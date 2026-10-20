@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "chapter": {
+    "id": 1,
+    "name": "枫叶岛",
+    "subtitle": "铁锈味的海风",
+    "goal": "追一条艾尔达走私线，从南港一路追到蘑菇王的巢穴"
+  },
+
+  "themes": {
+    "harbor": {
+      "bgTop": "#0d1524", "bgBottom": "#2c5265", "mid": "#16241f",
+      "ground": "#24382a", "groundDeep": "#101a15", "accent": "#7fb4c8"
+    },
+    "forest": {
+      "bgTop": "#101c14", "bgBottom": "#3e6f4a", "mid": "#132a1a",
+      "ground": "#2a4232", "groundDeep": "#121d16", "accent": "#9fdc9a"
+    },
+    "cliff": {
+      "bgTop": "#161327", "bgBottom": "#5b4a72", "mid": "#241a33",
+      "ground": "#33283f", "groundDeep": "#170f21", "accent": "#c3a0e8"
+    },
+    "nest": {
+      "bgTop": "#1c0f10", "bgBottom": "#6b3230", "mid": "#2b1414",
+      "ground": "#3a2422", "groundDeep": "#1a0d0c", "accent": "#f0a07a"
+    }
+  },
+
+  "bosses": {
+    "slime_king": {
+      "name": "巨型绿水灵",
+      "type": "slime",
+      "hp": 380,
+      "scale": 2.0,
+      "spd": 62,
+      "contact": 10,
+      "slam": { "telegraph": 1.15, "air": 0.42, "radius": 96, "damage": 16, "recover": 1.2 },
+      "summon": { "type": "slime", "count": 2, "gap": 0.4 },
+      "pattern": ["chase", "slam", "chase", "summon"],
+      "phases": [ { "at": 1.0, "cooldown": 2.0 }, { "at": 0.5, "cooldown": 1.4 } ],
+      "hint": "红圈是什么？踩进去会掉血。看到就往外走。"
+    },
+    "mushroom_king": {
+      "name": "蘑菇王",
+      "type": "mushroom",
+      "hp": 900,
+      "scale": 3.0,
+      "spd": 46,
+      "contact": 16,
+      "slam": { "telegraph": 1.0, "air": 0.5, "radius": 122, "damage": 26, "recover": 1.6 },
+      "summon": { "type": "mushroom", "count": 3, "gap": 0.35 },
+      "pattern": ["chase", "slam", "slam", "summon"],
+      "phases": [ { "at": 1.0, "cooldown": 2.2 }, { "at": 0.5, "cooldown": 1.5 } ],
+      "hint": "红圈出现就跑开。它落地后有 1.6 秒硬直——那是唯一能安心输出的窗口。"
+    }
+  },
+
+  "levels": [
+    {
+      "id": "1-1",
+      "name": "南港 · 出航",
+      "goal": "穿过南港，找到走私者留下的脚印",
+      "theme": "harbor",
+      "suppression": 0,
+      "recLevel": 1,
+      "teaches": "移动 + 自动普攻。这一关不会死，先熟悉手感。",
+      "dialogue": [
+        { "at": "start", "who": "阿岚", "text": "南港的灯还亮着，码头却一个人都没有。" },
+        { "at": "start", "who": "老船工", "text": "别往仓库那头走……昨晚有东西搬进来了，会动的。" }
+      ],
+      "segments": [
+        { "kind": "walk", "duration": 9, "hint": "推着摇杆往前走。普攻是自动的，你只需要走位。" },
+        { "kind": "combat", "name": "码头杂兵",
+          "spawns": [ { "type": "mushroom", "count": 3, "gap": 0.7, "z": "random", "side": "right" } ] },
+        { "kind": "rest", "duration": 4 },
+        { "kind": "combat", "name": "更多蘑菇",
+          "spawns": [
+            { "type": "mushroom", "count": 3, "gap": 0.6, "z": "random", "side": "right" },
+            { "type": "slime",    "count": 2, "gap": 0.5, "z": "random", "side": "left"  }
+          ] },
+        { "kind": "rest", "duration": 3 },
+        { "kind": "combat", "name": "仓库门口",
+          "spawns": [
+            { "type": "mushroom", "count": 4, "gap": 0.5, "z": "random", "side": "right" },
+            { "type": "slime",    "count": 2, "gap": 0.6, "z": "random", "side": "right" }
+          ] }
+      ],
+      "rewards": { "exp": 120, "gold": 80, "unlock": null,
+        "items": [ { "id": "potion_hp_s", "count": 2 } ] },
+      "quests": [
+        { "id": "m1_1", "type": "main", "name": "出航",
+          "steps": [
+            { "type": "reach", "target": "南港仓库", "count": 1 },
+            { "type": "kill",  "target": "mushroom", "count": 8 }
+          ],
+          "reward": { "exp": 120, "gold": 80 } },
+        { "id": "s1_1", "type": "side", "name": "老船工的请求",
+          "steps": [ { "type": "kill", "target": "slime", "count": 4 } ],
+          "reward": { "exp": 60, "gold": 40, "ruby": 1 },
+          "note": "支线给抗压/成长材料，主线只给等级——这条不能破" }
+      ]
+    },
+
+    {
+      "id": "1-2",
+      "name": "蘑菇森林 · 学看红圈",
+      "goal": "穿过森林，找到通往悬崖的路",
+      "theme": "forest",
+      "suppression": 0,
+      "recLevel": 2,
+      "teaches": "红圈躲位。这是全游戏唯一一次「允许你站着挨一下」的教学。",
+      "dialogue": [
+        { "at": "start", "who": "阿岚", "text": "森林里的蘑菇在动……不对，是整片森林都在动。" }
+      ],
+      "segments": [
+        { "kind": "walk", "duration": 7, "hint": "前面有东西在等你。" },
+        { "kind": "combat", "name": "林间",
+          "spawns": [ { "type": "slime", "count": 4, "gap": 0.55, "z": "random", "side": "both" } ] },
+        { "kind": "rest", "duration": 3 },
+        { "kind": "combat", "name": "野猪群",
+          "spawns": [
+            { "type": "pig",      "count": 2, "gap": 0.8, "z": "random", "side": "right" },
+            { "type": "mushroom", "count": 3, "gap": 0.5, "z": "random", "side": "right" }
+          ] },
+        { "kind": "boss", "bossId": "slime_king", "name": "林中空地",
+          "hint": "它跳起来之前，地上会出现红圈。红圈=别站那儿。" },
+        { "kind": "rest", "duration": 3 },
+        { "kind": "combat", "name": "余党",
+          "spawns": [
+            { "type": "pig",   "count": 3, "gap": 0.6, "z": "random", "side": "both" },
+            { "type": "slime", "count": 3, "gap": 0.5, "z": "random", "side": "both" }
+          ] }
+      ],
+      "rewards": { "exp": 200, "gold": 130, "unlock": null,
+        "items": [ { "id": "ruby_anti", "count": 1 } ] },
+      "quests": [
+        { "id": "m1_2", "type": "main", "name": "林中的巨响",
+          "steps": [
+            { "type": "kill", "target": "slime_king", "count": 1 },
+            { "type": "reach", "target": "悬崖小径", "count": 1 }
+          ],
+          "reward": { "exp": 200, "gold": 130 } },
+        { "id": "s1_2", "type": "side", "name": "采蘑菇的小姑娘",
+          "steps": [ { "type": "collect", "target": "spore", "count": 6 } ],
+          "reward": { "exp": 80, "gold": 60, "ruby": 1 } }
+      ]
+    },
+
+    {
+      "id": "1-3",
+      "name": "海岸悬崖 · 密度",
+      "goal": "在增援赶到前冲过悬崖",
+      "theme": "cliff",
+      "suppression": 30,
+      "recLevel": 3,
+      "teaches": "敌人变多而不是变强。如果觉得打不动，是抗压不够，不是操作问题。",
+      "dialogue": [
+        { "at": "start", "who": "阿岚", "text": "下面是海。掉下去没人捞你，站稳点。" }
+      ],
+      "segments": [
+        { "kind": "walk", "duration": 6, "hint": "这一关敌人会从两边来。别被围住。" },
+        { "kind": "combat", "name": "崖道前段",
+          "spawns": [
+            { "type": "pig",      "count": 3, "gap": 0.6, "z": "random", "side": "right" },
+            { "type": "mushroom", "count": 4, "gap": 0.45, "z": "random", "side": "both" }
+          ] },
+        { "kind": "rest", "duration": 2 },
+        { "kind": "combat", "name": "夹击",
+          "spawns": [
+            { "type": "slime", "count": 4, "gap": 0.45, "z": "random", "side": "both" },
+            { "type": "pig",   "count": 2, "gap": 0.7,  "z": "random", "side": "left" }
+          ] },
+        { "kind": "rest", "duration": 2 },
+        { "kind": "combat", "name": "桥上混战",
+          "spawns": [
+            { "type": "mushroom", "count": 5, "gap": 0.35, "z": "random", "side": "both" },
+            { "type": "pig",      "count": 3, "gap": 0.5,  "z": "random", "side": "right" },
+            { "type": "slime",    "count": 2, "gap": 0.5,  "z": "random", "side": "left" }
+          ] }
+      ],
+      "rewards": { "exp": 260, "gold": 150, "unlock": null,
+        "items": [ { "id": "potion_hp_s", "count": 3 } ] },
+      "quests": [
+        { "id": "m1_3", "type": "main", "name": "过崖",
+          "steps": [ { "type": "kill", "target": "any", "count": 14 } ],
+          "reward": { "exp": 260, "gold": 150 } }
+      ]
+    },
+
+    {
+      "id": "1-4",
+      "name": "蘑菇王巢穴 · 第一道墙",
+      "goal": "击败蘑菇王，从它身上拿到艾尔达结晶",
+      "theme": "nest",
+      "suppression": 60,
+      "recLevel": 4,
+      "teaches": "Boss 只考一件事：看红圈就跑。打完之后你会得到「冲刺」。",
+      "dialogue": [
+        { "at": "start", "who": "阿岚", "text": "……它比传说里还大。" },
+        { "at": "boss",  "who": "阿岚", "text": "别硬顶！它跳起来的时候往外跑，落下来再回去砍！" }
+      ],
+      "segments": [
+        { "kind": "walk", "duration": 10, "hint": "巢穴深处有很重的呼吸声。" },
+        { "kind": "combat", "name": "巢穴守卫",
+          "spawns": [ { "type": "mushroom", "count": 4, "gap": 0.5, "z": "random", "side": "right" } ] },
+        { "kind": "boss", "bossId": "mushroom_king", "name": "蘑菇王",
+          "hint": "红圈→跑开→落地硬直→回去打。重复这个循环。" }
+      ],
+      "rewards": { "exp": 520, "gold": 300, "unlock": "dash",
+        "items": [ { "id": "elda_crystal", "count": 1 } ],
+        "unlockText": "解锁永久能力：冲刺（技能②突进）" },
+      "quests": [
+        { "id": "m1_4", "type": "main", "name": "第一道墙",
+          "steps": [ { "type": "boss", "target": "mushroom_king", "count": 1 } ],
+          "reward": { "exp": 520, "gold": 300, "unlock": "dash" } }
+      ]
+    }
+  ]
+}

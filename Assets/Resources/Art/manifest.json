@@ -1,0 +1,4459 @@
+{
+ "version": 1,
+ "ppu": 40,
+ "source": "BeiDou GMS083 Data",
+ "chars": {
+  "knight": {
+   "name": "剑士（主角）",
+   "size": [
+    88,
+    84
+   ],
+   "pivot": [
+    38,
+    76
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/knight/stand_0.png",
+      "chars/knight/stand_1.png",
+      "chars/knight/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/knight/walk_0.png",
+      "chars/knight/walk_1.png",
+      "chars/knight/walk_2.png",
+      "chars/knight/walk_3.png",
+      "chars/knight/walk_4.png",
+      "chars/knight/walk_5.png",
+      "chars/knight/walk_6.png",
+      "chars/knight/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/knight/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/knight/atk_0.png",
+      "chars/knight/atk_1.png",
+      "chars/knight/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/knight/hit_0.png",
+      "chars/knight/hit_1.png",
+      "chars/knight/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/knight/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "warrior": {
+   "name": "战士（英雄）",
+   "size": [
+    151,
+    113
+   ],
+   "pivot": [
+    74,
+    98
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/warrior/stand_0.png",
+      "chars/warrior/stand_1.png",
+      "chars/warrior/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/warrior/walk_0.png",
+      "chars/warrior/walk_1.png",
+      "chars/warrior/walk_2.png",
+      "chars/warrior/walk_3.png",
+      "chars/warrior/walk_4.png",
+      "chars/warrior/walk_5.png",
+      "chars/warrior/walk_6.png",
+      "chars/warrior/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/warrior/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/warrior/atk_0.png",
+      "chars/warrior/atk_1.png",
+      "chars/warrior/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/warrior/hit_0.png",
+      "chars/warrior/hit_1.png",
+      "chars/warrior/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/warrior/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "mage": {
+   "name": "法师（英雄）",
+   "size": [
+    92,
+    107
+   ],
+   "pivot": [
+    34,
+    78
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/mage/stand_0.png",
+      "chars/mage/stand_1.png",
+      "chars/mage/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/mage/walk_0.png",
+      "chars/mage/walk_1.png",
+      "chars/mage/walk_2.png",
+      "chars/mage/walk_3.png",
+      "chars/mage/walk_4.png",
+      "chars/mage/walk_5.png",
+      "chars/mage/walk_6.png",
+      "chars/mage/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/mage/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/mage/atk_0.png",
+      "chars/mage/atk_1.png",
+      "chars/mage/atk_2.png"
+     ],
+     "delays": [
+      40,
+      200,
+      200
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/mage/hit_0.png",
+      "chars/mage/hit_1.png",
+      "chars/mage/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/mage/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "archer": {
+   "name": "弓手（英雄）",
+   "size": [
+    86,
+    92
+   ],
+   "pivot": [
+    38,
+    75
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/archer/stand_0.png",
+      "chars/archer/stand_1.png",
+      "chars/archer/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/archer/walk_0.png",
+      "chars/archer/walk_1.png",
+      "chars/archer/walk_2.png",
+      "chars/archer/walk_3.png",
+      "chars/archer/walk_4.png",
+      "chars/archer/walk_5.png",
+      "chars/archer/walk_6.png",
+      "chars/archer/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/archer/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/archer/atk_0.png",
+      "chars/archer/atk_1.png",
+      "chars/archer/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/archer/hit_0.png",
+      "chars/archer/hit_1.png",
+      "chars/archer/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/archer/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "priest": {
+   "name": "牧师（英雄）",
+   "size": [
+    72,
+    88
+   ],
+   "pivot": [
+    38,
+    80
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/priest/stand_0.png",
+      "chars/priest/stand_1.png",
+      "chars/priest/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/priest/walk_0.png",
+      "chars/priest/walk_1.png",
+      "chars/priest/walk_2.png",
+      "chars/priest/walk_3.png",
+      "chars/priest/walk_4.png",
+      "chars/priest/walk_5.png",
+      "chars/priest/walk_6.png",
+      "chars/priest/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/priest/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/priest/atk_0.png",
+      "chars/priest/atk_1.png",
+      "chars/priest/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/priest/hit_0.png",
+      "chars/priest/hit_1.png",
+      "chars/priest/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/priest/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  }
+ },
+ "mobs": {
+  "mushroom": {
+   "name": "蘑菇仔",
+   "size": [
+    80,
+    41
+   ],
+   "pivot": [
+    25,
+    39
+   ],
+   "scale": 0.85,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/mushroom/stand_0.png",
+      "mobs/mushroom/stand_1.png",
+      "mobs/mushroom/stand_2.png"
+     ],
+     "delays": [
+      180,
+      100,
+      180
+     ]
+    },
+    "move": {
+     "frames": [
+      "mobs/mushroom/move_0.png",
+      "mobs/mushroom/move_1.png",
+      "mobs/mushroom/move_2.png",
+      "mobs/mushroom/move_3.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/mushroom/hit1_0.png"
+     ],
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/mushroom/die1_0.png",
+      "mobs/mushroom/die1_1.png",
+      "mobs/mushroom/die1_2.png",
+      "mobs/mushroom/die1_3.png"
+     ],
+     "delays": [
+      120,
+      120,
+      120,
+      300
+     ]
+    }
+   }
+  },
+  "pig": {
+   "name": "猪猪",
+   "size": [
+    82,
+    60
+   ],
+   "pivot": [
+    45,
+    58
+   ],
+   "scale": 0.95,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/pig/stand_0.png",
+      "mobs/pig/stand_1.png",
+      "mobs/pig/stand_2.png"
+     ],
+     "delays": [
+      180,
+      150,
+      180
+     ]
+    },
+    "move": {
+     "frames": [
+      "mobs/pig/move_0.png",
+      "mobs/pig/move_1.png",
+      "mobs/pig/move_2.png"
+     ],
+     "delays": [
+      100,
+      100,
+      300
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/pig/hit1_0.png"
+     ],
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/pig/die1_0.png",
+      "mobs/pig/die1_1.png",
+      "mobs/pig/die1_2.png"
+     ],
+     "delays": [
+      180,
+      180,
+      300
+     ]
+    }
+   }
+  },
+  "mushmom": {
+   "name": "蘑菇王",
+   "size": [
+    202,
+    220
+   ],
+   "pivot": [
+    106,
+    215
+   ],
+   "scale": 1.0,
+   "boss": true,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/mushmom/stand_0.png"
+     ],
+     "delays": [
+      180
+     ]
+    },
+    "move": {
+     "frames": [
+      "mobs/mushmom/move_0.png",
+      "mobs/mushmom/move_1.png",
+      "mobs/mushmom/move_2.png",
+      "mobs/mushmom/move_3.png",
+      "mobs/mushmom/move_4.png"
+     ],
+     "delays": [
+      500,
+      100,
+      100,
+      300,
+      100
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/mushmom/hit1_0.png"
+     ],
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/mushmom/die1_0.png",
+      "mobs/mushmom/die1_1.png",
+      "mobs/mushmom/die1_2.png",
+      "mobs/mushmom/die1_3.png",
+      "mobs/mushmom/die1_4.png",
+      "mobs/mushmom/die1_5.png"
+     ],
+     "delays": [
+      200,
+      150,
+      150,
+      150,
+      150,
+      300
+     ]
+    },
+    "attack1": {
+     "frames": [
+      "mobs/mushmom/attack1_0.png",
+      "mobs/mushmom/attack1_1.png",
+      "mobs/mushmom/attack1_2.png",
+      "mobs/mushmom/attack1_3.png",
+      "mobs/mushmom/attack1_4.png"
+     ],
+     "delays": [
+      800,
+      200,
+      50,
+      50,
+      750
+     ]
+    }
+   }
+  },
+  "greenmush": {
+   "name": "绿蘑菇",
+   "size": [
+    63,
+    61
+   ],
+   "pivot": [
+    31,
+    58
+   ],
+   "scale": 0.95,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/greenmush/stand_0.png",
+      "mobs/greenmush/stand_1.png",
+      "mobs/greenmush/stand_2.png"
+     ],
+     "delays": [
+      180,
+      100,
+      180
+     ]
+    },
+    "move": {
+     "frames": [
+      "mobs/greenmush/move_0.png",
+      "mobs/greenmush/move_1.png",
+      "mobs/greenmush/move_2.png",
+      "mobs/greenmush/move_3.png"
+     ],
+     "delays": [
+      150,
+      150,
+      150,
+      150
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/greenmush/hit1_0.png"
+     ],
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/greenmush/die1_0.png",
+      "mobs/greenmush/die1_1.png",
+      "mobs/greenmush/die1_2.png",
+      "mobs/greenmush/die1_3.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      300
+     ]
+    }
+   }
+  },
+  "slime": {
+   "name": "绿水灵",
+   "size": [
+    76,
+    98
+   ],
+   "pivot": [
+    33,
+    96
+   ],
+   "scale": 0.9,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/slime/stand_0.png",
+      "mobs/slime/stand_1.png",
+      "mobs/slime/stand_2.png"
+     ],
+     "delays": [
+      200,
+      300,
+      250
+     ]
+    },
+    "move": {
+     "frames": [
+      "mobs/slime/move_0.png",
+      "mobs/slime/move_1.png",
+      "mobs/slime/move_2.png",
+      "mobs/slime/move_3.png",
+      "mobs/slime/move_4.png",
+      "mobs/slime/move_5.png",
+      "mobs/slime/move_6.png"
+     ],
+     "delays": [
+      200,
+      50,
+      150,
+      150,
+      100,
+      100,
+      300
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/slime/hit1_0.png"
+     ],
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/slime/die1_0.png",
+      "mobs/slime/die1_1.png",
+      "mobs/slime/die1_2.png",
+      "mobs/slime/die1_3.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      300
+     ]
+    }
+   }
+  },
+  "snail": {
+   "name": "蜗牛",
+   "size": [
+    48,
+    37
+   ],
+   "pivot": [
+    24,
+    35
+   ],
+   "scale": 0.8,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/snail/stand_0.png"
+     ],
+     "delays": [
+      180
+     ]
+    },
+    "move": {
+     "frames": [
+      "mobs/snail/move_0.png",
+      "mobs/snail/move_1.png",
+      "mobs/snail/move_2.png",
+      "mobs/snail/move_3.png",
+      "mobs/snail/move_4.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/snail/hit1_0.png"
+     ],
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/snail/die1_0.png",
+      "mobs/snail/die1_1.png",
+      "mobs/snail/die1_2.png",
+      "mobs/snail/die1_3.png",
+      "mobs/snail/die1_4.png",
+      "mobs/snail/die1_5.png",
+      "mobs/snail/die1_6.png",
+      "mobs/snail/die1_7.png",
+      "mobs/snail/die1_8.png"
+     ],
+     "delays": [
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      300
+     ]
+    }
+   }
+  },
+  "slimeking": {
+   "name": "绿水灵王",
+   "size": [
+    287,
+    293
+   ],
+   "pivot": [
+    125,
+    256
+   ],
+   "scale": 1.0,
+   "boss": true,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/slimeking/stand_0.png",
+      "mobs/slimeking/stand_1.png"
+     ],
+     "delays": [
+      300,
+      250
+     ]
+    },
+    "move": {
+     "frames": [
+      "mobs/slimeking/move_0.png",
+      "mobs/slimeking/move_1.png",
+      "mobs/slimeking/move_2.png",
+      "mobs/slimeking/move_3.png",
+      "mobs/slimeking/move_4.png",
+      "mobs/slimeking/move_5.png",
+      "mobs/slimeking/move_6.png"
+     ],
+     "delays": [
+      200,
+      50,
+      150,
+      150,
+      100,
+      100,
+      300
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/slimeking/hit1_0.png"
+     ],
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/slimeking/die1_0.png",
+      "mobs/slimeking/die1_1.png",
+      "mobs/slimeking/die1_2.png",
+      "mobs/slimeking/die1_3.png",
+      "mobs/slimeking/die1_4.png",
+      "mobs/slimeking/die1_5.png",
+      "mobs/slimeking/die1_6.png",
+      "mobs/slimeking/die1_7.png"
+     ],
+     "delays": [
+      80,
+      80,
+      80,
+      130,
+      130,
+      130,
+      140,
+      150
+     ]
+    },
+    "attack1": {
+     "frames": [
+      "mobs/slimeking/attack1_0.png",
+      "mobs/slimeking/attack1_1.png",
+      "mobs/slimeking/attack1_2.png",
+      "mobs/slimeking/attack1_3.png",
+      "mobs/slimeking/attack1_4.png",
+      "mobs/slimeking/attack1_5.png",
+      "mobs/slimeking/attack1_6.png",
+      "mobs/slimeking/attack1_7.png"
+     ],
+     "delays": [
+      300,
+      100,
+      100,
+      150,
+      150,
+      100,
+      100,
+      500
+     ]
+    }
+   }
+  }
+ },
+ "tiles": {
+  "grassySoil": {
+   "bsc": [
+    {
+     "file": "map/tiles/grassySoil/bsc_0.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/grassySoil/bsc_1.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/grassySoil/bsc_2.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/grassySoil/bsc_3.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/grassySoil/bsc_4.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    }
+   ],
+   "enH0": [
+    {
+     "file": "map/tiles/grassySoil/enH0_0.png",
+     "size": [
+      90,
+      38
+     ],
+     "origin": [
+      0,
+      38
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/grassySoil/enH0_1.png",
+     "size": [
+      90,
+      39
+     ],
+     "origin": [
+      0,
+      39
+     ],
+     "z": -3
+    }
+   ],
+   "enH1": [
+    {
+     "file": "map/tiles/grassySoil/enH1_0.png",
+     "size": [
+      90,
+      25
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/grassySoil/enH1_1.png",
+     "size": [
+      90,
+      26
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    }
+   ],
+   "enV0": [
+    {
+     "file": "map/tiles/grassySoil/enV0_0.png",
+     "size": [
+      32,
+      60
+     ],
+     "origin": [
+      32,
+      0
+     ],
+     "z": -2
+    },
+    {
+     "file": "map/tiles/grassySoil/enV0_1.png",
+     "size": [
+      29,
+      60
+     ],
+     "origin": [
+      29,
+      0
+     ],
+     "z": -2
+    }
+   ],
+   "enV1": [
+    {
+     "file": "map/tiles/grassySoil/enV1_0.png",
+     "size": [
+      29,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -2
+    },
+    {
+     "file": "map/tiles/grassySoil/enV1_1.png",
+     "size": [
+      29,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -2
+    }
+   ],
+   "edU": [
+    {
+     "file": "map/tiles/grassySoil/edU_0.png",
+     "size": [
+      54,
+      37
+     ],
+     "origin": [
+      29,
+      37
+     ],
+     "z": -4
+    },
+    {
+     "file": "map/tiles/grassySoil/edU_1.png",
+     "size": [
+      55,
+      38
+     ],
+     "origin": [
+      29,
+      37
+     ],
+     "z": -4
+    }
+   ],
+   "edD": [
+    {
+     "file": "map/tiles/grassySoil/edD_0.png",
+     "size": [
+      48,
+      17
+     ],
+     "origin": [
+      24,
+      0
+     ],
+     "z": -4
+    }
+   ],
+   "slLU": [
+    {
+     "file": "map/tiles/grassySoil/slLU_0.png",
+     "size": [
+      90,
+      94
+     ],
+     "origin": [
+      90,
+      94
+     ],
+     "z": -3
+    }
+   ],
+   "slRU": [
+    {
+     "file": "map/tiles/grassySoil/slRU_0.png",
+     "size": [
+      90,
+      94
+     ],
+     "origin": [
+      0,
+      94
+     ],
+     "z": -3
+    }
+   ],
+   "slLD": [
+    {
+     "file": "map/tiles/grassySoil/slLD_0.png",
+     "size": [
+      90,
+      77
+     ],
+     "origin": [
+      90,
+      0
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/grassySoil/slLD_1.png",
+     "size": [
+      90,
+      77
+     ],
+     "origin": [
+      90,
+      0
+     ],
+     "z": -3
+    }
+   ],
+   "slRD": [
+    {
+     "file": "map/tiles/grassySoil/slRD_0.png",
+     "size": [
+      90,
+      77
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/grassySoil/slRD_1.png",
+     "size": [
+      90,
+      77
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    }
+   ]
+  },
+  "greensandySeaFloor": {
+   "bsc": [
+    {
+     "file": "map/tiles/greensandySeaFloor/bsc_0.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/bsc_1.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/bsc_2.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/bsc_3.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/bsc_4.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/bsc_5.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    }
+   ],
+   "enH0": [
+    {
+     "file": "map/tiles/greensandySeaFloor/enH0_0.png",
+     "size": [
+      90,
+      29
+     ],
+     "origin": [
+      0,
+      29
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/enH0_1.png",
+     "size": [
+      90,
+      27
+     ],
+     "origin": [
+      0,
+      27
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/enH0_2.png",
+     "size": [
+      90,
+      27
+     ],
+     "origin": [
+      0,
+      27
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/enH0_3.png",
+     "size": [
+      90,
+      29
+     ],
+     "origin": [
+      0,
+      29
+     ],
+     "z": -3
+    }
+   ],
+   "enH1": [
+    {
+     "file": "map/tiles/greensandySeaFloor/enH1_0.png",
+     "size": [
+      90,
+      41
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/enH1_1.png",
+     "size": [
+      90,
+      36
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/enH1_2.png",
+     "size": [
+      90,
+      39
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    }
+   ],
+   "enV0": [
+    {
+     "file": "map/tiles/greensandySeaFloor/enV0_0.png",
+     "size": [
+      31,
+      61
+     ],
+     "origin": [
+      31,
+      0
+     ],
+     "z": -2
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/enV0_1.png",
+     "size": [
+      23,
+      60
+     ],
+     "origin": [
+      23,
+      0
+     ],
+     "z": -2
+    }
+   ],
+   "enV1": [
+    {
+     "file": "map/tiles/greensandySeaFloor/enV1_0.png",
+     "size": [
+      33,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -2
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/enV1_1.png",
+     "size": [
+      24,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -2
+    }
+   ],
+   "edU": [
+    {
+     "file": "map/tiles/greensandySeaFloor/edU_0.png",
+     "size": [
+      68,
+      27
+     ],
+     "origin": [
+      36,
+      27
+     ],
+     "z": -4
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/edU_1.png",
+     "size": [
+      61,
+      28
+     ],
+     "origin": [
+      26,
+      27
+     ],
+     "z": -4
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/edU_2.png",
+     "size": [
+      50,
+      28
+     ],
+     "origin": [
+      29,
+      27
+     ],
+     "z": -4
+    }
+   ],
+   "edD": [
+    {
+     "file": "map/tiles/greensandySeaFloor/edD_0.png",
+     "size": [
+      48,
+      27
+     ],
+     "origin": [
+      26,
+      0
+     ],
+     "z": -4
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/edD_1.png",
+     "size": [
+      39,
+      26
+     ],
+     "origin": [
+      19,
+      0
+     ],
+     "z": -4
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/edD_2.png",
+     "size": [
+      40,
+      27
+     ],
+     "origin": [
+      21,
+      0
+     ],
+     "z": -4
+    }
+   ],
+   "slLU": [
+    {
+     "file": "map/tiles/greensandySeaFloor/slLU_0.png",
+     "size": [
+      90,
+      87
+     ],
+     "origin": [
+      90,
+      87
+     ],
+     "z": -3
+    }
+   ],
+   "slRU": [
+    {
+     "file": "map/tiles/greensandySeaFloor/slRU_0.png",
+     "size": [
+      90,
+      88
+     ],
+     "origin": [
+      0,
+      87
+     ],
+     "z": -3
+    }
+   ],
+   "slLD": [
+    {
+     "file": "map/tiles/greensandySeaFloor/slLD_0.png",
+     "size": [
+      91,
+      87
+     ],
+     "origin": [
+      91,
+      0
+     ],
+     "z": -3
+    }
+   ],
+   "slRD": [
+    {
+     "file": "map/tiles/greensandySeaFloor/slRD_0.png",
+     "size": [
+      91,
+      87
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/greensandySeaFloor/slRD_1.png",
+     "size": [
+      90,
+      87
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    }
+   ]
+  },
+  "sandySeaFloor": {
+   "info": [
+    {
+     "file": "map/tiles/sandySeaFloor/info_0.png",
+     "size": [
+      68,
+      27
+     ],
+     "origin": [
+      34,
+      13
+     ],
+     "z": 0
+    }
+   ],
+   "bsc": [
+    {
+     "file": "map/tiles/sandySeaFloor/bsc_0.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/bsc_1.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/bsc_2.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/bsc_3.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/bsc_4.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/bsc_5.png",
+     "size": [
+      90,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": 0
+    }
+   ],
+   "enH0": [
+    {
+     "file": "map/tiles/sandySeaFloor/enH0_0.png",
+     "size": [
+      90,
+      29
+     ],
+     "origin": [
+      0,
+      29
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/enH0_1.png",
+     "size": [
+      90,
+      27
+     ],
+     "origin": [
+      0,
+      27
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/enH0_2.png",
+     "size": [
+      90,
+      27
+     ],
+     "origin": [
+      0,
+      27
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/enH0_3.png",
+     "size": [
+      90,
+      29
+     ],
+     "origin": [
+      0,
+      29
+     ],
+     "z": -3
+    }
+   ],
+   "enH1": [
+    {
+     "file": "map/tiles/sandySeaFloor/enH1_0.png",
+     "size": [
+      90,
+      41
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/enH1_1.png",
+     "size": [
+      90,
+      36
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/enH1_2.png",
+     "size": [
+      90,
+      39
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    }
+   ],
+   "enV0": [
+    {
+     "file": "map/tiles/sandySeaFloor/enV0_0.png",
+     "size": [
+      31,
+      60
+     ],
+     "origin": [
+      31,
+      0
+     ],
+     "z": -2
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/enV0_1.png",
+     "size": [
+      23,
+      60
+     ],
+     "origin": [
+      23,
+      0
+     ],
+     "z": -2
+    }
+   ],
+   "enV1": [
+    {
+     "file": "map/tiles/sandySeaFloor/enV1_0.png",
+     "size": [
+      33,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -2
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/enV1_1.png",
+     "size": [
+      24,
+      60
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -2
+    }
+   ],
+   "edU": [
+    {
+     "file": "map/tiles/sandySeaFloor/edU_0.png",
+     "size": [
+      68,
+      27
+     ],
+     "origin": [
+      36,
+      27
+     ],
+     "z": -4
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/edU_1.png",
+     "size": [
+      62,
+      27
+     ],
+     "origin": [
+      26,
+      27
+     ],
+     "z": -4
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/edU_2.png",
+     "size": [
+      50,
+      27
+     ],
+     "origin": [
+      29,
+      27
+     ],
+     "z": -4
+    }
+   ],
+   "edD": [
+    {
+     "file": "map/tiles/sandySeaFloor/edD_0.png",
+     "size": [
+      48,
+      27
+     ],
+     "origin": [
+      26,
+      0
+     ],
+     "z": -4
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/edD_1.png",
+     "size": [
+      39,
+      26
+     ],
+     "origin": [
+      19,
+      0
+     ],
+     "z": -4
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/edD_2.png",
+     "size": [
+      40,
+      27
+     ],
+     "origin": [
+      21,
+      0
+     ],
+     "z": -4
+    }
+   ],
+   "slLU": [
+    {
+     "file": "map/tiles/sandySeaFloor/slLU_0.png",
+     "size": [
+      90,
+      87
+     ],
+     "origin": [
+      90,
+      87
+     ],
+     "z": -3
+    }
+   ],
+   "slRU": [
+    {
+     "file": "map/tiles/sandySeaFloor/slRU_0.png",
+     "size": [
+      90,
+      87
+     ],
+     "origin": [
+      0,
+      87
+     ],
+     "z": -3
+    }
+   ],
+   "slLD": [
+    {
+     "file": "map/tiles/sandySeaFloor/slLD_0.png",
+     "size": [
+      90,
+      86
+     ],
+     "origin": [
+      90,
+      0
+     ],
+     "z": -3
+    }
+   ],
+   "slRD": [
+    {
+     "file": "map/tiles/sandySeaFloor/slRD_0.png",
+     "size": [
+      90,
+      87
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    },
+    {
+     "file": "map/tiles/sandySeaFloor/slRD_1.png",
+     "size": [
+      90,
+      87
+     ],
+     "origin": [
+      0,
+      0
+     ],
+     "z": -3
+    }
+   ]
+  }
+ },
+ "backs": {
+  "grassySoil": [
+   {
+    "file": "map/back/grassySoil/0.png",
+    "size": [
+     256,
+     256
+    ],
+    "origin": [
+     128,
+     128
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/grassySoil/1.png",
+    "size": [
+     1500,
+     848
+    ],
+    "origin": [
+     714,
+     289
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/grassySoil/2.png",
+    "size": [
+     2493,
+     340
+    ],
+    "origin": [
+     1246,
+     170
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/grassySoil/3.png",
+    "size": [
+     315,
+     268
+    ],
+    "origin": [
+     157,
+     134
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/grassySoil/4.png",
+    "size": [
+     1024,
+     257
+    ],
+    "origin": [
+     512,
+     128
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/grassySoil/5.png",
+    "size": [
+     1024,
+     257
+    ],
+    "origin": [
+     512,
+     128
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/grassySoil/6.png",
+    "size": [
+     1024,
+     294
+    ],
+    "origin": [
+     512,
+     147
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/grassySoil/7.png",
+    "size": [
+     2497,
+     343
+    ],
+    "origin": [
+     1248,
+     171
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/grassySoil/8.png",
+    "size": [
+     200,
+     200
+    ],
+    "origin": [
+     100,
+     100
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   }
+  ],
+  "midForest": [
+   {
+    "file": "map/back/midForest/0.png",
+    "size": [
+     128,
+     128
+    ],
+    "origin": [
+     64,
+     64
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/midForest/1.png",
+    "size": [
+     635,
+     719
+    ],
+    "origin": [
+     317,
+     359
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/midForest/2.png",
+    "size": [
+     1024,
+     439
+    ],
+    "origin": [
+     512,
+     219
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/midForest/3.png",
+    "size": [
+     1024,
+     502
+    ],
+    "origin": [
+     512,
+     251
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/midForest/4.png",
+    "size": [
+     1025,
+     503
+    ],
+    "origin": [
+     512,
+     251
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   }
+  ],
+  "vicportTown": [
+   {
+    "file": "map/back/vicportTown/0.png",
+    "size": [
+     256,
+     600
+    ],
+    "origin": [
+     128,
+     400
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/1.png",
+    "size": [
+     1400,
+     157
+    ],
+    "origin": [
+     820,
+     78
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/2.png",
+    "size": [
+     751,
+     148
+    ],
+    "origin": [
+     165,
+     127
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/3.png",
+    "size": [
+     751,
+     148
+    ],
+    "origin": [
+     165,
+     127
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/4.png",
+    "size": [
+     354,
+     143
+    ],
+    "origin": [
+     177,
+     71
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/5.png",
+    "size": [
+     277,
+     213
+    ],
+    "origin": [
+     132,
+     111
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/6.png",
+    "size": [
+     141,
+     52
+    ],
+    "origin": [
+     70,
+     26
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/7.png",
+    "size": [
+     281,
+     91
+    ],
+    "origin": [
+     140,
+     45
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/8.png",
+    "size": [
+     291,
+     165
+    ],
+    "origin": [
+     120,
+     84
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/9.png",
+    "size": [
+     492,
+     235
+    ],
+    "origin": [
+     246,
+     117
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/10.png",
+    "size": [
+     410,
+     178
+    ],
+    "origin": [
+     205,
+     89
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/11.png",
+    "size": [
+     358,
+     196
+    ],
+    "origin": [
+     179,
+     98
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/12.png",
+    "size": [
+     579,
+     143
+    ],
+    "origin": [
+     289,
+     71
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/13.png",
+    "size": [
+     385,
+     188
+    ],
+    "origin": [
+     106,
+     163
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/14.png",
+    "size": [
+     256,
+     444
+    ],
+    "origin": [
+     128,
+     222
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/15.png",
+    "size": [
+     245,
+     92
+    ],
+    "origin": [
+     350,
+     46
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/16.png",
+    "size": [
+     273,
+     74
+    ],
+    "origin": [
+     136,
+     37
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/17.png",
+    "size": [
+     371,
+     147
+    ],
+    "origin": [
+     420,
+     73
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/18.png",
+    "size": [
+     592,
+     505
+    ],
+    "origin": [
+     296,
+     252
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/vicportTown/19.png",
+    "size": [
+     377,
+     359
+    ],
+    "origin": [
+     410,
+     179
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   }
+  ],
+  "sandBeach": [
+   {
+    "file": "map/back/sandBeach/0.png",
+    "size": [
+     64,
+     64
+    ],
+    "origin": [
+     32,
+     32
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/1.png",
+    "size": [
+     18,
+     273
+    ],
+    "origin": [
+     9,
+     136
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/2.png",
+    "size": [
+     649,
+     293
+    ],
+    "origin": [
+     324,
+     146
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/3.png",
+    "size": [
+     426,
+     342
+    ],
+    "origin": [
+     213,
+     171
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/4.png",
+    "size": [
+     380,
+     186
+    ],
+    "origin": [
+     190,
+     93
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/5.png",
+    "size": [
+     291,
+     165
+    ],
+    "origin": [
+     120,
+     81
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/6.png",
+    "size": [
+     277,
+     213
+    ],
+    "origin": [
+     132,
+     111
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/7.png",
+    "size": [
+     18,
+     7
+    ],
+    "origin": [
+     9,
+     3
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/8.png",
+    "size": [
+     32,
+     10
+    ],
+    "origin": [
+     16,
+     5
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/9.png",
+    "size": [
+     33,
+     11
+    ],
+    "origin": [
+     16,
+     5
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/10.png",
+    "size": [
+     61,
+     17
+    ],
+    "origin": [
+     30,
+     8
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/11.png",
+    "size": [
+     117,
+     205
+    ],
+    "origin": [
+     58,
+     102
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/12.png",
+    "size": [
+     381,
+     172
+    ],
+    "origin": [
+     190,
+     86
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/sandBeach/13.png",
+    "size": [
+     120,
+     50
+    ],
+    "origin": [
+     60,
+     25
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   }
+  ],
+  "mushCatle": [
+   {
+    "file": "map/back/mushCatle/0.png",
+    "size": [
+     44,
+     44
+    ],
+    "origin": [
+     22,
+     22
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/1.png",
+    "size": [
+     11,
+     340
+    ],
+    "origin": [
+     5,
+     170
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/2.png",
+    "size": [
+     44,
+     44
+    ],
+    "origin": [
+     22,
+     22
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/3.png",
+    "size": [
+     635,
+     569
+    ],
+    "origin": [
+     317,
+     284
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/4.png",
+    "size": [
+     285,
+     97
+    ],
+    "origin": [
+     142,
+     48
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/5.png",
+    "size": [
+     331,
+     175
+    ],
+    "origin": [
+     165,
+     87
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/6.png",
+    "size": [
+     253,
+     128
+    ],
+    "origin": [
+     3,
+     96
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/7.png",
+    "size": [
+     333,
+     141
+    ],
+    "origin": [
+     166,
+     70
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/8.png",
+    "size": [
+     281,
+     102
+    ],
+    "origin": [
+     140,
+     51
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/9.png",
+    "size": [
+     520,
+     113
+    ],
+    "origin": [
+     260,
+     56
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/10.png",
+    "size": [
+     480,
+     113
+    ],
+    "origin": [
+     240,
+     56
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/11.png",
+    "size": [
+     500,
+     142
+    ],
+    "origin": [
+     250,
+     71
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/12.png",
+    "size": [
+     519,
+     336
+    ],
+    "origin": [
+     259,
+     168
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/13.png",
+    "size": [
+     270,
+     487
+    ],
+    "origin": [
+     135,
+     243
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/14.png",
+    "size": [
+     314,
+     505
+    ],
+    "origin": [
+     157,
+     252
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/15.png",
+    "size": [
+     644,
+     490
+    ],
+    "origin": [
+     322,
+     245
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/16.png",
+    "size": [
+     520,
+     109
+    ],
+    "origin": [
+     260,
+     54
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/17.png",
+    "size": [
+     480,
+     109
+    ],
+    "origin": [
+     240,
+     54
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/18.png",
+    "size": [
+     500,
+     139
+    ],
+    "origin": [
+     250,
+     69
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/19.png",
+    "size": [
+     520,
+     113
+    ],
+    "origin": [
+     260,
+     56
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/20.png",
+    "size": [
+     480,
+     113
+    ],
+    "origin": [
+     240,
+     56
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/21.png",
+    "size": [
+     500,
+     142
+    ],
+    "origin": [
+     250,
+     71
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/22.png",
+    "size": [
+     614,
+     266
+    ],
+    "origin": [
+     307,
+     133
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/23.png",
+    "size": [
+     1024,
+     509
+    ],
+    "origin": [
+     512,
+     254
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/24.png",
+    "size": [
+     795,
+     455
+    ],
+    "origin": [
+     397,
+     227
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/25.png",
+    "size": [
+     1299,
+     227
+    ],
+    "origin": [
+     649,
+     113
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/26.png",
+    "size": [
+     500,
+     183
+    ],
+    "origin": [
+     250,
+     91
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/27.png",
+    "size": [
+     500,
+     276
+    ],
+    "origin": [
+     250,
+     138
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   },
+   {
+    "file": "map/back/mushCatle/28.png",
+    "size": [
+     500,
+     335
+    ],
+    "origin": [
+     250,
+     167
+    ],
+    "z": 0,
+    "rx": 0,
+    "ry": 0,
+    "type": 0,
+    "a": 255,
+    "x": 0,
+    "y": 0
+   }
+  ]
+ },
+ "stages": {
+  "harbor": {
+   "map": "104010001",
+   "px": [
+    -1311,
+    -185,
+    1340,
+    610
+   ],
+   "ground": [
+    -641,
+    215
+   ],
+   "walk": [
+    -1271,
+    -11
+   ],
+   "sky": 3364266,
+   "files": {
+    "back": "map/stage/harbor_back.png",
+    "mid": "map/stage/harbor_mid.png"
+   },
+   "orders": {
+    "back": -800,
+    "mid": -400,
+    "front": 600
+   }
+  },
+  "forest": {
+   "map": "100010000",
+   "px": [
+    -621,
+    55,
+    2400,
+    610
+   ],
+   "ground": [
+    579,
+    455
+   ],
+   "walk": [
+    -581,
+    1739
+   ],
+   "sky": 4225745,
+   "files": {
+    "back": "map/stage/forest_back.png",
+    "mid": "map/stage/forest_mid.png"
+   },
+   "orders": {
+    "back": -800,
+    "mid": -400,
+    "front": 600
+   }
+  },
+  "cliff": {
+   "map": "101030100",
+   "px": [
+    -90,
+    1805,
+    2100,
+    610
+   ],
+   "ground": [
+    960,
+    2205
+   ],
+   "walk": [
+    -50,
+    1970
+   ],
+   "sky": 15066851,
+   "files": {
+    "back": "map/stage/cliff_back.png",
+    "mid": "map/stage/cliff_mid.png"
+   },
+   "orders": {
+    "back": -800,
+    "mid": -400,
+    "front": 600
+   }
+  },
+  "nest": {
+   "map": "106020300",
+   "px": [
+    -270,
+    -365,
+    1400,
+    610
+   ],
+   "ground": [
+    430,
+    35
+   ],
+   "walk": [
+    -230,
+    1090
+   ],
+   "sky": 1265792,
+   "files": {
+    "back": "map/stage/nest_back.png",
+    "mid": "map/stage/nest_mid.png"
+   },
+   "orders": {
+    "back": -800,
+    "mid": -400,
+    "front": 600
+   }
+  }
+ },
+ "skills": {
+  "flame": {
+   "name": "烈焰翔斩VI",
+   "id": "1121030",
+   "pivot": [
+    673,
+    686
+   ],
+   "size": [
+    1122,
+    934
+   ],
+   "icon": "skills/flame/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/flame/f000.png",
+      "skills/flame/f001.png",
+      "skills/flame/f002.png",
+      "skills/flame/f003.png",
+      "skills/flame/f004.png",
+      "skills/flame/f005.png",
+      "skills/flame/f006.png",
+      "skills/flame/f007.png",
+      "skills/flame/f008.png",
+      "skills/flame/f009.png",
+      "skills/flame/f010.png",
+      "skills/flame/f011.png",
+      "skills/flame/f012.png",
+      "skills/flame/f013.png",
+      "skills/flame/f014.png",
+      "skills/flame/f015.png",
+      "skills/flame/f016.png",
+      "skills/flame/f017.png",
+      "skills/flame/f018.png",
+      "skills/flame/f019.png",
+      "skills/flame/f020.png",
+      "skills/flame/f021.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ]
+    }
+   }
+  },
+  "dash": {
+   "name": "突进",
+   "id": "1121006",
+   "pivot": [
+    88,
+    129
+   ],
+   "size": [
+    288,
+    182
+   ],
+   "icon": "skills/dash/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/dash/f000.png",
+      "skills/dash/f001.png",
+      "skills/dash/f002.png",
+      "skills/dash/f003.png",
+      "skills/dash/f004.png",
+      "skills/dash/f005.png",
+      "skills/dash/f006.png"
+     ],
+     "delays": [
+      100,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120
+     ]
+    }
+   }
+  },
+  "rupture": {
+   "name": "斗气死亡断层",
+   "id": "1121012",
+   "pivot": [
+    711,
+    289
+   ],
+   "size": [
+    1311,
+    489
+   ],
+   "icon": "skills/rupture/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/rupture/f000.png",
+      "skills/rupture/f001.png",
+      "skills/rupture/f002.png",
+      "skills/rupture/f003.png",
+      "skills/rupture/f004.png",
+      "skills/rupture/f005.png",
+      "skills/rupture/f006.png",
+      "skills/rupture/f007.png",
+      "skills/rupture/f008.png",
+      "skills/rupture/f009.png",
+      "skills/rupture/f010.png",
+      "skills/rupture/f011.png",
+      "skills/rupture/f012.png",
+      "skills/rupture/f013.png",
+      "skills/rupture/f014.png",
+      "skills/rupture/f015.png",
+      "skills/rupture/f016.png",
+      "skills/rupture/f017.png",
+      "skills/rupture/f018.png",
+      "skills/rupture/f019.png",
+      "skills/rupture/f020.png",
+      "skills/rupture/f021.png",
+      "skills/rupture/f022.png",
+      "skills/rupture/f023.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ]
+    }
+   }
+  },
+  "illusion": {
+   "name": "剑影分身",
+   "id": "1121020",
+   "pivot": [
+    727,
+    409
+   ],
+   "size": [
+    1125,
+    568
+   ],
+   "icon": "skills/illusion/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/illusion/f000.png",
+      "skills/illusion/f001.png",
+      "skills/illusion/f002.png",
+      "skills/illusion/f003.png",
+      "skills/illusion/f004.png",
+      "skills/illusion/f005.png",
+      "skills/illusion/f006.png",
+      "skills/illusion/f007.png",
+      "skills/illusion/f008.png",
+      "skills/illusion/f009.png",
+      "skills/illusion/f010.png",
+      "skills/illusion/f011.png",
+      "skills/illusion/f012.png",
+      "skills/illusion/f013.png",
+      "skills/illusion/f014.png",
+      "skills/illusion/f015.png",
+      "skills/illusion/f016.png",
+      "skills/illusion/f017.png",
+      "skills/illusion/f018.png",
+      "skills/illusion/f019.png",
+      "skills/illusion/f020.png",
+      "skills/illusion/f021.png",
+      "skills/illusion/f022.png",
+      "skills/illusion/f023.png",
+      "skills/illusion/f024.png",
+      "skills/illusion/f025.png",
+      "skills/illusion/f026.png",
+      "skills/illusion/f027.png",
+      "skills/illusion/f028.png",
+      "skills/illusion/f029.png",
+      "skills/illusion/f030.png",
+      "skills/illusion/f031.png",
+      "skills/illusion/f032.png",
+      "skills/illusion/f033.png",
+      "skills/illusion/f034.png",
+      "skills/illusion/f035.png",
+      "skills/illusion/f036.png",
+      "skills/illusion/f037.png",
+      "skills/illusion/f038.png",
+      "skills/illusion/f039.png",
+      "skills/illusion/f040.png",
+      "skills/illusion/f041.png",
+      "skills/illusion/f042.png",
+      "skills/illusion/f043.png",
+      "skills/illusion/f044.png",
+      "skills/illusion/f045.png",
+      "skills/illusion/f046.png",
+      "skills/illusion/f047.png",
+      "skills/illusion/f048.png",
+      "skills/illusion/f049.png",
+      "skills/illusion/f050.png",
+      "skills/illusion/f051.png",
+      "skills/illusion/f052.png",
+      "skills/illusion/f053.png",
+      "skills/illusion/f054.png",
+      "skills/illusion/f055.png",
+      "skills/illusion/f056.png",
+      "skills/illusion/f057.png",
+      "skills/illusion/f058.png",
+      "skills/illusion/f059.png",
+      "skills/illusion/f060.png",
+      "skills/illusion/f061.png",
+      "skills/illusion/f062.png",
+      "skills/illusion/f063.png",
+      "skills/illusion/f064.png",
+      "skills/illusion/f065.png",
+      "skills/illusion/f066.png",
+      "skills/illusion/f067.png",
+      "skills/illusion/f068.png",
+      "skills/illusion/f069.png",
+      "skills/illusion/f070.png",
+      "skills/illusion/f071.png",
+      "skills/illusion/f072.png",
+      "skills/illusion/f073.png",
+      "skills/illusion/f074.png",
+      "skills/illusion/f075.png",
+      "skills/illusion/f076.png",
+      "skills/illusion/f077.png",
+      "skills/illusion/f078.png",
+      "skills/illusion/f079.png",
+      "skills/illusion/f080.png",
+      "skills/illusion/f081.png",
+      "skills/illusion/f082.png",
+      "skills/illusion/f083.png",
+      "skills/illusion/f084.png",
+      "skills/illusion/f085.png",
+      "skills/illusion/f086.png",
+      "skills/illusion/f087.png"
+     ],
+     "delays": [
+      30,
+      30,
+      30,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      60,
+      90,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ]
+    }
+   }
+  }
+ },
+ "damage": {
+  "red": {
+   "base": [
+    [
+     "fx/dmg/red_b0.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/red_b1.png",
+     11,
+     31,
+     22,
+     32
+    ],
+    [
+     "fx/dmg/red_b2.png",
+     14,
+     32,
+     29,
+     33
+    ],
+    [
+     "fx/dmg/red_b3.png",
+     14,
+     31,
+     28,
+     32
+    ],
+    [
+     "fx/dmg/red_b4.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/red_b5.png",
+     14,
+     31,
+     29,
+     32
+    ],
+    [
+     "fx/dmg/red_b6.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/red_b7.png",
+     14,
+     31,
+     29,
+     32
+    ],
+    [
+     "fx/dmg/red_b8.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/red_b9.png",
+     15,
+     32,
+     31,
+     33
+    ]
+   ],
+   "edge": [
+    [
+     "fx/dmg/red_e0.png",
+     18,
+     37,
+     37,
+     38
+    ],
+    [
+     "fx/dmg/red_e1.png",
+     12,
+     36,
+     25,
+     37
+    ],
+    [
+     "fx/dmg/red_e2.png",
+     17,
+     37,
+     34,
+     38
+    ],
+    [
+     "fx/dmg/red_e3.png",
+     16,
+     37,
+     33,
+     38
+    ],
+    [
+     "fx/dmg/red_e4.png",
+     18,
+     36,
+     36,
+     37
+    ],
+    [
+     "fx/dmg/red_e5.png",
+     17,
+     37,
+     34,
+     38
+    ],
+    [
+     "fx/dmg/red_e6.png",
+     18,
+     37,
+     36,
+     38
+    ],
+    [
+     "fx/dmg/red_e7.png",
+     16,
+     37,
+     33,
+     38
+    ],
+    [
+     "fx/dmg/red_e8.png",
+     18,
+     38,
+     36,
+     39
+    ],
+    [
+     "fx/dmg/red_e9.png",
+     18,
+     37,
+     36,
+     38
+    ]
+   ],
+   "miss": [
+    "fx/dmg/red_miss.png",
+    49,
+    37,
+    98,
+    38
+   ],
+   "fx": null
+  },
+  "cri": {
+   "base": [
+    [
+     "fx/dmg/cri_b0.png",
+     18,
+     37,
+     37,
+     38
+    ],
+    [
+     "fx/dmg/cri_b1.png",
+     12,
+     36,
+     25,
+     38
+    ],
+    [
+     "fx/dmg/cri_b2.png",
+     17,
+     37,
+     34,
+     38
+    ],
+    [
+     "fx/dmg/cri_b3.png",
+     16,
+     37,
+     33,
+     38
+    ],
+    [
+     "fx/dmg/cri_b4.png",
+     18,
+     36,
+     37,
+     38
+    ],
+    [
+     "fx/dmg/cri_b5.png",
+     17,
+     37,
+     33,
+     38
+    ],
+    [
+     "fx/dmg/cri_b6.png",
+     18,
+     37,
+     37,
+     38
+    ],
+    [
+     "fx/dmg/cri_b7.png",
+     16,
+     37,
+     33,
+     38
+    ],
+    [
+     "fx/dmg/cri_b8.png",
+     18,
+     38,
+     34,
+     39
+    ],
+    [
+     "fx/dmg/cri_b9.png",
+     18,
+     37,
+     36,
+     38
+    ]
+   ],
+   "edge": [
+    [
+     "fx/dmg/cri_e0.png",
+     21,
+     45,
+     43,
+     48
+    ],
+    [
+     "fx/dmg/cri_e1.png",
+     14,
+     43,
+     29,
+     44
+    ],
+    [
+     "fx/dmg/cri_e2.png",
+     20,
+     44,
+     40,
+     45
+    ],
+    [
+     "fx/dmg/cri_e3.png",
+     20,
+     45,
+     40,
+     46
+    ],
+    [
+     "fx/dmg/cri_e4.png",
+     21,
+     44,
+     43,
+     45
+    ],
+    [
+     "fx/dmg/cri_e5.png",
+     19,
+     45,
+     39,
+     46
+    ],
+    [
+     "fx/dmg/cri_e6.png",
+     21,
+     44,
+     43,
+     45
+    ],
+    [
+     "fx/dmg/cri_e7.png",
+     20,
+     44,
+     40,
+     45
+    ],
+    [
+     "fx/dmg/cri_e8.png",
+     20,
+     45,
+     41,
+     46
+    ],
+    [
+     "fx/dmg/cri_e9.png",
+     21,
+     45,
+     42,
+     46
+    ]
+   ],
+   "miss": null,
+   "fx": [
+    "fx/dmg/cri_fx.png",
+    41,
+    70,
+    62,
+    57
+   ]
+  },
+  "blue": {
+   "base": [
+    [
+     "fx/dmg/blue_b0.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/blue_b1.png",
+     11,
+     31,
+     22,
+     32
+    ],
+    [
+     "fx/dmg/blue_b2.png",
+     14,
+     32,
+     29,
+     33
+    ],
+    [
+     "fx/dmg/blue_b3.png",
+     14,
+     31,
+     28,
+     32
+    ],
+    [
+     "fx/dmg/blue_b4.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/blue_b5.png",
+     14,
+     31,
+     29,
+     32
+    ],
+    [
+     "fx/dmg/blue_b6.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/blue_b7.png",
+     14,
+     31,
+     29,
+     32
+    ],
+    [
+     "fx/dmg/blue_b8.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/blue_b9.png",
+     15,
+     32,
+     31,
+     33
+    ]
+   ],
+   "edge": [
+    [
+     "fx/dmg/blue_e0.png",
+     18,
+     37,
+     37,
+     38
+    ],
+    [
+     "fx/dmg/blue_e1.png",
+     12,
+     36,
+     25,
+     37
+    ],
+    [
+     "fx/dmg/blue_e2.png",
+     17,
+     37,
+     34,
+     38
+    ],
+    [
+     "fx/dmg/blue_e3.png",
+     16,
+     37,
+     33,
+     38
+    ],
+    [
+     "fx/dmg/blue_e4.png",
+     18,
+     36,
+     36,
+     37
+    ],
+    [
+     "fx/dmg/blue_e5.png",
+     17,
+     37,
+     34,
+     38
+    ],
+    [
+     "fx/dmg/blue_e6.png",
+     18,
+     37,
+     36,
+     38
+    ],
+    [
+     "fx/dmg/blue_e7.png",
+     16,
+     37,
+     33,
+     38
+    ],
+    [
+     "fx/dmg/blue_e8.png",
+     18,
+     38,
+     36,
+     39
+    ],
+    [
+     "fx/dmg/blue_e9.png",
+     18,
+     37,
+     36,
+     38
+    ]
+   ],
+   "miss": null,
+   "fx": null
+  },
+  "violet": {
+   "base": [
+    [
+     "fx/dmg/violet_b0.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/violet_b1.png",
+     11,
+     31,
+     22,
+     32
+    ],
+    [
+     "fx/dmg/violet_b2.png",
+     14,
+     32,
+     29,
+     33
+    ],
+    [
+     "fx/dmg/violet_b3.png",
+     14,
+     31,
+     28,
+     32
+    ],
+    [
+     "fx/dmg/violet_b4.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/violet_b5.png",
+     14,
+     31,
+     29,
+     32
+    ],
+    [
+     "fx/dmg/violet_b6.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/violet_b7.png",
+     14,
+     31,
+     29,
+     32
+    ],
+    [
+     "fx/dmg/violet_b8.png",
+     15,
+     32,
+     31,
+     33
+    ],
+    [
+     "fx/dmg/violet_b9.png",
+     15,
+     32,
+     31,
+     33
+    ]
+   ],
+   "edge": [
+    [
+     "fx/dmg/violet_e0.png",
+     18,
+     37,
+     37,
+     38
+    ],
+    [
+     "fx/dmg/violet_e1.png",
+     12,
+     36,
+     25,
+     37
+    ],
+    [
+     "fx/dmg/violet_e2.png",
+     17,
+     37,
+     34,
+     38
+    ],
+    [
+     "fx/dmg/violet_e3.png",
+     16,
+     37,
+     33,
+     38
+    ],
+    [
+     "fx/dmg/violet_e4.png",
+     18,
+     36,
+     36,
+     37
+    ],
+    [
+     "fx/dmg/violet_e5.png",
+     17,
+     37,
+     34,
+     38
+    ],
+    [
+     "fx/dmg/violet_e6.png",
+     18,
+     37,
+     36,
+     38
+    ],
+    [
+     "fx/dmg/violet_e7.png",
+     16,
+     37,
+     33,
+     38
+    ],
+    [
+     "fx/dmg/violet_e8.png",
+     18,
+     38,
+     36,
+     39
+    ],
+    [
+     "fx/dmg/violet_e9.png",
+     18,
+     37,
+     36,
+     38
+    ]
+   ],
+   "miss": [
+    "fx/dmg/violet_miss.png",
+    49,
+    37,
+    98,
+    38
+   ],
+   "fx": null
+  }
+ }
+}
