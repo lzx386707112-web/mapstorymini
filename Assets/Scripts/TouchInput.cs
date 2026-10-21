@@ -112,6 +112,8 @@ public class TouchPad : MonoBehaviour
     void Press(Vector2 v, int id)
     {
         float vw = UiKit.W, vh = UiKit.H;
+        // 技能优先消费自己的命中区域；第二根手指不受摇杆 fingerId 限制。
+        if (GameHUD.PressSkill(v)) return;
         // 跳跃键：任何手指按在它的圆内都触发（可和摇杆同时进行）
         if (Vector2.Distance(v, JumpCenter()) <= JR) { TouchInput.PushJump(); return; }
 

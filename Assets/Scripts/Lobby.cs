@@ -183,7 +183,7 @@ public class Lobby : MonoBehaviour
             var native = NativeSkillCatalog.Get(s.art);
             UiKit.Fill(new Rect(x, ly, w, 26f), new Color(0.12f, 0.14f, 0.19f));
             GUI.Label(new Rect(x + 8f, ly + 3f, w - 16f, 22),
-                      (i + 1) + ". " + s.name + "   CD " + native.Cooldown + "s   Lv.1 / MP " + native.MpCost, _small);
+                      (i + 1) + ". " + s.name + "   CD " + native.Cooldown + "s   Lv.1", _small);
             ly += 30f;
         }
     }

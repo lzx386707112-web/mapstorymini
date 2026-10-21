@@ -15,6 +15,8 @@ public class GameHUD : MonoBehaviour
     bool _stylesReady;
 
     Vector2 _mouseGui;
+    static string castFeedback;
+    static float feedbackUntil;
 
     Texture2D White
     {
@@ -32,6 +34,7 @@ public class GameHUD : MonoBehaviour
 
     void Awake()
     {
+        castFeedback = null; feedbackUntil = 0;
         // 静态字段会被域重载清掉，所以用 PlayerPrefs 传（截图脚本会置 1）
         if (PlayerPrefs.GetInt("hide_tuning", 0) == 1) showTuning = false;
     }
@@ -99,6 +102,31 @@ public class GameHUD : MonoBehaviour
         }
     }
 
+    // TouchPad.Update 统一接收每根手指的 Began；OnGUI 只绘制，避免一次点击多次施法。
+    public static Rect SkillButtonRect(int slot)
+    {
+        float cell = 88f, gap = 12f;
+        float x = (UiKit.W - (cell * 4 + gap * 3)) * .5f + UiKit.W * .06f;
+        return new Rect(x + slot * (cell + gap), UiKit.H-cell-34f,cell,cell);
+    }
+    public static bool PressSkill(Vector2 position)
+    {
+        for (int slot=0;slot<4;slot++)
+        {
+            if (!SkillButtonRect(slot).Contains(position)) continue;
+            var player = GameLoop.I != null ? GameLoop.I.player : null;
+            var sys = player != null ? player.GetComponent<SkillSystem>() : null;
+            if (sys != null)
+            {
+                bool cast = sys.TryCast(slot);
+                castFeedback = cast ? null : sys.LastFailure;
+                feedbackUntil = Time.unscaledTime + 1.5f;
+            }
+            return true;
+        }
+        return false;
+    }
+
     // —————————— 四格技能栏 ——————————
     //
     // 图标直接用客户端 Skill.wz 的原版 32x32 图标（Art.Tex，Point 过滤），
@@ -116,11 +144,12 @@ public class GameHUD : MonoBehaviour
         float y0 = UiKit.H - cell - 34f;
 
         if (GUI.Button(new Rect(x0 - 100, y0, 80, 44), "拾取 Z")) MesoDrop.TryPickupNearest();
-        GUI.Label(new Rect(x0 - 100, y0 + 48, 100, 24), "MP " + Mathf.CeilToInt(GameLoop.I.player.mp));
+        if (!string.IsNullOrEmpty(castFeedback) && Time.unscaledTime < feedbackUntil)
+            GUI.Label(new Rect(x0,y0-32,totalW,28),castFeedback,new GUIStyle(_cellTxt){fontSize=16});
         for (int i = 0; i < 4; i++)
         {
             var s = sys.skills[i];
-            var r = new Rect(x0 + i * (cell + gap), y0, cell, cell);
+            var r = SkillButtonRect(i);
 
             float left = sys.Remaining(i);
             bool ready = left <= 0f;
@@ -149,20 +178,13 @@ public class GameHUD : MonoBehaviour
                           Mathf.CeilToInt(left).ToString(), new GUIStyle(_cellTxt) { fontSize = 20 });
             }
 
-            // 左上角序号
-            GUI.Label(new Rect(r.x + 4, r.y - 1, 20, 16), (i + 1).ToString(),
-                      new GUIStyle(_cellTxt) { fontSize = 11, alignment = TextAnchor.UpperLeft });
-
             // 名字压在格子下沿（图标是原版画，名字只做辅助）
             Fill(new Rect(r.x - 12, r.y + r.height + 2, r.width + 24, 17), new Color(0f, 0f, 0f, 0.55f));
             var nm = new GUIStyle(_cellTxt) { fontSize = 11 };
             nm.normal.textColor = ready ? new Color(0.96f, 0.97f, 1f) : new Color(0.62f, 0.66f, 0.72f);
             GUI.Label(new Rect(r.x - 12, r.y + r.height + 2, r.width + 24, 17), s.name, nm);
 
-            // 点击释放（触屏与鼠标共用这条路径）
-            bool pressed = Input.GetMouseButtonDown(0) && r.Contains(_mouseGui);
-            if (pressed || Input.GetKeyDown(KeyCode.Alpha1 + i))
-                sys.TryCast(i);
+
         }
     }
 

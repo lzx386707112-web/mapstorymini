@@ -12,7 +12,7 @@ public sealed class SkillDef
         name = presentation.name; art = presentation.art;
         icon = string.IsNullOrEmpty(presentation.icon) ? art : presentation.icon;
         native = definition;
-        hint = "Lv." + native.Level + " MP " + native.MpCost;
+        hint = "Lv." + native.Level;
     }
 }
 
@@ -46,15 +46,21 @@ public class SkillSystem : MonoBehaviour
         foreach (var definition in definitions)
             if (!states.ContainsKey(definition.native.Id)) states.Add(definition.native.Id, new SkillRuntimeState());
     }
+    public string LastFailure { get; private set; }
+    bool Reject(string reason) { LastFailure = reason; return false; }
+
     public bool TryCast(int slot)
     {
+        LastFailure = null;
         var game = GameLoop.I;
-        if (slot < 0 || slot >= definitions.Count || p == null || p.hp <= 0 || p.IsClimbing ||
-            game == null || game.state != GameLoop.GameState.Playing || game.gameOver ||
-            Time.unscaledTime < actionUntil) return false;
+        if (slot < 0 || slot >= definitions.Count || p == null) return Reject("技能不可用");
+        if (p.hp <= 0 || game == null || game.state != GameLoop.GameState.Playing || game.gameOver) return Reject("当前无法释放技能");
+        if (p.IsClimbing) return Reject("攀爬时无法释放技能");
+        if (Time.unscaledTime < actionUntil) return Reject("正在释放技能");
         var s = definitions[slot];
-        if (p.mp < s.native.MpCost || !states[s.native.Id].TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return false;
-        p.mp -= s.native.MpCost;
+        if (Remaining(slot) > 0) return Reject("技能冷却中");
+        if (!states[s.native.Id].TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
+        // 当前单机触屏模式按用户选择暂不消耗 MP；原 MpCost 保留在只读数据中。
         p.PlaySkill(s.art);
         // 无冷却技能仍受角色动作时长限制，不允许一帧多次施法。
         actionUntil = Time.unscaledTime + p.SkillActionDuration;
