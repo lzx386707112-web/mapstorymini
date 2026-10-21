@@ -12,7 +12,6 @@ public class CameraRig : MonoBehaviour
     // 原端分辨率决定可见地图像素，而不是分别缩放地图和人物。
     // 1366×768 是原端 config.ini 列出的支持模式；手机显示时整体等比适配。
     public float baseSize = 768f / (2f * Art.PPU);
-    const float ReferenceAspect = 1366f / 768f;
     public float freeMinX = -11f, freeMaxX = 11f;
 
     Camera cam;
@@ -36,19 +35,11 @@ public class CameraRig : MonoBehaviour
 
     void UpdateViewport()
     {
-        // 超宽手机保留参考图的构图，触控层仍可使用两侧空间。
-        float screenAspect = (float)Screen.width / Mathf.Max(1, Screen.height);
-        if (screenAspect > ReferenceAspect)
-        {
-            float width = ReferenceAspect / screenAspect;
-            cam.rect = new Rect((1f - width) * 0.5f, 0f, width, 1f);
-        }
-        else
-        {
-            float height = screenAspect / ReferenceAspect;
-            cam.rect = new Rect(0f, (1f - height) * 0.5f, 1f, height);
-        }
-        cam.aspect = ReferenceAspect;
+        // 保持 768 个地图像素的高度，超宽屏扩展横向视野，不再留下未清理的侧边。
+        cam.rect = new Rect(0f, 0f, 1f, 1f);
+        cam.aspect = cam.targetTexture != null
+            ? (float)cam.targetTexture.width / cam.targetTexture.height
+            : (float)Screen.width / Mathf.Max(1, Screen.height);
         cam.orthographicSize = baseSize;
     }
 

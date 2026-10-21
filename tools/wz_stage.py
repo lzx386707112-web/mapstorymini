@@ -65,7 +65,7 @@ def export(theme, sync):
     return dict(map=map_id, px=[x0,y0,w,h], ground=[gx,gy],
                 view=vr, walk=[min(xs),max(xs)], sky=0,
                 footholds=[[f[k] for k in ("x1","y1","x2","y2")]
-                           for f in gm.footholds if f["x1"] != f["x2"]],
+                           for f in gm.footholds],
                 files=files, orders=dict(back=-800,mid=-400,front=600),
                 backgrounds=backgrounds)
 

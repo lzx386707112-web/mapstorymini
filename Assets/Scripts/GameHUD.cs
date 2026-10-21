@@ -5,7 +5,7 @@ using UnityEngine;
 // 让你能在手机上亲手判断"这一下爽不爽"，而不是靠看文档猜。
 public class GameHUD : MonoBehaviour
 {
-    public bool showTuning = true;
+    public bool showTuning = false;
 
     // 截图/录屏时把调参面板收起来（它会挡住右边三分之一的画面）
     public static bool HideTuning;

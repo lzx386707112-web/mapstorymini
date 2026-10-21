@@ -95,7 +95,7 @@
 
 ## 五、已知限制（M0 阶段故意不做）
 
-- 地图：已接入真实客户端切片（harbor/forest/cliff/nest 四关），镜头跟随角色、并夹在地图两端（走到尽头停住），即原版「大地图 + 跟随 + 边界」逻辑。切片由 `tools/wz_stage.py` 从北斗客户端渲染（1:1 像素），改地图重跑它即可。地面仍恒平，未做平台/斜坡/ foothold 起伏。
+- 地图：harbor/forest/cliff/nest 四关按原 WZ 坐标导出整图主体、全部 foothold 及独立背景；镜头按 VR 双轴夹边。主体动画与按角色地图层的遮挡尚未完整迁移，详见文末源码核对记录。
 - 没有碰撞体，跳跃只是抛物线，不处理平台
 - 没有音效 —— 打击感缺了听觉那一半，这是下一步要补的
 - 没有存档、没有 UI 框架、没有养成
@@ -159,19 +159,20 @@ Unity 里的设置顺序（装好 Android Build Support 之后）：
 `-smokeLevel` 是关卡索引（0=1-1 … 3=1-4），截图走 RenderTexture，batchmode 下也能出图。
 
 
-## 参考图取景比例
+## 原客户端地图显示处理
 
-战斗相机使用约 1366×768 的 16:9 逻辑视野（`CameraRig`），超宽手机居中留边。
-地图、人物共用 40 PPU，保持客户端素材 1:1；68px 高的人物可见部分约占画面高度 8.9%。
-地面锚点位于画面顶部约 61%，关卡切片上下留出 16px 余量。
-这仅校准取景比例，现有四关地图与参考截图中的具体地图并不相同。
+处理依据及与原端尚存的差异见 [源码核对记录](docs/original-map-rendering.md)。
+手机端全屏显示，保持 768px 逻辑高度并按屏幕比例扩展横向视野，地图、人物共用 40 PPU。
+相机按整图 VR 边界双轴跟随，背景按 WZ 的 rx/ry/type 独立视差、平铺和自动滚动。
 
-从本地原客户端重新导出四关地图：
+从本地原客户端重新导出四关地图（保留人物、技能等已有 manifest 配置）：
 
 ```sh
 python3 tools/wz_stage.py --unity
 ```
 
 需要 Pillow 和 `~/Documents/mxd/BeiDou-Server/tool/wz-python`。
-中间 PNG 位于 `Library/WzStage`；只更新地图切片及 manifest 的 stages，保留角色、技能等配置。
-导出保留原始瓦片与摆件坐标，不向下重复填土。
+中间 PNG 位于 `Library/WzStage`；原始客户端文件只读。
+
+角色动作和移动参数从原端重新导出：`python3 tools/wz_actions.py`。
+基础移动/跳跃检查：Unity batchmode 执行 `MovementChecks.Run`，覆盖 30/60/120Hz 的台阶、落地和摇杆手指归属。

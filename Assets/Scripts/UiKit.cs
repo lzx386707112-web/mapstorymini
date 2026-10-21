@@ -15,11 +15,16 @@ public static class UiKit
     static Font _font;
     static bool _fontTried;
 
-    public static void Begin()
+    public static void RefreshMetrics()
     {
         Scale = Mathf.Clamp(Screen.height / DesignH, 0.5f, 4f);
         W = Screen.width / Scale;
         H = Screen.height / Scale;
+    }
+
+    public static void Begin()
+    {
+        RefreshMetrics();
 
         GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(Scale, Scale, 1f));
 

@@ -17,6 +17,7 @@ public class SpriteAnim : MonoBehaviour
     int idx;
 
     public string Current => curName;
+    public bool IsOneShot => oneShot;
     public SpriteRenderer Renderer => sr;
 
     public void Init(string kind, string key, string idle, SpriteRenderer sr)
@@ -54,6 +55,7 @@ public class SpriteAnim : MonoBehaviour
         oneShot = once;
         t = 0f;
         idx = 0;
+        if (!once) speed = 1f;
         Apply(idx);
         return true;
     }

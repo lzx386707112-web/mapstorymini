@@ -1,8 +1,8 @@
 using UnityEngine;
 
-// 关卡背景：直接用 tools/wz_stage.py 从客户端地图渲染出来的真实切片。
+// 地图主体由 tools/wz_stage.py 按原坐标导出；back 按原 WZ 参数独立渲染。
 //
-// 每个主题三张图（back/mid/front），都是「地图像素 1:1」的，
+// 主体与背景均保持「地图像素 1:1」，
 // 摆放位置由 manifest 里的 px（窗口左上角）、ground（地面锚点）算出来：
 //     worldX = (mapX - ground.x) / PPU
 //     worldY = GroundY + (ground.y - mapY) / PPU
@@ -71,8 +71,7 @@ public class Backdrop : MonoBehaviour
         WalkMax = st.WalkMax;
         if (sky != null) sky.color = st.sky;
 
-        // 三层按 manifest 给的 sortingOrder 铺。front 层（原版 front=1）挡在角色前面，
-        // 走到树/柱子后面会被遮住——这是原版的深度感来源，不要去掉。
+        // 新导出使用独立 back；旧 manifest 仍兼容原来的三张切片。
         if (st.backgrounds.Count > 0)
             foreach (var entry in st.backgrounds)
                 nativeBacks.Add(new NativeBack(artRoot, st, entry));

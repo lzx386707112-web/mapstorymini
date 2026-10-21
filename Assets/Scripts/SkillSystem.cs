@@ -102,6 +102,7 @@ public class SkillSystem : MonoBehaviour
     // —— 总调度 ——
     public void Fire(SkillDef s)
     {
+        p.PlaySkill(s.art);
         switch (s.effect)
         {
             case SkillEffect.Sweep: CastSweep(s); break;
@@ -121,7 +122,6 @@ public class SkillSystem : MonoBehaviour
     // 身前扇形 AoE
     void CastSweep(SkillDef s)
     {
-        AtkAnim(1.3f);
         SkillFx.Play(s.art, CastAt(), p.facing);
         HitFeel.Punch(1.2f);
         HitMobs(Dmg(s), s.range, 1, true);
@@ -131,7 +131,6 @@ public class SkillSystem : MonoBehaviour
     // 远程直线打击（带飞行特效，命中沿途敌人）
     void CastBolt(SkillDef s)
     {
-        AtkAnim(1.3f);
         SkillFx.Play(s.art, CastAt(), p.facing);
         HitFeel.Punch(1.0f);
         HitMobs(Dmg(s), s.range, 1, true, s.extra > 0f ? s.extra : 0f);
@@ -166,7 +165,6 @@ public class SkillSystem : MonoBehaviour
         float from = p.worldX;
         float to = PlayerCtrl.ClampX(p.worldX + p.facing * s.range);
         p.invulnUntil = Time.unscaledTime + 0.35f;
-        AtkAnim(1.4f);
         SkillFx.Play(s.art, CastAt(), p.facing);
 
         float t = 0f;
@@ -191,7 +189,6 @@ public class SkillSystem : MonoBehaviour
     // 震地：范围 + 眩晕
     void CastAoe(SkillDef s)
     {
-        AtkAnim(1.3f);
         SkillFx.Play(s.art, CastAt(), p.facing);
         HitFeel.Punch(1.6f);
         HitMobs(Dmg(s), s.range, 2, false, s.extra);
@@ -201,7 +198,6 @@ public class SkillSystem : MonoBehaviour
     // 全屏爆发
     void CastNova(SkillDef s)
     {
-        AtkAnim(1.5f);
         SkillFx.Play(s.art, CastAt(), p.facing);
         HitFeel.Punch(2.2f);
         foreach (var e in EnemyUnit.All.ToArray())
@@ -227,13 +223,6 @@ public class SkillSystem : MonoBehaviour
         if (!string.IsNullOrEmpty(s.art)) SkillFx.Play(s.art, CastAt(), p.facing);
         p.AddAtkBuff(1.6f, s.extra);
         Fx.Ring(new Vector3(p.worldX, p.FeetPos.y + 0.4f, 0f), 1.4f, s.color, 0.35f);
-    }
-
-    void AtkAnim(float mul)
-    {
-        // SpriteAnim 挂在 Art.Attach 建的子节点上，GetComponent 在根节点找不到，
-        // 必须走 PlayerCtrl 内部的 vis 引用（之前技能因此没有角色动作）
-        p.PlayAtk(mul);
     }
 
     // 兼容旧接口（若有其它地方直接调用）

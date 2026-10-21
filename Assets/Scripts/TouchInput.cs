@@ -27,6 +27,7 @@ public static class TouchInput
 // 左下角浮动摇杆 + 右下角跳跃键。
 // 浮动式（按下处即圆心）而不是固定式：横屏握持时拇指落点每次都不一样，
 // 固定摇杆会让玩家不断"找摇杆"。
+[DefaultExecutionOrder(-100)]
 public class TouchPad : MonoBehaviour
 {
     bool    _active;
@@ -48,18 +49,22 @@ public class TouchPad : MonoBehaviour
 
     Vector2 JumpCenter() => new Vector2(UiKit.W - 96f, UiKit.H - 112f);
 
-    void OnGUI()
+    Texture2D circle;
+
+    void Update()
     {
-        // OnGUI 每帧会被 Layout/Repaint 调多次，输入只处理一次，否则一次点击算两次
-        if (Event.current.type != EventType.Repaint) return;
-
-        if (GameLoop.I == null || GameLoop.I.player == null) return;
-
-        UiKit.Begin();
+        UiKit.RefreshMetrics();
+        if (GameLoop.I == null || GameLoop.I.player == null ||
+            GameLoop.I.state != GameLoop.GameState.Playing || GameLoop.I.gameOver)
+        {
+            ResetPad();
+            return;
+        }
 
         // 输入来源：有触摸走手指（按 fingerId 区分），否则走鼠标
         if (Input.touchCount > 0)
         {
+            bool tracked = false;
             foreach (var t in Input.touches)
             {
                 Vector2 v = ToVirtual(t.position);
@@ -69,16 +74,27 @@ public class TouchPad : MonoBehaviour
                          t.phase == TouchPhase.Stationary) Move(v, id);
                 else if (t.phase == TouchPhase.Ended ||
                          t.phase == TouchPhase.Canceled)  Release(id);
+                if (id == _stickId) tracked = true;
             }
+            if (_active && !tracked) Release(_stickId);
         }
         else
         {
-            Vector2 v = UiKit.MouseGui();
+            if (_stickId >= 0) Release(_stickId);
+            Vector2 v = ToVirtual(Input.mousePosition);
             if (Input.GetMouseButtonDown(0)) Press(v, -1);
             else if (Input.GetMouseButton(0)) Move(v, -1);
             else if (Input.GetMouseButtonUp(0)) Release(-1);
         }
 
+    }
+
+    void OnGUI()
+    {
+        if (Event.current.type != EventType.Repaint || GameLoop.I == null ||
+            GameLoop.I.player == null || GameLoop.I.state != GameLoop.GameState.Playing) return;
+        var matrix = GUI.matrix;
+        UiKit.Begin();
         DrawStick(JumpCenter(), JR, "跳", true);
 
         if (_active)
@@ -89,6 +105,7 @@ public class TouchPad : MonoBehaviour
             FillCircle(k, 34f, new Color(0.96f, 0.98f, 1f, 0.82f));
             FillCircle(k, 26f, new Color(0.55f, 0.78f, 0.66f, 0.9f));
         }
+        GUI.matrix = matrix;
     }
 
     void Press(Vector2 v, int id)
@@ -98,13 +115,14 @@ public class TouchPad : MonoBehaviour
         if (Vector2.Distance(v, JumpCenter()) <= JR) { TouchInput.PushJump(); return; }
 
         // 摇杆：只在左半屏、且没被别的手指占用时起手
-        if (!_active && v.x < vw * 0.42f && v.y > vh * 0.22f)
+        if (!_active && v.x < vw * 0.42f && v.y > vh * 0.55f)
         {
             _active = true;
             _stickId = id;
             _origin = v;
             _knob = v;
             _laneLatched = false;
+            Move(v, id);
         }
     }
 
@@ -119,7 +137,7 @@ public class TouchPad : MonoBehaviour
         TouchInput.MoveH = Mathf.Abs(nx) > DEAD ? Mathf.Clamp(nx, -1f, 1f) : 0f;
 
         // 纵向：拨过阈值立刻换一层，回中后才能再拨
-        float ny = d.y / R;
+        float ny = PlayerCtrl.Terrain == null ? d.y / R : 0f;
         if (!_laneLatched)
         {
             if (ny < -LANE_T) { TouchInput.PushLaneStep(-1); _laneLatched = true; }
@@ -159,14 +177,38 @@ public class TouchPad : MonoBehaviour
 
     void FillCircle(Vector2 c, float r, Color col)
     {
-        // 没有圆形贴图，用四角各切掉一点的矩形近似 —— 便宜且看不清接缝
-        float cut = r * 0.29f;
+        if (circle == null)
+        {
+            const int size = 128;
+            circle = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            circle.wrapMode = TextureWrapMode.Clamp;
+            circle.filterMode = FilterMode.Bilinear;
+            var pixels = new Color[size * size];
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float distance = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), Vector2.one * (size / 2f));
+                    pixels[y * size + x] = new Color(1f, 1f, 1f, Mathf.Clamp01(size / 2f - distance));
+                }
+            circle.SetPixels(pixels);
+            circle.Apply();
+        }
         var old = GUI.color;
         GUI.color = col;
-
-        GUI.DrawTexture(new Rect(c.x - r + cut, c.y - r, (r - cut) * 2f, r * 2f), Texture2D.whiteTexture);
-        GUI.DrawTexture(new Rect(c.x - r, c.y - r + cut, r * 2f, (r - cut) * 2f), Texture2D.whiteTexture);
-
+        GUI.DrawTexture(new Rect(c.x - r, c.y - r, r * 2f, r * 2f), circle);
         GUI.color = old;
     }
+
+    void ResetPad()
+    {
+        _active = false;
+        _stickId = -2;
+        _laneLatched = false;
+        TouchInput.Reset();
+    }
+
+    void OnApplicationFocus(bool focus) { if (!focus) ResetPad(); }
+    void OnApplicationPause(bool paused) { if (paused) ResetPad(); }
+    void OnDisable() => ResetPad();
+    void OnDestroy() { if (circle != null) Destroy(circle); }
 }

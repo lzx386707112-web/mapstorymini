@@ -28,7 +28,7 @@ public static class Art
 
     // —— 关卡背景（真实地图切片） ——
     //
-    // 每个主题对应客户端里的一张地图 + 一段地面平坦的横向窗口。
+    // 每个主题对应客户端的一张地图，VR 边界与栅格图片范围分开保存。
     // px/ground/walk 全是「地图像素」，Unity 里按 PPU 换算成世界单位：
     //     worldX = (mapX - ground.x) / PPU
     //     worldY = GroundY + (ground.y - mapY) / PPU

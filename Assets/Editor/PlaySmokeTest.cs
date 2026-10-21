@@ -67,12 +67,15 @@ public static class PlaySmokeTest
     public static void Run()
     {
         int lv = 0, dur = 30;
+        int width = 960, height = 540;
         bool cast = false;
         string shots = "";
         float shotEvery = 4f;
         var args = System.Environment.GetCommandLineArgs();
         for (int i = 0; i < args.Length - 1; i++)
         {
+            if (args[i] == "-smokeWidth") int.TryParse(args[i + 1], out width);
+            if (args[i] == "-smokeHeight") int.TryParse(args[i + 1], out height);
             if (args[i] == "-smokeLevel") int.TryParse(args[i + 1], out lv);
             if (args[i] == "-smokeDuration") int.TryParse(args[i + 1], out dur);
             if (args[i] == "-smokeShots") shots = args[i + 1];
@@ -81,6 +84,9 @@ public static class PlaySmokeTest
             if (args[i] == "-smokeShotEvery") float.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out shotEvery);
         }
 
+        EditorPrefs.SetInt("PlaySmoke.width", Mathf.Max(320, width));
+        EditorPrefs.SetInt("PlaySmoke.height", Mathf.Max(240, height));
+        Screen.SetResolution(Mathf.Max(320, width), Mathf.Max(240, height), false);
         EditorPrefs.SetBool(K_RUN, true);
         EditorPrefs.SetString(K_T0, EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture));
         EditorPrefs.SetInt(K_LV, lv);
@@ -121,15 +127,6 @@ public static class PlaySmokeTest
         double t0 = Parse(EditorPrefs.GetString(K_T0, "0"));
         double dur = EditorPrefs.GetInt(K_DUR, 30);
         double t = EditorApplication.timeSinceStartup;
-
-        // 截图走的是 960x540 的 RenderTexture，但 batchmode 下 Screen 的比例可能不是 16:9，
-        // CameraRig 用 cam.aspect 夹边界，两者不一致就会在画面右边露出切片外的天空。
-        // 这里把相机比例钉死成 16:9，让夹边界和渲染分辨率对齐。
-        if (!string.IsNullOrEmpty(EditorPrefs.GetString(K_SHOTS, "")))
-        {
-            var c = Camera.main;
-            if (c != null && !Mathf.Approximately(c.aspect, 16f / 9f)) c.aspect = 16f / 9f;
-        }
 
         if (t - nextLog >= 1.0)
         {            nextLog = t;
@@ -202,7 +199,8 @@ public static class PlaySmokeTest
     {
         var cam = Camera.main;
         if (cam == null) { Debug.LogWarning("[PlaySmoke] 无相机，跳过截图"); return; }
-        const int W = 960, H = 540;
+        int W = EditorPrefs.GetInt("PlaySmoke.width", 960);
+        int H = EditorPrefs.GetInt("PlaySmoke.height", 540);
         Rect viewport = cam.rect;
         float aspect = cam.aspect;
         RenderTexture rt = null, prev = RenderTexture.active;
@@ -211,9 +209,12 @@ public static class PlaySmokeTest
         {
             rt = new RenderTexture(W, H, 24);
             cam.targetTexture = rt;
-            // 离屏纹理本身就是 16:9，不应再次套用手机屏幕的留边。
+            // 离屏纹理使用本次检查指定的屏幕比例。
             cam.rect = new Rect(0f, 0f, 1f, 1f);
             cam.aspect = (float)W / H;
+            // batchmode 的 Screen 可能仍是编辑器比例，背景平铺需按目标纹理重新铺满。
+            var backdrop = Object.FindObjectOfType<Backdrop>();
+            if (backdrop != null) backdrop.SendMessage("LateUpdate");
             cam.Render();
             RenderTexture.active = rt;
             tex = new Texture2D(W, H, TextureFormat.RGB24, false);

@@ -54,9 +54,9 @@ public class PlayerCtrl : MonoBehaviour
     }
 
     [Header("移动")]
-    public float moveSpeed = 7.5f;
-    public float jumpSpeed = 12.0f;
-    public float gravity   = -42f;
+    public float moveSpeed = 125f / Art.PPU;
+    public float jumpSpeed = 555f / Art.PPU;
+    public float gravity   = -2000f / Art.PPU;
 
     [Header("普攻")]
     public float attackInterval = 0.55f;
@@ -91,13 +91,16 @@ public class PlayerCtrl : MonoBehaviour
 
     // 技能系统的施法动画入口。SpriteAnim 挂在 Art.Attach 建的子节点上，
     // GetComponent<SpriteAnim>() 在根节点上找不到——之前技能因此完全没有角色动作。
-    public void PlayAtk(float mul)
+    public void PlaySkill(string skill)
     {
-        if (vis != null) vis.PlayOnce("atk", mul);
+        if (vis == null) return;
+        string action = "skill_" + skill;
+        vis.PlayOnce(Art.GetClip(vis.kind, vis.key, action) != null ? action : "atk");
     }
 
     float laneVis;
     float vy;
+    float fallSpeed = 670f / Art.PPU;
     float atkTimer;
     float laneCooldown;
     SpriteRenderer sr;
@@ -110,13 +113,22 @@ public class PlayerCtrl : MonoBehaviour
     SpriteRenderer coatSr;
     Sprite dyedFrame;        // 已经染过色的角色帧（动画换帧才重染）
 
-    public float DepthOffset    => (laneVis - (Lanes - 1) * 0.5f) * LaneStep;
+    public float DepthOffset    => Terrain != null ? 0f : (laneVis - (Lanes - 1) * 0.5f) * LaneStep;
     public int   SortingOrder   => 300 - lane * 12;
     public Vector2 FeetPos      => new Vector2(worldX, terrainY + jumpY + DepthOffset);
 
     void Awake()
     {
         Profile.Load();
+        var physics = Resources.Load<TextAsset>("Physics");
+        if (physics != null)
+        {
+            var values = MiniJson.Parse(physics.text) as System.Collections.Generic.Dictionary<string, object>;
+            moveSpeed = Art.Num(values, "walkSpeed", 125f) / Art.PPU;
+            jumpSpeed = Art.Num(values, "jumpSpeed", 555f) / Art.PPU;
+            gravity = -Art.Num(values, "gravityAcc", 2000f) / Art.PPU;
+            fallSpeed = Art.Num(values, "fallSpeed", 670f) / Art.PPU;
+        }
         laneVis = lane;
         // 根节点的 SpriteRenderer 只是「有没有素材」的占位，形状不放在这里：
         // 根节点一旦被非等比缩放（旧版 0.82 x 1.5），贴图就会被压扁拉长，
@@ -216,31 +228,10 @@ public class PlayerCtrl : MonoBehaviour
         // 键盘优先（编辑器调试），没按键时读摇杆。两者共用同一个 h，后面的逻辑完全一致
         float h = Input.GetAxisRaw("Horizontal");
         if (Mathf.Abs(h) < 0.15f) h = TouchInput.MoveH;
-        if (Mathf.Abs(h) > 0.15f)
-        {
-            facing = h > 0f ? 1 : -1;
-            float prevX = worldX;
-            worldX = ClampX(worldX + h * moveSpeed * dt);
-
-            // 贴地形走（原版 foothold 规则）：
-            //   前方地面高出 0.6u 以上 = 台阶墙，走不过去（要跳）；
-            //   走出台阶/悬崖 = 视觉高度连续、转为下落；
-            //   平地/斜坡/小台阶 = 直接贴上去。
-            float gy = GroundAt(worldX, terrainY);
-            if (gy > terrainY + 0.6f)
-            {
-                worldX = prevX;
-                gy = GroundAt(worldX, terrainY);
-            }
-            else if (gy < terrainY - 0.02f)
-            {
-                jumpY += terrainY - gy;            // 补偿视觉高度，落地自然
-                terrainY = gy;
-                if (grounded) { grounded = false; vy = 0f; }
-            }
-            terrainY = gy;
-        }
-        moving = Mathf.Abs(h) > 0.15f;
+        bool jumpReq = Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton0);
+        if (TouchInput.TakeJump()) jumpReq = true;
+        int steps = Mathf.Max(1, Mathf.CeilToInt(dt / 0.008f));
+        for (int i = 0; i < steps; i++) StepMovement(h, jumpReq && i == 0, dt / steps);
 
         // —— 深度层：一次换一层，带冷却 ——
         laneCooldown -= Time.unscaledDeltaTime;
@@ -254,32 +245,18 @@ public class PlayerCtrl : MonoBehaviour
             laneCooldown = 0.22f;
         }
         if (d == 0) d = TouchInput.TakeLaneStep();   // 摇杆上下拨
+        if (Terrain != null) { lane = 2; d = 0; }
         if (d != 0) lane = Mathf.Clamp(lane + d, 0, Lanes - 1);
 
         // 指数插值：快但不生硬。瞬间跳层会像"走格子"，破坏 2.5D 错觉
         laneVis = Mathf.Lerp(laneVis, lane, 1f - Mathf.Exp(-14f * dt));
 
-        if (vis != null) vis.SetBase(moving ? "walk" : "stand");
-
-        // —— 跳跃 ——
-        bool jumpReq = Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton0);
-        if (TouchInput.TakeJump()) jumpReq = true;   // 必须每帧取，短路会漏掉触摸
-        if (jumpReq && grounded)
-        {
-            vy = jumpSpeed;
-            grounded = false;
-        }
-        if (!grounded)
-        {
-            vy += gravity * dt;
-            jumpY += vy * dt;
-            if (jumpY <= 0f) { jumpY = 0f; vy = 0f; grounded = true; }
-        }
+        if (vis != null) vis.SetBase(!grounded ? "jump" : moving ? "walk" : "stand");
 
         // —— 自动普攻 ——
         // Boss 优先：Boss 体积大、通常只有一只，误判成本比杂兵高得多
         atkTimer -= dt;
-        if (atkTimer <= 0f)
+        if (atkTimer <= 0f && (vis == null || !vis.IsOneShot))
         {
             var b = FindBossTarget();
             if (b != null)
@@ -307,6 +284,91 @@ public class PlayerCtrl : MonoBehaviour
         }
     }
 
+    // 使用原 Map/Physics.img 的像素单位：125px/s、555px/s、2000px/s²。
+    // 空中位置独立于脚下平台；只在下降时扫过 foothold 才落地。
+    void StepMovement(float h, bool jumpReq, float dt)
+    {
+        if (jumpReq && grounded)
+        {
+            vy = jumpSpeed;
+            grounded = false;
+        }
+        float previousY = terrainY + jumpY;
+        float nextX = ClampX(worldX + h * moveSpeed * dt);
+        moving = Mathf.Abs(h) > 0.15f;
+        if (moving) facing = h > 0f ? 1 : -1;
+
+        float ground = GroundAt(nextX, terrainY);
+        bool support = HasSupport(nextX, ground);
+        // 原 WZ 的竖直 foothold 是墙；独立悬空平台只在下降时承接角色。
+        if (Terrain != null)
+            foreach (var wall in Terrain)
+            {
+                if (Mathf.Abs(wall.z - wall.x) >= 0.01f) continue;
+                if ((worldX < wall.x && nextX >= wall.x) || (worldX > wall.x && nextX <= wall.x))
+                    if (previousY < Mathf.Max(wall.y, wall.w) - 0.01f &&
+                        previousY >= Mathf.Min(wall.y, wall.w) - 0.01f)
+                        nextX = worldX;
+            }
+        if (grounded)
+        {
+            ground = GroundAt(nextX, terrainY);
+            support = HasSupport(nextX, ground);
+            if (support && Mathf.Abs(ground - terrainY) <= 0.6f)
+                terrainY = ground;
+            else
+            {
+                grounded = false;
+                vy = 0f;
+            }
+        }
+        worldX = nextX;
+        if (grounded) return;
+
+        // 帧内细分由调用方控制；用解析位移，跳高不随 30/60/120Hz 改变。
+        float nextY = previousY + vy * dt + 0.5f * gravity * dt * dt;
+        vy = Mathf.Max(vy + gravity * dt, -fallSpeed);
+        float landing;
+        if (vy <= 0f && FindLanding(worldX, previousY, nextY, out landing))
+        {
+            terrainY = landing;
+            jumpY = 0f;
+            vy = 0f;
+            grounded = true;
+        }
+        else jumpY = nextY - terrainY;
+    }
+
+    static bool HasSupport(float x, float y)
+    {
+        if (Terrain == null || Terrain.Count == 0) return true;
+        foreach (var f in Terrain)
+        {
+            if (x < Mathf.Min(f.x, f.z) || x > Mathf.Max(f.x, f.z) || Mathf.Abs(f.z - f.x) < 0.01f) continue;
+            float height = Mathf.Lerp(f.y, f.w, (x - f.x) / (f.z - f.x));
+            if (Mathf.Abs(height - y) < 0.01f) return true;
+        }
+        return false;
+    }
+
+    static bool FindLanding(float x, float previousY, float nextY, out float landing)
+    {
+        landing = float.NegativeInfinity;
+        if (Terrain == null || Terrain.Count == 0)
+        {
+            landing = GroundY;
+            return previousY >= GroundY && nextY <= GroundY;
+        }
+        foreach (var f in Terrain)
+        {
+            if (x < Mathf.Min(f.x, f.z) || x > Mathf.Max(f.x, f.z) || Mathf.Abs(f.z - f.x) < 0.01f) continue;
+            float height = Mathf.Lerp(f.y, f.w, (x - f.x) / (f.z - f.x));
+            if (previousY >= height - 0.01f && nextY <= height && height > landing)
+                landing = height;
+        }
+        return !float.IsNegativeInfinity(landing);
+    }
+
     BossUnit FindBossTarget()
     {
         foreach (var b in FindObjectsOfType<BossUnit>())
@@ -325,7 +387,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         b.TakeDamage(EffectiveAtk, facing);
         HitFeel.Punch(1f);
-        if (vis != null) vis.PlayOnce("atk", 1.3f);
+        if (vis != null) vis.PlayOnce("atk", 1f);
         // 原版近战的视觉就是角色挥砍帧本身（武器合成在帧里），没有额外的弧光贴片
     }
 
@@ -354,7 +416,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         e.TakeDamage(EffectiveAtk, facing);
         HitFeel.Punch(1f);
-        if (vis != null) vis.PlayOnce("atk", 1.3f);
+        if (vis != null) vis.PlayOnce("atk", 1f);
         // 同 StrikeBoss：挥砍帧即视觉，不再叠黄色弧光
     }
 
