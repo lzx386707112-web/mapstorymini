@@ -17,7 +17,13 @@ public sealed class SkillDef
 }
 
 // 配置只读，冷却每个角色独立；Fire 不是对外入口，UI 无法绕过施法校验。
-public class SkillSystem : MonoBehaviour
+//
+// 特效分工（和原版 Skill.wz 的节点一一对应）：
+//   cast / prepare  在角色身上播（SkillFx）
+//   ball            弹道本体，由 SkillVisuals 推进到目标
+//   hit / mob       落在被打到的目标身上（以前只有一个通用黄色爆点，那是占位）
+//   special / tile  分波次推进、砸地后停留的追加部件
+public partial class SkillSystem : MonoBehaviour
 {
     public IReadOnlyList<SkillDef> skills => definitions.AsReadOnly();
     readonly List<SkillDef> definitions = new List<SkillDef>();
@@ -61,37 +67,51 @@ public class SkillSystem : MonoBehaviour
         if (Remaining(slot) > 0) return Reject("技能冷却中");
         if (!states[s.native.Id].TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
         // 当前单机触屏模式按用户选择暂不消耗 MP；原 MpCost 保留在只读数据中。
-        p.PlaySkill(s.art);
+        float preparation = Preparation(s);
+        p.PlaySkill(preparation > 0 ? s.art+"_prepare" : s.art,preparation);
         // 无冷却技能仍受角色动作时长限制，不允许一帧多次施法。
-        actionUntil = Time.unscaledTime + p.SkillActionDuration;
+        actionUntil = Time.unscaledTime + Mathf.Max(p.SkillActionDuration, preparation + p.GetSkillActionDuration(s.art));
+        BeginVisuals(s);
         if (s.native.Kind == "Buff") p.AddAttackBonus(s.native.AttackBuff, s.native.Duration);
         else if (s.native.Kind == "Summon")
         {
             if (summon != null) { summon.gameObject.SetActive(false); Destroy(summon.gameObject); }
             summon = NativeSummon.Spawn(this, p, s);
         }
-        else if (s.art == "dash") StartCoroutine(Rush(s));
-        else StartCoroutine(Cast(s));
-        if (!string.IsNullOrEmpty(s.art)) SkillFx.Play(s.art, p.FeetPos, p.facing);
+
+        if (s.art == "dash") StartCoroutine(Rush(s));
+        else StartCoroutine(Cast(s,p.FeetPos,p.facing));
         return true;
     }
 
-    IEnumerator Cast(SkillDef s)
+    // 特效由原资源目录驱动；判定仍保留原端剑影子技能时间轴。
+    IEnumerator Cast(SkillDef s,Vector2 origin,int facing)
     {
-        if (s.art == "rupture") yield return new WaitForSecondsRealtime(1f);
+        float preparation = Preparation(s);
+        if (preparation > 0) yield return new WaitForSeconds(preparation);
+        if (s.native.Kind == "Buff" || s.native.Kind == "Summon") yield break;
         if (s.art == "illusion")
         {
-            // CloseRangeDamageHandler.SWORD_ILLUSION_*_TIMES_MS；子技能使用独立参数。
             int[] times = {1320,1470,1590,1710,1800,1950,2070,2190,2280,2430,2550,2670,2790,2820,2880,2940,3000};
             int previous = 0;
             foreach (int at in times)
             {
-                yield return new WaitForSecondsRealtime((at - previous) / 1000f);
+                yield return new WaitForSeconds((at - previous) / 1000f);
                 previous = at;
-                Hit(s, NativeSkillCatalog.Get(at <= 2670 ? "illusion_slash" : "illusion_explosion"));
+                HitAt(s, NativeSkillCatalog.Get(at <= 2670 ? "illusion_slash" : "illusion_explosion"), p.FeetPos, p.facing);
             }
+            yield break;
         }
-        else Hit(s, s.native);
+        if (UsesProjectile(s))
+        {
+            yield return ProjectileCast(s,origin,facing);
+            yield break;
+        }
+        float delay = s.art == "doom" ? NativeSkillVfx.Get(s.art,"effect").Duration*.5f :
+            s.art == "firebolt" ? .45f : s.art == "arrowrain" ? .5f : s.art == "starfall" ? NativeSkillVfx.Number(s.art,"hit/0","hitAfter",1800)/1000 :
+            (SkillFxPlan.Get(s.art)?.impact ?? 0);
+        if (delay > 0) yield return new WaitForSeconds(delay);
+        HitAt(s,s.native,origin,facing);
     }
 
     IEnumerator Rush(SkillDef s)
@@ -122,15 +142,14 @@ public class SkillSystem : MonoBehaviour
         return x >= -max.x && x <= -min.x && delta.y >= -max.y && delta.y <= -min.y;
     }
 
-    void Hit(SkillDef s, NativeSkillDefinition d) => HitAt(s,d,p.FeetPos,p.facing);
-
-    internal int HitAt(SkillDef s, NativeSkillDefinition d, Vector2 origin, int facing, HashSet<int> struck = null)
+    internal int HitAt(SkillDef s, NativeSkillDefinition d, Vector2 origin, int facing,
+                       HashSet<int> struck = null, Component onlyTarget = null)
     {
         if (d == null || p == null || p.hp <= 0 || GameLoop.I == null || GameLoop.I.gameOver ||
             GameLoop.I.state != GameLoop.GameState.Playing) return 0;
         var targets = new List<Component>();
-        foreach (var b in FindObjectsOfType<BossUnit>()) if (!b.dead && InRange(b.transform.position, d, origin, facing)) targets.Add(b);
-        foreach (var e in EnemyUnit.All) if (!e.dead && InRange(e.transform.position, d, origin, facing)) targets.Add(e);
+        foreach (var b in FindObjectsOfType<BossUnit>()) if (!b.dead && (onlyTarget == b || (onlyTarget == null && InRange(b.transform.position, d, origin, facing)))) targets.Add(b);
+        foreach (var e in EnemyUnit.All) if (!e.dead && (onlyTarget == e || (onlyTarget == null && InRange(e.transform.position, d, origin, facing)))) targets.Add(e);
         targets.Sort((a, b) =>
         {
             if (s.art == "illusion" && (a is BossUnit) != (b is BossUnit)) return a is BossUnit ? -1 : 1;
@@ -144,11 +163,15 @@ public class SkillSystem : MonoBehaviour
         {
             var e = targets[i] as EnemyUnit;
             var b = targets[i] as BossUnit;
-            int direction = targets[i].transform.position.x >= origin.x ? 1 : -1;
+            int direction = onlyTarget != null ? facing : targets[i].transform.position.x >= origin.x ? 1 : -1;
             struck?.Add(targets[i].GetInstanceID());
             if (d.Kind == "Dispel")
             {
-                if (e != null && Random.value < d.Probability) e.SealSkills(d.Duration);
+                if (e != null && Random.value < d.Probability)
+                {
+                    e.SealSkills(d.Duration);
+                    foreach (var clip in NativeSkillVfx.Parts(s.art,"mob")) Visual(s.art,clip.path,TargetAnchor(e,NativeSkillVfx.Number(s.art,clip.path,"pos")),direction,e.transform);
+                }
                 continue;
             }
             if (d.Kind == "Pull")
@@ -156,16 +179,29 @@ public class SkillSystem : MonoBehaviour
                 if (e != null && Random.value < d.Probability) e.PullTowards(p.worldX);
                 continue;
             }
+            bool landed = false;
             for (int hit = 0; hit < d.HitCount; hit++)
             {
                 var result = p.RollAttack(e != null ? e.CombatStats : b.CombatStats, d);
-                if (e != null) e.TakeHit(result, direction);
-                else if (b != null) b.TakeHit(result, direction);
+                landed |= result.Amount > 0;
+                // 技能自带原版 hit 部件时，关掉占位的黄色柔光爆点
+                if (e != null) e.TakeHit(result, direction, true);
+                else if (b != null) b.TakeHit(result, direction, true);
             }
+            Impact(s,d,targets[i],direction,landed);
             if (e != null)
             {
                 if ((s.art == "roar" || s.art == "chain") && Random.value < d.Probability)
-                    e.Stun(d.Duration * (s.art == "chain" ? 2 : 1));
+                {
+                    float duration = d.Duration * (s.art == "chain" ? 2 : 1);
+                    e.Stun(duration);
+                    foreach (var clip in NativeSkillVfx.Parts(s.art,"mob"))
+                    {
+                        var status = Visual(s.art,clip.path,TargetAnchor(e,NativeSkillVfx.Number(s.art,clip.path,"pos")),direction,e.transform,
+                            NativeSkillVfx.Number(s.art,clip.path,"repeat")>0);
+                        if (status != null && NativeSkillVfx.Number(s.art,clip.path,"repeat")>0) Destroy(status.gameObject,duration);
+                    }
+                }
                 if (s.art == "dragon" || s.art == "dash") e.Push(direction, d);
             }
         }
@@ -176,6 +212,7 @@ public class SkillSystem : MonoBehaviour
     public void CancelActions()
     {
         StopAllCoroutines();
+        ClearVisuals();
         if (summon != null) { summon.gameObject.SetActive(false); Destroy(summon.gameObject); }
         summon = null; actionUntil = 0;
         if (p != null) p.CancelRush();

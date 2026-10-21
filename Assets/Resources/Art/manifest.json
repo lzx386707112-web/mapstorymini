@@ -6,12 +6,12 @@
   "knight_h0": {
    "name": "剑士（主角）",
    "size": [
-    115,
-    137
+    148,
+    110
    ],
    "pivot": [
-    72,
-    79
+    105,
+    88
    ],
    "anims": {
     "stand": {
@@ -197,12 +197,12 @@
   "knight_h1": {
    "name": "剑士（主角）",
    "size": [
-    115,
-    137
+    148,
+    110
    ],
    "pivot": [
-    72,
-    79
+    105,
+    88
    ],
    "anims": {
     "stand": {
@@ -388,12 +388,12 @@
   "knight_h2": {
    "name": "剑士（主角）",
    "size": [
-    115,
-    137
+    148,
+    110
    ],
    "pivot": [
-    72,
-    79
+    105,
+    88
    ],
    "anims": {
     "stand": {
@@ -579,12 +579,12 @@
   "knight_h3": {
    "name": "剑士（主角）",
    "size": [
-    115,
-    137
+    148,
+    110
    ],
    "pivot": [
-    72,
-    79
+    105,
+    88
    ],
    "anims": {
     "stand": {
@@ -770,12 +770,12 @@
   "knight_h4": {
    "name": "剑士（主角）",
    "size": [
-    115,
-    137
+    148,
+    110
    ],
    "pivot": [
-    72,
-    79
+    105,
+    88
    ],
    "anims": {
     "stand": {
@@ -961,12 +961,12 @@
   "knight_h5": {
    "name": "剑士（主角）",
    "size": [
-    115,
-    137
+    148,
+    110
    ],
    "pivot": [
-    72,
-    79
+    105,
+    88
    ],
    "anims": {
     "stand": {
@@ -1152,12 +1152,12 @@
   "warrior_h0": {
    "name": "战士（英雄）",
    "size": [
-    166,
-    154
+    193,
+    130
    ],
    "pivot": [
-    97,
-    96
+    124,
+    100
    ],
    "anims": {
     "stand": {
@@ -1278,6 +1278,14 @@
       120
      ]
     },
+    "skill_magnet_prepare": {
+     "frames": [
+      "chars/warrior_h0/skill_magnet_prepare_0.png"
+     ],
+     "delays": [
+      1
+     ]
+    },
     "skill_berserk": {
      "frames": [
       "chars/warrior_h0/skill_berserk_0.png",
@@ -1286,51 +1294,9 @@
       "chars/warrior_h0/skill_berserk_3.png",
       "chars/warrior_h0/skill_berserk_4.png",
       "chars/warrior_h0/skill_berserk_5.png",
-      "chars/warrior_h0/skill_berserk_6.png",
-      "chars/warrior_h0/skill_berserk_7.png",
-      "chars/warrior_h0/skill_berserk_8.png",
-      "chars/warrior_h0/skill_berserk_9.png",
-      "chars/warrior_h0/skill_berserk_10.png",
-      "chars/warrior_h0/skill_berserk_11.png",
-      "chars/warrior_h0/skill_berserk_12.png",
-      "chars/warrior_h0/skill_berserk_13.png",
-      "chars/warrior_h0/skill_berserk_14.png",
-      "chars/warrior_h0/skill_berserk_15.png",
-      "chars/warrior_h0/skill_berserk_16.png",
-      "chars/warrior_h0/skill_berserk_17.png",
-      "chars/warrior_h0/skill_berserk_18.png",
-      "chars/warrior_h0/skill_berserk_19.png",
-      "chars/warrior_h0/skill_berserk_20.png",
-      "chars/warrior_h0/skill_berserk_21.png",
-      "chars/warrior_h0/skill_berserk_22.png",
-      "chars/warrior_h0/skill_berserk_23.png",
-      "chars/warrior_h0/skill_berserk_24.png",
-      "chars/warrior_h0/skill_berserk_25.png",
-      "chars/warrior_h0/skill_berserk_26.png",
-      "chars/warrior_h0/skill_berserk_27.png"
+      "chars/warrior_h0/skill_berserk_6.png"
      ],
      "delays": [
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
       120,
       120,
       120,
@@ -1372,10 +1338,10 @@
     "skill_rupture": [
      "brandish1"
     ],
+    "skill_magnet_prepare": [
+     "dash"
+    ],
     "skill_berserk": [
-     "brandish1",
-     "brandish1",
-     "brandish1",
      "brandish1"
     ]
    }
@@ -1383,12 +1349,12 @@
   "warrior_h1": {
    "name": "战士（英雄）",
    "size": [
-    166,
-    154
+    193,
+    130
    ],
    "pivot": [
-    97,
-    96
+    124,
+    100
    ],
    "anims": {
     "stand": {
@@ -1509,6 +1475,14 @@
       120
      ]
     },
+    "skill_magnet_prepare": {
+     "frames": [
+      "chars/warrior_h1/skill_magnet_prepare_0.png"
+     ],
+     "delays": [
+      1
+     ]
+    },
     "skill_berserk": {
      "frames": [
       "chars/warrior_h1/skill_berserk_0.png",
@@ -1517,51 +1491,9 @@
       "chars/warrior_h1/skill_berserk_3.png",
       "chars/warrior_h1/skill_berserk_4.png",
       "chars/warrior_h1/skill_berserk_5.png",
-      "chars/warrior_h1/skill_berserk_6.png",
-      "chars/warrior_h1/skill_berserk_7.png",
-      "chars/warrior_h1/skill_berserk_8.png",
-      "chars/warrior_h1/skill_berserk_9.png",
-      "chars/warrior_h1/skill_berserk_10.png",
-      "chars/warrior_h1/skill_berserk_11.png",
-      "chars/warrior_h1/skill_berserk_12.png",
-      "chars/warrior_h1/skill_berserk_13.png",
-      "chars/warrior_h1/skill_berserk_14.png",
-      "chars/warrior_h1/skill_berserk_15.png",
-      "chars/warrior_h1/skill_berserk_16.png",
-      "chars/warrior_h1/skill_berserk_17.png",
-      "chars/warrior_h1/skill_berserk_18.png",
-      "chars/warrior_h1/skill_berserk_19.png",
-      "chars/warrior_h1/skill_berserk_20.png",
-      "chars/warrior_h1/skill_berserk_21.png",
-      "chars/warrior_h1/skill_berserk_22.png",
-      "chars/warrior_h1/skill_berserk_23.png",
-      "chars/warrior_h1/skill_berserk_24.png",
-      "chars/warrior_h1/skill_berserk_25.png",
-      "chars/warrior_h1/skill_berserk_26.png",
-      "chars/warrior_h1/skill_berserk_27.png"
+      "chars/warrior_h1/skill_berserk_6.png"
      ],
      "delays": [
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
       120,
       120,
       120,
@@ -1603,10 +1535,10 @@
     "skill_rupture": [
      "brandish1"
     ],
+    "skill_magnet_prepare": [
+     "dash"
+    ],
     "skill_berserk": [
-     "brandish1",
-     "brandish1",
-     "brandish1",
      "brandish1"
     ]
    }
@@ -1614,12 +1546,12 @@
   "warrior_h2": {
    "name": "战士（英雄）",
    "size": [
-    166,
-    154
+    193,
+    130
    ],
    "pivot": [
-    97,
-    96
+    124,
+    100
    ],
    "anims": {
     "stand": {
@@ -1740,6 +1672,14 @@
       120
      ]
     },
+    "skill_magnet_prepare": {
+     "frames": [
+      "chars/warrior_h2/skill_magnet_prepare_0.png"
+     ],
+     "delays": [
+      1
+     ]
+    },
     "skill_berserk": {
      "frames": [
       "chars/warrior_h2/skill_berserk_0.png",
@@ -1748,51 +1688,9 @@
       "chars/warrior_h2/skill_berserk_3.png",
       "chars/warrior_h2/skill_berserk_4.png",
       "chars/warrior_h2/skill_berserk_5.png",
-      "chars/warrior_h2/skill_berserk_6.png",
-      "chars/warrior_h2/skill_berserk_7.png",
-      "chars/warrior_h2/skill_berserk_8.png",
-      "chars/warrior_h2/skill_berserk_9.png",
-      "chars/warrior_h2/skill_berserk_10.png",
-      "chars/warrior_h2/skill_berserk_11.png",
-      "chars/warrior_h2/skill_berserk_12.png",
-      "chars/warrior_h2/skill_berserk_13.png",
-      "chars/warrior_h2/skill_berserk_14.png",
-      "chars/warrior_h2/skill_berserk_15.png",
-      "chars/warrior_h2/skill_berserk_16.png",
-      "chars/warrior_h2/skill_berserk_17.png",
-      "chars/warrior_h2/skill_berserk_18.png",
-      "chars/warrior_h2/skill_berserk_19.png",
-      "chars/warrior_h2/skill_berserk_20.png",
-      "chars/warrior_h2/skill_berserk_21.png",
-      "chars/warrior_h2/skill_berserk_22.png",
-      "chars/warrior_h2/skill_berserk_23.png",
-      "chars/warrior_h2/skill_berserk_24.png",
-      "chars/warrior_h2/skill_berserk_25.png",
-      "chars/warrior_h2/skill_berserk_26.png",
-      "chars/warrior_h2/skill_berserk_27.png"
+      "chars/warrior_h2/skill_berserk_6.png"
      ],
      "delays": [
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
       120,
       120,
       120,
@@ -1834,10 +1732,10 @@
     "skill_rupture": [
      "brandish1"
     ],
+    "skill_magnet_prepare": [
+     "dash"
+    ],
     "skill_berserk": [
-     "brandish1",
-     "brandish1",
-     "brandish1",
      "brandish1"
     ]
    }
@@ -1845,12 +1743,12 @@
   "warrior_h3": {
    "name": "战士（英雄）",
    "size": [
-    166,
-    154
+    193,
+    130
    ],
    "pivot": [
-    97,
-    96
+    124,
+    100
    ],
    "anims": {
     "stand": {
@@ -1971,6 +1869,14 @@
       120
      ]
     },
+    "skill_magnet_prepare": {
+     "frames": [
+      "chars/warrior_h3/skill_magnet_prepare_0.png"
+     ],
+     "delays": [
+      1
+     ]
+    },
     "skill_berserk": {
      "frames": [
       "chars/warrior_h3/skill_berserk_0.png",
@@ -1979,51 +1885,9 @@
       "chars/warrior_h3/skill_berserk_3.png",
       "chars/warrior_h3/skill_berserk_4.png",
       "chars/warrior_h3/skill_berserk_5.png",
-      "chars/warrior_h3/skill_berserk_6.png",
-      "chars/warrior_h3/skill_berserk_7.png",
-      "chars/warrior_h3/skill_berserk_8.png",
-      "chars/warrior_h3/skill_berserk_9.png",
-      "chars/warrior_h3/skill_berserk_10.png",
-      "chars/warrior_h3/skill_berserk_11.png",
-      "chars/warrior_h3/skill_berserk_12.png",
-      "chars/warrior_h3/skill_berserk_13.png",
-      "chars/warrior_h3/skill_berserk_14.png",
-      "chars/warrior_h3/skill_berserk_15.png",
-      "chars/warrior_h3/skill_berserk_16.png",
-      "chars/warrior_h3/skill_berserk_17.png",
-      "chars/warrior_h3/skill_berserk_18.png",
-      "chars/warrior_h3/skill_berserk_19.png",
-      "chars/warrior_h3/skill_berserk_20.png",
-      "chars/warrior_h3/skill_berserk_21.png",
-      "chars/warrior_h3/skill_berserk_22.png",
-      "chars/warrior_h3/skill_berserk_23.png",
-      "chars/warrior_h3/skill_berserk_24.png",
-      "chars/warrior_h3/skill_berserk_25.png",
-      "chars/warrior_h3/skill_berserk_26.png",
-      "chars/warrior_h3/skill_berserk_27.png"
+      "chars/warrior_h3/skill_berserk_6.png"
      ],
      "delays": [
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
       120,
       120,
       120,
@@ -2065,10 +1929,10 @@
     "skill_rupture": [
      "brandish1"
     ],
+    "skill_magnet_prepare": [
+     "dash"
+    ],
     "skill_berserk": [
-     "brandish1",
-     "brandish1",
-     "brandish1",
      "brandish1"
     ]
    }
@@ -2076,12 +1940,12 @@
   "warrior_h4": {
    "name": "战士（英雄）",
    "size": [
-    166,
-    154
+    193,
+    130
    ],
    "pivot": [
-    97,
-    96
+    124,
+    100
    ],
    "anims": {
     "stand": {
@@ -2202,6 +2066,14 @@
       120
      ]
     },
+    "skill_magnet_prepare": {
+     "frames": [
+      "chars/warrior_h4/skill_magnet_prepare_0.png"
+     ],
+     "delays": [
+      1
+     ]
+    },
     "skill_berserk": {
      "frames": [
       "chars/warrior_h4/skill_berserk_0.png",
@@ -2210,51 +2082,9 @@
       "chars/warrior_h4/skill_berserk_3.png",
       "chars/warrior_h4/skill_berserk_4.png",
       "chars/warrior_h4/skill_berserk_5.png",
-      "chars/warrior_h4/skill_berserk_6.png",
-      "chars/warrior_h4/skill_berserk_7.png",
-      "chars/warrior_h4/skill_berserk_8.png",
-      "chars/warrior_h4/skill_berserk_9.png",
-      "chars/warrior_h4/skill_berserk_10.png",
-      "chars/warrior_h4/skill_berserk_11.png",
-      "chars/warrior_h4/skill_berserk_12.png",
-      "chars/warrior_h4/skill_berserk_13.png",
-      "chars/warrior_h4/skill_berserk_14.png",
-      "chars/warrior_h4/skill_berserk_15.png",
-      "chars/warrior_h4/skill_berserk_16.png",
-      "chars/warrior_h4/skill_berserk_17.png",
-      "chars/warrior_h4/skill_berserk_18.png",
-      "chars/warrior_h4/skill_berserk_19.png",
-      "chars/warrior_h4/skill_berserk_20.png",
-      "chars/warrior_h4/skill_berserk_21.png",
-      "chars/warrior_h4/skill_berserk_22.png",
-      "chars/warrior_h4/skill_berserk_23.png",
-      "chars/warrior_h4/skill_berserk_24.png",
-      "chars/warrior_h4/skill_berserk_25.png",
-      "chars/warrior_h4/skill_berserk_26.png",
-      "chars/warrior_h4/skill_berserk_27.png"
+      "chars/warrior_h4/skill_berserk_6.png"
      ],
      "delays": [
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
       120,
       120,
       120,
@@ -2296,10 +2126,10 @@
     "skill_rupture": [
      "brandish1"
     ],
+    "skill_magnet_prepare": [
+     "dash"
+    ],
     "skill_berserk": [
-     "brandish1",
-     "brandish1",
-     "brandish1",
      "brandish1"
     ]
    }
@@ -2307,12 +2137,12 @@
   "warrior_h5": {
    "name": "战士（英雄）",
    "size": [
-    166,
-    154
+    193,
+    130
    ],
    "pivot": [
-    97,
-    96
+    124,
+    100
    ],
    "anims": {
     "stand": {
@@ -2433,6 +2263,14 @@
       120
      ]
     },
+    "skill_magnet_prepare": {
+     "frames": [
+      "chars/warrior_h5/skill_magnet_prepare_0.png"
+     ],
+     "delays": [
+      1
+     ]
+    },
     "skill_berserk": {
      "frames": [
       "chars/warrior_h5/skill_berserk_0.png",
@@ -2441,51 +2279,9 @@
       "chars/warrior_h5/skill_berserk_3.png",
       "chars/warrior_h5/skill_berserk_4.png",
       "chars/warrior_h5/skill_berserk_5.png",
-      "chars/warrior_h5/skill_berserk_6.png",
-      "chars/warrior_h5/skill_berserk_7.png",
-      "chars/warrior_h5/skill_berserk_8.png",
-      "chars/warrior_h5/skill_berserk_9.png",
-      "chars/warrior_h5/skill_berserk_10.png",
-      "chars/warrior_h5/skill_berserk_11.png",
-      "chars/warrior_h5/skill_berserk_12.png",
-      "chars/warrior_h5/skill_berserk_13.png",
-      "chars/warrior_h5/skill_berserk_14.png",
-      "chars/warrior_h5/skill_berserk_15.png",
-      "chars/warrior_h5/skill_berserk_16.png",
-      "chars/warrior_h5/skill_berserk_17.png",
-      "chars/warrior_h5/skill_berserk_18.png",
-      "chars/warrior_h5/skill_berserk_19.png",
-      "chars/warrior_h5/skill_berserk_20.png",
-      "chars/warrior_h5/skill_berserk_21.png",
-      "chars/warrior_h5/skill_berserk_22.png",
-      "chars/warrior_h5/skill_berserk_23.png",
-      "chars/warrior_h5/skill_berserk_24.png",
-      "chars/warrior_h5/skill_berserk_25.png",
-      "chars/warrior_h5/skill_berserk_26.png",
-      "chars/warrior_h5/skill_berserk_27.png"
+      "chars/warrior_h5/skill_berserk_6.png"
      ],
      "delays": [
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
       120,
       120,
       120,
@@ -2527,10 +2323,10 @@
     "skill_rupture": [
      "brandish1"
     ],
+    "skill_magnet_prepare": [
+     "dash"
+    ],
     "skill_berserk": [
-     "brandish1",
-     "brandish1",
-     "brandish1",
      "brandish1"
     ]
    }
@@ -2538,11 +2334,11 @@
   "mage_h0": {
    "name": "法师（英雄）",
    "size": [
-    94,
-    93
+    135,
+    96
    ],
    "pivot": [
-    42,
+    83,
     79
    ],
    "anims": {
@@ -2656,6 +2452,18 @@
       100
      ]
     },
+    "skill_doom_prepare": {
+     "frames": [
+      "chars/mage_h0/skill_doom_prepare_0.png",
+      "chars/mage_h0/skill_doom_prepare_1.png",
+      "chars/mage_h0/skill_doom_prepare_2.png"
+     ],
+     "delays": [
+      200,
+      200,
+      200
+     ]
+    },
     "skill_chain": {
      "frames": [
       "chars/mage_h0/skill_chain_0.png",
@@ -2712,6 +2520,9 @@
     "skill_doom": [
      "alert4"
     ],
+    "skill_doom_prepare": [
+     "alert2"
+    ],
     "skill_chain": [
      "paralyze"
     ],
@@ -2723,11 +2534,11 @@
   "mage_h1": {
    "name": "法师（英雄）",
    "size": [
-    94,
-    93
+    135,
+    96
    ],
    "pivot": [
-    42,
+    83,
     79
    ],
    "anims": {
@@ -2841,6 +2652,18 @@
       100
      ]
     },
+    "skill_doom_prepare": {
+     "frames": [
+      "chars/mage_h1/skill_doom_prepare_0.png",
+      "chars/mage_h1/skill_doom_prepare_1.png",
+      "chars/mage_h1/skill_doom_prepare_2.png"
+     ],
+     "delays": [
+      200,
+      200,
+      200
+     ]
+    },
     "skill_chain": {
      "frames": [
       "chars/mage_h1/skill_chain_0.png",
@@ -2897,6 +2720,9 @@
     "skill_doom": [
      "alert4"
     ],
+    "skill_doom_prepare": [
+     "alert2"
+    ],
     "skill_chain": [
      "paralyze"
     ],
@@ -2908,11 +2734,11 @@
   "mage_h2": {
    "name": "法师（英雄）",
    "size": [
-    94,
-    93
+    135,
+    96
    ],
    "pivot": [
-    42,
+    83,
     79
    ],
    "anims": {
@@ -3026,6 +2852,18 @@
       100
      ]
     },
+    "skill_doom_prepare": {
+     "frames": [
+      "chars/mage_h2/skill_doom_prepare_0.png",
+      "chars/mage_h2/skill_doom_prepare_1.png",
+      "chars/mage_h2/skill_doom_prepare_2.png"
+     ],
+     "delays": [
+      200,
+      200,
+      200
+     ]
+    },
     "skill_chain": {
      "frames": [
       "chars/mage_h2/skill_chain_0.png",
@@ -3082,6 +2920,9 @@
     "skill_doom": [
      "alert4"
     ],
+    "skill_doom_prepare": [
+     "alert2"
+    ],
     "skill_chain": [
      "paralyze"
     ],
@@ -3093,11 +2934,11 @@
   "mage_h3": {
    "name": "法师（英雄）",
    "size": [
-    94,
-    93
+    135,
+    96
    ],
    "pivot": [
-    42,
+    83,
     79
    ],
    "anims": {
@@ -3211,6 +3052,18 @@
       100
      ]
     },
+    "skill_doom_prepare": {
+     "frames": [
+      "chars/mage_h3/skill_doom_prepare_0.png",
+      "chars/mage_h3/skill_doom_prepare_1.png",
+      "chars/mage_h3/skill_doom_prepare_2.png"
+     ],
+     "delays": [
+      200,
+      200,
+      200
+     ]
+    },
     "skill_chain": {
      "frames": [
       "chars/mage_h3/skill_chain_0.png",
@@ -3267,6 +3120,9 @@
     "skill_doom": [
      "alert4"
     ],
+    "skill_doom_prepare": [
+     "alert2"
+    ],
     "skill_chain": [
      "paralyze"
     ],
@@ -3278,11 +3134,11 @@
   "mage_h4": {
    "name": "法师（英雄）",
    "size": [
-    94,
-    93
+    135,
+    96
    ],
    "pivot": [
-    42,
+    83,
     79
    ],
    "anims": {
@@ -3396,6 +3252,18 @@
       100
      ]
     },
+    "skill_doom_prepare": {
+     "frames": [
+      "chars/mage_h4/skill_doom_prepare_0.png",
+      "chars/mage_h4/skill_doom_prepare_1.png",
+      "chars/mage_h4/skill_doom_prepare_2.png"
+     ],
+     "delays": [
+      200,
+      200,
+      200
+     ]
+    },
     "skill_chain": {
      "frames": [
       "chars/mage_h4/skill_chain_0.png",
@@ -3452,6 +3320,9 @@
     "skill_doom": [
      "alert4"
     ],
+    "skill_doom_prepare": [
+     "alert2"
+    ],
     "skill_chain": [
      "paralyze"
     ],
@@ -3463,11 +3334,11 @@
   "mage_h5": {
    "name": "法师（英雄）",
    "size": [
-    94,
-    93
+    135,
+    96
    ],
    "pivot": [
-    42,
+    83,
     79
    ],
    "anims": {
@@ -3581,6 +3452,18 @@
       100
      ]
     },
+    "skill_doom_prepare": {
+     "frames": [
+      "chars/mage_h5/skill_doom_prepare_0.png",
+      "chars/mage_h5/skill_doom_prepare_1.png",
+      "chars/mage_h5/skill_doom_prepare_2.png"
+     ],
+     "delays": [
+      200,
+      200,
+      200
+     ]
+    },
     "skill_chain": {
      "frames": [
       "chars/mage_h5/skill_chain_0.png",
@@ -3636,6 +3519,9 @@
     ],
     "skill_doom": [
      "alert4"
+    ],
+    "skill_doom_prepare": [
+     "alert2"
     ],
     "skill_chain": [
      "paralyze"
@@ -4489,7 +4375,7 @@
    "name": "牧师（英雄）",
    "size": [
     89,
-    93
+    94
    ],
    "pivot": [
     46,
@@ -4674,7 +4560,7 @@
    "name": "牧师（英雄）",
    "size": [
     89,
-    93
+    94
    ],
    "pivot": [
     46,
@@ -4859,7 +4745,7 @@
    "name": "牧师（英雄）",
    "size": [
     89,
-    93
+    94
    ],
    "pivot": [
     46,
@@ -5044,7 +4930,7 @@
    "name": "牧师（英雄）",
    "size": [
     89,
-    93
+    94
    ],
    "pivot": [
     46,
@@ -5229,7 +5115,7 @@
    "name": "牧师（英雄）",
    "size": [
     89,
-    93
+    94
    ],
    "pivot": [
     46,
@@ -5414,7 +5300,7 @@
    "name": "牧师（英雄）",
    "size": [
     89,
-    93
+    94
    ],
    "pivot": [
     46,
@@ -13392,7 +13278,46 @@
       120,
       120,
       120
+     ],
+     "pivot": [
+      88,
+      129
+     ],
+     "size": [
+      288,
+      182
      ]
+    },
+    "cast2": {
+     "frames": [
+      "skills/dash/cast2/f000.png",
+      "skills/dash/cast2/f001.png",
+      "skills/dash/cast2/f002.png",
+      "skills/dash/cast2/f003.png",
+      "skills/dash/cast2/f004.png",
+      "skills/dash/cast2/f005.png"
+     ],
+     "delays": [
+      120,
+      120,
+      120,
+      120,
+      120,
+      120
+     ],
+     "pivot": [
+      58,
+      113
+     ],
+     "size": [
+      199,
+      123
+     ]
+    }
+   },
+   "parts": {
+    "effect0": {
+     "z": -1
     }
    },
    "actions": [
@@ -13464,6 +13389,252 @@
       60,
       60,
       60
+     ],
+     "pivot": [
+      711,
+      289
+     ],
+     "size": [
+      1311,
+      489
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/rupture/hit/f000.png",
+      "skills/rupture/hit/f001.png",
+      "skills/rupture/hit/f002.png",
+      "skills/rupture/hit/f003.png",
+      "skills/rupture/hit/f004.png",
+      "skills/rupture/hit/f005.png"
+     ],
+     "delays": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
+     ],
+     "pivot": [
+      151,
+      149
+     ],
+     "size": [
+      304,
+      248
+     ]
+    },
+    "special": {
+     "frames": [
+      "skills/rupture/special/f000.png",
+      "skills/rupture/special/f001.png",
+      "skills/rupture/special/f002.png",
+      "skills/rupture/special/f003.png",
+      "skills/rupture/special/f004.png",
+      "skills/rupture/special/f005.png",
+      "skills/rupture/special/f006.png",
+      "skills/rupture/special/f007.png",
+      "skills/rupture/special/f008.png",
+      "skills/rupture/special/f009.png",
+      "skills/rupture/special/f010.png",
+      "skills/rupture/special/f011.png",
+      "skills/rupture/special/f012.png",
+      "skills/rupture/special/f013.png",
+      "skills/rupture/special/f014.png",
+      "skills/rupture/special/f015.png",
+      "skills/rupture/special/f016.png",
+      "skills/rupture/special/f017.png",
+      "skills/rupture/special/f018.png"
+     ],
+     "delays": [
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30
+     ],
+     "pivot": [
+      94,
+      70
+     ],
+     "size": [
+      192,
+      148
+     ]
+    },
+    "special1": {
+     "frames": [
+      "skills/rupture/special1/f000.png",
+      "skills/rupture/special1/f001.png",
+      "skills/rupture/special1/f002.png",
+      "skills/rupture/special1/f003.png",
+      "skills/rupture/special1/f004.png",
+      "skills/rupture/special1/f005.png",
+      "skills/rupture/special1/f006.png",
+      "skills/rupture/special1/f007.png",
+      "skills/rupture/special1/f008.png",
+      "skills/rupture/special1/f009.png",
+      "skills/rupture/special1/f010.png",
+      "skills/rupture/special1/f011.png",
+      "skills/rupture/special1/f012.png",
+      "skills/rupture/special1/f013.png",
+      "skills/rupture/special1/f014.png",
+      "skills/rupture/special1/f015.png",
+      "skills/rupture/special1/f016.png",
+      "skills/rupture/special1/f017.png",
+      "skills/rupture/special1/f018.png"
+     ],
+     "delays": [
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30
+     ],
+     "pivot": [
+      151,
+      110
+     ],
+     "size": [
+      304,
+      235
+     ]
+    },
+    "special2": {
+     "frames": [
+      "skills/rupture/special2/f000.png",
+      "skills/rupture/special2/f001.png",
+      "skills/rupture/special2/f002.png",
+      "skills/rupture/special2/f003.png",
+      "skills/rupture/special2/f004.png",
+      "skills/rupture/special2/f005.png",
+      "skills/rupture/special2/f006.png",
+      "skills/rupture/special2/f007.png",
+      "skills/rupture/special2/f008.png",
+      "skills/rupture/special2/f009.png",
+      "skills/rupture/special2/f010.png",
+      "skills/rupture/special2/f011.png",
+      "skills/rupture/special2/f012.png",
+      "skills/rupture/special2/f013.png",
+      "skills/rupture/special2/f014.png",
+      "skills/rupture/special2/f015.png",
+      "skills/rupture/special2/f016.png",
+      "skills/rupture/special2/f017.png",
+      "skills/rupture/special2/f018.png",
+      "skills/rupture/special2/f019.png"
+     ],
+     "delays": [
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30
+     ],
+     "pivot": [
+      215,
+      157
+     ],
+     "size": [
+      432,
+      331
+     ]
+    },
+    "special3": {
+     "frames": [
+      "skills/rupture/special3/f000.png",
+      "skills/rupture/special3/f001.png",
+      "skills/rupture/special3/f002.png",
+      "skills/rupture/special3/f003.png",
+      "skills/rupture/special3/f004.png",
+      "skills/rupture/special3/f005.png",
+      "skills/rupture/special3/f006.png",
+      "skills/rupture/special3/f007.png",
+      "skills/rupture/special3/f008.png",
+      "skills/rupture/special3/f009.png",
+      "skills/rupture/special3/f010.png",
+      "skills/rupture/special3/f011.png",
+      "skills/rupture/special3/f012.png",
+      "skills/rupture/special3/f013.png",
+      "skills/rupture/special3/f014.png",
+      "skills/rupture/special3/f015.png",
+      "skills/rupture/special3/f016.png",
+      "skills/rupture/special3/f017.png",
+      "skills/rupture/special3/f018.png",
+      "skills/rupture/special3/f019.png"
+     ],
+     "delays": [
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30
+     ],
+     "pivot": [
+      262,
+      217
+     ],
+     "size": [
+      524,
+      457
      ]
     }
    },
@@ -13664,6 +13835,66 @@
       60,
       60,
       60
+     ],
+     "pivot": [
+      727,
+      409
+     ],
+     "size": [
+      1125,
+      568
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/illusion/hit/f000.png",
+      "skills/illusion/hit/f001.png",
+      "skills/illusion/hit/f002.png",
+      "skills/illusion/hit/f003.png",
+      "skills/illusion/hit/f004.png",
+      "skills/illusion/hit/f005.png"
+     ],
+     "delays": [
+      30,
+      30,
+      30,
+      30,
+      30,
+      30
+     ],
+     "pivot": [
+      131,
+      101
+     ],
+     "size": [
+      236,
+      201
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "skills/illusion/hit1/f000.png",
+      "skills/illusion/hit1/f001.png",
+      "skills/illusion/hit1/f002.png",
+      "skills/illusion/hit1/f003.png",
+      "skills/illusion/hit1/f004.png",
+      "skills/illusion/hit1/f005.png"
+     ],
+     "delays": [
+      30,
+      30,
+      30,
+      30,
+      30,
+      30
+     ],
+     "pivot": [
+      104,
+      101
+     ],
+     "size": [
+      238,
+      201
      ]
     }
    },
@@ -13722,7 +13953,62 @@
       88,
       88,
       88
+     ],
+     "pivot": [
+      92,
+      149
+     ],
+     "size": [
+      157,
+      154
      ]
+    },
+    "hit": {
+     "frames": [
+      "skills/roar/hit/f000.png",
+      "skills/roar/hit/f001.png"
+     ],
+     "delays": [
+      120,
+      120
+     ],
+     "pivot": [
+      31,
+      34
+     ],
+     "size": [
+      70,
+      68
+     ]
+    },
+    "mob": {
+     "frames": [
+      "skills/roar/mob/f000.png",
+      "skills/roar/mob/f001.png",
+      "skills/roar/mob/f002.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      33,
+      9
+     ],
+     "size": [
+      66,
+      18
+     ]
+    }
+   },
+   "parts": {
+    "effect": {
+     "z": -1
+    },
+    "mob": {
+     "pos": 2,
+     "repeat": 1
     }
    },
    "actions": [
@@ -13784,7 +14070,56 @@
       80,
       80,
       80
+     ],
+     "pivot": [
+      67,
+      229
+     ],
+     "size": [
+      134,
+      236
      ]
+    },
+    "mob": {
+     "frames": [
+      "skills/crush/mob/f000.png",
+      "skills/crush/mob/f001.png",
+      "skills/crush/mob/f002.png",
+      "skills/crush/mob/f003.png",
+      "skills/crush/mob/f004.png",
+      "skills/crush/mob/f005.png",
+      "skills/crush/mob/f006.png",
+      "skills/crush/mob/f007.png",
+      "skills/crush/mob/f008.png",
+      "skills/crush/mob/f009.png",
+      "skills/crush/mob/f010.png"
+     ],
+     "delays": [
+      80,
+      80,
+      80,
+      150,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80
+     ],
+     "pivot": [
+      57,
+      97
+     ],
+     "size": [
+      134,
+      117
+     ]
+    }
+   },
+   "parts": {
+    "mob": {
+     "pos": 2
     }
    },
    "actions": [
@@ -13834,6 +14169,42 @@
       120,
       120,
       120
+     ],
+     "pivot": [
+      63,
+      123
+     ],
+     "size": [
+      108,
+      123
+     ]
+    },
+    "affected": {
+     "frames": [
+      "skills/rage/affected/f000.png",
+      "skills/rage/affected/f001.png",
+      "skills/rage/affected/f002.png",
+      "skills/rage/affected/f003.png",
+      "skills/rage/affected/f004.png",
+      "skills/rage/affected/f005.png",
+      "skills/rage/affected/f006.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      25,
+      81
+     ],
+     "size": [
+      42,
+      88
      ]
     }
    },
@@ -13894,7 +14265,21 @@
       60,
       60,
       60
+     ],
+     "pivot": [
+      80,
+      183
+     ],
+     "size": [
+      169,
+      150
      ]
+    }
+   },
+   "parts": {
+    "prepare": {
+     "action": "dash",
+     "time": 0
     }
    },
    "actions": []
@@ -13944,6 +14329,44 @@
       60,
       30,
       30
+     ],
+     "pivot": [
+      375,
+      313
+     ],
+     "size": [
+      924,
+      562
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/berserk/hit/f000.png",
+      "skills/berserk/hit/f001.png",
+      "skills/berserk/hit/f002.png",
+      "skills/berserk/hit/f003.png",
+      "skills/berserk/hit/f004.png",
+      "skills/berserk/hit/f005.png",
+      "skills/berserk/hit/f006.png",
+      "skills/berserk/hit/f007.png"
+     ],
+     "delays": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
+     ],
+     "pivot": [
+      99,
+      91
+     ],
+     "size": [
+      213,
+      197
      ]
     }
    },
@@ -13991,6 +14414,58 @@
       100,
       100,
       100
+     ],
+     "pivot": [
+      51,
+      86
+     ],
+     "size": [
+      52,
+      96
+     ]
+    },
+    "ball": {
+     "frames": [
+      "skills/firearrow/ball/f000.png",
+      "skills/firearrow/ball/f001.png",
+      "skills/firearrow/ball/f002.png"
+     ],
+     "delays": [
+      30,
+      30,
+      30
+     ],
+     "pivot": [
+      42,
+      10
+     ],
+     "size": [
+      84,
+      20
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/firearrow/hit/f000.png",
+      "skills/firearrow/hit/f001.png",
+      "skills/firearrow/hit/f002.png",
+      "skills/firearrow/hit/f003.png",
+      "skills/firearrow/hit/f004.png"
+     ],
+     "delays": [
+      90,
+      90,
+      90,
+      90,
+      90
+     ],
+     "pivot": [
+      29,
+      50
+     ],
+     "size": [
+      56,
+      77
      ]
     }
    },
@@ -14039,7 +14514,138 @@
       80,
       80,
       130
+     ],
+     "pivot": [
+      49,
+      178
+     ],
+     "size": [
+      110,
+      186
      ]
+    },
+    "prepare": {
+     "frames": [
+      "skills/doom/prepare/f000.png",
+      "skills/doom/prepare/f001.png",
+      "skills/doom/prepare/f002.png",
+      "skills/doom/prepare/f003.png",
+      "skills/doom/prepare/f004.png",
+      "skills/doom/prepare/f005.png",
+      "skills/doom/prepare/f006.png",
+      "skills/doom/prepare/f007.png",
+      "skills/doom/prepare/f008.png",
+      "skills/doom/prepare/f009.png",
+      "skills/doom/prepare/f010.png",
+      "skills/doom/prepare/f011.png",
+      "skills/doom/prepare/f012.png"
+     ],
+     "delays": [
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      135,
+      85,
+      95,
+      105
+     ],
+     "pivot": [
+      128,
+      162
+     ],
+     "size": [
+      252,
+      258
+     ]
+    },
+    "special": {
+     "frames": [
+      "skills/doom/special/f000.png",
+      "skills/doom/special/f001.png",
+      "skills/doom/special/f002.png",
+      "skills/doom/special/f003.png",
+      "skills/doom/special/f004.png",
+      "skills/doom/special/f005.png"
+     ],
+     "delays": [
+      150,
+      150,
+      70,
+      70,
+      70,
+      70
+     ],
+     "pivot": [
+      22,
+      28
+     ],
+     "size": [
+      46,
+      57
+     ]
+    },
+    "special1": {
+     "frames": [
+      "skills/doom/special1/f000.png",
+      "skills/doom/special1/f001.png",
+      "skills/doom/special1/f002.png",
+      "skills/doom/special1/f003.png",
+      "skills/doom/special1/f004.png",
+      "skills/doom/special1/f005.png"
+     ],
+     "delays": [
+      150,
+      150,
+      70,
+      70,
+      70,
+      70
+     ],
+     "pivot": [
+      33,
+      32
+     ],
+     "size": [
+      65,
+      59
+     ]
+    },
+    "special2": {
+     "frames": [
+      "skills/doom/special2/f000.png",
+      "skills/doom/special2/f001.png",
+      "skills/doom/special2/f002.png"
+     ],
+     "delays": [
+      150,
+      100,
+      100
+     ],
+     "pivot": [
+      14,
+      12
+     ],
+     "size": [
+      28,
+      25
+     ]
+    }
+   },
+   "parts": {
+    "prepare": {
+     "action": "alert2"
+    },
+    "special": {
+     "start": 150,
+     "interval": 60,
+     "count": 6,
+     "duration": 900
     }
    },
    "actions": [
@@ -14101,7 +14707,48 @@
       60,
       60,
       60
+     ],
+     "pivot": [
+      121,
+      149
+     ],
+     "size": [
+      229,
+      200
      ]
+    },
+    "hit": {
+     "frames": [
+      "skills/chain/hit/f000.png",
+      "skills/chain/hit/f001.png",
+      "skills/chain/hit/f002.png",
+      "skills/chain/hit/f003.png",
+      "skills/chain/hit/f004.png",
+      "skills/chain/hit/f005.png",
+      "skills/chain/hit/f006.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ],
+     "pivot": [
+      57,
+      59
+     ],
+     "size": [
+      115,
+      70
+     ]
+    }
+   },
+   "parts": {
+    "effect": {
+     "z": -1
     }
    },
    "actions": [
@@ -14175,7 +14822,711 @@
       90,
       90,
       90
+     ],
+     "pivot": [
+      99,
+      693
+     ],
+     "size": [
+      194,
+      748
      ]
+    },
+    "cast2": {
+     "frames": [
+      "skills/starfall/cast2/f000.png",
+      "skills/starfall/cast2/f001.png",
+      "skills/starfall/cast2/f002.png",
+      "skills/starfall/cast2/f003.png",
+      "skills/starfall/cast2/f004.png",
+      "skills/starfall/cast2/f005.png",
+      "skills/starfall/cast2/f006.png",
+      "skills/starfall/cast2/f007.png",
+      "skills/starfall/cast2/f008.png",
+      "skills/starfall/cast2/f009.png",
+      "skills/starfall/cast2/f010.png",
+      "skills/starfall/cast2/f011.png",
+      "skills/starfall/cast2/f012.png",
+      "skills/starfall/cast2/f013.png",
+      "skills/starfall/cast2/f014.png",
+      "skills/starfall/cast2/f015.png",
+      "skills/starfall/cast2/f016.png",
+      "skills/starfall/cast2/f017.png",
+      "skills/starfall/cast2/f018.png",
+      "skills/starfall/cast2/f019.png"
+     ],
+     "delays": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
+     ],
+     "pivot": [
+      117,
+      200
+     ],
+     "size": [
+      225,
+      237
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/starfall/hit/f000.png",
+      "skills/starfall/hit/f001.png",
+      "skills/starfall/hit/f002.png",
+      "skills/starfall/hit/f003.png",
+      "skills/starfall/hit/f004.png",
+      "skills/starfall/hit/f005.png",
+      "skills/starfall/hit/f006.png",
+      "skills/starfall/hit/f007.png",
+      "skills/starfall/hit/f008.png",
+      "skills/starfall/hit/f009.png",
+      "skills/starfall/hit/f010.png",
+      "skills/starfall/hit/f011.png",
+      "skills/starfall/hit/f012.png",
+      "skills/starfall/hit/f013.png",
+      "skills/starfall/hit/f014.png",
+      "skills/starfall/hit/f015.png",
+      "skills/starfall/hit/f016.png",
+      "skills/starfall/hit/f017.png",
+      "skills/starfall/hit/f018.png",
+      "skills/starfall/hit/f019.png",
+      "skills/starfall/hit/f020.png",
+      "skills/starfall/hit/f021.png",
+      "skills/starfall/hit/f022.png"
+     ],
+     "delays": [
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120
+     ],
+     "pivot": [
+      107,
+      228
+     ],
+     "size": [
+      277,
+      230
+     ]
+    },
+    "tile": {
+     "frames": [
+      "skills/starfall/tile/f000.png",
+      "skills/starfall/tile/f001.png",
+      "skills/starfall/tile/f002.png",
+      "skills/starfall/tile/f003.png",
+      "skills/starfall/tile/f004.png",
+      "skills/starfall/tile/f005.png",
+      "skills/starfall/tile/f006.png",
+      "skills/starfall/tile/f007.png",
+      "skills/starfall/tile/f008.png",
+      "skills/starfall/tile/f009.png",
+      "skills/starfall/tile/f010.png",
+      "skills/starfall/tile/f011.png",
+      "skills/starfall/tile/f012.png",
+      "skills/starfall/tile/f013.png",
+      "skills/starfall/tile/f014.png",
+      "skills/starfall/tile/f015.png",
+      "skills/starfall/tile/f016.png",
+      "skills/starfall/tile/f017.png",
+      "skills/starfall/tile/f018.png",
+      "skills/starfall/tile/f019.png",
+      "skills/starfall/tile/f020.png",
+      "skills/starfall/tile/f021.png",
+      "skills/starfall/tile/f022.png"
+     ],
+     "delays": [
+      60,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      540
+     ],
+     "pivot": [
+      67,
+      187
+     ],
+     "size": [
+      203,
+      189
+     ]
+    },
+    "tile1": {
+     "frames": [
+      "skills/starfall/tile1/f000.png",
+      "skills/starfall/tile1/f001.png",
+      "skills/starfall/tile1/f002.png",
+      "skills/starfall/tile1/f003.png",
+      "skills/starfall/tile1/f004.png",
+      "skills/starfall/tile1/f005.png",
+      "skills/starfall/tile1/f006.png",
+      "skills/starfall/tile1/f007.png",
+      "skills/starfall/tile1/f008.png",
+      "skills/starfall/tile1/f009.png",
+      "skills/starfall/tile1/f010.png",
+      "skills/starfall/tile1/f011.png",
+      "skills/starfall/tile1/f012.png",
+      "skills/starfall/tile1/f013.png",
+      "skills/starfall/tile1/f014.png",
+      "skills/starfall/tile1/f015.png",
+      "skills/starfall/tile1/f016.png",
+      "skills/starfall/tile1/f017.png",
+      "skills/starfall/tile1/f018.png",
+      "skills/starfall/tile1/f019.png",
+      "skills/starfall/tile1/f020.png",
+      "skills/starfall/tile1/f021.png",
+      "skills/starfall/tile1/f022.png"
+     ],
+     "delays": [
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      480
+     ],
+     "pivot": [
+      107,
+      199
+     ],
+     "size": [
+      268,
+      201
+     ]
+    },
+    "tile2": {
+     "frames": [
+      "skills/starfall/tile2/f000.png",
+      "skills/starfall/tile2/f001.png",
+      "skills/starfall/tile2/f002.png",
+      "skills/starfall/tile2/f003.png",
+      "skills/starfall/tile2/f004.png",
+      "skills/starfall/tile2/f005.png",
+      "skills/starfall/tile2/f006.png",
+      "skills/starfall/tile2/f007.png",
+      "skills/starfall/tile2/f008.png",
+      "skills/starfall/tile2/f009.png",
+      "skills/starfall/tile2/f010.png",
+      "skills/starfall/tile2/f011.png",
+      "skills/starfall/tile2/f012.png",
+      "skills/starfall/tile2/f013.png",
+      "skills/starfall/tile2/f014.png",
+      "skills/starfall/tile2/f015.png",
+      "skills/starfall/tile2/f016.png",
+      "skills/starfall/tile2/f017.png",
+      "skills/starfall/tile2/f018.png",
+      "skills/starfall/tile2/f019.png",
+      "skills/starfall/tile2/f020.png",
+      "skills/starfall/tile2/f021.png"
+     ],
+     "delays": [
+      180,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      540
+     ],
+     "pivot": [
+      120,
+      206
+     ],
+     "size": [
+      299,
+      208
+     ]
+    },
+    "tile3": {
+     "frames": [
+      "skills/starfall/tile3/f000.png",
+      "skills/starfall/tile3/f001.png",
+      "skills/starfall/tile3/f002.png",
+      "skills/starfall/tile3/f003.png",
+      "skills/starfall/tile3/f004.png",
+      "skills/starfall/tile3/f005.png",
+      "skills/starfall/tile3/f006.png",
+      "skills/starfall/tile3/f007.png",
+      "skills/starfall/tile3/f008.png",
+      "skills/starfall/tile3/f009.png",
+      "skills/starfall/tile3/f010.png",
+      "skills/starfall/tile3/f011.png",
+      "skills/starfall/tile3/f012.png",
+      "skills/starfall/tile3/f013.png",
+      "skills/starfall/tile3/f014.png",
+      "skills/starfall/tile3/f015.png",
+      "skills/starfall/tile3/f016.png",
+      "skills/starfall/tile3/f017.png",
+      "skills/starfall/tile3/f018.png",
+      "skills/starfall/tile3/f019.png",
+      "skills/starfall/tile3/f020.png",
+      "skills/starfall/tile3/f021.png",
+      "skills/starfall/tile3/f022.png",
+      "skills/starfall/tile3/f023.png",
+      "skills/starfall/tile3/f024.png"
+     ],
+     "delays": [
+      60,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      300
+     ],
+     "pivot": [
+      67,
+      216
+     ],
+     "size": [
+      213,
+      218
+     ]
+    },
+    "tile4": {
+     "frames": [
+      "skills/starfall/tile4/f000.png",
+      "skills/starfall/tile4/f001.png",
+      "skills/starfall/tile4/f002.png",
+      "skills/starfall/tile4/f003.png",
+      "skills/starfall/tile4/f004.png",
+      "skills/starfall/tile4/f005.png",
+      "skills/starfall/tile4/f006.png",
+      "skills/starfall/tile4/f007.png",
+      "skills/starfall/tile4/f008.png",
+      "skills/starfall/tile4/f009.png",
+      "skills/starfall/tile4/f010.png",
+      "skills/starfall/tile4/f011.png",
+      "skills/starfall/tile4/f012.png",
+      "skills/starfall/tile4/f013.png",
+      "skills/starfall/tile4/f014.png",
+      "skills/starfall/tile4/f015.png",
+      "skills/starfall/tile4/f016.png",
+      "skills/starfall/tile4/f017.png",
+      "skills/starfall/tile4/f018.png",
+      "skills/starfall/tile4/f019.png",
+      "skills/starfall/tile4/f020.png",
+      "skills/starfall/tile4/f021.png",
+      "skills/starfall/tile4/f022.png",
+      "skills/starfall/tile4/f023.png",
+      "skills/starfall/tile4/f024.png"
+     ],
+     "delays": [
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      240
+     ],
+     "pivot": [
+      107,
+      228
+     ],
+     "size": [
+      277,
+      230
+     ]
+    },
+    "tile5": {
+     "frames": [
+      "skills/starfall/tile5/f000.png",
+      "skills/starfall/tile5/f001.png",
+      "skills/starfall/tile5/f002.png",
+      "skills/starfall/tile5/f003.png",
+      "skills/starfall/tile5/f004.png",
+      "skills/starfall/tile5/f005.png",
+      "skills/starfall/tile5/f006.png",
+      "skills/starfall/tile5/f007.png",
+      "skills/starfall/tile5/f008.png",
+      "skills/starfall/tile5/f009.png",
+      "skills/starfall/tile5/f010.png",
+      "skills/starfall/tile5/f011.png",
+      "skills/starfall/tile5/f012.png",
+      "skills/starfall/tile5/f013.png",
+      "skills/starfall/tile5/f014.png",
+      "skills/starfall/tile5/f015.png",
+      "skills/starfall/tile5/f016.png",
+      "skills/starfall/tile5/f017.png",
+      "skills/starfall/tile5/f018.png",
+      "skills/starfall/tile5/f019.png",
+      "skills/starfall/tile5/f020.png",
+      "skills/starfall/tile5/f021.png",
+      "skills/starfall/tile5/f022.png",
+      "skills/starfall/tile5/f023.png",
+      "skills/starfall/tile5/f024.png"
+     ],
+     "delays": [
+      180,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      180
+     ],
+     "pivot": [
+      123,
+      235
+     ],
+     "size": [
+      312,
+      237
+     ]
+    },
+    "tile6": {
+     "frames": [
+      "skills/starfall/tile6/f000.png",
+      "skills/starfall/tile6/f001.png",
+      "skills/starfall/tile6/f002.png",
+      "skills/starfall/tile6/f003.png",
+      "skills/starfall/tile6/f004.png",
+      "skills/starfall/tile6/f005.png",
+      "skills/starfall/tile6/f006.png",
+      "skills/starfall/tile6/f007.png",
+      "skills/starfall/tile6/f008.png",
+      "skills/starfall/tile6/f009.png",
+      "skills/starfall/tile6/f010.png",
+      "skills/starfall/tile6/f011.png",
+      "skills/starfall/tile6/f012.png",
+      "skills/starfall/tile6/f013.png",
+      "skills/starfall/tile6/f014.png",
+      "skills/starfall/tile6/f015.png",
+      "skills/starfall/tile6/f016.png",
+      "skills/starfall/tile6/f017.png",
+      "skills/starfall/tile6/f018.png",
+      "skills/starfall/tile6/f019.png",
+      "skills/starfall/tile6/f020.png",
+      "skills/starfall/tile6/f021.png",
+      "skills/starfall/tile6/f022.png",
+      "skills/starfall/tile6/f023.png",
+      "skills/starfall/tile6/f024.png",
+      "skills/starfall/tile6/f025.png",
+      "skills/starfall/tile6/f026.png"
+     ],
+     "delays": [
+      30,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      90
+     ],
+     "pivot": [
+      67,
+      348
+     ],
+     "size": [
+      284,
+      350
+     ]
+    },
+    "tile7": {
+     "frames": [
+      "skills/starfall/tile7/f000.png",
+      "skills/starfall/tile7/f001.png",
+      "skills/starfall/tile7/f002.png",
+      "skills/starfall/tile7/f003.png",
+      "skills/starfall/tile7/f004.png",
+      "skills/starfall/tile7/f005.png",
+      "skills/starfall/tile7/f006.png",
+      "skills/starfall/tile7/f007.png",
+      "skills/starfall/tile7/f008.png",
+      "skills/starfall/tile7/f009.png",
+      "skills/starfall/tile7/f010.png",
+      "skills/starfall/tile7/f011.png",
+      "skills/starfall/tile7/f012.png",
+      "skills/starfall/tile7/f013.png",
+      "skills/starfall/tile7/f014.png",
+      "skills/starfall/tile7/f015.png",
+      "skills/starfall/tile7/f016.png",
+      "skills/starfall/tile7/f017.png",
+      "skills/starfall/tile7/f018.png",
+      "skills/starfall/tile7/f019.png",
+      "skills/starfall/tile7/f020.png",
+      "skills/starfall/tile7/f021.png",
+      "skills/starfall/tile7/f022.png",
+      "skills/starfall/tile7/f023.png",
+      "skills/starfall/tile7/f024.png",
+      "skills/starfall/tile7/f025.png",
+      "skills/starfall/tile7/f026.png"
+     ],
+     "delays": [
+      60,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      60
+     ],
+     "pivot": [
+      107,
+      360
+     ],
+     "size": [
+      343,
+      362
+     ]
+    },
+    "tile8": {
+     "frames": [
+      "skills/starfall/tile8/f000.png",
+      "skills/starfall/tile8/f001.png",
+      "skills/starfall/tile8/f002.png",
+      "skills/starfall/tile8/f003.png",
+      "skills/starfall/tile8/f004.png",
+      "skills/starfall/tile8/f005.png",
+      "skills/starfall/tile8/f006.png",
+      "skills/starfall/tile8/f007.png",
+      "skills/starfall/tile8/f008.png",
+      "skills/starfall/tile8/f009.png",
+      "skills/starfall/tile8/f010.png",
+      "skills/starfall/tile8/f011.png",
+      "skills/starfall/tile8/f012.png",
+      "skills/starfall/tile8/f013.png",
+      "skills/starfall/tile8/f014.png",
+      "skills/starfall/tile8/f015.png",
+      "skills/starfall/tile8/f016.png",
+      "skills/starfall/tile8/f017.png",
+      "skills/starfall/tile8/f018.png",
+      "skills/starfall/tile8/f019.png",
+      "skills/starfall/tile8/f020.png",
+      "skills/starfall/tile8/f021.png",
+      "skills/starfall/tile8/f022.png",
+      "skills/starfall/tile8/f023.png",
+      "skills/starfall/tile8/f024.png",
+      "skills/starfall/tile8/f025.png",
+      "skills/starfall/tile8/f026.png"
+     ],
+     "delays": [
+      90,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      30
+     ],
+     "pivot": [
+      123,
+      367
+     ],
+     "size": [
+      376,
+      369
+     ]
+    }
+   },
+   "parts": {
+    "effect0": {
+     "z": -1
+    },
+    "tile": {
+     "effectDistance": 180
     }
    },
    "actions": [
@@ -14217,7 +15568,201 @@
       110,
       110,
       110
+     ],
+     "pivot": [
+      96,
+      135
+     ],
+     "size": [
+      182,
+      209
      ]
+    },
+    "ball": {
+     "frames": [
+      "skills/firebolt/ball/f000.png",
+      "skills/firebolt/ball/f001.png",
+      "skills/firebolt/ball/f002.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      45,
+      16
+     ],
+     "size": [
+      159,
+      32
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/firebolt/hit/f000.png",
+      "skills/firebolt/hit/f001.png",
+      "skills/firebolt/hit/f002.png",
+      "skills/firebolt/hit/f003.png",
+      "skills/firebolt/hit/f004.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      51,
+      52
+     ],
+     "size": [
+      103,
+      102
+     ]
+    },
+    "special": {
+     "frames": [
+      "skills/firebolt/special/f000.png",
+      "skills/firebolt/special/f001.png",
+      "skills/firebolt/special/f002.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      42,
+      58
+     ],
+     "size": [
+      97,
+      107
+     ]
+    },
+    "special1": {
+     "frames": [
+      "skills/firebolt/special1/f000.png",
+      "skills/firebolt/special1/f001.png",
+      "skills/firebolt/special1/f002.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      26,
+      35
+     ],
+     "size": [
+      59,
+      70
+     ]
+    },
+    "special2": {
+     "frames": [
+      "skills/firebolt/special2/f000.png",
+      "skills/firebolt/special2/f001.png",
+      "skills/firebolt/special2/f002.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      29,
+      34
+     ],
+     "size": [
+      59,
+      68
+     ]
+    },
+    "tile": {
+     "frames": [
+      "skills/firebolt/tile/f000.png",
+      "skills/firebolt/tile/f001.png",
+      "skills/firebolt/tile/f002.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      17,
+      48
+     ],
+     "size": [
+      37,
+      60
+     ]
+    },
+    "tile1": {
+     "frames": [
+      "skills/firebolt/tile1/f000.png",
+      "skills/firebolt/tile1/f001.png",
+      "skills/firebolt/tile1/f002.png",
+      "skills/firebolt/tile1/f003.png"
+     ],
+     "delays": [
+      110,
+      110,
+      110,
+      110
+     ],
+     "pivot": [
+      22,
+      67
+     ],
+     "size": [
+      41,
+      83
+     ]
+    },
+    "tile2": {
+     "frames": [
+      "skills/firebolt/tile2/f000.png",
+      "skills/firebolt/tile2/f001.png",
+      "skills/firebolt/tile2/f002.png",
+      "skills/firebolt/tile2/f003.png",
+      "skills/firebolt/tile2/f004.png",
+      "skills/firebolt/tile2/f005.png"
+     ],
+     "delays": [
+      95,
+      95,
+      95,
+      95,
+      95,
+      95
+     ],
+     "pivot": [
+      32,
+      95
+     ],
+     "size": [
+      57,
+      117
+     ]
+    }
+   },
+   "parts": {
+    "special": {
+     "x": 105,
+     "y": 130,
+     "fall": 400,
+     "start": 150,
+     "interval": 90,
+     "count": 5,
+     "duration": 500
+    },
+    "tile": {
+     "effectDistance": 20
     }
    },
    "actions": []
@@ -14263,7 +15808,62 @@
       65,
       65,
       65
+     ],
+     "pivot": [
+      94,
+      158
+     ],
+     "size": [
+      129,
+      197
      ]
+    },
+    "hit": {
+     "frames": [
+      "skills/arrowrain/hit/f000.png",
+      "skills/arrowrain/hit/f001.png",
+      "skills/arrowrain/hit/f002.png"
+     ],
+     "delays": [
+      120,
+      120,
+      120
+     ],
+     "pivot": [
+      40,
+      110
+     ],
+     "size": [
+      101,
+      133
+     ]
+    },
+    "special": {
+     "frames": [
+      "skills/arrowrain/special/f000.png"
+     ],
+     "delays": [
+      100
+     ],
+     "pivot": [
+      21,
+      48
+     ],
+     "size": [
+      42,
+      96
+     ]
+    }
+   },
+   "parts": {
+    "special": {
+     "x": 85,
+     "y": 230,
+     "fall": 150,
+     "start": 0,
+     "interval": 90,
+     "count": 8,
+     "duration": 500
     }
    },
    "actions": []
@@ -14313,7 +15913,67 @@
       80,
       80,
       80
+     ],
+     "pivot": [
+      170,
+      143
+     ],
+     "size": [
+      300,
+      203
      ]
+    },
+    "ball": {
+     "frames": [
+      "skills/dragon/ball/f000.png",
+      "skills/dragon/ball/f001.png",
+      "skills/dragon/ball/f002.png",
+      "skills/dragon/ball/f003.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      66,
+      42
+     ],
+     "size": [
+      204,
+      90
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/dragon/hit/f000.png",
+      "skills/dragon/hit/f001.png",
+      "skills/dragon/hit/f002.png",
+      "skills/dragon/hit/f003.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      55,
+      85
+     ],
+     "size": [
+      197,
+      169
+     ]
+    }
+   },
+   "parts": {
+    "ball": {
+     "delay": 640
+    },
+    "hit": {
+     "order": 1
     }
    },
    "actions": []
@@ -14365,6 +16025,44 @@
       60,
       60,
       60
+     ],
+     "pivot": [
+      554,
+      352
+     ],
+     "size": [
+      842,
+      610
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/storm/hit/f000.png",
+      "skills/storm/hit/f001.png",
+      "skills/storm/hit/f002.png",
+      "skills/storm/hit/f003.png",
+      "skills/storm/hit/f004.png",
+      "skills/storm/hit/f005.png",
+      "skills/storm/hit/f006.png",
+      "skills/storm/hit/f007.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ],
+     "pivot": [
+      156,
+      135
+     ],
+     "size": [
+      284,
+      246
      ]
     }
    },
@@ -14403,6 +16101,54 @@
       100,
       100,
       100
+     ],
+     "pivot": [
+      103,
+      76
+     ],
+     "size": [
+      143,
+      89
+     ]
+    },
+    "ball": {
+     "frames": [
+      "skills/holyarrow/ball/f000.png",
+      "skills/holyarrow/ball/f001.png",
+      "skills/holyarrow/ball/f002.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100
+     ],
+     "pivot": [
+      41,
+      5
+     ],
+     "size": [
+      83,
+      11
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/holyarrow/hit/f000.png",
+      "skills/holyarrow/hit/f001.png",
+      "skills/holyarrow/hit/f002.png"
+     ],
+     "delays": [
+      80,
+      80,
+      80
+     ],
+     "pivot": [
+      68,
+      68
+     ],
+     "size": [
+      136,
+      136
      ]
     }
    },
@@ -14449,7 +16195,38 @@
       95,
       95,
       95
+     ],
+     "pivot": [
+      90,
+      202
+     ],
+     "size": [
+      188,
+      224
      ]
+    },
+    "hit": {
+     "frames": [
+      "skills/holy/hit/f000.png",
+      "skills/holy/hit/f001.png"
+     ],
+     "delays": [
+      200,
+      200
+     ],
+     "pivot": [
+      63,
+      73
+     ],
+     "size": [
+      137,
+      143
+     ]
+    }
+   },
+   "parts": {
+    "effect": {
+     "z": -1
     }
    },
    "actions": [
@@ -14503,6 +16280,58 @@
       60,
       60,
       60
+     ],
+     "pivot": [
+      112,
+      135
+     ],
+     "size": [
+      185,
+      194
+     ]
+    },
+    "ball": {
+     "frames": [
+      "skills/ray/ball/f000.png"
+     ],
+     "delays": [
+      100
+     ],
+     "pivot": [
+      47,
+      10
+     ],
+     "size": [
+      90,
+      19
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/ray/hit/f000.png",
+      "skills/ray/hit/f001.png",
+      "skills/ray/hit/f002.png",
+      "skills/ray/hit/f003.png",
+      "skills/ray/hit/f004.png",
+      "skills/ray/hit/f005.png",
+      "skills/ray/hit/f006.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ],
+     "pivot": [
+      52,
+      60
+     ],
+     "size": [
+      105,
+      114
      ]
     }
    },
@@ -14557,6 +16386,76 @@
       90,
       90,
       90
+     ],
+     "pivot": [
+      178,
+      318
+     ],
+     "size": [
+      356,
+      388
+     ]
+    },
+    "hit": {
+     "frames": [
+      "skills/libra/hit/f000.png",
+      "skills/libra/hit/f001.png",
+      "skills/libra/hit/f002.png",
+      "skills/libra/hit/f003.png",
+      "skills/libra/hit/f004.png",
+      "skills/libra/hit/f005.png",
+      "skills/libra/hit/f006.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ],
+     "pivot": [
+      147,
+      127
+     ],
+     "size": [
+      265,
+      221
+     ]
+    },
+    "affected": {
+     "frames": [
+      "skills/libra/affected/f000.png",
+      "skills/libra/affected/f001.png",
+      "skills/libra/affected/f002.png",
+      "skills/libra/affected/f003.png",
+      "skills/libra/affected/f004.png",
+      "skills/libra/affected/f005.png",
+      "skills/libra/affected/f006.png",
+      "skills/libra/affected/f007.png",
+      "skills/libra/affected/f008.png",
+      "skills/libra/affected/f009.png"
+     ],
+     "delays": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
+     ],
+     "pivot": [
+      144,
+      437
+     ],
+     "size": [
+      279,
+      528
      ]
     }
    },

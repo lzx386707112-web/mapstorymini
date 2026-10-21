@@ -47,7 +47,7 @@ public static class GameplayPlayChecks
             EditorApplication.Exit(SessionState.GetBool(Key + "failed", false) ? 1 : 0);
             return;
         }
-        if (EditorApplication.timeSinceStartup - SessionState.GetFloat(Key + "start", 0) > 60)
+        if (EditorApplication.timeSinceStartup - SessionState.GetFloat(Key + "start", 0) > 180)
         {
             Fail(new Exception("[GameplayPlayChecks] timed out")); return;
         }
@@ -145,7 +145,20 @@ public static class GameplayPlayChecks
                     break;
                 case 5:
                     Require(UnityEngine.Object.FindObjectsOfType<NativeSummon>().Length == 0,"lobby removes summons including detached actors");
+                    if(SessionState.GetBool("MapleDash.CheckAllSkillVfx",false))
+                    {
+                        SessionState.SetBool("MapleDash.CheckAllSkillVfx",false);
+                        new GameObject("SkillVfxRuntimeChecks").AddComponent<SkillVfxRuntimeChecks>();
+                        break;
+                    }
                     Debug.Log("[GameplayPlayChecks] PASS lifecycle / native shop / independent summon origin, lifetime and cleanup");
+                    SessionState.SetInt(Key + "phase", 9);
+                    EditorApplication.ExitPlaymode();
+                    return;
+                case 6:
+                    if(!SkillVfxRuntimeChecks.Done)return;
+                    if(SkillVfxRuntimeChecks.Failure!=null)throw SkillVfxRuntimeChecks.Failure;
+                    Debug.Log("[GameplayPlayChecks] PASS lifecycle and all skill VFX");
                     SessionState.SetInt(Key + "phase", 9);
                     EditorApplication.ExitPlaymode();
                     return;

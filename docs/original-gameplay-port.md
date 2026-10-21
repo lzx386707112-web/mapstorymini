@@ -24,6 +24,17 @@
 - 突进已移除自定义无敌帧，使用原技能攻击参数与推怪路径；角色自身突进与碰撞现已接入，原 EXE 参数核实边界见第二阶段。
 - 动作锁沿用当前原帧时长；完整武器攻速、硬直、跳跃施法限制尚未核实。
 
+## 技能效果部件
+
+资源、播放规则和适配边界统一记录于 [逐技能特效核对](skill-vfx-audit.md)。
+
+特效不能只按 Skill IMG 节点判断是否齐全：斗气死亡断层由服务端额外广播
+`Map/Effect.img/customSkill/deathFault/full`。角色动作也需要解析身体 action/frame 引用；
+未解析 brandish1 会产生缺身体帧，把技能 action 候选列表拼接会造成狂暴攻击重复四遍。
+
+运行时由 `NativeSkillVfx`、`SkillFx`、`SkillVisuals` 和 `SkillSystem` 分别承担资源、播放、调度和判伤。
+资源逐帧比对与实际范围/时序/角色完整性分开验证，不再将“资源加载成功”等同于表现完全一致。
+
 ## 数据及存档
 
 运行 `rtk proxy python3 tools/export_gameplay.py` 可重导出：

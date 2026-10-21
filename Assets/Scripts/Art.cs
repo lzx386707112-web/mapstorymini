@@ -20,10 +20,14 @@ public static class Art
     {
         public Vector2 pivot;              // 像素，左上原点
         public Dictionary<string, object> anims;
+        public Dictionary<string, object> parts;   // 部件的原版标量参数（count/interval/effectDistance）
     }
 
     static readonly Dictionary<string, Sheet> sheets = new Dictionary<string, Sheet>();
     static readonly Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>();
+    // 技能一个 key 下有多个部件（cast / ball / hit / tile ...），每个部件的画布和锚点都不同，
+    // 所以轴心按「帧路径」记录，而不是按整套技能一个 pivot。
+    static readonly Dictionary<string, Vector2> framePivot = new Dictionary<string, Vector2>();
     static Dictionary<string, object> tiles, backs;
 
     // —— 关卡背景（真实地图切片） ——
@@ -321,7 +325,20 @@ public static class Art
             var s = new Sheet { pivot = Vector2.zero };
             s.pivot = ReadVec(node, "pivot");
             s.anims = node.ContainsKey("anims") ? node["anims"] as Dictionary<string, object> : null;
+            s.parts = node.ContainsKey("parts") ? node["parts"] as Dictionary<string, object> : null;
             sheets[kind + "/" + kv.Key] = s;
+
+            // 每个动画自带 pivot（技能部件用）；没有就回落到整套的 pivot（角色/怪物）
+            if (s.anims == null) continue;
+            foreach (var a in s.anims)
+            {
+                var anim = a.Value as Dictionary<string, object>;
+                if (anim == null || !anim.ContainsKey("frames")) continue;
+                var pivot = anim.ContainsKey("pivot") ? ReadVec(anim, "pivot") : s.pivot;
+                var frames = anim["frames"] as List<object>;
+                if (frames == null) continue;
+                foreach (var f in frames) framePivot[f.ToString()] = pivot;
+            }
         }
     }
 
@@ -345,6 +362,9 @@ public static class Art
         Vector2 pivotPx = Vector2.zero;
         Sheet sheet;
         if (sheets.TryGetValue(sheetKey, out sheet)) pivotPx = sheet.pivot;
+        // 技能部件帧（skills/<key>/<part>/f000.png）用的是部件自己的轴心
+        Vector2 own;
+        if (framePivot.TryGetValue(rel, out own)) pivotPx = own;
 
         // manifest 的 pivot 是像素、左上原点；换算出 Unity 的归一化轴心
         return Frame(rel, pivotPx, true);
@@ -416,6 +436,15 @@ public static class Art
     {
         Ensure();
         return sheets.ContainsKey(kind + "/" + key);
+    }
+
+    // 部件里的原版标量参数（special.count / special.interval / tile.effectDistance ...）
+    public static Dictionary<string, object> PartMeta(string kind, string key, string part)
+    {
+        Ensure();
+        Sheet s;
+        if (!sheets.TryGetValue(kind + "/" + key, out s) || s.parts == null) return null;
+        return s.parts.ContainsKey(part) ? s.parts[part] as Dictionary<string, object> : null;
     }
 
     // 角色/怪物没有某个动作时的退化表：怪物没有 walk，只有 move

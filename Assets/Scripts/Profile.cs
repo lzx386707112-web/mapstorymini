@@ -38,9 +38,26 @@ public static class Profile
         if (ClassDefs.Get(data.cls).id != data.cls) data.cls = "knight";
         if (data.outfit == null || !CosmeticFactory.OutfitColors.ContainsKey(data.outfit)) data.outfit = "none";
         if (!WeaponDefs.CanEquip(WeaponDefs.Get(data.equipWeapon),data.attributes,data.cls)) data.equipWeapon = "1302000";
+
+        // 自动化测试用：临时覆盖职业，只影响本次运行，绝不写回存档。
+        // 注意光在这里改 data.cls 是不够的 —— 游戏过程中任何一次 Save() 都会把
+        // 覆盖后的职业写进真实存档（截图脚本跑完，玩家职业就被换掉了）。
+        string debugCls = UnityEngine.PlayerPrefs.GetString("debug_cls", "");
+        if (!string.IsNullOrEmpty(debugCls) && ClassDefs.Get(debugCls).id == debugCls)
+        {
+            data.cls = debugCls;
+            debugOverride = true;
+        }
     }
 
-    public static void Save() => LastSaveSucceeded = LocalProfileStore.Save(Data);
+    // 覆盖期间整段禁用落盘：自动化测试不产生任何存档副作用。
+    static bool debugOverride;
+
+    public static void Save()
+    {
+        if (debugOverride) { LastSaveSucceeded = true; return; }
+        LastSaveSucceeded = LocalProfileStore.Save(Data);
+    }
     public static void AddGold(int amount) { Data.AddGold(amount); Save(); }
     public static void GrantExperience(int amount)
     {

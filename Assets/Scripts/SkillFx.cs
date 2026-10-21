@@ -1,77 +1,74 @@
-using System.Collections.Generic;
 using UnityEngine;
 
-// 技能特效：把 skills/<key>/cast 那一段原版动画，按原版 delay 播一遍就销毁。
-//
-// 单例化到这一份（SkillSystem 只负责「何时施法、打谁」，不持有特效逻辑）：
-//   - 锚点：WZ 里技能特效的 origin 就是「挂在角色原点（脚底）」的那个点，
-//     所以施法时把特效放在角色脚底上方一点（SkillSystem.CastAt 已抬 0.5 世界单位），
-//     特效自然从角色身上向四周炸开。
-//   - 朝向：Skill.wz 的 effect 美术是按「朝右」画的（爆炎向 +x 扩散、剑气向 +x 炸开），
-//     所以向左释放时翻转（flipX = facing<0），「前方」永远和角色朝向一致。
-//   - 大小：按「目标世界高度」缩放，不同特效给不同倍率，避免火焰/剑气被压成贴纸。
-//   - 跟随：突进这类位移技能可挂 follow，让特效跟着施法者走。
+// 原 IMG 分支/帧元数据直接播放，不再只消费旧 manifest 的 cast。
 public class SkillFx : MonoBehaviour
 {
-    Art.Clip clip;
+    NativeVfxClip clip;
     SpriteRenderer sr;
-    float speed = 1f;
-    float t;
-    int i;
+    float speed=1, frameElapsed;
+    int index, baseOrder;
+    bool loop, hasFollow;
+    EnemyUnit enemy;
+    BossUnit boss;
+    public Transform follow;
+    public float followOffsetX;
+    Vector3 followOffset;
+    public string SkillKey { get; private set; }
+    public string Part => clip.path;
+    public Sprite CurrentSprite => sr.sprite;
+    public static SkillFx Play(string key,Vector3 anchor,int facing,float speed=1,int order=360)
+        => PlayPart(key,"effect",anchor,facing,speed,order);
 
-    public static SkillFx Play(string key, Vector3 anchor, int facing, float speed = 1f, int order = 360)
+    public static SkillFx PlayPart(string key,string part,Vector3 anchor,int facing,float speed=1,int order=360,bool loop=false)
     {
-        if (string.IsNullOrEmpty(key) || !Art.Has("skills", key)) return null;
-        var clip = Art.GetClip("skills", key, "cast");
-        if (clip == null || clip.frames.Length == 0) return null;
-
-        var go = new GameObject("SkillFx_" + key);
-        go.transform.position = anchor;
-
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sortingOrder = order;
-        // 朝向规则必须与角色完全一致：原版素材朝左，朝右（facing>0）时翻转。
-        // 之前用 facing<0 与角色方向相反，所以剑士释放时特效总在角色背面。
-        sr.flipX = facing > 0;
-
-        var fx = go.AddComponent<SkillFx>();
-        fx.clip = clip;
-        fx.sr = sr;
-        fx.speed = Mathf.Max(0.1f, speed);
-
-        // 原版 1:1：WZ 里特效多少像素，游戏里就显示多大（PPU=40）。
-        // 之前按「目标高度」压缩（如 flame 压到 4.6u ≈ 原尺寸 1/5），所以特效小得像贴纸。
-        sr.sprite = Art.Frame(clip.frames[0]);
-        go.transform.localScale = Vector3.one;
-
-        // 播完就销毁；多留 0.1s 给最后一帧停留
-        Object.Destroy(go, clip.Duration / fx.speed + 0.1f);
+        part=NativeSkillVfx.Alias(part);
+        var clip=NativeSkillVfx.Get(key,part);
+        if(clip==null)
+        {
+            var alternatives=NativeSkillVfx.Parts(key,part);
+            if(alternatives.Count==0) return null;
+            clip=alternatives[0];
+        }
+        var go=new GameObject("SkillFx_"+key+"_"+clip.path.Replace('/','_'));
+        go.transform.position=anchor;
+        var fx=go.AddComponent<SkillFx>();fx.clip=clip;fx.SkillKey=key;fx.speed=Mathf.Max(.1f,speed);fx.loop=loop;fx.baseOrder=order;
+        fx.sr=go.AddComponent<SpriteRenderer>();
+        fx.sr.flipX=facing>0;
+        fx.ShowFrame();
+        if(fx.sr.sprite==null){Destroy(go);return null;}
         return fx;
     }
-
-    // 让特效跟着角色走（突进这类位移技能）：每帧把 x 对齐施法者
-    public Transform follow;
-    public float followX;
-    public bool  followMove;
-
+    public void Follow(Transform target)
+    {
+        follow=target;hasFollow=true;enemy=target.GetComponent<EnemyUnit>();boss=target.GetComponent<BossUnit>();followOffset=transform.position-target.position;
+    }
+    public void Stop() { gameObject.SetActive(false); Destroy(gameObject); }
+    void ShowFrame()
+    {
+        var f=clip.frames[index];sr.sprite=Art.FrameAt(f.file,f.origin);sr.sortingOrder=baseOrder+f.z;
+        sr.color=new Color(1,1,1,f.alpha0);
+    }
     void Update()
     {
-        if (clip == null) return;
-
-        if (followMove && follow != null)
+        if(clip==null)return;
+        if(hasFollow && (follow==null || !follow.gameObject.activeInHierarchy || (enemy!=null && enemy.dead) || (boss!=null && boss.dead)))
         {
-            var p = transform.position;
-            p.x = follow.position.x + followX;
-            transform.position = p;
+            // 头顶循环状态随目标结束；一次性命中动画在最后位置播完。
+            if(loop){Stop();return;}
+            follow=null;hasFollow=false;
         }
-
-        t += Time.deltaTime * speed;
-        while (i < clip.frames.Length - 1 && t >= clip.delays[i])
+        if(follow!=null)transform.position=follow.position+followOffset+Vector3.right*followOffsetX;
+        float dt=Time.deltaTime*speed;frameElapsed+=dt;
+        while(frameElapsed>=clip.frames[index].delay)
         {
-            t -= clip.delays[i];
-            i++;
-            var sp = Art.Frame(clip.frames[i]);
-            if (sp != null) sr.sprite = sp;
+            frameElapsed-=clip.frames[index].delay;index++;
+            if(index>=clip.frames.Length)
+            {
+                if(!loop){Stop();return;}
+                index=0;
+            }
+            ShowFrame();
         }
+        var f=clip.frames[index];sr.color=new Color(1,1,1,Mathf.Lerp(f.alpha0,f.alpha1,frameElapsed/f.delay));
     }
 }

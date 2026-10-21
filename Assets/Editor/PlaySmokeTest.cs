@@ -70,6 +70,7 @@ public static class PlaySmokeTest
         int width = 960, height = 540;
         bool cast = false;
         string shots = "";
+        string cls = "";
         float shotEvery = 4f;
         var args = System.Environment.GetCommandLineArgs();
         for (int i = 0; i < args.Length - 1; i++)
@@ -80,8 +81,17 @@ public static class PlaySmokeTest
             if (args[i] == "-smokeDuration") int.TryParse(args[i + 1], out dur);
             if (args[i] == "-smokeShots") shots = args[i + 1];
             if (args[i] == "-smokeCast") cast = args[i + 1] != "0";
+            // 按职业跑：不同职业的四格技能覆盖不同的效果部件（弹道/落矢/地火/流星）
+            if (args[i] == "-smokeClass") cls = args[i + 1];
             // 伤害数字只活 0.95s，默认 4s 一张根本抓不到；核对数字时传 0.5 连拍
             if (args[i] == "-smokeShotEvery") float.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out shotEvery);
+        }
+
+        if (!string.IsNullOrEmpty(cls))
+        {
+            // debug_cls 只覆盖本次运行的职业，不碰玩家存档（存档快照优先于 mxd.cls）
+            PlayerPrefs.SetString("debug_cls", cls);
+            EditorPrefs.SetBool("PlaySmoke.clsRestore", true);
         }
 
         EditorPrefs.SetInt("PlaySmoke.width", Mathf.Max(320, width));
@@ -248,6 +258,12 @@ public static class PlaySmokeTest
 
     static void Finish(int code)
     {
+        if (EditorPrefs.GetBool("PlaySmoke.clsRestore", false))
+        {
+            PlayerPrefs.DeleteKey("debug_cls");
+            PlayerPrefs.Save();
+            EditorPrefs.DeleteKey("PlaySmoke.clsRestore");
+        }
         EditorPrefs.DeleteKey(K_RUN);
         EditorApplication.update -= Tick;
         if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();

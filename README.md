@@ -154,13 +154,32 @@ Unity 里的设置顺序（装好 Android Build Support 之后）：
 - 运行时：`Art.cs`（贴图/Sprite/轴心）、`SpriteAnim.cs`（逐帧动画）、`Backdrop.cs`（天空+视差+地面）。
 - 轴心：角色取 WZ 的 navel（脚底中线），怪物取 canvas 的 `origin`；没有素材时自动退回纯色方块。
 
+### 技能特效（每个技能按原版拆部件）
+
+资源由 `tools/export_skill_vfx.py` 从 Skill IMG 和服务端引用的 Map/Effect IMG 导出到
+`GameplaySkillVfx.json` / `Art/NativeSkillVfx/`。角色技能动作由 `tools/wz_actions.py` 解析身体
+`action/frame` 引用后合成，候选动作不作为重复连播序列。
+
+运行时 `SkillFx` 播放原帧，`SkillVisuals` 处理释放、落矢、弹道与全屏层，`SkillSystem` 负责判定。
+烈火箭/箭雨按原攻击框进行范围攻击，火焰箭等使用独立远程目标范围。
+斗气死亡断层额外使用原 `Map/Effect.img/customSkill/deathFault/full` 全屏动画。
+原图验证、各技能接入及仍属本地适配的参数详见 [逐技能核对](docs/skill-vfx-audit.md)。
+
+```sh
+rtk proxy python3 tools/export_skill_vfx.py
+rtk proxy python3 tools/verify_skill_vfx.py
+```
+
 自动截图（验证画面用）：
 
 ```sh
 /Applications/Unity/Unity.app/Contents/MacOS/Unity -batchmode -projectPath "$PWD" \
-  -executeMethod PlaySmokeTest.Run -smokeLevel 1 -smokeDuration 12 -smokeShots /tmp/shots
+  -executeMethod PlaySmokeTest.Run -smokeLevel 1 -smokeDuration 12 -smokeShots /tmp/shots \
+  -smokeCast 1 -smokeShotEvery 0.4 -smokeClass mage
 ```
 `-smokeLevel` 是关卡索引（0=1-1 … 3=1-4），截图走 RenderTexture，batchmode 下也能出图。
+`-smokeCast 1` 每 2.2 秒按顺序放四格技能，`-smokeClass` 指定职业（knight/warrior/mage/archer/priest），
+用来逐个职业核对释放、弹道、命中部件。
 
 
 ## 原客户端地图显示处理

@@ -311,7 +311,8 @@ public class BossUnit : MonoBehaviour
         TakeHit(CombatRules.Resolve(dmg), fromDir);
     }
 
-    public void TakeHit(DamageResult hit, int fromDir)
+    // nativeHit：技能已用原版 hit 部件打爆点，跳过得占位的柔光
+    public void TakeHit(DamageResult hit, int fromDir, bool nativeHit = false)
     {
         if (dead || hit.Amount <= 0) return;
         bool crit = hit.Critical;
@@ -323,8 +324,9 @@ public class BossUnit : MonoBehaviour
             body.color = Color.white;
             flashT = HitFeel.FlashDur;
         }
-        Fx.Burst(transform.position + Vector3.up * 0.9f, crit ? 0.7f : 0.5f,
-                 new Color(1f, 0.85f, 0.4f, 0.9f));
+        if (!nativeHit)
+            Fx.Burst(transform.position + Vector3.up * 0.9f, crit ? 0.7f : 0.5f,
+                     new Color(1f, 0.85f, 0.4f, 0.9f));
 
         // Boss 体积大，数字要压到头顶，否则会被身体挡住
         float top = body != null && body.sprite != null

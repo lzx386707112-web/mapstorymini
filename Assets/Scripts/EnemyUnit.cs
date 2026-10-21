@@ -190,7 +190,8 @@ public class EnemyUnit : MonoBehaviour
         TakeHit(CombatRules.Resolve(dmg), fromDir);
     }
 
-    public void TakeHit(DamageResult hit, int fromDir)
+    // nativeHit：技能已经用原版 hit 部件打了爆点，这里就不再叠占位的黄色柔光
+    public void TakeHit(DamageResult hit, int fromDir, bool nativeHit = false)
     {
         if (dead || hit.Amount <= 0) return;
         bool crit = hit.Critical;
@@ -200,8 +201,9 @@ public class EnemyUnit : MonoBehaviour
         knockV = fromDir * HitFeel.Knockback * 14f;
         Fx.Flash(body, Color.white);
         if (vis != null) vis.PlayOnce("hit", 1.4f);
-        Fx.Burst(transform.position + Vector3.up * 0.7f, crit ? 0.6f : 0.45f,
-                 new Color(1f, 0.9f, 0.5f, 0.9f));
+        if (!nativeHit)
+            Fx.Burst(transform.position + Vector3.up * 0.7f, crit ? 0.6f : 0.45f,
+                     new Color(1f, 0.9f, 0.5f, 0.9f));
 
         DamageText.Show(HeadPos, real, crit ? "cri" : "red", crit ? 1.08f : 1f);
         if (crit) HitFeel.Punch(1.35f);

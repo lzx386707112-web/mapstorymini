@@ -88,7 +88,8 @@ def char_anims(cfg):
             "rope": ["rope"], "ladder": ["ladder"], "atk": [cfg["atk"]], "hit": ["alert"], "die": ["dead"]}
     key = next(key for key, value in CHARS.items() if value is cfg)
     for skill in SKILL_KEYS[key]:
-        if SKILL_ACTIONS.get(skill): result["skill_"+skill] = SKILL_ACTIONS[skill]
+        if SKILL_ACTIONS.get(skill): result["skill_"+skill] = SKILL_ACTIONS[skill][:1]
+        if SKILL_ACTIONS.get(skill+"_prepare"): result["skill_"+skill+"_prepare"] = SKILL_ACTIONS[skill+"_prepare"][:1]
     return result
 
 def extract_char(key: str, cfg: dict, out_root: str, renderer: CharacterRenderer,
@@ -126,10 +127,26 @@ def extract_char(key: str, cfg: dict, out_root: str, renderer: CharacterRenderer
                     dly = num(node.get(str(f)), "delay", 120)
                 frames_meta.append((anim, pose, f, max(1, abs(dly))))
 
+    def resolve_frame(pose, frame):
+        # Body actions such as brandish1/alert4 redirect to real action/frame pairs.
+        seen=set()
+        while (pose,frame) not in seen:
+            seen.add((pose,frame))
+            node=body.get(f"{pose}/{frame}")
+            action=node.get("action") if node else None
+            if action is None: return pose,frame
+            pose=str(action.value); frame=num(node,"frame",0)
+        raise ValueError("Cyclic character action")
+
     def compose(ids, pose, frame, bbox):
         # CharacterRenderer puts navel at (0,0); the client positions the body
         # canvas origin at the foothold. Restore that frame's native map/navel.
-        pose = renderer.detect_pose(ids, pose)
+        pose,frame = resolve_frame(pose,frame)
+        # Forced F attacks are omitted from the renderer UI pose whitelist.
+        # Resolve the weapon's one/two-handed swing variant, never fall back to stand.
+        weapon=wzmap._wz("Character/Weapon/"+ids[-1])
+        if weapon.get(pose) is None and pose.startswith("swingO") and weapon.get(pose.replace("swingO","swingT",1)) is not None:
+            pose=pose.replace("swingO","swingT",1)
         hidden, slots, tokens = renderer._cap_hair_filter(ids)
         placements = renderer._build_placements(ids, pose, DEFAULT_EAR_TYPE, hidden, slots, tokens, frame)
         base = next((p for p in placements if p.category == "Body" and p.name == "body"), None)
@@ -208,6 +225,9 @@ def main():
         action = node.get("action") if node else None
         poses = [str(c.value) for c in action.children()] if action else []
         SKILL_ACTIONS[key] = [pose for pose in poses if body.get(pose) is not None]
+        prepare=node.get("prepare/action") if node else None
+        if prepare is not None and body.get(str(prepare.value)) is not None:
+            SKILL_ACTIONS[key+"_prepare"]=[str(prepare.value)]
         skill["actions"] = poses
     renderer = CharacterRenderer(open_wz(os.path.join(DATA,"Character"),region=REGION))
     for key, cfg in CHARS.items():

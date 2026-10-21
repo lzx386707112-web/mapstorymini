@@ -107,16 +107,24 @@ public class PlayerCtrl : MonoBehaviour
 
     // 技能系统的施法动画入口。SpriteAnim 挂在 Art.Attach 建的子节点上，
     // GetComponent<SpriteAnim>() 在根节点上找不到——之前技能因此完全没有角色动作。
-    public void PlaySkill(string skill)
+    public void PlaySkill(string skill,float phaseDuration=0)
     {
         if (vis == null || IsClimbing) return;
         string action = "skill_" + skill;
         if (Art.GetClip(vis.kind, vis.key, action) == null) action = "atk";
-        var clip = Art.GetClip(vis.kind, vis.key, action);
-        SkillActionDuration = 0f;
-        if (clip != null) foreach (float delay in clip.delays) SkillActionDuration += delay;
-        if (SkillActionDuration <= 0f) SkillActionDuration = attackInterval;
-        vis.PlayOnce(action);
+        SkillActionDuration = GetSkillActionDuration(skill);
+        float playbackSpeed=phaseDuration>0 ? SkillActionDuration/phaseDuration : 1;
+        if(phaseDuration>0)SkillActionDuration=phaseDuration;
+        vis.PlayOnce(action,playbackSpeed);
+    }
+
+    public float GetSkillActionDuration(string skill)
+    {
+        if(vis==null)return attackInterval;
+        var clip=Art.GetClip(vis.kind,vis.key,"skill_"+skill) ?? Art.GetClip(vis.kind,vis.key,"atk");
+        float duration=0;
+        if(clip!=null)foreach(float delay in clip.delays)duration+=delay;
+        return duration>0 ? duration : attackInterval;
     }
 
     float laneVis;
