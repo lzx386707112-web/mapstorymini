@@ -1,231 +1,178 @@
 using System.Collections;
-using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
-public class SkillDef
+public sealed class SkillDef
 {
-    public string name;
-    public string icon = "";        // skills/<icon>/icon.png 原版图标
-    public string art = "";         // skills/<art>/cast 真实释放特效（空=仅程序化特效）
-    public float  cd;
-    public float  left;
-    public string hint;
-    public Color  color;
-    public SkillEffect effect;
-    public float  dmg;              // 普攻倍数
-    public float  range;
-    public float  extra;            // 眩晕/治疗/增益时长
-    public System.Action<SkillSystem> cast;
+    public readonly string name, icon, art, hint;
+    public readonly NativeSkillDefinition native;
+    public float cd => native.Cooldown;
+    public SkillDef(ClassSkill presentation, NativeSkillDefinition definition)
+    {
+        name = presentation.name; art = presentation.art;
+        icon = string.IsNullOrEmpty(presentation.icon) ? art : presentation.icon;
+        native = definition;
+        hint = "Lv." + native.Level + " MP " + native.MpCost;
+    }
 }
 
-// 四格技能：构成循环，不能四个都长 CD。
-// 技能配置来自 ClassDefs（每职业一套），这里只按 effect 类型播放，不写死职业逻辑。
-// 数值都用「玩家普攻的倍数 / 世界单位」，方便统一调参。
+// 配置只读，冷却每个角色独立；Fire 不是对外入口，UI 无法绕过施法校验。
 public class SkillSystem : MonoBehaviour
 {
-    public SkillDef[] skills = new SkillDef[4];
+    public IReadOnlyList<SkillDef> skills => definitions.AsReadOnly();
+    readonly List<SkillDef> definitions = new List<SkillDef>();
+    Dictionary<int, SkillRuntimeState> states = new Dictionary<int, SkillRuntimeState>();
     PlayerCtrl p;
+    float actionUntil;
+    NativeSummon summon;
 
     void Awake()
     {
         p = GetComponent<PlayerCtrl>();
-        Profile.Load();
-        var def = ClassDefs.Get(Profile.cls);
-        for (int i = 0; i < 4; i++)
+        foreach (var slot in ClassDefs.Get(Profile.cls).skills)
         {
-            int idx = i;
-            var cs = def.skills[i];
-            skills[idx] = new SkillDef
-            {
-                name = cs.name, cd = cs.cd, hint = cs.hint, color = cs.color,
-                effect = cs.effect, dmg = cs.dmg, range = cs.range, extra = cs.extra,
-                art = cs.art,
-                // 图标独立配置（每技能一个原版图标）；没配时退回特效 key 的图标
-                icon = !string.IsNullOrEmpty(cs.icon) ? cs.icon : cs.art,
-                cast = sys => sys.Fire(sys.skills[idx]),
-            };
+            var native = NativeSkillCatalog.Get(slot.art);
+            if (native == null) throw new System.InvalidOperationException("缺少技能等级数据：" + slot.art);
+            definitions.Add(new SkillDef(slot, native));
+            if (!states.ContainsKey(native.Id)) states.Add(native.Id, new SkillRuntimeState());
         }
     }
 
-    void Update()
+    public float Remaining(int slot) => (float)states[definitions[slot].native.Id].Remaining(Time.realtimeSinceStartupAsDouble);
+    // 主角表现重建不代表新建角色：大厅往返不能绕过原角色的冷却。
+    public void BindCooldowns(Dictionary<int, SkillRuntimeState> characterStates)
     {
-        float dt = Time.deltaTime;
-        if (dt <= 0f) return;
-        for (int i = 0; i < skills.Length; i++)
-            if (skills[i].left > 0f) skills[i].left = Mathf.Max(0f, skills[i].left - dt);
+        states = characterStates;
+        foreach (var definition in definitions)
+            if (!states.ContainsKey(definition.native.Id)) states.Add(definition.native.Id, new SkillRuntimeState());
     }
-
-    public bool TryCast(int i)
+    public bool TryCast(int slot)
     {
-        if (i < 0 || i >= skills.Length || (p != null && p.IsClimbing)) return false;
-        var s = skills[i];
-        if (s.left > 0f) return false;
-        s.left = s.cd;
-        s.cast(this);
+        var game = GameLoop.I;
+        if (slot < 0 || slot >= definitions.Count || p == null || p.hp <= 0 || p.IsClimbing ||
+            game == null || game.state != GameLoop.GameState.Playing || game.gameOver ||
+            Time.unscaledTime < actionUntil) return false;
+        var s = definitions[slot];
+        if (p.mp < s.native.MpCost || !states[s.native.Id].TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return false;
+        p.mp -= s.native.MpCost;
+        p.PlaySkill(s.art);
+        // 无冷却技能仍受角色动作时长限制，不允许一帧多次施法。
+        actionUntil = Time.unscaledTime + p.SkillActionDuration;
+        if (s.native.Kind == "Buff") p.AddAttackBonus(s.native.AttackBuff, s.native.Duration);
+        else if (s.native.Kind == "Summon")
+        {
+            if (summon != null) { summon.gameObject.SetActive(false); Destroy(summon.gameObject); }
+            summon = NativeSummon.Spawn(this, p, s);
+        }
+        else if (s.art == "dash") StartCoroutine(Rush(s));
+        else StartCoroutine(Cast(s));
+        if (!string.IsNullOrEmpty(s.art)) SkillFx.Play(s.art, p.FeetPos, p.facing);
         return true;
     }
 
-    // —— 伤害结算的复用片段 ——
-    float Dmg(SkillDef s) => p.attackDamage * s.dmg;
-
-    void HitMobs(float dmg, float maxDx, int laneTol, bool frontal, float stun = 0f)
+    IEnumerator Cast(SkillDef s)
     {
-        foreach (var e in EnemyUnit.All.ToArray())
+        if (s.art == "rupture") yield return new WaitForSecondsRealtime(1f);
+        if (s.art == "illusion")
         {
-            if (e == null || e.dead) continue;
-            if (Mathf.Abs(e.Lane - p.lane) > laneTol) continue;
-            float dx = e.transform.position.x - p.worldX;
-            if (frontal && dx * p.facing < -0.5f) continue;
-            if (Mathf.Abs(dx) > maxDx) continue;
-            e.TakeDamage(dmg, dx >= 0f ? 1 : -1);
-            if (stun > 0f) e.Stun(stun);
-        }
-    }
-
-    // Boss 不在 EnemyUnit.All 里（状态机/硬直窗口不同），单独判一次
-    void HitBosses(float dmg, float range, bool stun, float stunSec, bool frontOnly)
-    {
-        foreach (var b in FindObjectsOfType<BossUnit>())
-        {
-            if (b == null || b.dead) continue;
-            if (Mathf.Abs(b.Lane - p.lane) > 1) continue;
-            float dx = b.transform.position.x - p.worldX;
-            if (frontOnly && dx * p.facing < -1.2f) continue;
-            if (Mathf.Abs(dx) <= range)
+            // CloseRangeDamageHandler.SWORD_ILLUSION_*_TIMES_MS；子技能使用独立参数。
+            int[] times = {1320,1470,1590,1710,1800,1950,2070,2190,2280,2430,2550,2670,2790,2820,2880,2940,3000};
+            int previous = 0;
+            foreach (int at in times)
             {
-                b.TakeDamage(dmg, dx >= 0f ? 1 : -1);
-                if (stun) b.Stun(stunSec);
+                yield return new WaitForSecondsRealtime((at - previous) / 1000f);
+                previous = at;
+                Hit(s, NativeSkillCatalog.Get(at <= 2670 ? "illusion_slash" : "illusion_explosion"));
             }
         }
+        else Hit(s, s.native);
     }
 
-    // —— 总调度 ——
-    public void Fire(SkillDef s)
+    IEnumerator Rush(SkillDef s)
     {
-        p.PlaySkill(s.art);
-        switch (s.effect)
+        p.BeginRush(s.native, p.SkillActionDuration);
+        var struck = new HashSet<int>();
+        HitAt(s,s.native,p.FeetPos,p.facing,struck);
+        while (p.IsRushing)
         {
-            case SkillEffect.Sweep: CastSweep(s); break;
-            case SkillEffect.Bolt:  CastBolt(s);  break;
-            case SkillEffect.Dash:  CastDash(s);  break;
-            case SkillEffect.Aoe:   CastAoe(s);   break;
-            case SkillEffect.Nova:  CastNova(s);  break;
-            case SkillEffect.Heal:  CastHeal(s);  break;
-            case SkillEffect.Buff:  CastBuff(s);  break;
-        }
-    }
-
-    // 角色脚底：WZ 技能特效的 origin 就是相对角色原点（脚底）存的，
-    // 1:1 复刻下锚点直接落在 FeetPos，特效位置和原版逐像素一致
-    Vector3 CastAt() => new Vector3(p.worldX, p.FeetPos.y, 0f);
-
-    // 身前扇形 AoE
-    void CastSweep(SkillDef s)
-    {
-        SkillFx.Play(s.art, CastAt(), p.facing);
-        HitFeel.Punch(1.2f);
-        HitMobs(Dmg(s), s.range, 1, true);
-        HitBosses(Dmg(s), s.range, false, 0f, true);
-    }
-
-    // 远程直线打击（带飞行特效，命中沿途敌人）
-    void CastBolt(SkillDef s)
-    {
-        SkillFx.Play(s.art, CastAt(), p.facing);
-        HitFeel.Punch(1.0f);
-        HitMobs(Dmg(s), s.range, 1, true, s.extra > 0f ? s.extra : 0f);
-        HitBosses(Dmg(s), s.range, s.extra > 0f, s.extra, true);
-        StartCoroutine(BoltFx(s));
-    }
-
-    IEnumerator BoltFx(SkillDef s)
-    {
-        float t = 0f, dur = 0.22f;
-        float x0 = p.worldX + p.facing * 0.4f;
-        float x1 = p.worldX + p.facing * s.range;
-        while (t < dur)
-        {
-            t += Time.deltaTime;
-            float k = t / dur;
-            Vector3 pos = new Vector3(Mathf.Lerp(x0, x1, k), p.FeetPos.y + 0.9f, 0f);
-            var sr = Fx.Quad("Bolt", pos, FxTex.Glow(), new Vector2(0.5f, 0.5f), s.color, 360);
-            sr.gameObject.AddComponent<FxLife>().life = 0.12f;
             yield return null;
+            HitAt(s,s.native,p.FeetPos,p.facing,struck);
         }
     }
 
-    // 突进 + 无敌帧
-    void CastDash(SkillDef s)
+    bool InRange(Vector3 position, NativeSkillDefinition d, Vector2 origin, int facing)
     {
-        StartCoroutine(DashRoutine(s));
-    }
-
-    IEnumerator DashRoutine(SkillDef s)
-    {
-        float from = p.worldX;
-        float to = PlayerCtrl.ClampX(p.worldX + p.facing * s.range);
-        p.invulnUntil = Time.unscaledTime + 0.35f;
-        SkillFx.Play(s.art, CastAt(), p.facing);
-
-        float t = 0f;
-        while (t < 0.16f)
+        var delta = (Vector2)position - origin;
+        float x = delta.x * facing;
+        // WZ 左朝向攻击框，世界坐标 Y 向上。
+        Vector2 min = d.Min, max = d.Max;
+        if (d.Kind == "Summon")
         {
-            t += Time.deltaTime;
-            p.worldX = Mathf.Lerp(from, to, t / 0.16f);
-            yield return null;
+            var info = (Dictionary<string,object>)((Dictionary<string,object>)NativeCombatData.Root["summon"])["info"];
+            var lt = (List<object>)info["lt"]; var rb = (List<object>)info["rb"];
+            min = new Vector2(System.Convert.ToSingle(lt[0]),System.Convert.ToSingle(lt[1])) / Art.PPU;
+            max = new Vector2(System.Convert.ToSingle(rb[0]),System.Convert.ToSingle(rb[1])) / Art.PPU;
         }
-        p.worldX = to;
-        HitFeel.Punch(1.3f);
-        foreach (var e in EnemyUnit.All.ToArray())
+        return x >= -max.x && x <= -min.x && delta.y >= -max.y && delta.y <= -min.y;
+    }
+
+    void Hit(SkillDef s, NativeSkillDefinition d) => HitAt(s,d,p.FeetPos,p.facing);
+
+    internal int HitAt(SkillDef s, NativeSkillDefinition d, Vector2 origin, int facing, HashSet<int> struck = null)
+    {
+        if (d == null || p == null || p.hp <= 0 || GameLoop.I == null || GameLoop.I.gameOver ||
+            GameLoop.I.state != GameLoop.GameState.Playing) return 0;
+        var targets = new List<Component>();
+        foreach (var b in FindObjectsOfType<BossUnit>()) if (!b.dead && InRange(b.transform.position, d, origin, facing)) targets.Add(b);
+        foreach (var e in EnemyUnit.All) if (!e.dead && InRange(e.transform.position, d, origin, facing)) targets.Add(e);
+        targets.Sort((a, b) =>
         {
-            if (e == null || e.dead) continue;
-            if (Mathf.Abs(e.Lane - p.lane) > 1) continue;
-            if (e.transform.position.x > Mathf.Min(from, to) && e.transform.position.x < Mathf.Max(from, to))
-                e.TakeDamage(Dmg(s), p.facing);
-        }
-        HitBosses(Dmg(s), Mathf.Abs(to - from) * 0.5f + 1.5f, false, 0f, false);
-    }
-
-    // 震地：范围 + 眩晕
-    void CastAoe(SkillDef s)
-    {
-        SkillFx.Play(s.art, CastAt(), p.facing);
-        HitFeel.Punch(1.6f);
-        HitMobs(Dmg(s), s.range, 2, false, s.extra);
-        HitBosses(Dmg(s), s.range, s.extra > 0f, s.extra, false);
-    }
-
-    // 全屏爆发
-    void CastNova(SkillDef s)
-    {
-        SkillFx.Play(s.art, CastAt(), p.facing);
-        HitFeel.Punch(2.2f);
-        foreach (var e in EnemyUnit.All.ToArray())
+            if (s.art == "illusion" && (a is BossUnit) != (b is BossUnit)) return a is BossUnit ? -1 : 1;
+            return (a.transform.position - (Vector3)origin).sqrMagnitude.CompareTo((b.transform.position - (Vector3)origin).sqrMagnitude);
+        });
+        targets.RemoveAll(t => struck != null && struck.Contains(t.GetInstanceID()));
+        int count = d.Kind == "Summon" ? NativeCombatData.Int((Dictionary<string,object>)((Dictionary<string,object>)NativeCombatData.Root["summon"])["info"],"count",1) : d.TargetCount;
+        if (struck != null) count = Mathf.Max(0,count-struck.Count);
+        int hits = Mathf.Min(count, targets.Count);
+        for (int i = 0; i < hits; i++)
         {
-            if (e == null || e.dead) continue;
-            e.TakeDamage(Dmg(s), e.transform.position.x >= p.worldX ? 1 : -1);
+            var e = targets[i] as EnemyUnit;
+            var b = targets[i] as BossUnit;
+            int direction = targets[i].transform.position.x >= origin.x ? 1 : -1;
+            struck?.Add(targets[i].GetInstanceID());
+            if (d.Kind == "Dispel")
+            {
+                if (e != null && Random.value < d.Probability) e.SealSkills(d.Duration);
+                continue;
+            }
+            if (d.Kind == "Pull")
+            {
+                if (e != null && Random.value < d.Probability) e.PullTowards(p.worldX);
+                continue;
+            }
+            for (int hit = 0; hit < d.HitCount; hit++)
+            {
+                var result = p.RollAttack(e != null ? e.CombatStats : b.CombatStats, d);
+                if (e != null) e.TakeHit(result, direction);
+                else if (b != null) b.TakeHit(result, direction);
+            }
+            if (e != null)
+            {
+                if ((s.art == "roar" || s.art == "chain") && Random.value < d.Probability)
+                    e.Stun(d.Duration * (s.art == "chain" ? 2 : 1));
+                if (s.art == "dragon" || s.art == "dash") e.Push(direction, d);
+            }
         }
-        HitBosses(Dmg(s), 999f, false, 0f, false);
+        return hits;
     }
 
-    // 自我治疗：原版圣光/群体治愈也有自己的 effect 帧，一并播放
-    void CastHeal(SkillDef s)
+    // 换地图/死亡取消飞行、延迟命中和召唤；冷却保留在角色状态中，不写回配置。
+    public void CancelActions()
     {
-        if (!string.IsNullOrEmpty(s.art)) SkillFx.Play(s.art, CastAt(), p.facing);
-        p.Heal(s.extra);
-        Fx.Burst(new Vector3(p.worldX, p.FeetPos.y + 1.0f, 0f), 1.1f, s.color, 0.4f);
-        DamageText.Show(new Vector3(p.FeetPos.x, p.FeetPos.y + 2.55f, 0f), s.extra, "blue", 0.9f);
+        StopAllCoroutines();
+        if (summon != null) { summon.gameObject.SetActive(false); Destroy(summon.gameObject); }
+        summon = null; actionUntil = 0;
+        if (p != null) p.CancelRush();
     }
-
-    // 自我增益（攻击力）：愤怒之火等 buff 技能同样带原版 effect 帧
-    void CastBuff(SkillDef s)
-    {
-        if (!string.IsNullOrEmpty(s.art)) SkillFx.Play(s.art, CastAt(), p.facing);
-        p.AddAtkBuff(1.6f, s.extra);
-        Fx.Ring(new Vector3(p.worldX, p.FeetPos.y + 0.4f, 0f), 1.4f, s.color, 0.35f);
-    }
-
-    // 兼容旧接口（若有其它地方直接调用）
-    Vector3 Anchor => (Vector3)p.FeetPos + Vector3.up * (21f / 40f);
+    void OnDisable() => CancelActions();
 }
-

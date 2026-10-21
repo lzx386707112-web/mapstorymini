@@ -1,0 +1,9595 @@
+{
+  "skills": [
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "dash",
+      "id": 1121006,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 72,
+          "hs": "h1",
+          "lt": [
+            -160,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 22,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 2,
+          "damage": 74,
+          "hs": "h2",
+          "lt": [
+            -160,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 24,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 3,
+          "damage": 76,
+          "hs": "h3",
+          "lt": [
+            -160,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 26,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 4,
+          "damage": 78,
+          "hs": "h4",
+          "lt": [
+            -170,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 28,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 5,
+          "damage": 80,
+          "hs": "h5",
+          "lt": [
+            -170,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 30,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 6,
+          "damage": 82,
+          "hs": "h6",
+          "lt": [
+            -170,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 32,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 7,
+          "damage": 84,
+          "hs": "h7",
+          "lt": [
+            -180,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 34,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 8,
+          "damage": 86,
+          "hs": "h8",
+          "lt": [
+            -180,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 36,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 9,
+          "damage": 88,
+          "hs": "h9",
+          "lt": [
+            -180,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 38,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 10,
+          "damage": 90,
+          "hs": "h10",
+          "lt": [
+            -190,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 40,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 11,
+          "damage": 92,
+          "hs": "h11",
+          "lt": [
+            -190,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 42,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 12,
+          "damage": 94,
+          "hs": "h12",
+          "lt": [
+            -190,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 44,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 13,
+          "damage": 96,
+          "hs": "h13",
+          "lt": [
+            -200,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 46,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 14,
+          "damage": 98,
+          "hs": "h14",
+          "lt": [
+            -200,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 48,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 15,
+          "damage": 100,
+          "hs": "h15",
+          "lt": [
+            -200,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 50,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 16,
+          "damage": 102,
+          "hs": "h16",
+          "lt": [
+            -210,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 52,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 17,
+          "damage": 104,
+          "hs": "h17",
+          "lt": [
+            -210,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 54,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 18,
+          "damage": 106,
+          "hs": "h18",
+          "lt": [
+            -210,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 56,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 19,
+          "damage": 108,
+          "hs": "h19",
+          "lt": [
+            -220,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 58,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 20,
+          "damage": 110,
+          "hs": "h20",
+          "lt": [
+            -220,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 60,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 21,
+          "damage": 112,
+          "hs": "h21",
+          "lt": [
+            -220,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 59,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 22,
+          "damage": 114,
+          "hs": "h22",
+          "lt": [
+            -230,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 58,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 23,
+          "damage": 116,
+          "hs": "h23",
+          "lt": [
+            -230,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 57,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 24,
+          "damage": 118,
+          "hs": "h24",
+          "lt": [
+            -230,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 56,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 25,
+          "damage": 120,
+          "hs": "h25",
+          "lt": [
+            -240,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 55,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 26,
+          "damage": 122,
+          "hs": "h26",
+          "lt": [
+            -240,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 54,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 27,
+          "damage": 124,
+          "hs": "h27",
+          "lt": [
+            -240,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 53,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 28,
+          "damage": 126,
+          "hs": "h28",
+          "lt": [
+            -250,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 52,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 29,
+          "damage": 128,
+          "hs": "h29",
+          "lt": [
+            -250,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 51,
+          "rb": [
+            0,
+            0
+          ]
+        },
+        {
+          "level": 30,
+          "damage": 130,
+          "hs": "h30",
+          "lt": [
+            -250,
+            -50
+          ],
+          "mobCount": 15,
+          "mpCon": 50,
+          "rb": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "rupture",
+      "id": 1121012,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h1",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 2,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h2",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 3,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h3",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 4,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h4",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 5,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h5",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 6,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h6",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 7,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h7",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 8,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h8",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 9,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h9",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 10,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h10",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 11,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h11",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 12,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h12",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 13,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h13",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 14,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h14",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 15,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h15",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 16,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h16",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 17,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h17",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 18,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h18",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 19,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h19",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 20,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h20",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 21,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h21",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 22,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h22",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 23,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h23",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 24,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h24",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 25,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h25",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 26,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h26",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 27,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h27",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 28,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h28",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 29,
+          "attackCount": 14,
+          "cooltime": 0,
+          "damage": 880,
+          "mad": 880,
+          "hs": "h29",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        },
+        {
+          "level": 30,
+          "attackCount": 14,
+          "cooltime": 25,
+          "damage": 165,
+          "mad": 165,
+          "hs": "h30",
+          "lt": [
+            -690,
+            -350
+          ],
+          "mobCount": 15,
+          "mpCon": 500,
+          "rb": [
+            520,
+            190
+          ]
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "illusion",
+      "id": 1121020,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h1",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 2,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h2",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 3,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h3",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 4,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h4",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 5,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h5",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 6,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h6",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 7,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h7",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 8,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h8",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 9,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h9",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 10,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h10",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 11,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h11",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 12,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h12",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 13,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h13",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 14,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h14",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 15,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h15",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 16,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h16",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 17,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h17",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 18,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h18",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 19,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h19",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 20,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h20",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 21,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h21",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 22,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h22",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 23,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h23",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 24,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h24",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 25,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h25",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 26,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h26",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 27,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h27",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 28,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h28",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 29,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h29",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 30,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 235,
+          "mad": 235,
+          "hs": "h30",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 700,
+          "rb": [
+            5,
+            50
+          ]
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "roar",
+      "id": 1111008,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 42,
+          "hs": "h1",
+          "mobCount": 8,
+          "mpCon": 8,
+          "prop": 52,
+          "time": 5,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 2,
+          "damage": 44,
+          "hs": "h2",
+          "mpCon": 8,
+          "prop": 54,
+          "time": 5,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 3,
+          "damage": 46,
+          "hs": "h3",
+          "mpCon": 8,
+          "prop": 56,
+          "time": 5,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 4,
+          "damage": 48,
+          "hs": "h4",
+          "mpCon": 8,
+          "time": 5,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "prop": 58,
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 5,
+          "damage": 50,
+          "hs": "h5",
+          "mpCon": 8,
+          "prop": 60,
+          "time": 5,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 6,
+          "damage": 52,
+          "hs": "h6",
+          "mpCon": 8,
+          "prop": 62,
+          "time": 6,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 7,
+          "damage": 54,
+          "hs": "h7",
+          "mpCon": 8,
+          "prop": 64,
+          "time": 6,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 8,
+          "damage": 56,
+          "hs": "h8",
+          "mpCon": 8,
+          "prop": 66,
+          "time": 6,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 9,
+          "damage": 58,
+          "hs": "h9",
+          "mpCon": 8,
+          "prop": 68,
+          "time": 6,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 10,
+          "damage": 60,
+          "hs": "h10",
+          "mpCon": 8,
+          "prop": 70,
+          "time": 6,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 11,
+          "damage": 62,
+          "hs": "h11",
+          "mpCon": 12,
+          "prop": 72,
+          "time": 7,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 12,
+          "damage": 64,
+          "hs": "h12",
+          "mpCon": 12,
+          "prop": 74,
+          "time": 7,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 13,
+          "damage": 66,
+          "hs": "h13",
+          "mpCon": 12,
+          "prop": 76,
+          "time": 7,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 14,
+          "damage": 68,
+          "hs": "h14",
+          "mpCon": 12,
+          "prop": 78,
+          "time": 7,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 15,
+          "damage": 70,
+          "hs": "h15",
+          "mpCon": 12,
+          "prop": 80,
+          "time": 7,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 16,
+          "damage": 72,
+          "hs": "h16",
+          "mpCon": 12,
+          "prop": 82,
+          "time": 8,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 17,
+          "damage": 74,
+          "hs": "h17",
+          "mpCon": 12,
+          "prop": 84,
+          "time": 8,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 18,
+          "damage": 76,
+          "hs": "h18",
+          "mpCon": 12,
+          "prop": 86,
+          "time": 8,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 19,
+          "damage": 78,
+          "hs": "h19",
+          "mpCon": 12,
+          "prop": 88,
+          "time": 8,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 20,
+          "damage": 80,
+          "hs": "h20",
+          "mpCon": 12,
+          "prop": 90,
+          "time": 8,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 21,
+          "damage": 82,
+          "hs": "h21",
+          "mpCon": 16,
+          "prop": 91,
+          "time": 9,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 22,
+          "damage": 84,
+          "hs": "h22",
+          "mpCon": 16,
+          "prop": 92,
+          "time": 9,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 23,
+          "damage": 86,
+          "hs": "h23",
+          "mpCon": 16,
+          "prop": 93,
+          "time": 9,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 24,
+          "damage": 88,
+          "hs": "h24",
+          "mpCon": 16,
+          "prop": 94,
+          "time": 9,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 25,
+          "damage": 90,
+          "hs": "h25",
+          "mpCon": 16,
+          "prop": 95,
+          "time": 9,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 26,
+          "damage": 92,
+          "hs": "h26",
+          "mpCon": 16,
+          "prop": 96,
+          "time": 10,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 27,
+          "damage": 94,
+          "hs": "h27",
+          "mpCon": 16,
+          "prop": 97,
+          "time": 10,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 28,
+          "damage": 96,
+          "hs": "h28",
+          "mpCon": 16,
+          "prop": 98,
+          "time": 10,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 29,
+          "damage": 98,
+          "hs": "h29",
+          "mpCon": 16,
+          "prop": 99,
+          "time": 10,
+          "lt": [
+            -300,
+            -150
+          ],
+          "rb": [
+            300,
+            150
+          ],
+          "mobCount": 8,
+          "cooltime": 1
+        },
+        {
+          "level": 30,
+          "damage": 130,
+          "hs": "h30",
+          "lt": [
+            -300,
+            -150
+          ],
+          "mobCount": 8,
+          "mpCon": 16,
+          "prop": 100,
+          "rb": [
+            300,
+            150
+          ],
+          "time": 10,
+          "cooltime": 1
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "crush",
+      "id": 1111007,
+      "kind": "Dispel",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "cooltime": 465,
+          "hs": "h1",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 35,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 2,
+          "cooltime": 450,
+          "hs": "h2",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 33,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 3,
+          "cooltime": 435,
+          "hs": "h3",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 31,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 4,
+          "cooltime": 420,
+          "hs": "h4",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 29,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 5,
+          "cooltime": 405,
+          "hs": "h5",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 27,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 6,
+          "cooltime": 390,
+          "hs": "h6",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 25,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 7,
+          "cooltime": 375,
+          "hs": "h7",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 23,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 8,
+          "cooltime": 360,
+          "hs": "h8",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 21,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 9,
+          "cooltime": 345,
+          "hs": "h9",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 19,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 10,
+          "cooltime": 330,
+          "hs": "h10",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 17,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 11,
+          "cooltime": 315,
+          "hs": "h11",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 16,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 12,
+          "cooltime": 300,
+          "hs": "h12",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 15,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 13,
+          "cooltime": 285,
+          "hs": "h13",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 14,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 14,
+          "cooltime": 270,
+          "hs": "h14",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 13,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 15,
+          "cooltime": 255,
+          "hs": "h15",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 12,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 16,
+          "cooltime": 240,
+          "hs": "h16",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 11,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 17,
+          "cooltime": 225,
+          "hs": "h17",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 10,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 18,
+          "cooltime": 210,
+          "hs": "h18",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 9,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 19,
+          "cooltime": 195,
+          "hs": "h19",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 8,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        },
+        {
+          "level": 20,
+          "cooltime": 180,
+          "hs": "h20",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mobCount": 15,
+          "mpCon": 7,
+          "prop": 100,
+          "rb": [
+            300,
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "rage",
+      "id": 1101006,
+      "kind": "Buff",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "hs": "h1",
+          "lt": [
+            -250,
+            -150
+          ],
+          "mpCon": 12,
+          "pad": 3,
+          "pdd": -3,
+          "rb": [
+            250,
+            150
+          ],
+          "time": 66
+        },
+        {
+          "level": 2,
+          "hs": "h2",
+          "lt": [
+            -250,
+            -150
+          ],
+          "mpCon": 12,
+          "pad": 3,
+          "pdd": -3,
+          "rb": [
+            250,
+            150
+          ],
+          "time": 72
+        },
+        {
+          "level": 3,
+          "hs": "h3",
+          "lt": [
+            -250,
+            -150
+          ],
+          "mpCon": 12,
+          "pad": 4,
+          "pdd": -4,
+          "rb": [
+            250,
+            150
+          ],
+          "time": 78
+        },
+        {
+          "level": 4,
+          "hs": "h4",
+          "lt": [
+            -250,
+            -150
+          ],
+          "mpCon": 12,
+          "pad": 4,
+          "pdd": -4,
+          "rb": [
+            250,
+            150
+          ],
+          "time": 84
+        },
+        {
+          "level": 5,
+          "hs": "h5",
+          "lt": [
+            -250,
+            -150
+          ],
+          "mpCon": 12,
+          "pad": 5,
+          "pdd": -5,
+          "rb": [
+            250,
+            150
+          ],
+          "time": 90
+        },
+        {
+          "level": 6,
+          "hs": "h6",
+          "lt": [
+            -250,
+            -150
+          ],
+          "mpCon": 12,
+          "pad": 5,
+          "pdd": -5,
+          "rb": [
+            250,
+            150
+          ],
+          "time": 96
+        },
+        {
+          "level": 7,
+          "hs": "h7",
+          "lt": [
+            -250,
+            -150
+          ],
+          "mpCon": 12,
+          "pad": 6,
+          "pdd": -6,
+          "rb": [
+            250,
+            150
+          ],
+          "time": 102
+        },
+        {
+          "level": 8,
+          "hs": "h8",
+          "lt": [
+            -250,
+            -150
+          ],
+          "mpCon": 12,
+          "pad": 6,
+          "pdd": -6,
+          "rb": [
+            250,
+            150
+          ],
+          "time": 108
+        },
+        {
+          "level": 9,
+          "hs": "h9",
+          "lt": [
+            -250,
+            -150
+          ],
+          "mpCon": 12,
+          "pad": 7,
+          "pdd": -7,
+          "rb": [
+            250,
+            150
+          ],
+          "time": 114
+        },
+        {
+          "level": 10,
+          "hs": "h10",
+          "lt": [
+            -250,
+            -150
+          ],
+          "mpCon": 12,
+          "pad": 7,
+          "pdd": -7,
+          "rb": [
+            250,
+            150
+          ],
+          "time": 120
+        },
+        {
+          "level": 11,
+          "hs": "h11",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mpCon": 20,
+          "pad": 8,
+          "pdd": -8,
+          "rb": [
+            300,
+            200
+          ],
+          "time": 126
+        },
+        {
+          "level": 12,
+          "hs": "h12",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mpCon": 20,
+          "pad": 8,
+          "pdd": -8,
+          "rb": [
+            300,
+            200
+          ],
+          "time": 132
+        },
+        {
+          "level": 13,
+          "hs": "h13",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mpCon": 20,
+          "pad": 9,
+          "pdd": -9,
+          "rb": [
+            300,
+            200
+          ],
+          "time": 138
+        },
+        {
+          "level": 14,
+          "hs": "h14",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mpCon": 20,
+          "pad": 9,
+          "pdd": -9,
+          "rb": [
+            300,
+            200
+          ],
+          "time": 144
+        },
+        {
+          "level": 15,
+          "hs": "h15",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mpCon": 20,
+          "pad": 10,
+          "pdd": -10,
+          "rb": [
+            300,
+            200
+          ],
+          "time": 150
+        },
+        {
+          "level": 16,
+          "hs": "h16",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mpCon": 20,
+          "pad": 10,
+          "pdd": -10,
+          "rb": [
+            300,
+            200
+          ],
+          "time": 156
+        },
+        {
+          "level": 17,
+          "hs": "h17",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mpCon": 20,
+          "pad": 11,
+          "pdd": -11,
+          "rb": [
+            300,
+            200
+          ],
+          "time": 162
+        },
+        {
+          "level": 18,
+          "hs": "h18",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mpCon": 20,
+          "pad": 11,
+          "pdd": -11,
+          "rb": [
+            300,
+            200
+          ],
+          "time": 168
+        },
+        {
+          "level": 19,
+          "hs": "h19",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mpCon": 20,
+          "pad": 12,
+          "pdd": -12,
+          "rb": [
+            300,
+            200
+          ],
+          "time": 174
+        },
+        {
+          "level": 20,
+          "hs": "h20",
+          "lt": [
+            -300,
+            -200
+          ],
+          "mpCon": 20,
+          "pad": 15,
+          "pdd": -1,
+          "rb": [
+            300,
+            200
+          ],
+          "time": 180
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "magnet",
+      "id": 1121001,
+      "kind": "Pull",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "hs": "h1",
+          "mobCount": 6,
+          "mpCon": 10,
+          "prop": 42,
+          "range": 200
+        },
+        {
+          "level": 2,
+          "hs": "h2",
+          "mobCount": 6,
+          "mpCon": 10,
+          "prop": 44,
+          "range": 200
+        },
+        {
+          "level": 3,
+          "hs": "h3",
+          "mobCount": 6,
+          "mpCon": 10,
+          "prop": 46,
+          "range": 200
+        },
+        {
+          "level": 4,
+          "hs": "h4",
+          "mobCount": 6,
+          "mpCon": 10,
+          "prop": 48,
+          "range": 200
+        },
+        {
+          "level": 5,
+          "hs": "h5",
+          "mobCount": 6,
+          "mpCon": 10,
+          "prop": 50,
+          "range": 200
+        },
+        {
+          "level": 6,
+          "hs": "h6",
+          "mobCount": 6,
+          "mpCon": 13,
+          "prop": 52,
+          "range": 200
+        },
+        {
+          "level": 7,
+          "hs": "h7",
+          "mobCount": 6,
+          "mpCon": 13,
+          "prop": 54,
+          "range": 200
+        },
+        {
+          "level": 8,
+          "hs": "h8",
+          "mobCount": 6,
+          "mpCon": 13,
+          "prop": 56,
+          "range": 200
+        },
+        {
+          "level": 9,
+          "hs": "h9",
+          "mobCount": 6,
+          "mpCon": 13,
+          "prop": 58,
+          "range": 200
+        },
+        {
+          "level": 10,
+          "hs": "h10",
+          "mobCount": 6,
+          "mpCon": 13,
+          "prop": 60,
+          "range": 200
+        },
+        {
+          "level": 11,
+          "hs": "h11",
+          "mobCount": 6,
+          "mpCon": 18,
+          "prop": 62,
+          "range": 300
+        },
+        {
+          "level": 12,
+          "hs": "h12",
+          "mobCount": 6,
+          "mpCon": 18,
+          "prop": 64,
+          "range": 300
+        },
+        {
+          "level": 13,
+          "hs": "h13",
+          "mobCount": 6,
+          "mpCon": 18,
+          "prop": 66,
+          "range": 300
+        },
+        {
+          "level": 14,
+          "hs": "h14",
+          "mobCount": 6,
+          "mpCon": 18,
+          "prop": 68,
+          "range": 300
+        },
+        {
+          "level": 15,
+          "hs": "h15",
+          "mobCount": 6,
+          "mpCon": 18,
+          "prop": 70,
+          "range": 300
+        },
+        {
+          "level": 16,
+          "hs": "h16",
+          "mobCount": 6,
+          "mpCon": 21,
+          "prop": 72,
+          "range": 300
+        },
+        {
+          "level": 17,
+          "hs": "h17",
+          "mobCount": 6,
+          "mpCon": 21,
+          "prop": 74,
+          "range": 300
+        },
+        {
+          "level": 18,
+          "hs": "h18",
+          "mobCount": 6,
+          "mpCon": 21,
+          "prop": 76,
+          "range": 300
+        },
+        {
+          "level": 19,
+          "hs": "h19",
+          "mobCount": 6,
+          "mpCon": 21,
+          "prop": 78,
+          "range": 300
+        },
+        {
+          "level": 20,
+          "hs": "h20",
+          "mobCount": 6,
+          "mpCon": 21,
+          "prop": 80,
+          "range": 300
+        },
+        {
+          "level": 21,
+          "hs": "h21",
+          "mobCount": 6,
+          "mpCon": 26,
+          "prop": 82,
+          "range": 400
+        },
+        {
+          "level": 22,
+          "hs": "h22",
+          "mobCount": 6,
+          "mpCon": 26,
+          "prop": 84,
+          "range": 400
+        },
+        {
+          "level": 23,
+          "hs": "h23",
+          "mobCount": 6,
+          "mpCon": 26,
+          "prop": 86,
+          "range": 400
+        },
+        {
+          "level": 24,
+          "hs": "h24",
+          "mobCount": 6,
+          "mpCon": 26,
+          "prop": 88,
+          "range": 400
+        },
+        {
+          "level": 25,
+          "hs": "h25",
+          "mobCount": 6,
+          "mpCon": 26,
+          "prop": 90,
+          "range": 400
+        },
+        {
+          "level": 26,
+          "hs": "h26",
+          "mobCount": 6,
+          "mpCon": 25,
+          "prop": 91,
+          "range": 400
+        },
+        {
+          "level": 27,
+          "hs": "h27",
+          "mobCount": 6,
+          "mpCon": 24,
+          "prop": 92,
+          "range": 400
+        },
+        {
+          "level": 28,
+          "hs": "h28",
+          "mobCount": 6,
+          "mpCon": 23,
+          "prop": 93,
+          "range": 400
+        },
+        {
+          "level": 29,
+          "hs": "h29",
+          "mobCount": 6,
+          "mpCon": 22,
+          "prop": 94,
+          "range": 400
+        },
+        {
+          "level": 30,
+          "hs": "h30",
+          "mobCount": 6,
+          "mpCon": 21,
+          "prop": 95,
+          "range": 400
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "berserk",
+      "id": 1121013,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 271,
+          "hs": "h1",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 22,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 2,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "hs": "h2",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 22,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 3,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 279,
+          "hs": "h3",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 22,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 4,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 283,
+          "hs": "h4",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 24,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 5,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 287,
+          "hs": "h5",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 24,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 6,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 291,
+          "hs": "h6",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 24,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 7,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 295,
+          "hs": "h7",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 26,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 8,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 299,
+          "hs": "h8",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 26,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 9,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 303,
+          "hs": "h9",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 26,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 10,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 307,
+          "hs": "h10",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 28,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 11,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 311,
+          "hs": "h11",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 28,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 12,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 315,
+          "hs": "h12",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 28,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 13,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 319,
+          "hs": "h13",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 30,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 14,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 323,
+          "hs": "h14",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 30,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 15,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 327,
+          "hs": "h15",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 30,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 16,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 331,
+          "hs": "h16",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 32,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 17,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 335,
+          "hs": "h17",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 32,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 18,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 339,
+          "hs": "h18",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 32,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 19,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 343,
+          "hs": "h19",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 34,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 20,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 347,
+          "hs": "h20",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 34,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 21,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 351,
+          "hs": "h21",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 34,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 22,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 355,
+          "hs": "h22",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 36,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 23,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 359,
+          "hs": "h23",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 36,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 24,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 363,
+          "hs": "h24",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 36,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 25,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 367,
+          "hs": "h25",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 38,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 26,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 371,
+          "hs": "h26",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 38,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 27,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 375,
+          "hs": "h27",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 38,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 28,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 379,
+          "hs": "h28",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 40,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 29,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 383,
+          "hs": "h29",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 40,
+          "rb": [
+            70,
+            100
+          ]
+        },
+        {
+          "level": 30,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 387,
+          "hs": "h30",
+          "lt": [
+            -360,
+            -250
+          ],
+          "mobCount": 8,
+          "mpCon": 40,
+          "rb": [
+            70,
+            100
+          ]
+        }
+      ]
+    },
+    {
+      "element": "f",
+      "summonInterval": 0.0,
+      "key": "firearrow",
+      "id": 2101004,
+      "kind": "Attack",
+      "magic": true,
+      "levels": [
+        {
+          "level": 1,
+          "hs": "h1",
+          "mpCon": 14,
+          "mad": 63,
+          "mastery": 1,
+          "mobCount": 2
+        },
+        {
+          "level": 2,
+          "hs": "h2",
+          "mpCon": 14,
+          "mad": 66,
+          "mastery": 1,
+          "mobCount": 2
+        },
+        {
+          "level": 3,
+          "hs": "h3",
+          "mpCon": 14,
+          "mad": 69,
+          "mastery": 1,
+          "mobCount": 2
+        },
+        {
+          "level": 4,
+          "hs": "h4",
+          "mpCon": 14,
+          "mad": 72,
+          "mastery": 2,
+          "mobCount": 2
+        },
+        {
+          "level": 5,
+          "hs": "h5",
+          "mpCon": 14,
+          "mad": 75,
+          "mastery": 2,
+          "mobCount": 2
+        },
+        {
+          "level": 6,
+          "hs": "h6",
+          "mpCon": 14,
+          "mad": 78,
+          "mastery": 2,
+          "mobCount": 2
+        },
+        {
+          "level": 7,
+          "hs": "h7",
+          "mpCon": 14,
+          "mad": 81,
+          "mastery": 3,
+          "mobCount": 2
+        },
+        {
+          "level": 8,
+          "hs": "h8",
+          "mpCon": 14,
+          "mad": 84,
+          "mastery": 3,
+          "mobCount": 2
+        },
+        {
+          "level": 9,
+          "hs": "h9",
+          "mpCon": 14,
+          "mad": 87,
+          "mastery": 3,
+          "mobCount": 2
+        },
+        {
+          "level": 10,
+          "hs": "h10",
+          "mpCon": 14,
+          "mad": 90,
+          "mastery": 4,
+          "mobCount": 2
+        },
+        {
+          "level": 11,
+          "hs": "h11",
+          "mpCon": 14,
+          "mad": 93,
+          "mastery": 4,
+          "mobCount": 2
+        },
+        {
+          "level": 12,
+          "hs": "h12",
+          "mpCon": 14,
+          "mad": 96,
+          "mastery": 4,
+          "mobCount": 2
+        },
+        {
+          "level": 13,
+          "hs": "h13",
+          "mpCon": 14,
+          "mad": 99,
+          "mastery": 5,
+          "mobCount": 2
+        },
+        {
+          "level": 14,
+          "hs": "h14",
+          "mpCon": 14,
+          "mad": 102,
+          "mastery": 5,
+          "mobCount": 2
+        },
+        {
+          "level": 15,
+          "hs": "h15",
+          "mpCon": 14,
+          "mad": 105,
+          "mastery": 5,
+          "mobCount": 2
+        },
+        {
+          "level": 16,
+          "hs": "h16",
+          "mpCon": 28,
+          "mad": 108,
+          "mastery": 6,
+          "mobCount": 2
+        },
+        {
+          "level": 17,
+          "hs": "h17",
+          "mpCon": 28,
+          "mad": 111,
+          "mastery": 6,
+          "mobCount": 2
+        },
+        {
+          "level": 18,
+          "hs": "h18",
+          "mpCon": 28,
+          "mad": 114,
+          "mastery": 6,
+          "mobCount": 2
+        },
+        {
+          "level": 19,
+          "hs": "h19",
+          "mpCon": 28,
+          "mad": 117,
+          "mastery": 7,
+          "mobCount": 2
+        },
+        {
+          "level": 20,
+          "hs": "h20",
+          "mpCon": 28,
+          "mad": 120,
+          "mastery": 7,
+          "mobCount": 2
+        },
+        {
+          "level": 21,
+          "hs": "h21",
+          "mpCon": 28,
+          "mad": 123,
+          "mastery": 7,
+          "mobCount": 2
+        },
+        {
+          "level": 22,
+          "hs": "h22",
+          "mpCon": 28,
+          "mad": 126,
+          "mastery": 8,
+          "mobCount": 2
+        },
+        {
+          "level": 23,
+          "hs": "h23",
+          "mpCon": 28,
+          "mad": 129,
+          "mastery": 8,
+          "mobCount": 2
+        },
+        {
+          "level": 24,
+          "hs": "h24",
+          "mpCon": 28,
+          "mad": 132,
+          "mastery": 8,
+          "mobCount": 2
+        },
+        {
+          "level": 25,
+          "hs": "h25",
+          "mpCon": 28,
+          "mad": 135,
+          "mastery": 9,
+          "mobCount": 2
+        },
+        {
+          "level": 26,
+          "hs": "h26",
+          "mpCon": 28,
+          "mad": 138,
+          "mastery": 9,
+          "mobCount": 2
+        },
+        {
+          "level": 27,
+          "hs": "h27",
+          "mpCon": 28,
+          "mad": 141,
+          "mastery": 9,
+          "mobCount": 2
+        },
+        {
+          "level": 28,
+          "hs": "h28",
+          "mpCon": 28,
+          "mad": 144,
+          "mastery": 10,
+          "mobCount": 2
+        },
+        {
+          "level": 29,
+          "hs": "h29",
+          "mpCon": 28,
+          "mad": 147,
+          "mastery": 10,
+          "mobCount": 2
+        },
+        {
+          "level": 30,
+          "hs": "h30",
+          "mpCon": 28,
+          "mad": 150,
+          "mastery": 10,
+          "mobCount": 2
+        }
+      ]
+    },
+    {
+      "element": "f",
+      "summonInterval": 0.0,
+      "key": "doom",
+      "id": 2111002,
+      "kind": "Attack",
+      "magic": true,
+      "levels": [
+        {
+          "level": 1,
+          "hs": "h1",
+          "mpCon": 21,
+          "mad": 72,
+          "mastery": 1,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 2,
+          "hs": "h2",
+          "mpCon": 22,
+          "mad": 74,
+          "mastery": 1,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 3,
+          "hs": "h3",
+          "mpCon": 23,
+          "mad": 76,
+          "mastery": 1,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 4,
+          "hs": "h4",
+          "mpCon": 24,
+          "mad": 78,
+          "mastery": 2,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 5,
+          "hs": "h5",
+          "mpCon": 25,
+          "mad": 80,
+          "mastery": 2,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 6,
+          "hs": "h6",
+          "mpCon": 26,
+          "mad": 82,
+          "mastery": 2,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 7,
+          "hs": "h7",
+          "mpCon": 27,
+          "mad": 84,
+          "mastery": 3,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 8,
+          "hs": "h8",
+          "mpCon": 28,
+          "mad": 86,
+          "mastery": 3,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 9,
+          "hs": "h9",
+          "mpCon": 29,
+          "mad": 88,
+          "mastery": 3,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 10,
+          "hs": "h10",
+          "mpCon": 30,
+          "mad": 90,
+          "mastery": 4,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 11,
+          "hs": "h11",
+          "mpCon": 31,
+          "mad": 92,
+          "mastery": 4,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 12,
+          "hs": "h12",
+          "mpCon": 32,
+          "mad": 94,
+          "mastery": 4,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 13,
+          "hs": "h13",
+          "mpCon": 33,
+          "mad": 96,
+          "mastery": 5,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 14,
+          "hs": "h14",
+          "mpCon": 34,
+          "mad": 98,
+          "mastery": 5,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 15,
+          "hs": "h15",
+          "mpCon": 35,
+          "mad": 100,
+          "mastery": 5,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 16,
+          "hs": "h16",
+          "mpCon": 36,
+          "mad": 102,
+          "mastery": 6,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 17,
+          "hs": "h17",
+          "mpCon": 37,
+          "mad": 104,
+          "mastery": 6,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 18,
+          "hs": "h18",
+          "mpCon": 38,
+          "mad": 106,
+          "mastery": 6,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 19,
+          "hs": "h19",
+          "mpCon": 39,
+          "mad": 108,
+          "mastery": 7,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 20,
+          "hs": "h20",
+          "mpCon": 40,
+          "mad": 110,
+          "mastery": 7,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 21,
+          "hs": "h21",
+          "mpCon": 41,
+          "mad": 112,
+          "mastery": 7,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 22,
+          "hs": "h22",
+          "mpCon": 42,
+          "mad": 114,
+          "mastery": 8,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 23,
+          "hs": "h23",
+          "mpCon": 43,
+          "mad": 116,
+          "mastery": 8,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 24,
+          "hs": "h24",
+          "mpCon": 44,
+          "mad": 118,
+          "mastery": 8,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 25,
+          "hs": "h25",
+          "mpCon": 45,
+          "mad": 120,
+          "mastery": 9,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 26,
+          "hs": "h26",
+          "mpCon": 46,
+          "mad": 122,
+          "mastery": 9,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 27,
+          "hs": "h27",
+          "mpCon": 47,
+          "mad": 124,
+          "mastery": 9,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 28,
+          "hs": "h28",
+          "mpCon": 48,
+          "mad": 126,
+          "mastery": 10,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 29,
+          "hs": "h29",
+          "mpCon": 49,
+          "mad": 128,
+          "mastery": 10,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        },
+        {
+          "level": 30,
+          "hs": "h30",
+          "mpCon": 50,
+          "mad": 130,
+          "mastery": 10,
+          "mobCount": 8,
+          "rb": [
+            300,
+            150
+          ],
+          "lt": [
+            -300,
+            -150
+          ]
+        }
+      ]
+    },
+    {
+      "element": "s",
+      "summonInterval": 0.0,
+      "key": "chain",
+      "id": 2121006,
+      "kind": "Attack",
+      "magic": true,
+      "levels": [
+        {
+          "level": 1,
+          "attackCount": 2,
+          "hs": "h1",
+          "mad": 184,
+          "mastery": 10,
+          "mpCon": 16,
+          "prop": 100,
+          "time": 5
+        },
+        {
+          "level": 2,
+          "attackCount": 2,
+          "hs": "h2",
+          "mad": 188,
+          "mastery": 10,
+          "mpCon": 16,
+          "prop": 100,
+          "time": 5
+        },
+        {
+          "level": 3,
+          "attackCount": 2,
+          "hs": "h3",
+          "mad": 192,
+          "mastery": 10,
+          "mpCon": 16,
+          "prop": 100,
+          "time": 5
+        },
+        {
+          "level": 4,
+          "attackCount": 2,
+          "hs": "h4",
+          "mad": 196,
+          "mastery": 10,
+          "mpCon": 16,
+          "prop": 100,
+          "time": 5
+        },
+        {
+          "level": 5,
+          "attackCount": 2,
+          "hs": "h5",
+          "mad": 200,
+          "mastery": 10,
+          "mpCon": 16,
+          "prop": 100,
+          "time": 5
+        },
+        {
+          "level": 6,
+          "attackCount": 2,
+          "hs": "h6",
+          "mad": 204,
+          "mastery": 10,
+          "mpCon": 16,
+          "prop": 100,
+          "time": 5
+        },
+        {
+          "level": 7,
+          "attackCount": 2,
+          "hs": "h7",
+          "mad": 208,
+          "mastery": 10,
+          "mpCon": 16,
+          "prop": 100,
+          "time": 5
+        },
+        {
+          "level": 8,
+          "attackCount": 2,
+          "hs": "h8",
+          "mad": 212,
+          "mastery": 10,
+          "mpCon": 16,
+          "prop": 100,
+          "time": 5
+        },
+        {
+          "level": 9,
+          "attackCount": 2,
+          "hs": "h9",
+          "mad": 216,
+          "mastery": 10,
+          "mpCon": 16,
+          "prop": 100,
+          "time": 5
+        },
+        {
+          "level": 10,
+          "attackCount": 2,
+          "hs": "h10",
+          "mad": 220,
+          "mastery": 10,
+          "mpCon": 16,
+          "prop": 100,
+          "time": 5
+        },
+        {
+          "level": 11,
+          "attackCount": 2,
+          "hs": "h11",
+          "mad": 224,
+          "mastery": 10,
+          "mpCon": 24,
+          "prop": 100,
+          "time": 10
+        },
+        {
+          "level": 12,
+          "attackCount": 2,
+          "hs": "h12",
+          "mad": 228,
+          "mastery": 10,
+          "mpCon": 24,
+          "prop": 100,
+          "time": 10
+        },
+        {
+          "level": 13,
+          "attackCount": 2,
+          "hs": "h13",
+          "mad": 232,
+          "mastery": 10,
+          "mpCon": 24,
+          "prop": 100,
+          "time": 10
+        },
+        {
+          "level": 14,
+          "attackCount": 2,
+          "hs": "h14",
+          "mad": 236,
+          "mastery": 10,
+          "mpCon": 24,
+          "prop": 100,
+          "time": 10
+        },
+        {
+          "level": 15,
+          "attackCount": 2,
+          "hs": "h15",
+          "mad": 240,
+          "mastery": 10,
+          "mpCon": 24,
+          "prop": 100,
+          "time": 10
+        },
+        {
+          "level": 16,
+          "attackCount": 2,
+          "hs": "h16",
+          "mad": 244,
+          "mastery": 10,
+          "mpCon": 24,
+          "prop": 100,
+          "time": 10
+        },
+        {
+          "level": 17,
+          "attackCount": 2,
+          "hs": "h17",
+          "mad": 248,
+          "mastery": 10,
+          "mpCon": 24,
+          "prop": 100,
+          "time": 10
+        },
+        {
+          "level": 18,
+          "attackCount": 2,
+          "hs": "h18",
+          "mad": 252,
+          "mastery": 10,
+          "mpCon": 24,
+          "prop": 100,
+          "time": 10
+        },
+        {
+          "level": 19,
+          "attackCount": 2,
+          "hs": "h19",
+          "mad": 256,
+          "mastery": 10,
+          "mpCon": 24,
+          "prop": 100,
+          "time": 10
+        },
+        {
+          "level": 20,
+          "attackCount": 4,
+          "hs": "h20",
+          "mad": 260,
+          "mastery": 10,
+          "mpCon": 24,
+          "prop": 100,
+          "time": 10
+        },
+        {
+          "level": 21,
+          "attackCount": 4,
+          "hs": "h21",
+          "mad": 264,
+          "mastery": 10,
+          "mpCon": 30,
+          "prop": 100,
+          "time": 15
+        },
+        {
+          "level": 22,
+          "attackCount": 4,
+          "hs": "h22",
+          "mad": 268,
+          "mastery": 10,
+          "mpCon": 30,
+          "prop": 100,
+          "time": 15
+        },
+        {
+          "level": 23,
+          "attackCount": 4,
+          "hs": "h23",
+          "mad": 272,
+          "mastery": 10,
+          "mpCon": 30,
+          "prop": 100,
+          "time": 15
+        },
+        {
+          "level": 24,
+          "attackCount": 4,
+          "hs": "h24",
+          "mad": 276,
+          "mastery": 10,
+          "mpCon": 30,
+          "prop": 100,
+          "time": 15
+        },
+        {
+          "level": 25,
+          "attackCount": 4,
+          "hs": "h25",
+          "mad": 280,
+          "mastery": 10,
+          "mpCon": 30,
+          "prop": 100,
+          "time": 15
+        },
+        {
+          "level": 26,
+          "attackCount": 4,
+          "hs": "h26",
+          "mad": 284,
+          "mastery": 10,
+          "mpCon": 29,
+          "prop": 100,
+          "time": 15
+        },
+        {
+          "level": 27,
+          "attackCount": 4,
+          "hs": "h27",
+          "mad": 288,
+          "mastery": 10,
+          "mpCon": 28,
+          "prop": 100,
+          "time": 15
+        },
+        {
+          "level": 28,
+          "attackCount": 4,
+          "hs": "h28",
+          "mad": 292,
+          "mastery": 10,
+          "mpCon": 27,
+          "prop": 100,
+          "time": 15
+        },
+        {
+          "level": 29,
+          "attackCount": 4,
+          "hs": "h29",
+          "mad": 296,
+          "mastery": 10,
+          "mpCon": 26,
+          "prop": 100,
+          "time": 15
+        },
+        {
+          "level": 30,
+          "attackCount": 4,
+          "hs": "h30",
+          "mad": 300,
+          "mastery": 10,
+          "mpCon": 25,
+          "prop": 100,
+          "time": 15
+        }
+      ]
+    },
+    {
+      "element": "f",
+      "summonInterval": 0.0,
+      "key": "starfall",
+      "id": 2121007,
+      "kind": "Attack",
+      "magic": true,
+      "levels": [
+        {
+          "level": 1,
+          "attackCount": 2,
+          "hs": "h1",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 175,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1450,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 2,
+          "attackCount": 2,
+          "hs": "h2",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 180,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1500,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 3,
+          "attackCount": 2,
+          "hs": "h3",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 185,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1550,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 4,
+          "attackCount": 2,
+          "hs": "h4",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 190,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1600,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 5,
+          "attackCount": 2,
+          "hs": "h5",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 195,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1650,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 6,
+          "attackCount": 2,
+          "hs": "h6",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 200,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1700,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 7,
+          "attackCount": 2,
+          "hs": "h7",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 205,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1750,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 8,
+          "attackCount": 2,
+          "hs": "h8",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 210,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1800,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 9,
+          "attackCount": 2,
+          "hs": "h9",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 215,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1850,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 10,
+          "attackCount": 2,
+          "hs": "h10",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 220,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1900,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 11,
+          "attackCount": 2,
+          "hs": "h11",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 225,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 1950,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 12,
+          "attackCount": 2,
+          "hs": "h12",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 230,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2000,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 13,
+          "attackCount": 2,
+          "hs": "h13",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 235,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2050,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 14,
+          "attackCount": 2,
+          "hs": "h14",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 240,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2100,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 15,
+          "attackCount": 2,
+          "hs": "h15",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 245,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2150,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 16,
+          "attackCount": 2,
+          "hs": "h16",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 250,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2200,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 17,
+          "attackCount": 2,
+          "hs": "h17",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 255,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2250,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 18,
+          "attackCount": 2,
+          "hs": "h18",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 260,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2300,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 19,
+          "attackCount": 2,
+          "hs": "h19",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 265,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2350,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 20,
+          "attackCount": 2,
+          "hs": "h20",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 270,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2400,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 21,
+          "attackCount": 2,
+          "hs": "h21",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 275,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2450,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 22,
+          "attackCount": 2,
+          "hs": "h22",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 280,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2500,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 23,
+          "attackCount": 2,
+          "hs": "h23",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 285,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2550,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 24,
+          "attackCount": 2,
+          "hs": "h24",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 290,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2600,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 25,
+          "attackCount": 2,
+          "hs": "h25",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 295,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2650,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 26,
+          "attackCount": 2,
+          "hs": "h26",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 300,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2600,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 27,
+          "attackCount": 2,
+          "hs": "h27",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 305,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2550,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 28,
+          "attackCount": 2,
+          "hs": "h28",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 310,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2500,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 29,
+          "attackCount": 2,
+          "hs": "h29",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 315,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2450,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        },
+        {
+          "level": 30,
+          "attackCount": 2,
+          "hs": "h30",
+          "lt": [
+            -400,
+            -350
+          ],
+          "mad": 320,
+          "mastery": 10,
+          "mobCount": 15,
+          "mpCon": 2400,
+          "rb": [
+            400,
+            250
+          ],
+          "cooltime": 1
+        }
+      ]
+    },
+    {
+      "element": "f",
+      "summonInterval": 0.0,
+      "key": "firebolt",
+      "id": 3111003,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "hs": "h1",
+          "mpCon": 20,
+          "damage": 153,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 2,
+          "hs": "h2",
+          "mpCon": 20,
+          "damage": 156,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 3,
+          "hs": "h3",
+          "mpCon": 20,
+          "damage": 159,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 4,
+          "hs": "h4",
+          "mpCon": 20,
+          "damage": 162,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 5,
+          "hs": "h5",
+          "mpCon": 20,
+          "damage": 165,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 6,
+          "hs": "h6",
+          "mpCon": 20,
+          "damage": 168,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 7,
+          "hs": "h7",
+          "mpCon": 20,
+          "damage": 171,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 8,
+          "hs": "h8",
+          "mpCon": 20,
+          "damage": 174,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 9,
+          "hs": "h9",
+          "mpCon": 20,
+          "damage": 177,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 10,
+          "hs": "h10",
+          "mpCon": 20,
+          "damage": 180,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 11,
+          "hs": "h11",
+          "mpCon": 25,
+          "damage": 183,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 12,
+          "hs": "h12",
+          "mpCon": 25,
+          "damage": 186,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 13,
+          "hs": "h13",
+          "mpCon": 25,
+          "damage": 189,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 14,
+          "hs": "h14",
+          "mpCon": 25,
+          "damage": 192,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 15,
+          "hs": "h15",
+          "mpCon": 25,
+          "damage": 195,
+          "time": 5,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 16,
+          "hs": "h16",
+          "mpCon": 25,
+          "damage": 198,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 17,
+          "hs": "h17",
+          "mpCon": 25,
+          "damage": 201,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 18,
+          "hs": "h18",
+          "mpCon": 25,
+          "damage": 204,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 19,
+          "hs": "h19",
+          "mpCon": 25,
+          "damage": 207,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 20,
+          "hs": "h20",
+          "mpCon": 25,
+          "damage": 210,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 21,
+          "hs": "h21",
+          "mpCon": 30,
+          "damage": 213,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 22,
+          "hs": "h22",
+          "mpCon": 30,
+          "damage": 216,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 23,
+          "hs": "h23",
+          "mpCon": 30,
+          "damage": 219,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 24,
+          "hs": "h24",
+          "mpCon": 30,
+          "damage": 222,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 25,
+          "hs": "h25",
+          "mpCon": 30,
+          "damage": 225,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 26,
+          "hs": "h26",
+          "mpCon": 30,
+          "damage": 228,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 27,
+          "hs": "h27",
+          "mpCon": 30,
+          "damage": 231,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 28,
+          "hs": "h28",
+          "mpCon": 30,
+          "damage": 234,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 29,
+          "hs": "h29",
+          "mpCon": 30,
+          "damage": 237,
+          "time": 10,
+          "mobCount": 6,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "x": 50
+        },
+        {
+          "level": 30,
+          "hs": "h30",
+          "mpCon": 30,
+          "damage": 240,
+          "time": 10,
+          "lt": [
+            -150,
+            -100
+          ],
+          "rb": [
+            150,
+            100
+          ],
+          "mobCount": 6,
+          "x": 50
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "arrowrain",
+      "id": 3111004,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "hs": "h1",
+          "mobCount": 6,
+          "mpCon": 18,
+          "damage": 173,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 2,
+          "hs": "h2",
+          "mobCount": 6,
+          "mpCon": 18,
+          "damage": 176,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 3,
+          "hs": "h3",
+          "mobCount": 6,
+          "mpCon": 18,
+          "damage": 179,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 4,
+          "hs": "h4",
+          "mobCount": 6,
+          "mpCon": 18,
+          "damage": 182,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 5,
+          "hs": "h5",
+          "mobCount": 6,
+          "mpCon": 18,
+          "damage": 185,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 6,
+          "hs": "h6",
+          "mobCount": 6,
+          "mpCon": 18,
+          "damage": 188,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 7,
+          "hs": "h7",
+          "mobCount": 6,
+          "mpCon": 18,
+          "damage": 191,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 8,
+          "hs": "h8",
+          "mobCount": 6,
+          "mpCon": 18,
+          "damage": 194,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 9,
+          "hs": "h9",
+          "mobCount": 6,
+          "mpCon": 18,
+          "damage": 197,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 10,
+          "hs": "h10",
+          "mobCount": 6,
+          "mpCon": 18,
+          "damage": 200,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 11,
+          "hs": "h11",
+          "mobCount": 6,
+          "mpCon": 23,
+          "damage": 203,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 12,
+          "hs": "h12",
+          "mobCount": 6,
+          "mpCon": 23,
+          "damage": 206,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 13,
+          "hs": "h13",
+          "mobCount": 6,
+          "mpCon": 23,
+          "damage": 209,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 14,
+          "hs": "h14",
+          "mobCount": 6,
+          "mpCon": 23,
+          "damage": 212,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 15,
+          "hs": "h15",
+          "mobCount": 6,
+          "mpCon": 23,
+          "damage": 215,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 16,
+          "hs": "h16",
+          "mobCount": 6,
+          "mpCon": 23,
+          "damage": 218,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 17,
+          "hs": "h17",
+          "mobCount": 6,
+          "mpCon": 23,
+          "damage": 221,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 18,
+          "hs": "h18",
+          "mobCount": 6,
+          "mpCon": 23,
+          "damage": 224,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 19,
+          "hs": "h19",
+          "mobCount": 6,
+          "mpCon": 23,
+          "damage": 227,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 20,
+          "hs": "h20",
+          "mobCount": 6,
+          "mpCon": 23,
+          "damage": 230,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 21,
+          "hs": "h21",
+          "mobCount": 6,
+          "mpCon": 28,
+          "damage": 233,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 22,
+          "hs": "h22",
+          "mobCount": 6,
+          "mpCon": 28,
+          "damage": 236,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 23,
+          "hs": "h23",
+          "mobCount": 6,
+          "mpCon": 28,
+          "damage": 239,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 24,
+          "hs": "h24",
+          "mobCount": 6,
+          "mpCon": 28,
+          "damage": 242,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 25,
+          "hs": "h25",
+          "mobCount": 6,
+          "mpCon": 28,
+          "damage": 245,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 26,
+          "hs": "h26",
+          "mobCount": 6,
+          "mpCon": 28,
+          "damage": 248,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 27,
+          "hs": "h27",
+          "mobCount": 6,
+          "mpCon": 28,
+          "damage": 251,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 28,
+          "hs": "h28",
+          "mobCount": 6,
+          "mpCon": 28,
+          "damage": 254,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 29,
+          "hs": "h29",
+          "mobCount": 6,
+          "mpCon": 28,
+          "damage": 257,
+          "lt": [
+            -210,
+            -150
+          ],
+          "rb": [
+            210,
+            100
+          ]
+        },
+        {
+          "level": 30,
+          "hs": "h30",
+          "mobCount": 6,
+          "mpCon": 28,
+          "damage": 260,
+          "rb": [
+            250,
+            150
+          ],
+          "lt": [
+            -250,
+            -150
+          ]
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "dragon",
+      "id": 3121003,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "hs": "h1",
+          "mpCon": 24,
+          "damage": 42,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 2,
+          "hs": "h2",
+          "mpCon": 24,
+          "damage": 44,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 3,
+          "hs": "h3",
+          "mpCon": 24,
+          "damage": 46,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 4,
+          "hs": "h4",
+          "mpCon": 24,
+          "damage": 48,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 5,
+          "hs": "h5",
+          "mpCon": 24,
+          "damage": 50,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 6,
+          "hs": "h6",
+          "mpCon": 24,
+          "damage": 52,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 7,
+          "hs": "h7",
+          "mpCon": 24,
+          "damage": 54,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 8,
+          "hs": "h8",
+          "mpCon": 24,
+          "damage": 56,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 9,
+          "hs": "h9",
+          "mpCon": 24,
+          "damage": 58,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 10,
+          "hs": "h10",
+          "mpCon": 24,
+          "damage": 60,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 11,
+          "hs": "h11",
+          "mpCon": 30,
+          "damage": 62,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 12,
+          "hs": "h12",
+          "mpCon": 30,
+          "damage": 64,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 13,
+          "hs": "h13",
+          "mpCon": 30,
+          "damage": 66,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 14,
+          "hs": "h14",
+          "mpCon": 30,
+          "damage": 68,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 15,
+          "hs": "h15",
+          "mpCon": 30,
+          "damage": 70,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 16,
+          "hs": "h16",
+          "mpCon": 30,
+          "damage": 72,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 17,
+          "hs": "h17",
+          "mpCon": 30,
+          "damage": 74,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 18,
+          "hs": "h18",
+          "mpCon": 30,
+          "damage": 76,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 19,
+          "hs": "h19",
+          "mpCon": 30,
+          "damage": 78,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 20,
+          "hs": "h20",
+          "mpCon": 30,
+          "damage": 80,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 21,
+          "hs": "h21",
+          "mpCon": 36,
+          "damage": 82,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 22,
+          "hs": "h22",
+          "mpCon": 36,
+          "damage": 84,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 23,
+          "hs": "h23",
+          "mpCon": 36,
+          "damage": 86,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 24,
+          "hs": "h24",
+          "mpCon": 36,
+          "damage": 88,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 25,
+          "hs": "h25",
+          "mpCon": 36,
+          "damage": 90,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 26,
+          "hs": "h26",
+          "mpCon": 36,
+          "damage": 92,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 27,
+          "hs": "h27",
+          "mpCon": 36,
+          "damage": 94,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 28,
+          "hs": "h28",
+          "mpCon": 36,
+          "damage": 96,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 29,
+          "hs": "h29",
+          "mpCon": 36,
+          "damage": 98,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        },
+        {
+          "level": 30,
+          "hs": "h30",
+          "mpCon": 36,
+          "damage": 100,
+          "mobCount": 6,
+          "range": 440,
+          "prop": 100
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "storm",
+      "id": 3121022,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h1",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 2,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h2",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 3,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h3",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 4,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h4",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 5,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h5",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 6,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h6",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 7,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h7",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 8,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h8",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 9,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h9",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 10,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h10",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 11,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h11",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 12,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h12",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 13,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h13",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 14,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h14",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 15,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h15",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 16,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h16",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 17,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h17",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 18,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h18",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 19,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h19",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 20,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h20",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 21,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h21",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 22,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h22",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 23,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h23",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 24,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h24",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 25,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h25",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 26,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h26",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 27,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h27",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 28,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h28",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 29,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 610,
+          "mad": 610,
+          "hs": "h29",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        },
+        {
+          "level": 30,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 110,
+          "mad": 110,
+          "hs": "h30",
+          "lt": [
+            -480,
+            -205
+          ],
+          "mobCount": 8,
+          "mpCon": 37,
+          "rb": [
+            30,
+            130
+          ]
+        }
+      ]
+    },
+    {
+      "element": "h",
+      "summonInterval": 0.0,
+      "key": "holyarrow",
+      "id": 2301005,
+      "kind": "Attack",
+      "magic": true,
+      "levels": [
+        {
+          "level": 1,
+          "hs": "h1",
+          "mpCon": 12,
+          "mad": 42,
+          "mastery": 1
+        },
+        {
+          "level": 2,
+          "hs": "h2",
+          "mpCon": 12,
+          "mad": 44,
+          "mastery": 1
+        },
+        {
+          "level": 3,
+          "hs": "h3",
+          "mpCon": 12,
+          "mad": 46,
+          "mastery": 1
+        },
+        {
+          "level": 4,
+          "hs": "h4",
+          "mpCon": 12,
+          "mad": 48,
+          "mastery": 2
+        },
+        {
+          "level": 5,
+          "hs": "h5",
+          "mpCon": 12,
+          "mad": 50,
+          "mastery": 2
+        },
+        {
+          "level": 6,
+          "hs": "h6",
+          "mpCon": 12,
+          "mad": 52,
+          "mastery": 2
+        },
+        {
+          "level": 7,
+          "hs": "h7",
+          "mpCon": 12,
+          "mad": 54,
+          "mastery": 3
+        },
+        {
+          "level": 8,
+          "hs": "h8",
+          "mpCon": 12,
+          "mad": 56,
+          "mastery": 3
+        },
+        {
+          "level": 9,
+          "hs": "h9",
+          "mpCon": 12,
+          "mad": 58,
+          "mastery": 3
+        },
+        {
+          "level": 10,
+          "hs": "h10",
+          "mpCon": 12,
+          "mad": 60,
+          "mastery": 4
+        },
+        {
+          "level": 11,
+          "hs": "h11",
+          "mpCon": 12,
+          "mad": 62,
+          "mastery": 4
+        },
+        {
+          "level": 12,
+          "hs": "h12",
+          "mpCon": 12,
+          "mad": 64,
+          "mastery": 4
+        },
+        {
+          "level": 13,
+          "hs": "h13",
+          "mpCon": 12,
+          "mad": 66,
+          "mastery": 5
+        },
+        {
+          "level": 14,
+          "hs": "h14",
+          "mpCon": 12,
+          "mad": 68,
+          "mastery": 5
+        },
+        {
+          "level": 15,
+          "hs": "h15",
+          "mpCon": 12,
+          "mad": 70,
+          "mastery": 5
+        },
+        {
+          "level": 16,
+          "hs": "h16",
+          "mpCon": 24,
+          "mad": 72,
+          "mastery": 6
+        },
+        {
+          "level": 17,
+          "hs": "h17",
+          "mpCon": 24,
+          "mad": 74,
+          "mastery": 6
+        },
+        {
+          "level": 18,
+          "hs": "h18",
+          "mpCon": 24,
+          "mad": 76,
+          "mastery": 6
+        },
+        {
+          "level": 19,
+          "hs": "h19",
+          "mpCon": 24,
+          "mad": 78,
+          "mastery": 7
+        },
+        {
+          "level": 20,
+          "hs": "h20",
+          "mpCon": 24,
+          "mad": 80,
+          "mastery": 7
+        },
+        {
+          "level": 21,
+          "hs": "h21",
+          "mpCon": 24,
+          "mad": 82,
+          "mastery": 7
+        },
+        {
+          "level": 22,
+          "hs": "h22",
+          "mpCon": 24,
+          "mad": 84,
+          "mastery": 8
+        },
+        {
+          "level": 23,
+          "hs": "h23",
+          "mpCon": 24,
+          "mad": 86,
+          "mastery": 8
+        },
+        {
+          "level": 24,
+          "hs": "h24",
+          "mpCon": 24,
+          "mad": 88,
+          "mastery": 8
+        },
+        {
+          "level": 25,
+          "hs": "h25",
+          "mpCon": 24,
+          "mad": 90,
+          "mastery": 9
+        },
+        {
+          "level": 26,
+          "hs": "h26",
+          "mpCon": 24,
+          "mad": 92,
+          "mastery": 9
+        },
+        {
+          "level": 27,
+          "hs": "h27",
+          "mpCon": 24,
+          "mad": 94,
+          "mastery": 9
+        },
+        {
+          "level": 28,
+          "hs": "h28",
+          "mpCon": 24,
+          "mad": 96,
+          "mastery": 10
+        },
+        {
+          "level": 29,
+          "hs": "h29",
+          "mpCon": 24,
+          "mad": 98,
+          "mastery": 10
+        },
+        {
+          "level": 30,
+          "hs": "h30",
+          "mpCon": 24,
+          "mad": 100,
+          "mastery": 10
+        }
+      ]
+    },
+    {
+      "element": "h",
+      "summonInterval": 0.0,
+      "key": "holy",
+      "id": 2311004,
+      "kind": "Attack",
+      "magic": true,
+      "levels": [
+        {
+          "level": 1,
+          "hs": "h1",
+          "mpCon": 21,
+          "mad": 92,
+          "mastery": 1,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 2,
+          "hs": "h2",
+          "mpCon": 22,
+          "mad": 94,
+          "mastery": 1,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 3,
+          "hs": "h3",
+          "mpCon": 23,
+          "mad": 96,
+          "mastery": 1,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 4,
+          "hs": "h4",
+          "mpCon": 24,
+          "mad": 98,
+          "mastery": 2,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 5,
+          "hs": "h5",
+          "mpCon": 25,
+          "mad": 100,
+          "mastery": 2,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 6,
+          "hs": "h6",
+          "mpCon": 26,
+          "mad": 102,
+          "mastery": 2,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 7,
+          "hs": "h7",
+          "mpCon": 27,
+          "mad": 104,
+          "mastery": 3,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 8,
+          "hs": "h8",
+          "mpCon": 28,
+          "mad": 106,
+          "mastery": 3,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 9,
+          "hs": "h9",
+          "mpCon": 29,
+          "mad": 108,
+          "mastery": 3,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 10,
+          "hs": "h10",
+          "mpCon": 30,
+          "mad": 110,
+          "mastery": 4,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 11,
+          "hs": "h11",
+          "mpCon": 31,
+          "mad": 112,
+          "mastery": 4,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 12,
+          "hs": "h12",
+          "mpCon": 32,
+          "mad": 114,
+          "mastery": 4,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 13,
+          "hs": "h13",
+          "mpCon": 33,
+          "mad": 116,
+          "mastery": 5,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 14,
+          "hs": "h14",
+          "mpCon": 34,
+          "mad": 118,
+          "mastery": 5,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 15,
+          "hs": "h15",
+          "mpCon": 35,
+          "mad": 120,
+          "mastery": 5,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 16,
+          "hs": "h16",
+          "mpCon": 36,
+          "mad": 122,
+          "mastery": 6,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 17,
+          "hs": "h17",
+          "mpCon": 37,
+          "mad": 124,
+          "mastery": 6,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 18,
+          "hs": "h18",
+          "mpCon": 38,
+          "mad": 126,
+          "mastery": 6,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 19,
+          "hs": "h19",
+          "mpCon": 39,
+          "mad": 128,
+          "mastery": 7,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 20,
+          "hs": "h20",
+          "mpCon": 40,
+          "mad": 130,
+          "mastery": 7,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 21,
+          "hs": "h21",
+          "mpCon": 41,
+          "mad": 132,
+          "mastery": 7,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 22,
+          "hs": "h22",
+          "mpCon": 42,
+          "mad": 134,
+          "mastery": 8,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 23,
+          "hs": "h23",
+          "mpCon": 43,
+          "mad": 136,
+          "mastery": 8,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 24,
+          "hs": "h24",
+          "mpCon": 44,
+          "mad": 138,
+          "mastery": 8,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 25,
+          "hs": "h25",
+          "mpCon": 45,
+          "mad": 140,
+          "mastery": 9,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 26,
+          "hs": "h26",
+          "mpCon": 46,
+          "mad": 142,
+          "mastery": 9,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 27,
+          "hs": "h27",
+          "mpCon": 47,
+          "mad": 144,
+          "mastery": 9,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 28,
+          "hs": "h28",
+          "mpCon": 48,
+          "mad": 146,
+          "mastery": 10,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 29,
+          "hs": "h29",
+          "mpCon": 49,
+          "mad": 148,
+          "mastery": 10,
+          "mobCount": 6,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        },
+        {
+          "level": 30,
+          "hs": "h30",
+          "mpCon": 50,
+          "mad": 150,
+          "mastery": 10,
+          "mobCount": 8,
+          "lt": [
+            -250,
+            -150
+          ],
+          "rb": [
+            250,
+            150
+          ]
+        }
+      ]
+    },
+    {
+      "element": "h",
+      "summonInterval": 0.0,
+      "key": "ray",
+      "id": 2321007,
+      "kind": "Attack",
+      "magic": true,
+      "levels": [
+        {
+          "level": 1,
+          "hs": "h1",
+          "mpCon": 16,
+          "mad": 123,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 2,
+          "hs": "h2",
+          "mpCon": 16,
+          "mad": 126,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 3,
+          "hs": "h3",
+          "mpCon": 16,
+          "mad": 129,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 4,
+          "hs": "h4",
+          "mpCon": 16,
+          "mad": 132,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 5,
+          "hs": "h5",
+          "mpCon": 16,
+          "mad": 135,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 6,
+          "hs": "h6",
+          "mpCon": 16,
+          "mad": 138,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 7,
+          "hs": "h7",
+          "mpCon": 16,
+          "mad": 141,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 8,
+          "hs": "h8",
+          "mpCon": 16,
+          "mad": 144,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 9,
+          "hs": "h9",
+          "mpCon": 16,
+          "mad": 147,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 10,
+          "hs": "h10",
+          "mpCon": 16,
+          "mad": 150,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 11,
+          "hs": "h11",
+          "mpCon": 24,
+          "mad": 154,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 12,
+          "hs": "h12",
+          "mpCon": 24,
+          "mad": 158,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 13,
+          "hs": "h13",
+          "mpCon": 24,
+          "mad": 162,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 14,
+          "hs": "h14",
+          "mpCon": 24,
+          "mad": 166,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 15,
+          "hs": "h15",
+          "mpCon": 24,
+          "mad": 170,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 16,
+          "hs": "h16",
+          "mpCon": 24,
+          "mad": 174,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 17,
+          "hs": "h17",
+          "mpCon": 24,
+          "mad": 178,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 18,
+          "hs": "h18",
+          "mpCon": 24,
+          "mad": 182,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 19,
+          "hs": "h19",
+          "mpCon": 24,
+          "mad": 186,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 20,
+          "hs": "h20",
+          "mpCon": 24,
+          "mad": 190,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 21,
+          "hs": "h21",
+          "mpCon": 30,
+          "mad": 195,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 22,
+          "hs": "h22",
+          "mpCon": 30,
+          "mad": 200,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 23,
+          "hs": "h23",
+          "mpCon": 30,
+          "mad": 205,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 24,
+          "hs": "h24",
+          "mpCon": 30,
+          "mad": 210,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 25,
+          "hs": "h25",
+          "mpCon": 30,
+          "mad": 215,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 26,
+          "hs": "h26",
+          "mpCon": 29,
+          "mad": 220,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 27,
+          "hs": "h27",
+          "mpCon": 28,
+          "mad": 225,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 28,
+          "hs": "h28",
+          "mpCon": 27,
+          "mad": 230,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 29,
+          "hs": "h29",
+          "mpCon": 26,
+          "mad": 235,
+          "mastery": 10,
+          "attackCount": 2
+        },
+        {
+          "level": 30,
+          "hs": "h30",
+          "mpCon": 25,
+          "mad": 240,
+          "mastery": 10,
+          "attackCount": 3,
+          "mobCount": 3
+        }
+      ]
+    },
+    {
+      "element": "h",
+      "summonInterval": 2.1,
+      "key": "libra",
+      "id": 2321020,
+      "kind": "Summon",
+      "magic": true,
+      "levels": [
+        {
+          "level": 1,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h1",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 2,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h2",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 3,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h3",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 4,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h4",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 5,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h5",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 6,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h6",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 7,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h7",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 8,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h8",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 9,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h9",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 10,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h10",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 11,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h11",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 12,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h12",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 13,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h13",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 14,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h14",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 15,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h15",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 16,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h16",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 17,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h17",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 18,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h18",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 19,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h19",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 20,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h20",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 21,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h21",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 22,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h22",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 23,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h23",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 24,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h24",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 25,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h25",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 26,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h26",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 27,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h27",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 28,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h28",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 29,
+          "attackCount": 1,
+          "cooltime": 120,
+          "damage": 1100,
+          "mad": 11000,
+          "hs": "h29",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        },
+        {
+          "level": 30,
+          "attackCount": 1,
+          "cooltime": 5,
+          "damage": 110,
+          "mad": 110,
+          "hs": "h30",
+          "lt": [
+            -700,
+            -500
+          ],
+          "mobCount": 12,
+          "mpCon": 1000,
+          "rb": [
+            700,
+            300
+          ],
+          "time": 30
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "illusion_slash",
+      "id": 1121021,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h1",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 2,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h2",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 3,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h3",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 4,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h4",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 5,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h5",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 6,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h6",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 7,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h7",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 8,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h8",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 9,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h9",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 10,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h10",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 11,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h11",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 12,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h12",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 13,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h13",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 14,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h14",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 15,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h15",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 16,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h16",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 17,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h17",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 18,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h18",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 19,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h19",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 20,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h20",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 21,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h21",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 22,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h22",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 23,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h23",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 24,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h24",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 25,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h25",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 26,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h26",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 27,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h27",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 28,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h28",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 29,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 275,
+          "mad": 275,
+          "hs": "h29",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 30,
+          "attackCount": 4,
+          "cooltime": 0,
+          "damage": 175,
+          "mad": 175,
+          "hs": "h30",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        }
+      ]
+    },
+    {
+      "element": "",
+      "summonInterval": 0.0,
+      "key": "illusion_explosion",
+      "id": 1121022,
+      "kind": "Attack",
+      "magic": false,
+      "levels": [
+        {
+          "level": 1,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h1",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 2,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h2",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 3,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h3",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 4,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h4",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 5,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h5",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 6,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h6",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 7,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h7",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 8,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h8",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 9,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h9",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 10,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h10",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 11,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h11",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 12,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h12",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 13,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h13",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 14,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h14",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 15,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h15",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 16,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h16",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 17,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h17",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 18,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h18",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 19,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h19",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 20,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h20",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 21,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h21",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 22,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h22",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 23,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h23",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 24,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h24",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 25,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h25",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 26,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h26",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 27,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h27",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 28,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h28",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 29,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 550,
+          "mad": 550,
+          "hs": "h29",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        },
+        {
+          "level": 30,
+          "attackCount": 5,
+          "cooltime": 0,
+          "damage": 175,
+          "mad": 175,
+          "hs": "h30",
+          "lt": [
+            -600,
+            -300
+          ],
+          "mobCount": 8,
+          "mpCon": 0,
+          "rb": [
+            5,
+            50
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,46 +1,83 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-// 武器目录：金币购买，每个武器改玩家的普攻属性（伤害/攻速/攻击距离），
-// 同时决定手持道具的视觉形状（kind）。起始武器 w_sword_basic 免费拥有。
-public enum WeaponKind { sword, dagger, bow, staff, mace, greatsword }
-
-[System.Serializable]
+public enum WeaponKind { sword, dagger, bow, staff, mace, greatsword, axe, wand, greataxe, greatmace, spear, polearm, crossbow, claw, knuckle, gun }
 public struct WeaponDef
 {
-    public string id;
-    public string name;
+    public string id, name;
     public int price;
     public WeaponKind kind;
     public Color color;
-    public float dmgAdd;      // 直接加成的伤害
-    public float dmgMul;      // 伤害倍率
-    public float intervalMul; // 攻速倍率（<1 更快）
-    public float reachAdd;    // 攻击距离加成
+    public double multiplier;
+    public Dictionary<string, object> stats;
+}
+public sealed class NativeWeaponShop
+{
+    public int id;
+    public string name;
+    public readonly List<WeaponDef> items = new List<WeaponDef>();
 }
 
 public static class WeaponDefs
 {
-    static readonly WeaponDef[] All = new WeaponDef[]
+    static readonly List<WeaponDef> all = new List<WeaponDef>();
+    static readonly List<NativeWeaponShop> shops = new List<NativeWeaponShop>();
+    static bool loaded;
+    // 一次性旧原型存档迁移；烈焰剑无原物品，保留旧 ID 到档案审计字段后折为同类基础剑。
+    public static string Canonical(string id)
     {
-        W("w_sword_basic",  "铁剑",     0,   WeaponKind.sword,      new Color(0.80f,0.82f,0.88f), 0f,   1.00f, 1.00f, 0.0f),
-        W("w_dagger",       "匕首",     120, WeaponKind.dagger,     new Color(0.82f,0.82f,0.86f), 0f,   0.80f, 0.60f, -0.2f),
-        W("w_bow",          "短弓",     150, WeaponKind.bow,        new Color(0.70f,0.85f,0.50f), 0f,   1.10f, 0.90f, 0.6f),
-        W("w_mace",         "钝器",     160, WeaponKind.mace,       new Color(0.80f,0.60f,0.40f), 4f,   1.20f, 1.15f, 0.0f),
-        W("w_staff",        "法杖",     180, WeaponKind.staff,      new Color(0.60f,0.80f,1.00f), 6f,   1.25f, 1.10f, 0.3f),
-        W("w_sword_flame",  "烈焰剑",   260, WeaponKind.sword,      new Color(1.00f,0.50f,0.20f), 8f,   1.40f, 1.00f, 0.2f),
-        W("w_greatsword",   "巨剑",     520, WeaponKind.greatsword, new Color(0.90f,0.90f,0.95f), 14f,  1.90f, 1.40f, 0.4f),
-    };
-
-    static WeaponDef W(string id, string name, int price, WeaponKind k, Color c, float dmgAdd, float dmgMul, float intervalMul, float reachAdd)
-        => new WeaponDef { id = id, name = name, price = price, kind = k, color = c,
-                           dmgAdd = dmgAdd, dmgMul = dmgMul, intervalMul = intervalMul, reachAdd = reachAdd };
-
-    public static WeaponDef Get(string id)
-    {
-        foreach (var d in All) if (d.id == id) return d;
-        return All[0];
+        switch (id)
+        {
+            case "w_sword_basic": return "1302000";
+            case "w_dagger": return "1332000";
+            case "w_bow": return "1452000";
+            case "w_mace": return "1322000";
+            case "w_staff": return "1382000";
+            case "w_sword_flame": return "1302007";
+            case "w_greatsword": return "1402000";
+            default: return id;
+        }
     }
-
-    public static int Count => All.Length;
-    public static WeaponDef At(int i) => All[i];
+    static void Ensure()
+    {
+        if (loaded) return;
+        loaded = true;
+        foreach (Dictionary<string, object> item in (List<object>)NativeCombatData.Root["items"])
+            all.Add(new WeaponDef { id = item["id"].ToString(), name = (string)item["name"],
+                kind = (WeaponKind)System.Enum.Parse(typeof(WeaponKind), (string)item["kind"]),
+                multiplier = System.Convert.ToDouble(item["multiplier"]), stats = (Dictionary<string, object>)item["stats"],
+                color = new Color(.6f,.8f,1f), price = -1 });
+        foreach (Dictionary<string, object> shop in (List<object>)NativeCombatData.Root["shops"])
+        {
+            var s = new NativeWeaponShop { id = NativeCombatData.Int(shop,"id"), name = (string)shop["name"] };
+            foreach (Dictionary<string, object> row in (List<object>)shop["rows"])
+            {
+                var item = all.Find(w => w.id == row["item"].ToString());
+                item.price = NativeCombatData.Int(row,"price");
+                s.items.Add(item);
+                int at = all.FindIndex(w => w.id == item.id);
+                if (all[at].price < 0) all[at] = item;
+            }
+            shops.Add(s);
+        }
+    }
+    public static IReadOnlyList<NativeWeaponShop> Shops { get { Ensure(); return shops.AsReadOnly(); } }
+    public static bool TryGet(string id, out WeaponDef weapon)
+    {
+        Ensure(); id = Canonical(id);
+        foreach (var item in all) if (item.id == id) { weapon = item; return true; }
+        weapon = default; return false;
+    }
+    public static WeaponDef Get(string id) => TryGet(id, out var item) ? item : Get("1302000");
+    public static int Count { get { Ensure(); return all.Count; } }
+    public static WeaponDef At(int i) { Ensure(); return all[i]; }
+    public static bool CanEquip(WeaponDef w, CharacterAttributes a, string cls)
+    {
+        var d = w.stats;
+        int mask = cls == "mage" || cls == "priest" ? 2 : cls == "archer" ? 4 : 1;
+        int job = NativeCombatData.Int(d,"reqJob");
+        return (job == 0 || (job > 0 && (job & mask) != 0)) && a.level >= NativeCombatData.Int(d,"reqLevel") &&
+            a.str >= NativeCombatData.Int(d,"reqSTR") && a.dex >= NativeCombatData.Int(d,"reqDEX") &&
+            a.intelligence >= NativeCombatData.Int(d,"reqINT") && a.luk >= NativeCombatData.Int(d,"reqLUK");
+    }
 }

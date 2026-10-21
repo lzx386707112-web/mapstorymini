@@ -62,6 +62,7 @@ public static class MovementChecks
             for(int i=0;i<30;i++) Tick(under,1,false,1f/60f);
             Require(under.worldX>1.5f && under.grounded && under.terrainY==0,"overhead platform became invisible wall");
             UnityEngine.Object.DestroyImmediate(under.gameObject);
+            CheckRush();
             CheckClimbs();
             CheckAllFootholds();
             TouchInput.Reset();
@@ -71,6 +72,35 @@ public static class MovementChecks
         }
         catch(Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
     }
+    static void CheckRush()
+    {
+        foreach (float dt in new[]{1f/30,1f/60,1f/120})
+        {
+            var skill = NativeSkillCatalog.Get("dash");
+            var p = Create(new List<Vector4>{new Vector4(-10,0,10,0)},0,0);
+            p.facing = 1; p.BeginRush(skill,.5f);
+            for (int i=0;i<Mathf.CeilToInt(.6f/dt);i++) Tick(p,0,false,dt);
+            Require(Mathf.Abs(p.worldX-4)<.01f && p.grounded,"rush distance/frame independence " + dt);
+            UnityEngine.Object.DestroyImmediate(p.gameObject);
+            p = Create(new List<Vector4>{new Vector4(-10,0,2,0),new Vector4(2,0,2,3),new Vector4(2,3,10,3)},0,0);
+            p.facing=1; p.BeginRush(skill,.5f);
+            for (int i=0;i<Mathf.CeilToInt(.6f/dt);i++) Tick(p,0,false,dt);
+            Require(p.worldX<2 && !p.IsRushing,"rush passed wall " + dt);
+            UnityEngine.Object.DestroyImmediate(p.gameObject);
+            p = Create(new List<Vector4>{new Vector4(-10,0,1,0),new Vector4(1,-3,10,-3)},0,0);
+            p.facing=1; p.BeginRush(skill,.5f);
+            for (int i=0;i<Mathf.CeilToInt(.3f/dt);i++) Tick(p,0,false,dt);
+            Require(!p.grounded && p.FeetPos.y<0,"rush did not fall from ledge " + dt);
+            p.CancelRush(); Require(!p.IsRushing,"rush cancel");
+            UnityEngine.Object.DestroyImmediate(p.gameObject);
+            p = Create(new List<Vector4>{new Vector4(-10,-2,10,2)},0,0);
+            p.facing=-1; p.BeginRush(skill,.5f);
+            for (int i=0;i<Mathf.CeilToInt(.6f/dt);i++) Tick(p,0,false,dt);
+            Require(Mathf.Abs(p.worldX+4)<.01f && p.grounded && Mathf.Abs(p.FeetPos.y+.8f)<.01f,"rush slope/left facing " + dt);
+            UnityEngine.Object.DestroyImmediate(p.gameObject);
+        }
+    }
+
     static void CheckClimbs()
     {
         foreach (string theme in new[]{"harbor","forest","cliff","nest"})

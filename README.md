@@ -76,6 +76,10 @@
 
 ## 四、代码结构
 
+后续单机功能的职责边界、现有脚本归属及渐进拆分顺序见 [单机架构规划](docs/single-player-architecture.md)。该文档按当前代码核对，以下 M0 说明中的部分限制已随开发更新。
+
+原端源码对应的档案/商店、伤害入口、技能等级配置、死亡奖励与战斗清理迁移，见 [原端玩法迁移记录](docs/original-gameplay-port.md)；其中明确区分已实现规则与尚未完成的 1:1 范围。
+
 | 文件 | 作用 |
 |---|---|
 | `GameLoop.cs` | 场景构建、刷怪、游戏状态。**改数值先看这里** |
@@ -89,7 +93,7 @@
 | `GameHUD.cs` | 技能栏、血条、调参面板 |
 | `SpriteFactory.cs` | 纯色方块生成（美术就位后替换这里） |
 
-**要改数值，只需要动三个地方**：`GameLoop.Spawn()` 里的敌人属性、`PlayerCtrl` 的移动与攻击字段、`SkillSystem.Awake()` 里的四个技能。
+玩法数据现由原端快照提供：`GameplaySkills.json`、`GameplayCombat.json`、`GameplayRewards.json`；使用 `tools/export_gameplay.py` 和 `tools/export_combat_data.py` 重导出。原端依据及单机适配边界见 [原端玩法核对](docs/original-gameplay-port.md)。
 
 ---
 

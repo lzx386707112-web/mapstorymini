@@ -15,7 +15,14 @@ public class PlayerCtrl : MonoBehaviour
     public const float LaneStep = 0.22f;
 
     // 基础属性（武器在此之上加成）。改数值只动这里，不要动面板上的默认字段。
-    const float BaseAtk = 11f, BaseInterval = 0.55f, BaseReach = 2.3f;
+    const float BaseInterval = 0.55f, BaseReach = 2.3f;
+    WeaponDef weapon;
+    CharacterAttributes baseAttributes;
+    public CharacterAttributes Attributes { get; private set; }
+    int weaponAttack, magicAttack;
+    float rushRemaining, rushSpeed;
+    int rushFacing;
+    public bool IsRushing => rushRemaining > 0;
 
     // 可走范围：由 GameLoop 在切关时按背景切片设，默认是无限刷怪模式的宽度。
     // 原来写死 ±13 会让角色走出地图切片，背景在屏幕边上直接断开。
@@ -72,14 +79,15 @@ public class PlayerCtrl : MonoBehaviour
     public float hpMax = 100f;
     public float hp    = 100f;
     public float invulnUntil;
+    public float mpMax = 100f;
+    public float mp = 100f;
+    float attackBonus;
+    float attackBonusUntil;
+    public float SkillActionDuration { get; private set; } = 0.55f;
 
     public int   lane     = 2;
     public int   facing   = 1;
     public bool  grounded = true;
-
-    // 攻击增益（Buff 技能触发）：到期自动失效
-    public float atkBuffMul = 1f;
-    float atkBuffUntil;
 
     [HideInInspector] public float worldX;
     [HideInInspector] public float jumpY;
@@ -88,6 +96,7 @@ public class PlayerCtrl : MonoBehaviour
     // 切关 / 重生时调用：把脚下地形吸附到 x 处的 foothold 上
     public void ResetTerrain()
     {
+        CancelRush();
         climb = null;
         grabCooldown = 0f;
         terrainY = GroundAt(worldX, GroundY);
@@ -102,7 +111,12 @@ public class PlayerCtrl : MonoBehaviour
     {
         if (vis == null || IsClimbing) return;
         string action = "skill_" + skill;
-        vis.PlayOnce(Art.GetClip(vis.kind, vis.key, action) != null ? action : "atk");
+        if (Art.GetClip(vis.kind, vis.key, action) == null) action = "atk";
+        var clip = Art.GetClip(vis.kind, vis.key, action);
+        SkillActionDuration = 0f;
+        if (clip != null) foreach (float delay in clip.delays) SkillActionDuration += delay;
+        if (SkillActionDuration <= 0f) SkillActionDuration = attackInterval;
+        vis.PlayOnce(action);
     }
 
     float laneVis;
@@ -179,10 +193,14 @@ public class PlayerCtrl : MonoBehaviour
     // 武器属性 + 装扮覆盖层：每次（重新）进关都会按当前 Profile 重建
     void ApplyLoadout()
     {
-        var w = WeaponDefs.Get(Profile.equipWeapon);
-        attackDamage   = (BaseAtk + w.dmgAdd) * w.dmgMul;
-        attackInterval = BaseInterval * w.intervalMul;
-        reach          = BaseReach + w.reachAdd;
+        weapon = WeaponDefs.Get(Profile.equipWeapon);
+        baseAttributes = Profile.Attributes;
+        RefreshAttributes();
+        hpMax = Attributes.maxHp; mpMax = Attributes.maxMp; hp = hpMax; mp = mpMax;
+        CancelRush();
+        attackDamage = EffectiveAtk;
+        attackInterval = BaseInterval;
+        reach = BaseReach;
         BuildCosmetics();
     }
 
@@ -224,6 +242,7 @@ public class PlayerCtrl : MonoBehaviour
 
     void Update()
     {
+        if (GameLoop.I != null && (GameLoop.I.state != GameLoop.GameState.Playing || GameLoop.I.gameOver)) return;
         float dt = Time.deltaTime;
         if (dt > 0f) Step(dt);   // 顿帧期间 dt==0，逻辑自动跳过
         SyncTransform();
@@ -304,6 +323,21 @@ public class PlayerCtrl : MonoBehaviour
     // 空中位置独立于脚下平台；只在下降时扫过 foothold 才落地。
     void StepMovement(float h, bool jumpReq, float dt)
     {
+        if (rushRemaining > 0)
+        {
+            h = rushFacing * rushSpeed / moveSpeed;
+            float step = Mathf.Min(dt, rushRemaining / rushSpeed);
+            float before = worldX;
+            rushRemaining = Mathf.Max(0,rushRemaining-rushSpeed*step);
+            // 同一套墙/坡/落地求解；递归一次时不再进入突进分支。
+            float remaining = rushRemaining;
+            rushRemaining = 0;
+            float climbBefore = climbInput; climbInput = 0;
+            StepMovement(h, false, step);
+            climbInput = climbBefore;
+            rushRemaining = Mathf.Abs(worldX-before) < .00001f ? 0 : remaining;
+            return;
+        }
         grabCooldown = Mathf.Max(0f, grabCooldown - dt);
         if (StepClimb(h, jumpReq, dt)) return;
         if (jumpReq && grounded)
@@ -453,7 +487,7 @@ public class PlayerCtrl : MonoBehaviour
 
     void StrikeBoss(BossUnit b)
     {
-        b.TakeDamage(EffectiveAtk, facing);
+        b.TakeHit(RollAttack(b.CombatStats), facing);
         HitFeel.Punch(1f);
         if (vis != null) vis.PlayOnce("atk", 1f);
         // 原版近战的视觉就是角色挥砍帧本身（武器合成在帧里），没有额外的弧光贴片
@@ -482,15 +516,18 @@ public class PlayerCtrl : MonoBehaviour
 
     void Strike(EnemyUnit e)
     {
-        e.TakeDamage(EffectiveAtk, facing);
+        e.TakeHit(RollAttack(e.CombatStats), facing);
         HitFeel.Punch(1f);
         if (vis != null) vis.PlayOnce("atk", 1f);
         // 同 StrikeBoss：挥砍帧即视觉，不再叠黄色弧光
     }
 
-    public void TakeDamage(float dmg, int dir)
+    public void TakeDamage(float dmg, int dir, bool magic = false, int attackerLevel = 1)
     {
-        if (Time.unscaledTime < invulnUntil) return;
+        if (hp <= 0f || Time.unscaledTime < invulnUntil) return;
+        RefreshAttributes();
+        dmg = CombatRules.Incoming(dmg, Attributes, magic, attackerLevel, Random.value).Amount;
+        if (dmg <= 0) return;
         hp = Mathf.Max(0f, hp - dmg);
         invulnUntil = Time.unscaledTime + 0.5f;
         if (IsClimbing) { climb = null; grabCooldown = 0.25f; vy = 0f; grounded = false; }
@@ -505,14 +542,51 @@ public class PlayerCtrl : MonoBehaviour
 
     public void Heal(float v) => hp = Mathf.Min(hpMax, hp + v);
 
-    // Buff 技能：临时提升普攻倍率
-    public void AddAtkBuff(float mul, float sec)
+    public void AddAttackBonus(float amount, float seconds)
     {
-        atkBuffMul = mul;
-        atkBuffUntil = Time.unscaledTime + sec;
+        attackBonus = amount;
+        attackBonusUntil = Time.unscaledTime + seconds;
     }
-    float AtkMul() => Time.unscaledTime < atkBuffUntil ? atkBuffMul : 1f;
-    public float EffectiveAtk => attackDamage * AtkMul();
+
+    void RefreshAttributes()
+    {
+        Attributes = baseAttributes.WithWeapon(weapon, Time.unscaledTime < attackBonusUntil ? Mathf.RoundToInt(attackBonus) : 0,
+            out weaponAttack, out magicAttack);
+    }
+    public DamageResult RollAttack(System.Collections.Generic.Dictionary<string, object> target, NativeSkillDefinition skill = null)
+    {
+        RefreshAttributes();
+        return CombatRules.Attack(Attributes, weapon, weaponAttack, magicAttack, target, skill,
+            Random.value, Random.value, Random.value);
+    }
+    public float EffectiveAtk
+    {
+        get
+        {
+            RefreshAttributes();
+            bool dexWeapon = weapon.kind == WeaponKind.bow || weapon.kind == WeaponKind.crossbow || weapon.kind == WeaponKind.gun;
+            if (weapon.kind == WeaponKind.claw) return CombatRules.MaxPhysicalDamage(Attributes.luk,Attributes.dex+Attributes.str,weaponAttack,weapon.multiplier);
+            return dexWeapon ? CombatRules.MaxPhysicalDamage(Attributes.dex, Attributes.str, weaponAttack, weapon.multiplier) :
+                CombatRules.MaxPhysicalDamage(Attributes.str, Attributes.dex, weaponAttack, weapon.multiplier);
+        }
+    }
+    public void BeginRush(NativeSkillDefinition skill, float duration)
+    {
+        // WZ Rush 无距离/速度字段，以前向攻击框宽度作为最大行程；时长取原角色动作。
+        // 精确 EXE 移动常量尚未提供，此处是显式的本地运动适配。
+        rushRemaining = Mathf.Max(0, skill.Max.x-skill.Min.x);
+        rushSpeed = rushRemaining / Mathf.Max(.01f,duration);
+        rushFacing = facing;
+    }
+    public void CancelRush() { rushRemaining = 0; }
+
+    public void ResetCombatState()
+    {
+        hp = hpMax; mp = mpMax;
+        CancelRush();
+        attackBonus = 0; attackBonusUntil = 0;
+        GetComponent<SkillSystem>()?.CancelActions();
+    }
 
     void SyncTransform()
     {

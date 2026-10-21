@@ -16,7 +16,7 @@ public class LobbyCheck
             bool hasArt = Art.Has("chars", d.artKey) && Art.GetClip("chars", d.artKey, "stand") != null;
             string skills = "";
             for (int j = 0; j < d.skills.Length; j++)
-                skills += d.skills[j].name + "(" + d.skills[j].effect + "," + d.skills[j].cd + "s) ";
+                skills += d.skills[j].name + "(" + NativeSkillCatalog.Get(d.skills[j].art).Kind + "," + NativeSkillCatalog.Get(d.skills[j].art).Cooldown + "s) ";
             Debug.Log("[Check] 职业 " + d.id + " 素材=" + (hasArt ? "OK" : "缺失") + " 技能=" + skills);
         }
 
@@ -24,7 +24,7 @@ public class LobbyCheck
         {
             var w = WeaponDefs.At(i);
             Debug.Log("[Check] 武器 " + w.id + " 价=" + w.price + " 类型=" + w.kind +
-                      " 伤害x" + w.dmgMul + " 攻速x" + w.intervalMul + " 距离" + w.reachAdd);
+                      " 攻击 " + NativeCombatData.Int(w.stats,"incPAD") + " 魔攻 " + NativeCombatData.Int(w.stats,"incMAD"));
         }
 
         // 装扮贴图：用真实角色帧验证染色/武器贴图在运行时不抛异常
@@ -36,11 +36,10 @@ public class LobbyCheck
         foreach (WeaponKind k in System.Enum.GetValues(typeof(WeaponKind)))
             Debug.Log("[Check] 武器贴图 " + k + " = " + (CosmeticFactory.WeaponSprite(k, new Color(0.8f,0.8f,0.9f)) != null));
 
-        // 金币流程模拟
-        int g0 = Profile.gold;
-        Profile.AddGold(50); Profile.AddGold(15);
-        bool buy = Profile.Spend(120);
-        Debug.Log("[Check] 金币流程 起始=" + g0 + " +65后=" + Profile.gold + " 花120=" + buy + " 余=" + Profile.gold);
+        // 使用独立状态做规则检查，避免自检修改真实玩家金币。
+        var test = new PlayerProfileData();
+        test.AddGold(65);
+        Debug.Assert(!test.TrySpend(120) && test.gold == 65);
 
         Debug.Log("[Check] 完成");
         EditorApplication.Exit(0);

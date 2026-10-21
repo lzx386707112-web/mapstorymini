@@ -13,6 +13,7 @@ public class Lobby : MonoBehaviour
 
     GUIStyle _small, _label, _title, _sw;
     Vector2 _mouse;
+    int shopIndex, shopPage;
 
     void OnGUI()
     {
@@ -64,6 +65,9 @@ public class Lobby : MonoBehaviour
         UiKit.Fill(new Rect(x, y, w, 2f), new Color(0.5f, 0.8f, 1f));
 
         float cx = x + w * 0.5f;
+        var attrs = Profile.Attributes;
+        GUI.Label(new Rect(x+12,y+38,w-24,22), "Lv."+attrs.level+"  STR "+attrs.str+"  DEX "+attrs.dex, _small);
+        GUI.Label(new Rect(x+12,y+62,w-24,22), "INT "+attrs.intelligence+"  LUK "+attrs.luk+"  HP "+attrs.maxHp+"  MP "+attrs.maxMp, _small);
         float footY = y + h - 40f;
         DrawCharacter(cx, footY, 300f, Profile.cls, Profile.hair, Profile.outfit, Profile.equipWeapon);
 
@@ -125,11 +129,11 @@ public class Lobby : MonoBehaviour
     {
         float y = 124f;
         SectionTitle(x, y, "头发（真实发型）"); y += 30f;
-        y = HairRow(x, y, Profile.hair, id => { Profile.SetHair(id); Profile.Save(); });
+        y = HairRow(x, y, Profile.hair, id => { Profile.SetHair(id); });
 
         y += 14f; SectionTitle(x, y, "服饰"); y += 30f;
         y = SwatchRow(x, y, new List<string>(CosmeticFactory.OutfitColors.Keys), Profile.outfit,
-                      id => CosmeticFactory.OutfitColor(id), id => { Profile.SetOutfit(id); Profile.Save(); });
+                      id => CosmeticFactory.OutfitColor(id), id => { Profile.SetOutfit(id); });
 
         y += 14f; SectionTitle(x, y, "武器外观（已拥有）"); y += 30f;
         // 已拥有武器：点选即装备（改变手持外观）
@@ -143,7 +147,7 @@ public class Lobby : MonoBehaviour
             bool on = Profile.equipWeapon == oid;
             UiKit.Fill(r, on ? new Color(0.22f, 0.42f, 0.62f) : new Color(0.14f, 0.17f, 0.22f));
             GUI.Label(r, WeaponDefs.Get(oid).name, new GUIStyle(_sw) { alignment = TextAnchor.MiddleCenter });
-            if (Clicked(r)) { Profile.EquipWeapon(oid); Profile.Save(); }
+            if (Clicked(r)) { Profile.EquipWeapon(oid); }
             col++;
         }
     }
@@ -166,7 +170,7 @@ public class Lobby : MonoBehaviour
                       new GUIStyle(_label) { fontStyle = FontStyle.Bold });
             GUI.Label(new Rect(bx + 12f, by + 36f, cardW - 20f, 20), "4 技能 · 点击切换",
                       new GUIStyle(_small) { fontSize = 12 });
-            if (Clicked(r)) { Profile.SetClass(d.id); Profile.Save(); }
+            if (Clicked(r)) { Profile.SetClass(d.id); }
         }
 
         // 当前职业技能列表
@@ -176,9 +180,10 @@ public class Lobby : MonoBehaviour
         for (int i = 0; i < cd.skills.Length; i++)
         {
             var s = cd.skills[i];
+            var native = NativeSkillCatalog.Get(s.art);
             UiKit.Fill(new Rect(x, ly, w, 26f), new Color(0.12f, 0.14f, 0.19f));
             GUI.Label(new Rect(x + 8f, ly + 3f, w - 16f, 22),
-                      (i + 1) + ". " + s.name + "   CD " + s.cd + "s   " + s.hint, _small);
+                      (i + 1) + ". " + s.name + "   CD " + native.Cooldown + "s   Lv.1 / MP " + native.MpCost, _small);
             ly += 30f;
         }
     }
@@ -186,44 +191,44 @@ public class Lobby : MonoBehaviour
     // —————————— 武器商店 ——————————
     void DrawShop(float x, float w)
     {
-        float y = 124f;
-        for (int i = 0; i < WeaponDefs.Count; i++)
+        float y = 160f;
+        var shops = WeaponDefs.Shops;
+        var shop = shops[shopIndex];
+        if (GUI.Button(new Rect(x,120,w * .32f,28), "商店：" + shop.name + " →"))
+        { shopIndex = (shopIndex+1)%shops.Count; shopPage = 0; }
+        int pages = Mathf.Max(1,(shop.items.Count+3)/4);
+        if (GUI.Button(new Rect(x+w*.34f,120,w*.25f,28), "上一页")) shopPage = (shopPage+pages-1)%pages;
+        if (GUI.Button(new Rect(x+w*.61f,120,w*.39f,28), (shopPage+1) + "/" + pages + " 下一页")) shopPage = (shopPage+1)%pages;
+        if (!Profile.LastSaveSucceeded) GUI.Label(new Rect(x, 94f, w, 26f), "存档保存失败，请检查设备可用空间", _small);
+        for (int i = shopPage*4; i < Mathf.Min(shop.items.Count,shopPage*4+4); i++)
         {
-            var d = WeaponDefs.At(i);
+            var d = shop.items[i];
             float rh = 58f;
             UiKit.Fill(new Rect(x, y, w, rh), new Color(0.12f, 0.14f, 0.19f, 0.9f));
             UiKit.Fill(new Rect(x, y, 4f, rh), d.color);
 
-            GUI.Label(new Rect(x + 12f, y + 6f, w - 160f, 22), d.name,
+            GUI.Label(new Rect(x + 12f, y + 6f, w - 240f, 22), d.name,
                       new GUIStyle(_label) { fontStyle = FontStyle.Bold });
-            string stat = string.Format("伤害+{0}  x{1}  攻速x{2}  距离{3:+0.0;-0.0}",
-                                        d.dmgAdd, d.dmgMul, d.intervalMul, d.reachAdd);
-            GUI.Label(new Rect(x + 12f, y + 30f, w - 160f, 20), stat,
+            string stat = "攻击 " + NativeCombatData.Int(d.stats,"incPAD") + " 魔攻 " + NativeCombatData.Int(d.stats,"incMAD") +
+                " 需求 Lv." + NativeCombatData.Int(d.stats,"reqLevel") + " STR " + NativeCombatData.Int(d.stats,"reqSTR") +
+                (WeaponDefs.CanEquip(d,Profile.Attributes,Profile.cls) ? "" : "（未满足装备条件）");
+            GUI.Label(new Rect(x + 12f, y + 30f, w - 240f, 20), stat,
                       new GUIStyle(_small) { fontSize = 12 });
 
             bool owned = Profile.OwnsWeapon(d.id);
-            var br = new Rect(x + w - 140f, y + 12f, 128f, 34f);
+            var equip = new Rect(x + w - 220f, y + 12f, 72f, 34f);
+            bool eq = Profile.equipWeapon == d.id;
             if (owned)
             {
-                bool eq = Profile.equipWeapon == d.id;
-                UiKit.Fill(br, eq ? new Color(0.25f, 0.55f, 0.35f) : new Color(0.2f, 0.3f, 0.4f));
-                GUI.Label(br, eq ? "已装备" : "装备", new GUIStyle(_sw) { alignment = TextAnchor.MiddleCenter });
-                if (!eq && Clicked(br)) { Profile.EquipWeapon(d.id); Profile.Save(); }
+                UiKit.Fill(equip, eq ? new Color(0.25f, 0.55f, 0.35f) : new Color(0.2f, 0.3f, 0.4f));
+                GUI.Label(equip, eq ? "已装备" : "装备", new GUIStyle(_sw) { alignment = TextAnchor.MiddleCenter });
+                if (!eq && Clicked(equip)) Profile.EquipWeapon(d.id);
             }
-            else
-            {
-                bool can = Profile.gold >= d.price;
-                UiKit.Fill(br, can ? new Color(0.5f, 0.4f, 0.15f) : new Color(0.22f, 0.18f, 0.15f));
-                GUI.Label(br, "购买 " + d.price, new GUIStyle(_sw)
-                {
-                    alignment = TextAnchor.MiddleCenter,
-                    normal = { textColor = can ? new Color(0.98f, 0.9f, 0.5f) : new Color(0.7f, 0.6f, 0.55f) }
-                });
-                if (can && Clicked(br))
-                {
-                    if (Profile.Spend(d.price)) { Profile.OwnWeapon(d.id); Profile.EquipWeapon(d.id); Profile.Save(); }
-                }
-            }
+            var buy = new Rect(x + w - 140f, y + 12f, 128f, 34f);
+            bool can = Profile.gold >= d.price;
+            UiKit.Fill(buy, can ? new Color(0.5f, 0.4f, 0.15f) : new Color(0.22f, 0.18f, 0.15f));
+            GUI.Label(buy, "购买 " + d.price, new GUIStyle(_sw) { alignment = TextAnchor.MiddleCenter });
+            if (can && Clicked(buy)) Profile.TryBuyWeapon(shop.id,i,d.id);
             y += rh + 10f;
         }
     }
@@ -237,7 +242,6 @@ public class Lobby : MonoBehaviour
         GUI.Label(r, "出  战", new GUIStyle(_title) { alignment = TextAnchor.MiddleCenter, fontSize = 24 });
         if (Clicked(r))
         {
-            Profile.Save();
             if (GameLoop.I != null) GameLoop.I.StartGame();
         }
     }

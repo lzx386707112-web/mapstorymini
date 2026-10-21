@@ -26,6 +26,9 @@ public class GameLoop : MonoBehaviour
     float spawnTimer;
     float eliteTimer;
     float respawnTimer;
+    readonly DeathSettlement deaths = new DeathSettlement();
+    readonly System.Collections.Generic.Dictionary<int, SkillRuntimeState> playerCooldowns =
+        new System.Collections.Generic.Dictionary<int, SkillRuntimeState>();
 
     const int MaxEnemies = 11;
 
@@ -81,6 +84,8 @@ public class GameLoop : MonoBehaviour
     {
         if (player != null) { state = GameState.Playing; return; }
         state = GameState.Playing;
+        gameOver = false; killCount = 0; elapsed = 0f;
+        deaths.Clear();
         BuildScene();
 
         // 有关卡数据就走数据驱动；没有则退回无限刷怪（保证项目任何状态下都能按 Play）
@@ -117,12 +122,35 @@ public class GameLoop : MonoBehaviour
     {
         state = GameState.Lobby;
         gameOver = false;
-        if (player != null) { Destroy(player.gameObject); player = null; }
-        foreach (var e in EnemyUnit.All.ToArray()) if (e != null) Destroy(e.gameObject);
-        EnemyUnit.All.Clear();
-        foreach (var b in FindObjectsOfType<BossUnit>()) if (b != null) Destroy(b.gameObject);
+        if (stage != null) { stage.StopSession(); Destroy(stage); stage = null; }
+        ClearBattleEntities();
+        if (player != null)
+        {
+            player.GetComponent<SkillSystem>()?.CancelActions();
+            player.gameObject.SetActive(false);
+            Destroy(player.gameObject); player = null;
+        }
         if (hudGo != null) { Destroy(hudGo); hudGo = null; }
+        deaths.Clear();
+        camRig.target = null;
         camRig?.SnapTo(0f);
+        HitFeel.Reset();
+        Profile.Save();
+    }
+
+    void ClearBattleEntities()
+    {
+        foreach (var summon in FindObjectsOfType<NativeSummon>())
+            if (summon != null) { summon.gameObject.SetActive(false); Destroy(summon.gameObject); }
+        foreach (var e in FindObjectsOfType<EnemyUnit>())
+            if (e != null) { e.gameObject.SetActive(false); Destroy(e.gameObject); }
+        EnemyUnit.All.Clear();
+        foreach (var b in FindObjectsOfType<BossUnit>())
+            if (b != null) { b.gameObject.SetActive(false); Destroy(b.gameObject); }
+        MesoDrop.Clear();
+        foreach (var fx in FindObjectsOfType<SkillFx>())
+            if (fx != null) { fx.gameObject.SetActive(false); Destroy(fx.gameObject); }
+        HitFeel.Reset();
     }
 
     // ——————————————————————— 场景 ———————————————————————
@@ -141,7 +169,7 @@ public class GameLoop : MonoBehaviour
         // 任何非等比缩放都会把人压扁/拉长（旧版的 0.82 x 1.5 就是这个 bug）
         pGo.transform.localScale = Vector3.one;
         player = pGo.AddComponent<PlayerCtrl>();
-        pGo.AddComponent<SkillSystem>();
+        pGo.AddComponent<SkillSystem>().BindCooldowns(playerCooldowns);
 
         camRig.target = pGo.transform;
         camRig.SnapTo(0f);
@@ -220,6 +248,8 @@ public class GameLoop : MonoBehaviour
     public void ApplyTheme(StageTheme t, string key)
     {
         if (t == null) return;
+        player?.GetComponent<SkillSystem>()?.CancelActions();
+        MesoDrop.Clear();
         if (!string.IsNullOrEmpty(key)) themeKey = key;
 
         if (backdrop != null) backdrop.Apply(themeKey, t);
@@ -274,6 +304,7 @@ public class GameLoop : MonoBehaviour
             return;
         }
 
+        if (Input.GetKeyDown(KeyCode.Z)) MesoDrop.TryPickupNearest();
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
         elapsed += dt;
@@ -384,25 +415,23 @@ public class GameLoop : MonoBehaviour
 
     public void OnEnemyKilled(EnemyUnit e)
     {
+        if (state != GameState.Playing || gameOver || e == null || !e.dead || !deaths.TrySettle(e.GetInstanceID())) return;
         killCount++;
-        // 击杀回血：割草模式必须给正向反馈，否则只能靠躲避，节奏会闷
-        if (player != null) player.Heal(e.elite ? 6f : 1.5f);
-        // 金币：消灭怪物获得，用于大厅武器商店
-        Profile.AddGold(e.elite ? 15 : 5);
-        Profile.Save();
+        BattleRewards.Drop(e.artKey, e.transform.position);
     }
 
-    // Boss 死亡奖励（在 BossUnit.Die 里调用）
-    public void RewardBossGold()
+    public void OnBossKilled(BossUnit boss)
     {
-        Profile.AddGold(80);
-        Profile.Save();
+        if (state != GameState.Playing || gameOver || boss == null || !boss.dead || !deaths.TrySettle(boss.GetInstanceID())) return;
+        BattleRewards.Drop(boss.def.type == "slime" ? "slimeking" : "mushmom", boss.transform.position);
     }
 
     public void OnPlayerDead()
     {
         if (gameOver) return;
         gameOver = true;
+        stage?.StopSession();
+        player?.GetComponent<SkillSystem>()?.CancelActions();
         respawnTimer = 1.6f;
         HitFeel.Reset();
     }
@@ -415,17 +444,12 @@ public class GameLoop : MonoBehaviour
         spawnTimer = 1.2f;
         eliteTimer = 14f;
 
-        for (int i = EnemyUnit.All.Count - 1; i >= 0; i--)
-            if (EnemyUnit.All[i] != null) Destroy(EnemyUnit.All[i].gameObject);
-        EnemyUnit.All.Clear();
-
-        // Boss 也要清，否则重来时上一只还站在场上
-        foreach (var b in FindObjectsOfType<BossUnit>())
-            if (b != null) Destroy(b.gameObject);
+        ClearBattleEntities();
+        deaths.Clear();
 
         if (player != null)
         {
-            player.hp = player.hpMax;
+            player.ResetCombatState();
             player.worldX = 0f;
             player.ResetTerrain();
             player.lane = 2;

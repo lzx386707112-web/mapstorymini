@@ -1,0 +1,76 @@
+{
+  "source": "src/main/resources/db/migration/V1.0.51__drop_data_insert_old_data.sql",
+  "sha256": "48518ffc4d507493b0bd56b2e40ba348ffc4ba20f928ae840af3aed6b4a6da68",
+  "mobs": [
+    {
+      "key": "snail",
+      "id": 100100,
+      "exp": 3,
+      "meso": {
+        "minimum": 4,
+        "maximum": 6,
+        "chance": 400000
+      }
+    },
+    {
+      "key": "slime",
+      "id": 210100,
+      "exp": 10,
+      "meso": {
+        "minimum": 12,
+        "maximum": 18,
+        "chance": 400000
+      }
+    },
+    {
+      "key": "mushroom",
+      "id": 1210102,
+      "exp": 15,
+      "meso": {
+        "minimum": 16,
+        "maximum": 24,
+        "chance": 400000
+      }
+    },
+    {
+      "key": "greenmush",
+      "id": 1110100,
+      "exp": 26,
+      "meso": {
+        "minimum": 28,
+        "maximum": 42,
+        "chance": 400000
+      }
+    },
+    {
+      "key": "pig",
+      "id": 1210100,
+      "exp": 15,
+      "meso": {
+        "minimum": 14,
+        "maximum": 21,
+        "chance": 400000
+      }
+    },
+    {
+      "key": "mushmom",
+      "id": 6130101,
+      "exp": 1200,
+      "meso": {
+        "minimum": 800,
+        "maximum": 1196,
+        "chance": 400000
+      }
+    },
+    {
+      "key": "slimeking",
+      "id": 9300003,
+      "exp": 800,
+      "meso": {
+        "minimum": 0,
+        "maximum": 0,
+        "chance": 0
+      }
+    }
+  ]
+}

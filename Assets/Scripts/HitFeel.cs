@@ -10,12 +10,6 @@ public static class HitFeel
     public static float Knockback   = 0.9f;  // 击退距离（世界单位）
     public static float FlashDur    = 0.06f; // 闪白持续（秒）
 
-    // —— 暴击 ——
-    // 原版打怪有明确的暴击（黄/粉字 + 星爆），所以数字不只是白色的伤害值。
-    // 这里给一个温和的默认值：18% 触发、1.7 倍伤害，够让战斗有起伏又不会打乱数值曲线。
-    public static float CritRate     = 0.18f;
-    public static float CritMul      = 1.7f;
-
     static float _stopUntil;
     static float _shakeUntil;
     static float _shakeNow;

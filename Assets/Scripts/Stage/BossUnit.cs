@@ -35,6 +35,7 @@ public class BossUnit : MonoBehaviour
     SpriteRenderer legShade;
 
     public int Lane => 2;
+    public System.Collections.Generic.Dictionary<string, object> CombatStats => NativeCombatData.Mob(def != null && def.type == "slime" ? "slimeking" : "mushmom");
 
     float RadiusUnit => Px.ToUnit(def != null ? def.slam.radius : 122f);
     const float GroundY = PlayerCtrl.GroundY;
@@ -69,7 +70,7 @@ public class BossUnit : MonoBehaviour
     public void Init(StageBossDef d, float startX)
     {
         def = d;
-        hpMax = Mathf.Max(1f, d.hp);
+        hpMax = NativeCombatData.Int(CombatStats,"maxHP",1);
         hp = hpMax;
         laneVis = Lane;
 
@@ -238,7 +239,7 @@ public class BossUnit : MonoBehaviour
         else if (contactTimer <= 0f && Mathf.Abs(p.lane - Lane) <= 1)
         {
             contactTimer = 0.9f;
-            p.TakeDamage(def.contact, dx >= 0f ? 1 : -1);
+            p.TakeDamage(NativeCombatData.Int(CombatStats,"PADamage"), dx >= 0f ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1));
         }
     }
 
@@ -307,12 +308,15 @@ public class BossUnit : MonoBehaviour
     public void TakeDamage(float dmg, int fromDir)
     {
         if (dead) return;
-        // 硬直期伤害 1.25 倍：让玩家学会「等硬直」而不是无脑贴脸
-        float mul = st == St.Recover ? 1.25f : 1f;
+        TakeHit(CombatRules.Resolve(dmg), fromDir);
+    }
 
-        bool crit = Random.value < HitFeel.CritRate;
-        float real = dmg * mul * (crit ? HitFeel.CritMul : 1f);
-        hp -= real;
+    public void TakeHit(DamageResult hit, int fromDir)
+    {
+        if (dead || hit.Amount <= 0) return;
+        bool crit = hit.Critical;
+        float real = hit.Amount;
+        hp = Mathf.Max(0f, hp - real);
 
         if (body != null)
         {
@@ -349,7 +353,7 @@ public class BossUnit : MonoBehaviour
         if (GameLoop.I != null)
         {
             if (GameLoop.I.stage != null) GameLoop.I.stage.OnBossKilled(this);
-            GameLoop.I.RewardBossGold();
+            GameLoop.I.OnBossKilled(this);
         }
         Destroy(gameObject, vis != null ? 0.6f : 0.05f);
     }

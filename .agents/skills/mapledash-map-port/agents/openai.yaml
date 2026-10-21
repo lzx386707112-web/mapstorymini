@@ -1,0 +1,4 @@
+interface:
+  display_name: "冒险岛地图与角色迁移"
+  short_description: "复用原版 WZ 地图、人物脚底锚点、平台碰撞与绳梯逻辑迁移新地图"
+  default_prompt: "使用 $mapledash-map-port，按原客户端代码和 WZ 数据迁移指定地图，复用 MapleDash 的显示、人物与绳梯逻辑并验证。"

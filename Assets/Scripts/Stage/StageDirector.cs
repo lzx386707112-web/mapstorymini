@@ -101,13 +101,10 @@ public class StageDirector : MonoBehaviour
     IEnumerator RunRest(StageSegment seg)
     {
         float t = seg.duration > 0f ? seg.duration : 3f;
-        // 喘息段给一点回血，让「打完一波」有正反馈
-        var p = GameLoop.I != null ? GameLoop.I.player : null;
         while (t > 0f)
         {
             if (GameLoop.I != null && GameLoop.I.gameOver) yield break;
             t -= Time.unscaledDeltaTime;
-            if (p != null) p.Heal(1.2f * Time.unscaledDeltaTime);
             yield return null;
         }
     }
@@ -124,12 +121,9 @@ public class StageDirector : MonoBehaviour
             }
         }
         // 清场才推进：这是「房间制」的核心，也是玩家理解节奏的锚点
-        float guard = 0f;
         while (EnemyUnit.All.Count > 0)
         {
             if (GameLoop.I == null || GameLoop.I.gameOver) yield break;
-            guard += Time.unscaledDeltaTime;
-            if (guard > 60f) break;                     // 兜底：卡怪时不要永远停住
             yield return null;
         }
         yield return new WaitForSecondsRealtime(0.25f);
@@ -219,9 +213,18 @@ public class StageDirector : MonoBehaviour
     }
 
     // 死亡重来：只重跑当前这一关，不从头开始
+    public void StopSession()
+    {
+        StopAllCoroutines(); run = null; boss = null;
+    }
+
+    void OnDisable() => StopSession();
+
     public void RestartLevel()
     {
-        if (run != null) StopCoroutine(run);
+        StopSession();
+        levelIndex = Mathf.Clamp(levelIndex, 0, chapter.levels.Count - 1);
+        allClear = false; levelClear = false;
         boss = null;
         hint = "";
         hintT = 0f;

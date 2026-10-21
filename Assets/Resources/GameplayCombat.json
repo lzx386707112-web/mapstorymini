@@ -1,0 +1,3121 @@
+{
+  "source": "src/main/resources/db/migration/V1.0.55__shopitems_insert_data.sql",
+  "sha256": "a897639137fe9b8f2f7720ef3dce1f531ee1c58860f4b2923aeae30b56318654",
+  "shops": [
+    {
+      "id": 11000,
+      "name": "新手村",
+      "rows": [
+        {
+          "row": 4,
+          "shop": 11000,
+          "item": 1302000,
+          "price": 50,
+          "pitch": 0,
+          "position": 116
+        },
+        {
+          "row": 3,
+          "shop": 11000,
+          "item": 1312004,
+          "price": 50,
+          "pitch": 0,
+          "position": 112
+        },
+        {
+          "row": 2,
+          "shop": 11000,
+          "item": 1322005,
+          "price": 50,
+          "pitch": 0,
+          "position": 108
+        },
+        {
+          "row": 1,
+          "shop": 11000,
+          "item": 1332005,
+          "price": 500,
+          "pitch": 0,
+          "position": 104
+        }
+      ]
+    },
+    {
+      "id": 1001000,
+      "name": "明珠港",
+      "rows": [
+        {
+          "row": 28,
+          "shop": 1001000,
+          "item": 1302000,
+          "price": 50,
+          "pitch": 0,
+          "position": 124
+        },
+        {
+          "row": 27,
+          "shop": 1001000,
+          "item": 1312004,
+          "price": 50,
+          "pitch": 0,
+          "position": 120
+        },
+        {
+          "row": 26,
+          "shop": 1001000,
+          "item": 1322005,
+          "price": 50,
+          "pitch": 0,
+          "position": 116
+        },
+        {
+          "row": 25,
+          "shop": 1001000,
+          "item": 1302007,
+          "price": 3000,
+          "pitch": 0,
+          "position": 112
+        },
+        {
+          "row": 24,
+          "shop": 1001000,
+          "item": 1312000,
+          "price": 3000,
+          "pitch": 0,
+          "position": 108
+        },
+        {
+          "row": 23,
+          "shop": 1001000,
+          "item": 1332007,
+          "price": 1000,
+          "pitch": 0,
+          "position": 104
+        }
+      ]
+    },
+    {
+      "id": 1011000,
+      "name": "射手村",
+      "rows": [
+        {
+          "row": 96,
+          "shop": 1011000,
+          "item": 1452002,
+          "price": 3000,
+          "pitch": 0,
+          "position": 152
+        },
+        {
+          "row": 95,
+          "shop": 1011000,
+          "item": 1452003,
+          "price": 6000,
+          "pitch": 0,
+          "position": 148
+        },
+        {
+          "row": 94,
+          "shop": 1011000,
+          "item": 1452001,
+          "price": 10000,
+          "pitch": 0,
+          "position": 144
+        },
+        {
+          "row": 93,
+          "shop": 1011000,
+          "item": 1452000,
+          "price": 20000,
+          "pitch": 0,
+          "position": 140
+        },
+        {
+          "row": 92,
+          "shop": 1011000,
+          "item": 1462001,
+          "price": 4000,
+          "pitch": 0,
+          "position": 136
+        },
+        {
+          "row": 91,
+          "shop": 1011000,
+          "item": 1462002,
+          "price": 8000,
+          "pitch": 0,
+          "position": 132
+        },
+        {
+          "row": 90,
+          "shop": 1011000,
+          "item": 1462003,
+          "price": 12000,
+          "pitch": 0,
+          "position": 128
+        },
+        {
+          "row": 89,
+          "shop": 1011000,
+          "item": 1462000,
+          "price": 30000,
+          "pitch": 0,
+          "position": 124
+        },
+        {
+          "row": 88,
+          "shop": 1011000,
+          "item": 1302007,
+          "price": 3000,
+          "pitch": 0,
+          "position": 120
+        },
+        {
+          "row": 87,
+          "shop": 1011000,
+          "item": 1322007,
+          "price": 6000,
+          "pitch": 0,
+          "position": 116
+        },
+        {
+          "row": 86,
+          "shop": 1011000,
+          "item": 1322008,
+          "price": 12000,
+          "pitch": 0,
+          "position": 112
+        },
+        {
+          "row": 85,
+          "shop": 1011000,
+          "item": 1422004,
+          "price": 20000,
+          "pitch": 0,
+          "position": 108
+        },
+        {
+          "row": 84,
+          "shop": 1011000,
+          "item": 1442004,
+          "price": 24000,
+          "pitch": 0,
+          "position": 104
+        }
+      ]
+    },
+    {
+      "id": 1021000,
+      "name": "勇士部落",
+      "rows": [
+        {
+          "row": 281,
+          "shop": 1021000,
+          "item": 1302007,
+          "price": 3000,
+          "pitch": 0,
+          "position": 236
+        },
+        {
+          "row": 280,
+          "shop": 1021000,
+          "item": 1302005,
+          "price": 6000,
+          "pitch": 0,
+          "position": 232
+        },
+        {
+          "row": 279,
+          "shop": 1021000,
+          "item": 1302002,
+          "price": 10000,
+          "pitch": 0,
+          "position": 228
+        },
+        {
+          "row": 278,
+          "shop": 1021000,
+          "item": 1302006,
+          "price": 10000,
+          "pitch": 0,
+          "position": 224
+        },
+        {
+          "row": 277,
+          "shop": 1021000,
+          "item": 1302003,
+          "price": 20000,
+          "pitch": 0,
+          "position": 220
+        },
+        {
+          "row": 276,
+          "shop": 1021000,
+          "item": 1302008,
+          "price": 40000,
+          "pitch": 0,
+          "position": 216
+        },
+        {
+          "row": 275,
+          "shop": 1021000,
+          "item": 1332006,
+          "price": 7000,
+          "pitch": 0,
+          "position": 212
+        },
+        {
+          "row": 274,
+          "shop": 1021000,
+          "item": 1332008,
+          "price": 10000,
+          "pitch": 0,
+          "position": 208
+        },
+        {
+          "row": 273,
+          "shop": 1021000,
+          "item": 1332010,
+          "price": 22000,
+          "pitch": 0,
+          "position": 204
+        },
+        {
+          "row": 272,
+          "shop": 1021000,
+          "item": 1312001,
+          "price": 6000,
+          "pitch": 0,
+          "position": 200
+        },
+        {
+          "row": 271,
+          "shop": 1021000,
+          "item": 1312003,
+          "price": 20000,
+          "pitch": 0,
+          "position": 196
+        },
+        {
+          "row": 270,
+          "shop": 1021000,
+          "item": 1312005,
+          "price": 40000,
+          "pitch": 0,
+          "position": 192
+        },
+        {
+          "row": 269,
+          "shop": 1021000,
+          "item": 1322000,
+          "price": 6000,
+          "pitch": 0,
+          "position": 188
+        },
+        {
+          "row": 268,
+          "shop": 1021000,
+          "item": 1322002,
+          "price": 10000,
+          "pitch": 0,
+          "position": 184
+        },
+        {
+          "row": 267,
+          "shop": 1021000,
+          "item": 1322004,
+          "price": 22000,
+          "pitch": 0,
+          "position": 180
+        },
+        {
+          "row": 266,
+          "shop": 1021000,
+          "item": 1322014,
+          "price": 40000,
+          "pitch": 0,
+          "position": 176
+        },
+        {
+          "row": 265,
+          "shop": 1021000,
+          "item": 1402001,
+          "price": 3000,
+          "pitch": 0,
+          "position": 172
+        },
+        {
+          "row": 264,
+          "shop": 1021000,
+          "item": 1402000,
+          "price": 12000,
+          "pitch": 0,
+          "position": 168
+        },
+        {
+          "row": 263,
+          "shop": 1021000,
+          "item": 1402008,
+          "price": 22000,
+          "pitch": 0,
+          "position": 164
+        },
+        {
+          "row": 262,
+          "shop": 1021000,
+          "item": 1412001,
+          "price": 3000,
+          "pitch": 0,
+          "position": 160
+        },
+        {
+          "row": 261,
+          "shop": 1021000,
+          "item": 1412002,
+          "price": 10000,
+          "pitch": 0,
+          "position": 156
+        },
+        {
+          "row": 260,
+          "shop": 1021000,
+          "item": 1412000,
+          "price": 22000,
+          "pitch": 0,
+          "position": 152
+        },
+        {
+          "row": 259,
+          "shop": 1021000,
+          "item": 1412006,
+          "price": 45000,
+          "pitch": 0,
+          "position": 148
+        },
+        {
+          "row": 258,
+          "shop": 1021000,
+          "item": 1422000,
+          "price": 3000,
+          "pitch": 0,
+          "position": 144
+        },
+        {
+          "row": 257,
+          "shop": 1021000,
+          "item": 1422002,
+          "price": 6000,
+          "pitch": 0,
+          "position": 140
+        },
+        {
+          "row": 256,
+          "shop": 1021000,
+          "item": 1422003,
+          "price": 10000,
+          "pitch": 0,
+          "position": 136
+        },
+        {
+          "row": 255,
+          "shop": 1021000,
+          "item": 1422006,
+          "price": 10000,
+          "pitch": 0,
+          "position": 132
+        },
+        {
+          "row": 254,
+          "shop": 1021000,
+          "item": 1422004,
+          "price": 20000,
+          "pitch": 0,
+          "position": 128
+        },
+        {
+          "row": 253,
+          "shop": 1021000,
+          "item": 1432000,
+          "price": 3000,
+          "pitch": 0,
+          "position": 124
+        },
+        {
+          "row": 252,
+          "shop": 1021000,
+          "item": 1432001,
+          "price": 7000,
+          "pitch": 0,
+          "position": 120
+        },
+        {
+          "row": 251,
+          "shop": 1021000,
+          "item": 1442000,
+          "price": 3000,
+          "pitch": 0,
+          "position": 116
+        },
+        {
+          "row": 250,
+          "shop": 1021000,
+          "item": 1442006,
+          "price": 8000,
+          "pitch": 0,
+          "position": 112
+        },
+        {
+          "row": 249,
+          "shop": 1021000,
+          "item": 1442007,
+          "price": 12000,
+          "pitch": 0,
+          "position": 108
+        },
+        {
+          "row": 248,
+          "shop": 1021000,
+          "item": 1442004,
+          "price": 24000,
+          "pitch": 0,
+          "position": 104
+        }
+      ]
+    },
+    {
+      "id": 1031000,
+      "name": "魔法密林",
+      "rows": [
+        {
+          "row": 382,
+          "shop": 1031000,
+          "item": 1372005,
+          "price": 2000,
+          "pitch": 0,
+          "position": 144
+        },
+        {
+          "row": 381,
+          "shop": 1031000,
+          "item": 1372006,
+          "price": 5000,
+          "pitch": 0,
+          "position": 140
+        },
+        {
+          "row": 380,
+          "shop": 1031000,
+          "item": 1372002,
+          "price": 9000,
+          "pitch": 0,
+          "position": 136
+        },
+        {
+          "row": 379,
+          "shop": 1031000,
+          "item": 1372004,
+          "price": 18000,
+          "pitch": 0,
+          "position": 132
+        },
+        {
+          "row": 378,
+          "shop": 1031000,
+          "item": 1372003,
+          "price": 38000,
+          "pitch": 0,
+          "position": 128
+        },
+        {
+          "row": 377,
+          "shop": 1031000,
+          "item": 1382000,
+          "price": 3000,
+          "pitch": 0,
+          "position": 124
+        },
+        {
+          "row": 376,
+          "shop": 1031000,
+          "item": 1382003,
+          "price": 6000,
+          "pitch": 0,
+          "position": 120
+        },
+        {
+          "row": 375,
+          "shop": 1031000,
+          "item": 1382005,
+          "price": 6000,
+          "pitch": 0,
+          "position": 116
+        },
+        {
+          "row": 374,
+          "shop": 1031000,
+          "item": 1382004,
+          "price": 10000,
+          "pitch": 0,
+          "position": 112
+        },
+        {
+          "row": 373,
+          "shop": 1031000,
+          "item": 1382002,
+          "price": 20000,
+          "pitch": 0,
+          "position": 108
+        },
+        {
+          "row": 372,
+          "shop": 1031000,
+          "item": 1322002,
+          "price": 10000,
+          "pitch": 0,
+          "position": 104
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": 1302000,
+      "name": "剑",
+      "kind": "sword",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 17,
+        "tuc": 7,
+        "price": 1,
+        "attackSpeed": 4,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1302002,
+      "name": "海盗剑",
+      "kind": "sword",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 1,
+        "reqLevel": 20,
+        "reqSTR": 65,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 37,
+        "tuc": 7,
+        "price": 5000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1302003,
+      "name": "太阳剑",
+      "kind": "sword",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 9,
+        "reqLevel": 25,
+        "reqSTR": 30,
+        "reqDEX": 50,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 42,
+        "tuc": 7,
+        "price": 10000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1302005,
+      "name": "武士刀",
+      "kind": "sword",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 1,
+        "reqLevel": 15,
+        "reqSTR": 40,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 32,
+        "tuc": 7,
+        "price": 3000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1302006,
+      "name": "逆月刀",
+      "kind": "sword",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 9,
+        "reqLevel": 20,
+        "reqSTR": 25,
+        "reqDEX": 40,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 37,
+        "tuc": 7,
+        "price": 5000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1302007,
+      "name": "大剑",
+      "kind": "sword",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOS",
+        "sfx": "swordS",
+        "reqJob": 0,
+        "reqLevel": 10,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 27,
+        "tuc": 7,
+        "price": 1500,
+        "attackSpeed": 4,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1302008,
+      "name": "战剑",
+      "kind": "sword",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOS",
+        "sfx": "swordS",
+        "reqJob": 1,
+        "reqLevel": 30,
+        "reqSTR": 95,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 47,
+        "tuc": 7,
+        "price": 20000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1312000,
+      "name": "双刃斧",
+      "kind": "axe",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 0,
+        "reqLevel": 10,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 27,
+        "tuc": 7,
+        "price": 1500,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1312001,
+      "name": "战斗斧",
+      "kind": "axe",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 1,
+        "reqLevel": 15,
+        "reqSTR": 40,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 32,
+        "tuc": 7,
+        "price": 3000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1312003,
+      "name": "锂矿斧",
+      "kind": "axe",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 1,
+        "reqLevel": 25,
+        "reqSTR": 80,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 42,
+        "tuc": 7,
+        "price": 10000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1312004,
+      "name": "小斧",
+      "kind": "axe",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 17,
+        "tuc": 7,
+        "price": 1,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1312005,
+      "name": "赤斧",
+      "kind": "axe",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 1,
+        "reqLevel": 30,
+        "reqSTR": 95,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 47,
+        "tuc": 7,
+        "price": 20000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1322000,
+      "name": "铁瓜锤",
+      "kind": "mace",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 3,
+        "reqLevel": 15,
+        "reqSTR": 20,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 34,
+        "tuc": 7,
+        "price": 3000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1322002,
+      "name": "钢锤",
+      "kind": "mace",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 3,
+        "reqLevel": 20,
+        "reqSTR": 25,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 39,
+        "tuc": 7,
+        "price": 5000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1322004,
+      "name": "奇型锤",
+      "kind": "mace",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 3,
+        "reqLevel": 25,
+        "reqSTR": 25,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 44,
+        "tuc": 7,
+        "price": 11000,
+        "attackSpeed": 3,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1322005,
+      "name": "棍棒",
+      "kind": "mace",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 19,
+        "tuc": 7,
+        "price": 1,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1322007,
+      "name": "皮制手提包",
+      "kind": "mace",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 0,
+        "reqLevel": 15,
+        "reqSTR": 20,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 34,
+        "tuc": 7,
+        "price": 3000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1322008,
+      "name": "007提包",
+      "kind": "mace",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 0,
+        "reqLevel": 20,
+        "reqSTR": 25,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 39,
+        "tuc": 7,
+        "price": 6000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1322014,
+      "name": "大战斗锤",
+      "kind": "mace",
+      "multiplier": 4.4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 1,
+        "reqLevel": 30,
+        "reqSTR": 95,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 49,
+        "tuc": 7,
+        "price": 20000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1332000,
+      "name": "三角刃",
+      "kind": "dagger",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOL",
+        "sfx": "swordL",
+        "reqJob": 8,
+        "reqLevel": 12,
+        "reqSTR": 0,
+        "reqDEX": 25,
+        "reqINT": 0,
+        "reqLUK": 25,
+        "incPAD": 27,
+        "tuc": 7,
+        "price": 2000,
+        "attackSpeed": 4,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1332005,
+      "name": "刮胡刀",
+      "kind": "dagger",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOS",
+        "sfx": "swordS",
+        "reqJob": 0,
+        "reqLevel": 5,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 20,
+        "tuc": 7,
+        "price": 250,
+        "attackSpeed": 4,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1332006,
+      "name": "战斗短刀",
+      "kind": "dagger",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOS",
+        "sfx": "swordS",
+        "reqJob": 9,
+        "reqLevel": 15,
+        "reqSTR": 0,
+        "reqDEX": 30,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 30,
+        "tuc": 7,
+        "price": 3500,
+        "attackSpeed": 3,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1332007,
+      "name": "短刀",
+      "kind": "dagger",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOS",
+        "sfx": "swordS",
+        "reqJob": 0,
+        "reqLevel": 8,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 22,
+        "tuc": 7,
+        "price": 500,
+        "attackSpeed": 3,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1332008,
+      "name": "牙刀",
+      "kind": "dagger",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOS",
+        "sfx": "swordS",
+        "reqJob": 9,
+        "reqLevel": 20,
+        "reqSTR": 10,
+        "reqDEX": 40,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 35,
+        "tuc": 7,
+        "price": 5000,
+        "attackSpeed": 3,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1332010,
+      "name": "钢短刀",
+      "kind": "dagger",
+      "multiplier": 4,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 1,
+        "afterImage": "swordOS",
+        "sfx": "swordS",
+        "reqJob": 9,
+        "reqLevel": 25,
+        "reqSTR": 15,
+        "reqDEX": 50,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 40,
+        "tuc": 7,
+        "price": 11000,
+        "attackSpeed": 3,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1372002,
+      "name": "金属短杖",
+      "kind": "wand",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 6,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqLevel": 18,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 55,
+        "reqLUK": 20,
+        "incPAD": 21,
+        "incMAD": 33,
+        "tuc": 7,
+        "price": 4500,
+        "attackSpeed": 6,
+        "cash": 0,
+        "reqJob": 2,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1372003,
+      "name": "锂矿短杖",
+      "kind": "wand",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 6,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 2,
+        "reqLevel": 28,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 85,
+        "reqLUK": 30,
+        "incPAD": 27,
+        "incMAD": 43,
+        "tuc": 7,
+        "price": 19000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1372004,
+      "name": "冰精短杖",
+      "kind": "wand",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 6,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 2,
+        "reqLevel": 23,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 70,
+        "reqLUK": 25,
+        "incPAD": 24,
+        "incMAD": 38,
+        "tuc": 7,
+        "price": 9000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1372005,
+      "name": "木制短杖",
+      "kind": "wand",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 6,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 0,
+        "reqLevel": 8,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 15,
+        "incMAD": 23,
+        "tuc": 7,
+        "price": 1000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1372006,
+      "name": "高级木制短杖",
+      "kind": "wand",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 6,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 0,
+        "reqLevel": 13,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 40,
+        "reqLUK": 15,
+        "incPAD": 18,
+        "incMAD": 28,
+        "tuc": 7,
+        "price": 2500,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1382000,
+      "name": "木制长杖",
+      "kind": "staff",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 6,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 2,
+        "reqLevel": 10,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 32,
+        "reqLUK": 13,
+        "incPAD": 20,
+        "incMAD": 25,
+        "tuc": 7,
+        "price": 1500,
+        "attackSpeed": 8,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1382002,
+      "name": "法师长杖",
+      "kind": "staff",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 6,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 2,
+        "reqLevel": 25,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 78,
+        "reqLUK": 28,
+        "incPAD": 29,
+        "incMAD": 40,
+        "tuc": 7,
+        "price": 10000,
+        "attackSpeed": 8,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1382003,
+      "name": "蓝宝石长杖",
+      "kind": "staff",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 6,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 2,
+        "reqLevel": 15,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 48,
+        "reqLUK": 18,
+        "incPAD": 23,
+        "incMAD": 30,
+        "tuc": 7,
+        "price": 3000,
+        "attackSpeed": 8,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1382004,
+      "name": "古树长杖",
+      "kind": "staff",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 6,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 2,
+        "reqLevel": 20,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 62,
+        "reqLUK": 23,
+        "incPAD": 26,
+        "incMAD": 35,
+        "tuc": 7,
+        "price": 5000,
+        "attackSpeed": 8,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1382005,
+      "name": "祖母绿长杖",
+      "kind": "staff",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 1,
+        "stand": 1,
+        "attack": 6,
+        "afterImage": "mace",
+        "sfx": "mace",
+        "reqJob": 2,
+        "reqLevel": 15,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 48,
+        "reqLUK": 18,
+        "incPAD": 23,
+        "incMAD": 30,
+        "tuc": 7,
+        "price": 3000,
+        "attackSpeed": 8,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1402000,
+      "name": "双手剑",
+      "kind": "greatsword",
+      "multiplier": 4.6,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 1,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "swordTS",
+        "sfx": "swordL",
+        "reqJob": 1,
+        "reqLevel": 20,
+        "reqSTR": 70,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 40,
+        "tuc": 7,
+        "price": 6000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1402001,
+      "name": "木剑",
+      "kind": "greatsword",
+      "multiplier": 4.6,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 1,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "swordTS",
+        "sfx": "swordS",
+        "reqJob": 13,
+        "reqLevel": 10,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 30,
+        "tuc": 7,
+        "price": 1500,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1402008,
+      "name": "钢铁剑",
+      "kind": "greatsword",
+      "multiplier": 4.6,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 1,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "swordTS",
+        "sfx": "swordL",
+        "reqJob": 1,
+        "reqLevel": 25,
+        "reqSTR": 85,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 45,
+        "tuc": 7,
+        "price": 11000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1412000,
+      "name": "双手斧",
+      "kind": "greataxe",
+      "multiplier": 4.8,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "axe",
+        "sfx": "swordS",
+        "reqJob": 1,
+        "reqLevel": 25,
+        "reqSTR": 85,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 47,
+        "tuc": 7,
+        "price": 11000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1412001,
+      "name": "铁斧",
+      "kind": "greataxe",
+      "multiplier": 4.8,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "axe",
+        "sfx": "swordS",
+        "reqJob": 13,
+        "reqLevel": 10,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 32,
+        "tuc": 7,
+        "price": 1500,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1412002,
+      "name": "钢铁斧",
+      "kind": "greataxe",
+      "multiplier": 4.8,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "axe",
+        "sfx": "swordS",
+        "reqJob": 1,
+        "reqLevel": 20,
+        "reqSTR": 70,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "tuc": 7,
+        "incPAD": 42,
+        "price": 5000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1412006,
+      "name": "重型巨斧",
+      "kind": "greataxe",
+      "multiplier": 4.8,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "axe",
+        "sfx": "swordS",
+        "reqJob": 1,
+        "reqLevel": 30,
+        "reqSTR": 100,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "tuc": 7,
+        "incPAD": 52,
+        "price": 22500,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1422000,
+      "name": "木锤",
+      "kind": "greatmace",
+      "multiplier": 4.8,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "axe",
+        "sfx": "mace",
+        "reqJob": 13,
+        "reqLevel": 10,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 32,
+        "tuc": 7,
+        "price": 1500,
+        "attackSpeed": 6,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1422002,
+      "name": "钢铁圆锤",
+      "kind": "greatmace",
+      "multiplier": 4.8,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "axe",
+        "sfx": "mace",
+        "reqJob": 1,
+        "reqLevel": 15,
+        "reqSTR": 45,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 37,
+        "tuc": 7,
+        "price": 3000,
+        "attackSpeed": 7,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1422003,
+      "name": "方形锤子",
+      "kind": "greatmace",
+      "multiplier": 4.8,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "axe",
+        "sfx": "mace",
+        "reqJob": 1,
+        "reqLevel": 20,
+        "reqSTR": 70,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 42,
+        "tuc": 7,
+        "price": 5000,
+        "attackSpeed": 7,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1422004,
+      "name": "板手",
+      "kind": "greatmace",
+      "multiplier": 4.8,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "axe",
+        "sfx": "mace",
+        "reqJob": 13,
+        "reqLevel": 25,
+        "reqSTR": 25,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 47,
+        "tuc": 7,
+        "price": 10000,
+        "attackSpeed": 7,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1422006,
+      "name": "十字镐",
+      "kind": "greatmace",
+      "multiplier": 4.8,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 5,
+        "afterImage": "axe",
+        "sfx": "mace",
+        "reqJob": 9,
+        "reqLevel": 20,
+        "reqSTR": 20,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 42,
+        "tuc": 7,
+        "price": 5000,
+        "attackSpeed": 7,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1432000,
+      "name": "长枪",
+      "kind": "spear",
+      "multiplier": 5,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 2,
+        "stand": 2,
+        "attack": 2,
+        "afterImage": "spear",
+        "sfx": "spear",
+        "reqJob": 13,
+        "reqLevel": 10,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 32,
+        "tuc": 7,
+        "price": 1500,
+        "attackSpeed": 8,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1432001,
+      "name": "叉枪",
+      "kind": "spear",
+      "multiplier": 5,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 2,
+        "stand": 2,
+        "attack": 2,
+        "afterImage": "spear",
+        "sfx": "spear",
+        "reqJob": 13,
+        "reqLevel": 15,
+        "reqSTR": 15,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 37,
+        "tuc": 7,
+        "price": 3500,
+        "attackSpeed": 8,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1442000,
+      "name": "矛",
+      "kind": "polearm",
+      "multiplier": 5,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 2,
+        "stand": 2,
+        "attack": 2,
+        "afterImage": "poleArm",
+        "sfx": "poleArm",
+        "reqJob": 13,
+        "reqLevel": 10,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 32,
+        "tuc": 7,
+        "price": 1500,
+        "attackSpeed": 8,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1442004,
+      "name": "拖把",
+      "kind": "polearm",
+      "multiplier": 5,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 2,
+        "stand": 2,
+        "attack": 2,
+        "afterImage": "poleArm",
+        "sfx": "poleArm",
+        "reqJob": 13,
+        "reqLevel": 25,
+        "reqSTR": 25,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 47,
+        "tuc": 7,
+        "price": 12000,
+        "attackSpeed": 8,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1442006,
+      "name": "蓝铁锤",
+      "kind": "polearm",
+      "multiplier": 5,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 2,
+        "stand": 2,
+        "attack": 2,
+        "afterImage": "poleArm",
+        "sfx": "poleArm",
+        "reqJob": 1,
+        "reqLevel": 15,
+        "reqSTR": 15,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 37,
+        "tuc": 7,
+        "price": 4000,
+        "attackSpeed": 7,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1442007,
+      "name": "幻影",
+      "kind": "polearm",
+      "multiplier": 5,
+      "stats": {
+        "islot": "Wp",
+        "vslot": "Wp",
+        "walk": 2,
+        "stand": 2,
+        "attack": 2,
+        "afterImage": "poleArm",
+        "sfx": "poleArm",
+        "reqJob": 1,
+        "reqLevel": 20,
+        "reqSTR": 20,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 42,
+        "tuc": 7,
+        "price": 6000,
+        "attackSpeed": 7,
+        "cash": 0,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1452000,
+      "name": "战斗弓",
+      "kind": "bow",
+      "multiplier": 3.4,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 1,
+        "stand": 1,
+        "attack": 3,
+        "afterImage": "bow",
+        "sfx": "bow",
+        "reqJob": 4,
+        "reqLevel": 25,
+        "reqSTR": 30,
+        "reqDEX": 80,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 40,
+        "tuc": 7,
+        "price": 10000,
+        "attackSpeed": 5,
+        "cash": 0,
+        "knockback": 36,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1452001,
+      "name": "打猎弓",
+      "kind": "bow",
+      "multiplier": 3.4,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 1,
+        "stand": 1,
+        "attack": 3,
+        "afterImage": "bow",
+        "sfx": "bow",
+        "reqJob": 4,
+        "reqLevel": 20,
+        "reqSTR": 25,
+        "reqDEX": 65,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 35,
+        "incDEX": 1,
+        "tuc": 7,
+        "price": 5000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "knockback": 32,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1452002,
+      "name": "长弓",
+      "kind": "bow",
+      "multiplier": 3.4,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 1,
+        "stand": 1,
+        "attack": 3,
+        "afterImage": "bow",
+        "sfx": "bow",
+        "reqJob": 4,
+        "reqLevel": 10,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 25,
+        "tuc": 7,
+        "price": 1500,
+        "attackSpeed": 6,
+        "cash": 0,
+        "knockback": 26,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1452003,
+      "name": "钢铁弓",
+      "kind": "bow",
+      "multiplier": 3.4,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 1,
+        "stand": 1,
+        "attack": 3,
+        "afterImage": "bow",
+        "sfx": "bow",
+        "reqJob": 4,
+        "reqLevel": 15,
+        "reqSTR": 20,
+        "reqDEX": 40,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 30,
+        "tuc": 7,
+        "price": 3000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "knockback": 26,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1462000,
+      "name": "山羊弩",
+      "kind": "crossbow",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 4,
+        "afterImage": "crossBow",
+        "sfx": "cBow",
+        "reqJob": 4,
+        "reqLevel": 28,
+        "reqSTR": 28,
+        "reqDEX": 80,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 44,
+        "tuc": 7,
+        "price": 15000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "knockback": 35,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1462001,
+      "name": "弩弓",
+      "kind": "crossbow",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 4,
+        "afterImage": "crossBow",
+        "sfx": "cBow",
+        "reqJob": 4,
+        "reqLevel": 12,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 29,
+        "tuc": 7,
+        "price": 2000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "knockback": 28,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1462002,
+      "name": "战斗弩弓",
+      "kind": "crossbow",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 4,
+        "afterImage": "crossBow",
+        "sfx": "cBow",
+        "reqJob": 4,
+        "reqLevel": 18,
+        "reqSTR": 18,
+        "reqDEX": 55,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 34,
+        "tuc": 7,
+        "price": 4000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "knockback": 28,
+        "limitBreak": 2147483647
+      }
+    },
+    {
+      "id": 1462003,
+      "name": "猎弩弓",
+      "kind": "crossbow",
+      "multiplier": 3.6,
+      "stats": {
+        "islot": "WpSi",
+        "vslot": "WpSi",
+        "walk": 2,
+        "stand": 2,
+        "attack": 4,
+        "afterImage": "crossBow",
+        "sfx": "cBow",
+        "reqJob": 4,
+        "reqLevel": 22,
+        "reqSTR": 22,
+        "reqDEX": 70,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incPAD": 39,
+        "incSTR": 1,
+        "tuc": 7,
+        "price": 6000,
+        "attackSpeed": 6,
+        "cash": 0,
+        "knockback": 35,
+        "limitBreak": 2147483647
+      }
+    }
+  ],
+  "mobs": [
+    {
+      "key": "snail",
+      "id": 100100,
+      "stats": {
+        "bodyAttack": 1,
+        "level": 1,
+        "maxHP": 8,
+        "maxMP": 0,
+        "speed": -65,
+        "PADamage": 12,
+        "PDDamage": 0,
+        "MADamage": 0,
+        "MDDamage": 0,
+        "acc": 20,
+        "eva": 0,
+        "exp": 3,
+        "undead": 0,
+        "pushed": 1,
+        "fs": 10.0,
+        "summonType": 1,
+        "mobType": 0
+      }
+    },
+    {
+      "key": "slime",
+      "id": 210100,
+      "stats": {
+        "bodyAttack": 1,
+        "level": 6,
+        "maxHP": 50,
+        "maxMP": 35,
+        "speed": -20,
+        "PADamage": 32,
+        "PDDamage": 5,
+        "MADamage": 0,
+        "MDDamage": 10,
+        "acc": 35,
+        "eva": 1,
+        "exp": 10,
+        "undead": 0,
+        "pushed": 1,
+        "elemAttr": "L3",
+        "fs": 10.0,
+        "summonType": 1,
+        "mobType": 5
+      }
+    },
+    {
+      "key": "mushroom",
+      "id": 1210102,
+      "stats": {
+        "bodyAttack": 1,
+        "level": 8,
+        "maxHP": 80,
+        "maxMP": 45,
+        "speed": 0,
+        "PADamage": 42,
+        "PDDamage": 0,
+        "MADamage": 0,
+        "MDDamage": 10,
+        "acc": 42,
+        "eva": 1,
+        "exp": 15,
+        "undead": 0,
+        "pushed": 1,
+        "fs": 10.0,
+        "summonType": 1,
+        "mobType": 4
+      }
+    },
+    {
+      "key": "greenmush",
+      "id": 1110100,
+      "stats": {
+        "bodyAttack": 1,
+        "level": 15,
+        "maxHP": 250,
+        "maxMP": 25,
+        "speed": -20,
+        "PADamage": 82,
+        "PDDamage": 12,
+        "MADamage": 0,
+        "MDDamage": 40,
+        "acc": 45,
+        "eva": 5,
+        "exp": 26,
+        "undead": 0,
+        "pushed": 1,
+        "elemAttr": "S1",
+        "fs": 10.0,
+        "summonType": 1,
+        "mobType": 4
+      }
+    },
+    {
+      "key": "pig",
+      "id": 1210100,
+      "stats": {
+        "bodyAttack": 1,
+        "level": 7,
+        "maxHP": 75,
+        "maxMP": 40,
+        "speed": 0,
+        "PADamage": 37,
+        "PDDamage": 5,
+        "MADamage": 0,
+        "MDDamage": 20,
+        "acc": 40,
+        "eva": 0,
+        "exp": 15,
+        "undead": 0,
+        "pushed": 1,
+        "fs": 10.0,
+        "summonType": 1,
+        "mobType": 0
+      }
+    },
+    {
+      "key": "mushmom",
+      "id": 6130101,
+      "stats": {
+        "bodyAttack": 1,
+        "level": 60,
+        "maxHP": 20000,
+        "maxMP": 200,
+        "speed": 5,
+        "PADamage": 200,
+        "PDDamage": 320,
+        "MADamage": 300,
+        "MDDamage": 320,
+        "acc": 150,
+        "eva": 27,
+        "exp": 1200,
+        "undead": 0,
+        "pushed": 1000,
+        "hpRecovery": 100,
+        "mpRecovery": 5,
+        "boss": 1,
+        "fs": 10.0,
+        "summonType": 0,
+        "hpTagColor": 1,
+        "hpTagBgcolor": 5,
+        "HPgaugeHide": 1,
+        "mobType": 4,
+        "rareItemDropLevel": 2
+      }
+    },
+    {
+      "key": "slimeking",
+      "id": 9300003,
+      "stats": {
+        "bodyAttack": 1,
+        "level": 40,
+        "maxHP": 8000,
+        "maxMP": 100,
+        "speed": -20,
+        "PADamage": 130,
+        "PDDamage": 160,
+        "MADamage": 165,
+        "MDDamage": 160,
+        "acc": 140,
+        "eva": 10,
+        "exp": 800,
+        "undead": 0,
+        "pushed": 300,
+        "fs": 10.0,
+        "summonType": 0,
+        "rareItemDropLevel": 2,
+        "boss": 1,
+        "HPgaugeHide": 1,
+        "hpTagBgcolor": 5,
+        "hpTagColor": 1
+      }
+    }
+  ],
+  "summon": {
+    "summoned": [
+      {
+        "file": "NativeSummon/libra/summoned_0.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          33,
+          221
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_1.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          26,
+          213
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_2.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          23,
+          212
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_3.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          18,
+          216
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_4.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          19,
+          213
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_5.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          27,
+          221
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_6.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          62,
+          270
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_7.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          62,
+          270
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_8.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          62,
+          270
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_9.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          62,
+          270
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_10.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          115,
+          290
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_11.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          114,
+          304
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_12.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          110,
+          303
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_13.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          113,
+          302
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_14.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          118,
+          298
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/summoned_15.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          88,
+          296
+        ],
+        "delay": 0.09
+      }
+    ],
+    "stand": [
+      {
+        "file": "NativeSummon/libra/stand_0.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          22,
+          253
+        ],
+        "delay": 0.15
+      },
+      {
+        "file": "NativeSummon/libra/stand_1.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          20,
+          255
+        ],
+        "delay": 0.15
+      },
+      {
+        "file": "NativeSummon/libra/stand_2.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          18,
+          256
+        ],
+        "delay": 0.15
+      },
+      {
+        "file": "NativeSummon/libra/stand_3.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          22,
+          253
+        ],
+        "delay": 0.15
+      },
+      {
+        "file": "NativeSummon/libra/stand_4.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          26,
+          248
+        ],
+        "delay": 0.15
+      },
+      {
+        "file": "NativeSummon/libra/stand_5.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          27,
+          246
+        ],
+        "delay": 0.15
+      },
+      {
+        "file": "NativeSummon/libra/stand_6.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          30,
+          244
+        ],
+        "delay": 0.15
+      },
+      {
+        "file": "NativeSummon/libra/stand_7.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          26,
+          248
+        ],
+        "delay": 0.15
+      }
+    ],
+    "fly": [
+      {
+        "file": "NativeSummon/libra/fly_0.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          35,
+          252
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/fly_1.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          33,
+          254
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/fly_2.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          31,
+          255
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/fly_3.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          35,
+          252
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/fly_4.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          39,
+          247
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/fly_5.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          39,
+          245
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/fly_6.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          42,
+          243
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/fly_7.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          39,
+          247
+        ],
+        "delay": 0.09
+      }
+    ],
+    "attack1": [
+      {
+        "file": "NativeSummon/libra/attack1_0.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          175,
+          244
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_1.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          127,
+          220
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_2.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          99,
+          222
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_3.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          117,
+          223
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_4.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          108,
+          224
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_5.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          110,
+          225
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_6.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          130,
+          251
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_7.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          117,
+          268
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_8.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          384,
+          263
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_9.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          658,
+          263
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_10.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          676,
+          265
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_11.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          684,
+          268
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_12.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          690,
+          265
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_13.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          702,
+          260
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_14.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          709,
+          254
+        ],
+        "delay": 0.09
+      },
+      {
+        "file": "NativeSummon/libra/attack1_15.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          715,
+          241
+        ],
+        "delay": 0.09
+      }
+    ],
+    "die": [
+      {
+        "file": "NativeSummon/libra/die_0.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          166,
+          248
+        ],
+        "delay": 0.06
+      },
+      {
+        "file": "NativeSummon/libra/die_1.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          167,
+          246
+        ],
+        "delay": 0.06
+      },
+      {
+        "file": "NativeSummon/libra/die_2.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          170,
+          244
+        ],
+        "delay": 0.06
+      },
+      {
+        "file": "NativeSummon/libra/die_3.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          166,
+          248
+        ],
+        "delay": 0.06
+      },
+      {
+        "file": "NativeSummon/libra/die_4.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          162,
+          253
+        ],
+        "delay": 0.06
+      },
+      {
+        "file": "NativeSummon/libra/die_5.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          160,
+          255
+        ],
+        "delay": 0.06
+      },
+      {
+        "file": "NativeSummon/libra/die_6.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          158,
+          256
+        ],
+        "delay": 0.06
+      },
+      {
+        "file": "NativeSummon/libra/die_7.png",
+        "origin": [
+          715,
+          304
+        ],
+        "sourceOrigin": [
+          322,
+          252
+        ],
+        "delay": 0.06
+      }
+    ],
+    "info": {
+      "after": 0.66,
+      "count": 6,
+      "lt": [
+        -640,
+        -210
+      ],
+      "rb": [
+        0,
+        30
+      ]
+    }
+  }
+}

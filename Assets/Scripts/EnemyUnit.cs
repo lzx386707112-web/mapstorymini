@@ -32,6 +32,7 @@ public class EnemyUnit : MonoBehaviour
     float visHeight = 1.15f;
 
     public int Lane => lane;
+    public Dictionary<string, object> CombatStats => NativeCombatData.Mob(artKey);
 
     void OnEnable()  => All.Add(this);
     void OnDisable() => All.Remove(this);
@@ -40,6 +41,9 @@ public class EnemyUnit : MonoBehaviour
     {
         lane = laneIndex;
         laneVis = laneIndex;
+        var native = CombatStats;
+        hpMax = NativeCombatData.Int(native,"maxHP",40);
+        damage = NativeCombatData.Int(native,"PADamage",8);
         hp = hpMax;
         terrainY = PlayerCtrl.GroundAt(startX, PlayerCtrl.GroundY);
         transform.position = new Vector3(startX, terrainY + DepthOffset, 0f);
@@ -147,7 +151,7 @@ public class EnemyUnit : MonoBehaviour
                 if (atkTimer <= 0f)
                 {
                     atkTimer = attackInterval;
-                    p.TakeDamage(damage, dx > 0f ? 1 : -1);
+                    p.TakeDamage(damage, dx > 0f ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1));
                     if (vis != null) vis.PlayOnce("atk", 1.1f);
                 }
             }
@@ -183,10 +187,15 @@ public class EnemyUnit : MonoBehaviour
     {
         if (dead) return;
 
-        // 暴击：数字换成原版的粉红 NoCri（自带星爆），伤害本身也放大
-        bool crit = Random.value < HitFeel.CritRate;
-        float real = crit ? dmg * HitFeel.CritMul : dmg;
-        hp -= real;
+        TakeHit(CombatRules.Resolve(dmg), fromDir);
+    }
+
+    public void TakeHit(DamageResult hit, int fromDir)
+    {
+        if (dead || hit.Amount <= 0) return;
+        bool crit = hit.Critical;
+        float real = hit.Amount;
+        hp = Mathf.Max(0f, hp - real);
 
         knockV = fromDir * HitFeel.Knockback * 14f;
         Fx.Flash(body, Color.white);
@@ -210,6 +219,23 @@ public class EnemyUnit : MonoBehaviour
                 : transform.position.y + visHeight;
             return new Vector3(transform.position.x, top - 0.12f, 0f);
         }
+    }
+
+    public float SkillsSealedUntil { get; private set; }
+    public void SealSkills(float seconds) => SkillsSealedUntil = Time.unscaledTime + Mathf.Max(0, seconds);
+
+    public void PullTowards(float x)
+    {
+        var pos = transform.position;
+        pos.x = PlayerCtrl.ClampX(x + (pos.x >= x ? 1f : -1f));
+        pos.y = PlayerCtrl.GroundAt(pos.x, pos.y);
+        terrainY = pos.y;
+        transform.position = pos;
+    }
+
+    public void Push(int direction, NativeSkillDefinition skill)
+    {
+        knockV = direction * Mathf.Max(0f, skill.Max.x - skill.Min.x);
     }
 
     public void Stun(float seconds) => stunUntil = Mathf.Max(stunUntil, Time.time + seconds);

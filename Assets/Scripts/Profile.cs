@@ -1,80 +1,98 @@
 using System.Collections.Generic;
-using UnityEngine;
 
-// 跨局持久化的玩家档案：金币、所选职业、已拥有/已装备武器、装扮（头发/服饰）。
-// 用 PlayerPrefs 直接存字段（不用 JSON 序列化，避免依赖 MiniJson 的 stringify），
-// 这样换机器/重装项目都不会因为解析失败丢档。
+// 流程入口；UI 不组合扣款/授予操作。原端规则依据见 docs/original-gameplay-port.md。
 public static class Profile
 {
-    const string K_GOLD   = "mxd.gold";
-    const string K_CLASS  = "mxd.cls";
-    const string K_OWNED  = "mxd.owned";
-    const string K_EQUIP  = "mxd.equip";
-    const string K_HAIR   = "mxd.hair";
-    const string K_OUTFIT = "mxd.outfit";
-
-    public static int   gold;
-    public static string cls       = "knight";
-    public static string equipWeapon = "w_sword_basic";
-    public static string hair      = "h0";   // 发型下标（见 HairStyles）
-    public static string outfit    = "none";
-
-    static HashSet<string> _owned = new HashSet<string> { "w_sword_basic" };
-    static bool loaded;
+    static PlayerProfileData data;
+    static PlayerProfileData Data { get { Load(); return data; } }
+    public static int gold => Data.gold;
+    public static CharacterAttributes Attributes => Data.attributes.Copy();
+    public static long experience => Data.experience;
+    public static string cls => Data.cls;
+    public static string equipWeapon => Data.equipWeapon;
+    public static string hair => Data.hair;
+    public static string outfit => Data.outfit;
+    public static IReadOnlyCollection<string> OwnedWeapons => Data.owned.AsReadOnly();
+    public static bool LastSaveSucceeded { get; private set; } = true;
 
     public static void Load()
     {
-        if (loaded) return;
-        loaded = true;
-
-        gold    = PlayerPrefs.GetInt(K_GOLD, 0);
-        cls     = PlayerPrefs.GetString(K_CLASS, "knight");
-        equipWeapon = PlayerPrefs.GetString(K_EQUIP, "w_sword_basic");
-        hair    = PlayerPrefs.GetString(K_HAIR, "h0");
-        // 旧档里 hair 存的是颜色名（black/brown…），新方案存发型下标（h0…h5）
-        if (!HairStyles.Contains(hair)) hair = "h0";
-        outfit  = PlayerPrefs.GetString(K_OUTFIT, "none");
-
-        _owned.Clear();
-        string o = PlayerPrefs.GetString(K_OWNED, "w_sword_basic");
-        foreach (var p in o.Split(','))
-            if (!string.IsNullOrEmpty(p)) _owned.Add(p);
-        if (!_owned.Contains("w_sword_basic")) _owned.Add("w_sword_basic");
-        if (!_owned.Contains(equipWeapon)) equipWeapon = "w_sword_basic";
+        if (data != null) return;
+        data = LocalProfileStore.Load();
+        data.gold = System.Math.Max(0, data.gold);
+        data.experience = System.Math.Max(0, data.experience);
+        if (data.equipmentSlots <= 0) data.equipmentSlots = 24;
+        if (data.attributes == null) data.attributes = new CharacterAttributes();
+        if (data.migratedLegacyWeapons == null) data.migratedLegacyWeapons = new List<string>();
+        for (int i = 0; i < data.owned.Count; i++)
+        {
+            string old = data.owned[i];
+            data.owned[i] = WeaponDefs.Canonical(old);
+            if (old != data.owned[i]) data.migratedLegacyWeapons.Add(old);
+        }
+        data.equipWeapon = WeaponDefs.Canonical(data.equipWeapon);
+        data.owned.RemoveAll(id => !WeaponDefs.TryGet(id, out _));
+        if (!data.owned.Contains("1302000")) data.owned.Add("1302000");
+        if (!data.owned.Contains(data.equipWeapon)) data.equipWeapon = "1302000";
+        if (!HairStyles.Contains(data.hair)) data.hair = "h0";
+        if (ClassDefs.Get(data.cls).id != data.cls) data.cls = "knight";
+        if (data.outfit == null || !CosmeticFactory.OutfitColors.ContainsKey(data.outfit)) data.outfit = "none";
+        if (!WeaponDefs.CanEquip(WeaponDefs.Get(data.equipWeapon),data.attributes,data.cls)) data.equipWeapon = "1302000";
     }
 
-    public static void Save()
+    public static void Save() => LastSaveSucceeded = LocalProfileStore.Save(Data);
+    public static void AddGold(int amount) { Data.AddGold(amount); Save(); }
+    public static void GrantExperience(int amount)
     {
-        PlayerPrefs.SetInt(K_GOLD, gold);
-        PlayerPrefs.SetString(K_CLASS, cls);
-        PlayerPrefs.SetString(K_EQUIP, equipWeapon);
-        PlayerPrefs.SetString(K_HAIR, hair);
-        PlayerPrefs.SetString(K_OUTFIT, outfit);
-        PlayerPrefs.SetString(K_OWNED, string.Join(",", _owned));
-        PlayerPrefs.Save();
+        if (amount <= 0) return;
+        Data.experience = Data.experience > long.MaxValue - amount ? long.MaxValue : Data.experience + amount;
+        Save();
     }
-
-    // —— 金币 ——
-    public static void AddGold(int n) { gold = Mathf.Max(0, gold + n); }
-    public static bool Spend(int n)
+    public static bool Spend(int amount)
     {
-        if (gold < n) return false;
-        gold -= n; return true;
+        if (!Data.TrySpend(amount)) return false;
+        Save();
+        return true;
+    }
+    public static bool OwnsWeapon(string id) => Data.owned.Contains(WeaponDefs.Canonical(id));
+
+    public static bool TryBuyWeapon(string id)
+    {
+        if (!WeaponDefs.TryGet(id, out var weapon) || weapon.price < 0 || !Data.TryBuy(weapon.id, weapon.price)) return false;
+        Save();
+        return true;
     }
 
-    // —— 武器 ——
-    public static bool OwnsWeapon(string id) => _owned.Contains(id);
-    public static void OwnWeapon(string id) => _owned.Add(id);
+    // 购买放入背包，不自动装备；装备不能凭空授予物品。
     public static void EquipWeapon(string id)
     {
-        if (!_owned.Contains(id)) _owned.Add(id);
-        equipWeapon = id;
+        if (!WeaponDefs.TryGet(id,out var weapon)) return;
+        if (WeaponDefs.CanEquip(weapon, Attributes, cls) && Data.TryEquip(weapon.id)) Save();
     }
-
-    // —— 装扮 ——
-    public static void SetClass(string id)  => cls = id;
-    public static void SetHair(string id)   => hair = id;
-    public static void SetOutfit(string id) => outfit = id;
-
-    public static IReadOnlyCollection<string> OwnedWeapons => _owned;
+    public static bool TryBuyWeapon(int shop, int slot, string expectedId)
+    {
+        var catalog = WeaponDefs.Shops;
+        var selected = System.Linq.Enumerable.FirstOrDefault(catalog, s => s.id == shop);
+        if (selected == null || slot < 0 || slot >= selected.items.Count) return false;
+        var item = selected.items[slot];
+        if (item.id != expectedId || item.price < 0 || !Data.TryBuy(item.id, item.price)) return false;
+        Save(); return true;
+    }
+    public static void SetClass(string id)
+    {
+        if (ClassDefs.Get(id).id != id) return;
+        Data.cls = id;
+        if (!WeaponDefs.CanEquip(WeaponDefs.Get(Data.equipWeapon),Data.attributes,id)) Data.equipWeapon = "1302000";
+        Save();
+    }
+    public static void SetHair(string id)
+    {
+        if (!HairStyles.Contains(id)) return;
+        Data.hair = id; Save();
+    }
+    public static void SetOutfit(string id)
+    {
+        if (!CosmeticFactory.OutfitColors.ContainsKey(id)) return;
+        Data.outfit = id; Save();
+    }
 }

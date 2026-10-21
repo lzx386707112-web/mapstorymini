@@ -115,12 +115,15 @@ public class GameHUD : MonoBehaviour
         float x0 = (UiKit.W - totalW) * 0.5f + UiKit.W * 0.06f;
         float y0 = UiKit.H - cell - 34f;
 
+        if (GUI.Button(new Rect(x0 - 100, y0, 80, 44), "拾取 Z")) MesoDrop.TryPickupNearest();
+        GUI.Label(new Rect(x0 - 100, y0 + 48, 100, 24), "MP " + Mathf.CeilToInt(GameLoop.I.player.mp));
         for (int i = 0; i < 4; i++)
         {
             var s = sys.skills[i];
             var r = new Rect(x0 + i * (cell + gap), y0, cell, cell);
 
-            bool ready = s.left <= 0f;
+            float left = sys.Remaining(i);
+            bool ready = left <= 0f;
             var icon = Art.SkillIcon(s.icon);
 
             // 外框 + 底色（图标透明的地方露出这层）
@@ -140,10 +143,10 @@ public class GameHUD : MonoBehaviour
             // CD 遮罩：从下往上退，比数字更直观
             if (!ready)
             {
-                float k = s.left / s.cd;
+                float k = left / s.cd;
                 Fill(new Rect(r.x, r.y, r.width, r.height * k), new Color(0.02f, 0.03f, 0.05f, 0.72f));
                 GUI.Label(new Rect(r.x, r.y + r.height * 0.5f - 12, r.width, 24),
-                          Mathf.CeilToInt(s.left).ToString(), new GUIStyle(_cellTxt) { fontSize = 20 });
+                          Mathf.CeilToInt(left).ToString(), new GUIStyle(_cellTxt) { fontSize = 20 });
             }
 
             // 左上角序号
@@ -198,7 +201,6 @@ public class GameHUD : MonoBehaviour
         GUI.Label(br, "返回大厅", bs);
         if (Input.GetMouseButtonDown(0) && br.Contains(_mouseGui))
         {
-            Profile.Save();
             if (GameLoop.I != null) GameLoop.I.EnterLobby();
         }
     }
