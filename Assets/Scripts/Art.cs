@@ -52,6 +52,8 @@ public static class Art
         public readonly System.Collections.Generic.List<Vector4> Footholds =
             new System.Collections.Generic.List<Vector4>();
 
+        public readonly List<ClimbLine> Climbs = new List<ClimbLine>();
+
         public bool HasFront => !string.IsNullOrEmpty(fileFront);
 
         // 地图像素 → 世界单位
@@ -64,6 +66,12 @@ public static class Art
         public float RightX => WorldX(px.x + size.x);
         public float TopY => WorldY(px.y);
         public float BottomY => WorldY(px.y + size.y);
+    }
+
+    public class ClimbLine
+    {
+        public float x, top, bottom;
+        public bool ladder, upperExit;
     }
 
     public class StageBack
@@ -134,6 +142,18 @@ public static class Art
                                                  st.WorldX(mx2), st.WorldY(my2)));
                 }
             }
+
+            if (n.ContainsKey("ladderRope") && n["ladderRope"] is List<object> ropes)
+                foreach (var item in ropes)
+                {
+                    var r = item as Dictionary<string, object>;
+                    if (r == null) continue;
+                    st.Climbs.Add(new ClimbLine {
+                        x = st.WorldX(Num(r,"x")), top = st.WorldY(Num(r,"y1")),
+                        bottom = st.WorldY(Num(r,"y2")), ladder = Int(r,"l",0) != 0,
+                        upperExit = Int(r,"uf",0) != 0
+                    });
+                }
 
             var files = n.ContainsKey("files") ? n["files"] as Dictionary<string, object> : null;
             if (files != null)

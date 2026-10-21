@@ -57,7 +57,7 @@ public class SkillSystem : MonoBehaviour
 
     public bool TryCast(int i)
     {
-        if (i < 0 || i >= skills.Length) return false;
+        if (i < 0 || i >= skills.Length || (p != null && p.IsClimbing)) return false;
         var s = skills[i];
         if (s.left > 0f) return false;
         s.left = s.cd;

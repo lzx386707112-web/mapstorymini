@@ -232,12 +232,14 @@ public class GameLoop : MonoBehaviour
             PlayerCtrl.SetBounds(backdrop.WalkMin, backdrop.WalkMax);
             // foothold 地形交给角色/怪物：贴台阶、走斜坡、到段尽头被挡住
             PlayerCtrl.SetTerrain(st != null ? st.Footholds : null);
+            PlayerCtrl.Climbs = st != null ? st.Climbs : null;
             if (camRig != null && st != null) camRig.SetStage(st);
         }
         else
         {
             PlayerCtrl.SetBounds(-13f, 13f);
             PlayerCtrl.SetTerrain(null);
+            PlayerCtrl.Climbs = null;
             if (camRig != null) camRig.ClearStage();
         }
         // 换关时角色可能落在新关的可走范围之外，立刻夹回来并把脚下地形吸附好

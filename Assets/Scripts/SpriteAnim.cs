@@ -77,7 +77,7 @@ public class SpriteAnim : MonoBehaviour
     void Update()
     {
         if (cur == null || sr == null) return;
-        float dt = Time.deltaTime * Mathf.Max(0.05f, speed);
+        float dt = Time.deltaTime * Mathf.Max(0f, speed);
         if (dt <= 0f) return;
 
         t += dt;

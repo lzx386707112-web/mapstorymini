@@ -1,11 +1,11 @@
 using UnityEngine;
 
-// 主角：左右移动 + 跳跃 + 5 条深度层 + 自动普攻。
+// 主角：原地图左右移动、foothold 跳跃与自动普攻；无地图时保留原型深度层。
 // 刻意不用 Rigidbody2D：横版手感要精确，物理引擎的穿透修正和摩擦会让落地发飘。
 //
 // 坐标约定（很重要，后面所有单位都按这个来）：
 //   worldX  —— 水平位置
-//   jumpY   —— 离地高度，>= 0
+//   jumpY   —— 相对起跳平台的高度，下落至更低平台前可以为负
 //   laneVis —— 深度层（0 最远 / 4 最近），插值显示
 //   脚底最终 y = GroundY + jumpY + DepthOffset
 public class PlayerCtrl : MonoBehaviour
@@ -33,8 +33,13 @@ public class PlayerCtrl : MonoBehaviour
     public static System.Collections.Generic.List<Vector4> Terrain;
     public static void SetTerrain(System.Collections.Generic.List<Vector4> t) => Terrain = t;
 
+    public static System.Collections.Generic.List<Art.ClimbLine> Climbs;
+    Art.ClimbLine climb;
+    float climbInput, grabCooldown;
+    public bool IsClimbing => climb != null;
+
     // x 处的地面高度：取覆盖 x 的段里与 refY 最接近的一条（段内线性插值，支持斜坡）。
-    // 原版角色就是这样贴着 foothold 走的——上台阶、下斜坡、走到尽头被段边界挡住。
+    // 用于重置位置与查询邻近地面；空中落地另用扫过 foothold 的检测。
     public static float GroundAt(float x, float refY)
     {
         if (Terrain == null || Terrain.Count == 0) return GroundY;
@@ -83,6 +88,8 @@ public class PlayerCtrl : MonoBehaviour
     // 切关 / 重生时调用：把脚下地形吸附到 x 处的 foothold 上
     public void ResetTerrain()
     {
+        climb = null;
+        grabCooldown = 0f;
         terrainY = GroundAt(worldX, GroundY);
         jumpY = 0f;
         vy = 0f;
@@ -93,7 +100,7 @@ public class PlayerCtrl : MonoBehaviour
     // GetComponent<SpriteAnim>() 在根节点上找不到——之前技能因此完全没有角色动作。
     public void PlaySkill(string skill)
     {
-        if (vis == null) return;
+        if (vis == null || IsClimbing) return;
         string action = "skill_" + skill;
         vis.PlayOnce(Art.GetClip(vis.kind, vis.key, action) != null ? action : "atk");
     }
@@ -230,6 +237,8 @@ public class PlayerCtrl : MonoBehaviour
         if (Mathf.Abs(h) < 0.15f) h = TouchInput.MoveH;
         bool jumpReq = Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton0);
         if (TouchInput.TakeJump()) jumpReq = true;
+        climbInput = Input.GetAxisRaw("Vertical");
+        if (Mathf.Abs(climbInput) < 0.15f) climbInput = TouchInput.MoveV;
         int steps = Mathf.Max(1, Mathf.CeilToInt(dt / 0.008f));
         for (int i = 0; i < steps; i++) StepMovement(h, jumpReq && i == 0, dt / steps);
 
@@ -251,12 +260,19 @@ public class PlayerCtrl : MonoBehaviour
         // 指数插值：快但不生硬。瞬间跳层会像"走格子"，破坏 2.5D 错觉
         laneVis = Mathf.Lerp(laneVis, lane, 1f - Mathf.Exp(-14f * dt));
 
-        if (vis != null) vis.SetBase(!grounded ? "jump" : moving ? "walk" : "stand");
+        if (vis != null)
+        {
+            string action = IsClimbing ? (climb.ladder ? "ladder" : "rope") :
+                !grounded ? "jump" : moving ? "walk" : "stand";
+            vis.SetBase(action);
+            if (IsClimbing) vis.Play(action, false); // 抓绳打断攻击/受击残留
+            vis.speed = IsClimbing ? Mathf.Abs(climbInput) : 1f;
+        }
 
         // —— 自动普攻 ——
         // Boss 优先：Boss 体积大、通常只有一只，误判成本比杂兵高得多
         atkTimer -= dt;
-        if (atkTimer <= 0f && (vis == null || !vis.IsOneShot))
+        if (!IsClimbing && atkTimer <= 0f && (vis == null || !vis.IsOneShot))
         {
             var b = FindBossTarget();
             if (b != null)
@@ -288,6 +304,8 @@ public class PlayerCtrl : MonoBehaviour
     // 空中位置独立于脚下平台；只在下降时扫过 foothold 才落地。
     void StepMovement(float h, bool jumpReq, float dt)
     {
+        grabCooldown = Mathf.Max(0f, grabCooldown - dt);
+        if (StepClimb(h, jumpReq, dt)) return;
         if (jumpReq && grounded)
         {
             vy = jumpSpeed;
@@ -325,7 +343,7 @@ public class PlayerCtrl : MonoBehaviour
         worldX = nextX;
         if (grounded) return;
 
-        // 帧内细分由调用方控制；用解析位移，跳高不随 30/60/120Hz 改变。
+        // 帧内细分由调用方控制；用解析位移避免跳高随帧率变化。
         float nextY = previousY + vy * dt + 0.5f * gravity * dt * dt;
         vy = Mathf.Max(vy + gravity * dt, -fallSpeed);
         float landing;
@@ -337,6 +355,56 @@ public class PlayerCtrl : MonoBehaviour
             grounded = true;
         }
         else jumpY = nextY - terrainY;
+    }
+
+    bool StepClimb(float h, bool jumpReq, float dt)
+    {
+        float y = terrainY + jumpY;
+        if (climb == null && grabCooldown <= 0f && Mathf.Abs(climbInput) > 0.15f && Climbs != null)
+        {
+            float distance = 10f / Art.PPU;
+            foreach (var line in Climbs)
+            {
+                float dx = Mathf.Abs(worldX - line.x);
+                if (dx > distance || y < line.bottom || y > line.top + 5f / Art.PPU) continue;
+                // 从平台顶端只能向下抓绳；空中按上可抓住绳身。
+                if (grounded && climbInput > 0f && y >= line.top) continue;
+                distance = dx;
+                climb = line;
+            }
+            if (climb != null) { worldX = climb.x; grounded = false; vy = 0f; }
+        }
+        if (climb == null) return false;
+        if (jumpReq && Mathf.Abs(h) > 0.15f)
+        {
+            climb = null;
+            grabCooldown = 0.25f;
+            vy = jumpSpeed;
+            facing = h > 0f ? 1 : -1;
+            return false;
+        }
+        float nextY = y + climbInput * moveSpeed * dt;
+        if (nextY >= climb.top)
+        {
+            if (climb.upperExit && climbInput > 0f)
+            {
+                float top = GroundAt(worldX, climb.top);
+                if (HasSupport(worldX, top) && Mathf.Abs(top-climb.top) <= 12f / Art.PPU)
+                {
+                    terrainY = top; jumpY = 0f; grounded = true;
+                    climb = null; grabCooldown = 0.2f;
+                    return true;
+                }
+            }
+            nextY = climb.top;
+        }
+        if (nextY < climb.bottom)
+        {
+            climb = null; grabCooldown = 0.2f; vy = 0f;
+            return false;
+        }
+        jumpY = nextY - terrainY;
+        return true;
     }
 
     static bool HasSupport(float x, float y)
@@ -425,6 +493,7 @@ public class PlayerCtrl : MonoBehaviour
         if (Time.unscaledTime < invulnUntil) return;
         hp = Mathf.Max(0f, hp - dmg);
         invulnUntil = Time.unscaledTime + 0.5f;
+        if (IsClimbing) { climb = null; grabCooldown = 0.25f; vy = 0f; grounded = false; }
         worldX += dir * 0.25f;
         Fx.Flash(sr, new Color(1f, 0.35f, 0.35f));
         if (vis != null) vis.PlayOnce(hp <= 0f ? "die" : "hit");

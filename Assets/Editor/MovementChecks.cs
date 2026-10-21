@@ -19,7 +19,10 @@ public static class MovementChecks
     {
         PlayerCtrl.SetBounds(-20f,20f);
         PlayerCtrl.SetTerrain(terrain);
+        PlayerCtrl.Climbs = null;
+        TouchInput.Reset();
         var p = new GameObject("MovementCheck").AddComponent<PlayerCtrl>();
+        typeof(PlayerCtrl).GetMethod("Awake",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(p,null);
         p.worldX=x; p.terrainY=y; p.jumpY=0f; p.grounded=true;
         return p;
     }
@@ -59,13 +62,81 @@ public static class MovementChecks
             for(int i=0;i<30;i++) Tick(under,1,false,1f/60f);
             Require(under.worldX>1.5f && under.grounded && under.terrainY==0,"overhead platform became invisible wall");
             UnityEngine.Object.DestroyImmediate(under.gameObject);
+            CheckClimbs();
+            CheckAllFootholds();
             TouchInput.Reset();
             CheckTouch();
-            Debug.Log("[MovementChecks] PASS: original harbor 60px step, 30/60/120Hz step, ledge, lower landing, overhead platform, multitouch ownership and release");
+            Debug.Log("[MovementChecks] PASS: native ropes and upper exits, all native foothold landings, 30/60/120Hz steps, ledges and touch ownership");
             EditorApplication.Exit(0);
         }
         catch(Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
     }
+    static void CheckClimbs()
+    {
+        foreach (string theme in new[]{"harbor","forest","cliff","nest"})
+        {
+            var stage = Art.Stage(theme);
+            Require(stage.Climbs.Count > 0, "missing native ladderRope: " + theme);
+            foreach (var rope in stage.Climbs)
+            {
+                var p = Create(stage.Footholds,rope.x,(rope.top+rope.bottom)*0.5f);
+                PlayerCtrl.SetBounds(stage.WalkMin,stage.WalkMax);
+                PlayerCtrl.Climbs=stage.Climbs;
+                p.grounded=false;
+                TouchInput.MoveV=1f;
+                Tick(p,0,false,1f/60f);
+                Require(p.IsClimbing && Mathf.Abs(p.worldX-rope.x)<0.001f,"failed native rope grab: "+theme);
+                var animation=p.GetComponentInChildren<SpriteAnim>();
+                Require(animation != null && animation.Current==(rope.ladder ? "ladder" : "rope"),"wrong climbing animation");
+                float y=p.FeetPos.y;
+                TouchInput.MoveV=0f;
+                for(int i=0;i<30;i++) Tick(p,0,false,1f/60f);
+                Require(p.IsClimbing && Mathf.Abs(y-p.FeetPos.y)<0.001f,"hanging drifted");
+                Require(animation.speed==0f,"hanging animation did not pause");
+                TouchInput.MoveV=-1f;
+                Tick(p,0,false,0.1f);
+                Require(p.FeetPos.y<y,"down input did not descend");
+                TouchInput.MoveV=1f;
+                int climbTicks=Mathf.CeilToInt((rope.top-p.FeetPos.y)/p.moveSpeed*60)+60;
+                for(int i=0;i<climbTicks;i++)
+                {
+                    Tick(p,0,false,1f/60f);
+                    if (!p.IsClimbing) break;
+                }
+                if (rope.upperExit)
+                    Require(p.grounded && !p.IsClimbing && Mathf.Abs(p.FeetPos.y-rope.top)<0.31f,"native upper exit failed: "+theme);
+                else Require(p.IsClimbing,"uf=0 rope incorrectly exited through top");
+                UnityEngine.Object.DestroyImmediate(p.gameObject);
+            }
+        }
+        var line=new Art.ClimbLine{x=0,top=5,bottom=0,upperExit=false};
+        var test=Create(new List<Vector4>{new Vector4(-10,-1,10,-1)},0,2);
+        PlayerCtrl.Climbs=new List<Art.ClimbLine>{line};test.grounded=false;
+        TouchInput.MoveV=1;Tick(test,0,false,0.02f);
+        Tick(test,1,true,0.02f);
+        Require(!test.IsClimbing && !test.grounded && test.worldX>0,"rope jump-off failed");
+        UnityEngine.Object.DestroyImmediate(test.gameObject);
+        PlayerCtrl.Climbs=null;
+    }
+    static void CheckAllFootholds()
+    {
+        foreach(string theme in new[]{"harbor","forest","cliff","nest"})
+        {
+            var st=Art.Stage(theme);
+            foreach(var f in st.Footholds)
+            {
+                if(Mathf.Abs(f.z-f.x)<0.01f) continue;
+                float x=(f.x+f.z)*0.5f, y=(f.y+f.w)*0.5f;
+                var p=Create(st.Footholds,x,y);
+                PlayerCtrl.SetBounds(st.WalkMin,st.WalkMax);
+                p.jumpY=0.2f;p.grounded=false;
+                for(int i=0;i<30;i++) Tick(p,0,false,1f/60f);
+                Require(p.grounded && Mathf.Abs(p.FeetPos.y-y)<0.01f,"missed native foothold: "+theme+" "+f);
+                UnityEngine.Object.DestroyImmediate(p.gameObject);
+            }
+        }
+    }
+
     static void CheckTouch()
     {
         UiKit.RefreshMetrics();
@@ -78,9 +149,10 @@ public static class MovementChecks
         call("Release",new object[]{8});
         Require(TouchInput.MoveH>0.9f,"second finger released the movement stick");
         call("Move",new object[]{point+Vector2.up*70,7});
+        Require(TouchInput.MoveV < -0.6f,"stick did not expose continuous vertical input");
         Require(TouchInput.TakeLaneStep()==0,"vertical drag changed depth on original 2D map");
         call("Release",new object[]{7});
-        Require(TouchInput.MoveH==0,"movement stuck after release");
+        Require(TouchInput.MoveH==0 && TouchInput.MoveV==0,"movement stuck after release");
         UnityEngine.Object.DestroyImmediate(go);
     }
 }

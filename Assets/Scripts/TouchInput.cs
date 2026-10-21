@@ -5,6 +5,7 @@ using UnityEngine;
 // 不再关心是键盘按的、还是手指搓的。这样加摇杆不需要改 PlayerCtrl 的战斗逻辑。
 public static class TouchInput
 {
+    public static float MoveV;      // -1..1，上为正，持续攀爬输入
     public static float MoveH;      // -1..1，左右移动
 
     static int  _laneStep;          // 一次性：-1 往前，+1 往后
@@ -17,7 +18,7 @@ public static class TouchInput
     // 重开/切关时调用，防止上一关的手指状态残留
     public static void Reset()
     {
-        MoveH = 0f; _laneStep = 0; _jump = false;
+        MoveH = MoveV = 0f; _laneStep = 0; _jump = false;
     }
 
     public static void PushLaneStep(int d) { _laneStep = d; }
@@ -136,6 +137,8 @@ public class TouchPad : MonoBehaviour
         float nx = d.x / (R * 0.75f);
         TouchInput.MoveH = Mathf.Abs(nx) > DEAD ? Mathf.Clamp(nx, -1f, 1f) : 0f;
 
+        float vertical = -d.y / R; // GUI y 向下
+        TouchInput.MoveV = Mathf.Abs(vertical) > DEAD ? Mathf.Clamp(vertical,-1f,1f) : 0f;
         // 纵向：拨过阈值立刻换一层，回中后才能再拨
         float ny = PlayerCtrl.Terrain == null ? d.y / R : 0f;
         if (!_laneLatched)
@@ -155,7 +158,7 @@ public class TouchPad : MonoBehaviour
         {
             _active = false;
             _stickId = -2;
-            TouchInput.MoveH = 0f;
+            TouchInput.MoveH = TouchInput.MoveV = 0f;
             _laneLatched = false;
         }
     }

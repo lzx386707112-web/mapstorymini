@@ -10,7 +10,7 @@ public class CameraRig : MonoBehaviour
     public float smooth = 7f;
     public float baseY = PlayerCtrl.GroundY + 50f / Art.PPU;
     // 原端分辨率决定可见地图像素，而不是分别缩放地图和人物。
-    // 1366×768 是原端 config.ini 列出的支持模式；手机显示时整体等比适配。
+    // 保留 768px 逻辑高度，手机全屏按宽高比扩展横向视野。
     public float baseSize = 768f / (2f * Art.PPU);
     public float freeMinX = -11f, freeMaxX = 11f;
 

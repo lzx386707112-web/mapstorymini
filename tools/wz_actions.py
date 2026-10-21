@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 import wzmap
 from wzpy import WzImage, WzKey, open_wz
-from wzpy.character import CharacterRenderer
+from wzpy.character import CharacterRenderer, DEFAULT_EAR_TYPE
 from wzpy.properties import WzSubProperty
 DATA = wzmap.DATA
 REGION = "GMS"
@@ -85,7 +85,7 @@ def char_anims(cfg):
     info = load_img(os.path.join(DATA, "Character", "Weapon", cfg["ids"][-1]+".img")).get("info")
     result = {"stand": ["stand"+str(num(info,"stand",1))],
             "walk": ["walk"+str(num(info,"walk",1))], "jump": ["jump"],
-            "atk": [cfg["atk"]], "hit": ["alert"], "die": ["dead"]}
+            "rope": ["rope"], "ladder": ["ladder"], "atk": [cfg["atk"]], "hit": ["alert"], "die": ["dead"]}
     key = next(key for key, value in CHARS.items() if value is cfg)
     for skill in SKILL_KEYS[key]:
         if SKILL_ACTIONS.get(skill): result["skill_"+skill] = SKILL_ACTIONS[skill]
@@ -126,6 +126,17 @@ def extract_char(key: str, cfg: dict, out_root: str, renderer: CharacterRenderer
                     dly = num(node.get(str(f)), "delay", 120)
                 frames_meta.append((anim, pose, f, max(1, abs(dly))))
 
+    def compose(ids, pose, frame, bbox):
+        # CharacterRenderer puts navel at (0,0); the client positions the body
+        # canvas origin at the foothold. Restore that frame's native map/navel.
+        pose = renderer.detect_pose(ids, pose)
+        hidden, slots, tokens = renderer._cap_hair_filter(ids)
+        placements = renderer._build_placements(ids, pose, DEFAULT_EAR_TYPE, hidden, slots, tokens, frame)
+        base = next((p for p in placements if p.category == "Body" and p.name == "body"), None)
+        dx, dy = base.map_anchors.get("navel", (0, 0)) if base else (0, 0)
+        shifted = (bbox[0]-dx, bbox[1]-dy, bbox[2]-dx, bbox[3]-dy)
+        return renderer._render_placements(placements, bbox=shifted)
+
     # 第一遍：把每个发型都合一遍，求所有帧在世界坐标里的并集画布，
     # 避免长发/宽发被裁掉。
     BIG = (-240, -240, 240, 240)
@@ -134,7 +145,7 @@ def extract_char(key: str, cfg: dict, out_root: str, renderer: CharacterRenderer
         ids = ids_for_hair(base_ids, hid)
         for anim, pose, f, _ in frames_meta:
             try:
-                im = renderer.compose(ids, pose=pose, frame=f, bbox=BIG)
+                im = compose(ids, pose=pose, frame=f, bbox=BIG)
             except Exception:
                 continue
             bb = im.getbbox()
@@ -150,14 +161,8 @@ def extract_char(key: str, cfg: dict, out_root: str, renderer: CharacterRenderer
     bbox = (union[0] - 6, union[1] - 6, union[2] + 6, union[3] + 8)
     w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
 
-    # 轴心 = 脚底中线（站立帧最下面一行不透明像素兜底）
-    navel_y = -bbox[1]
-    try:
-        ref = renderer.compose(ids_for_hair(base_ids, default_hair), pose="stand1", frame=0, bbox=bbox)
-        rb = ref.getbbox()
-        pivot = (-bbox[0], rb[3] if rb else navel_y + 21)
-    except Exception:
-        pivot = (-bbox[0], navel_y + 21)
+    # 原生身体 origin 是运动坐标，不再从武器/发型不透明边界猜脚底。
+    pivot = (-bbox[0], -bbox[1])
 
     out: Dict[str, dict] = {}
     for i, hid in enumerate(variants):
@@ -168,7 +173,7 @@ def extract_char(key: str, cfg: dict, out_root: str, renderer: CharacterRenderer
         ok = 0
         for anim, pose, f, dly in frames_meta:
             try:
-                im = renderer.compose(ids, pose=pose, frame=f, bbox=bbox)
+                im = compose(ids, pose=pose, frame=f, bbox=bbox)
             except Exception:
                 # 这个发型某一帧合不出 → 跳过该帧（通常整发型都合不出会在外部回退）
                 continue

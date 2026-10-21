@@ -66,6 +66,9 @@ def export(theme, sync):
                 view=vr, walk=[min(xs),max(xs)], sky=0,
                 footholds=[[f[k] for k in ("x1","y1","x2","y2")]
                            for f in gm.footholds],
+                ladderRope=[{k: wzmap._num(c,k,0) for k in ("x","y1","y2","l","uf","page")}
+                            for c in gm.img.get("ladderRope").children()]
+                            if gm.img.get("ladderRope") else [],
                 files=files, orders=dict(back=-800,mid=-400,front=600),
                 backgrounds=backgrounds)
 

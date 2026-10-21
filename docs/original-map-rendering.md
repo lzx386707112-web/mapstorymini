@@ -64,3 +64,27 @@
 剑影分身 brandish1 等；包含原 action 列表里的重复段，治疗/增益也进入对应角色姿势。
 原帧 delay 可能为负值，播放时取绝对时长，不能用 max(40,delay) 把 -300ms 截成 40ms。
 缺少 action 的自定义技能仍退回职业普攻姿势，未凭空推测原端特殊分派。
+
+
+### Foothold anchors and ladderRope (2026-10-21)
+
+Character export now restores each resolved Body/body canvas's `map/navel`
+translation after the local CharacterRenderer aligns navel to zero. Sprite pivot
+is the native body origin, shared with foothold movement coordinates, rather than
+the opaque bounding box of stand1 (which also contains equipment). UOL body
+references use the renderer's resolved placements. No global floor offset is added;
+original tile origins and foothold coordinates remain unchanged.
+
+All four maps export `ladderRope` x/y1/y2/l/uf/page (16 entries). Runtime uses
+continuous up/down input, 10px horizontal grab tolerance, original rope/ladder
+frames and delays, stationary animation pause, directional jump-off, and `uf`
+controlled top exits onto a nearby actual foothold. Climb speed currently follows
+base walk speed; grab tolerance and detach cooldown are port behavior parameters,
+not verified original executable constants. Attacks/skills are disabled while
+hanging; damage detaches the character. Map switching resets climbing state.
+
+MovementChecks exercises every nonvertical foothold landing across all four maps,
+each native rope/ladder and upper exit, hanging, descending, jumping off, existing
+30/60/120Hz steps/ledge behavior and touch release. These verify collision support,
+not an end-to-end route to every platform. Native accelerated movement and every
+combat action transition are not yet a verified byte-for-byte client recreation.
