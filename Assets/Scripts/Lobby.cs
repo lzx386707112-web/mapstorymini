@@ -72,13 +72,15 @@ public class Lobby : MonoBehaviour
                   new GUIStyle(_small) { alignment = TextAnchor.MiddleCenter });
     }
 
-    // 在 GUI 里画「站立帧 + 服饰/头发染色 + 手持武器」。
-    // 染色贴图与角色帧同尺寸，所以直接铺在同一个 Rect 上 → 和战斗里完全一致。
-    void DrawCharacter(float cx, float footY, float hpx, string cls, string hair, string outfit, string weapon)
+    // 在 GUI 里画「站立帧（含真实发型）+ 服饰染色 + 手持武器」。
+    // 角色帧已经是从客户端抽出来的真实发型，直接铺在 body Rect 上即可；
+    // 只有服饰是叠加染色层。
+    void DrawCharacter(float cx, float footY, float hpx, string cls, string hairKey, string outfit, string weapon)
     {
         GUI.color = Color.white;
 
-        var clip = Art.GetClip("chars", cls, "stand");
+        string artKey = cls + "_" + (HairStyles.Contains(hairKey) ? hairKey : "h0");
+        var clip = Art.GetClip("chars", artKey, "stand");
         Sprite frame = null;
         if (clip != null && clip.frames.Length > 0) frame = Art.Frame(clip.frames[0]);
 
@@ -89,10 +91,8 @@ public class Lobby : MonoBehaviour
 
         var body = new Rect(cx - texW * k * 0.5f, footY - hpx, texW * k, hpx);
 
-        // 服饰（身下）→ 原画 → 头发（身上），三层同 Rect，像素级对齐
+        // 服饰染色叠在角色之上（头发已是角色帧里的真实发型，无需再染）
         var coat = CosmeticFactory.DyeCoat(frame, CosmeticFactory.OutfitColor(outfit));
-        var hairSp = CosmeticFactory.DyeHair(frame, CosmeticFactory.HairColor(hair));
-
         if (coat != null && outfit != "none")
             GUI.DrawTexture(body, coat.texture, ScaleMode.StretchToFill);
 
@@ -101,22 +101,7 @@ public class Lobby : MonoBehaviour
         else
             UiKit.Fill(body, new Color(0.6f, 0.6f, 0.6f));
 
-        if (hairSp != null)
-            GUI.DrawTexture(body, hairSp.texture, ScaleMode.StretchToFill);
-
-        // 武器：绕自身中心轻微后倾
-        var wd = WeaponDefs.Get(weapon);
-        var wsp = CosmeticFactory.WeaponSprite(wd.kind, wd.color);
-        if (wsp != null && wsp.texture != null)
-        {
-            float wh = visH * 0.86f * Art.PPU * k;
-            var center = new Vector2(cx + visH * 0.20f * Art.PPU * k, footY - visH * 0.50f * Art.PPU * k);
-            var old = GUI.matrix;
-            GUIUtility.RotateAroundPivot(-16f, center);
-            GUI.DrawTexture(new Rect(center.x - wh * 0.5f, center.y - wh * 0.5f, wh, wh),
-                            wsp.texture, ScaleMode.StretchToFill);
-            GUI.matrix = old;
-        }
+        // 注：不再单独画武器层——原版武器已合成进角色帧，独立画只会在身前叠出静止色块。
     }
 
     // —————————— 标签栏 ——————————
@@ -139,9 +124,8 @@ public class Lobby : MonoBehaviour
     void DrawDress(float x, float w)
     {
         float y = 124f;
-        SectionTitle(x, y, "头发"); y += 30f;
-        y = SwatchRow(x, y, new List<string>(CosmeticFactory.HairColors.Keys), Profile.hair,
-                      id => CosmeticFactory.HairColor(id), id => { Profile.SetHair(id); Profile.Save(); });
+        SectionTitle(x, y, "头发（真实发型）"); y += 30f;
+        y = HairRow(x, y, Profile.hair, id => { Profile.SetHair(id); Profile.Save(); });
 
         y += 14f; SectionTitle(x, y, "服饰"); y += 30f;
         y = SwatchRow(x, y, new List<string>(CosmeticFactory.OutfitColors.Keys), Profile.outfit,
@@ -263,6 +247,25 @@ public class Lobby : MonoBehaviour
     {
         var left = new GUIStyle(_label) { fontStyle = FontStyle.Bold, normal = { textColor = new Color(0.6f, 0.85f, 1f) } };
         GUI.Label(new Rect(x, y, 300f, 24), t, left);
+    }
+
+    // 一排真实发型按钮：点击切换
+    float HairRow(float x, float y, string cur, System.Action<string> onPick)
+    {
+        float bw = 96f, bh = 34f, gap = 8f;
+        int cols = 3;
+        for (int i = 0; i < HairStyles.Count; i++)
+        {
+            float bx = x + (i % cols) * (bw + gap);
+            float by = y + (i / cols) * (bh + gap);
+            var r = new Rect(bx, by, bw, bh);
+            bool on = cur == HairStyles.Keys[i];
+            UiKit.Fill(r, on ? new Color(0.22f, 0.42f, 0.62f) : new Color(0.14f, 0.17f, 0.22f));
+            GUI.Label(r, HairStyles.Names[i], new GUIStyle(_sw) { alignment = TextAnchor.MiddleCenter });
+            if (Clicked(r)) onPick(HairStyles.Keys[i]);
+        }
+        int rows = (HairStyles.Count + cols - 1) / cols;
+        return y + rows * (bh + gap) + 6f;
     }
 
     // 一排色板：点击切换

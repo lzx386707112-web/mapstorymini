@@ -3,26 +3,23 @@ using UnityEngine;
 // 摄像机：跟随 + 顿帧震屏 + 关卡边界。
 // 震屏必须作用在摄像机偏移上，且用 LateUpdate，否则会被跟随逻辑覆盖掉。
 //
-// 边界：关卡背景是「真实地图切片」，切片之外什么都没有。
-// 所以镜头不能像自由滚动那样乱跑，必须夹在 [切片左端+半屏, 切片右端-半屏] 内，
-// 这样任何机位都只会看到切片内部的画面，不会露黑边。
+// 原端依据 VR 范围限制相机中心，地图小于视野时锁在两边界的中点。
 public class CameraRig : MonoBehaviour
 {
     public Transform target;
     public float smooth = 7f;
-    public float forwardOffset = 1.1f;
-    public float baseY = 0.9f;
-    // 正交尺寸：视野高度 = baseSize * 2 * PPU = 7.2*2*40 = 576 地图像素。
-    // 原版 800x600 的窗口能看到约 600px 高的地图，角色（~110px）占屏 15%。
-    // 之前 4.6 只有 368px 高，等于把画面放大了 1.6 倍，所以「整个景像被拉近」。
-    public float baseSize = 7.2f;
+    public float baseY = PlayerCtrl.GroundY + 50f / Art.PPU;
+    // 原端分辨率决定可见地图像素，而不是分别缩放地图和人物。
+    // 1366×768 是原端 config.ini 列出的支持模式；手机显示时整体等比适配。
+    public float baseSize = 768f / (2f * Art.PPU);
+    const float ReferenceAspect = 1366f / 768f;
     public float freeMinX = -11f, freeMaxX = 11f;
 
     Camera cam;
-    float x;
+    float x, y;
 
     bool  useStage;
-    float stageMinX, stageMaxX;
+    float stageMinX, stageMaxX, stageMinY, stageMaxY;
 
     void Awake()
     {
@@ -33,14 +30,36 @@ public class CameraRig : MonoBehaviour
         cam.backgroundColor = new Color(0.07f, 0.08f, 0.11f);
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.farClipPlane = 100f;
+        UpdateViewport();
+        y = baseY;
     }
 
-    // 关卡切片的世界左右端（不是可走范围，是画面边界）
-    public void SetStage(float minX, float maxX)
+    void UpdateViewport()
+    {
+        // 超宽手机保留参考图的构图，触控层仍可使用两侧空间。
+        float screenAspect = (float)Screen.width / Mathf.Max(1, Screen.height);
+        if (screenAspect > ReferenceAspect)
+        {
+            float width = ReferenceAspect / screenAspect;
+            cam.rect = new Rect((1f - width) * 0.5f, 0f, width, 1f);
+        }
+        else
+        {
+            float height = screenAspect / ReferenceAspect;
+            cam.rect = new Rect(0f, (1f - height) * 0.5f, 1f, height);
+        }
+        cam.aspect = ReferenceAspect;
+        cam.orthographicSize = baseSize;
+    }
+
+    public void SetStage(Art.StageInfo stage)
     {
         useStage = true;
-        stageMinX = minX;
-        stageMaxX = maxX;
+        stageMinX = stage.hasView ? stage.WorldX(stage.view.x) : stage.LeftX;
+        stageMaxX = stage.hasView ? stage.WorldX(stage.view.z) : stage.RightX;
+        stageMinY = stage.hasView ? stage.WorldY(stage.view.w) : stage.BottomY;
+        stageMaxY = stage.hasView ? stage.WorldY(stage.view.y) : stage.TopY;
+        SnapTo(target != null ? target.position.x : x);
     }
 
     public void ClearStage()
@@ -50,17 +69,24 @@ public class CameraRig : MonoBehaviour
 
     void LateUpdate()
     {
+        UpdateViewport();
         if (target != null)
         {
-            float tx = target.position.x + forwardOffset;
+            // CAnimationDisplayer camera anchor: RelMove(0, -50), 0x00437B32.
+            float tx = target.position.x;
             x = Mathf.Lerp(x, tx, 1f - Mathf.Exp(-smooth * Time.unscaledDeltaTime));
             x = ClampX(x);
+            float ty = target.position.y + 50f / Art.PPU;
+            y = Mathf.Lerp(y, ty, 1f - Mathf.Exp(-smooth * Time.unscaledDeltaTime));
+            y = ClampY(y);
         }
+        else y = baseY;
 
         var off = HitFeel.CameraOffset;
         // 吸附到像素网格（1/PPU）：背景是 1:1 的地图像素，镜头停在半个像素上会抖
         float px = Mathf.Round((x + off.x) * Art.PPU) / Art.PPU;
-        transform.position = new Vector3(px, baseY + off.y, -10f);
+        float py = Mathf.Round((y + off.y) * Art.PPU) / Art.PPU;
+        transform.position = new Vector3(px, py, -10f);
     }
 
     float ClampX(float v)
@@ -78,6 +104,15 @@ public class CameraRig : MonoBehaviour
     public void SnapTo(float targetX)
     {
         x = ClampX(targetX);
-        transform.position = new Vector3(x, baseY, -10f);
+        y = ClampY(target != null ? target.position.y + 50f / Art.PPU : baseY);
+        transform.position = new Vector3(x, y, -10f);
+    }
+
+    float ClampY(float value)
+    {
+        if (!useStage) return value;
+        float lo = stageMinY + cam.orthographicSize;
+        float hi = stageMaxY - cam.orthographicSize;
+        return lo >= hi ? (stageMinY + stageMaxY) * 0.5f : Mathf.Clamp(value, lo, hi);
     }
 }

@@ -203,12 +203,17 @@ public static class PlaySmokeTest
         var cam = Camera.main;
         if (cam == null) { Debug.LogWarning("[PlaySmoke] 无相机，跳过截图"); return; }
         const int W = 960, H = 540;
+        Rect viewport = cam.rect;
+        float aspect = cam.aspect;
         RenderTexture rt = null, prev = RenderTexture.active;
         Texture2D tex = null;
         try
         {
             rt = new RenderTexture(W, H, 24);
             cam.targetTexture = rt;
+            // 离屏纹理本身就是 16:9，不应再次套用手机屏幕的留边。
+            cam.rect = new Rect(0f, 0f, 1f, 1f);
+            cam.aspect = (float)W / H;
             cam.Render();
             RenderTexture.active = rt;
             tex = new Texture2D(W, H, TextureFormat.RGB24, false);
@@ -225,7 +230,12 @@ public static class PlaySmokeTest
         }
         finally
         {
-            if (cam != null) cam.targetTexture = null;
+            if (cam != null)
+            {
+                cam.targetTexture = null;
+                cam.rect = viewport;
+                cam.aspect = aspect;
+            }
             RenderTexture.active = prev;
             if (rt != null) Object.Destroy(rt);
             if (tex != null) Object.Destroy(tex);

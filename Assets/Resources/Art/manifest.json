@@ -3,22 +3,22 @@
  "ppu": 40,
  "source": "BeiDou GMS083 Data",
  "chars": {
-  "knight": {
+  "knight_h0": {
    "name": "剑士（主角）",
    "size": [
-    88,
-    84
+    93,
+    116
    ],
    "pivot": [
-    38,
-    76
+    43,
+    79
    ],
    "anims": {
     "stand": {
      "frames": [
-      "chars/knight/stand_0.png",
-      "chars/knight/stand_1.png",
-      "chars/knight/stand_2.png"
+      "chars/knight_h0/stand_0.png",
+      "chars/knight_h0/stand_1.png",
+      "chars/knight_h0/stand_2.png"
      ],
      "delays": [
       500,
@@ -28,14 +28,14 @@
     },
     "walk": {
      "frames": [
-      "chars/knight/walk_0.png",
-      "chars/knight/walk_1.png",
-      "chars/knight/walk_2.png",
-      "chars/knight/walk_3.png",
-      "chars/knight/walk_4.png",
-      "chars/knight/walk_5.png",
-      "chars/knight/walk_6.png",
-      "chars/knight/walk_7.png"
+      "chars/knight_h0/walk_0.png",
+      "chars/knight_h0/walk_1.png",
+      "chars/knight_h0/walk_2.png",
+      "chars/knight_h0/walk_3.png",
+      "chars/knight_h0/walk_4.png",
+      "chars/knight_h0/walk_5.png",
+      "chars/knight_h0/walk_6.png",
+      "chars/knight_h0/walk_7.png"
      ],
      "delays": [
       180,
@@ -50,7 +50,7 @@
     },
     "jump": {
      "frames": [
-      "chars/knight/jump_0.png"
+      "chars/knight_h0/jump_0.png"
      ],
      "delays": [
       200
@@ -58,9 +58,9 @@
     },
     "atk": {
      "frames": [
-      "chars/knight/atk_0.png",
-      "chars/knight/atk_1.png",
-      "chars/knight/atk_2.png"
+      "chars/knight_h0/atk_0.png",
+      "chars/knight_h0/atk_1.png",
+      "chars/knight_h0/atk_2.png"
      ],
      "delays": [
       300,
@@ -70,9 +70,9 @@
     },
     "hit": {
      "frames": [
-      "chars/knight/hit_0.png",
-      "chars/knight/hit_1.png",
-      "chars/knight/hit_2.png"
+      "chars/knight_h0/hit_0.png",
+      "chars/knight_h0/hit_1.png",
+      "chars/knight_h0/hit_2.png"
      ],
      "delays": [
       300,
@@ -82,7 +82,7 @@
     },
     "die": {
      "frames": [
-      "chars/knight/die_0.png"
+      "chars/knight_h0/die_0.png"
      ],
      "delays": [
       120
@@ -90,11 +90,446 @@
     }
    }
   },
-  "warrior": {
+  "knight_h1": {
+   "name": "剑士（主角）",
+   "size": [
+    93,
+    116
+   ],
+   "pivot": [
+    43,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/knight_h1/stand_0.png",
+      "chars/knight_h1/stand_1.png",
+      "chars/knight_h1/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/knight_h1/walk_0.png",
+      "chars/knight_h1/walk_1.png",
+      "chars/knight_h1/walk_2.png",
+      "chars/knight_h1/walk_3.png",
+      "chars/knight_h1/walk_4.png",
+      "chars/knight_h1/walk_5.png",
+      "chars/knight_h1/walk_6.png",
+      "chars/knight_h1/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/knight_h1/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/knight_h1/atk_0.png",
+      "chars/knight_h1/atk_1.png",
+      "chars/knight_h1/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/knight_h1/hit_0.png",
+      "chars/knight_h1/hit_1.png",
+      "chars/knight_h1/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/knight_h1/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "knight_h2": {
+   "name": "剑士（主角）",
+   "size": [
+    93,
+    116
+   ],
+   "pivot": [
+    43,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/knight_h2/stand_0.png",
+      "chars/knight_h2/stand_1.png",
+      "chars/knight_h2/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/knight_h2/walk_0.png",
+      "chars/knight_h2/walk_1.png",
+      "chars/knight_h2/walk_2.png",
+      "chars/knight_h2/walk_3.png",
+      "chars/knight_h2/walk_4.png",
+      "chars/knight_h2/walk_5.png",
+      "chars/knight_h2/walk_6.png",
+      "chars/knight_h2/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/knight_h2/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/knight_h2/atk_0.png",
+      "chars/knight_h2/atk_1.png",
+      "chars/knight_h2/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/knight_h2/hit_0.png",
+      "chars/knight_h2/hit_1.png",
+      "chars/knight_h2/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/knight_h2/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "knight_h3": {
+   "name": "剑士（主角）",
+   "size": [
+    93,
+    116
+   ],
+   "pivot": [
+    43,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/knight_h3/stand_0.png",
+      "chars/knight_h3/stand_1.png",
+      "chars/knight_h3/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/knight_h3/walk_0.png",
+      "chars/knight_h3/walk_1.png",
+      "chars/knight_h3/walk_2.png",
+      "chars/knight_h3/walk_3.png",
+      "chars/knight_h3/walk_4.png",
+      "chars/knight_h3/walk_5.png",
+      "chars/knight_h3/walk_6.png",
+      "chars/knight_h3/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/knight_h3/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/knight_h3/atk_0.png",
+      "chars/knight_h3/atk_1.png",
+      "chars/knight_h3/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/knight_h3/hit_0.png",
+      "chars/knight_h3/hit_1.png",
+      "chars/knight_h3/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/knight_h3/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "knight_h4": {
+   "name": "剑士（主角）",
+   "size": [
+    93,
+    116
+   ],
+   "pivot": [
+    43,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/knight_h4/stand_0.png",
+      "chars/knight_h4/stand_1.png",
+      "chars/knight_h4/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/knight_h4/walk_0.png",
+      "chars/knight_h4/walk_1.png",
+      "chars/knight_h4/walk_2.png",
+      "chars/knight_h4/walk_3.png",
+      "chars/knight_h4/walk_4.png",
+      "chars/knight_h4/walk_5.png",
+      "chars/knight_h4/walk_6.png",
+      "chars/knight_h4/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/knight_h4/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/knight_h4/atk_0.png",
+      "chars/knight_h4/atk_1.png",
+      "chars/knight_h4/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/knight_h4/hit_0.png",
+      "chars/knight_h4/hit_1.png",
+      "chars/knight_h4/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/knight_h4/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "knight_h5": {
+   "name": "剑士（主角）",
+   "size": [
+    93,
+    116
+   ],
+   "pivot": [
+    43,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/knight_h5/stand_0.png",
+      "chars/knight_h5/stand_1.png",
+      "chars/knight_h5/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/knight_h5/walk_0.png",
+      "chars/knight_h5/walk_1.png",
+      "chars/knight_h5/walk_2.png",
+      "chars/knight_h5/walk_3.png",
+      "chars/knight_h5/walk_4.png",
+      "chars/knight_h5/walk_5.png",
+      "chars/knight_h5/walk_6.png",
+      "chars/knight_h5/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/knight_h5/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/knight_h5/atk_0.png",
+      "chars/knight_h5/atk_1.png",
+      "chars/knight_h5/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/knight_h5/hit_0.png",
+      "chars/knight_h5/hit_1.png",
+      "chars/knight_h5/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/knight_h5/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "warrior_h0": {
    "name": "战士（英雄）",
    "size": [
     151,
-    113
+    135
    ],
    "pivot": [
     74,
@@ -103,9 +538,9 @@
    "anims": {
     "stand": {
      "frames": [
-      "chars/warrior/stand_0.png",
-      "chars/warrior/stand_1.png",
-      "chars/warrior/stand_2.png"
+      "chars/warrior_h0/stand_0.png",
+      "chars/warrior_h0/stand_1.png",
+      "chars/warrior_h0/stand_2.png"
      ],
      "delays": [
       500,
@@ -115,14 +550,14 @@
     },
     "walk": {
      "frames": [
-      "chars/warrior/walk_0.png",
-      "chars/warrior/walk_1.png",
-      "chars/warrior/walk_2.png",
-      "chars/warrior/walk_3.png",
-      "chars/warrior/walk_4.png",
-      "chars/warrior/walk_5.png",
-      "chars/warrior/walk_6.png",
-      "chars/warrior/walk_7.png"
+      "chars/warrior_h0/walk_0.png",
+      "chars/warrior_h0/walk_1.png",
+      "chars/warrior_h0/walk_2.png",
+      "chars/warrior_h0/walk_3.png",
+      "chars/warrior_h0/walk_4.png",
+      "chars/warrior_h0/walk_5.png",
+      "chars/warrior_h0/walk_6.png",
+      "chars/warrior_h0/walk_7.png"
      ],
      "delays": [
       180,
@@ -137,7 +572,7 @@
     },
     "jump": {
      "frames": [
-      "chars/warrior/jump_0.png"
+      "chars/warrior_h0/jump_0.png"
      ],
      "delays": [
       200
@@ -145,9 +580,9 @@
     },
     "atk": {
      "frames": [
-      "chars/warrior/atk_0.png",
-      "chars/warrior/atk_1.png",
-      "chars/warrior/atk_2.png"
+      "chars/warrior_h0/atk_0.png",
+      "chars/warrior_h0/atk_1.png",
+      "chars/warrior_h0/atk_2.png"
      ],
      "delays": [
       300,
@@ -157,9 +592,9 @@
     },
     "hit": {
      "frames": [
-      "chars/warrior/hit_0.png",
-      "chars/warrior/hit_1.png",
-      "chars/warrior/hit_2.png"
+      "chars/warrior_h0/hit_0.png",
+      "chars/warrior_h0/hit_1.png",
+      "chars/warrior_h0/hit_2.png"
      ],
      "delays": [
       300,
@@ -169,7 +604,7 @@
     },
     "die": {
      "frames": [
-      "chars/warrior/die_0.png"
+      "chars/warrior_h0/die_0.png"
      ],
      "delays": [
       120
@@ -177,22 +612,22 @@
     }
    }
   },
-  "mage": {
-   "name": "法师（英雄）",
+  "warrior_h1": {
+   "name": "战士（英雄）",
    "size": [
-    92,
-    107
+    151,
+    135
    ],
    "pivot": [
-    34,
-    78
+    74,
+    98
    ],
    "anims": {
     "stand": {
      "frames": [
-      "chars/mage/stand_0.png",
-      "chars/mage/stand_1.png",
-      "chars/mage/stand_2.png"
+      "chars/warrior_h1/stand_0.png",
+      "chars/warrior_h1/stand_1.png",
+      "chars/warrior_h1/stand_2.png"
      ],
      "delays": [
       500,
@@ -202,14 +637,14 @@
     },
     "walk": {
      "frames": [
-      "chars/mage/walk_0.png",
-      "chars/mage/walk_1.png",
-      "chars/mage/walk_2.png",
-      "chars/mage/walk_3.png",
-      "chars/mage/walk_4.png",
-      "chars/mage/walk_5.png",
-      "chars/mage/walk_6.png",
-      "chars/mage/walk_7.png"
+      "chars/warrior_h1/walk_0.png",
+      "chars/warrior_h1/walk_1.png",
+      "chars/warrior_h1/walk_2.png",
+      "chars/warrior_h1/walk_3.png",
+      "chars/warrior_h1/walk_4.png",
+      "chars/warrior_h1/walk_5.png",
+      "chars/warrior_h1/walk_6.png",
+      "chars/warrior_h1/walk_7.png"
      ],
      "delays": [
       180,
@@ -224,7 +659,7 @@
     },
     "jump": {
      "frames": [
-      "chars/mage/jump_0.png"
+      "chars/warrior_h1/jump_0.png"
      ],
      "delays": [
       200
@@ -232,9 +667,444 @@
     },
     "atk": {
      "frames": [
-      "chars/mage/atk_0.png",
-      "chars/mage/atk_1.png",
-      "chars/mage/atk_2.png"
+      "chars/warrior_h1/atk_0.png",
+      "chars/warrior_h1/atk_1.png",
+      "chars/warrior_h1/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/warrior_h1/hit_0.png",
+      "chars/warrior_h1/hit_1.png",
+      "chars/warrior_h1/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/warrior_h1/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "warrior_h2": {
+   "name": "战士（英雄）",
+   "size": [
+    151,
+    135
+   ],
+   "pivot": [
+    74,
+    98
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/warrior_h2/stand_0.png",
+      "chars/warrior_h2/stand_1.png",
+      "chars/warrior_h2/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/warrior_h2/walk_0.png",
+      "chars/warrior_h2/walk_1.png",
+      "chars/warrior_h2/walk_2.png",
+      "chars/warrior_h2/walk_3.png",
+      "chars/warrior_h2/walk_4.png",
+      "chars/warrior_h2/walk_5.png",
+      "chars/warrior_h2/walk_6.png",
+      "chars/warrior_h2/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/warrior_h2/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/warrior_h2/atk_0.png",
+      "chars/warrior_h2/atk_1.png",
+      "chars/warrior_h2/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/warrior_h2/hit_0.png",
+      "chars/warrior_h2/hit_1.png",
+      "chars/warrior_h2/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/warrior_h2/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "warrior_h3": {
+   "name": "战士（英雄）",
+   "size": [
+    151,
+    135
+   ],
+   "pivot": [
+    74,
+    98
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/warrior_h3/stand_0.png",
+      "chars/warrior_h3/stand_1.png",
+      "chars/warrior_h3/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/warrior_h3/walk_0.png",
+      "chars/warrior_h3/walk_1.png",
+      "chars/warrior_h3/walk_2.png",
+      "chars/warrior_h3/walk_3.png",
+      "chars/warrior_h3/walk_4.png",
+      "chars/warrior_h3/walk_5.png",
+      "chars/warrior_h3/walk_6.png",
+      "chars/warrior_h3/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/warrior_h3/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/warrior_h3/atk_0.png",
+      "chars/warrior_h3/atk_1.png",
+      "chars/warrior_h3/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/warrior_h3/hit_0.png",
+      "chars/warrior_h3/hit_1.png",
+      "chars/warrior_h3/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/warrior_h3/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "warrior_h4": {
+   "name": "战士（英雄）",
+   "size": [
+    151,
+    135
+   ],
+   "pivot": [
+    74,
+    98
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/warrior_h4/stand_0.png",
+      "chars/warrior_h4/stand_1.png",
+      "chars/warrior_h4/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/warrior_h4/walk_0.png",
+      "chars/warrior_h4/walk_1.png",
+      "chars/warrior_h4/walk_2.png",
+      "chars/warrior_h4/walk_3.png",
+      "chars/warrior_h4/walk_4.png",
+      "chars/warrior_h4/walk_5.png",
+      "chars/warrior_h4/walk_6.png",
+      "chars/warrior_h4/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/warrior_h4/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/warrior_h4/atk_0.png",
+      "chars/warrior_h4/atk_1.png",
+      "chars/warrior_h4/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/warrior_h4/hit_0.png",
+      "chars/warrior_h4/hit_1.png",
+      "chars/warrior_h4/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/warrior_h4/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "warrior_h5": {
+   "name": "战士（英雄）",
+   "size": [
+    151,
+    135
+   ],
+   "pivot": [
+    74,
+    98
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/warrior_h5/stand_0.png",
+      "chars/warrior_h5/stand_1.png",
+      "chars/warrior_h5/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/warrior_h5/walk_0.png",
+      "chars/warrior_h5/walk_1.png",
+      "chars/warrior_h5/walk_2.png",
+      "chars/warrior_h5/walk_3.png",
+      "chars/warrior_h5/walk_4.png",
+      "chars/warrior_h5/walk_5.png",
+      "chars/warrior_h5/walk_6.png",
+      "chars/warrior_h5/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/warrior_h5/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/warrior_h5/atk_0.png",
+      "chars/warrior_h5/atk_1.png",
+      "chars/warrior_h5/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/warrior_h5/hit_0.png",
+      "chars/warrior_h5/hit_1.png",
+      "chars/warrior_h5/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/warrior_h5/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "mage_h0": {
+   "name": "法师（英雄）",
+   "size": [
+    94,
+    116
+   ],
+   "pivot": [
+    36,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/mage_h0/stand_0.png",
+      "chars/mage_h0/stand_1.png",
+      "chars/mage_h0/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/mage_h0/walk_0.png",
+      "chars/mage_h0/walk_1.png",
+      "chars/mage_h0/walk_2.png",
+      "chars/mage_h0/walk_3.png",
+      "chars/mage_h0/walk_4.png",
+      "chars/mage_h0/walk_5.png",
+      "chars/mage_h0/walk_6.png",
+      "chars/mage_h0/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/mage_h0/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/mage_h0/atk_0.png",
+      "chars/mage_h0/atk_1.png",
+      "chars/mage_h0/atk_2.png"
      ],
      "delays": [
       40,
@@ -244,9 +1114,9 @@
     },
     "hit": {
      "frames": [
-      "chars/mage/hit_0.png",
-      "chars/mage/hit_1.png",
-      "chars/mage/hit_2.png"
+      "chars/mage_h0/hit_0.png",
+      "chars/mage_h0/hit_1.png",
+      "chars/mage_h0/hit_2.png"
      ],
      "delays": [
       300,
@@ -256,7 +1126,7 @@
     },
     "die": {
      "frames": [
-      "chars/mage/die_0.png"
+      "chars/mage_h0/die_0.png"
      ],
      "delays": [
       120
@@ -264,22 +1134,22 @@
     }
    }
   },
-  "archer": {
-   "name": "弓手（英雄）",
+  "mage_h1": {
+   "name": "法师（英雄）",
    "size": [
-    86,
-    92
+    94,
+    116
    ],
    "pivot": [
-    38,
-    75
+    36,
+    79
    ],
    "anims": {
     "stand": {
      "frames": [
-      "chars/archer/stand_0.png",
-      "chars/archer/stand_1.png",
-      "chars/archer/stand_2.png"
+      "chars/mage_h1/stand_0.png",
+      "chars/mage_h1/stand_1.png",
+      "chars/mage_h1/stand_2.png"
      ],
      "delays": [
       500,
@@ -289,14 +1159,14 @@
     },
     "walk": {
      "frames": [
-      "chars/archer/walk_0.png",
-      "chars/archer/walk_1.png",
-      "chars/archer/walk_2.png",
-      "chars/archer/walk_3.png",
-      "chars/archer/walk_4.png",
-      "chars/archer/walk_5.png",
-      "chars/archer/walk_6.png",
-      "chars/archer/walk_7.png"
+      "chars/mage_h1/walk_0.png",
+      "chars/mage_h1/walk_1.png",
+      "chars/mage_h1/walk_2.png",
+      "chars/mage_h1/walk_3.png",
+      "chars/mage_h1/walk_4.png",
+      "chars/mage_h1/walk_5.png",
+      "chars/mage_h1/walk_6.png",
+      "chars/mage_h1/walk_7.png"
      ],
      "delays": [
       180,
@@ -311,7 +1181,7 @@
     },
     "jump": {
      "frames": [
-      "chars/archer/jump_0.png"
+      "chars/mage_h1/jump_0.png"
      ],
      "delays": [
       200
@@ -319,21 +1189,21 @@
     },
     "atk": {
      "frames": [
-      "chars/archer/atk_0.png",
-      "chars/archer/atk_1.png",
-      "chars/archer/atk_2.png"
+      "chars/mage_h1/atk_0.png",
+      "chars/mage_h1/atk_1.png",
+      "chars/mage_h1/atk_2.png"
      ],
      "delays": [
-      300,
-      150,
-      350
+      40,
+      200,
+      200
      ]
     },
     "hit": {
      "frames": [
-      "chars/archer/hit_0.png",
-      "chars/archer/hit_1.png",
-      "chars/archer/hit_2.png"
+      "chars/mage_h1/hit_0.png",
+      "chars/mage_h1/hit_1.png",
+      "chars/mage_h1/hit_2.png"
      ],
      "delays": [
       300,
@@ -343,7 +1213,7 @@
     },
     "die": {
      "frames": [
-      "chars/archer/die_0.png"
+      "chars/mage_h1/die_0.png"
      ],
      "delays": [
       120
@@ -351,22 +1221,892 @@
     }
    }
   },
-  "priest": {
-   "name": "牧师（英雄）",
+  "mage_h2": {
+   "name": "法师（英雄）",
    "size": [
-    72,
-    88
+    94,
+    116
+   ],
+   "pivot": [
+    36,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/mage_h2/stand_0.png",
+      "chars/mage_h2/stand_1.png",
+      "chars/mage_h2/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/mage_h2/walk_0.png",
+      "chars/mage_h2/walk_1.png",
+      "chars/mage_h2/walk_2.png",
+      "chars/mage_h2/walk_3.png",
+      "chars/mage_h2/walk_4.png",
+      "chars/mage_h2/walk_5.png",
+      "chars/mage_h2/walk_6.png",
+      "chars/mage_h2/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/mage_h2/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/mage_h2/atk_0.png",
+      "chars/mage_h2/atk_1.png",
+      "chars/mage_h2/atk_2.png"
+     ],
+     "delays": [
+      40,
+      200,
+      200
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/mage_h2/hit_0.png",
+      "chars/mage_h2/hit_1.png",
+      "chars/mage_h2/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/mage_h2/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "mage_h3": {
+   "name": "法师（英雄）",
+   "size": [
+    94,
+    116
+   ],
+   "pivot": [
+    36,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/mage_h3/stand_0.png",
+      "chars/mage_h3/stand_1.png",
+      "chars/mage_h3/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/mage_h3/walk_0.png",
+      "chars/mage_h3/walk_1.png",
+      "chars/mage_h3/walk_2.png",
+      "chars/mage_h3/walk_3.png",
+      "chars/mage_h3/walk_4.png",
+      "chars/mage_h3/walk_5.png",
+      "chars/mage_h3/walk_6.png",
+      "chars/mage_h3/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/mage_h3/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/mage_h3/atk_0.png",
+      "chars/mage_h3/atk_1.png",
+      "chars/mage_h3/atk_2.png"
+     ],
+     "delays": [
+      40,
+      200,
+      200
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/mage_h3/hit_0.png",
+      "chars/mage_h3/hit_1.png",
+      "chars/mage_h3/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/mage_h3/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "mage_h4": {
+   "name": "法师（英雄）",
+   "size": [
+    94,
+    116
+   ],
+   "pivot": [
+    36,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/mage_h4/stand_0.png",
+      "chars/mage_h4/stand_1.png",
+      "chars/mage_h4/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/mage_h4/walk_0.png",
+      "chars/mage_h4/walk_1.png",
+      "chars/mage_h4/walk_2.png",
+      "chars/mage_h4/walk_3.png",
+      "chars/mage_h4/walk_4.png",
+      "chars/mage_h4/walk_5.png",
+      "chars/mage_h4/walk_6.png",
+      "chars/mage_h4/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/mage_h4/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/mage_h4/atk_0.png",
+      "chars/mage_h4/atk_1.png",
+      "chars/mage_h4/atk_2.png"
+     ],
+     "delays": [
+      40,
+      200,
+      200
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/mage_h4/hit_0.png",
+      "chars/mage_h4/hit_1.png",
+      "chars/mage_h4/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/mage_h4/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "mage_h5": {
+   "name": "法师（英雄）",
+   "size": [
+    94,
+    116
+   ],
+   "pivot": [
+    36,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/mage_h5/stand_0.png",
+      "chars/mage_h5/stand_1.png",
+      "chars/mage_h5/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/mage_h5/walk_0.png",
+      "chars/mage_h5/walk_1.png",
+      "chars/mage_h5/walk_2.png",
+      "chars/mage_h5/walk_3.png",
+      "chars/mage_h5/walk_4.png",
+      "chars/mage_h5/walk_5.png",
+      "chars/mage_h5/walk_6.png",
+      "chars/mage_h5/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/mage_h5/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/mage_h5/atk_0.png",
+      "chars/mage_h5/atk_1.png",
+      "chars/mage_h5/atk_2.png"
+     ],
+     "delays": [
+      40,
+      200,
+      200
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/mage_h5/hit_0.png",
+      "chars/mage_h5/hit_1.png",
+      "chars/mage_h5/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/mage_h5/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "archer_h0": {
+   "name": "弓手（英雄）",
+   "size": [
+    86,
+    116
    ],
    "pivot": [
     38,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/archer_h0/stand_0.png",
+      "chars/archer_h0/stand_1.png",
+      "chars/archer_h0/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/archer_h0/walk_0.png",
+      "chars/archer_h0/walk_1.png",
+      "chars/archer_h0/walk_2.png",
+      "chars/archer_h0/walk_3.png",
+      "chars/archer_h0/walk_4.png",
+      "chars/archer_h0/walk_5.png",
+      "chars/archer_h0/walk_6.png",
+      "chars/archer_h0/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/archer_h0/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/archer_h0/atk_0.png",
+      "chars/archer_h0/atk_1.png",
+      "chars/archer_h0/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/archer_h0/hit_0.png",
+      "chars/archer_h0/hit_1.png",
+      "chars/archer_h0/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/archer_h0/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "archer_h1": {
+   "name": "弓手（英雄）",
+   "size": [
+    86,
+    116
+   ],
+   "pivot": [
+    38,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/archer_h1/stand_0.png",
+      "chars/archer_h1/stand_1.png",
+      "chars/archer_h1/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/archer_h1/walk_0.png",
+      "chars/archer_h1/walk_1.png",
+      "chars/archer_h1/walk_2.png",
+      "chars/archer_h1/walk_3.png",
+      "chars/archer_h1/walk_4.png",
+      "chars/archer_h1/walk_5.png",
+      "chars/archer_h1/walk_6.png",
+      "chars/archer_h1/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/archer_h1/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/archer_h1/atk_0.png",
+      "chars/archer_h1/atk_1.png",
+      "chars/archer_h1/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/archer_h1/hit_0.png",
+      "chars/archer_h1/hit_1.png",
+      "chars/archer_h1/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/archer_h1/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "archer_h2": {
+   "name": "弓手（英雄）",
+   "size": [
+    86,
+    116
+   ],
+   "pivot": [
+    38,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/archer_h2/stand_0.png",
+      "chars/archer_h2/stand_1.png",
+      "chars/archer_h2/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/archer_h2/walk_0.png",
+      "chars/archer_h2/walk_1.png",
+      "chars/archer_h2/walk_2.png",
+      "chars/archer_h2/walk_3.png",
+      "chars/archer_h2/walk_4.png",
+      "chars/archer_h2/walk_5.png",
+      "chars/archer_h2/walk_6.png",
+      "chars/archer_h2/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/archer_h2/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/archer_h2/atk_0.png",
+      "chars/archer_h2/atk_1.png",
+      "chars/archer_h2/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/archer_h2/hit_0.png",
+      "chars/archer_h2/hit_1.png",
+      "chars/archer_h2/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/archer_h2/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "archer_h3": {
+   "name": "弓手（英雄）",
+   "size": [
+    86,
+    116
+   ],
+   "pivot": [
+    38,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/archer_h3/stand_0.png",
+      "chars/archer_h3/stand_1.png",
+      "chars/archer_h3/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/archer_h3/walk_0.png",
+      "chars/archer_h3/walk_1.png",
+      "chars/archer_h3/walk_2.png",
+      "chars/archer_h3/walk_3.png",
+      "chars/archer_h3/walk_4.png",
+      "chars/archer_h3/walk_5.png",
+      "chars/archer_h3/walk_6.png",
+      "chars/archer_h3/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/archer_h3/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/archer_h3/atk_0.png",
+      "chars/archer_h3/atk_1.png",
+      "chars/archer_h3/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/archer_h3/hit_0.png",
+      "chars/archer_h3/hit_1.png",
+      "chars/archer_h3/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/archer_h3/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "archer_h4": {
+   "name": "弓手（英雄）",
+   "size": [
+    86,
+    116
+   ],
+   "pivot": [
+    38,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/archer_h4/stand_0.png",
+      "chars/archer_h4/stand_1.png",
+      "chars/archer_h4/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/archer_h4/walk_0.png",
+      "chars/archer_h4/walk_1.png",
+      "chars/archer_h4/walk_2.png",
+      "chars/archer_h4/walk_3.png",
+      "chars/archer_h4/walk_4.png",
+      "chars/archer_h4/walk_5.png",
+      "chars/archer_h4/walk_6.png",
+      "chars/archer_h4/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/archer_h4/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/archer_h4/atk_0.png",
+      "chars/archer_h4/atk_1.png",
+      "chars/archer_h4/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/archer_h4/hit_0.png",
+      "chars/archer_h4/hit_1.png",
+      "chars/archer_h4/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/archer_h4/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "archer_h5": {
+   "name": "弓手（英雄）",
+   "size": [
+    86,
+    116
+   ],
+   "pivot": [
+    38,
+    79
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/archer_h5/stand_0.png",
+      "chars/archer_h5/stand_1.png",
+      "chars/archer_h5/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/archer_h5/walk_0.png",
+      "chars/archer_h5/walk_1.png",
+      "chars/archer_h5/walk_2.png",
+      "chars/archer_h5/walk_3.png",
+      "chars/archer_h5/walk_4.png",
+      "chars/archer_h5/walk_5.png",
+      "chars/archer_h5/walk_6.png",
+      "chars/archer_h5/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/archer_h5/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/archer_h5/atk_0.png",
+      "chars/archer_h5/atk_1.png",
+      "chars/archer_h5/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/archer_h5/hit_0.png",
+      "chars/archer_h5/hit_1.png",
+      "chars/archer_h5/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/archer_h5/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "priest_h0": {
+   "name": "牧师（英雄）",
+   "size": [
+    84,
+    116
+   ],
+   "pivot": [
+    40,
     80
    ],
    "anims": {
     "stand": {
      "frames": [
-      "chars/priest/stand_0.png",
-      "chars/priest/stand_1.png",
-      "chars/priest/stand_2.png"
+      "chars/priest_h0/stand_0.png",
+      "chars/priest_h0/stand_1.png",
+      "chars/priest_h0/stand_2.png"
      ],
      "delays": [
       500,
@@ -376,14 +2116,14 @@
     },
     "walk": {
      "frames": [
-      "chars/priest/walk_0.png",
-      "chars/priest/walk_1.png",
-      "chars/priest/walk_2.png",
-      "chars/priest/walk_3.png",
-      "chars/priest/walk_4.png",
-      "chars/priest/walk_5.png",
-      "chars/priest/walk_6.png",
-      "chars/priest/walk_7.png"
+      "chars/priest_h0/walk_0.png",
+      "chars/priest_h0/walk_1.png",
+      "chars/priest_h0/walk_2.png",
+      "chars/priest_h0/walk_3.png",
+      "chars/priest_h0/walk_4.png",
+      "chars/priest_h0/walk_5.png",
+      "chars/priest_h0/walk_6.png",
+      "chars/priest_h0/walk_7.png"
      ],
      "delays": [
       180,
@@ -398,7 +2138,7 @@
     },
     "jump": {
      "frames": [
-      "chars/priest/jump_0.png"
+      "chars/priest_h0/jump_0.png"
      ],
      "delays": [
       200
@@ -406,9 +2146,9 @@
     },
     "atk": {
      "frames": [
-      "chars/priest/atk_0.png",
-      "chars/priest/atk_1.png",
-      "chars/priest/atk_2.png"
+      "chars/priest_h0/atk_0.png",
+      "chars/priest_h0/atk_1.png",
+      "chars/priest_h0/atk_2.png"
      ],
      "delays": [
       300,
@@ -418,9 +2158,9 @@
     },
     "hit": {
      "frames": [
-      "chars/priest/hit_0.png",
-      "chars/priest/hit_1.png",
-      "chars/priest/hit_2.png"
+      "chars/priest_h0/hit_0.png",
+      "chars/priest_h0/hit_1.png",
+      "chars/priest_h0/hit_2.png"
      ],
      "delays": [
       300,
@@ -430,7 +2170,442 @@
     },
     "die": {
      "frames": [
-      "chars/priest/die_0.png"
+      "chars/priest_h0/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "priest_h1": {
+   "name": "牧师（英雄）",
+   "size": [
+    84,
+    116
+   ],
+   "pivot": [
+    40,
+    80
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/priest_h1/stand_0.png",
+      "chars/priest_h1/stand_1.png",
+      "chars/priest_h1/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/priest_h1/walk_0.png",
+      "chars/priest_h1/walk_1.png",
+      "chars/priest_h1/walk_2.png",
+      "chars/priest_h1/walk_3.png",
+      "chars/priest_h1/walk_4.png",
+      "chars/priest_h1/walk_5.png",
+      "chars/priest_h1/walk_6.png",
+      "chars/priest_h1/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/priest_h1/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/priest_h1/atk_0.png",
+      "chars/priest_h1/atk_1.png",
+      "chars/priest_h1/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/priest_h1/hit_0.png",
+      "chars/priest_h1/hit_1.png",
+      "chars/priest_h1/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/priest_h1/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "priest_h2": {
+   "name": "牧师（英雄）",
+   "size": [
+    84,
+    116
+   ],
+   "pivot": [
+    40,
+    80
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/priest_h2/stand_0.png",
+      "chars/priest_h2/stand_1.png",
+      "chars/priest_h2/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/priest_h2/walk_0.png",
+      "chars/priest_h2/walk_1.png",
+      "chars/priest_h2/walk_2.png",
+      "chars/priest_h2/walk_3.png",
+      "chars/priest_h2/walk_4.png",
+      "chars/priest_h2/walk_5.png",
+      "chars/priest_h2/walk_6.png",
+      "chars/priest_h2/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/priest_h2/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/priest_h2/atk_0.png",
+      "chars/priest_h2/atk_1.png",
+      "chars/priest_h2/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/priest_h2/hit_0.png",
+      "chars/priest_h2/hit_1.png",
+      "chars/priest_h2/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/priest_h2/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "priest_h3": {
+   "name": "牧师（英雄）",
+   "size": [
+    84,
+    116
+   ],
+   "pivot": [
+    40,
+    80
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/priest_h3/stand_0.png",
+      "chars/priest_h3/stand_1.png",
+      "chars/priest_h3/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/priest_h3/walk_0.png",
+      "chars/priest_h3/walk_1.png",
+      "chars/priest_h3/walk_2.png",
+      "chars/priest_h3/walk_3.png",
+      "chars/priest_h3/walk_4.png",
+      "chars/priest_h3/walk_5.png",
+      "chars/priest_h3/walk_6.png",
+      "chars/priest_h3/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/priest_h3/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/priest_h3/atk_0.png",
+      "chars/priest_h3/atk_1.png",
+      "chars/priest_h3/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/priest_h3/hit_0.png",
+      "chars/priest_h3/hit_1.png",
+      "chars/priest_h3/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/priest_h3/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "priest_h4": {
+   "name": "牧师（英雄）",
+   "size": [
+    84,
+    116
+   ],
+   "pivot": [
+    40,
+    80
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/priest_h4/stand_0.png",
+      "chars/priest_h4/stand_1.png",
+      "chars/priest_h4/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/priest_h4/walk_0.png",
+      "chars/priest_h4/walk_1.png",
+      "chars/priest_h4/walk_2.png",
+      "chars/priest_h4/walk_3.png",
+      "chars/priest_h4/walk_4.png",
+      "chars/priest_h4/walk_5.png",
+      "chars/priest_h4/walk_6.png",
+      "chars/priest_h4/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/priest_h4/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/priest_h4/atk_0.png",
+      "chars/priest_h4/atk_1.png",
+      "chars/priest_h4/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/priest_h4/hit_0.png",
+      "chars/priest_h4/hit_1.png",
+      "chars/priest_h4/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/priest_h4/die_0.png"
+     ],
+     "delays": [
+      120
+     ]
+    }
+   }
+  },
+  "priest_h5": {
+   "name": "牧师（英雄）",
+   "size": [
+    84,
+    116
+   ],
+   "pivot": [
+    40,
+    80
+   ],
+   "anims": {
+    "stand": {
+     "frames": [
+      "chars/priest_h5/stand_0.png",
+      "chars/priest_h5/stand_1.png",
+      "chars/priest_h5/stand_2.png"
+     ],
+     "delays": [
+      500,
+      500,
+      500
+     ]
+    },
+    "walk": {
+     "frames": [
+      "chars/priest_h5/walk_0.png",
+      "chars/priest_h5/walk_1.png",
+      "chars/priest_h5/walk_2.png",
+      "chars/priest_h5/walk_3.png",
+      "chars/priest_h5/walk_4.png",
+      "chars/priest_h5/walk_5.png",
+      "chars/priest_h5/walk_6.png",
+      "chars/priest_h5/walk_7.png"
+     ],
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "jump": {
+     "frames": [
+      "chars/priest_h5/jump_0.png"
+     ],
+     "delays": [
+      200
+     ]
+    },
+    "atk": {
+     "frames": [
+      "chars/priest_h5/atk_0.png",
+      "chars/priest_h5/atk_1.png",
+      "chars/priest_h5/atk_2.png"
+     ],
+     "delays": [
+      300,
+      150,
+      350
+     ]
+    },
+    "hit": {
+     "frames": [
+      "chars/priest_h5/hit_0.png",
+      "chars/priest_h5/hit_1.png",
+      "chars/priest_h5/hit_2.png"
+     ],
+     "delays": [
+      300,
+      300,
+      300
+     ]
+    },
+    "die": {
+     "frames": [
+      "chars/priest_h5/die_0.png"
      ],
      "delays": [
       120
@@ -3370,20 +5545,178 @@
   "harbor": {
    "map": "104010001",
    "px": [
-    -1311,
-    -185,
-    1340,
-    610
+    -1330,
+    -269,
+    1400,
+    800
    ],
    "ground": [
-    -641,
+    -630,
     215
    ],
    "walk": [
     -1271,
-    -11
+    11
    ],
-   "sky": 3364266,
+   "sky": 2250120,
+   "footholds": [
+    [
+     -360,
+     215,
+     -270,
+     215
+    ],
+    [
+     -990,
+     215,
+     -900,
+     215
+    ],
+    [
+     -900,
+     215,
+     -810,
+     215
+    ],
+    [
+     -810,
+     215,
+     -720,
+     215
+    ],
+    [
+     -630,
+     215,
+     -540,
+     215
+    ],
+    [
+     -720,
+     215,
+     -630,
+     215
+    ],
+    [
+     -540,
+     215,
+     -450,
+     215
+    ],
+    [
+     -450,
+     215,
+     -360,
+     215
+    ],
+    [
+     -1080,
+     215,
+     -990,
+     215
+    ],
+    [
+     -180,
+     215,
+     -90,
+     215
+    ],
+    [
+     0,
+     215,
+     51,
+     215
+    ],
+    [
+     -90,
+     215,
+     0,
+     215
+    ],
+    [
+     51,
+     155,
+     90,
+     155
+    ],
+    [
+     -270,
+     215,
+     -180,
+     215
+    ],
+    [
+     -1170,
+     215,
+     -1080,
+     215
+    ],
+    [
+     -1311,
+     215,
+     -1260,
+     215
+    ],
+    [
+     -1260,
+     215,
+     -1170,
+     215
+    ],
+    [
+     -1350,
+     -145,
+     -1311,
+     -145
+    ],
+    [
+     -129,
+     -325,
+     -51,
+     -325
+    ],
+    [
+     -51,
+     -325,
+     0,
+     -325
+    ],
+    [
+     0,
+     -325,
+     90,
+     -325
+    ],
+    [
+     -849,
+     -325,
+     -771,
+     -325
+    ],
+    [
+     -771,
+     -325,
+     -720,
+     -325
+    ],
+    [
+     -720,
+     -325,
+     -630,
+     -325
+    ],
+    [
+     -579,
+     -325,
+     -501,
+     -325
+    ],
+    [
+     -630,
+     -325,
+     -579,
+     -325
+    ]
+   ],
    "files": {
     "back": "map/stage/harbor_back.png",
     "mid": "map/stage/harbor_mid.png"
@@ -3397,20 +5730,598 @@
   "forest": {
    "map": "100010000",
    "px": [
-    -621,
-    55,
-    2400,
-    610
+    -669,
+    -29,
+    2688,
+    800
    ],
    "ground": [
-    579,
+    675,
     455
    ],
    "walk": [
-    -581,
-    1739
+    -629,
+    1979
    ],
-   "sky": 4225745,
+   "sky": 3368652,
+   "footholds": [
+    [
+     -354,
+     -55,
+     -315,
+     -55
+    ],
+    [
+     -315,
+     -55,
+     -276,
+     -55
+    ],
+    [
+     -276,
+     -55,
+     -225,
+     -55
+    ],
+    [
+     -225,
+     -55,
+     -135,
+     -55
+    ],
+    [
+     -135,
+     -55,
+     -45,
+     -55
+    ],
+    [
+     -45,
+     -55,
+     6,
+     -55
+    ],
+    [
+     6,
+     -55,
+     45,
+     -55
+    ],
+    [
+     45,
+     -55,
+     84,
+     -55
+    ],
+    [
+     -174,
+     185,
+     -135,
+     185
+    ],
+    [
+     -135,
+     185,
+     -96,
+     185
+    ],
+    [
+     -96,
+     185,
+     -45,
+     185
+    ],
+    [
+     -45,
+     185,
+     6,
+     185
+    ],
+    [
+     6,
+     185,
+     84,
+     185
+    ],
+    [
+     96,
+     245,
+     174,
+     245
+    ],
+    [
+     174,
+     245,
+     186,
+     245
+    ],
+    [
+     186,
+     245,
+     264,
+     245
+    ],
+    [
+     96,
+     425,
+     174,
+     425
+    ],
+    [
+     174,
+     425,
+     186,
+     425
+    ],
+    [
+     186,
+     365,
+     225,
+     365
+    ],
+    [
+     225,
+     365,
+     264,
+     365
+    ],
+    [
+     264,
+     365,
+     276,
+     365
+    ],
+    [
+     276,
+     305,
+     315,
+     305
+    ],
+    [
+     315,
+     305,
+     354,
+     305
+    ],
+    [
+     354,
+     305,
+     405,
+     305
+    ],
+    [
+     405,
+     305,
+     495,
+     305
+    ],
+    [
+     495,
+     305,
+     585,
+     305
+    ],
+    [
+     585,
+     305,
+     675,
+     305
+    ],
+    [
+     675,
+     305,
+     765,
+     305
+    ],
+    [
+     765,
+     305,
+     855,
+     305
+    ],
+    [
+     855,
+     305,
+     906,
+     305
+    ],
+    [
+     906,
+     305,
+     945,
+     305
+    ],
+    [
+     945,
+     305,
+     984,
+     305
+    ],
+    [
+     984,
+     365,
+     996,
+     365
+    ],
+    [
+     996,
+     365,
+     1074,
+     365
+    ],
+    [
+     1074,
+     425,
+     1086,
+     425
+    ],
+    [
+     1086,
+     425,
+     1125,
+     425
+    ],
+    [
+     1125,
+     425,
+     1164,
+     425
+    ],
+    [
+     996,
+     245,
+     1074,
+     245
+    ],
+    [
+     1074,
+     245,
+     1086,
+     245
+    ],
+    [
+     1086,
+     245,
+     1164,
+     245
+    ],
+    [
+     1176,
+     -55,
+     1254,
+     -55
+    ],
+    [
+     1254,
+     -55,
+     1305,
+     -55
+    ],
+    [
+     1305,
+     -55,
+     1395,
+     -55
+    ],
+    [
+     1321,
+     -84,
+     1438,
+     -81
+    ],
+    [
+     1395,
+     -55,
+     1485,
+     -55
+    ],
+    [
+     1485,
+     -55,
+     1575,
+     -55
+    ],
+    [
+     1575,
+     -55,
+     1665,
+     -55
+    ],
+    [
+     1665,
+     -55,
+     1716,
+     -55
+    ],
+    [
+     1716,
+     -55,
+     1794,
+     -55
+    ],
+    [
+     1176,
+     185,
+     1254,
+     185
+    ],
+    [
+     1254,
+     185,
+     1266,
+     185
+    ],
+    [
+     1266,
+     185,
+     1344,
+     185
+    ],
+    [
+     1356,
+     245,
+     1395,
+     245
+    ],
+    [
+     1395,
+     245,
+     1434,
+     245
+    ],
+    [
+     1434,
+     245,
+     1446,
+     245
+    ],
+    [
+     1446,
+     245,
+     1485,
+     245
+    ],
+    [
+     1485,
+     245,
+     1524,
+     245
+    ],
+    [
+     -669,
+     155,
+     -630,
+     155
+    ],
+    [
+     -630,
+     155,
+     -591,
+     155
+    ],
+    [
+     -591,
+     155,
+     -540,
+     155
+    ],
+    [
+     -540,
+     155,
+     -450,
+     155
+    ],
+    [
+     -450,
+     155,
+     -399,
+     155
+    ],
+    [
+     -399,
+     155,
+     -360,
+     155
+    ],
+    [
+     -360,
+     155,
+     -321,
+     155
+    ],
+    [
+     -669,
+     455,
+     -630,
+     455
+    ],
+    [
+     -630,
+     455,
+     -591,
+     455
+    ],
+    [
+     -591,
+     455,
+     -540,
+     455
+    ],
+    [
+     -540,
+     455,
+     -450,
+     455
+    ],
+    [
+     -450,
+     455,
+     -360,
+     455
+    ],
+    [
+     -360,
+     455,
+     -270,
+     455
+    ],
+    [
+     -270,
+     455,
+     -180,
+     455
+    ],
+    [
+     -180,
+     455,
+     -90,
+     455
+    ],
+    [
+     -90,
+     455,
+     0,
+     455
+    ],
+    [
+     0,
+     455,
+     90,
+     455
+    ],
+    [
+     90,
+     455,
+     180,
+     455
+    ],
+    [
+     180,
+     455,
+     270,
+     455
+    ],
+    [
+     270,
+     455,
+     360,
+     455
+    ],
+    [
+     360,
+     455,
+     450,
+     455
+    ],
+    [
+     450,
+     455,
+     540,
+     455
+    ],
+    [
+     540,
+     455,
+     630,
+     455
+    ],
+    [
+     630,
+     455,
+     720,
+     455
+    ],
+    [
+     720,
+     455,
+     810,
+     455
+    ],
+    [
+     810,
+     455,
+     900,
+     455
+    ],
+    [
+     900,
+     455,
+     990,
+     455
+    ],
+    [
+     990,
+     455,
+     1080,
+     455
+    ],
+    [
+     1080,
+     455,
+     1170,
+     455
+    ],
+    [
+     1170,
+     455,
+     1260,
+     455
+    ],
+    [
+     1260,
+     455,
+     1350,
+     455
+    ],
+    [
+     1350,
+     455,
+     1440,
+     455
+    ],
+    [
+     1440,
+     455,
+     1530,
+     455
+    ],
+    [
+     1530,
+     455,
+     1620,
+     455
+    ],
+    [
+     1620,
+     455,
+     1710,
+     455
+    ],
+    [
+     1710,
+     455,
+     1800,
+     455
+    ],
+    [
+     1800,
+     455,
+     1890,
+     455
+    ],
+    [
+     1890,
+     455,
+     1941,
+     455
+    ],
+    [
+     1941,
+     455,
+     2019,
+     455
+    ]
+   ],
    "files": {
     "back": "map/stage/forest_back.png",
     "mid": "map/stage/forest_mid.png"
@@ -3424,20 +6335,184 @@
   "cliff": {
    "map": "101030100",
    "px": [
-    -90,
-    1805,
-    2100,
-    610
+    -113,
+    1721,
+    2116,
+    800
    ],
    "ground": [
-    960,
+    945,
     2205
    ],
    "walk": [
-    -50,
-    1970
+    -73,
+    1963
    ],
-   "sky": 15066851,
+   "sky": 14542062,
+   "footholds": [
+    [
+     1080,
+     2205,
+     1170,
+     2205
+    ],
+    [
+     1620,
+     2205,
+     1710,
+     2205
+    ],
+    [
+     270,
+     2205,
+     360,
+     2205
+    ],
+    [
+     1530,
+     2205,
+     1620,
+     2205
+    ],
+    [
+     0,
+     2205,
+     90,
+     2205
+    ],
+    [
+     1350,
+     2205,
+     1440,
+     2205
+    ],
+    [
+     720,
+     2205,
+     810,
+     2205
+    ],
+    [
+     630,
+     2205,
+     720,
+     2205
+    ],
+    [
+     1260,
+     2205,
+     1350,
+     2205
+    ],
+    [
+     1440,
+     2205,
+     1530,
+     2205
+    ],
+    [
+     1710,
+     2205,
+     1800,
+     2205
+    ],
+    [
+     900,
+     2205,
+     990,
+     2205
+    ],
+    [
+     450,
+     2205,
+     540,
+     2205
+    ],
+    [
+     180,
+     2205,
+     270,
+     2205
+    ],
+    [
+     1170,
+     2205,
+     1260,
+     2205
+    ],
+    [
+     540,
+     2205,
+     630,
+     2205
+    ],
+    [
+     990,
+     2205,
+     1080,
+     2205
+    ],
+    [
+     810,
+     2205,
+     900,
+     2205
+    ],
+    [
+     360,
+     2205,
+     450,
+     2205
+    ],
+    [
+     90,
+     2205,
+     180,
+     2205
+    ],
+    [
+     -90,
+     2205,
+     -67,
+     2205
+    ],
+    [
+     1890,
+     2205,
+     1957,
+     2205
+    ],
+    [
+     1957,
+     2205,
+     1980,
+     2205
+    ],
+    [
+     1980,
+     2205,
+     2003,
+     2205
+    ],
+    [
+     1800,
+     2205,
+     1890,
+     2205
+    ],
+    [
+     -113,
+     2205,
+     -90,
+     2205
+    ],
+    [
+     -67,
+     2205,
+     0,
+     2205
+    ]
+   ],
    "files": {
     "back": "map/stage/cliff_back.png",
     "mid": "map/stage/cliff_mid.png"
@@ -3452,19 +6527,441 @@
    "map": "106020300",
    "px": [
     -270,
-    -365,
-    1400,
-    610
+    -449,
+    1710,
+    800
    ],
    "ground": [
-    430,
+    585,
     35
    ],
    "walk": [
     -230,
-    1090
+    1400
    ],
-   "sky": 1265792,
+   "sky": 31999,
+   "footholds": [
+    [
+     96,
+     5,
+     174,
+     5
+    ],
+    [
+     174,
+     5,
+     186,
+     5
+    ],
+    [
+     186,
+     -55,
+     264,
+     -55
+    ],
+    [
+     264,
+     -55,
+     276,
+     -55
+    ],
+    [
+     276,
+     -115,
+     354,
+     -115
+    ],
+    [
+     405,
+     -115,
+     495,
+     -115
+    ],
+    [
+     354,
+     -115,
+     405,
+     -115
+    ],
+    [
+     495,
+     -115,
+     585,
+     -115
+    ],
+    [
+     585,
+     -115,
+     675,
+     -115
+    ],
+    [
+     675,
+     -115,
+     765,
+     -115
+    ],
+    [
+     765,
+     -115,
+     855,
+     -115
+    ],
+    [
+     855,
+     -115,
+     906,
+     -115
+    ],
+    [
+     996,
+     -55,
+     1074,
+     -55
+    ],
+    [
+     906,
+     -115,
+     945,
+     -115
+    ],
+    [
+     945,
+     -115,
+     984,
+     -115
+    ],
+    [
+     984,
+     -55,
+     996,
+     -55
+    ],
+    [
+     1074,
+     5,
+     1086,
+     5
+    ],
+    [
+     1086,
+     5,
+     1125,
+     5
+    ],
+    [
+     1125,
+     5,
+     1164,
+     5
+    ],
+    [
+     1305,
+     -355,
+     1356,
+     -355
+    ],
+    [
+     1086,
+     -355,
+     1164,
+     -355
+    ],
+    [
+     1215,
+     -355,
+     1305,
+     -355
+    ],
+    [
+     1356,
+     -355,
+     1395,
+     -355
+    ],
+    [
+     1395,
+     -355,
+     1434,
+     -355
+    ],
+    [
+     1164,
+     -355,
+     1215,
+     -355
+    ],
+    [
+     996,
+     -295,
+     1074,
+     -295
+    ],
+    [
+     1074,
+     -295,
+     1086,
+     -295
+    ],
+    [
+     1086,
+     -295,
+     1125,
+     -295
+    ],
+    [
+     1125,
+     -295,
+     1164,
+     -295
+    ],
+    [
+     225,
+     -355,
+     264,
+     -355
+    ],
+    [
+     186,
+     -355,
+     225,
+     -355
+    ],
+    [
+     264,
+     -355,
+     276,
+     -355
+    ],
+    [
+     276,
+     -355,
+     315,
+     -355
+    ],
+    [
+     315,
+     -355,
+     354,
+     -355
+    ],
+    [
+     96,
+     -295,
+     174,
+     -295
+    ],
+    [
+     -45,
+     -295,
+     45,
+     -295
+    ],
+    [
+     45,
+     -295,
+     96,
+     -295
+    ],
+    [
+     -135,
+     -295,
+     -96,
+     -295
+    ],
+    [
+     -174,
+     -295,
+     -135,
+     -295
+    ],
+    [
+     -96,
+     -295,
+     -45,
+     -295
+    ],
+    [
+     906,
+     -235,
+     984,
+     -235
+    ],
+    [
+     996,
+     -235,
+     1074,
+     -235
+    ],
+    [
+     984,
+     -235,
+     996,
+     -235
+    ],
+    [
+     366,
+     -295,
+     444,
+     -295
+    ],
+    [
+     495,
+     -295,
+     585,
+     -295
+    ],
+    [
+     444,
+     -295,
+     495,
+     -295
+    ],
+    [
+     675,
+     -295,
+     765,
+     -295
+    ],
+    [
+     585,
+     -295,
+     675,
+     -295
+    ],
+    [
+     765,
+     -295,
+     816,
+     -295
+    ],
+    [
+     816,
+     -295,
+     855,
+     -295
+    ],
+    [
+     855,
+     -295,
+     894,
+     -295
+    ],
+    [
+     180,
+     35,
+     270,
+     35
+    ],
+    [
+     360,
+     35,
+     450,
+     35
+    ],
+    [
+     1350,
+     35,
+     1440,
+     35
+    ],
+    [
+     630,
+     35,
+     720,
+     35
+    ],
+    [
+     540,
+     35,
+     630,
+     35
+    ],
+    [
+     270,
+     35,
+     360,
+     35
+    ],
+    [
+     1260,
+     35,
+     1350,
+     35
+    ],
+    [
+     450,
+     35,
+     540,
+     35
+    ],
+    [
+     810,
+     35,
+     900,
+     35
+    ],
+    [
+     990,
+     35,
+     1080,
+     35
+    ],
+    [
+     90,
+     35,
+     180,
+     35
+    ],
+    [
+     1170,
+     35,
+     1260,
+     35
+    ],
+    [
+     720,
+     35,
+     810,
+     35
+    ],
+    [
+     900,
+     35,
+     990,
+     35
+    ],
+    [
+     1080,
+     35,
+     1170,
+     35
+    ],
+    [
+     -180,
+     35,
+     -90,
+     35
+    ],
+    [
+     -270,
+     35,
+     -180,
+     35
+    ],
+    [
+     0,
+     35,
+     90,
+     35
+    ],
+    [
+     -90,
+     35,
+     0,
+     35
+    ]
+   ],
    "files": {
     "back": "map/stage/nest_back.png",
     "mid": "map/stage/nest_mid.png"
@@ -3477,71 +6974,6 @@
   }
  },
  "skills": {
-  "flame": {
-   "name": "烈焰翔斩VI",
-   "id": "1121030",
-   "pivot": [
-    673,
-    686
-   ],
-   "size": [
-    1122,
-    934
-   ],
-   "icon": "skills/flame/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/flame/f000.png",
-      "skills/flame/f001.png",
-      "skills/flame/f002.png",
-      "skills/flame/f003.png",
-      "skills/flame/f004.png",
-      "skills/flame/f005.png",
-      "skills/flame/f006.png",
-      "skills/flame/f007.png",
-      "skills/flame/f008.png",
-      "skills/flame/f009.png",
-      "skills/flame/f010.png",
-      "skills/flame/f011.png",
-      "skills/flame/f012.png",
-      "skills/flame/f013.png",
-      "skills/flame/f014.png",
-      "skills/flame/f015.png",
-      "skills/flame/f016.png",
-      "skills/flame/f017.png",
-      "skills/flame/f018.png",
-      "skills/flame/f019.png",
-      "skills/flame/f020.png",
-      "skills/flame/f021.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ]
-    }
-   }
-  },
   "dash": {
    "name": "突进",
    "id": "1121006",
@@ -3839,6 +7271,853 @@
       60,
       60,
       60
+     ]
+    }
+   }
+  },
+  "roar": {
+   "name": "虎咆哮",
+   "id": "1111008",
+   "pivot": [
+    92,
+    149
+   ],
+   "size": [
+    157,
+    154
+   ],
+   "icon": "skills/roar/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/roar/f000.png",
+      "skills/roar/f001.png",
+      "skills/roar/f002.png",
+      "skills/roar/f003.png",
+      "skills/roar/f004.png",
+      "skills/roar/f005.png",
+      "skills/roar/f006.png",
+      "skills/roar/f007.png",
+      "skills/roar/f008.png",
+      "skills/roar/f009.png",
+      "skills/roar/f010.png",
+      "skills/roar/f011.png",
+      "skills/roar/f012.png",
+      "skills/roar/f013.png",
+      "skills/roar/f014.png",
+      "skills/roar/f015.png",
+      "skills/roar/f016.png"
+     ],
+     "delays": [
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88,
+      88
+     ]
+    }
+   }
+  },
+  "crush": {
+   "name": "防御崩坏",
+   "id": "1111007",
+   "pivot": [
+    67,
+    229
+   ],
+   "size": [
+    134,
+    236
+   ],
+   "icon": "skills/crush/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/crush/f000.png",
+      "skills/crush/f001.png",
+      "skills/crush/f002.png",
+      "skills/crush/f003.png",
+      "skills/crush/f004.png",
+      "skills/crush/f005.png",
+      "skills/crush/f006.png",
+      "skills/crush/f007.png",
+      "skills/crush/f008.png",
+      "skills/crush/f009.png",
+      "skills/crush/f010.png",
+      "skills/crush/f011.png",
+      "skills/crush/f012.png",
+      "skills/crush/f013.png",
+      "skills/crush/f014.png",
+      "skills/crush/f015.png",
+      "skills/crush/f016.png",
+      "skills/crush/f017.png",
+      "skills/crush/f018.png"
+     ],
+     "delays": [
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      150,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80
+     ]
+    }
+   }
+  },
+  "rage": {
+   "name": "愤怒之火",
+   "id": "1101006",
+   "pivot": [
+    63,
+    123
+   ],
+   "size": [
+    108,
+    123
+   ],
+   "icon": "skills/rage/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/rage/f000.png",
+      "skills/rage/f001.png",
+      "skills/rage/f002.png",
+      "skills/rage/f003.png",
+      "skills/rage/f004.png",
+      "skills/rage/f005.png",
+      "skills/rage/f006.png",
+      "skills/rage/f007.png",
+      "skills/rage/f008.png",
+      "skills/rage/f009.png",
+      "skills/rage/f010.png",
+      "skills/rage/f011.png",
+      "skills/rage/f012.png"
+     ],
+     "delays": [
+      80,
+      80,
+      100,
+      100,
+      100,
+      100,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120
+     ]
+    }
+   }
+  },
+  "magnet": {
+   "name": "磁石",
+   "id": "1121001",
+   "pivot": [
+    80,
+    183
+   ],
+   "size": [
+    169,
+    150
+   ],
+   "icon": "skills/magnet/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/magnet/f000.png",
+      "skills/magnet/f001.png",
+      "skills/magnet/f002.png",
+      "skills/magnet/f003.png",
+      "skills/magnet/f004.png",
+      "skills/magnet/f005.png",
+      "skills/magnet/f006.png",
+      "skills/magnet/f007.png",
+      "skills/magnet/f008.png",
+      "skills/magnet/f009.png",
+      "skills/magnet/f010.png",
+      "skills/magnet/f011.png",
+      "skills/magnet/f012.png",
+      "skills/magnet/f013.png",
+      "skills/magnet/f014.png",
+      "skills/magnet/f015.png",
+      "skills/magnet/f016.png",
+      "skills/magnet/f017.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ]
+    }
+   }
+  },
+  "berserk": {
+   "name": "狂暴攻击",
+   "id": "1121013",
+   "pivot": [
+    375,
+    313
+   ],
+   "size": [
+    924,
+    562
+   ],
+   "icon": "skills/berserk/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/berserk/f000.png",
+      "skills/berserk/f001.png",
+      "skills/berserk/f002.png",
+      "skills/berserk/f003.png",
+      "skills/berserk/f004.png",
+      "skills/berserk/f005.png",
+      "skills/berserk/f006.png",
+      "skills/berserk/f007.png",
+      "skills/berserk/f008.png",
+      "skills/berserk/f009.png",
+      "skills/berserk/f010.png",
+      "skills/berserk/f011.png",
+      "skills/berserk/f012.png",
+      "skills/berserk/f013.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      30,
+      30
+     ]
+    }
+   }
+  },
+  "firearrow": {
+   "name": "火焰箭",
+   "id": "2101004",
+   "pivot": [
+    51,
+    86
+   ],
+   "size": [
+    52,
+    96
+   ],
+   "icon": "skills/firearrow/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/firearrow/f000.png",
+      "skills/firearrow/f001.png",
+      "skills/firearrow/f002.png",
+      "skills/firearrow/f003.png",
+      "skills/firearrow/f004.png",
+      "skills/firearrow/f005.png",
+      "skills/firearrow/f006.png",
+      "skills/firearrow/f007.png",
+      "skills/firearrow/f008.png",
+      "skills/firearrow/f009.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+     ]
+    }
+   }
+  },
+  "doom": {
+   "name": "末日烈焰",
+   "id": "2111002",
+   "pivot": [
+    49,
+    178
+   ],
+   "size": [
+    110,
+    186
+   ],
+   "icon": "skills/doom/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/doom/f000.png",
+      "skills/doom/f001.png",
+      "skills/doom/f002.png",
+      "skills/doom/f003.png",
+      "skills/doom/f004.png",
+      "skills/doom/f005.png",
+      "skills/doom/f006.png",
+      "skills/doom/f007.png",
+      "skills/doom/f008.png",
+      "skills/doom/f009.png",
+      "skills/doom/f010.png",
+      "skills/doom/f011.png"
+     ],
+     "delays": [
+      50,
+      50,
+      110,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      130
+     ]
+    }
+   }
+  },
+  "chain": {
+   "name": "连环爆破",
+   "id": "2121006",
+   "pivot": [
+    121,
+    149
+   ],
+   "size": [
+    229,
+    200
+   ],
+   "icon": "skills/chain/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/chain/f000.png",
+      "skills/chain/f001.png",
+      "skills/chain/f002.png",
+      "skills/chain/f003.png",
+      "skills/chain/f004.png",
+      "skills/chain/f005.png",
+      "skills/chain/f006.png",
+      "skills/chain/f007.png",
+      "skills/chain/f008.png",
+      "skills/chain/f009.png",
+      "skills/chain/f010.png",
+      "skills/chain/f011.png",
+      "skills/chain/f012.png",
+      "skills/chain/f013.png",
+      "skills/chain/f014.png",
+      "skills/chain/f015.png",
+      "skills/chain/f016.png",
+      "skills/chain/f017.png",
+      "skills/chain/f018.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ]
+    }
+   }
+  },
+  "starfall": {
+   "name": "天降落星",
+   "id": "2121007",
+   "pivot": [
+    99,
+    693
+   ],
+   "size": [
+    194,
+    748
+   ],
+   "icon": "skills/starfall/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/starfall/f000.png",
+      "skills/starfall/f001.png",
+      "skills/starfall/f002.png",
+      "skills/starfall/f003.png",
+      "skills/starfall/f004.png",
+      "skills/starfall/f005.png",
+      "skills/starfall/f006.png",
+      "skills/starfall/f007.png",
+      "skills/starfall/f008.png",
+      "skills/starfall/f009.png",
+      "skills/starfall/f010.png",
+      "skills/starfall/f011.png",
+      "skills/starfall/f012.png",
+      "skills/starfall/f013.png",
+      "skills/starfall/f014.png",
+      "skills/starfall/f015.png",
+      "skills/starfall/f016.png",
+      "skills/starfall/f017.png",
+      "skills/starfall/f018.png",
+      "skills/starfall/f019.png",
+      "skills/starfall/f020.png",
+      "skills/starfall/f021.png",
+      "skills/starfall/f022.png",
+      "skills/starfall/f023.png",
+      "skills/starfall/f024.png"
+     ],
+     "delays": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
+     ]
+    }
+   }
+  },
+  "firebolt": {
+   "name": "烈火箭",
+   "id": "3111003",
+   "pivot": [
+    96,
+    135
+   ],
+   "size": [
+    182,
+    209
+   ],
+   "icon": "skills/firebolt/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/firebolt/f000.png",
+      "skills/firebolt/f001.png",
+      "skills/firebolt/f002.png",
+      "skills/firebolt/f003.png",
+      "skills/firebolt/f004.png",
+      "skills/firebolt/f005.png",
+      "skills/firebolt/f006.png",
+      "skills/firebolt/f007.png",
+      "skills/firebolt/f008.png"
+     ],
+     "delays": [
+      110,
+      110,
+      110,
+      110,
+      110,
+      110,
+      110,
+      110,
+      110
+     ]
+    }
+   }
+  },
+  "arrowrain": {
+   "name": "箭雨",
+   "id": "3111004",
+   "pivot": [
+    94,
+    158
+   ],
+   "size": [
+    129,
+    197
+   ],
+   "icon": "skills/arrowrain/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/arrowrain/f000.png",
+      "skills/arrowrain/f001.png",
+      "skills/arrowrain/f002.png",
+      "skills/arrowrain/f003.png",
+      "skills/arrowrain/f004.png",
+      "skills/arrowrain/f005.png",
+      "skills/arrowrain/f006.png",
+      "skills/arrowrain/f007.png",
+      "skills/arrowrain/f008.png",
+      "skills/arrowrain/f009.png",
+      "skills/arrowrain/f010.png",
+      "skills/arrowrain/f011.png"
+     ],
+     "delays": [
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65,
+      65
+     ]
+    }
+   }
+  },
+  "dragon": {
+   "name": "飞龙冲击波",
+   "id": "3121003",
+   "pivot": [
+    170,
+    143
+   ],
+   "size": [
+    300,
+    203
+   ],
+   "icon": "skills/dragon/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/dragon/f000.png",
+      "skills/dragon/f001.png",
+      "skills/dragon/f002.png",
+      "skills/dragon/f003.png",
+      "skills/dragon/f004.png",
+      "skills/dragon/f005.png",
+      "skills/dragon/f006.png",
+      "skills/dragon/f007.png",
+      "skills/dragon/f008.png",
+      "skills/dragon/f009.png",
+      "skills/dragon/f010.png",
+      "skills/dragon/f011.png",
+      "skills/dragon/f012.png",
+      "skills/dragon/f013.png"
+     ],
+     "delays": [
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80,
+      80
+     ]
+    }
+   }
+  },
+  "storm": {
+   "name": "驟雨狂矢VI",
+   "id": "3121022",
+   "pivot": [
+    554,
+    352
+   ],
+   "size": [
+    842,
+    610
+   ],
+   "icon": "skills/storm/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/storm/f000.png",
+      "skills/storm/f001.png",
+      "skills/storm/f002.png",
+      "skills/storm/f003.png",
+      "skills/storm/f004.png",
+      "skills/storm/f005.png",
+      "skills/storm/f006.png",
+      "skills/storm/f007.png",
+      "skills/storm/f008.png",
+      "skills/storm/f009.png",
+      "skills/storm/f010.png",
+      "skills/storm/f011.png",
+      "skills/storm/f012.png",
+      "skills/storm/f013.png",
+      "skills/storm/f014.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ]
+    }
+   }
+  },
+  "holyarrow": {
+   "name": "圣箭术",
+   "id": "2301005",
+   "pivot": [
+    103,
+    76
+   ],
+   "size": [
+    143,
+    89
+   ],
+   "icon": "skills/holyarrow/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/holyarrow/f000.png",
+      "skills/holyarrow/f001.png",
+      "skills/holyarrow/f002.png",
+      "skills/holyarrow/f003.png",
+      "skills/holyarrow/f004.png",
+      "skills/holyarrow/f005.png",
+      "skills/holyarrow/f006.png"
+     ],
+     "delays": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+     ]
+    }
+   }
+  },
+  "holy": {
+   "name": "圣光",
+   "id": "2311004",
+   "pivot": [
+    90,
+    202
+   ],
+   "size": [
+    188,
+    224
+   ],
+   "icon": "skills/holy/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/holy/f000.png",
+      "skills/holy/f001.png",
+      "skills/holy/f002.png",
+      "skills/holy/f003.png",
+      "skills/holy/f004.png",
+      "skills/holy/f005.png",
+      "skills/holy/f006.png",
+      "skills/holy/f007.png",
+      "skills/holy/f008.png",
+      "skills/holy/f009.png",
+      "skills/holy/f010.png"
+     ],
+     "delays": [
+      95,
+      95,
+      95,
+      95,
+      95,
+      95,
+      95,
+      95,
+      95,
+      95,
+      95
+     ]
+    }
+   }
+  },
+  "ray": {
+   "name": "光芒飞箭",
+   "id": "2321007",
+   "pivot": [
+    112,
+    135
+   ],
+   "size": [
+    185,
+    194
+   ],
+   "icon": "skills/ray/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/ray/f000.png",
+      "skills/ray/f001.png",
+      "skills/ray/f002.png",
+      "skills/ray/f003.png",
+      "skills/ray/f004.png",
+      "skills/ray/f005.png",
+      "skills/ray/f006.png",
+      "skills/ray/f007.png",
+      "skills/ray/f008.png",
+      "skills/ray/f009.png",
+      "skills/ray/f010.png",
+      "skills/ray/f011.png",
+      "skills/ray/f012.png",
+      "skills/ray/f013.png",
+      "skills/ray/f014.png"
+     ],
+     "delays": [
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60
+     ]
+    }
+   }
+  },
+  "libra": {
+   "name": "天秤之使",
+   "id": "2321020",
+   "pivot": [
+    178,
+    318
+   ],
+   "size": [
+    356,
+    388
+   ],
+   "icon": "skills/libra/icon.png",
+   "anims": {
+    "cast": {
+     "frames": [
+      "skills/libra/f000.png",
+      "skills/libra/f001.png",
+      "skills/libra/f002.png",
+      "skills/libra/f003.png",
+      "skills/libra/f004.png",
+      "skills/libra/f005.png",
+      "skills/libra/f006.png",
+      "skills/libra/f007.png",
+      "skills/libra/f008.png",
+      "skills/libra/f009.png",
+      "skills/libra/f010.png",
+      "skills/libra/f011.png",
+      "skills/libra/f012.png",
+      "skills/libra/f013.png",
+      "skills/libra/f014.png"
+     ],
+     "delays": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
      ]
     }
    }

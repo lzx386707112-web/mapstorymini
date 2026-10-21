@@ -37,9 +37,10 @@ public class AllyAI : MonoBehaviour
             body = SpriteFactory.Make("AllyBody", transform, new Vector2(0.7f, 1.25f), tint, 280);
         body.color = tint;
 
-        if (Art.Has("chars", artKey))
+        string useKey = Art.Has("chars", artKey) ? artKey : artKey + "_h0";
+        if (Art.Has("chars", useKey))
         {
-            vis = Art.Attach(transform, "chars", artKey, "stand", 0f);
+            vis = Art.Attach(transform, "chars", useKey, "stand", 0f);
             if (vis != null)
             {
                 var vr = vis.Renderer;

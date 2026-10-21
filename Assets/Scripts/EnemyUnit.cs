@@ -22,6 +22,7 @@ public class EnemyUnit : MonoBehaviour
     float stunUntil;
     float knockV;
     float laneCooldown;
+    float terrainY = PlayerCtrl.GroundY;   // 脚下地形 y（跟随 foothold 起伏）
     SpriteRenderer body;
     SpriteAnim vis;
     SpriteRenderer hpBar;
@@ -40,7 +41,8 @@ public class EnemyUnit : MonoBehaviour
         lane = laneIndex;
         laneVis = laneIndex;
         hp = hpMax;
-        transform.position = new Vector3(startX, GroundY + DepthOffset, 0f);
+        terrainY = PlayerCtrl.GroundAt(startX, PlayerCtrl.GroundY);
+        transform.position = new Vector3(startX, terrainY + DepthOffset, 0f);
         BuildVisual();
     }
 
@@ -129,8 +131,15 @@ public class EnemyUnit : MonoBehaviour
             if (Mathf.Abs(dx) > attackRange)
             {
                 int dir = dx > 0f ? 1 : -1;
-                transform.position += Vector3.right * (dir * speed * dt);
-                moving = true;
+                float nx = transform.position.x + dir * speed * dt;
+                // 贴地形走：高出台阶 0.6u 以上的墙挡住（和玩家同一套规则）
+                float gy = PlayerCtrl.GroundAt(nx, terrainY);
+                if (gy <= terrainY + 0.6f)
+                {
+                    transform.position = new Vector3(nx, transform.position.y, 0f);
+                    terrainY = gy;
+                    moving = true;
+                }
             }
             else
             {
@@ -164,7 +173,9 @@ public class EnemyUnit : MonoBehaviour
 
     void SyncVisual()
     {
-        transform.position = new Vector3(transform.position.x, GroundY + DepthOffset, 0f);
+        // 每帧把脚下地形吸附到所在 x 的 foothold 上（击退、跟随都自然贴合）
+        terrainY = PlayerCtrl.GroundAt(transform.position.x, terrainY);
+        transform.position = new Vector3(transform.position.x, terrainY + DepthOffset, 0f);
         if (body != null) body.sortingOrder = 300 - lane * 12;
     }
 

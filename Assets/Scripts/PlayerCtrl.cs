@@ -27,6 +27,32 @@ public class PlayerCtrl : MonoBehaviour
     }
     public static float ClampX(float x) => Mathf.Clamp(x, XMin, XMax);
 
+    // ————————————— 地形（foothold）—————————————
+    // 关卡模式下由 GameLoop.ApplyTheme 按 manifest 的 footholds 填充（世界坐标 x1,y1,x2,y2）；
+    // 空 = 无地形数据（大厅/无限模式），退回恒平 GroundY。
+    public static System.Collections.Generic.List<Vector4> Terrain;
+    public static void SetTerrain(System.Collections.Generic.List<Vector4> t) => Terrain = t;
+
+    // x 处的地面高度：取覆盖 x 的段里与 refY 最接近的一条（段内线性插值，支持斜坡）。
+    // 原版角色就是这样贴着 foothold 走的——上台阶、下斜坡、走到尽头被段边界挡住。
+    public static float GroundAt(float x, float refY)
+    {
+        if (Terrain == null || Terrain.Count == 0) return GroundY;
+        float best = refY, bestD = float.MaxValue;
+        for (int i = 0; i < Terrain.Count; i++)
+        {
+            var f = Terrain[i];
+            float x1 = f.x, y1 = f.y, x2 = f.z, y2 = f.w;
+            if (Mathf.Abs(x2 - x1) < 0.01f) continue;      // 竖直段不可走
+            float lo = Mathf.Min(x1, x2), hi = Mathf.Max(x1, x2);
+            if (x < lo || x > hi) continue;
+            float y = Mathf.Lerp(y1, y2, (x - x1) / (x2 - x1));
+            float d = Mathf.Abs(y - refY);
+            if (d < bestD) { bestD = d; best = y; }
+        }
+        return best;
+    }
+
     [Header("移动")]
     public float moveSpeed = 7.5f;
     public float jumpSpeed = 12.0f;
@@ -52,6 +78,23 @@ public class PlayerCtrl : MonoBehaviour
 
     [HideInInspector] public float worldX;
     [HideInInspector] public float jumpY;
+    [HideInInspector] public float terrainY = GroundY;   // 脚下地形 y（跟随 foothold 起伏）
+
+    // 切关 / 重生时调用：把脚下地形吸附到 x 处的 foothold 上
+    public void ResetTerrain()
+    {
+        terrainY = GroundAt(worldX, GroundY);
+        jumpY = 0f;
+        vy = 0f;
+        grounded = true;
+    }
+
+    // 技能系统的施法动画入口。SpriteAnim 挂在 Art.Attach 建的子节点上，
+    // GetComponent<SpriteAnim>() 在根节点上找不到——之前技能因此完全没有角色动作。
+    public void PlayAtk(float mul)
+    {
+        if (vis != null) vis.PlayOnce("atk", mul);
+    }
 
     float laneVis;
     float vy;
@@ -61,13 +104,15 @@ public class PlayerCtrl : MonoBehaviour
     SpriteAnim vis;          // 真素材动画（有素材时接管显示）
     bool moving;
 
-    // 装扮覆盖层（头发 / 服饰 / 武器外观）
-    SpriteRenderer hairSr, coatSr, weaponSr;
+    // 装扮覆盖层（服饰）。武器不再单独叠层：
+    // 原版客户端的武器是 CharacterRenderer 按 zmap 合成进角色帧的，
+    // 程序化画的武器贴在身上只会变成「盖在脸上的静态色块」（武器永远不动，攻击像没动作）。
+    SpriteRenderer coatSr;
     Sprite dyedFrame;        // 已经染过色的角色帧（动画换帧才重染）
 
     public float DepthOffset    => (laneVis - (Lanes - 1) * 0.5f) * LaneStep;
     public int   SortingOrder   => 300 - lane * 12;
-    public Vector2 FeetPos      => new Vector2(worldX, GroundY + jumpY + DepthOffset);
+    public Vector2 FeetPos      => new Vector2(worldX, terrainY + jumpY + DepthOffset);
 
     void Awake()
     {
@@ -86,7 +131,8 @@ public class PlayerCtrl : MonoBehaviour
     // 有 WZ 素材就用素材；没有就退回纯色方块（保证任何状态下都能跑）
     void BuildArt()
     {
-        string artKey = Profile.cls;
+        // 发型是真实素材：artKey = 职业 + "_" + 发型下标（chars/<职业>_h0…）
+        string artKey = Profile.cls + "_" + HairStyles.KeyOf(HairStyles.IndexOf(Profile.hair));
         if (Art.Has("chars", artKey))
         {
             vis = Art.Attach(transform, "chars", artKey, "stand", 0f);
@@ -129,13 +175,6 @@ public class PlayerCtrl : MonoBehaviour
         if (vis == null) return;
         var host = vis.transform;
 
-        if (hairSr == null)
-        {
-            var gh = new GameObject("HairDye");
-            gh.transform.SetParent(host, false);
-            hairSr = gh.AddComponent<SpriteRenderer>();
-            hairSr.sortingOrder = 302;        // 压在角色之上
-        }
         if (coatSr == null)
         {
             var gc = new GameObject("CoatDye");
@@ -143,60 +182,25 @@ public class PlayerCtrl : MonoBehaviour
             coatSr = gc.AddComponent<SpriteRenderer>();
             coatSr.sortingOrder = 301;
         }
-        if (weaponSr == null)
-        {
-            var gw = new GameObject("Weapon");
-            gw.transform.SetParent(transform, false);
-            weaponSr = gw.AddComponent<SpriteRenderer>();
-            weaponSr.sortingOrder = 304;
-        }
 
         dyedFrame = null;
         ApplyDye();
-        LayoutWeapon();
     }
 
     // 只在动画换帧时重染（换帧才需要新贴图，缓存命中后几乎零开销）
     void ApplyDye()
     {
-        if (hairSr == null || coatSr == null) return;
+        if (coatSr == null) return;
         var src = sr != null ? sr.sprite : null;
         if (src == null) return;
         if (dyedFrame == src) return;
         dyedFrame = src;
 
-        var hs = CosmeticFactory.DyeHair(src, CosmeticFactory.HairColor(Profile.hair));
-        if (hairSr.sprite != hs) hairSr.sprite = hs;
-        hairSr.enabled = hs != null;
-        hairSr.flipX = sr.flipX;
-
+        // 服饰：把角色原画的胸腹段保明暗换色（跳过皮肤），叠在角色之上
         var cs = CosmeticFactory.DyeCoat(src, CosmeticFactory.OutfitColor(Profile.outfit));
         if (coatSr.sprite != cs) coatSr.sprite = cs;
         coatSr.enabled = cs != null && Profile.outfit != "none";
         coatSr.flipX = sr.flipX;
-    }
-
-    // 武器：程序化贴图（颜色已烘进贴图，sr.color 保持白色），握在身前、略向后倾
-    void LayoutWeapon()
-    {
-        if (weaponSr == null) return;
-        var wp = WeaponDefs.Get(Profile.equipWeapon);
-        var sp = CosmeticFactory.WeaponSprite(wp.kind, wp.color);
-        if (weaponSr.sprite != sp) weaponSr.sprite = sp;
-        weaponSr.color = Color.white;
-        if (sp == null) return;
-
-        float h = (sr != null && sr.sprite != null) ? sr.bounds.size.y : 2.6f;
-        float native = Mathf.Max(0.01f, sp.bounds.size.y);
-        float s = h * 0.86f / native;
-        weaponSr.transform.localScale = new Vector3(s, s, 1f);
-
-        var b = sr != null ? sr.bounds : new Bounds(transform.position, Vector3.one);
-        float cx = b.center.x - transform.position.x;
-        float top = b.max.y - transform.position.y;
-        weaponSr.transform.localPosition = new Vector3(cx + facing * h * 0.20f, top - h * 0.50f, 0f);
-        weaponSr.flipX = false;
-        weaponSr.transform.localRotation = Quaternion.Euler(0f, 0f, -16f * facing);
     }
 
     void Update()
@@ -215,7 +219,26 @@ public class PlayerCtrl : MonoBehaviour
         if (Mathf.Abs(h) > 0.15f)
         {
             facing = h > 0f ? 1 : -1;
+            float prevX = worldX;
             worldX = ClampX(worldX + h * moveSpeed * dt);
+
+            // 贴地形走（原版 foothold 规则）：
+            //   前方地面高出 0.6u 以上 = 台阶墙，走不过去（要跳）；
+            //   走出台阶/悬崖 = 视觉高度连续、转为下落；
+            //   平地/斜坡/小台阶 = 直接贴上去。
+            float gy = GroundAt(worldX, terrainY);
+            if (gy > terrainY + 0.6f)
+            {
+                worldX = prevX;
+                gy = GroundAt(worldX, terrainY);
+            }
+            else if (gy < terrainY - 0.02f)
+            {
+                jumpY += terrainY - gy;            // 补偿视觉高度，落地自然
+                terrainY = gy;
+                if (grounded) { grounded = false; vy = 0f; }
+            }
+            terrainY = gy;
         }
         moving = Mathf.Abs(h) > 0.15f;
 
@@ -303,8 +326,7 @@ public class PlayerCtrl : MonoBehaviour
         b.TakeDamage(EffectiveAtk, facing);
         HitFeel.Punch(1f);
         if (vis != null) vis.PlayOnce("atk", 1.3f);
-        Fx.Slash(new Vector3(worldX + facing * 0.85f, FeetPos.y + 0.75f, 0f),
-                 new Color(1f, 0.95f, 0.6f, 0.9f), facing);
+        // 原版近战的视觉就是角色挥砍帧本身（武器合成在帧里），没有额外的弧光贴片
     }
 
     EnemyUnit FindTarget()
@@ -333,8 +355,7 @@ public class PlayerCtrl : MonoBehaviour
         e.TakeDamage(EffectiveAtk, facing);
         HitFeel.Punch(1f);
         if (vis != null) vis.PlayOnce("atk", 1.3f);
-        Fx.Slash(new Vector3(worldX + facing * 0.85f, FeetPos.y + 0.75f, 0f),
-                 new Color(1f, 0.95f, 0.6f, 0.9f), facing);
+        // 同 StrikeBoss：挥砍帧即视觉，不再叠黄色弧光
     }
 
     public void TakeDamage(float dmg, int dir)
@@ -364,14 +385,13 @@ public class PlayerCtrl : MonoBehaviour
 
     void SyncTransform()
     {
-        transform.position = new Vector3(worldX, GroundY + jumpY + DepthOffset, 0f);
+        transform.position = new Vector3(worldX, terrainY + jumpY + DepthOffset, 0f);
         if (sr == null) return;
         sr.sortingOrder = SortingOrder;
         if (vis != null)
         {
             vis.SetFacing(facing);        // 素材靠 flipX 转向，别再翻 scale
             ApplyDye();
-            LayoutWeapon();
             return;
         }
         var s = sr.transform.localScale;

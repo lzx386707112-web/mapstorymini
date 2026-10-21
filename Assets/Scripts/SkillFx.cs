@@ -1,26 +1,25 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-// 技能特效：把 Skill.wz 的 `effect` 帧按原版 delay 播一遍就销毁。
+// 技能特效：把 skills/<key>/cast 那一段原版动画，按原版 delay 播一遍就销毁。
 //
-// 三条约定（和角色贴图一致，不能改）：
-//   1. 帧已经共用同一个锚点（tools/wz_skill.py 里按 max(origin) 对齐），
-//      所以 transform.position 就是「技能挂在角色身上的那个点」，
-//      不再需要每帧补偏移。
-//   2. 原图朝右（见下方 sr.flipX 的说明），向左释放时翻转。
-//      翻转是绕轴心翻的，锚点不动，位置天然正确。
-//   3. 锚点是角色的「身体中心」而不是脚底：我们角色贴图轴心在脚底，
-//      所以要往上抬 21px（0.525 世界单位），否则特效会整体沉到地里。
+// 单例化到这一份（SkillSystem 只负责「何时施法、打谁」，不持有特效逻辑）：
+//   - 锚点：WZ 里技能特效的 origin 就是「挂在角色原点（脚底）」的那个点，
+//     所以施法时把特效放在角色脚底上方一点（SkillSystem.CastAt 已抬 0.5 世界单位），
+//     特效自然从角色身上向四周炸开。
+//   - 朝向：Skill.wz 的 effect 美术是按「朝右」画的（爆炎向 +x 扩散、剑气向 +x 炸开），
+//     所以向左释放时翻转（flipX = facing<0），「前方」永远和角色朝向一致。
+//   - 大小：按「目标世界高度」缩放，不同特效给不同倍率，避免火焰/剑气被压成贴纸。
+//   - 跟随：突进这类位移技能可挂 follow，让特效跟着施法者走。
 public class SkillFx : MonoBehaviour
 {
-    public const float AnchorUp = 21f / 40f;   // WZ 角色 origin 离脚底的距离
-
     Art.Clip clip;
     SpriteRenderer sr;
     float speed = 1f;
     float t;
     int i;
 
-    public static SkillFx Play(string key, Vector3 anchor, int facing, float speed = 1f, int order = 350)
+    public static SkillFx Play(string key, Vector3 anchor, int facing, float speed = 1f, int order = 360)
     {
         if (string.IsNullOrEmpty(key) || !Art.Has("skills", key)) return null;
         var clip = Art.GetClip("skills", key, "cast");
@@ -31,24 +30,26 @@ public class SkillFx : MonoBehaviour
 
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sortingOrder = order;
-        sr.sprite = Art.Frame(clip.frames[0]);
-        // 注意：技能特效的朝向和角色**相反**。
-        // 角色原图朝左（向右走才 flipX=true），但 Skill.wz 的 effect 美术是按朝右画的：
-        //   斗气死亡断层的爆炎向 +x 扩散、烈焰翔斩向 +x 炸开、突进的光尾在 +x 侧。
-        // 所以向左释放时要翻转，向右释放时不翻，这样「前方」永远和角色朝向一致。
-        sr.flipX = facing < 0;
+        // 朝向规则必须与角色完全一致：原版素材朝左，朝右（facing>0）时翻转。
+        // 之前用 facing<0 与角色方向相反，所以剑士释放时特效总在角色背面。
+        sr.flipX = facing > 0;
 
         var fx = go.AddComponent<SkillFx>();
         fx.clip = clip;
         fx.sr = sr;
         fx.speed = Mathf.Max(0.1f, speed);
 
-        // 播完就销毁；多留 0.1s 是给最后一帧的停留
+        // 原版 1:1：WZ 里特效多少像素，游戏里就显示多大（PPU=40）。
+        // 之前按「目标高度」压缩（如 flame 压到 4.6u ≈ 原尺寸 1/5），所以特效小得像贴纸。
+        sr.sprite = Art.Frame(clip.frames[0]);
+        go.transform.localScale = Vector3.one;
+
+        // 播完就销毁；多留 0.1s 给最后一帧停留
         Object.Destroy(go, clip.Duration / fx.speed + 0.1f);
         return fx;
     }
 
-    // 让特效跟着角色走（突进这种位移技能）：每帧把 x 对齐施法者
+    // 让特效跟着角色走（突进这类位移技能）：每帧把 x 对齐施法者
     public Transform follow;
     public float followX;
     public bool  followMove;

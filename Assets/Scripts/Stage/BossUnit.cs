@@ -26,6 +26,7 @@ public class BossUnit : MonoBehaviour
     float summonT;
     float laneVis = 2f;
     float flashT;
+    float terrainY = PlayerCtrl.GroundY;   // 脚下地形 y（跟随 foothold 起伏）
 
     SpriteRenderer body;
     SpriteAnim vis;
@@ -120,7 +121,8 @@ public class BossUnit : MonoBehaviour
             ring = go.transform;
         }
 
-        transform.position = new Vector3(startX, GroundY + DepthOffset, 0f);
+        terrainY = PlayerCtrl.GroundAt(startX, PlayerCtrl.GroundY);
+        transform.position = new Vector3(startX, terrainY + DepthOffset, 0f);
         st = St.Enter;
         stT = 1.2f;
         actTimer = 1.4f;
@@ -214,7 +216,8 @@ public class BossUnit : MonoBehaviour
         }
 
         laneVis = Mathf.Lerp(laneVis, Lane, 1f - Mathf.Exp(-10f * dt));
-        transform.position = new Vector3(transform.position.x, GroundY + DepthOffset + airH, 0f);
+        terrainY = PlayerCtrl.GroundAt(transform.position.x, terrainY);
+        transform.position = new Vector3(transform.position.x, terrainY + DepthOffset + airH, 0f);
         if (body != null) body.sortingOrder = 300 - Lane * 12;
     }
 
@@ -259,7 +262,8 @@ public class BossUnit : MonoBehaviour
             {
                 ringSr.enabled = true;
                 ringSr.color = new Color(1f, 0.25f, 0.3f, 0.9f);
-                ring.transform.position = new Vector3(targetX, GroundY + 0.03f, 0f);
+                float ringY = PlayerCtrl.GroundAt(targetX, terrainY);
+                ring.transform.position = new Vector3(targetX, ringY + 0.03f, 0f);
             }
             if (GameLoop.I != null && GameLoop.I.stage != null)
                 GameLoop.I.stage.OnBossTelegraph(def.slam.telegraph);
@@ -292,8 +296,9 @@ public class BossUnit : MonoBehaviour
         }
 
         HitFeel.Punch(1.6f);
-        Fx.Ring(new Vector3(targetX, GroundY + 0.06f, 0f), RadiusUnit * 1.6f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.35f);
-        Fx.Burst(new Vector3(transform.position.x, GroundY + 0.3f, 0f), RadiusUnit * 0.8f, new Color(1f, 0.75f, 0.4f, 0.9f), 0.3f);
+        float landY = PlayerCtrl.GroundAt(targetX, terrainY);
+        Fx.Ring(new Vector3(targetX, landY + 0.06f, 0f), RadiusUnit * 1.6f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.35f);
+        Fx.Burst(new Vector3(targetX, landY + 0.3f, 0f), RadiusUnit * 0.8f, new Color(1f, 0.75f, 0.4f, 0.9f), 0.3f);
 
         st = St.Recover;
         stT = def.slam.recover;                        // ← 唯一的输出窗口

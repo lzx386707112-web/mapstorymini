@@ -5,7 +5,8 @@ using UnityEngine;
 public class SkillDef
 {
     public string name;
-    public string icon = "";        // 统一用彩色格子 + 名字，不用抽图标
+    public string icon = "";        // skills/<icon>/icon.png 原版图标
+    public string art = "";         // skills/<art>/cast 真实释放特效（空=仅程序化特效）
     public float  cd;
     public float  left;
     public string hint;
@@ -38,6 +39,9 @@ public class SkillSystem : MonoBehaviour
             {
                 name = cs.name, cd = cs.cd, hint = cs.hint, color = cs.color,
                 effect = cs.effect, dmg = cs.dmg, range = cs.range, extra = cs.extra,
+                art = cs.art,
+                // 图标独立配置（每技能一个原版图标）；没配时退回特效 key 的图标
+                icon = !string.IsNullOrEmpty(cs.icon) ? cs.icon : cs.art,
                 cast = sys => sys.Fire(sys.skills[idx]),
             };
         }
@@ -110,11 +114,15 @@ public class SkillSystem : MonoBehaviour
         }
     }
 
+    // 角色脚底：WZ 技能特效的 origin 就是相对角色原点（脚底）存的，
+    // 1:1 复刻下锚点直接落在 FeetPos，特效位置和原版逐像素一致
+    Vector3 CastAt() => new Vector3(p.worldX, p.FeetPos.y, 0f);
+
     // 身前扇形 AoE
     void CastSweep(SkillDef s)
     {
         AtkAnim(1.3f);
-        Fx.Slash(new Vector3(p.worldX + p.facing * 0.9f, p.FeetPos.y + 0.75f, 0f), s.color, p.facing);
+        SkillFx.Play(s.art, CastAt(), p.facing);
         HitFeel.Punch(1.2f);
         HitMobs(Dmg(s), s.range, 1, true);
         HitBosses(Dmg(s), s.range, false, 0f, true);
@@ -124,6 +132,7 @@ public class SkillSystem : MonoBehaviour
     void CastBolt(SkillDef s)
     {
         AtkAnim(1.3f);
+        SkillFx.Play(s.art, CastAt(), p.facing);
         HitFeel.Punch(1.0f);
         HitMobs(Dmg(s), s.range, 1, true, s.extra > 0f ? s.extra : 0f);
         HitBosses(Dmg(s), s.range, s.extra > 0f, s.extra, true);
@@ -158,6 +167,7 @@ public class SkillSystem : MonoBehaviour
         float to = PlayerCtrl.ClampX(p.worldX + p.facing * s.range);
         p.invulnUntil = Time.unscaledTime + 0.35f;
         AtkAnim(1.4f);
+        SkillFx.Play(s.art, CastAt(), p.facing);
 
         float t = 0f;
         while (t < 0.16f)
@@ -182,7 +192,7 @@ public class SkillSystem : MonoBehaviour
     void CastAoe(SkillDef s)
     {
         AtkAnim(1.3f);
-        Fx.Ring(new Vector3(p.worldX, p.FeetPos.y + 0.2f, 0f), s.range * 0.5f + 0.6f, s.color, 0.3f);
+        SkillFx.Play(s.art, CastAt(), p.facing);
         HitFeel.Punch(1.6f);
         HitMobs(Dmg(s), s.range, 2, false, s.extra);
         HitBosses(Dmg(s), s.range, s.extra > 0f, s.extra, false);
@@ -192,7 +202,7 @@ public class SkillSystem : MonoBehaviour
     void CastNova(SkillDef s)
     {
         AtkAnim(1.5f);
-        Fx.Burst(new Vector3(p.worldX, p.FeetPos.y + 0.9f, 0f), s.range * 0.5f + 1f, s.color, 0.4f);
+        SkillFx.Play(s.art, CastAt(), p.facing);
         HitFeel.Punch(2.2f);
         foreach (var e in EnemyUnit.All.ToArray())
         {
@@ -202,27 +212,31 @@ public class SkillSystem : MonoBehaviour
         HitBosses(Dmg(s), 999f, false, 0f, false);
     }
 
-    // 自我治疗
+    // 自我治疗：原版圣光/群体治愈也有自己的 effect 帧，一并播放
     void CastHeal(SkillDef s)
     {
+        if (!string.IsNullOrEmpty(s.art)) SkillFx.Play(s.art, CastAt(), p.facing);
         p.Heal(s.extra);
         Fx.Burst(new Vector3(p.worldX, p.FeetPos.y + 1.0f, 0f), 1.1f, s.color, 0.4f);
         DamageText.Show(new Vector3(p.FeetPos.x, p.FeetPos.y + 2.55f, 0f), s.extra, "blue", 0.9f);
     }
 
-    // 自我增益（攻击力）
+    // 自我增益（攻击力）：愤怒之火等 buff 技能同样带原版 effect 帧
     void CastBuff(SkillDef s)
     {
+        if (!string.IsNullOrEmpty(s.art)) SkillFx.Play(s.art, CastAt(), p.facing);
         p.AddAtkBuff(1.6f, s.extra);
         Fx.Ring(new Vector3(p.worldX, p.FeetPos.y + 0.4f, 0f), 1.4f, s.color, 0.35f);
     }
 
     void AtkAnim(float mul)
     {
-        var v = p.GetComponent<SpriteAnim>();
-        if (v != null) v.PlayOnce("atk", mul);
+        // SpriteAnim 挂在 Art.Attach 建的子节点上，GetComponent 在根节点找不到，
+        // 必须走 PlayerCtrl 内部的 vis 引用（之前技能因此没有角色动作）
+        p.PlayAtk(mul);
     }
 
     // 兼容旧接口（若有其它地方直接调用）
     Vector3 Anchor => (Vector3)p.FeetPos + Vector3.up * (21f / 40f);
 }
+

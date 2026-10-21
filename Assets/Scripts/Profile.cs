@@ -16,7 +16,7 @@ public static class Profile
     public static int   gold;
     public static string cls       = "knight";
     public static string equipWeapon = "w_sword_basic";
-    public static string hair      = "black";
+    public static string hair      = "h0";   // 发型下标（见 HairStyles）
     public static string outfit    = "none";
 
     static HashSet<string> _owned = new HashSet<string> { "w_sword_basic" };
@@ -30,7 +30,9 @@ public static class Profile
         gold    = PlayerPrefs.GetInt(K_GOLD, 0);
         cls     = PlayerPrefs.GetString(K_CLASS, "knight");
         equipWeapon = PlayerPrefs.GetString(K_EQUIP, "w_sword_basic");
-        hair    = PlayerPrefs.GetString(K_HAIR, "black");
+        hair    = PlayerPrefs.GetString(K_HAIR, "h0");
+        // 旧档里 hair 存的是颜色名（black/brown…），新方案存发型下标（h0…h5）
+        if (!HairStyles.Contains(hair)) hair = "h0";
         outfit  = PlayerPrefs.GetString(K_OUTFIT, "none");
 
         _owned.Clear();

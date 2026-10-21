@@ -230,15 +230,22 @@ public class GameLoop : MonoBehaviour
         {
             var st = Art.Stage(themeKey);
             PlayerCtrl.SetBounds(backdrop.WalkMin, backdrop.WalkMax);
-            if (camRig != null && st != null) camRig.SetStage(st.LeftX, st.RightX);
+            // foothold 地形交给角色/怪物：贴台阶、走斜坡、到段尽头被挡住
+            PlayerCtrl.SetTerrain(st != null ? st.Footholds : null);
+            if (camRig != null && st != null) camRig.SetStage(st);
         }
         else
         {
             PlayerCtrl.SetBounds(-13f, 13f);
+            PlayerCtrl.SetTerrain(null);
             if (camRig != null) camRig.ClearStage();
         }
-        // 换关时角色可能落在新关的可走范围之外，立刻夹回来
-        if (player != null) player.worldX = PlayerCtrl.ClampX(player.worldX);
+        // 换关时角色可能落在新关的可走范围之外，立刻夹回来并把脚下地形吸附好
+        if (player != null)
+        {
+            player.worldX = PlayerCtrl.ClampX(player.worldX);
+            player.ResetTerrain();
+        }
 
         if (edgeSr != null) edgeSr.color = t.accent;
         if (skySr != null) skySr.color = t.bgTop;
@@ -418,7 +425,7 @@ public class GameLoop : MonoBehaviour
         {
             player.hp = player.hpMax;
             player.worldX = 0f;
-            player.jumpY = 0f;
+            player.ResetTerrain();
             player.lane = 2;
             player.invulnUntil = Time.unscaledTime + 1f;
         }

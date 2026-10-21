@@ -95,7 +95,7 @@
 
 ## 五、已知限制（M0 阶段故意不做）
 
-- 没有地图，地面是一条无限长的直线
+- 地图：已接入真实客户端切片（harbor/forest/cliff/nest 四关），镜头跟随角色、并夹在地图两端（走到尽头停住），即原版「大地图 + 跟随 + 边界」逻辑。切片由 `tools/wz_stage.py` 从北斗客户端渲染（1:1 像素），改地图重跑它即可。地面仍恒平，未做平台/斜坡/ foothold 起伏。
 - 没有碰撞体，跳跃只是抛物线，不处理平台
 - 没有音效 —— 打击感缺了听觉那一半，这是下一步要补的
 - 没有存档、没有 UI 框架、没有养成
@@ -157,3 +157,21 @@ Unity 里的设置顺序（装好 Android Build Support 之后）：
   -executeMethod PlaySmokeTest.Run -smokeLevel 1 -smokeDuration 12 -smokeShots /tmp/shots
 ```
 `-smokeLevel` 是关卡索引（0=1-1 … 3=1-4），截图走 RenderTexture，batchmode 下也能出图。
+
+
+## 参考图取景比例
+
+战斗相机使用约 1366×768 的 16:9 逻辑视野（`CameraRig`），超宽手机居中留边。
+地图、人物共用 40 PPU，保持客户端素材 1:1；68px 高的人物可见部分约占画面高度 8.9%。
+地面锚点位于画面顶部约 61%，关卡切片上下留出 16px 余量。
+这仅校准取景比例，现有四关地图与参考截图中的具体地图并不相同。
+
+从本地原客户端重新导出四关地图：
+
+```sh
+python3 tools/wz_stage.py --unity
+```
+
+需要 Pillow 和 `~/Documents/mxd/BeiDou-Server/tool/wz-python`。
+中间 PNG 位于 `Library/WzStage`；只更新地图切片及 manifest 的 stages，保留角色、技能等配置。
+导出保留原始瓦片与摆件坐标，不向下重复填土。

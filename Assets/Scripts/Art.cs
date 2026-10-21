@@ -41,8 +41,16 @@ public static class Art
         public Vector2 ground;         // 地面锚点：窗口中心 x + 地面线 y
         public Vector2 walk;           // 可走范围（地图像素 x 两端）
         public Color sky;              // 切片外的天空底色
+        public Vector4 view;           // 原客户端 VR 边界，地图坐标
+        public bool hasView;
+        public readonly List<StageBack> backgrounds = new List<StageBack>();
         public string fileBack, fileMid, fileFront;
         public int orderBack = -800, orderMid = -400, orderFront = 600;
+
+        // 窗口内的全部 foothold 线段，已换算成世界坐标 (x1,y1,x2,y2)。
+        // 角色/怪物靠它贴地形行走（含斜坡、高台），是"一比一复刻原版地图"的碰撞数据。
+        public readonly System.Collections.Generic.List<Vector4> Footholds =
+            new System.Collections.Generic.List<Vector4>();
 
         public bool HasFront => !string.IsNullOrEmpty(fileFront);
 
@@ -56,6 +64,13 @@ public static class Art
         public float RightX => WorldX(px.x + size.x);
         public float TopY => WorldY(px.y);
         public float BottomY => WorldY(px.y + size.y);
+    }
+
+    public class StageBack
+    {
+        public string file;
+        public Vector2 origin, size;
+        public int x, y, rx, ry, cx, cy, type, front, alpha, no;
     }
 
     static Dictionary<string, StageInfo> stages;
@@ -89,6 +104,36 @@ public static class Art
                 ? ReadVec(n, "walk")
                 : new Vector2(st.px.x, st.px.x + st.size.x);
             st.sky = ToColor(Int(n, "sky", 0x6FB7E8));
+            st.hasView = n.ContainsKey("view");
+            if (st.hasView)
+                st.view = new Vector4(ReadNum(n, "view", 0), ReadNum(n, "view", 1),
+                                      ReadNum(n, "view", 2), ReadNum(n, "view", 3));
+            if (n.ContainsKey("backgrounds") && n["backgrounds"] is List<object> backs)
+                foreach (var item in backs)
+                {
+                    var b = item as Dictionary<string, object>;
+                    if (b == null) continue;
+                    st.backgrounds.Add(new StageBack {
+                        file = Str(b, "file"), origin = ReadVec(b, "origin"), size = ReadVec(b, "size"),
+                        x = Int(b, "x", 0), y = Int(b, "y", 0), rx = Int(b, "rx", 0), ry = Int(b, "ry", 0),
+                        cx = Int(b, "cx", 0), cy = Int(b, "cy", 0), type = Int(b, "type", 0),
+                        front = Int(b, "front", 0), alpha = Int(b, "a", 255), no = Int(b, "no", 0)
+                    });
+                }
+
+            // foothold 线段（地图像素 y 向下）→ 世界坐标
+            if (n.ContainsKey("footholds") && n["footholds"] is List<object> fh)
+            {
+                foreach (var o in fh)
+                {
+                    var e = o as List<object>;
+                    if (e == null || e.Count < 4) continue;
+                    float mx1 = ToF(e[0]), my1 = ToF(e[1]);
+                    float mx2 = ToF(e[2]), my2 = ToF(e[3]);
+                    st.Footholds.Add(new Vector4(st.WorldX(mx1), st.WorldY(my1),
+                                                 st.WorldX(mx2), st.WorldY(my2)));
+                }
+            }
 
             var files = n.ContainsKey("files") ? n["files"] as Dictionary<string, object> : null;
             if (files != null)
