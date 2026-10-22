@@ -35,10 +35,26 @@
 地图 tile/obj 仍烘焙为静态主体图，动画摆件与按角色所在地图层的遮挡尚未迁移。
 因此这些修改不能等同于整个地图渲染器已经完全 1:1。
 
+## 背景 back 的坐标约定（2026-10-21 补充核对）
+
+`back` 的 `x/y` 不是绝对地图坐标，而是**相对屏幕中心（相机）的偏移**。证据是同图里成对出现的远景层宽度与 `x` 差值相等，例如：
+
+- `1010004` 的 `grassySoil/6`（1024×294，x=-135）与 `grassySoil/5`（1024×257，x=889），两者 `x` 差 1024 = 图宽，正好并排平铺成一条远景土带；
+- `40001` 的 `midForest/3`（1025×503，x=924）与 `midForest/4`（1025×503，x=-100），`x` 差同样等于图宽。
+
+因此运行时位置取 `worldX = (x - origin.x) + 相机地图像素X × (1 + rx/100)`，`worldY` 同理用 `ry`：
+
+- `rx = 0` 时系数为 1，背景随地图 1:1 移动（贴地远景）；
+- `rx = -100` 时系数为 0，背景钉在屏幕上；
+- `rx` 越大层越“近”。`type` 4/5/6/7 额外按 `-5×rx px/s` 自动滚动。
+
+这条约定与 `tools/wzmap.py` 静态烘焙里的 `my = ground_y + (y - origin.y) - cam_above` 是同一条规则的静态特例（烘焙时相机固定，视差项为常数）。
+
+因此实机里偶尔能在屏幕边缘看到「地形带断开、露出蓝天」的缝隙：那是原图远景层本身的覆盖范围（`type 0` 不重复的层有边），不是贴图错位。已用同一份 WZ 数据烘焙的参考图逐块比对确认——`40001`、`1010004` 的平台、树木、土带位置与实机截图一一对应。
+
 ## 对照文件哈希
 
-- BeiDou.exe: `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`
-- ijl15.dll: `87c0d58d53b4294acf53f053191c67739d1fa1ab2e9532fd764ba6b251f85c7e`
+- BeiDou.exe: `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`- ijl15.dll: `87c0d58d53b4294acf53f053191c67739d1fa1ab2e9532fd764ba6b251f85c7e`
 
 
 ## 全屏、输入与跳跃修正（2026-10-21）
@@ -88,3 +104,28 @@ each native rope/ladder and upper exit, hanging, descending, jumping off, existi
 30/60/120Hz steps/ledge behavior and touch release. These verify collision support,
 not an end-to-end route to every platform. Native accelerated movement and every
 combat action transition are not yet a verified byte-for-byte client recreation.
+
+## 每层的绘制顺序：先摆件（z），后瓦片（zM）（2026-10-21 修正）
+
+原来把瓦片和摆件放进同一个 (layer, z) 序列里排序，瓦片的 z 取 `zM×100`。结果是**同层摆件永远压在地形前面**：`001000000`（彩虹村）里那些「蘑菇屋」摆件的贴图底边是齐平的硬切边（作者按「下半截埋进土里」画的），就被画到了挡土墙中间，看起来像房子插进了地板。
+
+证据有两条，方向相反，只能靠「分成两组、组间不交叉」同时满足：
+
+- `Obj/houseGS.img/house10/basic/0` = 189×265，底边在 `y-oy` 处是平的。它挂在 layer 1、`z=2`；同层挡土墙是 `Tile/woodMarble` 的 `bsc/enH0`、`zM=0`。原版里这截是埋在土里的，所以地形必须压住摆件。
+- `000040001`（蜗牛打猎场Ⅱ）的栅栏是 `Obj/guide/midForest/wood/4`、layer 1、`z=9`，它必须压在 `zM=0` 的地面上；`001000000` 的 `door/grassySoil/window`（`z=4`）也必须压在墙上。若把整层瓦片无差别压在摆件上，这些会整块消失（实测栅栏与窗户直接不见）。`FieldChecks` 与实机截图都验证过这一点。
+
+所以 `tools/wzmap.py` 现在的规则是：
+
+```
+items = [ (layer, 0, z,  'obj') ] + [ (layer, 1, zM, 'tile') ]   # 层 → 组 → 组内 z
+```
+
+- 层与层之间仍然是 layer 小在前（远景摆件所在层先画）；
+- 同一层内：摆件按 `z` 升序，瓦片按 `zM` 升序，**组之间不比较** —— 摆件＝摆进地形里的布景，地形体量（`zM=0` 的草地/挡土墙/路面）盖住它的底座；前景草叶（全量统计里 `zM` 最大到 84）再盖住所有东西；
+- `zM` 原值范围 0..84、摆件 `z` 范围 0..15（62 张 Map0 地图统计，没有负值），这个量级差也说明两组本来就不是同一个 z 空间。
+
+重烘焙后 `001000000` 蘑菇屋的茎在草皮处收口、`000040001` 的栅栏与路牌仍在墙前；`FieldChecks` 1455 项通过 0 失败。实机对比图：`docs/field-shots/1000000-蘑菇屋-层级修正后.png`、`/tmp/smoke_shots/shot00.png`（已归档为 `1000000-传送门与层级.png`）。
+
+## 传送门「光洞」是独立资源
+
+`Map0/<id>.img/portal` 只有 `pn/tn/pt/tm/x/y/script`，没有贴图。`pt=2`（VISIBLE）的门由客户端用 `MapHelper.img/portal/game/pv` 的 8 帧动画绘制，锚点是每帧自己的 `origin`。因此地图主体烘焙图里永远没有门，运行时必须单独画（`FieldView.Portal`，`sortingOrder=200`）。帧上无 `delay`，取 120ms 并登记为适配项。

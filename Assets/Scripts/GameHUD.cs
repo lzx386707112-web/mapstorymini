@@ -32,11 +32,23 @@ public class GameHUD : MonoBehaviour
         }
     }
 
+    static float levelUpAt;
+    static int levelUpLevel;
+
     void Awake()
     {
         castFeedback = null; feedbackUntil = 0;
         // 静态字段会被域重载清掉，所以用 PlayerPrefs 传（截图脚本会置 1）
         if (PlayerPrefs.GetInt("hide_tuning", 0) == 1) showTuning = false;
+        Profile.LeveledUp += OnLeveledUp;
+    }
+
+    void OnDestroy() => Profile.LeveledUp -= OnLeveledUp;
+
+    void OnLeveledUp(int level)
+    {
+        levelUpAt = Time.unscaledTime;
+        levelUpLevel = level;
     }
 
     void EnsureStyles()
@@ -80,9 +92,21 @@ public class GameHUD : MonoBehaviour
         UiKit.Begin();
         _mouseGui = UiKit.MouseGui();
 
-        DrawSkillBar();
+        // 原版底部栏：底板 → 左段状态条 → 右侧按钮 + 快捷格（都在 BottomBar 里按顺序画）
+        BottomBar.Draw();
         DrawTopLeft();
         DrawStage();
+        DrawLevelUp();
+        // 浮窗（技能窗/能力值/帮助…）
+        GameWindows.DrawAll();
+        // 技能施放失败等即时提示
+        DrawNotice();
+        if (PlayerPrefs.GetInt("debug_keyconfig", 0) == 1)
+        {
+            PlayerPrefs.DeleteKey("debug_keyconfig");
+            if (!KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
+        }
+        KeyConfigWindow.Draw();
         if (showTuning && !HideTuning) DrawTuning();
 
         if (GameLoop.I != null && GameLoop.I.gameOver)
@@ -103,11 +127,30 @@ public class GameHUD : MonoBehaviour
     }
 
     // TouchPad.Update 统一接收每根手指的 Began；OnGUI 只绘制，避免一次点击多次施法。
+    // 技能格现在靠右下角（原版快捷栏的位置），并且必须避开左下角的状态栏：
+    // 横排放不下时整排抬到状态栏上方，绝不压在血条上。
+    const float SkillCell = 88f, SkillGap = 12f;
+
+    public static void SkillBarOrigin(out float x0, out float y0)
+    {
+        float totalW = SkillCell * 4 + SkillGap * 3;
+        x0 = UiKit.W - totalW - 12f;
+        y0 = UiKit.H - SkillCell - 12f;
+
+        float panelRight = StatusBar.Panel.width;
+        float panelTop = UiKit.H - StatusBar.Panel.height;
+        if (x0 < panelRight + 8f)
+        {
+            x0 = Mathf.Max(12f, UiKit.W - totalW - 12f);
+            y0 = Mathf.Max(8f, panelTop - SkillCell - 8f);
+        }
+    }
+
     public static Rect SkillButtonRect(int slot)
     {
-        float cell = 88f, gap = 12f;
-        float x = (UiKit.W - (cell * 4 + gap * 3)) * .5f + UiKit.W * .06f;
-        return new Rect(x + slot * (cell + gap), UiKit.H-cell-34f,cell,cell);
+        float x0, y0;
+        SkillBarOrigin(out x0, out y0);
+        return new Rect(x0 + slot * (SkillCell + SkillGap), y0, SkillCell, SkillCell);
     }
     public static bool PressSkill(Vector2 position)
     {
@@ -127,94 +170,68 @@ public class GameHUD : MonoBehaviour
         return false;
     }
 
-    // —————————— 四格技能栏 ——————————
-    //
-    // 图标直接用客户端 Skill.wz 的原版 32x32 图标（Art.Tex，Point 过滤），
-    // 放大到格子里是整数倍最近邻，和游戏里的技能栏观感一致。
-    void DrawSkillBar()
+    // 技能窗/快捷格的即时提示（魔法不足、冷却中、绑定成功…）
+    void DrawNotice()
     {
-        var sys = GameLoop.I != null && GameLoop.I.player != null
-            ? GameLoop.I.player.GetComponent<SkillSystem>()
-            : null;
-        if (sys == null) return;
-
-        float cell = 88f, gap = 12f;
-        float totalW = cell * 4 + gap * 3;
-        float x0 = (UiKit.W - totalW) * 0.5f + UiKit.W * 0.06f;
-        float y0 = UiKit.H - cell - 34f;
-
-        if (GUI.Button(new Rect(x0 - 100, y0, 80, 44), "拾取 Z")) MesoDrop.TryPickupNearest();
-        if (!string.IsNullOrEmpty(castFeedback) && Time.unscaledTime < feedbackUntil)
-            GUI.Label(new Rect(x0,y0-32,totalW,28),castFeedback,new GUIStyle(_cellTxt){fontSize=16});
-        for (int i = 0; i < 4; i++)
-        {
-            var s = sys.skills[i];
-            var r = SkillButtonRect(i);
-
-            float left = sys.Remaining(i);
-            bool ready = left <= 0f;
-            var icon = Art.SkillIcon(s.icon);
-
-            // 外框 + 底色（图标透明的地方露出这层）
-            Fill(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), new Color(0.04f, 0.05f, 0.07f, 0.85f));
-            Color bg = ready ? new Color(0.16f, 0.18f, 0.24f) : new Color(0.11f, 0.12f, 0.16f);
-            Fill(r, bg);
-
-            if (icon != null)
-            {
-                var ir = new Rect(r.x + 4, r.y + 4, r.width - 8, r.height - 8);
-                var old = GUI.color;
-                GUI.color = ready ? Color.white : new Color(0.55f, 0.58f, 0.64f);
-                GUI.DrawTexture(ir, icon, ScaleMode.StretchToFill);
-                GUI.color = old;
-            }
-
-            // CD 遮罩：从下往上退，比数字更直观
-            if (!ready)
-            {
-                float k = left / s.cd;
-                Fill(new Rect(r.x, r.y, r.width, r.height * k), new Color(0.02f, 0.03f, 0.05f, 0.72f));
-                GUI.Label(new Rect(r.x, r.y + r.height * 0.5f - 12, r.width, 24),
-                          Mathf.CeilToInt(left).ToString(), new GUIStyle(_cellTxt) { fontSize = 20 });
-            }
-
-            // 名字压在格子下沿（图标是原版画，名字只做辅助）
-            Fill(new Rect(r.x - 12, r.y + r.height + 2, r.width + 24, 17), new Color(0f, 0f, 0f, 0.55f));
-            var nm = new GUIStyle(_cellTxt) { fontSize = 11 };
-            nm.normal.textColor = ready ? new Color(0.96f, 0.97f, 1f) : new Color(0.62f, 0.66f, 0.72f);
-            GUI.Label(new Rect(r.x - 12, r.y + r.height + 2, r.width + 24, 17), s.name, nm);
-
-
-        }
+        var p = GameLoop.I != null ? GameLoop.I.player : null;
+        var sys = p != null ? p.GetComponent<SkillSystem>() : null;
+        string text = sys != null ? sys.ActiveNotice : null;
+        if (string.IsNullOrEmpty(text)) text = BottomBar.ActiveToast;
+        if (string.IsNullOrEmpty(text)) return;
+        var st = new GUIStyle(_small);
+        st.alignment = TextAnchor.MiddleCenter;
+        st.fontSize = 15;
+        st.normal.textColor = new Color(1f, 0.94f, 0.72f);
+        var r = new Rect(UiKit.W * 0.2f, UiKit.H - 96f, UiKit.W * 0.6f, 24f);
+        Fill(new Rect(r.x - 6, r.y - 3, r.width + 12, r.height + 6), new Color(0f, 0f, 0f, 0.62f));
+        GUI.Label(r, text, st);
     }
 
     // —————————— 左上角状态 ——————————
+    // HP/MP/EXP 已全部交给左下角的原版状态栏（StatusBar.cs），
+    // 这里只留地图、金币、掉落提示和返回按钮，避免同一份数值画两遍。
     void DrawTopLeft()
     {
         if (GameLoop.I == null || GameLoop.I.player == null) return;
         var p = GameLoop.I.player;
 
-        float w = 210f, h = 16f;
-        var back = new Rect(18f, 18f, w, h);
-        Fill(new Rect(back.x - 2, back.y - 2, back.width + 4, back.height + 4), new Color(0f, 0f, 0f, 0.65f));
-        Fill(back, new Color(0.22f, 0.1f, 0.12f));
-        Fill(new Rect(back.x, back.y, back.width * Mathf.Clamp01(p.hp / p.hpMax), back.height),
-             new Color(0.9f, 0.28f, 0.32f));
+        var field = GameLoop.I.field;
+        if (field != null && field.Map != null)
+        {
+            var mapSt = new GUIStyle(_small);
+            mapSt.normal.textColor = new Color(0.85f, 0.93f, 1f);
+            GUI.Label(new Rect(18f, 16f, 420f, 20),
+                      field.Map.name + "  (" + field.Map.id + ")   怪物 " + field.AliveCount +
+                      "   击杀 " + GameLoop.I.killCount, mapSt);
 
-        var st = new GUIStyle(_small);
-        st.normal.textColor = Color.white;
-        GUI.Label(new Rect(22f, 16f, 200f, 20), "HP  " + Mathf.CeilToInt(p.hp) + " / " + Mathf.CeilToInt(p.hpMax), st);
-        GUI.Label(new Rect(18f, 40f, 260f, 20), "击杀 " + GameLoop.I.killCount + "   深度层 " + (p.lane + 1) + "/5", _small);
+            if (!string.IsNullOrEmpty(GroundItem.LastPickup))
+            {
+                var toast = new GUIStyle(_small);
+                toast.normal.textColor = new Color(1f, 0.95f, 0.6f);
+                GUI.Label(new Rect(18f, 92f, 300f, 20), "拾取 " + GroundItem.LastPickup, toast);
+            }
 
-        // 金币 + 职业 + 武器
+            // 传送门必须按上才进（原端 pt=2/10 的语义），这里给个明确提示
+            if (field.NearPortal != null)
+            {
+                var tip = new GUIStyle(_small);
+                tip.normal.textColor = new Color(0.7f, 1f, 0.8f);
+                GUI.Label(new Rect(18f, 112f, 320f, 20), "按 ↑ / W 进入传送门", tip);
+            }
+        }
+        else
+        {
+            GUI.Label(new Rect(18f, 16f, 260f, 20), "击杀 " + GameLoop.I.killCount + "   深度层 " + (p.lane + 1) + "/5", _small);
+        }
+
+        // 金币 + 武器（职业名在状态栏里，这里不重复）
         var gold = new GUIStyle(_small);
         gold.normal.textColor = new Color(0.98f, 0.82f, 0.35f);
-        GUI.Label(new Rect(18f, 60f, 300f, 20),
-                  "金币 " + Profile.gold + "    " + ClassDefs.Get(Profile.cls).name +
-                  "   武器：" + WeaponDefs.Get(Profile.equipWeapon).name, gold);
+        GUI.Label(new Rect(18f, 38f, 320f, 20),
+                  "金币 " + Profile.gold + "   武器：" + WeaponDefs.Get(Profile.equipWeapon).name, gold);
 
         // 返回大厅按钮
-        var br = new Rect(18f, 84f, 96f, 28f);
+        var br = new Rect(18f, 62f, 96f, 28f);
         Fill(br, new Color(0.16f, 0.2f, 0.3f, 0.92f));
         Fill(new Rect(br.x, br.y, br.width, 2f), new Color(0.5f, 0.8f, 1f));
         var bs = new GUIStyle(_small);
@@ -317,6 +334,34 @@ public class GameHUD : MonoBehaviour
             GUI.Label(new Rect(0, UiKit.H * 0.40f + 50, UiKit.W, 24),
                       "击杀 " + GameLoop.I.killCount + " 只", s);
         }
+    }
+
+    // —————————— 升级提示 ——————————
+    // 原版的升级是 Effect/BasicEff.img/LevelUp 动画 + 一声音效；
+    // 本阶段先把「升级了」这件事用文字确认掉，动画留到特效批次统一接。
+    void DrawLevelUp()
+    {
+        float age = Time.unscaledTime - levelUpAt;
+        if (age < 0f || age > 2.4f) return;
+
+        float k = age < 1.8f ? 1f : 1f - (age - 1.8f) / 0.6f;
+        var st = new GUIStyle(_small);
+        st.alignment = TextAnchor.MiddleCenter;
+        st.fontSize = Mathf.RoundToInt(30f + 6f * Mathf.Clamp01(1f - age * 2f));
+        st.fontStyle = FontStyle.Bold;
+        st.normal.textColor = new Color(1f, 0.9f, 0.45f, k);
+
+        float y = UiKit.H * 0.3f;
+        var shadow = new GUIStyle(st);
+        shadow.normal.textColor = new Color(0f, 0f, 0f, k * 0.7f);
+        GUI.Label(new Rect(0, y + 2, UiKit.W, 44), "LEVEL  UP", shadow);
+        GUI.Label(new Rect(0, y, UiKit.W, 44), "LEVEL  UP", st);
+
+        var sub = new GUIStyle(_small);
+        sub.alignment = TextAnchor.MiddleCenter;
+        sub.fontSize = 15;
+        sub.normal.textColor = new Color(0.95f, 0.97f, 1f, k);
+        GUI.Label(new Rect(0, y + 46, UiKit.W, 24), "Lv. " + levelUpLevel + "   HP/MP 已回满", sub);
     }
 
     // —————————— 手感调参面板 ——————————

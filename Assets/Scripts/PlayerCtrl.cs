@@ -15,7 +15,7 @@ public class PlayerCtrl : MonoBehaviour
     public const float LaneStep = 0.22f;
 
     // 基础属性（武器在此之上加成）。改数值只动这里，不要动面板上的默认字段。
-    const float BaseInterval = 0.55f, BaseReach = 2.3f;
+    public const float BaseInterval = 0.55f, BaseReach = 2.3f;
     WeaponDef weapon;
     CharacterAttributes baseAttributes;
     public CharacterAttributes Attributes { get; private set; }
@@ -45,12 +45,23 @@ public class PlayerCtrl : MonoBehaviour
     float climbInput, grabCooldown;
     public bool IsClimbing => climb != null;
 
+    // 掉落兜底：低于这个高度就说明脚下一条 foothold 都没接住（原端由服务端复位）。
+    // 由 FieldDirector 按地图 VR 底部设置；不设置时保持 -∞，不影响章节模式。
+    public static float FallFloor = float.NegativeInfinity;
+
+    // 换图黑场期间冻结输入与物理：原版从按下 ↑ 到人物出现在新图之间是「角色已离场」的状态，
+    // 本地这段黑幕有 0.3s，如果不锁住，按住方向键会让角色在黑屏里继续走/掉下平台。
+    // 位置仍然同步（SyncTransform 照常跑），否则新图出生点要等黑幕结束才生效。
+    public static bool InputLocked;
+
     // x 处的地面高度：取覆盖 x 的段里与 refY 最接近的一条（段内线性插值，支持斜坡）。
-    // 用于重置位置与查询邻近地面；空中落地另用扫过 foothold 的检测。
+    // 若 x 不在任何段内，退回「水平距离最近的那条段」的端点高度——
+    // 传送门/出生点偶尔贴在平台边缘外一两像素，返回 refY 会让角色直接浮空下坠。
     public static float GroundAt(float x, float refY)
     {
         if (Terrain == null || Terrain.Count == 0) return GroundY;
         float best = refY, bestD = float.MaxValue;
+        bool covered = false;
         for (int i = 0; i < Terrain.Count; i++)
         {
             var f = Terrain[i];
@@ -60,13 +71,105 @@ public class PlayerCtrl : MonoBehaviour
             if (x < lo || x > hi) continue;
             float y = Mathf.Lerp(y1, y2, (x - x1) / (x2 - x1));
             float d = Mathf.Abs(y - refY);
-            if (d < bestD) { bestD = d; best = y; }
+            if (d < bestD) { bestD = d; best = y; covered = true; }
         }
-        return best;
+        if (covered) return best;
+        float atX;
+        return NearestGround(x, out atX);
     }
 
+    // 水平方向离 x 最近的一条可走段（含端点外），用于出生点/掉落复位。
+    // 距离相同取更低的一条：掉落时应该落到下面接得住的地面。
+    static float NearestGround(float x, out float atX)
+    {
+        atX = x;
+        if (Terrain == null || Terrain.Count == 0) return GroundY;
+        float bestD = float.MaxValue, bestY = GroundY;
+        for (int i = 0; i < Terrain.Count; i++)
+        {
+            var f = Terrain[i];
+            if (Mathf.Abs(f.z - f.x) < 0.01f) continue;
+            float lo = Mathf.Min(f.x, f.z), hi = Mathf.Max(f.x, f.z);
+            float cx = Mathf.Clamp(x, lo, hi);
+            float d = Mathf.Abs(cx - x);
+            float y = Mathf.Lerp(f.y, f.w, (cx - f.x) / (f.z - f.x));
+            if (d < bestD - 1e-4f || (Mathf.Abs(d - bestD) <= 1e-4f && y < bestY))
+            {
+                bestD = d; bestY = y; atX = cx;
+            }
+        }
+        return bestY;
+    }
+
+    // 沿 foothold 走一步：段内线性插值；跨出端点时，若另一条段在同一 x 相接，
+    // 就当作同一块地面直接接续（原端 foothold 的 prev/next 语义）。
+    // 之前用「高度差 ≤ 0.6u 才算支撑」判接缝，台阶差 24px 以上就会误判成踏空，
+    // 下面又没有段接住时角色会一路掉到地图外。
+    public static bool FollowGround(float fromX, float curY, float toX, out float outY)
+    {
+        outY = curY;
+        if (Terrain == null || Terrain.Count == 0) { outY = GroundY; return true; }
+
+        const float EdgeTol = 1.5f / Art.PPU;    // 端点重合容差：1.5px
+
+        // 1) 当前脚下这条段：覆盖 fromX 且高度最接近 curY
+        int cur = -1;
+        float curLo = 0f, curHi = 0f, bestD = float.MaxValue;
+        for (int i = 0; i < Terrain.Count; i++)
+        {
+            var f = Terrain[i];
+            if (Mathf.Abs(f.z - f.x) < 0.01f) continue;
+            float lo = Mathf.Min(f.x, f.z), hi = Mathf.Max(f.x, f.z);
+            if (fromX < lo || fromX > hi) continue;
+            float y = Mathf.Lerp(f.y, f.w, (fromX - f.x) / (f.z - f.x));
+            float d = Mathf.Abs(y - curY);
+            if (d < bestD) { bestD = d; cur = i; curLo = lo; curHi = hi; }
+        }
+        if (cur < 0) return false;               // 脚下没有段：交给下落
+
+        // 2) 目标 x 仍在同一条段上
+        var c = Terrain[cur];
+        if (toX >= curLo && toX <= curHi)
+        {
+            outY = Mathf.Lerp(c.y, c.w, (toX - c.x) / (c.z - c.x));
+            return true;
+        }
+
+        // 3) 跨出端点：找在该端点相接的段（端点重合即视为相接）
+        float edge = toX > curHi ? curHi : curLo;
+        int next = -1;
+        float nextD = float.MaxValue;
+        for (int i = 0; i < Terrain.Count; i++)
+        {
+            if (i == cur) continue;
+            var f = Terrain[i];
+            if (Mathf.Abs(f.z - f.x) < 0.01f) continue;
+            float lo = Mathf.Min(f.x, f.z), hi = Mathf.Max(f.x, f.z);
+            bool joined = Mathf.Abs(lo - edge) <= EdgeTol || Mathf.Abs(hi - edge) <= EdgeTol;
+            if (!joined) continue;
+            float y = Mathf.Lerp(f.y, f.w, (Mathf.Clamp(toX, lo, hi) - f.x) / (f.z - f.x));
+            float d = Mathf.Abs(y - curY);
+            if (d < nextD) { nextD = d; next = i; }
+        }
+        if (next < 0) return false;              // 端点外没有接续段：真悬崖
+
+        var n = Terrain[next];
+        float nlo = Mathf.Min(n.x, n.z), nhi = Mathf.Max(n.x, n.z);
+        outY = Mathf.Lerp(n.y, n.w, (Mathf.Clamp(toX, nlo, nhi) - n.x) / (n.z - n.x));
+        return true;
+    }
+
+    // 原端 WalkSpeed 的 100% 基准（Character.wz 角色 info/walkSpeed = 125px/s）。
+    // 怪物 info/speed 是「相对 100% 的百分比偏移」，两边共用这个基准，
+    // 所以怪物速度也要用它换算，不能各写一个魔数（见 FieldDirector.ApplyStats）。
+    public const float BaseWalkPx = 125f;
+
+    // 普攻是矩形判定：近战框上沿大约在脚底上方 48px，够不到上层平台。
+    // 之前只比 |dx|，站在下层能把上层平台的怪打下来（用户实测截图）。
+    public const float MeleeVertical = 1.2f;
+
     [Header("移动")]
-    public float moveSpeed = 125f / Art.PPU;
+    public float moveSpeed = BaseWalkPx / Art.PPU;
     public float jumpSpeed = 555f / Art.PPU;
     public float gravity   = -2000f / Art.PPU;
 
@@ -131,6 +234,7 @@ public class PlayerCtrl : MonoBehaviour
     float vy;
     float fallSpeed = 670f / Art.PPU;
     float atkTimer;
+    bool attackRequested;
     float laneCooldown;
     SpriteRenderer sr;
     SpriteAnim vis;          // 真素材动画（有素材时接管显示）
@@ -146,9 +250,31 @@ public class PlayerCtrl : MonoBehaviour
     public int   SortingOrder   => 300 - lane * 12;
     public Vector2 FeetPos      => new Vector2(worldX, terrainY + jumpY + DepthOffset);
 
+    // 身体判定框（世界尺寸，脚底为原点）。怪物接触伤害必须真实碰到身体，
+    // 站在高低不同的平台上、只是 Y 方向错位重叠不算碰到。
+    public float BodyHeight
+    {
+        get
+        {
+            float h = 1.5f;                                  // 兜底方块 0.82 x 1.5
+            if (sr != null && sr.enabled && sr.sprite != null) h = sr.bounds.size.y;
+            return Mathf.Max(0.8f, h);
+        }
+    }
+    public float BodyHalfWidth
+    {
+        get
+        {
+            float w = 0.41f;
+            if (sr != null && sr.enabled && sr.sprite != null) w = sr.bounds.size.x * 0.5f;
+            return Mathf.Max(0.22f, w);
+        }
+    }
+
     void Awake()
     {
         Profile.Load();
+        Profile.LeveledUp += OnLevelUp;
         var physics = Resources.Load<TextAsset>("Physics");
         if (physics != null)
         {
@@ -170,6 +296,59 @@ public class PlayerCtrl : MonoBehaviour
     }
 
     // 有 WZ 素材就用素材；没有就退回纯色方块（保证任何状态下都能跑）
+    // 升级后按原端 Character.levelUp → changeHpMp(localMaxHp, localMaxMp) 直接回满。
+    void OnLevelUp(int level) => ApplyProgression();
+
+    public void ApplyProgression()
+    {
+        baseAttributes = Profile.Attributes;
+        RefreshAttributes();
+        hpMax = Attributes.maxHp;
+        mpMax = Attributes.maxMp;
+        hp = hpMax;
+        mp = mpMax;
+        attackDamage = EffectiveAtk;
+    }
+
+    void OnDestroy()
+    {
+        Profile.LeveledUp -= OnLevelUp;
+    }
+
+    // —— 魔力 ——
+    // 原端 skill.mpCon 是硬门槛（客户端先判、服务端再判一次）。本地没有服务端，
+    // 判定在 SkillSystem.TryCast 里做，这里只提供扣蓝的原子操作。
+    public bool TrySpendMp(int amount)
+    {
+        if (amount <= 0) return true;
+        if (mp < amount) return false;
+        mp -= amount;
+        return true;
+    }
+
+    // 自然回复：原版客户端逻辑（服务端没有这段，所以只能按客户端行为复刻）。
+    //   MP —— 每 10 秒自动回复，最低 3 点（Mapletip/MP：「regained automatically …
+    //          at a minimum rate of 3 MP per 10 seconds」）；高等级按最大 MP 的 1% 递增。
+    //   HP —— 站立不动每 10 秒回 10 点（Mapletip/Health Points：「By default,
+    //          you gained 10 HP when standing still per 10 seconds」）。
+    // 节拍固定 10 秒，用 unscaledDeltaTime 累加，不受顿帧/慢动作影响。
+    public const float RegenInterval = 10f;
+    public float RegenTimer { get; private set; }
+
+    public void TickRegen(float dt)
+    {
+        if (dt <= 0f || hp <= 0f) return;
+        RegenTimer += dt;
+        if (RegenTimer < RegenInterval) return;
+        RegenTimer -= RegenInterval;
+        if (RegenTimer < 0f) RegenTimer = 0f;
+
+        int mpGain = Mathf.Max(3, Mathf.CeilToInt(mpMax * 0.01f));
+        mp = Mathf.Min(mpMax, mp + mpGain);
+        // 「站立不动」才回 HP：走动/跳跃/攀爬期间不给，和原版一致
+        if (grounded && !moving && climb == null) hp = Mathf.Min(hpMax, hp + 10f);
+    }
+
     void BuildArt()
     {
         // 发型是真实素材：artKey = 职业 + "_" + 发型下标（chars/<职业>_h0…）
@@ -251,8 +430,10 @@ public class PlayerCtrl : MonoBehaviour
     void Update()
     {
         if (GameLoop.I != null && (GameLoop.I.state != GameLoop.GameState.Playing || GameLoop.I.gameOver)) return;
+        if (InputLocked) { SyncTransform(); return; }   // 换图黑场中：不读输入、不跑物理
         float dt = Time.deltaTime;
         if (dt > 0f) Step(dt);   // 顿帧期间 dt==0，逻辑自动跳过
+        TickRegen(Time.unscaledDeltaTime);
         SyncTransform();
     }
 
@@ -260,21 +441,18 @@ public class PlayerCtrl : MonoBehaviour
     {
         // —— 横向 ——
         // 键盘优先（编辑器调试），没按键时读摇杆。两者共用同一个 h，后面的逻辑完全一致
-        float h = Input.GetAxisRaw("Horizontal");
-        if (Mathf.Abs(h) < 0.15f) h = TouchInput.MoveH;
-        bool jumpReq = Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton0);
-        if (TouchInput.TakeJump()) jumpReq = true;
-        climbInput = Input.GetAxisRaw("Vertical");
-        if (Mathf.Abs(climbInput) < 0.15f) climbInput = TouchInput.MoveV;
+        float h = TouchInput.MoveH;
+        bool jumpReq = TouchInput.TakeJump();
+        climbInput = TouchInput.MoveV;
         int steps = Mathf.Max(1, Mathf.CeilToInt(dt / 0.008f));
         for (int i = 0; i < steps; i++) StepMovement(h, jumpReq && i == 0, dt / steps);
 
         // —— 深度层：一次换一层，带冷却 ——
         laneCooldown -= Time.unscaledDeltaTime;
         int d = 0;
-        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))   d = -1;
-        if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow)) d = +1;
-        float v = Input.GetAxisRaw("Vertical");
+        if (InputHub.Pressed(GameAction.Up)) d = -1;
+        if (InputHub.Pressed(GameAction.Down)) d = +1;
+        float v = TouchInput.MoveV;
         if (d == 0 && Mathf.Abs(v) > 0.6f && laneCooldown <= 0f)
         {
             d = v > 0f ? -1 : 1;
@@ -299,7 +477,7 @@ public class PlayerCtrl : MonoBehaviour
         // —— 自动普攻 ——
         // Boss 优先：Boss 体积大、通常只有一只，误判成本比杂兵高得多
         atkTimer -= dt;
-        if (!IsClimbing && atkTimer <= 0f && (vis == null || !vis.IsOneShot))
+        if ((Terrain == null || attackRequested) && !IsClimbing && atkTimer <= 0f && (vis == null || !vis.IsOneShot))
         {
             var b = FindBossTarget();
             if (b != null)
@@ -325,6 +503,7 @@ public class PlayerCtrl : MonoBehaviour
                 }
             }
         }
+        attackRequested = false;
     }
 
     // 使用原 Map/Physics.img 的像素单位：125px/s、555px/s、2000px/s²。
@@ -358,8 +537,6 @@ public class PlayerCtrl : MonoBehaviour
         moving = Mathf.Abs(h) > 0.15f;
         if (moving) facing = h > 0f ? 1 : -1;
 
-        float ground = GroundAt(nextX, terrainY);
-        bool support = HasSupport(nextX, ground);
         // 原 WZ 的竖直 foothold 是墙；独立悬空平台只在下降时承接角色。
         if (Terrain != null)
             foreach (var wall in Terrain)
@@ -372,10 +549,9 @@ public class PlayerCtrl : MonoBehaviour
             }
         if (grounded)
         {
-            ground = GroundAt(nextX, terrainY);
-            support = HasSupport(nextX, ground);
-            if (support && Mathf.Abs(ground - terrainY) <= 0.6f)
-                terrainY = ground;
+            float gy;
+            if (FollowGround(worldX, terrainY, nextX, out gy))
+                terrainY = gy;
             else
             {
                 grounded = false;
@@ -397,6 +573,24 @@ public class PlayerCtrl : MonoBehaviour
             grounded = true;
         }
         else jumpY = nextY - terrainY;
+
+        // 掉到地图可视范围以下：说明一条 foothold 都没接住（真空缺口，或数据异常）。
+        // 原端会由服务端把角色复位回最近地面；这里做等价兜底，避免一路掉到屏幕外卡死。
+        if (nextY < FallFloor) RecoverFromFall();
+    }
+
+    void RecoverFromFall()
+    {
+        float atX;
+        float y = NearestGround(worldX, out atX);
+        worldX = ClampX(atX);
+        terrainY = y;
+        jumpY = 0f;
+        vy = 0f;
+        grounded = true;
+        climb = null;
+        grabCooldown = 0.3f;
+        Debug.Log("[Player] 掉出地图，复位到 x=" + atX.ToString("F2") + " y=" + y.ToString("F2"));
     }
 
     bool StepClimb(float h, bool jumpReq, float dt)
@@ -404,25 +598,45 @@ public class PlayerCtrl : MonoBehaviour
         float y = terrainY + jumpY;
         if (climb == null && grabCooldown <= 0f && Mathf.Abs(climbInput) > 0.15f && Climbs != null)
         {
+            // 抓取横向距离沿用原端的「站在绳梯正下方」语义（±10px）。
+            // 纵向给 100px 容差：WZ 里绳梯 y2 是图元下端，常常悬在落脚平台上方
+            // （全量统计：88 条差 ≤40px，17 条 40~80px，3 条 80~120px），
+            // 原来用 y < bottom 直接判死，站在梯脚按上根本抓不到。
             float distance = 10f / Art.PPU;
+            float bottomSlack = 100f / Art.PPU;
+            float topSlack = 8f / Art.PPU;
             foreach (var line in Climbs)
             {
                 float dx = Mathf.Abs(worldX - line.x);
-                if (dx > distance || y < line.bottom || y > line.top + 5f / Art.PPU) continue;
-                // 从平台顶端只能向下抓绳；空中按上可抓住绳身。
-                if (grounded && climbInput > 0f && y >= line.top) continue;
+                if (dx > distance) continue;
+                if (y < line.bottom - bottomSlack || y > line.top + topSlack) continue;
+                // 站在平台顶端正上方按上 = 想往上走，不是想爬；只有按上时忽略顶端这条线。
+                if (grounded && climbInput > 0f && y >= line.top - topSlack) continue;
                 distance = dx;
                 climb = line;
             }
-            if (climb != null) { worldX = climb.x; grounded = false; vy = 0f; }
+            if (climb != null)
+            {
+                worldX = climb.x;
+                grounded = false;
+                vy = 0f;
+                // 吸附到绳身上：从地面够到悬空的绳底时，脚底先贴到 y2 再往上爬
+                float cy = terrainY + jumpY;
+                if (cy < climb.bottom) jumpY = climb.bottom - terrainY;
+                else if (cy > climb.top) jumpY = climb.top - terrainY;
+                // 必须用吸附后的高度继续算位移：不然第一帧还在绳底下方，
+                // 下面「nextY < climb.bottom 就脱手」会立刻把刚抓住的绳子放掉。
+                y = terrainY + jumpY;
+            }
         }
         if (climb == null) return false;
-        if (jumpReq && Mathf.Abs(h) > 0.15f)
+        // 在绳上按跳跃 = 脱手（原端就是这样跳离的，不需要同时按方向）
+        if (jumpReq)
         {
             climb = null;
             grabCooldown = 0.25f;
             vy = jumpSpeed;
-            facing = h > 0f ? 1 : -1;
+            if (Mathf.Abs(h) > 0.15f) facing = h > 0f ? 1 : -1;
             return false;
         }
         float nextY = y + climbInput * moveSpeed * dt;
@@ -430,8 +644,9 @@ public class PlayerCtrl : MonoBehaviour
         {
             if (climb.upperExit && climbInput > 0f)
             {
+                // 梯子顶端通常穿出平台十几像素，容差按 30px 取；HasSupport 保证落点真有地面。
                 float top = GroundAt(worldX, climb.top);
-                if (HasSupport(worldX, top) && Mathf.Abs(top-climb.top) <= 12f / Art.PPU)
+                if (HasSupport(worldX, top) && Mathf.Abs(top - climb.top) <= 30f / Art.PPU)
                 {
                     terrainY = top; jumpY = 0f; grounded = true;
                     climb = null; grabCooldown = 0.2f;
@@ -514,13 +729,27 @@ public class PlayerCtrl : MonoBehaviour
             // 普攻全自动。若只打正面，站着不动时背后的怪永远打不着，
             // 而「清完怪才推进」会让关卡彻底卡死（自动化测试实测卡了 50 秒）。
             float dx = e.transform.position.x - worldX;
-            if (Mathf.Abs(dx) > reach) continue;
+            if (!InMeleeBand(FeetPos, e.transform.position, reach)) continue;
 
             float d = Mathf.Abs(dx);
             if (d < bestD) { bestD = d; best = e; }
         }
         return best;
     }
+
+    // 普攻判定框：横向 ±reach，纵向 ±MeleeVertical（以双方脚底为准）。
+    // 原客户端的近战框就是「orig 前方的矩形」，高度远小于一层平台；
+    // 本地没有武器攻击框 WZ 数据，用固定高度近似，并按全地图 foothold 统计校验
+    // （同层台阶/斜坡都 < 1.2u，层与层都远大于它）。
+    public static bool InMeleeBand(Vector2 feet, Vector3 target, float reach)
+    {
+        if (Mathf.Abs(target.x - feet.x) > reach) return false;
+        return Mathf.Abs(target.y - feet.y) <= MeleeVertical;
+    }
+
+    // 键盘 Ctrl / 虚拟攻击键：把自动挥砍的计时器清零，下一次 Step 立刻结算。
+    // 原版普攻是玩家主动挥的，这里保留自动索敌，只把「什么时候挥」交给玩家。
+    public void RequestAttack() { attackRequested = true; }
 
     void Strike(EnemyUnit e)
     {
@@ -587,6 +816,21 @@ public class PlayerCtrl : MonoBehaviour
         rushFacing = facing;
     }
     public void CancelRush() { rushRemaining = 0; }
+
+    // 换地图 / 从传送门落地：直接指定落脚点（地面 y 由调用方按 foothold 求出）。
+    public void PlaceAt(float x, float groundY)
+    {
+        CancelRush();
+        climb = null;
+        grabCooldown = 0f;
+        worldX = ClampX(x);
+        terrainY = groundY;
+        jumpY = 0f;
+        vy = 0f;
+        grounded = true;
+        laneVis = lane;
+        SyncTransform();
+    }
 
     public void ResetCombatState()
     {

@@ -53,6 +53,17 @@ public class CameraRig : MonoBehaviour
         SnapTo(target != null ? target.position.x : x);
     }
 
+    // 原版地图模式：直接给出 VR 换算后的世界坐标边界（单位与 SetStage 相同）
+    public void SetBounds(float minX, float maxX, float minY, float maxY)
+    {
+        useStage = true;
+        stageMinX = Mathf.Min(minX, maxX);
+        stageMaxX = Mathf.Max(minX, maxX);
+        stageMinY = Mathf.Min(minY, maxY);
+        stageMaxY = Mathf.Max(minY, maxY);
+        SnapTo(target != null ? target.position.x : x);
+    }
+
     public void ClearStage()
     {
         useStage = false;

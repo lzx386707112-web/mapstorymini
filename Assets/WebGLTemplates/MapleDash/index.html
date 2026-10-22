@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>{{{ PRODUCT_NAME }}} · 浏览器调试</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #0b0e13; overflow: hidden;
+                 font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+    #wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+    #unity-canvas { background: #0b0e13; display: block; outline: none; }
+
+    #loading { position: absolute; inset: 0; display: flex; flex-direction: column;
+               align-items: center; justify-content: center; gap: 14px; color: #cfe3d8; }
+    #loading .title { font-size: 15px; letter-spacing: .16em; color: #8fb6a1; }
+    #bar { width: 260px; height: 4px; border-radius: 2px; background: #1e2733; overflow: hidden; }
+    #bar > i { display: block; width: 0; height: 100%; background: #67c08b; transition: width .15s; }
+    #msg { font-size: 12px; color: #7d8b98; max-width: 70vw; text-align: center; white-space: pre-wrap; }
+
+    /* 调试面板：只在浏览器里用，不影响游戏内 UI。
+       放右上角：左下角已经交给原版状态栏（LV./名字/HP/MP/EXP），右下角是技能格 */
+    #devbar { position: absolute; right: 10px; top: 8px;
+              display: flex; gap: 6px; align-items: center;
+              padding: 6px 8px; border-radius: 8px; background: rgba(8,12,16,.82);
+              border: 1px solid rgba(120,160,140,.35); color: #cfe3d8; font-size: 12px;
+              box-shadow: 0 2px 10px rgba(0,0,0,.35); z-index: 10; }
+    #devbar .hint { opacity: .75; }
+    #devbar input { width: 84px; background: #0d141b; border: 1px solid #2a3a46; border-radius: 5px;
+                    color: #dfeaf0; padding: 3px 6px; font-size: 12px; font-family: inherit; }
+    #devbar button { background: #1c2b24; border: 1px solid #2f4a3c; border-radius: 5px;
+                     color: #a9d7bd; padding: 3px 8px; font-size: 12px; cursor: pointer; font-family: inherit; }
+    #devbar button:hover { background: #24402f; }
+    #devbar .hint { color: #6d7f8c; }
+    #devbar .cur { color: #67c08b; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="unity-canvas" width={{{ WIDTH }}} height={{{ HEIGHT }}} tabindex="-1"></canvas>
+  </div>
+
+  <div id="loading">
+    <div class="title">枫叶闯关 · 正在加载</div>
+    <div id="bar"><i></i></div>
+    <div id="msg"></div>
+  </div>
+
+  <div id="devbar">
+    <span class="hint">地图</span>
+    <input id="mapid" placeholder="40001" inputmode="numeric">
+    <button id="go">进入</button>
+    <button id="full">全屏</button>
+    <span class="cur" id="now"></span>
+    <span class="hint">WASD/方向键 · 上=进光洞/爬绳</span>
+  </div>
+
+  <script>
+    const canvas = document.querySelector("#unity-canvas");
+    const wrap = document.querySelector("#wrap");
+    const loading = document.querySelector("#loading");
+    const barFill = document.querySelector("#bar > i");
+    const msg = document.querySelector("#msg");
+    const devbar = document.querySelector("#devbar");
+
+    const buildUrl = "Build";
+    const loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+    const config = {
+      dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_THREADS
+      workerUrl: buildUrl + "/{{{ WORKER_FILENAME }}}",
+#endif
+#if USE_WASM
+      codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+#endif
+#if MEMORY_FILENAME
+      memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      showBanner: (text, type) => {
+        console.warn("[Unity " + type + "] " + text);
+        if (type === "error") { msg.textContent = String(text); msg.style.color = "#e08a8a"; }
+      },
+    };
+
+    // 画布按窗口等比缩放，保持 16:9；像素比压到 1，WebGL 在 Retina 上跑 2x 会很吃力
+    config.devicePixelRatio = window.devicePixelRatio > 1 ? 1.5 : 1;
+
+    function fit() {
+      const ar = 16 / 9;
+      const availW = window.innerWidth, availH = window.innerHeight;
+      let w = availW, h = w / ar;
+      if (h > availH) { h = availH; w = h * ar; }
+      canvas.style.width = Math.floor(w) + "px";
+      canvas.style.height = Math.floor(h) + "px";
+    }
+    window.addEventListener("resize", fit);
+    fit();
+
+    // URL 参数：?map=40001&god=1 —— 由 WebBoot.cs 读取，这里只负责展示与跳转
+    const params = new URLSearchParams(location.search);
+    const curMap = params.get("map");
+    document.querySelector("#now").textContent = curMap ? "当前 " + curMap : "";
+    if (curMap) document.querySelector("#mapid").value = curMap;
+
+    document.querySelector("#go").onclick = () => {
+      const id = (document.querySelector("#mapid").value || "").trim();
+      if (!/^\d{1,8}$/.test(id)) { alert("请输入地图 id，例如 1000000 / 40001"); return; }
+      const q = new URLSearchParams();
+      q.set("map", id);
+      if (params.get("god") === "1") q.set("god", "1");
+      location.search = "?" + q.toString();
+    };
+    document.querySelector("#full").onclick = () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    };
+
+    const script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = () => {
+      createUnityInstance(canvas, config, (progress) => {
+        barFill.style.width = (100 * progress).toFixed(0) + "%";
+        msg.textContent = (100 * progress).toFixed(0) + "%";
+      }).then((unityInstance) => {
+        loading.style.display = "none";
+        window.unityInstance = unityInstance;   // F12 里可直接调，方便调试
+        document.querySelector("#full").onclick = () => unityInstance.SetFullscreen(1);
+      }).catch((message) => {
+        barFill.style.background = "#c05a5a";
+        msg.style.color = "#e08a8a";
+        msg.textContent = "启动失败：" + message + "\n（检查 Build/ 目录是否完整，以及是否用 http 服务器打开）";
+        console.error(message);
+      });
+    };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

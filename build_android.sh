@@ -75,12 +75,30 @@ done
 echo "== 2/6 构建（IL2CPP / ARM64，约 2–6 分钟）=="
 cd "$PROJ"
 # 代理会让 Gradle 下载 dl.google.com 时 TLS 握手被中断，这里显式去掉
-env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY \
-    -u all_proxy -u ALL_PROXY \
-    ANDROID_NDK_ROOT="$NDK" ANDROID_NDK_HOME="$NDK" \
-    ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" \
-    "$UNITY" -batchmode -quit -projectPath "$PROJ" \
-    -executeMethod BuildToDevice.BuildIl2cpp -logFile "$LOG" || true
+unity_build() {
+  env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY \
+      -u all_proxy -u ALL_PROXY \
+      ANDROID_NDK_ROOT="$NDK" ANDROID_NDK_HOME="$NDK" \
+      ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" \
+      "$UNITY" -batchmode -quit -projectPath "$PROJ" \
+      -executeMethod BuildToDevice.BuildIl2cpp -logFile "$LOG" || true
+}
+
+unity_build
+
+# 上一轮打过 WebGL 包时活动平台会是 WebGL，此时 BuildToDevice 只切平台就退出了
+# （同进程切平台会让 BuildPlayer 读不到架构），这里补一次切换再构建，不用手工重跑。
+if ! grep -q "结果=Succeeded" "$LOG" && grep -q "活动平台不是 Android" "$LOG"; then
+  echo "   活动平台不是 Android：切平台要单独一个进程，切完自动接着构建…"
+  env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY \
+      -u all_proxy -u ALL_PROXY \
+      ANDROID_NDK_ROOT="$NDK" ANDROID_NDK_HOME="$NDK" \
+      ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK" \
+      "$UNITY" -batchmode -quit -projectPath "$PROJ" \
+      -executeMethod BuildToDevice.SwitchToAndroid -logFile "$LOG.switch" || true
+  grep -E "\[Build\]" "$LOG.switch" | tail -2
+  unity_build
+fi
 
 if ! grep -q "结果=Succeeded" "$LOG"; then
   echo "❌ 构建失败，日志关键行："

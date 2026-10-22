@@ -1,0 +1,71 @@
+{
+ "source": "Map/MapHelper/portal/game/pv",
+ "pv": {
+  "frames": [
+   {
+    "file": "map/field/_portal/pv_0.png",
+    "origin": [
+     43,
+     173
+    ],
+    "delay": 120
+   },
+   {
+    "file": "map/field/_portal/pv_1.png",
+    "origin": [
+     43,
+     173
+    ],
+    "delay": 120
+   },
+   {
+    "file": "map/field/_portal/pv_2.png",
+    "origin": [
+     44,
+     193
+    ],
+    "delay": 120
+   },
+   {
+    "file": "map/field/_portal/pv_3.png",
+    "origin": [
+     43,
+     193
+    ],
+    "delay": 120
+   },
+   {
+    "file": "map/field/_portal/pv_4.png",
+    "origin": [
+     42,
+     209
+    ],
+    "delay": 120
+   },
+   {
+    "file": "map/field/_portal/pv_5.png",
+    "origin": [
+     42,
+     209
+    ],
+    "delay": 120
+   },
+   {
+    "file": "map/field/_portal/pv_6.png",
+    "origin": [
+     41,
+     248
+    ],
+    "delay": 120
+   },
+   {
+    "file": "map/field/_portal/pv_7.png",
+    "origin": [
+     42,
+     246
+    ],
+    "delay": 120
+   }
+  ]
+ }
+}

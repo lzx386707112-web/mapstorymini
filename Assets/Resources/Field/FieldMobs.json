@@ -1,0 +1,912 @@
+{
+ "version": 1,
+ "mobs": [
+  {
+   "id": 100100,
+   "name": "蜗牛",
+   "stats": {
+    "level": 1,
+    "maxHP": 8,
+    "maxMP": 0,
+    "PADamage": 12,
+    "PDDamage": 0,
+    "MADamage": 0,
+    "MDDamage": 0,
+    "acc": 20,
+    "eva": 0,
+    "speed": -65,
+    "exp": 3,
+    "pushed": 1,
+    "undead": 0,
+    "bodyAttack": 1,
+    "mobType": 0,
+    "fs": 10.0,
+    "summonType": 1
+   },
+   "artKey": "100100",
+   "art": {
+    "name": "100100",
+    "size": [
+     48,
+     37
+    ],
+    "pivot": [
+     24,
+     35
+    ],
+    "scale": 1.0,
+    "boss": false,
+    "anims": {
+     "stand": {
+      "frames": [
+       "mobs/100100/stand_0.png"
+      ],
+      "delays": [
+       180
+      ]
+     },
+     "move": {
+      "frames": [
+       "mobs/100100/move_0.png",
+       "mobs/100100/move_1.png",
+       "mobs/100100/move_2.png",
+       "mobs/100100/move_3.png",
+       "mobs/100100/move_4.png"
+      ],
+      "delays": [
+       180,
+       180,
+       180,
+       180,
+       180
+      ]
+     },
+     "hit1": {
+      "frames": [
+       "mobs/100100/hit1_0.png"
+      ],
+      "delays": [
+       600
+      ]
+     },
+     "die1": {
+      "frames": [
+       "mobs/100100/die1_0.png",
+       "mobs/100100/die1_1.png",
+       "mobs/100100/die1_2.png",
+       "mobs/100100/die1_3.png",
+       "mobs/100100/die1_4.png",
+       "mobs/100100/die1_5.png",
+       "mobs/100100/die1_6.png",
+       "mobs/100100/die1_7.png",
+       "mobs/100100/die1_8.png"
+      ],
+      "delays": [
+       120,
+       120,
+       120,
+       120,
+       120,
+       120,
+       120,
+       120,
+       300
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 100101,
+   "name": "蓝蜗牛",
+   "stats": {
+    "level": 2,
+    "maxHP": 15,
+    "maxMP": 15,
+    "PADamage": 17,
+    "PDDamage": 0,
+    "MADamage": 0,
+    "MDDamage": 0,
+    "acc": 20,
+    "eva": 0,
+    "speed": -50,
+    "exp": 4,
+    "pushed": 1,
+    "undead": 0,
+    "bodyAttack": 1,
+    "mobType": 0,
+    "fs": 10.0,
+    "summonType": 1
+   },
+   "artKey": "100101",
+   "art": {
+    "name": "100101",
+    "size": [
+     62,
+     43
+    ],
+    "pivot": [
+     32,
+     41
+    ],
+    "scale": 1.0,
+    "boss": false,
+    "anims": {
+     "stand": {
+      "frames": [
+       "mobs/100101/stand_0.png"
+      ],
+      "delays": [
+       180
+      ]
+     },
+     "move": {
+      "frames": [
+       "mobs/100101/move_0.png",
+       "mobs/100101/move_1.png",
+       "mobs/100101/move_2.png",
+       "mobs/100101/move_3.png"
+      ],
+      "delays": [
+       120,
+       120,
+       120,
+       120
+      ]
+     },
+     "hit1": {
+      "frames": [
+       "mobs/100101/hit1_0.png"
+      ],
+      "delays": [
+       600
+      ]
+     },
+     "die1": {
+      "frames": [
+       "mobs/100101/die1_0.png",
+       "mobs/100101/die1_1.png",
+       "mobs/100101/die1_2.png"
+      ],
+      "delays": [
+       180,
+       180,
+       300
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 120100,
+   "name": "蘑菇仔",
+   "stats": {
+    "level": 2,
+    "maxHP": 20,
+    "maxMP": 15,
+    "PADamage": 17,
+    "PDDamage": 0,
+    "MADamage": 0,
+    "MDDamage": 0,
+    "acc": 30,
+    "eva": 0,
+    "speed": -30,
+    "exp": 5,
+    "pushed": 1,
+    "undead": 0,
+    "bodyAttack": 1,
+    "mobType": 4,
+    "fs": 10.0,
+    "summonType": 1
+   },
+   "artKey": "120100",
+   "art": {
+    "name": "120100",
+    "size": [
+     80,
+     41
+    ],
+    "pivot": [
+     25,
+     39
+    ],
+    "scale": 1.0,
+    "boss": false,
+    "anims": {
+     "stand": {
+      "frames": [
+       "mobs/120100/stand_0.png",
+       "mobs/120100/stand_1.png",
+       "mobs/120100/stand_2.png"
+      ],
+      "delays": [
+       180,
+       100,
+       180
+      ]
+     },
+     "move": {
+      "frames": [
+       "mobs/120100/move_0.png",
+       "mobs/120100/move_1.png",
+       "mobs/120100/move_2.png",
+       "mobs/120100/move_3.png"
+      ],
+      "delays": [
+       180,
+       180,
+       180,
+       180
+      ]
+     },
+     "hit1": {
+      "frames": [
+       "mobs/120100/hit1_0.png"
+      ],
+      "delays": [
+       600
+      ]
+     },
+     "die1": {
+      "frames": [
+       "mobs/120100/die1_0.png",
+       "mobs/120100/die1_1.png",
+       "mobs/120100/die1_2.png",
+       "mobs/120100/die1_3.png"
+      ],
+      "delays": [
+       120,
+       120,
+       120,
+       300
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 130100,
+   "name": "木妖",
+   "stats": {
+    "level": 4,
+    "maxHP": 40,
+    "maxMP": 30,
+    "PADamage": 30,
+    "PDDamage": 0,
+    "MADamage": 0,
+    "MDDamage": 10,
+    "acc": 30,
+    "eva": 0,
+    "speed": -70,
+    "exp": 8,
+    "pushed": 1,
+    "undead": 0,
+    "bodyAttack": 1,
+    "mobType": 4,
+    "fs": 10.0,
+    "summonType": 1,
+    "elemAttr": "F3"
+   },
+   "artKey": "130100",
+   "art": {
+    "name": "130100",
+    "size": [
+     73,
+     62
+    ],
+    "pivot": [
+     37,
+     60
+    ],
+    "scale": 1.0,
+    "boss": false,
+    "anims": {
+     "stand": {
+      "frames": [
+       "mobs/130100/stand_0.png"
+      ],
+      "delays": [
+       180
+      ]
+     },
+     "move": {
+      "frames": [
+       "mobs/130100/move_0.png",
+       "mobs/130100/move_1.png",
+       "mobs/130100/move_2.png",
+       "mobs/130100/move_3.png"
+      ],
+      "delays": [
+       180,
+       180,
+       180,
+       180
+      ]
+     },
+     "hit1": {
+      "frames": [
+       "mobs/130100/hit1_0.png"
+      ],
+      "delays": [
+       600
+      ]
+     },
+     "die1": {
+      "frames": [
+       "mobs/130100/die1_0.png",
+       "mobs/130100/die1_1.png",
+       "mobs/130100/die1_2.png"
+      ],
+      "delays": [
+       180,
+       180,
+       300
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 130101,
+   "name": "红蜗牛",
+   "stats": {
+    "level": 4,
+    "maxHP": 40,
+    "maxMP": 30,
+    "PADamage": 27,
+    "PDDamage": 3,
+    "MADamage": 0,
+    "MDDamage": 10,
+    "acc": 35,
+    "eva": 0,
+    "speed": -50,
+    "exp": 8,
+    "pushed": 1,
+    "undead": 0,
+    "bodyAttack": 1,
+    "mobType": 0,
+    "fs": 10.0,
+    "summonType": 1
+   },
+   "artKey": "130101",
+   "art": {
+    "name": "130101",
+    "size": [
+     62,
+     43
+    ],
+    "pivot": [
+     32,
+     41
+    ],
+    "scale": 1.0,
+    "boss": false,
+    "anims": {
+     "stand": {
+      "frames": [
+       "mobs/130101/stand_0.png"
+      ],
+      "delays": [
+       180
+      ]
+     },
+     "move": {
+      "frames": [
+       "mobs/130101/move_0.png",
+       "mobs/130101/move_1.png",
+       "mobs/130101/move_2.png",
+       "mobs/130101/move_3.png"
+      ],
+      "delays": [
+       120,
+       120,
+       120,
+       120
+      ]
+     },
+     "hit1": {
+      "frames": [
+       "mobs/130101/hit1_0.png"
+      ],
+      "delays": [
+       600
+      ]
+     },
+     "die1": {
+      "frames": [
+       "mobs/130101/die1_0.png",
+       "mobs/130101/die1_1.png",
+       "mobs/130101/die1_2.png"
+      ],
+      "delays": [
+       180,
+       180,
+       300
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 210100,
+   "name": "绿水灵",
+   "stats": {
+    "level": 6,
+    "maxHP": 50,
+    "maxMP": 35,
+    "PADamage": 32,
+    "PDDamage": 5,
+    "MADamage": 0,
+    "MDDamage": 10,
+    "acc": 35,
+    "eva": 1,
+    "speed": -20,
+    "exp": 10,
+    "pushed": 1,
+    "undead": 0,
+    "bodyAttack": 1,
+    "mobType": 5,
+    "fs": 10.0,
+    "summonType": 1,
+    "elemAttr": "L3"
+   },
+   "artKey": "210100",
+   "art": {
+    "name": "210100",
+    "size": [
+     76,
+     98
+    ],
+    "pivot": [
+     33,
+     96
+    ],
+    "scale": 1.0,
+    "boss": false,
+    "anims": {
+     "stand": {
+      "frames": [
+       "mobs/210100/stand_0.png",
+       "mobs/210100/stand_1.png",
+       "mobs/210100/stand_2.png"
+      ],
+      "delays": [
+       200,
+       300,
+       250
+      ]
+     },
+     "move": {
+      "frames": [
+       "mobs/210100/move_0.png",
+       "mobs/210100/move_1.png",
+       "mobs/210100/move_2.png",
+       "mobs/210100/move_3.png",
+       "mobs/210100/move_4.png",
+       "mobs/210100/move_5.png",
+       "mobs/210100/move_6.png"
+      ],
+      "delays": [
+       200,
+       50,
+       150,
+       150,
+       100,
+       100,
+       300
+      ]
+     },
+     "hit1": {
+      "frames": [
+       "mobs/210100/hit1_0.png"
+      ],
+      "delays": [
+       600
+      ]
+     },
+     "die1": {
+      "frames": [
+       "mobs/210100/die1_0.png",
+       "mobs/210100/die1_1.png",
+       "mobs/210100/die1_2.png",
+       "mobs/210100/die1_3.png"
+      ],
+      "delays": [
+       180,
+       180,
+       180,
+       300
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 1210102,
+   "name": "花蘑菇",
+   "stats": {
+    "level": 8,
+    "maxHP": 80,
+    "maxMP": 45,
+    "PADamage": 42,
+    "PDDamage": 0,
+    "MADamage": 0,
+    "MDDamage": 10,
+    "acc": 42,
+    "eva": 1,
+    "speed": 0,
+    "exp": 15,
+    "pushed": 1,
+    "undead": 0,
+    "bodyAttack": 1,
+    "mobType": 4,
+    "fs": 10.0,
+    "summonType": 1
+   },
+   "artKey": "1210102",
+   "art": {
+    "name": "1210102",
+    "size": [
+     74,
+     71
+    ],
+    "pivot": [
+     36,
+     69
+    ],
+    "scale": 1.0,
+    "boss": false,
+    "anims": {
+     "stand": {
+      "frames": [
+       "mobs/1210102/stand_0.png",
+       "mobs/1210102/stand_1.png"
+      ],
+      "delays": [
+       180,
+       180
+      ]
+     },
+     "move": {
+      "frames": [
+       "mobs/1210102/move_0.png",
+       "mobs/1210102/move_1.png",
+       "mobs/1210102/move_2.png"
+      ],
+      "delays": [
+       180,
+       120,
+       180
+      ]
+     },
+     "hit1": {
+      "frames": [
+       "mobs/1210102/hit1_0.png"
+      ],
+      "delays": [
+       600
+      ]
+     },
+     "die1": {
+      "frames": [
+       "mobs/1210102/die1_0.png",
+       "mobs/1210102/die1_1.png",
+       "mobs/1210102/die1_2.png"
+      ],
+      "delays": [
+       180,
+       180,
+       300
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 9300018,
+   "name": "特殊小石球",
+   "stats": {
+    "level": 1,
+    "maxHP": 8,
+    "maxMP": 15,
+    "PADamage": 20,
+    "PDDamage": 0,
+    "MADamage": 0,
+    "MDDamage": 0,
+    "acc": 30,
+    "eva": 0,
+    "speed": -60,
+    "exp": 1,
+    "pushed": 1,
+    "undead": 0,
+    "bodyAttack": 1,
+    "noFlip": 1,
+    "notAttack": 1,
+    "mobType": 8,
+    "fs": 10.0,
+    "summonType": 1
+   },
+   "artKey": "9300018",
+   "art": {
+    "name": "9300018",
+    "size": [
+     60,
+     86
+    ],
+    "pivot": [
+     31,
+     70
+    ],
+    "scale": 1.0,
+    "boss": false,
+    "anims": {
+     "move": {
+      "frames": [
+       "mobs/9300018/move_0.png",
+       "mobs/9300018/move_1.png",
+       "mobs/9300018/move_2.png"
+      ],
+      "delays": [
+       120,
+       120,
+       120
+      ]
+     },
+     "hit1": {
+      "frames": [
+       "mobs/9300018/hit1_0.png"
+      ],
+      "delays": [
+       600
+      ]
+     },
+     "die1": {
+      "frames": [
+       "mobs/9300018/die1_0.png",
+       "mobs/9300018/die1_1.png",
+       "mobs/9300018/die1_2.png",
+       "mobs/9300018/die1_3.png",
+       "mobs/9300018/die1_4.png"
+      ],
+      "delays": [
+       120,
+       120,
+       120,
+       120,
+       300
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 9409000,
+   "name": "小白雪鬼",
+   "stats": {
+    "level": 1,
+    "maxHP": 8,
+    "maxMP": 15,
+    "PADamage": 20,
+    "PDDamage": 0,
+    "MADamage": 0,
+    "MDDamage": 0,
+    "acc": 30,
+    "eva": 0,
+    "speed": -60,
+    "exp": 1,
+    "pushed": 1,
+    "undead": 0,
+    "bodyAttack": 1,
+    "noFlip": 1,
+    "notAttack": 1,
+    "fs": 10.0,
+    "summonType": 1
+   },
+   "artKey": "9409000",
+   "art": {
+    "name": "9409000",
+    "size": [
+     55,
+     93
+    ],
+    "pivot": [
+     24,
+     88
+    ],
+    "scale": 1.0,
+    "boss": false,
+    "anims": {
+     "stand": {
+      "frames": [
+       "mobs/9409000/stand_0.png",
+       "mobs/9409000/stand_1.png",
+       "mobs/9409000/stand_2.png",
+       "mobs/9409000/stand_3.png",
+       "mobs/9409000/stand_4.png",
+       "mobs/9409000/stand_5.png",
+       "mobs/9409000/stand_6.png",
+       "mobs/9409000/stand_7.png"
+      ],
+      "delays": [
+       150,
+       150,
+       150,
+       150,
+       150,
+       150,
+       150,
+       150
+      ]
+     },
+     "move": {
+      "frames": [
+       "mobs/9409000/move_0.png",
+       "mobs/9409000/move_1.png",
+       "mobs/9409000/move_2.png",
+       "mobs/9409000/move_3.png"
+      ],
+      "delays": [
+       150,
+       150,
+       150,
+       150
+      ]
+     },
+     "hit1": {
+      "frames": [
+       "mobs/9409000/hit1_0.png"
+      ],
+      "delays": [
+       600
+      ]
+     },
+     "die1": {
+      "frames": [
+       "mobs/9409000/die1_0.png",
+       "mobs/9409000/die1_1.png",
+       "mobs/9409000/die1_2.png",
+       "mobs/9409000/die1_3.png"
+      ],
+      "delays": [
+       150,
+       150,
+       150,
+       300
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 9409001,
+   "name": "打鼓兔子",
+   "stats": {
+    "level": 1,
+    "maxHP": 8,
+    "maxMP": 15,
+    "PADamage": 20,
+    "PDDamage": 0,
+    "MADamage": 0,
+    "MDDamage": 0,
+    "acc": 30,
+    "eva": 0,
+    "speed": -60,
+    "exp": 1,
+    "pushed": 1,
+    "undead": 0,
+    "bodyAttack": 1,
+    "noFlip": 1,
+    "notAttack": 1,
+    "fs": 10.0,
+    "summonType": 1
+   },
+   "artKey": "9409001",
+   "art": {
+    "name": "9409001",
+    "size": [
+     53,
+     110
+    ],
+    "pivot": [
+     27,
+     104
+    ],
+    "scale": 1.0,
+    "boss": false,
+    "anims": {
+     "stand": {
+      "frames": [
+       "mobs/9409001/stand_0.png",
+       "mobs/9409001/stand_1.png",
+       "mobs/9409001/stand_2.png",
+       "mobs/9409001/stand_3.png",
+       "mobs/9409001/stand_4.png",
+       "mobs/9409001/stand_5.png",
+       "mobs/9409001/stand_6.png"
+      ],
+      "delays": [
+       130,
+       130,
+       130,
+       130,
+       130,
+       130,
+       130
+      ]
+     },
+     "move": {
+      "frames": [
+       "mobs/9409001/move_0.png",
+       "mobs/9409001/move_1.png",
+       "mobs/9409001/move_2.png",
+       "mobs/9409001/move_3.png",
+       "mobs/9409001/move_4.png",
+       "mobs/9409001/move_5.png",
+       "mobs/9409001/move_6.png"
+      ],
+      "delays": [
+       130,
+       130,
+       130,
+       130,
+       130,
+       130,
+       130
+      ]
+     },
+     "hit1": {
+      "frames": [
+       "mobs/9409001/hit1_0.png"
+      ],
+      "delays": [
+       600
+      ]
+     },
+     "die1": {
+      "frames": [
+       "mobs/9409001/die1_0.png",
+       "mobs/9409001/die1_1.png",
+       "mobs/9409001/die1_2.png",
+       "mobs/9409001/die1_3.png",
+       "mobs/9409001/die1_4.png",
+       "mobs/9409001/die1_5.png"
+      ],
+      "delays": [
+       130,
+       130,
+       130,
+       130,
+       130,
+       130
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": 9500102,
+   "name": "花蘑菇",
+   "stats": {
+    "level": 8,
+    "maxHP": 80,
+    "maxMP": 45,
+    "PADamage": 52,
+    "PDDamage": 0,
+    "MADamage": 0,
+    "MDDamage": 10,
+    "acc": 42,
+    "eva": 1,
+    "speed": 0,
+    "exp": 15,
+    "pushed": 1,
+    "undead": 0,
+    "link": "1210102",
+    "bodyAttack": 1,
+    "fs": 10.0,
+    "summonType": 1
+   },
+   "artKey": "1210102",
+   "art": null
+  }
+ ]
+}

@@ -20,6 +20,26 @@ public static class UiKit
         Scale = Mathf.Clamp(Screen.height / DesignH, 0.5f, 4f);
         W = Screen.width / Scale;
         H = Screen.height / Scale;
+        LogOnce();
+    }
+
+    // 真机上「按 Screen.height 算虚拟高」偶尔会对不上实际可见区域
+    // （厂商 ROM 报的分辨率比屏幕大），表现是底部栏/大按钮被屏幕下缘切掉。
+    // 这里把真实数值打一次日志，方便对着 adb logcat 核对。
+    static bool logged;
+    static void LogOnce()
+    {
+        if (logged) return;
+        logged = true;
+        var sa = Screen.safeArea;
+        Debug.Log("[Ui] screen=" + Screen.width + "x" + Screen.height +
+                  " dpi=" + Screen.dpi +
+                  " scale=" + Scale.ToString("0.00") +
+                  " virtual=" + W.ToString("0") + "x" + H.ToString("0") +
+                  " safe=" + sa.x.ToString("0") + "," + sa.y.ToString("0") + " " +
+                  sa.width.ToString("0") + "x" + sa.height.ToString("0") +
+                  " insets(l/r/t/b)=" + sa.x.ToString("0") + "/" + (Screen.width - sa.xMax).ToString("0") +
+                  "/" + (Screen.height - sa.yMax).ToString("0") + "/" + sa.y.ToString("0"));
     }
 
     public static void Begin()
@@ -32,10 +52,23 @@ public static class UiKit
         {
             _fontTried = true;
             _font = Resources.Load<Font>("Fonts/ui");
-            // 注意：这里刻意不写 GUI.skin.font。
-            // 安卓 IL2CPP 下 GUI.skin 在首帧可能为 null，赋值会把整个 OnGUI 打断。
-            // 字体在需要的地方通过 GUIStyle.font 显式指定。
         }
+        ApplyFont();
+    }
+
+    public static Font Font => _font;
+
+    // GUIStyle 不指定 font 时用的是 GUI.skin.font，而内置字体没有中文字形：
+    // 于是英文/数字正常、中文整段不显示（技能格键帽能看见、按钮文字看不见就是这么来的）。
+    // 安卓 IL2CPP 首帧 GUI.skin 可能是 null，所以必须判空并兜住异常。
+    static void ApplyFont()
+    {
+        if (_font == null) return;
+        try
+        {
+            if (GUI.skin != null && GUI.skin.font != _font) GUI.skin.font = _font;
+        }
+        catch { /* skin 还没准备好时忽略，下一帧会重试 */ }
     }
 
     // 触摸/鼠标位置转成虚拟坐标（GUI 原点在左上）

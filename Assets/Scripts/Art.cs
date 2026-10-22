@@ -8,7 +8,7 @@ using UnityEngine;
 // 这里统一存成 .png.bytes（Unity 当二进制资源），运行时 Texture2D.LoadImage
 // 自己建 Sprite —— 轴心、PPU 全部来自 manifest.json，跨平台一致。
 //
-// manifest 结构见 art/manifest.json：chars / mobs / tiles / backs。
+// manifest 结构见 art/manifest.json：chars / mobs / stages / damage；skills仅保留导出用ID元数据。
 public static class Art
 {
     public const float PPU = 40f;          // 1 世界单位 = 40px（与 Px.ToUnit 一致）
@@ -28,7 +28,6 @@ public static class Art
     // 技能一个 key 下有多个部件（cast / ball / hit / tile ...），每个部件的画布和锚点都不同，
     // 所以轴心按「帧路径」记录，而不是按整套技能一个 pivot。
     static readonly Dictionary<string, Vector2> framePivot = new Dictionary<string, Vector2>();
-    static Dictionary<string, object> tiles, backs;
 
     // —— 关卡背景（真实地图切片） ——
     //
@@ -303,9 +302,6 @@ public static class Art
 
         ReadSheets(root, "chars");
         ReadSheets(root, "mobs");
-        ReadSheets(root, "skills");        // 技能特效帧（结构与角色一致，只是动作固定叫 cast）
-        tiles = root.ContainsKey("tiles") ? root["tiles"] as Dictionary<string, object> : null;
-        backs = root.ContainsKey("backs") ? root["backs"] as Dictionary<string, object> : null;
         ReadStages(root);
         ReadDamage(root);
 
@@ -351,6 +347,16 @@ public static class Art
 
     static float ToF(object o) => o == null ? 0f : float.Parse(o.ToString(), System.Globalization.CultureInfo.InvariantCulture);
 
+    // Resources 里的贴图统一存成 "xxx.bytes"，但调用方传进来的 rel 可能是
+    // "xxx.png"（manifest 里的原始文件名）也可能是 "xxx.bytes"。
+    // 以前写死 rel.Length-4，只对 4 字符扩展名成立；".bytes" 会残留 ".b" 而加载不到。
+    static string StripExtension(string rel)
+    {
+        int dot = rel.LastIndexOf('.');
+        int slash = rel.LastIndexOf('/');
+        return dot > slash + 1 ? rel.Substring(0, dot) : rel;
+    }
+
     // —— 单帧 ——
     public static Sprite Frame(string rel)
     {
@@ -362,7 +368,7 @@ public static class Art
         Vector2 pivotPx = Vector2.zero;
         Sheet sheet;
         if (sheets.TryGetValue(sheetKey, out sheet)) pivotPx = sheet.pivot;
-        // 技能部件帧（skills/<key>/<part>/f000.png）用的是部件自己的轴心
+        // 逐帧显式记录的轴心优先于整套动画默认值
         Vector2 own;
         if (framePivot.TryGetValue(rel, out own)) pivotPx = own;
 
@@ -384,7 +390,7 @@ public static class Art
         if (cache.TryGetValue(key, out sp) && sp != null) return sp;
 
         // 贴图存成 "xxx.bytes"（不带 .png），路径里也就不能带扩展名
-        string path = "Art/" + rel.Substring(0, rel.Length - 4);
+        string path = "Art/" + StripExtension(rel);
         var ta = Resources.Load<TextAsset>(path);
         if (ta == null) return null;
 
@@ -508,7 +514,7 @@ public static class Art
         Texture2D tex;
         if (texCache.TryGetValue(rel, out tex) && tex != null) return tex;
 
-        string path = "Art/" + rel.Substring(0, rel.Length - 4);
+        string path = "Art/" + StripExtension(rel);
         var ta = Resources.Load<TextAsset>(path);
         if (ta == null) return null;
         tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
@@ -517,47 +523,6 @@ public static class Art
         tex.wrapMode = TextureWrapMode.Clamp;
         texCache[rel] = tex;
         return tex;
-    }
-
-    // 技能图标：约定路径 skills/<key>/icon.png（由 tools/wz_skill.py 生成）
-    public static Texture2D SkillIcon(string skillKey)
-    {
-        Ensure();
-        if (string.IsNullOrEmpty(skillKey)) return null;
-        return Tex("skills/" + skillKey + "/icon.png");
-    }
-
-    // —— 地形 / 背景 ——
-    public static List<Dictionary<string, object>> BackLayers(string set)
-    {
-        Ensure();
-        var outList = new List<Dictionary<string, object>>();
-        if (backs == null || !backs.ContainsKey(set)) return outList;
-        var arr = backs[set] as List<object>;
-        if (arr == null) return outList;
-        foreach (var o in arr)
-        {
-            var d = o as Dictionary<string, object>;
-            if (d != null) outList.Add(d);
-        }
-        return outList;
-    }
-
-    public static List<Dictionary<string, object>> TileGroup(string set, string group)
-    {
-        Ensure();
-        var outList = new List<Dictionary<string, object>>();
-        if (tiles == null || !tiles.ContainsKey(set)) return outList;
-        var setDict = tiles[set] as Dictionary<string, object>;
-        if (setDict == null || !setDict.ContainsKey(group)) return outList;
-        var arr = setDict[group] as List<object>;
-        if (arr == null) return outList;
-        foreach (var o in arr)
-        {
-            var d = o as Dictionary<string, object>;
-            if (d != null) outList.Add(d);
-        }
-        return outList;
     }
 
     public static string Str(Dictionary<string, object> d, string key, string def = "")

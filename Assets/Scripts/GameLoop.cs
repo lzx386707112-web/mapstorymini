@@ -10,6 +10,7 @@ public class GameLoop : MonoBehaviour
     public PlayerCtrl player;
     public CameraRig camRig;
     public StageDirector stage;          // 非空 = 关卡模式（数据驱动）；空 = 无限刷怪模式
+    public FieldDirector field;          // 非空 = 原版地图模式（彩虹岛全部地图）
     GameObject hudGo;
 
     public int   killCount;
@@ -48,7 +49,7 @@ public class GameLoop : MonoBehaviour
         go.AddComponent<HitFeelRunner>();
         go.AddComponent<GameLoop>();
         go.AddComponent<Lobby>();        // 大厅（装扮 / 角色 / 武器）
-        go.AddComponent<TouchPad>();     // 手机端虚拟摇杆 + 跳跃键；编辑器里也能用鼠标拖
+        go.AddComponent<InputBridge>();  // 键盘/虚拟键 → 游戏意图（原版是纯键盘操作）
     }
 
     void Awake()
@@ -88,6 +89,30 @@ public class GameLoop : MonoBehaviour
         deaths.Clear();
         BuildScene();
 
+        // 原版地图模式优先：只要 Field 数据存在，就不再进章节关卡。
+        FieldCatalog.Ensure();
+        if (FieldCatalog.Ready)
+        {
+            field = gameObject.AddComponent<FieldDirector>();
+            int startMap = Profile.LastMapId;
+            // 调试/自动化：临时指定进入的地图，只影响本次运行
+            if (PlayerPrefs.HasKey("debug_field_map"))
+            {
+                startMap = PlayerPrefs.GetInt("debug_field_map");
+                PlayerPrefs.DeleteKey("debug_field_map");
+            }
+            if (!FieldCatalog.Maps.ContainsKey(startMap)) startMap = 1000000;
+            field.Begin(startMap);
+            Debug.Log("[GameLoop] 原版地图模式：" + FieldCatalog.Maps.Count + " 张彩虹岛地图");
+            if (PlayerPrefs.GetInt("debug_god", 0) == 1)
+            {
+                PlayerPrefs.DeleteKey("debug_god");
+                if (player != null) { player.hpMax = 99999f; player.hp = 99999f; }
+                Debug.Log("[GameLoop] 调试无敌已开启");
+            }
+            return;
+        }
+
         // 有关卡数据就走数据驱动；没有则退回无限刷怪（保证项目任何状态下都能按 Play）
         var ch = StageChapter.Load("Stage/chapter1");
         if (ch != null && ch.levels.Count > 0)
@@ -122,6 +147,7 @@ public class GameLoop : MonoBehaviour
     {
         state = GameState.Lobby;
         gameOver = false;
+        if (field != null) { field.Shutdown(); Destroy(field); field = null; }
         if (stage != null) { stage.StopSession(); Destroy(stage); stage = null; }
         ClearBattleEntities();
         if (player != null)
@@ -148,6 +174,7 @@ public class GameLoop : MonoBehaviour
         foreach (var b in FindObjectsOfType<BossUnit>())
             if (b != null) { b.gameObject.SetActive(false); Destroy(b.gameObject); }
         MesoDrop.Clear();
+        GroundItem.Clear();
         foreach (var fx in FindObjectsOfType<SkillFx>())
             if (fx != null) { fx.gameObject.SetActive(false); Destroy(fx.gameObject); }
         HitFeel.Reset();
@@ -304,10 +331,12 @@ public class GameLoop : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.Z)) MesoDrop.TryPickupNearest();
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
         elapsed += dt;
+
+        // 原版地图模式：刷怪/换图/掉落由 FieldDirector 按原端规则驱动
+        if (field != null) return;
 
         // 关卡模式下刷怪由 StageDirector 按 segments 控制，这里不能再随机刷
         if (stage != null) return;
@@ -417,6 +446,7 @@ public class GameLoop : MonoBehaviour
     {
         if (state != GameState.Playing || gameOver || e == null || !e.dead || !deaths.TrySettle(e.GetInstanceID())) return;
         killCount++;
+        if (field != null) { field.OnEnemyKilled(e); return; }
         BattleRewards.Drop(e.artKey, e.transform.position);
     }
 
@@ -446,6 +476,19 @@ public class GameLoop : MonoBehaviour
 
         ClearBattleEntities();
         deaths.Clear();
+
+        if (field != null)
+        {
+            // 原版地图：死亡后回到本图 returnMap 的出生传送门（和原服 changeMap 一致）
+            if (player != null)
+            {
+                player.ResetCombatState();
+                player.hp = player.hpMax;
+                player.invulnUntil = Time.unscaledTime + 1f;
+            }
+            field.RespawnPlayer();
+            return;
+        }
 
         if (player != null)
         {

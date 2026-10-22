@@ -167,22 +167,18 @@ public static class MovementChecks
         }
     }
 
+    // 触屏摇杆已随「放弃触屏点击」移除，这里改成验证 键盘/虚拟键 → 意图层 的通路
     static void CheckTouch()
     {
         UiKit.RefreshMetrics();
-        var go=new GameObject("TouchCheck"); var pad=go.AddComponent<TouchPad>();
-        Action<string,object[]> call=(name,args)=>typeof(TouchPad).GetMethod(name,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(pad,args);
-        var point=new Vector2(100,UiKit.H-150);
-        call("Press",new object[]{point,7});
-        call("Move",new object[]{point+Vector2.right*70,7});
-        Require(TouchInput.MoveH>0.9f,"stick did not move right");
-        call("Release",new object[]{8});
-        Require(TouchInput.MoveH>0.9f,"second finger released the movement stick");
-        call("Move",new object[]{point+Vector2.up*70,7});
-        Require(TouchInput.MoveV < -0.6f,"stick did not expose continuous vertical input");
-        Require(TouchInput.TakeLaneStep()==0,"vertical drag changed depth on original 2D map");
-        call("Release",new object[]{7});
-        Require(TouchInput.MoveH==0 && TouchInput.MoveV==0,"movement stuck after release");
-        UnityEngine.Object.DestroyImmediate(go);
-    }
+        TouchInput.Reset();
+        var right = KeyMap.Of(GameAction.Right);
+        Require(right != KeyCode.None, "移动右键位为空");
+        InputHub.SetVirtual(right, true);
+        Require(InputHub.Held(GameAction.Right), "虚拟右键按下后 Held 仍为 false");
+        Require(InputHub.AxisX > 0.5f, "虚拟右键没有产生前进输入");
+        InputHub.SetVirtual(right, false);
+        Require(InputHub.AxisX == 0f, "松开虚拟右键后仍有移动输入");
+        TouchInput.Reset();
+        }
 }

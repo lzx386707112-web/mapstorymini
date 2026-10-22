@@ -5985,2429 +5985,643 @@
      ]
     }
    }
-  }
- },
- "tiles": {
-  "grassySoil": {
-   "bsc": [
-    {
-     "file": "map/tiles/grassySoil/bsc_0.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/grassySoil/bsc_1.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/grassySoil/bsc_2.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/grassySoil/bsc_3.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/grassySoil/bsc_4.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    }
-   ],
-   "enH0": [
-    {
-     "file": "map/tiles/grassySoil/enH0_0.png",
-     "size": [
-      90,
-      38
-     ],
-     "origin": [
-      0,
-      38
-     ],
-     "z": -3
-    },
-    {
-     "file": "map/tiles/grassySoil/enH0_1.png",
-     "size": [
-      90,
-      39
-     ],
-     "origin": [
-      0,
-      39
-     ],
-     "z": -3
-    }
-   ],
-   "enH1": [
-    {
-     "file": "map/tiles/grassySoil/enH1_0.png",
-     "size": [
-      90,
-      25
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
-    },
-    {
-     "file": "map/tiles/grassySoil/enH1_1.png",
-     "size": [
-      90,
-      26
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
-    }
-   ],
-   "enV0": [
-    {
-     "file": "map/tiles/grassySoil/enV0_0.png",
-     "size": [
-      32,
-      60
-     ],
-     "origin": [
-      32,
-      0
-     ],
-     "z": -2
-    },
-    {
-     "file": "map/tiles/grassySoil/enV0_1.png",
-     "size": [
-      29,
-      60
-     ],
-     "origin": [
-      29,
-      0
-     ],
-     "z": -2
-    }
-   ],
-   "enV1": [
-    {
-     "file": "map/tiles/grassySoil/enV1_0.png",
-     "size": [
-      29,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -2
-    },
-    {
-     "file": "map/tiles/grassySoil/enV1_1.png",
-     "size": [
-      29,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -2
-    }
-   ],
-   "edU": [
-    {
-     "file": "map/tiles/grassySoil/edU_0.png",
-     "size": [
-      54,
-      37
-     ],
-     "origin": [
-      29,
-      37
-     ],
-     "z": -4
-    },
-    {
-     "file": "map/tiles/grassySoil/edU_1.png",
-     "size": [
-      55,
-      38
-     ],
-     "origin": [
-      29,
-      37
-     ],
-     "z": -4
-    }
-   ],
-   "edD": [
-    {
-     "file": "map/tiles/grassySoil/edD_0.png",
-     "size": [
-      48,
-      17
-     ],
-     "origin": [
-      24,
-      0
-     ],
-     "z": -4
-    }
-   ],
-   "slLU": [
-    {
-     "file": "map/tiles/grassySoil/slLU_0.png",
-     "size": [
-      90,
-      94
-     ],
-     "origin": [
-      90,
-      94
-     ],
-     "z": -3
-    }
-   ],
-   "slRU": [
-    {
-     "file": "map/tiles/grassySoil/slRU_0.png",
-     "size": [
-      90,
-      94
-     ],
-     "origin": [
-      0,
-      94
-     ],
-     "z": -3
-    }
-   ],
-   "slLD": [
-    {
-     "file": "map/tiles/grassySoil/slLD_0.png",
-     "size": [
-      90,
-      77
-     ],
-     "origin": [
-      90,
-      0
-     ],
-     "z": -3
-    },
-    {
-     "file": "map/tiles/grassySoil/slLD_1.png",
-     "size": [
-      90,
-      77
-     ],
-     "origin": [
-      90,
-      0
-     ],
-     "z": -3
-    }
-   ],
-   "slRD": [
-    {
-     "file": "map/tiles/grassySoil/slRD_0.png",
-     "size": [
-      90,
-      77
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
-    },
-    {
-     "file": "map/tiles/grassySoil/slRD_1.png",
-     "size": [
-      90,
-      77
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
-    }
-   ]
   },
-  "greensandySeaFloor": {
-   "bsc": [
-    {
-     "file": "map/tiles/greensandySeaFloor/bsc_0.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/bsc_1.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/bsc_2.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/bsc_3.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/bsc_4.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/bsc_5.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    }
+  "100100": {
+   "name": "100100",
+   "size": [
+    48,
+    37
    ],
-   "enH0": [
-    {
-     "file": "map/tiles/greensandySeaFloor/enH0_0.png",
-     "size": [
-      90,
-      29
-     ],
-     "origin": [
-      0,
-      29
-     ],
-     "z": -3
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/enH0_1.png",
-     "size": [
-      90,
-      27
-     ],
-     "origin": [
-      0,
-      27
-     ],
-     "z": -3
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/enH0_2.png",
-     "size": [
-      90,
-      27
-     ],
-     "origin": [
-      0,
-      27
-     ],
-     "z": -3
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/enH0_3.png",
-     "size": [
-      90,
-      29
-     ],
-     "origin": [
-      0,
-      29
-     ],
-     "z": -3
-    }
+   "pivot": [
+    24,
+    35
    ],
-   "enH1": [
-    {
-     "file": "map/tiles/greensandySeaFloor/enH1_0.png",
-     "size": [
-      90,
-      41
+   "scale": 1.0,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/100100/stand_0.png"
      ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
+     "delays": [
+      180
+     ]
     },
-    {
-     "file": "map/tiles/greensandySeaFloor/enH1_1.png",
-     "size": [
-      90,
-      36
+    "move": {
+     "frames": [
+      "mobs/100100/move_0.png",
+      "mobs/100100/move_1.png",
+      "mobs/100100/move_2.png",
+      "mobs/100100/move_3.png",
+      "mobs/100100/move_4.png"
      ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
+     "delays": [
+      180,
+      180,
+      180,
+      180,
+      180
+     ]
     },
-    {
-     "file": "map/tiles/greensandySeaFloor/enH1_2.png",
-     "size": [
-      90,
-      39
+    "hit1": {
+     "frames": [
+      "mobs/100100/hit1_0.png"
      ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
-    }
-   ],
-   "enV0": [
-    {
-     "file": "map/tiles/greensandySeaFloor/enV0_0.png",
-     "size": [
-      31,
-      61
-     ],
-     "origin": [
-      31,
-      0
-     ],
-     "z": -2
+     "delays": [
+      600
+     ]
     },
-    {
-     "file": "map/tiles/greensandySeaFloor/enV0_1.png",
-     "size": [
-      23,
-      60
+    "die1": {
+     "frames": [
+      "mobs/100100/die1_0.png",
+      "mobs/100100/die1_1.png",
+      "mobs/100100/die1_2.png",
+      "mobs/100100/die1_3.png",
+      "mobs/100100/die1_4.png",
+      "mobs/100100/die1_5.png",
+      "mobs/100100/die1_6.png",
+      "mobs/100100/die1_7.png",
+      "mobs/100100/die1_8.png"
      ],
-     "origin": [
-      23,
-      0
-     ],
-     "z": -2
+     "delays": [
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      120,
+      300
+     ]
     }
-   ],
-   "enV1": [
-    {
-     "file": "map/tiles/greensandySeaFloor/enV1_0.png",
-     "size": [
-      33,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -2
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/enV1_1.png",
-     "size": [
-      24,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -2
-    }
-   ],
-   "edU": [
-    {
-     "file": "map/tiles/greensandySeaFloor/edU_0.png",
-     "size": [
-      68,
-      27
-     ],
-     "origin": [
-      36,
-      27
-     ],
-     "z": -4
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/edU_1.png",
-     "size": [
-      61,
-      28
-     ],
-     "origin": [
-      26,
-      27
-     ],
-     "z": -4
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/edU_2.png",
-     "size": [
-      50,
-      28
-     ],
-     "origin": [
-      29,
-      27
-     ],
-     "z": -4
-    }
-   ],
-   "edD": [
-    {
-     "file": "map/tiles/greensandySeaFloor/edD_0.png",
-     "size": [
-      48,
-      27
-     ],
-     "origin": [
-      26,
-      0
-     ],
-     "z": -4
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/edD_1.png",
-     "size": [
-      39,
-      26
-     ],
-     "origin": [
-      19,
-      0
-     ],
-     "z": -4
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/edD_2.png",
-     "size": [
-      40,
-      27
-     ],
-     "origin": [
-      21,
-      0
-     ],
-     "z": -4
-    }
-   ],
-   "slLU": [
-    {
-     "file": "map/tiles/greensandySeaFloor/slLU_0.png",
-     "size": [
-      90,
-      87
-     ],
-     "origin": [
-      90,
-      87
-     ],
-     "z": -3
-    }
-   ],
-   "slRU": [
-    {
-     "file": "map/tiles/greensandySeaFloor/slRU_0.png",
-     "size": [
-      90,
-      88
-     ],
-     "origin": [
-      0,
-      87
-     ],
-     "z": -3
-    }
-   ],
-   "slLD": [
-    {
-     "file": "map/tiles/greensandySeaFloor/slLD_0.png",
-     "size": [
-      91,
-      87
-     ],
-     "origin": [
-      91,
-      0
-     ],
-     "z": -3
-    }
-   ],
-   "slRD": [
-    {
-     "file": "map/tiles/greensandySeaFloor/slRD_0.png",
-     "size": [
-      91,
-      87
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
-    },
-    {
-     "file": "map/tiles/greensandySeaFloor/slRD_1.png",
-     "size": [
-      90,
-      87
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
-    }
-   ]
+   }
   },
-  "sandySeaFloor": {
-   "info": [
-    {
-     "file": "map/tiles/sandySeaFloor/info_0.png",
-     "size": [
-      68,
-      27
-     ],
-     "origin": [
-      34,
-      13
-     ],
-     "z": 0
-    }
+  "100101": {
+   "name": "100101",
+   "size": [
+    62,
+    43
    ],
-   "bsc": [
-    {
-     "file": "map/tiles/sandySeaFloor/bsc_0.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/sandySeaFloor/bsc_1.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/sandySeaFloor/bsc_2.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/sandySeaFloor/bsc_3.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/sandySeaFloor/bsc_4.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    },
-    {
-     "file": "map/tiles/sandySeaFloor/bsc_5.png",
-     "size": [
-      90,
-      60
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": 0
-    }
+   "pivot": [
+    32,
+    41
    ],
-   "enH0": [
-    {
-     "file": "map/tiles/sandySeaFloor/enH0_0.png",
-     "size": [
-      90,
-      29
+   "scale": 1.0,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/100101/stand_0.png"
      ],
-     "origin": [
-      0,
-      29
-     ],
-     "z": -3
+     "delays": [
+      180
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/enH0_1.png",
-     "size": [
-      90,
-      27
+    "move": {
+     "frames": [
+      "mobs/100101/move_0.png",
+      "mobs/100101/move_1.png",
+      "mobs/100101/move_2.png",
+      "mobs/100101/move_3.png"
      ],
-     "origin": [
-      0,
-      27
-     ],
-     "z": -3
+     "delays": [
+      120,
+      120,
+      120,
+      120
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/enH0_2.png",
-     "size": [
-      90,
-      27
+    "hit1": {
+     "frames": [
+      "mobs/100101/hit1_0.png"
      ],
-     "origin": [
-      0,
-      27
-     ],
-     "z": -3
+     "delays": [
+      600
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/enH0_3.png",
-     "size": [
-      90,
-      29
+    "die1": {
+     "frames": [
+      "mobs/100101/die1_0.png",
+      "mobs/100101/die1_1.png",
+      "mobs/100101/die1_2.png"
      ],
-     "origin": [
-      0,
-      29
-     ],
-     "z": -3
+     "delays": [
+      180,
+      180,
+      300
+     ]
     }
+   }
+  },
+  "120100": {
+   "name": "120100",
+   "size": [
+    80,
+    41
    ],
-   "enH1": [
-    {
-     "file": "map/tiles/sandySeaFloor/enH1_0.png",
-     "size": [
-      90,
-      41
+   "pivot": [
+    25,
+    39
+   ],
+   "scale": 1.0,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/120100/stand_0.png",
+      "mobs/120100/stand_1.png",
+      "mobs/120100/stand_2.png"
      ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
+     "delays": [
+      180,
+      100,
+      180
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/enH1_1.png",
-     "size": [
-      90,
-      36
+    "move": {
+     "frames": [
+      "mobs/120100/move_0.png",
+      "mobs/120100/move_1.png",
+      "mobs/120100/move_2.png",
+      "mobs/120100/move_3.png"
      ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
+     "delays": [
+      180,
+      180,
+      180,
+      180
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/enH1_2.png",
-     "size": [
-      90,
-      39
+    "hit1": {
+     "frames": [
+      "mobs/120100/hit1_0.png"
      ],
-     "origin": [
-      0,
-      0
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/120100/die1_0.png",
+      "mobs/120100/die1_1.png",
+      "mobs/120100/die1_2.png",
+      "mobs/120100/die1_3.png"
      ],
-     "z": -3
+     "delays": [
+      120,
+      120,
+      120,
+      300
+     ]
     }
+   }
+  },
+  "130100": {
+   "name": "130100",
+   "size": [
+    73,
+    62
    ],
-   "enV0": [
-    {
-     "file": "map/tiles/sandySeaFloor/enV0_0.png",
-     "size": [
-      31,
-      60
+   "pivot": [
+    37,
+    60
+   ],
+   "scale": 1.0,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/130100/stand_0.png"
      ],
-     "origin": [
-      31,
-      0
-     ],
-     "z": -2
+     "delays": [
+      180
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/enV0_1.png",
-     "size": [
-      23,
-      60
+    "move": {
+     "frames": [
+      "mobs/130100/move_0.png",
+      "mobs/130100/move_1.png",
+      "mobs/130100/move_2.png",
+      "mobs/130100/move_3.png"
      ],
-     "origin": [
-      23,
-      0
+     "delays": [
+      180,
+      180,
+      180,
+      180
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/130100/hit1_0.png"
      ],
-     "z": -2
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/130100/die1_0.png",
+      "mobs/130100/die1_1.png",
+      "mobs/130100/die1_2.png"
+     ],
+     "delays": [
+      180,
+      180,
+      300
+     ]
     }
+   }
+  },
+  "130101": {
+   "name": "130101",
+   "size": [
+    62,
+    43
    ],
-   "enV1": [
-    {
-     "file": "map/tiles/sandySeaFloor/enV1_0.png",
-     "size": [
-      33,
-      60
+   "pivot": [
+    32,
+    41
+   ],
+   "scale": 1.0,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/130101/stand_0.png"
      ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -2
+     "delays": [
+      180
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/enV1_1.png",
-     "size": [
-      24,
-      60
+    "move": {
+     "frames": [
+      "mobs/130101/move_0.png",
+      "mobs/130101/move_1.png",
+      "mobs/130101/move_2.png",
+      "mobs/130101/move_3.png"
      ],
-     "origin": [
-      0,
-      0
+     "delays": [
+      120,
+      120,
+      120,
+      120
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/130101/hit1_0.png"
      ],
-     "z": -2
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/130101/die1_0.png",
+      "mobs/130101/die1_1.png",
+      "mobs/130101/die1_2.png"
+     ],
+     "delays": [
+      180,
+      180,
+      300
+     ]
     }
+   }
+  },
+  "210100": {
+   "name": "210100",
+   "size": [
+    76,
+    98
    ],
-   "edU": [
-    {
-     "file": "map/tiles/sandySeaFloor/edU_0.png",
-     "size": [
-      68,
-      27
+   "pivot": [
+    33,
+    96
+   ],
+   "scale": 1.0,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/210100/stand_0.png",
+      "mobs/210100/stand_1.png",
+      "mobs/210100/stand_2.png"
      ],
-     "origin": [
-      36,
-      27
-     ],
-     "z": -4
+     "delays": [
+      200,
+      300,
+      250
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/edU_1.png",
-     "size": [
-      62,
-      27
+    "move": {
+     "frames": [
+      "mobs/210100/move_0.png",
+      "mobs/210100/move_1.png",
+      "mobs/210100/move_2.png",
+      "mobs/210100/move_3.png",
+      "mobs/210100/move_4.png",
+      "mobs/210100/move_5.png",
+      "mobs/210100/move_6.png"
      ],
-     "origin": [
-      26,
-      27
-     ],
-     "z": -4
-    },
-    {
-     "file": "map/tiles/sandySeaFloor/edU_2.png",
-     "size": [
+     "delays": [
+      200,
       50,
-      27
-     ],
-     "origin": [
-      29,
-      27
-     ],
-     "z": -4
-    }
-   ],
-   "edD": [
-    {
-     "file": "map/tiles/sandySeaFloor/edD_0.png",
-     "size": [
-      48,
-      27
-     ],
-     "origin": [
-      26,
-      0
-     ],
-     "z": -4
+      150,
+      150,
+      100,
+      100,
+      300
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/edD_1.png",
-     "size": [
-      39,
-      26
+    "hit1": {
+     "frames": [
+      "mobs/210100/hit1_0.png"
      ],
-     "origin": [
-      19,
-      0
-     ],
-     "z": -4
+     "delays": [
+      600
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/edD_2.png",
-     "size": [
-      40,
-      27
+    "die1": {
+     "frames": [
+      "mobs/210100/die1_0.png",
+      "mobs/210100/die1_1.png",
+      "mobs/210100/die1_2.png",
+      "mobs/210100/die1_3.png"
      ],
-     "origin": [
-      21,
-      0
-     ],
-     "z": -4
+     "delays": [
+      180,
+      180,
+      180,
+      300
+     ]
     }
+   }
+  },
+  "1210102": {
+   "name": "1210102",
+   "size": [
+    74,
+    71
    ],
-   "slLU": [
-    {
-     "file": "map/tiles/sandySeaFloor/slLU_0.png",
-     "size": [
-      90,
-      87
-     ],
-     "origin": [
-      90,
-      87
-     ],
-     "z": -3
-    }
+   "pivot": [
+    36,
+    69
    ],
-   "slRU": [
-    {
-     "file": "map/tiles/sandySeaFloor/slRU_0.png",
-     "size": [
-      90,
-      87
+   "scale": 1.0,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/1210102/stand_0.png",
+      "mobs/1210102/stand_1.png"
      ],
-     "origin": [
-      0,
-      87
-     ],
-     "z": -3
-    }
-   ],
-   "slLD": [
-    {
-     "file": "map/tiles/sandySeaFloor/slLD_0.png",
-     "size": [
-      90,
-      86
-     ],
-     "origin": [
-      90,
-      0
-     ],
-     "z": -3
-    }
-   ],
-   "slRD": [
-    {
-     "file": "map/tiles/sandySeaFloor/slRD_0.png",
-     "size": [
-      90,
-      87
-     ],
-     "origin": [
-      0,
-      0
-     ],
-     "z": -3
+     "delays": [
+      180,
+      180
+     ]
     },
-    {
-     "file": "map/tiles/sandySeaFloor/slRD_1.png",
-     "size": [
-      90,
-      87
+    "move": {
+     "frames": [
+      "mobs/1210102/move_0.png",
+      "mobs/1210102/move_1.png",
+      "mobs/1210102/move_2.png"
      ],
-     "origin": [
-      0,
-      0
+     "delays": [
+      180,
+      120,
+      180
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/1210102/hit1_0.png"
      ],
-     "z": -3
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/1210102/die1_0.png",
+      "mobs/1210102/die1_1.png",
+      "mobs/1210102/die1_2.png"
+     ],
+     "delays": [
+      180,
+      180,
+      300
+     ]
     }
-   ]
+   }
+  },
+  "9300018": {
+   "name": "9300018",
+   "size": [
+    60,
+    86
+   ],
+   "pivot": [
+    31,
+    70
+   ],
+   "scale": 1.0,
+   "boss": false,
+   "anims": {
+    "move": {
+     "frames": [
+      "mobs/9300018/move_0.png",
+      "mobs/9300018/move_1.png",
+      "mobs/9300018/move_2.png"
+     ],
+     "delays": [
+      120,
+      120,
+      120
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/9300018/hit1_0.png"
+     ],
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/9300018/die1_0.png",
+      "mobs/9300018/die1_1.png",
+      "mobs/9300018/die1_2.png",
+      "mobs/9300018/die1_3.png",
+      "mobs/9300018/die1_4.png"
+     ],
+     "delays": [
+      120,
+      120,
+      120,
+      120,
+      300
+     ]
+    }
+   }
+  },
+  "9409000": {
+   "name": "9409000",
+   "size": [
+    55,
+    93
+   ],
+   "pivot": [
+    24,
+    88
+   ],
+   "scale": 1.0,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/9409000/stand_0.png",
+      "mobs/9409000/stand_1.png",
+      "mobs/9409000/stand_2.png",
+      "mobs/9409000/stand_3.png",
+      "mobs/9409000/stand_4.png",
+      "mobs/9409000/stand_5.png",
+      "mobs/9409000/stand_6.png",
+      "mobs/9409000/stand_7.png"
+     ],
+     "delays": [
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150
+     ]
+    },
+    "move": {
+     "frames": [
+      "mobs/9409000/move_0.png",
+      "mobs/9409000/move_1.png",
+      "mobs/9409000/move_2.png",
+      "mobs/9409000/move_3.png"
+     ],
+     "delays": [
+      150,
+      150,
+      150,
+      150
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/9409000/hit1_0.png"
+     ],
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/9409000/die1_0.png",
+      "mobs/9409000/die1_1.png",
+      "mobs/9409000/die1_2.png",
+      "mobs/9409000/die1_3.png"
+     ],
+     "delays": [
+      150,
+      150,
+      150,
+      300
+     ]
+    }
+   }
+  },
+  "9409001": {
+   "name": "9409001",
+   "size": [
+    53,
+    110
+   ],
+   "pivot": [
+    27,
+    104
+   ],
+   "scale": 1.0,
+   "boss": false,
+   "anims": {
+    "stand": {
+     "frames": [
+      "mobs/9409001/stand_0.png",
+      "mobs/9409001/stand_1.png",
+      "mobs/9409001/stand_2.png",
+      "mobs/9409001/stand_3.png",
+      "mobs/9409001/stand_4.png",
+      "mobs/9409001/stand_5.png",
+      "mobs/9409001/stand_6.png"
+     ],
+     "delays": [
+      130,
+      130,
+      130,
+      130,
+      130,
+      130,
+      130
+     ]
+    },
+    "move": {
+     "frames": [
+      "mobs/9409001/move_0.png",
+      "mobs/9409001/move_1.png",
+      "mobs/9409001/move_2.png",
+      "mobs/9409001/move_3.png",
+      "mobs/9409001/move_4.png",
+      "mobs/9409001/move_5.png",
+      "mobs/9409001/move_6.png"
+     ],
+     "delays": [
+      130,
+      130,
+      130,
+      130,
+      130,
+      130,
+      130
+     ]
+    },
+    "hit1": {
+     "frames": [
+      "mobs/9409001/hit1_0.png"
+     ],
+     "delays": [
+      600
+     ]
+    },
+    "die1": {
+     "frames": [
+      "mobs/9409001/die1_0.png",
+      "mobs/9409001/die1_1.png",
+      "mobs/9409001/die1_2.png",
+      "mobs/9409001/die1_3.png",
+      "mobs/9409001/die1_4.png",
+      "mobs/9409001/die1_5.png"
+     ],
+     "delays": [
+      130,
+      130,
+      130,
+      130,
+      130,
+      130
+     ]
+    }
+   }
   }
- },
- "backs": {
-  "grassySoil": [
-   {
-    "file": "map/back/grassySoil/0.png",
-    "size": [
-     256,
-     256
-    ],
-    "origin": [
-     128,
-     128
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/grassySoil/1.png",
-    "size": [
-     1500,
-     848
-    ],
-    "origin": [
-     714,
-     289
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/grassySoil/2.png",
-    "size": [
-     2493,
-     340
-    ],
-    "origin": [
-     1246,
-     170
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/grassySoil/3.png",
-    "size": [
-     315,
-     268
-    ],
-    "origin": [
-     157,
-     134
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/grassySoil/4.png",
-    "size": [
-     1024,
-     257
-    ],
-    "origin": [
-     512,
-     128
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/grassySoil/5.png",
-    "size": [
-     1024,
-     257
-    ],
-    "origin": [
-     512,
-     128
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/grassySoil/6.png",
-    "size": [
-     1024,
-     294
-    ],
-    "origin": [
-     512,
-     147
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/grassySoil/7.png",
-    "size": [
-     2497,
-     343
-    ],
-    "origin": [
-     1248,
-     171
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/grassySoil/8.png",
-    "size": [
-     200,
-     200
-    ],
-    "origin": [
-     100,
-     100
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   }
-  ],
-  "midForest": [
-   {
-    "file": "map/back/midForest/0.png",
-    "size": [
-     128,
-     128
-    ],
-    "origin": [
-     64,
-     64
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/midForest/1.png",
-    "size": [
-     635,
-     719
-    ],
-    "origin": [
-     317,
-     359
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/midForest/2.png",
-    "size": [
-     1024,
-     439
-    ],
-    "origin": [
-     512,
-     219
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/midForest/3.png",
-    "size": [
-     1024,
-     502
-    ],
-    "origin": [
-     512,
-     251
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/midForest/4.png",
-    "size": [
-     1025,
-     503
-    ],
-    "origin": [
-     512,
-     251
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   }
-  ],
-  "vicportTown": [
-   {
-    "file": "map/back/vicportTown/0.png",
-    "size": [
-     256,
-     600
-    ],
-    "origin": [
-     128,
-     400
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/1.png",
-    "size": [
-     1400,
-     157
-    ],
-    "origin": [
-     820,
-     78
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/2.png",
-    "size": [
-     751,
-     148
-    ],
-    "origin": [
-     165,
-     127
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/3.png",
-    "size": [
-     751,
-     148
-    ],
-    "origin": [
-     165,
-     127
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/4.png",
-    "size": [
-     354,
-     143
-    ],
-    "origin": [
-     177,
-     71
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/5.png",
-    "size": [
-     277,
-     213
-    ],
-    "origin": [
-     132,
-     111
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/6.png",
-    "size": [
-     141,
-     52
-    ],
-    "origin": [
-     70,
-     26
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/7.png",
-    "size": [
-     281,
-     91
-    ],
-    "origin": [
-     140,
-     45
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/8.png",
-    "size": [
-     291,
-     165
-    ],
-    "origin": [
-     120,
-     84
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/9.png",
-    "size": [
-     492,
-     235
-    ],
-    "origin": [
-     246,
-     117
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/10.png",
-    "size": [
-     410,
-     178
-    ],
-    "origin": [
-     205,
-     89
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/11.png",
-    "size": [
-     358,
-     196
-    ],
-    "origin": [
-     179,
-     98
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/12.png",
-    "size": [
-     579,
-     143
-    ],
-    "origin": [
-     289,
-     71
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/13.png",
-    "size": [
-     385,
-     188
-    ],
-    "origin": [
-     106,
-     163
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/14.png",
-    "size": [
-     256,
-     444
-    ],
-    "origin": [
-     128,
-     222
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/15.png",
-    "size": [
-     245,
-     92
-    ],
-    "origin": [
-     350,
-     46
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/16.png",
-    "size": [
-     273,
-     74
-    ],
-    "origin": [
-     136,
-     37
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/17.png",
-    "size": [
-     371,
-     147
-    ],
-    "origin": [
-     420,
-     73
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/18.png",
-    "size": [
-     592,
-     505
-    ],
-    "origin": [
-     296,
-     252
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/vicportTown/19.png",
-    "size": [
-     377,
-     359
-    ],
-    "origin": [
-     410,
-     179
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   }
-  ],
-  "sandBeach": [
-   {
-    "file": "map/back/sandBeach/0.png",
-    "size": [
-     64,
-     64
-    ],
-    "origin": [
-     32,
-     32
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/1.png",
-    "size": [
-     18,
-     273
-    ],
-    "origin": [
-     9,
-     136
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/2.png",
-    "size": [
-     649,
-     293
-    ],
-    "origin": [
-     324,
-     146
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/3.png",
-    "size": [
-     426,
-     342
-    ],
-    "origin": [
-     213,
-     171
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/4.png",
-    "size": [
-     380,
-     186
-    ],
-    "origin": [
-     190,
-     93
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/5.png",
-    "size": [
-     291,
-     165
-    ],
-    "origin": [
-     120,
-     81
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/6.png",
-    "size": [
-     277,
-     213
-    ],
-    "origin": [
-     132,
-     111
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/7.png",
-    "size": [
-     18,
-     7
-    ],
-    "origin": [
-     9,
-     3
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/8.png",
-    "size": [
-     32,
-     10
-    ],
-    "origin": [
-     16,
-     5
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/9.png",
-    "size": [
-     33,
-     11
-    ],
-    "origin": [
-     16,
-     5
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/10.png",
-    "size": [
-     61,
-     17
-    ],
-    "origin": [
-     30,
-     8
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/11.png",
-    "size": [
-     117,
-     205
-    ],
-    "origin": [
-     58,
-     102
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/12.png",
-    "size": [
-     381,
-     172
-    ],
-    "origin": [
-     190,
-     86
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/sandBeach/13.png",
-    "size": [
-     120,
-     50
-    ],
-    "origin": [
-     60,
-     25
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   }
-  ],
-  "mushCatle": [
-   {
-    "file": "map/back/mushCatle/0.png",
-    "size": [
-     44,
-     44
-    ],
-    "origin": [
-     22,
-     22
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/1.png",
-    "size": [
-     11,
-     340
-    ],
-    "origin": [
-     5,
-     170
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/2.png",
-    "size": [
-     44,
-     44
-    ],
-    "origin": [
-     22,
-     22
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/3.png",
-    "size": [
-     635,
-     569
-    ],
-    "origin": [
-     317,
-     284
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/4.png",
-    "size": [
-     285,
-     97
-    ],
-    "origin": [
-     142,
-     48
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/5.png",
-    "size": [
-     331,
-     175
-    ],
-    "origin": [
-     165,
-     87
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/6.png",
-    "size": [
-     253,
-     128
-    ],
-    "origin": [
-     3,
-     96
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/7.png",
-    "size": [
-     333,
-     141
-    ],
-    "origin": [
-     166,
-     70
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/8.png",
-    "size": [
-     281,
-     102
-    ],
-    "origin": [
-     140,
-     51
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/9.png",
-    "size": [
-     520,
-     113
-    ],
-    "origin": [
-     260,
-     56
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/10.png",
-    "size": [
-     480,
-     113
-    ],
-    "origin": [
-     240,
-     56
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/11.png",
-    "size": [
-     500,
-     142
-    ],
-    "origin": [
-     250,
-     71
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/12.png",
-    "size": [
-     519,
-     336
-    ],
-    "origin": [
-     259,
-     168
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/13.png",
-    "size": [
-     270,
-     487
-    ],
-    "origin": [
-     135,
-     243
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/14.png",
-    "size": [
-     314,
-     505
-    ],
-    "origin": [
-     157,
-     252
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/15.png",
-    "size": [
-     644,
-     490
-    ],
-    "origin": [
-     322,
-     245
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/16.png",
-    "size": [
-     520,
-     109
-    ],
-    "origin": [
-     260,
-     54
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/17.png",
-    "size": [
-     480,
-     109
-    ],
-    "origin": [
-     240,
-     54
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/18.png",
-    "size": [
-     500,
-     139
-    ],
-    "origin": [
-     250,
-     69
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/19.png",
-    "size": [
-     520,
-     113
-    ],
-    "origin": [
-     260,
-     56
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/20.png",
-    "size": [
-     480,
-     113
-    ],
-    "origin": [
-     240,
-     56
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/21.png",
-    "size": [
-     500,
-     142
-    ],
-    "origin": [
-     250,
-     71
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/22.png",
-    "size": [
-     614,
-     266
-    ],
-    "origin": [
-     307,
-     133
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/23.png",
-    "size": [
-     1024,
-     509
-    ],
-    "origin": [
-     512,
-     254
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/24.png",
-    "size": [
-     795,
-     455
-    ],
-    "origin": [
-     397,
-     227
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/25.png",
-    "size": [
-     1299,
-     227
-    ],
-    "origin": [
-     649,
-     113
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/26.png",
-    "size": [
-     500,
-     183
-    ],
-    "origin": [
-     250,
-     91
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/27.png",
-    "size": [
-     500,
-     276
-    ],
-    "origin": [
-     250,
-     138
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   },
-   {
-    "file": "map/back/mushCatle/28.png",
-    "size": [
-     500,
-     335
-    ],
-    "origin": [
-     250,
-     167
-    ],
-    "z": 0,
-    "rx": 0,
-    "ry": 0,
-    "type": 0,
-    "a": 255,
-    "x": 0,
-    "y": 0
-   }
-  ]
  },
  "stages": {
   "harbor": {
@@ -13250,76 +11464,6 @@
   "dash": {
    "name": "突进",
    "id": "1121006",
-   "pivot": [
-    88,
-    129
-   ],
-   "size": [
-    288,
-    182
-   ],
-   "icon": "skills/dash/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/dash/f000.png",
-      "skills/dash/f001.png",
-      "skills/dash/f002.png",
-      "skills/dash/f003.png",
-      "skills/dash/f004.png",
-      "skills/dash/f005.png",
-      "skills/dash/f006.png"
-     ],
-     "delays": [
-      100,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120
-     ],
-     "pivot": [
-      88,
-      129
-     ],
-     "size": [
-      288,
-      182
-     ]
-    },
-    "cast2": {
-     "frames": [
-      "skills/dash/cast2/f000.png",
-      "skills/dash/cast2/f001.png",
-      "skills/dash/cast2/f002.png",
-      "skills/dash/cast2/f003.png",
-      "skills/dash/cast2/f004.png",
-      "skills/dash/cast2/f005.png"
-     ],
-     "delays": [
-      120,
-      120,
-      120,
-      120,
-      120,
-      120
-     ],
-     "pivot": [
-      58,
-      113
-     ],
-     "size": [
-      199,
-      123
-     ]
-    }
-   },
-   "parts": {
-    "effect0": {
-     "z": -1
-    }
-   },
    "actions": [
     "rush2"
    ]
@@ -13327,317 +11471,6 @@
   "rupture": {
    "name": "斗气死亡断层",
    "id": "1121012",
-   "pivot": [
-    711,
-    289
-   ],
-   "size": [
-    1311,
-    489
-   ],
-   "icon": "skills/rupture/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/rupture/f000.png",
-      "skills/rupture/f001.png",
-      "skills/rupture/f002.png",
-      "skills/rupture/f003.png",
-      "skills/rupture/f004.png",
-      "skills/rupture/f005.png",
-      "skills/rupture/f006.png",
-      "skills/rupture/f007.png",
-      "skills/rupture/f008.png",
-      "skills/rupture/f009.png",
-      "skills/rupture/f010.png",
-      "skills/rupture/f011.png",
-      "skills/rupture/f012.png",
-      "skills/rupture/f013.png",
-      "skills/rupture/f014.png",
-      "skills/rupture/f015.png",
-      "skills/rupture/f016.png",
-      "skills/rupture/f017.png",
-      "skills/rupture/f018.png",
-      "skills/rupture/f019.png",
-      "skills/rupture/f020.png",
-      "skills/rupture/f021.png",
-      "skills/rupture/f022.png",
-      "skills/rupture/f023.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ],
-     "pivot": [
-      711,
-      289
-     ],
-     "size": [
-      1311,
-      489
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/rupture/hit/f000.png",
-      "skills/rupture/hit/f001.png",
-      "skills/rupture/hit/f002.png",
-      "skills/rupture/hit/f003.png",
-      "skills/rupture/hit/f004.png",
-      "skills/rupture/hit/f005.png"
-     ],
-     "delays": [
-      90,
-      90,
-      90,
-      90,
-      90,
-      90
-     ],
-     "pivot": [
-      151,
-      149
-     ],
-     "size": [
-      304,
-      248
-     ]
-    },
-    "special": {
-     "frames": [
-      "skills/rupture/special/f000.png",
-      "skills/rupture/special/f001.png",
-      "skills/rupture/special/f002.png",
-      "skills/rupture/special/f003.png",
-      "skills/rupture/special/f004.png",
-      "skills/rupture/special/f005.png",
-      "skills/rupture/special/f006.png",
-      "skills/rupture/special/f007.png",
-      "skills/rupture/special/f008.png",
-      "skills/rupture/special/f009.png",
-      "skills/rupture/special/f010.png",
-      "skills/rupture/special/f011.png",
-      "skills/rupture/special/f012.png",
-      "skills/rupture/special/f013.png",
-      "skills/rupture/special/f014.png",
-      "skills/rupture/special/f015.png",
-      "skills/rupture/special/f016.png",
-      "skills/rupture/special/f017.png",
-      "skills/rupture/special/f018.png"
-     ],
-     "delays": [
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30
-     ],
-     "pivot": [
-      94,
-      70
-     ],
-     "size": [
-      192,
-      148
-     ]
-    },
-    "special1": {
-     "frames": [
-      "skills/rupture/special1/f000.png",
-      "skills/rupture/special1/f001.png",
-      "skills/rupture/special1/f002.png",
-      "skills/rupture/special1/f003.png",
-      "skills/rupture/special1/f004.png",
-      "skills/rupture/special1/f005.png",
-      "skills/rupture/special1/f006.png",
-      "skills/rupture/special1/f007.png",
-      "skills/rupture/special1/f008.png",
-      "skills/rupture/special1/f009.png",
-      "skills/rupture/special1/f010.png",
-      "skills/rupture/special1/f011.png",
-      "skills/rupture/special1/f012.png",
-      "skills/rupture/special1/f013.png",
-      "skills/rupture/special1/f014.png",
-      "skills/rupture/special1/f015.png",
-      "skills/rupture/special1/f016.png",
-      "skills/rupture/special1/f017.png",
-      "skills/rupture/special1/f018.png"
-     ],
-     "delays": [
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30
-     ],
-     "pivot": [
-      151,
-      110
-     ],
-     "size": [
-      304,
-      235
-     ]
-    },
-    "special2": {
-     "frames": [
-      "skills/rupture/special2/f000.png",
-      "skills/rupture/special2/f001.png",
-      "skills/rupture/special2/f002.png",
-      "skills/rupture/special2/f003.png",
-      "skills/rupture/special2/f004.png",
-      "skills/rupture/special2/f005.png",
-      "skills/rupture/special2/f006.png",
-      "skills/rupture/special2/f007.png",
-      "skills/rupture/special2/f008.png",
-      "skills/rupture/special2/f009.png",
-      "skills/rupture/special2/f010.png",
-      "skills/rupture/special2/f011.png",
-      "skills/rupture/special2/f012.png",
-      "skills/rupture/special2/f013.png",
-      "skills/rupture/special2/f014.png",
-      "skills/rupture/special2/f015.png",
-      "skills/rupture/special2/f016.png",
-      "skills/rupture/special2/f017.png",
-      "skills/rupture/special2/f018.png",
-      "skills/rupture/special2/f019.png"
-     ],
-     "delays": [
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30
-     ],
-     "pivot": [
-      215,
-      157
-     ],
-     "size": [
-      432,
-      331
-     ]
-    },
-    "special3": {
-     "frames": [
-      "skills/rupture/special3/f000.png",
-      "skills/rupture/special3/f001.png",
-      "skills/rupture/special3/f002.png",
-      "skills/rupture/special3/f003.png",
-      "skills/rupture/special3/f004.png",
-      "skills/rupture/special3/f005.png",
-      "skills/rupture/special3/f006.png",
-      "skills/rupture/special3/f007.png",
-      "skills/rupture/special3/f008.png",
-      "skills/rupture/special3/f009.png",
-      "skills/rupture/special3/f010.png",
-      "skills/rupture/special3/f011.png",
-      "skills/rupture/special3/f012.png",
-      "skills/rupture/special3/f013.png",
-      "skills/rupture/special3/f014.png",
-      "skills/rupture/special3/f015.png",
-      "skills/rupture/special3/f016.png",
-      "skills/rupture/special3/f017.png",
-      "skills/rupture/special3/f018.png",
-      "skills/rupture/special3/f019.png"
-     ],
-     "delays": [
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30
-     ],
-     "pivot": [
-      262,
-      217
-     ],
-     "size": [
-      524,
-      457
-     ]
-    }
-   },
    "actions": [
     "brandish1"
    ]
@@ -13645,259 +11478,6 @@
   "illusion": {
    "name": "剑影分身",
    "id": "1121020",
-   "pivot": [
-    727,
-    409
-   ],
-   "size": [
-    1125,
-    568
-   ],
-   "icon": "skills/illusion/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/illusion/f000.png",
-      "skills/illusion/f001.png",
-      "skills/illusion/f002.png",
-      "skills/illusion/f003.png",
-      "skills/illusion/f004.png",
-      "skills/illusion/f005.png",
-      "skills/illusion/f006.png",
-      "skills/illusion/f007.png",
-      "skills/illusion/f008.png",
-      "skills/illusion/f009.png",
-      "skills/illusion/f010.png",
-      "skills/illusion/f011.png",
-      "skills/illusion/f012.png",
-      "skills/illusion/f013.png",
-      "skills/illusion/f014.png",
-      "skills/illusion/f015.png",
-      "skills/illusion/f016.png",
-      "skills/illusion/f017.png",
-      "skills/illusion/f018.png",
-      "skills/illusion/f019.png",
-      "skills/illusion/f020.png",
-      "skills/illusion/f021.png",
-      "skills/illusion/f022.png",
-      "skills/illusion/f023.png",
-      "skills/illusion/f024.png",
-      "skills/illusion/f025.png",
-      "skills/illusion/f026.png",
-      "skills/illusion/f027.png",
-      "skills/illusion/f028.png",
-      "skills/illusion/f029.png",
-      "skills/illusion/f030.png",
-      "skills/illusion/f031.png",
-      "skills/illusion/f032.png",
-      "skills/illusion/f033.png",
-      "skills/illusion/f034.png",
-      "skills/illusion/f035.png",
-      "skills/illusion/f036.png",
-      "skills/illusion/f037.png",
-      "skills/illusion/f038.png",
-      "skills/illusion/f039.png",
-      "skills/illusion/f040.png",
-      "skills/illusion/f041.png",
-      "skills/illusion/f042.png",
-      "skills/illusion/f043.png",
-      "skills/illusion/f044.png",
-      "skills/illusion/f045.png",
-      "skills/illusion/f046.png",
-      "skills/illusion/f047.png",
-      "skills/illusion/f048.png",
-      "skills/illusion/f049.png",
-      "skills/illusion/f050.png",
-      "skills/illusion/f051.png",
-      "skills/illusion/f052.png",
-      "skills/illusion/f053.png",
-      "skills/illusion/f054.png",
-      "skills/illusion/f055.png",
-      "skills/illusion/f056.png",
-      "skills/illusion/f057.png",
-      "skills/illusion/f058.png",
-      "skills/illusion/f059.png",
-      "skills/illusion/f060.png",
-      "skills/illusion/f061.png",
-      "skills/illusion/f062.png",
-      "skills/illusion/f063.png",
-      "skills/illusion/f064.png",
-      "skills/illusion/f065.png",
-      "skills/illusion/f066.png",
-      "skills/illusion/f067.png",
-      "skills/illusion/f068.png",
-      "skills/illusion/f069.png",
-      "skills/illusion/f070.png",
-      "skills/illusion/f071.png",
-      "skills/illusion/f072.png",
-      "skills/illusion/f073.png",
-      "skills/illusion/f074.png",
-      "skills/illusion/f075.png",
-      "skills/illusion/f076.png",
-      "skills/illusion/f077.png",
-      "skills/illusion/f078.png",
-      "skills/illusion/f079.png",
-      "skills/illusion/f080.png",
-      "skills/illusion/f081.png",
-      "skills/illusion/f082.png",
-      "skills/illusion/f083.png",
-      "skills/illusion/f084.png",
-      "skills/illusion/f085.png",
-      "skills/illusion/f086.png",
-      "skills/illusion/f087.png"
-     ],
-     "delays": [
-      30,
-      30,
-      30,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      30,
-      60,
-      90,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ],
-     "pivot": [
-      727,
-      409
-     ],
-     "size": [
-      1125,
-      568
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/illusion/hit/f000.png",
-      "skills/illusion/hit/f001.png",
-      "skills/illusion/hit/f002.png",
-      "skills/illusion/hit/f003.png",
-      "skills/illusion/hit/f004.png",
-      "skills/illusion/hit/f005.png"
-     ],
-     "delays": [
-      30,
-      30,
-      30,
-      30,
-      30,
-      30
-     ],
-     "pivot": [
-      131,
-      101
-     ],
-     "size": [
-      236,
-      201
-     ]
-    },
-    "hit1": {
-     "frames": [
-      "skills/illusion/hit1/f000.png",
-      "skills/illusion/hit1/f001.png",
-      "skills/illusion/hit1/f002.png",
-      "skills/illusion/hit1/f003.png",
-      "skills/illusion/hit1/f004.png",
-      "skills/illusion/hit1/f005.png"
-     ],
-     "delays": [
-      30,
-      30,
-      30,
-      30,
-      30,
-      30
-     ],
-     "pivot": [
-      104,
-      101
-     ],
-     "size": [
-      238,
-      201
-     ]
-    }
-   },
    "actions": [
     "brandish1"
    ]
@@ -13905,112 +11485,6 @@
   "roar": {
    "name": "虎咆哮",
    "id": "1111008",
-   "pivot": [
-    92,
-    149
-   ],
-   "size": [
-    157,
-    154
-   ],
-   "icon": "skills/roar/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/roar/f000.png",
-      "skills/roar/f001.png",
-      "skills/roar/f002.png",
-      "skills/roar/f003.png",
-      "skills/roar/f004.png",
-      "skills/roar/f005.png",
-      "skills/roar/f006.png",
-      "skills/roar/f007.png",
-      "skills/roar/f008.png",
-      "skills/roar/f009.png",
-      "skills/roar/f010.png",
-      "skills/roar/f011.png",
-      "skills/roar/f012.png",
-      "skills/roar/f013.png",
-      "skills/roar/f014.png",
-      "skills/roar/f015.png",
-      "skills/roar/f016.png"
-     ],
-     "delays": [
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88,
-      88
-     ],
-     "pivot": [
-      92,
-      149
-     ],
-     "size": [
-      157,
-      154
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/roar/hit/f000.png",
-      "skills/roar/hit/f001.png"
-     ],
-     "delays": [
-      120,
-      120
-     ],
-     "pivot": [
-      31,
-      34
-     ],
-     "size": [
-      70,
-      68
-     ]
-    },
-    "mob": {
-     "frames": [
-      "skills/roar/mob/f000.png",
-      "skills/roar/mob/f001.png",
-      "skills/roar/mob/f002.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      33,
-      9
-     ],
-     "size": [
-      66,
-      18
-     ]
-    }
-   },
-   "parts": {
-    "effect": {
-     "z": -1
-    },
-    "mob": {
-     "pos": 2,
-     "repeat": 1
-    }
-   },
    "actions": [
     "alert3"
    ]
@@ -14018,110 +11492,6 @@
   "crush": {
    "name": "防御崩坏",
    "id": "1111007",
-   "pivot": [
-    67,
-    229
-   ],
-   "size": [
-    134,
-    236
-   ],
-   "icon": "skills/crush/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/crush/f000.png",
-      "skills/crush/f001.png",
-      "skills/crush/f002.png",
-      "skills/crush/f003.png",
-      "skills/crush/f004.png",
-      "skills/crush/f005.png",
-      "skills/crush/f006.png",
-      "skills/crush/f007.png",
-      "skills/crush/f008.png",
-      "skills/crush/f009.png",
-      "skills/crush/f010.png",
-      "skills/crush/f011.png",
-      "skills/crush/f012.png",
-      "skills/crush/f013.png",
-      "skills/crush/f014.png",
-      "skills/crush/f015.png",
-      "skills/crush/f016.png",
-      "skills/crush/f017.png",
-      "skills/crush/f018.png"
-     ],
-     "delays": [
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      150,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80
-     ],
-     "pivot": [
-      67,
-      229
-     ],
-     "size": [
-      134,
-      236
-     ]
-    },
-    "mob": {
-     "frames": [
-      "skills/crush/mob/f000.png",
-      "skills/crush/mob/f001.png",
-      "skills/crush/mob/f002.png",
-      "skills/crush/mob/f003.png",
-      "skills/crush/mob/f004.png",
-      "skills/crush/mob/f005.png",
-      "skills/crush/mob/f006.png",
-      "skills/crush/mob/f007.png",
-      "skills/crush/mob/f008.png",
-      "skills/crush/mob/f009.png",
-      "skills/crush/mob/f010.png"
-     ],
-     "delays": [
-      80,
-      80,
-      80,
-      150,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80
-     ],
-     "pivot": [
-      57,
-      97
-     ],
-     "size": [
-      134,
-      117
-     ]
-    }
-   },
-   "parts": {
-    "mob": {
-     "pos": 2
-    }
-   },
    "actions": [
     "alert3"
    ]
@@ -14129,85 +11499,6 @@
   "rage": {
    "name": "愤怒之火",
    "id": "1101006",
-   "pivot": [
-    63,
-    123
-   ],
-   "size": [
-    108,
-    123
-   ],
-   "icon": "skills/rage/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/rage/f000.png",
-      "skills/rage/f001.png",
-      "skills/rage/f002.png",
-      "skills/rage/f003.png",
-      "skills/rage/f004.png",
-      "skills/rage/f005.png",
-      "skills/rage/f006.png",
-      "skills/rage/f007.png",
-      "skills/rage/f008.png",
-      "skills/rage/f009.png",
-      "skills/rage/f010.png",
-      "skills/rage/f011.png",
-      "skills/rage/f012.png"
-     ],
-     "delays": [
-      80,
-      80,
-      100,
-      100,
-      100,
-      100,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120
-     ],
-     "pivot": [
-      63,
-      123
-     ],
-     "size": [
-      108,
-      123
-     ]
-    },
-    "affected": {
-     "frames": [
-      "skills/rage/affected/f000.png",
-      "skills/rage/affected/f001.png",
-      "skills/rage/affected/f002.png",
-      "skills/rage/affected/f003.png",
-      "skills/rage/affected/f004.png",
-      "skills/rage/affected/f005.png",
-      "skills/rage/affected/f006.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100,
-      100,
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      25,
-      81
-     ],
-     "size": [
-      42,
-      88
-     ]
-    }
-   },
    "actions": [
     "alert2"
    ]
@@ -14215,161 +11506,11 @@
   "magnet": {
    "name": "磁石",
    "id": "1121001",
-   "pivot": [
-    80,
-    183
-   ],
-   "size": [
-    169,
-    150
-   ],
-   "icon": "skills/magnet/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/magnet/f000.png",
-      "skills/magnet/f001.png",
-      "skills/magnet/f002.png",
-      "skills/magnet/f003.png",
-      "skills/magnet/f004.png",
-      "skills/magnet/f005.png",
-      "skills/magnet/f006.png",
-      "skills/magnet/f007.png",
-      "skills/magnet/f008.png",
-      "skills/magnet/f009.png",
-      "skills/magnet/f010.png",
-      "skills/magnet/f011.png",
-      "skills/magnet/f012.png",
-      "skills/magnet/f013.png",
-      "skills/magnet/f014.png",
-      "skills/magnet/f015.png",
-      "skills/magnet/f016.png",
-      "skills/magnet/f017.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ],
-     "pivot": [
-      80,
-      183
-     ],
-     "size": [
-      169,
-      150
-     ]
-    }
-   },
-   "parts": {
-    "prepare": {
-     "action": "dash",
-     "time": 0
-    }
-   },
    "actions": []
   },
   "berserk": {
    "name": "狂暴攻击",
    "id": "1121013",
-   "pivot": [
-    375,
-    313
-   ],
-   "size": [
-    924,
-    562
-   ],
-   "icon": "skills/berserk/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/berserk/f000.png",
-      "skills/berserk/f001.png",
-      "skills/berserk/f002.png",
-      "skills/berserk/f003.png",
-      "skills/berserk/f004.png",
-      "skills/berserk/f005.png",
-      "skills/berserk/f006.png",
-      "skills/berserk/f007.png",
-      "skills/berserk/f008.png",
-      "skills/berserk/f009.png",
-      "skills/berserk/f010.png",
-      "skills/berserk/f011.png",
-      "skills/berserk/f012.png",
-      "skills/berserk/f013.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      30,
-      30
-     ],
-     "pivot": [
-      375,
-      313
-     ],
-     "size": [
-      924,
-      562
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/berserk/hit/f000.png",
-      "skills/berserk/hit/f001.png",
-      "skills/berserk/hit/f002.png",
-      "skills/berserk/hit/f003.png",
-      "skills/berserk/hit/f004.png",
-      "skills/berserk/hit/f005.png",
-      "skills/berserk/hit/f006.png",
-      "skills/berserk/hit/f007.png"
-     ],
-     "delays": [
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90
-     ],
-     "pivot": [
-      99,
-      91
-     ],
-     "size": [
-      213,
-      197
-     ]
-    }
-   },
    "actions": [
     "brandish1",
     "brandish1",
@@ -14380,95 +11521,6 @@
   "firearrow": {
    "name": "火焰箭",
    "id": "2101004",
-   "pivot": [
-    51,
-    86
-   ],
-   "size": [
-    52,
-    96
-   ],
-   "icon": "skills/firearrow/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/firearrow/f000.png",
-      "skills/firearrow/f001.png",
-      "skills/firearrow/f002.png",
-      "skills/firearrow/f003.png",
-      "skills/firearrow/f004.png",
-      "skills/firearrow/f005.png",
-      "skills/firearrow/f006.png",
-      "skills/firearrow/f007.png",
-      "skills/firearrow/f008.png",
-      "skills/firearrow/f009.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100,
-      100,
-      100,
-      100,
-      100,
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      51,
-      86
-     ],
-     "size": [
-      52,
-      96
-     ]
-    },
-    "ball": {
-     "frames": [
-      "skills/firearrow/ball/f000.png",
-      "skills/firearrow/ball/f001.png",
-      "skills/firearrow/ball/f002.png"
-     ],
-     "delays": [
-      30,
-      30,
-      30
-     ],
-     "pivot": [
-      42,
-      10
-     ],
-     "size": [
-      84,
-      20
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/firearrow/hit/f000.png",
-      "skills/firearrow/hit/f001.png",
-      "skills/firearrow/hit/f002.png",
-      "skills/firearrow/hit/f003.png",
-      "skills/firearrow/hit/f004.png"
-     ],
-     "delays": [
-      90,
-      90,
-      90,
-      90,
-      90
-     ],
-     "pivot": [
-      29,
-      50
-     ],
-     "size": [
-      56,
-      77
-     ]
-    }
-   },
    "actions": [
     "shoot1"
    ]
@@ -14476,178 +11528,6 @@
   "doom": {
    "name": "末日烈焰",
    "id": "2111002",
-   "pivot": [
-    49,
-    178
-   ],
-   "size": [
-    110,
-    186
-   ],
-   "icon": "skills/doom/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/doom/f000.png",
-      "skills/doom/f001.png",
-      "skills/doom/f002.png",
-      "skills/doom/f003.png",
-      "skills/doom/f004.png",
-      "skills/doom/f005.png",
-      "skills/doom/f006.png",
-      "skills/doom/f007.png",
-      "skills/doom/f008.png",
-      "skills/doom/f009.png",
-      "skills/doom/f010.png",
-      "skills/doom/f011.png"
-     ],
-     "delays": [
-      50,
-      50,
-      110,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      130
-     ],
-     "pivot": [
-      49,
-      178
-     ],
-     "size": [
-      110,
-      186
-     ]
-    },
-    "prepare": {
-     "frames": [
-      "skills/doom/prepare/f000.png",
-      "skills/doom/prepare/f001.png",
-      "skills/doom/prepare/f002.png",
-      "skills/doom/prepare/f003.png",
-      "skills/doom/prepare/f004.png",
-      "skills/doom/prepare/f005.png",
-      "skills/doom/prepare/f006.png",
-      "skills/doom/prepare/f007.png",
-      "skills/doom/prepare/f008.png",
-      "skills/doom/prepare/f009.png",
-      "skills/doom/prepare/f010.png",
-      "skills/doom/prepare/f011.png",
-      "skills/doom/prepare/f012.png"
-     ],
-     "delays": [
-      55,
-      55,
-      55,
-      55,
-      55,
-      55,
-      55,
-      55,
-      55,
-      135,
-      85,
-      95,
-      105
-     ],
-     "pivot": [
-      128,
-      162
-     ],
-     "size": [
-      252,
-      258
-     ]
-    },
-    "special": {
-     "frames": [
-      "skills/doom/special/f000.png",
-      "skills/doom/special/f001.png",
-      "skills/doom/special/f002.png",
-      "skills/doom/special/f003.png",
-      "skills/doom/special/f004.png",
-      "skills/doom/special/f005.png"
-     ],
-     "delays": [
-      150,
-      150,
-      70,
-      70,
-      70,
-      70
-     ],
-     "pivot": [
-      22,
-      28
-     ],
-     "size": [
-      46,
-      57
-     ]
-    },
-    "special1": {
-     "frames": [
-      "skills/doom/special1/f000.png",
-      "skills/doom/special1/f001.png",
-      "skills/doom/special1/f002.png",
-      "skills/doom/special1/f003.png",
-      "skills/doom/special1/f004.png",
-      "skills/doom/special1/f005.png"
-     ],
-     "delays": [
-      150,
-      150,
-      70,
-      70,
-      70,
-      70
-     ],
-     "pivot": [
-      33,
-      32
-     ],
-     "size": [
-      65,
-      59
-     ]
-    },
-    "special2": {
-     "frames": [
-      "skills/doom/special2/f000.png",
-      "skills/doom/special2/f001.png",
-      "skills/doom/special2/f002.png"
-     ],
-     "delays": [
-      150,
-      100,
-      100
-     ],
-     "pivot": [
-      14,
-      12
-     ],
-     "size": [
-      28,
-      25
-     ]
-    }
-   },
-   "parts": {
-    "prepare": {
-     "action": "alert2"
-    },
-    "special": {
-     "start": 150,
-     "interval": 60,
-     "count": 6,
-     "duration": 900
-    }
-   },
    "actions": [
     "alert4"
    ]
@@ -14655,102 +11535,6 @@
   "chain": {
    "name": "连环爆破",
    "id": "2121006",
-   "pivot": [
-    121,
-    149
-   ],
-   "size": [
-    229,
-    200
-   ],
-   "icon": "skills/chain/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/chain/f000.png",
-      "skills/chain/f001.png",
-      "skills/chain/f002.png",
-      "skills/chain/f003.png",
-      "skills/chain/f004.png",
-      "skills/chain/f005.png",
-      "skills/chain/f006.png",
-      "skills/chain/f007.png",
-      "skills/chain/f008.png",
-      "skills/chain/f009.png",
-      "skills/chain/f010.png",
-      "skills/chain/f011.png",
-      "skills/chain/f012.png",
-      "skills/chain/f013.png",
-      "skills/chain/f014.png",
-      "skills/chain/f015.png",
-      "skills/chain/f016.png",
-      "skills/chain/f017.png",
-      "skills/chain/f018.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ],
-     "pivot": [
-      121,
-      149
-     ],
-     "size": [
-      229,
-      200
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/chain/hit/f000.png",
-      "skills/chain/hit/f001.png",
-      "skills/chain/hit/f002.png",
-      "skills/chain/hit/f003.png",
-      "skills/chain/hit/f004.png",
-      "skills/chain/hit/f005.png",
-      "skills/chain/hit/f006.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ],
-     "pivot": [
-      57,
-      59
-     ],
-     "size": [
-      115,
-      70
-     ]
-    }
-   },
-   "parts": {
-    "effect": {
-     "z": -1
-    }
-   },
    "actions": [
     "paralyze"
    ]
@@ -14758,777 +11542,6 @@
   "starfall": {
    "name": "天降落星",
    "id": "2121007",
-   "pivot": [
-    99,
-    693
-   ],
-   "size": [
-    194,
-    748
-   ],
-   "icon": "skills/starfall/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/starfall/f000.png",
-      "skills/starfall/f001.png",
-      "skills/starfall/f002.png",
-      "skills/starfall/f003.png",
-      "skills/starfall/f004.png",
-      "skills/starfall/f005.png",
-      "skills/starfall/f006.png",
-      "skills/starfall/f007.png",
-      "skills/starfall/f008.png",
-      "skills/starfall/f009.png",
-      "skills/starfall/f010.png",
-      "skills/starfall/f011.png",
-      "skills/starfall/f012.png",
-      "skills/starfall/f013.png",
-      "skills/starfall/f014.png",
-      "skills/starfall/f015.png",
-      "skills/starfall/f016.png",
-      "skills/starfall/f017.png",
-      "skills/starfall/f018.png",
-      "skills/starfall/f019.png",
-      "skills/starfall/f020.png",
-      "skills/starfall/f021.png",
-      "skills/starfall/f022.png",
-      "skills/starfall/f023.png",
-      "skills/starfall/f024.png"
-     ],
-     "delays": [
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90
-     ],
-     "pivot": [
-      99,
-      693
-     ],
-     "size": [
-      194,
-      748
-     ]
-    },
-    "cast2": {
-     "frames": [
-      "skills/starfall/cast2/f000.png",
-      "skills/starfall/cast2/f001.png",
-      "skills/starfall/cast2/f002.png",
-      "skills/starfall/cast2/f003.png",
-      "skills/starfall/cast2/f004.png",
-      "skills/starfall/cast2/f005.png",
-      "skills/starfall/cast2/f006.png",
-      "skills/starfall/cast2/f007.png",
-      "skills/starfall/cast2/f008.png",
-      "skills/starfall/cast2/f009.png",
-      "skills/starfall/cast2/f010.png",
-      "skills/starfall/cast2/f011.png",
-      "skills/starfall/cast2/f012.png",
-      "skills/starfall/cast2/f013.png",
-      "skills/starfall/cast2/f014.png",
-      "skills/starfall/cast2/f015.png",
-      "skills/starfall/cast2/f016.png",
-      "skills/starfall/cast2/f017.png",
-      "skills/starfall/cast2/f018.png",
-      "skills/starfall/cast2/f019.png"
-     ],
-     "delays": [
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90
-     ],
-     "pivot": [
-      117,
-      200
-     ],
-     "size": [
-      225,
-      237
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/starfall/hit/f000.png",
-      "skills/starfall/hit/f001.png",
-      "skills/starfall/hit/f002.png",
-      "skills/starfall/hit/f003.png",
-      "skills/starfall/hit/f004.png",
-      "skills/starfall/hit/f005.png",
-      "skills/starfall/hit/f006.png",
-      "skills/starfall/hit/f007.png",
-      "skills/starfall/hit/f008.png",
-      "skills/starfall/hit/f009.png",
-      "skills/starfall/hit/f010.png",
-      "skills/starfall/hit/f011.png",
-      "skills/starfall/hit/f012.png",
-      "skills/starfall/hit/f013.png",
-      "skills/starfall/hit/f014.png",
-      "skills/starfall/hit/f015.png",
-      "skills/starfall/hit/f016.png",
-      "skills/starfall/hit/f017.png",
-      "skills/starfall/hit/f018.png",
-      "skills/starfall/hit/f019.png",
-      "skills/starfall/hit/f020.png",
-      "skills/starfall/hit/f021.png",
-      "skills/starfall/hit/f022.png"
-     ],
-     "delays": [
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120
-     ],
-     "pivot": [
-      107,
-      228
-     ],
-     "size": [
-      277,
-      230
-     ]
-    },
-    "tile": {
-     "frames": [
-      "skills/starfall/tile/f000.png",
-      "skills/starfall/tile/f001.png",
-      "skills/starfall/tile/f002.png",
-      "skills/starfall/tile/f003.png",
-      "skills/starfall/tile/f004.png",
-      "skills/starfall/tile/f005.png",
-      "skills/starfall/tile/f006.png",
-      "skills/starfall/tile/f007.png",
-      "skills/starfall/tile/f008.png",
-      "skills/starfall/tile/f009.png",
-      "skills/starfall/tile/f010.png",
-      "skills/starfall/tile/f011.png",
-      "skills/starfall/tile/f012.png",
-      "skills/starfall/tile/f013.png",
-      "skills/starfall/tile/f014.png",
-      "skills/starfall/tile/f015.png",
-      "skills/starfall/tile/f016.png",
-      "skills/starfall/tile/f017.png",
-      "skills/starfall/tile/f018.png",
-      "skills/starfall/tile/f019.png",
-      "skills/starfall/tile/f020.png",
-      "skills/starfall/tile/f021.png",
-      "skills/starfall/tile/f022.png"
-     ],
-     "delays": [
-      60,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      540
-     ],
-     "pivot": [
-      67,
-      187
-     ],
-     "size": [
-      203,
-      189
-     ]
-    },
-    "tile1": {
-     "frames": [
-      "skills/starfall/tile1/f000.png",
-      "skills/starfall/tile1/f001.png",
-      "skills/starfall/tile1/f002.png",
-      "skills/starfall/tile1/f003.png",
-      "skills/starfall/tile1/f004.png",
-      "skills/starfall/tile1/f005.png",
-      "skills/starfall/tile1/f006.png",
-      "skills/starfall/tile1/f007.png",
-      "skills/starfall/tile1/f008.png",
-      "skills/starfall/tile1/f009.png",
-      "skills/starfall/tile1/f010.png",
-      "skills/starfall/tile1/f011.png",
-      "skills/starfall/tile1/f012.png",
-      "skills/starfall/tile1/f013.png",
-      "skills/starfall/tile1/f014.png",
-      "skills/starfall/tile1/f015.png",
-      "skills/starfall/tile1/f016.png",
-      "skills/starfall/tile1/f017.png",
-      "skills/starfall/tile1/f018.png",
-      "skills/starfall/tile1/f019.png",
-      "skills/starfall/tile1/f020.png",
-      "skills/starfall/tile1/f021.png",
-      "skills/starfall/tile1/f022.png"
-     ],
-     "delays": [
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      480
-     ],
-     "pivot": [
-      107,
-      199
-     ],
-     "size": [
-      268,
-      201
-     ]
-    },
-    "tile2": {
-     "frames": [
-      "skills/starfall/tile2/f000.png",
-      "skills/starfall/tile2/f001.png",
-      "skills/starfall/tile2/f002.png",
-      "skills/starfall/tile2/f003.png",
-      "skills/starfall/tile2/f004.png",
-      "skills/starfall/tile2/f005.png",
-      "skills/starfall/tile2/f006.png",
-      "skills/starfall/tile2/f007.png",
-      "skills/starfall/tile2/f008.png",
-      "skills/starfall/tile2/f009.png",
-      "skills/starfall/tile2/f010.png",
-      "skills/starfall/tile2/f011.png",
-      "skills/starfall/tile2/f012.png",
-      "skills/starfall/tile2/f013.png",
-      "skills/starfall/tile2/f014.png",
-      "skills/starfall/tile2/f015.png",
-      "skills/starfall/tile2/f016.png",
-      "skills/starfall/tile2/f017.png",
-      "skills/starfall/tile2/f018.png",
-      "skills/starfall/tile2/f019.png",
-      "skills/starfall/tile2/f020.png",
-      "skills/starfall/tile2/f021.png"
-     ],
-     "delays": [
-      180,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      540
-     ],
-     "pivot": [
-      120,
-      206
-     ],
-     "size": [
-      299,
-      208
-     ]
-    },
-    "tile3": {
-     "frames": [
-      "skills/starfall/tile3/f000.png",
-      "skills/starfall/tile3/f001.png",
-      "skills/starfall/tile3/f002.png",
-      "skills/starfall/tile3/f003.png",
-      "skills/starfall/tile3/f004.png",
-      "skills/starfall/tile3/f005.png",
-      "skills/starfall/tile3/f006.png",
-      "skills/starfall/tile3/f007.png",
-      "skills/starfall/tile3/f008.png",
-      "skills/starfall/tile3/f009.png",
-      "skills/starfall/tile3/f010.png",
-      "skills/starfall/tile3/f011.png",
-      "skills/starfall/tile3/f012.png",
-      "skills/starfall/tile3/f013.png",
-      "skills/starfall/tile3/f014.png",
-      "skills/starfall/tile3/f015.png",
-      "skills/starfall/tile3/f016.png",
-      "skills/starfall/tile3/f017.png",
-      "skills/starfall/tile3/f018.png",
-      "skills/starfall/tile3/f019.png",
-      "skills/starfall/tile3/f020.png",
-      "skills/starfall/tile3/f021.png",
-      "skills/starfall/tile3/f022.png",
-      "skills/starfall/tile3/f023.png",
-      "skills/starfall/tile3/f024.png"
-     ],
-     "delays": [
-      60,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      300
-     ],
-     "pivot": [
-      67,
-      216
-     ],
-     "size": [
-      213,
-      218
-     ]
-    },
-    "tile4": {
-     "frames": [
-      "skills/starfall/tile4/f000.png",
-      "skills/starfall/tile4/f001.png",
-      "skills/starfall/tile4/f002.png",
-      "skills/starfall/tile4/f003.png",
-      "skills/starfall/tile4/f004.png",
-      "skills/starfall/tile4/f005.png",
-      "skills/starfall/tile4/f006.png",
-      "skills/starfall/tile4/f007.png",
-      "skills/starfall/tile4/f008.png",
-      "skills/starfall/tile4/f009.png",
-      "skills/starfall/tile4/f010.png",
-      "skills/starfall/tile4/f011.png",
-      "skills/starfall/tile4/f012.png",
-      "skills/starfall/tile4/f013.png",
-      "skills/starfall/tile4/f014.png",
-      "skills/starfall/tile4/f015.png",
-      "skills/starfall/tile4/f016.png",
-      "skills/starfall/tile4/f017.png",
-      "skills/starfall/tile4/f018.png",
-      "skills/starfall/tile4/f019.png",
-      "skills/starfall/tile4/f020.png",
-      "skills/starfall/tile4/f021.png",
-      "skills/starfall/tile4/f022.png",
-      "skills/starfall/tile4/f023.png",
-      "skills/starfall/tile4/f024.png"
-     ],
-     "delays": [
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      240
-     ],
-     "pivot": [
-      107,
-      228
-     ],
-     "size": [
-      277,
-      230
-     ]
-    },
-    "tile5": {
-     "frames": [
-      "skills/starfall/tile5/f000.png",
-      "skills/starfall/tile5/f001.png",
-      "skills/starfall/tile5/f002.png",
-      "skills/starfall/tile5/f003.png",
-      "skills/starfall/tile5/f004.png",
-      "skills/starfall/tile5/f005.png",
-      "skills/starfall/tile5/f006.png",
-      "skills/starfall/tile5/f007.png",
-      "skills/starfall/tile5/f008.png",
-      "skills/starfall/tile5/f009.png",
-      "skills/starfall/tile5/f010.png",
-      "skills/starfall/tile5/f011.png",
-      "skills/starfall/tile5/f012.png",
-      "skills/starfall/tile5/f013.png",
-      "skills/starfall/tile5/f014.png",
-      "skills/starfall/tile5/f015.png",
-      "skills/starfall/tile5/f016.png",
-      "skills/starfall/tile5/f017.png",
-      "skills/starfall/tile5/f018.png",
-      "skills/starfall/tile5/f019.png",
-      "skills/starfall/tile5/f020.png",
-      "skills/starfall/tile5/f021.png",
-      "skills/starfall/tile5/f022.png",
-      "skills/starfall/tile5/f023.png",
-      "skills/starfall/tile5/f024.png"
-     ],
-     "delays": [
-      180,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      180
-     ],
-     "pivot": [
-      123,
-      235
-     ],
-     "size": [
-      312,
-      237
-     ]
-    },
-    "tile6": {
-     "frames": [
-      "skills/starfall/tile6/f000.png",
-      "skills/starfall/tile6/f001.png",
-      "skills/starfall/tile6/f002.png",
-      "skills/starfall/tile6/f003.png",
-      "skills/starfall/tile6/f004.png",
-      "skills/starfall/tile6/f005.png",
-      "skills/starfall/tile6/f006.png",
-      "skills/starfall/tile6/f007.png",
-      "skills/starfall/tile6/f008.png",
-      "skills/starfall/tile6/f009.png",
-      "skills/starfall/tile6/f010.png",
-      "skills/starfall/tile6/f011.png",
-      "skills/starfall/tile6/f012.png",
-      "skills/starfall/tile6/f013.png",
-      "skills/starfall/tile6/f014.png",
-      "skills/starfall/tile6/f015.png",
-      "skills/starfall/tile6/f016.png",
-      "skills/starfall/tile6/f017.png",
-      "skills/starfall/tile6/f018.png",
-      "skills/starfall/tile6/f019.png",
-      "skills/starfall/tile6/f020.png",
-      "skills/starfall/tile6/f021.png",
-      "skills/starfall/tile6/f022.png",
-      "skills/starfall/tile6/f023.png",
-      "skills/starfall/tile6/f024.png",
-      "skills/starfall/tile6/f025.png",
-      "skills/starfall/tile6/f026.png"
-     ],
-     "delays": [
-      30,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      90
-     ],
-     "pivot": [
-      67,
-      348
-     ],
-     "size": [
-      284,
-      350
-     ]
-    },
-    "tile7": {
-     "frames": [
-      "skills/starfall/tile7/f000.png",
-      "skills/starfall/tile7/f001.png",
-      "skills/starfall/tile7/f002.png",
-      "skills/starfall/tile7/f003.png",
-      "skills/starfall/tile7/f004.png",
-      "skills/starfall/tile7/f005.png",
-      "skills/starfall/tile7/f006.png",
-      "skills/starfall/tile7/f007.png",
-      "skills/starfall/tile7/f008.png",
-      "skills/starfall/tile7/f009.png",
-      "skills/starfall/tile7/f010.png",
-      "skills/starfall/tile7/f011.png",
-      "skills/starfall/tile7/f012.png",
-      "skills/starfall/tile7/f013.png",
-      "skills/starfall/tile7/f014.png",
-      "skills/starfall/tile7/f015.png",
-      "skills/starfall/tile7/f016.png",
-      "skills/starfall/tile7/f017.png",
-      "skills/starfall/tile7/f018.png",
-      "skills/starfall/tile7/f019.png",
-      "skills/starfall/tile7/f020.png",
-      "skills/starfall/tile7/f021.png",
-      "skills/starfall/tile7/f022.png",
-      "skills/starfall/tile7/f023.png",
-      "skills/starfall/tile7/f024.png",
-      "skills/starfall/tile7/f025.png",
-      "skills/starfall/tile7/f026.png"
-     ],
-     "delays": [
-      60,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      60
-     ],
-     "pivot": [
-      107,
-      360
-     ],
-     "size": [
-      343,
-      362
-     ]
-    },
-    "tile8": {
-     "frames": [
-      "skills/starfall/tile8/f000.png",
-      "skills/starfall/tile8/f001.png",
-      "skills/starfall/tile8/f002.png",
-      "skills/starfall/tile8/f003.png",
-      "skills/starfall/tile8/f004.png",
-      "skills/starfall/tile8/f005.png",
-      "skills/starfall/tile8/f006.png",
-      "skills/starfall/tile8/f007.png",
-      "skills/starfall/tile8/f008.png",
-      "skills/starfall/tile8/f009.png",
-      "skills/starfall/tile8/f010.png",
-      "skills/starfall/tile8/f011.png",
-      "skills/starfall/tile8/f012.png",
-      "skills/starfall/tile8/f013.png",
-      "skills/starfall/tile8/f014.png",
-      "skills/starfall/tile8/f015.png",
-      "skills/starfall/tile8/f016.png",
-      "skills/starfall/tile8/f017.png",
-      "skills/starfall/tile8/f018.png",
-      "skills/starfall/tile8/f019.png",
-      "skills/starfall/tile8/f020.png",
-      "skills/starfall/tile8/f021.png",
-      "skills/starfall/tile8/f022.png",
-      "skills/starfall/tile8/f023.png",
-      "skills/starfall/tile8/f024.png",
-      "skills/starfall/tile8/f025.png",
-      "skills/starfall/tile8/f026.png"
-     ],
-     "delays": [
-      90,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      120,
-      30
-     ],
-     "pivot": [
-      123,
-      367
-     ],
-     "size": [
-      376,
-      369
-     ]
-    }
-   },
-   "parts": {
-    "effect0": {
-     "z": -1
-    },
-    "tile": {
-     "effectDistance": 180
-    }
-   },
    "actions": [
     "meteor"
    ]
@@ -15536,536 +11549,21 @@
   "firebolt": {
    "name": "烈火箭",
    "id": "3111003",
-   "pivot": [
-    96,
-    135
-   ],
-   "size": [
-    182,
-    209
-   ],
-   "icon": "skills/firebolt/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/firebolt/f000.png",
-      "skills/firebolt/f001.png",
-      "skills/firebolt/f002.png",
-      "skills/firebolt/f003.png",
-      "skills/firebolt/f004.png",
-      "skills/firebolt/f005.png",
-      "skills/firebolt/f006.png",
-      "skills/firebolt/f007.png",
-      "skills/firebolt/f008.png"
-     ],
-     "delays": [
-      110,
-      110,
-      110,
-      110,
-      110,
-      110,
-      110,
-      110,
-      110
-     ],
-     "pivot": [
-      96,
-      135
-     ],
-     "size": [
-      182,
-      209
-     ]
-    },
-    "ball": {
-     "frames": [
-      "skills/firebolt/ball/f000.png",
-      "skills/firebolt/ball/f001.png",
-      "skills/firebolt/ball/f002.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      45,
-      16
-     ],
-     "size": [
-      159,
-      32
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/firebolt/hit/f000.png",
-      "skills/firebolt/hit/f001.png",
-      "skills/firebolt/hit/f002.png",
-      "skills/firebolt/hit/f003.png",
-      "skills/firebolt/hit/f004.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      51,
-      52
-     ],
-     "size": [
-      103,
-      102
-     ]
-    },
-    "special": {
-     "frames": [
-      "skills/firebolt/special/f000.png",
-      "skills/firebolt/special/f001.png",
-      "skills/firebolt/special/f002.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      42,
-      58
-     ],
-     "size": [
-      97,
-      107
-     ]
-    },
-    "special1": {
-     "frames": [
-      "skills/firebolt/special1/f000.png",
-      "skills/firebolt/special1/f001.png",
-      "skills/firebolt/special1/f002.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      26,
-      35
-     ],
-     "size": [
-      59,
-      70
-     ]
-    },
-    "special2": {
-     "frames": [
-      "skills/firebolt/special2/f000.png",
-      "skills/firebolt/special2/f001.png",
-      "skills/firebolt/special2/f002.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      29,
-      34
-     ],
-     "size": [
-      59,
-      68
-     ]
-    },
-    "tile": {
-     "frames": [
-      "skills/firebolt/tile/f000.png",
-      "skills/firebolt/tile/f001.png",
-      "skills/firebolt/tile/f002.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      17,
-      48
-     ],
-     "size": [
-      37,
-      60
-     ]
-    },
-    "tile1": {
-     "frames": [
-      "skills/firebolt/tile1/f000.png",
-      "skills/firebolt/tile1/f001.png",
-      "skills/firebolt/tile1/f002.png",
-      "skills/firebolt/tile1/f003.png"
-     ],
-     "delays": [
-      110,
-      110,
-      110,
-      110
-     ],
-     "pivot": [
-      22,
-      67
-     ],
-     "size": [
-      41,
-      83
-     ]
-    },
-    "tile2": {
-     "frames": [
-      "skills/firebolt/tile2/f000.png",
-      "skills/firebolt/tile2/f001.png",
-      "skills/firebolt/tile2/f002.png",
-      "skills/firebolt/tile2/f003.png",
-      "skills/firebolt/tile2/f004.png",
-      "skills/firebolt/tile2/f005.png"
-     ],
-     "delays": [
-      95,
-      95,
-      95,
-      95,
-      95,
-      95
-     ],
-     "pivot": [
-      32,
-      95
-     ],
-     "size": [
-      57,
-      117
-     ]
-    }
-   },
-   "parts": {
-    "special": {
-     "x": 105,
-     "y": 130,
-     "fall": 400,
-     "start": 150,
-     "interval": 90,
-     "count": 5,
-     "duration": 500
-    },
-    "tile": {
-     "effectDistance": 20
-    }
-   },
    "actions": []
   },
   "arrowrain": {
    "name": "箭雨",
    "id": "3111004",
-   "pivot": [
-    94,
-    158
-   ],
-   "size": [
-    129,
-    197
-   ],
-   "icon": "skills/arrowrain/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/arrowrain/f000.png",
-      "skills/arrowrain/f001.png",
-      "skills/arrowrain/f002.png",
-      "skills/arrowrain/f003.png",
-      "skills/arrowrain/f004.png",
-      "skills/arrowrain/f005.png",
-      "skills/arrowrain/f006.png",
-      "skills/arrowrain/f007.png",
-      "skills/arrowrain/f008.png",
-      "skills/arrowrain/f009.png",
-      "skills/arrowrain/f010.png",
-      "skills/arrowrain/f011.png"
-     ],
-     "delays": [
-      65,
-      65,
-      65,
-      65,
-      65,
-      65,
-      65,
-      65,
-      65,
-      65,
-      65,
-      65
-     ],
-     "pivot": [
-      94,
-      158
-     ],
-     "size": [
-      129,
-      197
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/arrowrain/hit/f000.png",
-      "skills/arrowrain/hit/f001.png",
-      "skills/arrowrain/hit/f002.png"
-     ],
-     "delays": [
-      120,
-      120,
-      120
-     ],
-     "pivot": [
-      40,
-      110
-     ],
-     "size": [
-      101,
-      133
-     ]
-    },
-    "special": {
-     "frames": [
-      "skills/arrowrain/special/f000.png"
-     ],
-     "delays": [
-      100
-     ],
-     "pivot": [
-      21,
-      48
-     ],
-     "size": [
-      42,
-      96
-     ]
-    }
-   },
-   "parts": {
-    "special": {
-     "x": 85,
-     "y": 230,
-     "fall": 150,
-     "start": 0,
-     "interval": 90,
-     "count": 8,
-     "duration": 500
-    }
-   },
    "actions": []
   },
   "dragon": {
    "name": "飞龙冲击波",
    "id": "3121003",
-   "pivot": [
-    170,
-    143
-   ],
-   "size": [
-    300,
-    203
-   ],
-   "icon": "skills/dragon/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/dragon/f000.png",
-      "skills/dragon/f001.png",
-      "skills/dragon/f002.png",
-      "skills/dragon/f003.png",
-      "skills/dragon/f004.png",
-      "skills/dragon/f005.png",
-      "skills/dragon/f006.png",
-      "skills/dragon/f007.png",
-      "skills/dragon/f008.png",
-      "skills/dragon/f009.png",
-      "skills/dragon/f010.png",
-      "skills/dragon/f011.png",
-      "skills/dragon/f012.png",
-      "skills/dragon/f013.png"
-     ],
-     "delays": [
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80,
-      80
-     ],
-     "pivot": [
-      170,
-      143
-     ],
-     "size": [
-      300,
-      203
-     ]
-    },
-    "ball": {
-     "frames": [
-      "skills/dragon/ball/f000.png",
-      "skills/dragon/ball/f001.png",
-      "skills/dragon/ball/f002.png",
-      "skills/dragon/ball/f003.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      66,
-      42
-     ],
-     "size": [
-      204,
-      90
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/dragon/hit/f000.png",
-      "skills/dragon/hit/f001.png",
-      "skills/dragon/hit/f002.png",
-      "skills/dragon/hit/f003.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      55,
-      85
-     ],
-     "size": [
-      197,
-      169
-     ]
-    }
-   },
-   "parts": {
-    "ball": {
-     "delay": 640
-    },
-    "hit": {
-     "order": 1
-    }
-   },
    "actions": []
   },
   "storm": {
    "name": "驟雨狂矢VI",
    "id": "3121022",
-   "pivot": [
-    554,
-    352
-   ],
-   "size": [
-    842,
-    610
-   ],
-   "icon": "skills/storm/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/storm/f000.png",
-      "skills/storm/f001.png",
-      "skills/storm/f002.png",
-      "skills/storm/f003.png",
-      "skills/storm/f004.png",
-      "skills/storm/f005.png",
-      "skills/storm/f006.png",
-      "skills/storm/f007.png",
-      "skills/storm/f008.png",
-      "skills/storm/f009.png",
-      "skills/storm/f010.png",
-      "skills/storm/f011.png",
-      "skills/storm/f012.png",
-      "skills/storm/f013.png",
-      "skills/storm/f014.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ],
-     "pivot": [
-      554,
-      352
-     ],
-     "size": [
-      842,
-      610
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/storm/hit/f000.png",
-      "skills/storm/hit/f001.png",
-      "skills/storm/hit/f002.png",
-      "skills/storm/hit/f003.png",
-      "skills/storm/hit/f004.png",
-      "skills/storm/hit/f005.png",
-      "skills/storm/hit/f006.png",
-      "skills/storm/hit/f007.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ],
-     "pivot": [
-      156,
-      135
-     ],
-     "size": [
-      284,
-      246
-     ]
-    }
-   },
    "actions": [
     "shoot1"
    ]
@@ -16073,85 +11571,6 @@
   "holyarrow": {
    "name": "圣箭术",
    "id": "2301005",
-   "pivot": [
-    103,
-    76
-   ],
-   "size": [
-    143,
-    89
-   ],
-   "icon": "skills/holyarrow/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/holyarrow/f000.png",
-      "skills/holyarrow/f001.png",
-      "skills/holyarrow/f002.png",
-      "skills/holyarrow/f003.png",
-      "skills/holyarrow/f004.png",
-      "skills/holyarrow/f005.png",
-      "skills/holyarrow/f006.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100,
-      100,
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      103,
-      76
-     ],
-     "size": [
-      143,
-      89
-     ]
-    },
-    "ball": {
-     "frames": [
-      "skills/holyarrow/ball/f000.png",
-      "skills/holyarrow/ball/f001.png",
-      "skills/holyarrow/ball/f002.png"
-     ],
-     "delays": [
-      100,
-      100,
-      100
-     ],
-     "pivot": [
-      41,
-      5
-     ],
-     "size": [
-      83,
-      11
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/holyarrow/hit/f000.png",
-      "skills/holyarrow/hit/f001.png",
-      "skills/holyarrow/hit/f002.png"
-     ],
-     "delays": [
-      80,
-      80,
-      80
-     ],
-     "pivot": [
-      68,
-      68
-     ],
-     "size": [
-      136,
-      136
-     ]
-    }
-   },
    "actions": [
     "shoot1"
    ]
@@ -16159,76 +11578,6 @@
   "holy": {
    "name": "圣光",
    "id": "2311004",
-   "pivot": [
-    90,
-    202
-   ],
-   "size": [
-    188,
-    224
-   ],
-   "icon": "skills/holy/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/holy/f000.png",
-      "skills/holy/f001.png",
-      "skills/holy/f002.png",
-      "skills/holy/f003.png",
-      "skills/holy/f004.png",
-      "skills/holy/f005.png",
-      "skills/holy/f006.png",
-      "skills/holy/f007.png",
-      "skills/holy/f008.png",
-      "skills/holy/f009.png",
-      "skills/holy/f010.png"
-     ],
-     "delays": [
-      95,
-      95,
-      95,
-      95,
-      95,
-      95,
-      95,
-      95,
-      95,
-      95,
-      95
-     ],
-     "pivot": [
-      90,
-      202
-     ],
-     "size": [
-      188,
-      224
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/holy/hit/f000.png",
-      "skills/holy/hit/f001.png"
-     ],
-     "delays": [
-      200,
-      200
-     ],
-     "pivot": [
-      63,
-      73
-     ],
-     "size": [
-      137,
-      143
-     ]
-    }
-   },
-   "parts": {
-    "effect": {
-     "z": -1
-    }
-   },
    "actions": [
     "magic2"
    ]
@@ -16236,105 +11585,6 @@
   "ray": {
    "name": "光芒飞箭",
    "id": "2321007",
-   "pivot": [
-    112,
-    135
-   ],
-   "size": [
-    185,
-    194
-   ],
-   "icon": "skills/ray/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/ray/f000.png",
-      "skills/ray/f001.png",
-      "skills/ray/f002.png",
-      "skills/ray/f003.png",
-      "skills/ray/f004.png",
-      "skills/ray/f005.png",
-      "skills/ray/f006.png",
-      "skills/ray/f007.png",
-      "skills/ray/f008.png",
-      "skills/ray/f009.png",
-      "skills/ray/f010.png",
-      "skills/ray/f011.png",
-      "skills/ray/f012.png",
-      "skills/ray/f013.png",
-      "skills/ray/f014.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ],
-     "pivot": [
-      112,
-      135
-     ],
-     "size": [
-      185,
-      194
-     ]
-    },
-    "ball": {
-     "frames": [
-      "skills/ray/ball/f000.png"
-     ],
-     "delays": [
-      100
-     ],
-     "pivot": [
-      47,
-      10
-     ],
-     "size": [
-      90,
-      19
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/ray/hit/f000.png",
-      "skills/ray/hit/f001.png",
-      "skills/ray/hit/f002.png",
-      "skills/ray/hit/f003.png",
-      "skills/ray/hit/f004.png",
-      "skills/ray/hit/f005.png",
-      "skills/ray/hit/f006.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ],
-     "pivot": [
-      52,
-      60
-     ],
-     "size": [
-      105,
-      114
-     ]
-    }
-   },
    "actions": [
     "shoot1"
    ]
@@ -16342,123 +11592,6 @@
   "libra": {
    "name": "天秤之使",
    "id": "2321020",
-   "pivot": [
-    178,
-    318
-   ],
-   "size": [
-    356,
-    388
-   ],
-   "icon": "skills/libra/icon.png",
-   "anims": {
-    "cast": {
-     "frames": [
-      "skills/libra/f000.png",
-      "skills/libra/f001.png",
-      "skills/libra/f002.png",
-      "skills/libra/f003.png",
-      "skills/libra/f004.png",
-      "skills/libra/f005.png",
-      "skills/libra/f006.png",
-      "skills/libra/f007.png",
-      "skills/libra/f008.png",
-      "skills/libra/f009.png",
-      "skills/libra/f010.png",
-      "skills/libra/f011.png",
-      "skills/libra/f012.png",
-      "skills/libra/f013.png",
-      "skills/libra/f014.png"
-     ],
-     "delays": [
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90
-     ],
-     "pivot": [
-      178,
-      318
-     ],
-     "size": [
-      356,
-      388
-     ]
-    },
-    "hit": {
-     "frames": [
-      "skills/libra/hit/f000.png",
-      "skills/libra/hit/f001.png",
-      "skills/libra/hit/f002.png",
-      "skills/libra/hit/f003.png",
-      "skills/libra/hit/f004.png",
-      "skills/libra/hit/f005.png",
-      "skills/libra/hit/f006.png"
-     ],
-     "delays": [
-      60,
-      60,
-      60,
-      60,
-      60,
-      60,
-      60
-     ],
-     "pivot": [
-      147,
-      127
-     ],
-     "size": [
-      265,
-      221
-     ]
-    },
-    "affected": {
-     "frames": [
-      "skills/libra/affected/f000.png",
-      "skills/libra/affected/f001.png",
-      "skills/libra/affected/f002.png",
-      "skills/libra/affected/f003.png",
-      "skills/libra/affected/f004.png",
-      "skills/libra/affected/f005.png",
-      "skills/libra/affected/f006.png",
-      "skills/libra/affected/f007.png",
-      "skills/libra/affected/f008.png",
-      "skills/libra/affected/f009.png"
-     ],
-     "delays": [
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90,
-      90
-     ],
-     "pivot": [
-      144,
-      437
-     ],
-     "size": [
-      279,
-      528
-     ]
-    }
-   },
    "actions": [
     "alert2"
    ]

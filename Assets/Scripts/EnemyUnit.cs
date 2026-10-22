@@ -18,6 +18,15 @@ public class EnemyUnit : MonoBehaviour
     public bool    dead;
     public Color   tint = new Color(0.62f, 0.36f, 0.72f);   // 关卡数据按 type 指定
 
+    // —— 原版地图模式 ——
+    // 刷怪点给的巡逻范围（rx0..rx1）与出生点；玩家进入视野才追击，否则在自己的台子上来回走。
+    public bool  fieldMode;
+    public int   fieldMobId;
+    public float homeX;
+    public float roamMin = float.NegativeInfinity, roamMax = float.PositiveInfinity;
+    public float aggroRange = 8f;
+    int patrolDir = 1;
+
     float atkTimer;
     float stunUntil;
     float knockV;
@@ -30,6 +39,7 @@ public class EnemyUnit : MonoBehaviour
     Transform hpRoot;
     float laneVis;
     float visHeight = 1.15f;
+    float bodyHalfW = 0.39f;    // 身体半宽（接触判定用，随当前动画帧同步）
 
     public int Lane => lane;
     public Dictionary<string, object> CombatStats => NativeCombatData.Mob(artKey);
@@ -39,13 +49,20 @@ public class EnemyUnit : MonoBehaviour
 
     public void Init(int laneIndex, float startX)
     {
+        Init(laneIndex, startX, float.NaN);
+    }
+
+    // refY：出生点在地图里的 y（世界坐标）。原版地图有高低差，
+    // 不能用全局 GroundY 当参考，否则会吸附到最近的最底层平台。
+    public void Init(int laneIndex, float startX, float refY)
+    {
         lane = laneIndex;
         laneVis = laneIndex;
         var native = CombatStats;
         hpMax = NativeCombatData.Int(native,"maxHP",40);
         damage = NativeCombatData.Int(native,"PADamage",8);
         hp = hpMax;
-        terrainY = PlayerCtrl.GroundAt(startX, PlayerCtrl.GroundY);
+        terrainY = PlayerCtrl.GroundAt(startX, float.IsNaN(refY) ? PlayerCtrl.GroundY : refY);
         transform.position = new Vector3(startX, terrainY + DepthOffset, 0f);
         BuildVisual();
     }
@@ -97,6 +114,9 @@ public class EnemyUnit : MonoBehaviour
                                        new Color(0.4f, 0.95f, 0.45f), 411, false);
             hpBar.transform.localPosition = Vector3.zero;
         }
+        // 原客户端只在怪物「掉过血」之后才画血条，满血时是干净的。
+        // 之前每个怪头顶都常驻血条，看起来像全场都在挨打（用户截图里所有平台的蜗牛都顶着一根）。
+        hpRoot.gameObject.SetActive(hp < hpMax);
     }
 
     void Update()
@@ -119,7 +139,7 @@ public class EnemyUnit : MonoBehaviour
         // 而「清完怪才推进」会让关卡彻底卡死（实测卡了 40 秒以上）。
         // 所以敌人主动向玩家所在层收拢，一层一层挪，不瞬移。
         laneCooldown -= dt;
-        if (laneCooldown <= 0f && Mathf.Abs(lane - p.lane) > 1)
+        if (!fieldMode && laneCooldown <= 0f && Mathf.Abs(lane - p.lane) > 1)
         {
             laneCooldown = 0.35f;
             lane += p.lane > lane ? 1 : -1;
@@ -128,13 +148,24 @@ public class EnemyUnit : MonoBehaviour
         bool stunned = Time.time < stunUntil;
         bool moving = false;
         int faceDir = 1;
+        float dx = p.worldX - transform.position.x;
+        bool aggro = true;
+        if (fieldMode)
+        {
+            // 只有同一高度附近、且在视野内的玩家才追；否则留在刷怪点的台子上巡逻
+            float dy = Mathf.Abs(p.FeetPos.y - transform.position.y);
+            aggro = p.hp > 0f && Mathf.Abs(dx) <= aggroRange && dy <= 1.8f;
+        }
         if (!stunned)
         {
-            float dx = p.worldX - transform.position.x;
-            faceDir = dx >= 0f ? 1 : -1;
-            if (Mathf.Abs(dx) > attackRange)
+            if (fieldMode && !aggro)
+            {
+                moving = Roam(dt, out faceDir);
+            }
+            else if (Mathf.Abs(dx) > attackRange)
             {
                 int dir = dx > 0f ? 1 : -1;
+                faceDir = dir;
                 float nx = transform.position.x + dir * speed * dt;
                 // 贴地形走：高出台阶 0.6u 以上的墙挡住（和玩家同一套规则）
                 float gy = PlayerCtrl.GroundAt(nx, terrainY);
@@ -147,8 +178,11 @@ public class EnemyUnit : MonoBehaviour
             }
             else
             {
+                faceDir = dx >= 0f ? 1 : -1;
                 atkTimer -= dt;
-                if (atkTimer <= 0f)
+                // 只有身体真的碰到才造成接触伤害；
+                // 只在 Y 方向错位重叠（比如站在高低不同的平台上）不扣血。
+                if (atkTimer <= 0f && TouchesPlayer(p))
                 {
                     atkTimer = attackInterval;
                     p.TakeDamage(damage, dx > 0f ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1));
@@ -165,6 +199,7 @@ public class EnemyUnit : MonoBehaviour
         }
         if (hpBar != null)
         {
+            if (hpRoot.gameObject.activeSelf != (hp < hpMax)) hpRoot.gameObject.SetActive(hp < hpMax);
             float ratio = Mathf.Clamp01(hp / hpMax);
             float w = 0.86f * ratio;
             hpBar.transform.localScale = new Vector3(w, 0.07f, 1f);
@@ -175,12 +210,49 @@ public class EnemyUnit : MonoBehaviour
         SyncVisual();
     }
 
+    // 原地巡逻：在刷怪点给的 rx0..rx1 之间来回走。
+    // 原端怪物行走速度与转向由客户端 AI 决定；巡逻和追击都用同一个 WZ 速度，
+    // 以前巡逻额外乘 0.35（蜗牛只剩 9.8px/s），看起来像站桩，已去掉。
+    bool Roam(float dt, out int faceDir)
+    {
+        faceDir = patrolDir;
+        float nx = transform.position.x + patrolDir * speed * dt;
+        if (nx < roamMin) { nx = roamMin; patrolDir = 1; }
+        if (nx > roamMax) { nx = roamMax; patrolDir = -1; }
+        float gy = PlayerCtrl.GroundAt(nx, terrainY);
+        if (gy > terrainY + 0.6f || gy < terrainY - 1.2f) { patrolDir = -patrolDir; return false; }
+        faceDir = patrolDir;
+        transform.position = new Vector3(nx, transform.position.y, 0f);
+        terrainY = gy;
+        return true;
+    }
+
     void SyncVisual()
     {
         // 每帧把脚下地形吸附到所在 x 的 foothold 上（击退、跟随都自然贴合）
         terrainY = PlayerCtrl.GroundAt(transform.position.x, terrainY);
         transform.position = new Vector3(transform.position.x, terrainY + DepthOffset, 0f);
         if (body != null) body.sortingOrder = 300 - lane * 12;
+        // 接触判定框随当前动画帧更新（走路/攻击帧宽高不同）
+        if (body != null && body.sprite != null)
+        {
+            var b = body.bounds;
+            visHeight = Mathf.Max(0.6f, b.size.y);
+            bodyHalfW = Mathf.Max(0.2f, b.size.x * 0.5f);
+        }
+    }
+
+    // 真实接触判定：以双方脚底为原点的身体 AABB，X、Y 两个方向都要有实际重叠。
+    // 以前只比脚底高度差（field 模式 dy<=1.8 即视作同层）+ 横向 attackRange，
+    // 站在高低不同的平台上只要贴近就会被打——现在必须两个身体真的碰到。
+    bool TouchesPlayer(PlayerCtrl p)
+    {
+        const float eps = 0.03f;    // 贴边也算碰到的小容差
+        var pf = p.FeetPos;
+        bool xOverlap = Mathf.Abs(pf.x - transform.position.x) <= p.BodyHalfWidth + bodyHalfW;
+        bool yOverlap = pf.y + p.BodyHeight   >= transform.position.y + eps &&
+                        transform.position.y + visHeight >= pf.y + eps;
+        return xOverlap && yOverlap;
     }
 
     public void TakeDamage(float dmg, int fromDir)

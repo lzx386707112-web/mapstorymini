@@ -78,16 +78,15 @@ public static class GameplayPlayChecks
                     var sys = game.player.GetComponent<SkillSystem>();
                     game.player.mp = 0;
                     UiKit.RefreshMetrics();
-                    var touchObject = new GameObject("SkillTouchCheck");
-                    var pad = touchObject.AddComponent<TouchPad>();
-                    var flags = BindingFlags.NonPublic | BindingFlags.Instance;
-                    var origin = new Vector2(80,UiKit.H-180);
-                    typeof(TouchPad).GetMethod("Press",flags).Invoke(pad,new object[]{origin,7});
-                    typeof(TouchPad).GetMethod("Move",flags).Invoke(pad,new object[]{origin+Vector2.right*70,7});
-                    Require(TouchInput.MoveH>.9f,"hold joystick before skill touch");
-                    typeof(TouchPad).GetMethod("Press",flags).Invoke(pad,new object[]{GameHUD.SkillButtonRect(0).center,8});
-                    Require(sys.Remaining(0)>0 && game.player.mp==0 && TouchInput.MoveH>.9f,"second finger casts at zero MP without releasing joystick or pressing number keys");
-                    UnityEngine.Object.DestroyImmediate(touchObject);
+                    // 旧的「二指触屏放技能」已随摇杆移除：现在技能只由键位触发，
+                    // 这里改成按下虚拟键，验证走的是同一条施法校验（MP 不足 → 拒绝、不进冷却）。
+                    var slotKey = KeyMap.Of(GameAction.Slot1);
+                    InputHub.SetVirtual(slotKey, true);
+                    Require(InputHub.Pressed(GameAction.Slot1), "virtual key did not raise pressed edge");
+                    Require(!sys.TryCastSkill(1121006), "zero MP cast must be rejected");
+                    Require(sys.Remaining(0) == 0f, "rejected cast must not start cooldown");
+                    InputHub.EndFrame();
+                    InputHub.SetVirtual(slotKey, false);
                     float mp = game.player.mp;
                     Require(!sys.TryCast(0) && game.player.mp == mp, "rejected cast does not spend mana");
                     game.EnterLobby();

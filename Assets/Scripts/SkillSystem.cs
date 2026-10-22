@@ -45,6 +45,17 @@ public partial class SkillSystem : MonoBehaviour
     }
 
     public float Remaining(int slot) => (float)states[definitions[slot].native.Id].Remaining(Time.realtimeSinceStartupAsDouble);
+    // 快捷格/技能窗按技能 id 查冷却
+    public float RemainingById(int id)
+        => states.TryGetValue(id, out var st) ? (float)st.Remaining(Time.realtimeSinceStartupAsDouble) : 0f;
+    public float CooldownOf(int id)
+    {
+        var data = SkillBook.Get(id);
+        if (data == null) return 0f;
+        int lv = Mathf.Max(1, SkillProgress.LevelOf(id));
+        var native = SkillBook.Native(id, lv);
+        return native != null ? native.Cooldown : 0f;
+    }
     // 主角表现重建不代表新建角色：大厅往返不能绕过原角色的冷却。
     public void BindCooldowns(Dictionary<int, SkillRuntimeState> characterStates)
     {
@@ -55,23 +66,75 @@ public partial class SkillSystem : MonoBehaviour
     public string LastFailure { get; private set; }
     bool Reject(string reason) { LastFailure = reason; return false; }
 
+    // 面板/快捷格的即时提示，HUD 顶部读 ActiveNotice 显示。
+    string notice;
+    float noticeUntil;
+    public void Report(string text) { notice = text; noticeUntil = Time.unscaledTime + 1.8f; }
+    public string ActiveNotice => Time.unscaledTime < noticeUntil ? notice : null;
+
+    SkillRuntimeState State(int id)
+    {
+        if (!states.TryGetValue(id, out var st)) { st = new SkillRuntimeState(); states[id] = st; }
+        return st;
+    }
+
+    // 四格旧入口（大厅预览、自动化测试仍然用它）
     public bool TryCast(int slot)
     {
         LastFailure = null;
-        var game = GameLoop.I;
         if (slot < 0 || slot >= definitions.Count || p == null) return Reject("技能不可用");
-        if (p.hp <= 0 || game == null || game.state != GameLoop.GameState.Playing || game.gameOver) return Reject("当前无法释放技能");
+        return BeginCast(definitions[slot]);
+    }
+
+    // 技能窗按「原版技能 id」施放：等级取角色已学等级，数值取 WZ 该等级。
+    public bool TryCastSkill(int skillId)
+    {
+        LastFailure = null;
+        var data = SkillBook.Get(skillId);
+        if (data == null) return Reject("缺少技能数据");
+        int level = SkillProgress.LevelOf(skillId);
+        if (level <= 0) return Reject("技能尚未学习（技能窗里加点）");
+        if (data.IsPassive) return Reject("被动技能无需施放");
+        var native = SkillBook.Native(skillId, level);
+        if (native == null) return Reject("技能等级数据缺失");
+        var def = new SkillDef(new ClassSkill { name = data.name, art = "", icon = "" }, native);
+        return BeginCast(def);
+    }
+
+    // 原版释放流程：校验 → 扣蓝 → 播放施法帧/特效 → 按 lt/rb 判定 → 结算伤害。
+    // 没有 WZ 特效部件的技能（206 个里大部分）走同一条判定，只是不播特效。
+    bool BeginCast(SkillDef s)
+    {
+        LastFailure = null;
+        var game = GameLoop.I;
+        if (p == null || p.hp <= 0 || game == null || game.state != GameLoop.GameState.Playing || game.gameOver)
+            return Reject("当前无法释放技能");
         if (p.IsClimbing) return Reject("攀爬时无法释放技能");
         if (Time.unscaledTime < actionUntil) return Reject("正在释放技能");
-        var s = definitions[slot];
-        if (Remaining(slot) > 0) return Reject("技能冷却中");
-        if (!states[s.native.Id].TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
-        // 当前单机触屏模式按用户选择暂不消耗 MP；原 MpCost 保留在只读数据中。
-        float preparation = Preparation(s);
-        p.PlaySkill(preparation > 0 ? s.art+"_prepare" : s.art,preparation);
-        // 无冷却技能仍受角色动作时长限制，不允许一帧多次施法。
-        actionUntil = Time.unscaledTime + Mathf.Max(p.SkillActionDuration, preparation + p.GetSkillActionDuration(s.art));
-        BeginVisuals(s);
+        if (s.native == null) return Reject("技能等级数据缺失");
+        if (s.native.Kind == "Passive") return Reject("被动技能无需施放");
+        if (State(s.native.Id).Remaining(Time.realtimeSinceStartupAsDouble) > 0) return Reject("技能冷却中");
+        // 原端 TryUseSkill：MP 不够直接拒绝，扣蓝在施法成功之后。
+        // mpCon 来自 Skill.wz 对应等级的 mpCon（见 NativeSkillDefinition.MpCost），不是本地估值。
+        if (p.mp < s.native.MpCost) return Reject("魔力不足（需要 " + s.native.MpCost + "）");
+        if (!State(s.native.Id).TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
+        p.TrySpendMp(s.native.MpCost);
+
+        bool hasArt = !string.IsNullOrEmpty(s.art);
+        float preparation = hasArt ? Preparation(s) : 0f;
+        if (hasArt)
+        {
+            p.PlaySkill(preparation > 0 ? s.art + "_prepare" : s.art, preparation);
+            // 无冷却技能仍受角色动作时长限制，不允许一帧多次施法。
+            actionUntil = Time.unscaledTime + Mathf.Max(p.SkillActionDuration, preparation + p.GetSkillActionDuration(s.art));
+            BeginVisuals(s);
+        }
+        else
+        {
+            // 没有特效部件的技能：给一段挥动时长，避免连点一帧打十下
+            actionUntil = Time.unscaledTime + Mathf.Max(p.SkillActionDuration, 0.32f);
+        }
+
         if (s.native.Kind == "Buff") p.AddAttackBonus(s.native.AttackBuff, s.native.Duration);
         else if (s.native.Kind == "Summon")
         {
