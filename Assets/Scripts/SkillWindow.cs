@@ -280,7 +280,38 @@ public static class SkillWindow
 
     static void HandleRows(Rect win, List<int> list)
     {
-        if (Event.current.type != EventType.Repaint || !Pointer.Pressed) return;
+        if (Event.current.type != EventType.Repaint) return;
+
+        // 双击 = 直接施放（原版技能窗里双击技能就是这么用的）。
+        // 必须放在单击处理之前：双击的第二下也会产生 Pressed，先判 DoubleClicked
+        // 才能既不重新起拖、也不会把第二下当成"拾起"。
+        if (Pointer.DoubleClicked)
+        {
+            for (int i = 0; i < Rows; i++)
+            {
+                int index = scroll + i;
+                if (index >= list.Count) break;
+                float y = RowY + i * RowStep;
+                if (!At(win, RowX, y, RowHitW, RowHitH).Contains(Pointer.Pos)) continue;
+                var hit = SkillBook.Get(list[index]);
+                selected = index;
+                CancelDrag();
+                if (hit == null) return;
+                // 连点「+」是连续加点，不能被当成双击施放
+                if (At(win, SpUpX, y + SpUpY, SpUpSize, SpUpSize).Contains(Pointer.Pos))
+                {
+                    SkillProgress.Raise(hit);
+                    return;
+                }
+                string why;
+                SkillCast.TryCast(hit.id, out why);
+                return;
+            }
+            CancelDrag();
+            return;
+        }
+
+        if (!Pointer.Pressed) return;
 
         for (int i = 0; i < Rows; i++)
         {
@@ -290,11 +321,10 @@ public static class SkillWindow
             if (d == null) continue;
 
             float y = RowY + i * RowStep;
-            var hit = At(win, RowX, y, RowHitW, RowHitH);
-            if (!hit.Contains(Pointer.Pos)) continue;
+            var hitRect = At(win, RowX, y, RowHitW, RowHitH);
+            if (!hitRect.Contains(Pointer.Pos)) continue;
 
             var plus = At(win, SpUpX, y + SpUpY, SpUpSize, SpUpSize);
-            var icon = At(win, RowX + IconOffX, y + IconOffY, IconSize, IconSize);
             selected = index;
 
             if (plus.Contains(Pointer.Pos))
@@ -303,7 +333,8 @@ public static class SkillWindow
                 SkillProgress.Raise(d);
                 return;
             }
-            if (icon.Contains(Pointer.Pos) && SkillProgress.LevelOf(d.id) > 0)
+            // 整行都能拾起（原版是拖图标，但手机上 32px 图标太难点中）
+            if (SkillProgress.LevelOf(d.id) > 0)
             {
                 dragId = d.id;
                 dragStarted = false;
@@ -801,6 +832,10 @@ public static class SkillWindow
     static bool dragStarted;
     static Vector2 lastPress;
 
+    // 给虚拟按键层用：拖动中有没有技能、拖的是哪个
+    public static bool Dragging => dragId != 0 && dragStarted;
+    public static int DragSkillId => dragId;
+
     static void CancelDrag()
     {
         dragId = 0;
@@ -832,6 +867,10 @@ public static class SkillWindow
     static void DropOnSlot()
     {
         if (DropOnMacro(dragId)) return;
+        // 拖到屏上虚拟按键：把这个按键直接变成该技能键（原版"技能拖进快捷格"的屏上等价物）。
+        // 键盘设定窗口盖住按键时，落在键帽上的优先算键位绑定——视觉在上面的那个先收到。
+        bool overKeycap = KeyConfigWindow.Visible && KeyConfigWindow.HitKey(Pointer.Pos) != KeyCode.None;
+        if (!overKeycap && VirtualControls.TryBindSkill(Pointer.Pos, dragId)) return;
         if (KeyConfigWindow.DropSkill(Pointer.Pos, dragId)) return;
         for (int i = 0; i < QuickSlots.Count; i++)
         {

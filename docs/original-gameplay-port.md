@@ -346,7 +346,7 @@
 
 ### 尚未完成
 
-NPC 对话/商店/任务、反应堆脚本、**AP/SP 加点面板**（`LevelSystem` 已按 `level_up_ap_gain=5` 累计，面板未做）、`Effect/BasicEff.img/LevelUp` 升级动画、原版怪物 AI 技能、BGM、小地图、伤害数字与原版的逐帧一致性。原章节关卡与新地图模式并存，但不再默认进入。
+反应堆脚本、**AP/SP 加点面板**（`LevelSystem` 已按 `level_up_ap_gain=5` 累计，面板未做）、`Effect/BasicEff.img/LevelUp` 升级动画、原版怪物 AI 技能、BGM、小地图、伤害数字与原版的逐帧一致性。原章节关卡与新地图模式并存，但不再默认进入。NPC 对话与任务系统见下一节。
 
 ### 验证入口
 
@@ -359,3 +359,139 @@ NPC 对话/商店/任务、反应堆脚本、**AP/SP 加点面板**（`LevelSyst
 
 实机截图与 WZ 烘焙参考图见 `docs/field-shots/`：`40001-蜗牛打猎场Ⅱ.png`、`1010004-蜗牛花园.png`、`wz-烘焙参考-40001.png`（同一份 WZ 数据烘焙，平台/树木/土带位置与实机逐块对应）。
 
+
+---
+
+## NPC 脚本与任务系统（原端脚本原样执行）
+
+### 为什么是「内嵌解释器」而不是「重写脚本逻辑」
+
+源端 `BeiDou-Server/gms-server/scripts-zh-CN/` 下有 1183 条脚本（889 个 NPC、294 个任务），
+里面是真实的业务规则：等级门槛、任务链跳转、按职业分发装备、按概率抽奖、分页对白…
+把这些逻辑用 C# 重写一遍，等于把 1183 个脚本再实现一次，而且每改一次源端就要跟着改一次，
+「和源端一样」这个前提立刻失守。
+
+所以走的是另一条路：**在客户端里跑源端脚本本身**。`Assets/Scripts/Scripting/` 是一个纯 C#
+（不引用 UnityEngine，IL2CPP 安全）的 ES5 解释器，直接吃源端 `.js` 原文：
+
+```
+词法 → 递归下降 + 优先级爬升 → AST 直接求值（无字节码）
+```
+
+- `JsLexer`：`//` `/* */`、十六进制、单双引号转义、模板字符串 `` ` ``（含 `${}` 嵌套花括号计数）
+- `JsParser`：`let/const` 当 `var`；`JsScope` 函数作用域 + 变量提升 + **隐式全局落根作用域**
+- `JsInterpreter`：`MaxSteps=4_000_000` 步数预算、`MaxDepth=96` 调用深度
+- `JsBuiltins`：`parseInt/Math/JSON`、`String.prototype`（19 个）、`Array.prototype`（16 个）
+
+模板字符串和「隐式全局」不是可选项：26 个脚本用 `\`${x}\``，30 多个脚本在 `start()` 里写
+`status = -1;`（没有 `var`）再到 `action()` 里读。少了任何一条，那批 NPC 就是一句对白都没有。
+
+### cm / qm 对齐
+
+`NpcApi` 按源端 `NPCConversationManager` / `QuestActionManager` 的方法名逐个装配：
+对话（`sendNext/sendPrev/sendNextPrev/sendOk/sendYesNo/sendAcceptDecline/sendSimple/sendGetText/sendGetNumber/sendStyle/sendImage/sendNoExit/dispose`）、
+金币经验等级、道具（`haveItem/itemQuantity/gainItem/canHold/...`）、传送（`warp/warpParty`）、
+任务（`isQuestStarted/getQuestStatus/getQuestProgress/setQuestProgress/startQuest/forceStartQuest/...`）、
+技能职业外观（`teachSkill/changeJobById/setHair/setFace/...`）、提示（`dropMessage/topMessage/openNpc/openShopNPC`）。
+
+交互语义照搬源端：继续 `(1,1)`、返回 `(0,1)`、确定 `(-1,0)`、是 `(1,0)`、否 `(0,0)`、选项 `(1,1,index)`。
+
+`dispose()` 只释放脚本管理器，**已经发出的对话框留在屏幕上**，玩家点掉最后一个按钮才真正关闭 ——
+这是源端 `sendOk + dispose` 的常见写法，如果 dispose 就清屏，玩家会看到对白一闪而过。
+
+单机没有的系统（组队、远征队、公会、仓库、宠物、拍卖、活动、MTS）返回 `null`；`null` 上的成员读取
+由解释器的「空收件人」兜住：`size()=0`、`isEmpty()=true`、其余调用返回 `null`。这样脚本会自然走进
+源端那批「你没有队伍」「没有可复活宠物」的分支，而不是在第一行就 `TypeError` 把整段对话打断。
+排查真实空指针时把 `JsInterpreter.StrictNullMembers` 打开即可回到严格模式。
+
+### 任务数据（Quest.wz）
+
+`QuestCatalog` 直接读 `Quest/Check.img`、`Act.img`、`QuestInfo.img`，字段与服务端
+`Quest.java` + `requirements/*` + `actions/*` 一一对应，**不臆造任何数值**：
+
+- `Check.img/<id>/0`（开始需求）与 `/1`（完成需求）：`npc` `level` `maxLevel` `job` `item` `mob`
+  `quest` `interval` `infoEx` `fieldEnter` `startscript` `endscript`
+- `Act.img/<id>/0` / `/1`：`exp` `money` `fame` `item`（含 `prop` 权重）`skill` `nextQuest`
+- `QuestInfo.img/<id>`：`name` `area` `0..n`（分页正文）
+
+实测：**3423 个任务**、3416 个挂了 NPC、706 个带脚本、1938 条 item 条件、534 条 mob 条件、788 条 job 条件。
+
+`QuestLogic` 把 `Quest.canStart/canComplete` 逐条翻译过来，几个容易搞错的点照源端保留：
+
+- `item` 条件里 `count <= 0` 表示「必须**没有**这件道具」（不是「数量不限」）
+- `mob` 进度用怪物 id 当键，`killMob` 只累加已接取且条件里确实列了这只怪的任务
+- `infoEx` 用 `info<i>` 字符串严格相等比较（源端就是字符串比）
+- `interval` 是分钟，配 `questCompletedAt` 时间戳判断冷却
+- `ItemAction` 的 `prop`：缺省 -1 = 必发；`>=0` 参与加权随机
+
+### 资源管线
+
+`tools/sync_npc_scripts.py` 把源端脚本同步成两份（内容逐字节相同，同步阶段不做任何改写）：
+
+| 输出 | 用途 |
+| --- | --- |
+| `MapleDashResources/Data/scripts/{npc,quest}/<名字>.js` | 编辑器/桌面直接读文件，改完即用 |
+| `MapleDash/Assets/Resources/Scripts/npc_scripts.json` | 打包进包体，Android/WebGL 不依赖 `/sdcard` |
+
+优先级：`scripts-zh-CN` 覆盖 `scripts`（中文优先、英文兜底）；实测 1016 条中文覆盖 1016/1025 条英文。
+
+两个细节是踩出来的：
+
+- **编码**：源端混着 UTF-8 和 GBK 老脚本。以前一律 `errors="replace"` 读，11 个文件的中文全变成
+  `U+FFFD`，进游戏就是乱码对白。现在按 `utf-8-sig → gb18030` 严格尝试，乱码归零。
+- **`-` 开头的文件**：`quest/-31069.js` 这类有 176 个，在 `Quest.wz` 里查无此 id（TMS 遗留内容），
+  客户端永远走不到，同步时跳过；其余自定义名（`gachapon.js`、`changeName.js`、`坐骑领取.js`）
+  由 `cm.openNpc(id, 名字)` 一类调用触发，必须一起打包。
+
+### 对话框与任务窗口
+
+- `NpcDialogUi`：`UI/UIWindow.img/UtilDlgEx` 底板 + NPC 名 + 关闭钮 + 正文富文本 + 选项行，
+  底部按钮按 `Mode` 取 `BtNext/BtPrev/BtOK/BtYes/BtNo/BtQYes/BtQNo/BtClose`
+- `DialogText`：`#b/#r/#g/#y/#d/#c/#k` → `<color=…>`、`#L<idx>#…#l` → 选项、`#m/#p/#t/#z/#v/#i/#f/#s`
+  做名字/数字替换（`String.wz` 取名，带缓存）
+- `NpcField`：靠近 110px 才可交互，头顶图标 `!` 可接 / `?` 可交（0.4s 缓存，「可交」优先）
+- `QuestWindow`：`UI/UIWindow.img/Quest/backgrnd`(245×396)+`backgrnd2`(305×396)、`S=1.25`，
+  两个页签（进行中/已完成）、详情与奖励、`BtGiveup` 放弃
+
+### 覆盖率（`tools/script-harness` 离线实测）
+
+| 集合 | 文件 | 跑通 | Java 互操作 | 运行时异常 | 语法不支持 |
+| --- | --- | --- | --- | --- | --- |
+| `npc/` | 889 | 785 | 70 | 27 | 7 |
+| `quest/` | 294 | 275 | 6 | 7 | 6 |
+| 合计 | 1183 | **1060 (89.6%)** | 76 | 34 | 13 |
+
+跑通部分的实测指标：产生 **1817 段对白**、**896 次 dispose**。
+
+剩下 4% 是源端脚本自己用了客户端跑不了的东西，逐类列清楚：
+
+| 不支持 | 条数 | 原因 |
+| --- | --- | --- |
+| `Java.type` / `java.util.*` / `importPackage` | 76 | 单机没有 JVM；脚本在做内存表操作或事件实例调用 |
+| `eval` | 2 | 需要动态求值，安全与 IL2CPP 都不允许 |
+| 正则字面量 `/.../g` | 2 | 词法器不支持 `/` 的两种含义（除号/正则）歧义判定 |
+| `for...of` / 解构参数 `([a,b]) => …` / 箭头函数 | 9 | ES6 语法，当时按 ES5 目标实现 |
+
+这些脚本走到时给的是 `BottomBar.Toast("对话脚本出错（详见日志）")` + 一条 `[Script]` error 日志，
+不会静默假装成功。
+
+### 验证入口
+
+- `tools/script-harness --run <dir>`：解析并跑一遍 `start/action`，统计跑通/异常/对白数（上表数据）
+- `tools/script-harness --parse <dir>`：只查语法覆盖率
+- `tools/script-harness --trace <file>`：单脚本逐句跟踪（`sendNext → sendSimple → sendYesNo → 金币不足分支`）
+- `tools/script-harness --pack <json>`：走客户端同一套 `MiniJson` 解 `npc_scripts.json`，逐条丢给引擎，
+  确保「打包 → 读取 → 解析」链路没坏（当前 1183 条，`parseFail=13`、`mangled=0`）
+- `tools/unity-compile-check`：用 `Assets/Scripts/**` + `Assets/Editor/**` 对全部 Unity 模块 DLL 编译，
+  0 error / 0 warning
+- `QuestNpcChecks.Run`（编辑器，可不进 Play）：
+  `Unity -batchmode -projectPath MapleDash -executeMethod QuestNpcChecks.Run -logFile /tmp/quest_npc.log`
+  校验脚本包条数/可解析性、Quest.wz 装载、任务 1021 的脚本与条件、对白标记转换、JobId 映射
+
+### 已知边界
+
+- 只做了「读」的还原：任务状态、击杀进度、`infoEx` 进度都落在本地存档（`PlayerPrefs`），没有服务端校验
+- `startscript/endscript` 的字段名（`q1021s`）与脚本文件名（`1021.js`）不一致：源端
+  `QuestScriptManager` 实际按 `quest/<questid>.js` 加载，本实现跟着按 id 取，不按字段名取
+- 商店交易、仓库、宠物、公会、远征队这些被脚本调用的系统，客户端只给「空集合」语义
+- 反应堆脚本（`reactor/`）尚未接入

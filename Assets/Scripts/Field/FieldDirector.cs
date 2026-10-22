@@ -45,6 +45,7 @@ public sealed class FieldDirector : MonoBehaviour
     WarpState warpState;
     float warpClock;             // 当前阶段已用时（真实秒）
     FieldPortal warpTarget;      // null = 死亡复活
+    int pendingWarpMap = -1;     // 脚本 cm.warp / 任务传送到指定地图
 
     bool Warping => warpState != WarpState.None;
 
@@ -100,6 +101,7 @@ public sealed class FieldDirector : MonoBehaviour
         player?.GetComponent<SkillSystem>()?.CancelActions();
 
         Map = map;
+        NpcField.Bind(map);
         ApplyGeometry(map);
         PlacePlayer(map, spawnPortalName);
 
@@ -253,6 +255,7 @@ public sealed class FieldDirector : MonoBehaviour
 
         portalLock = Mathf.Max(0f, portalLock - dt);
         CheckPortals(player, dt);
+        CheckNpc(player);
         TickRespawn(dt);
 
         AliveCount = 0;
@@ -260,6 +263,15 @@ public sealed class FieldDirector : MonoBehaviour
 
         saveTimer += dt;
         if (saveTimer > 20f) { saveTimer = 0f; Profile.Save(); }
+    }
+
+    // 靠近 NPC 按 ↑ 对话。传送门优先（同位置时按原端行为进图）。
+    void CheckNpc(PlayerCtrl player)
+    {
+        if (Warping || NpcSession.Active != null) return;
+        if (nearPortal != null) return;
+        if (!PressUp()) return;
+        NpcField.TryInteractNearest();
     }
 
     void TickRespawn(float dt)
@@ -398,8 +410,10 @@ public sealed class FieldDirector : MonoBehaviour
                 // 全黑之后才真正换图：玩家看不到任何一帧跳变
                 if (warpTarget == null)
                 {
-                    int back = Map != null ? Map.returnMap : 1000000;
-                    Enter(back, null);
+                    int target = pendingWarpMap;
+                    pendingWarpMap = -1;
+                    if (target <= 0) target = Map != null ? Map.returnMap : 1000000;
+                    Enter(target, null);
                 }
                 else if (warpTarget.tm == Map.id) WarpInsideMap(warpTarget);
                 else Enter(warpTarget.tm, string.IsNullOrEmpty(warpTarget.targetName) ? null : warpTarget.targetName);
@@ -457,6 +471,9 @@ public sealed class FieldDirector : MonoBehaviour
         int exp = (int)Art.Num(mob.stats, "exp", 0);
         if (exp > 0) Profile.GrantExperience(exp);
 
+        // 任务击杀计数（原端 Character 收到 MOB_KILLED 后推进已接任务的 mob 进度）
+        QuestLogic.OnMobKilled(mob.id);
+
         int dropped = 0, mesos = 0;
         DropLoot(e, mob, ref dropped, ref mesos);
         if (logKills)
@@ -500,6 +517,15 @@ public sealed class FieldDirector : MonoBehaviour
         AliveCount = 0;
     }
 
+    // 脚本 cm.warp(mapId)：和传送门一样走黑场过渡，而不是瞬间切图。
+    public void WarpTo(int mapId)
+    {
+        if (Warping || mapId <= 0) return;
+        if (Map != null && Map.id == mapId) return;
+        pendingWarpMap = mapId;
+        StartWarp(null);
+    }
+
     // 原版死亡复活同样是黑场过渡（回到本图 returnMap 的出生门），不是瞬间跳回来
     public void RespawnPlayer()
     {
@@ -517,6 +543,8 @@ public sealed class FieldDirector : MonoBehaviour
 
         ClearMobs();
         GroundItem.Clear();
+        NpcField.Clear();
+        NpcSession.CloseActive();
         if (view != null) view.Clear();
         Map = null;
         PlayerCtrl.SetTerrain(null);

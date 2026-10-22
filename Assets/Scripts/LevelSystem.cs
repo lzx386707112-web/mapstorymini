@@ -9,7 +9,7 @@ using System;
 //                       bowman、thief 20..24 / 14..16
 //                       pirate 22..28 / 18..23
 //   use_randomize_hpmp_gain=true → 非法师 MP 再加 INT/10，法师加 INT/20
-//   level_up_ap_gain=5           → 每级 5 AP（本地只累计，尚未做加点面板）
+//   level_up_ap_gain=5           → 每级 5 AP（新手前10次升级自动分配，之后累计）
 //   use_level_up_protect=true    → 一次经验结算最多升 1 级（防止连升）
 //   getMaxClassLevel()=255       → 等级上限（V2.1.50 把 mxj_max_level 改成 255）
 //   升满级后经验封顶 99%（getMaxLevelExpLimit），避免客户端把终止经验值画崩
@@ -138,6 +138,23 @@ public static class LevelSystem
         d.attributes.maxMp = d.baseMaxMp;
     }
 
+    // Migrate only unspent AP from the old implementation, preserving earned stats.
+    public static bool MigrateNoviceAp(PlayerProfileData d)
+    {
+        if (d.noviceApMigrated) return false;
+        d.noviceApMigrated = true;
+        if (d.cls != "beginner" || d.ap <= 0) return true;
+        int remaining = Math.Min(d.ap, Math.Min(10, Math.Max(0, d.level - 1)) * 5);
+        for (int oldLevel = 1; oldLevel < Math.Min(d.level, 11) && remaining > 0; oldLevel++)
+        {
+            int strength = Math.Min(remaining, oldLevel < 6 ? 5 : 4);
+            d.attributes.str += strength;
+            d.ap -= strength; remaining -= strength;
+            if (oldLevel >= 6 && remaining > 0) { d.attributes.dex++; d.ap--; remaining--; }
+        }
+        return true;
+    }
+
     static void LevelUp(PlayerProfileData d)
     {
         var branch = BranchOf(d.cls);
@@ -156,7 +173,13 @@ public static class LevelSystem
         d.baseMaxHp = Math.Max(1, d.baseMaxHp + addHp);
         d.baseMaxMp = Math.Max(1, d.baseMaxMp + addMp);
         d.level = Math.Min(ExpTable.MaxLevel, d.level + 1);
-        d.ap = Math.Max(0, d.ap) + ApPerLevel;
+        // Character.levelUp checks the OLD level before incrementing it.
+        if (branch == JobBranch.Beginner && d.level - 1 < 11)
+        {
+            d.attributes.str += d.level - 1 < 6 ? 5 : 4;
+            if (d.level - 1 >= 6) d.attributes.dex++;
+        }
+        else d.ap = Math.Max(0, d.ap) + ApPerLevel;
 
         d.attributes.level = d.level;
         d.attributes.maxHp = d.baseMaxHp;

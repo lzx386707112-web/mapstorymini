@@ -222,6 +222,29 @@ public static class SkillProgress
     }
 }
 
+// 技能施放统一入口：技能窗双击、虚拟按键、快捷格三条路都走这里，
+// 失败原因统一由 SkillSystem.Report 报到 HUD 上，不会出现"点了没反应也没提示"。
+public static class SkillCast
+{
+    public static bool TryCast(int skillId, out string fail)
+    {
+        fail = null;
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        var sys = player != null ? player.GetComponent<SkillSystem>() : null;
+        if (sys == null) { fail = "当前无法施放技能"; return false; }
+
+        var data = SkillBook.Get(skillId);
+        if (data == null) { fail = "缺少技能数据"; return false; }
+        if (data.IsPassive) { fail = "被动技能无需施放"; sys.Report(fail); return false; }
+        if (SkillProgress.LevelOf(skillId) <= 0) { fail = "技能尚未学习（技能窗里加点）"; sys.Report(fail); return false; }
+
+        if (sys.TryCastSkill(skillId)) return true;
+        fail = sys.LastFailure;
+        if (!string.IsNullOrEmpty(fail)) sys.Report(fail);
+        return false;
+    }
+}
+
 // 右上八个快捷格 → 技能 id 的绑定。0 表示空格。
 // 和原版一样：技能图标从技能窗拖到格子上完成绑定，格子再被键盘键触发。
 public static class QuickSlots

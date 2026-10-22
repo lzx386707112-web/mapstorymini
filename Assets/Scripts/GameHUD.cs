@@ -102,8 +102,13 @@ public class GameHUD : MonoBehaviour
 
         // 浮窗（技能窗/能力值/帮助…）
         GameWindows.DrawAll();
+        // 从技能窗拖技能时，把可放置的虚拟按键提到最上层（否则被技能窗/键盘窗口盖住）
+        VirtualControls.DrawDropTargets();
         // 技能施放失败等即时提示
         DrawNotice();
+        // NPC 对话（最上层）+ 靠近提示
+        NpcDialogUi.Draw();
+        NpcDialogUi.DrawHint();
         if (PlayerPrefs.GetInt("debug_keyconfig", 0) == 1)
         {
             PlayerPrefs.DeleteKey("debug_keyconfig");

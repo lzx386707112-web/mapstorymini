@@ -163,7 +163,7 @@ public static partial class VirtualControlsEditor
         if (page == P_Keys) KeySheet(act);
     }
 
-    static Vector2 CenterOf(VCElem e) => new Vector2(e.cx * UiKit.W, e.cy * UiKit.H);
+    static Vector2 CenterOf(VCElem e) => VirtualControls.Center(e);
 
     // 选中：蓝色虚线框（摇杆/十字键带四角圆点）；拖动时才叠加坐标虚线
     static void DrawSelection(VCElem e)

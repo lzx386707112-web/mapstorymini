@@ -773,6 +773,7 @@ public class PlayerCtrl : MonoBehaviour
 
     void RefreshAttributes()
     {
+        baseAttributes = Profile.Attributes;
         Attributes = baseAttributes.WithWeapon(weapon, Time.unscaledTime < attackBonusUntil ? Mathf.RoundToInt(attackBonus) : 0,
             out weaponAttack, out magicAttack);
     }

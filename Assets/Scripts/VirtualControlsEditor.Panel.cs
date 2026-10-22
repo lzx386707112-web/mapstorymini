@@ -315,6 +315,21 @@ public static partial class VirtualControlsEditor
             keyTarget = 0;                     // 按钮页落的是主键
             OpenPage(P_Keys);
         }
+        y = card.yMax + GapY;
+
+        // —— 技能绑定 ——
+        // 原版是「技能窗把技能拖到快捷格」，这里是同一语义的屏上版本：
+        // 游戏里把技能图标拖到这个按键上即绑定（面板只负责看和解除）。
+        SectionLabel(b, y, "技能"); y += SecH;
+        card = new Rect(x, y, w, RHNav);
+        Card(card);
+        var bound = e.skillId > 0 ? SkillBook.Get(e.skillId) : null;
+        string boundName = bound != null ? bound.name : "从技能窗拖入";
+        if (NavRow(new Rect(x, card.y, w, RHNav), "绑定技能", boundName, act) && e.skillId > 0)
+        {
+            VirtualControls.UnbindSkill(e);
+            BottomBar.Toast("已解除技能绑定");
+        }
 
         return card.yMax;
     }

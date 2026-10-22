@@ -31,6 +31,12 @@ public class VCElem
     public float opacity = 1f;                   // 整体不透明度 0.15~1
     public string label = "";                    // 空则自动取键名/技能图标
 
+    // —— 技能绑定（原版快捷格的屏上等价物） ——
+    // 技能窗里把技能图标拖到这个按键上就绑定；0 = 没绑。
+    // 绑了技能的按键按下时直接施放该技能，不再走"按键 → 快捷格"那条绕路，
+    // 所以在快捷格没配好的情况下也能点一下就放（原端拖到快捷栏格子的语义）。
+    public int skillId;
+
     // —— 基础属性（编辑面板） ——
     public float scale = 1f;                     // 整体缩放
     public float rotation = 0f;                  // 旋转角度（度）
@@ -85,7 +91,8 @@ public class VCElem
         get
         {
             float r = R, w = HalfW;
-            return new Rect(cx * UiKit.W - w, cy * UiKit.H - r, w * 2f, r * 2f);
+            var c = VirtualControls.Center(this);
+            return new Rect(c.x - w, c.y - r, w * 2f, r * 2f);
         }
     }
 
@@ -93,6 +100,7 @@ public class VCElem
     {
         return new VCElem { type = type, action = action, key = key, shiftMod = shiftMod,
             cx = cx, cy = cy, size = size, shape = shape, opacity = opacity, label = label,
+            skillId = skillId,
             scale = scale, rotation = rotation, aspect = aspect,
             borderW = borderW, halo = halo, bg = bg, line = line, bgDown = bgDown, lineDown = lineDown,
             stickStd = stickStd, upKey = upKey, downKey = downKey, leftKey = leftKey, rightKey = rightKey };
@@ -102,7 +110,7 @@ public class VCElem
     {
         // 触摸命中放宽 1.35 倍，拇指定位比鼠标难；忽略旋转（近似即可）
         float r = R * 1.35f, w = HalfW * 1.35f;
-        var c = new Vector2(cx * UiKit.W, cy * UiKit.H);
+        var c = VirtualControls.Center(this);
         var d = p - c;
         if (Mathf.Approximately(w, 0f) || Mathf.Approximately(r, 0f)) return false;
         float k = d.x * d.x / (w * w) + d.y * d.y / (r * r);
@@ -118,6 +126,50 @@ public static class VirtualControls
     public static string activeName = "默认";
     public static List<string> profileNames = new List<string>();
     public static bool OverlayVisible = true;
+
+    // —————————— 系统输入法避让 ——————————
+    // 聊天框/宏名字输入时，安卓会弹出输入法，屏幕下半被整体盖住：
+    // 虚拟按键照常画，但用户看不见也按不到（"显示键盘时按键都没了"）。
+    // 这里把整层按输入法高度上移，键盘收起后自动落回原位。
+    // 只影响绘制与命中，不改存盘坐标（cx/cy 仍是用户在编辑器里摆的位置）。
+    public static float LiftY { get; private set; }
+
+    static int baseScreenH;   // 键盘没弹出时的屏幕高，用来判断系统是不是已经帮我们把视图缩小了
+
+    static void UpdateLift()
+    {
+        if (!TouchScreenKeyboard.visible)
+        {
+            baseScreenH = Screen.height;
+            LiftY = 0f;
+            return;
+        }
+
+        // adjustResize 的机器上，Unity 视图本身会被压矮，按键已经跟着上移了，
+        // 再叠加一次会让它们冲出屏幕上沿，所以这种情况直接不动。
+        bool resized = baseScreenH > 0 && Screen.height < baseScreenH * 0.9f;
+        float lift = 0f;
+        if (!resized)
+        {
+            float h = 0f;
+            try { h = TouchScreenKeyboard.area.height; } catch { /* 个别机型/版本不支持 */ }
+            if (h <= 1f) h = Screen.height * 0.42f;          // 拿不到高度时按典型键盘比例估
+            lift = h / Mathf.Max(0.01f, UiKit.Scale);
+        }
+        // 上限 55%：再高会把按键顶到状态栏外面去
+        LiftY = Mathf.Clamp(lift, 0f, UiKit.H * 0.55f);
+    }
+
+    // 控件的实际屏幕中心（含键盘避让上移），且保证整个圆仍在屏内。
+    // 绘制、命中、摇杆轴向计算全部走这里，三处不会各算一套。
+    public static Vector2 Center(VCElem e)
+    {
+        float y = e.cy * UiKit.H - LiftY;
+        float r = e.R;
+        y = Mathf.Clamp(y, r + 4f, Mathf.Max(r + 4f, UiKit.H - r - 4f));
+        return new Vector2(e.cx * UiKit.W, y);
+    }
+
 
     const string DirName = "vcontrols";
     static bool loaded;
@@ -221,6 +273,7 @@ public static class VirtualControls
               .Append(",\"dbg\":").Append(Q(Hex(e.bgDown)))
               .Append(",\"dln\":").Append(Q(Hex(e.lineDown)))
               .Append(",\"label\":").Append(Q(e.label ?? ""))
+              .Append(",\"sk\":").Append(e.skillId)
               .Append(",\"ssd\":").Append(e.stickStd ? 1 : 0)
               .Append(",\"ku\":").Append((int)e.upKey)
               .Append(",\"kd\":").Append((int)e.downKey)
@@ -279,6 +332,7 @@ public static class VirtualControls
                     e.lineDown = new Color(1f, 1f, 1f, 0.95f);
                 }
                 if (d.TryGetValue("label", out var lb)) e.label = lb as string ?? "";
+                if (d.TryGetValue("sk", out var skId)) e.skillId = Mathf.Max(0, Mathf.RoundToInt(ToF(skId, 0f)));
 
                 // 摇杆输入模式：没有 ssd 字段 = 老存档，按「标准输入」处理（和以前行为一致）
                 if (d.TryGetValue("ssd", out var ssd)) e.stickStd = ToF(ssd, 1f) > 0.5f;
@@ -457,6 +511,7 @@ public static class VirtualControls
     public static void Tick(bool feed)
     {
         Ensure();
+        UpdateLift();
 
         // 门控关闭（大厅/暂停/编辑器/键位窗口）：全部松开，别把状态带进下一局
         if (!feed)
@@ -604,6 +659,51 @@ public static class VirtualControls
         return null;
     }
 
+    // 屏幕坐标（像素）下命中的虚拟控件；没有则 null。技能窗拖放绑定用这个。
+    public static VCElem HitAtScreen(Vector2 screenPos)
+    {
+        Ensure();
+        var p = new Vector2(screenPos.x / UiKit.Scale, (Screen.height - screenPos.y) / UiKit.Scale);
+        return HitElement(p);
+    }
+
+    // 把技能绑到一个虚拟按键上（技能窗拖到按键即调用）。
+    // 只接受 BUTTON 元素：摇杆/十字是方向输入，绑技能没有语义。
+    public static bool TryBindSkill(Vector2 guiPos, int skillId)
+    {
+        Ensure();
+        var e = HitElement(guiPos);
+        if (e == null || e.type != VCElemType.Button) return false;
+        var data = SkillBook.Get(skillId);
+        if (data == null) return false;
+        if (data.IsPassive) { BottomBar.Toast("被动技能不能绑定到按键"); return true; }
+        if (SkillProgress.LevelOf(skillId) <= 0) { BottomBar.Toast("先给技能加点，才能绑到按键"); return true; }
+
+        bool replaced = e.skillId > 0 && e.skillId != skillId;
+        e.skillId = skillId;
+        SaveActive();
+        BottomBar.Toast((replaced ? "已替换为 " : "已绑定 ") + data.name + " → " + ElementCaption(e));
+        return true;
+    }
+
+    public static void UnbindSkill(VCElem e)
+    {
+        if (e == null || e.skillId == 0) return;
+        e.skillId = 0;
+        SaveActive();
+    }
+
+    // 按键的短名（提示/面板用）：优先技能名，其次键名，最后动作名
+    public static string ElementCaption(VCElem e)
+    {
+        if (e != null && e.skillId > 0)
+        {
+            var d = SkillBook.Get(e.skillId);
+            if (d != null) return d.name;
+        }
+        return e == null ? "" : ActionName(e);
+    }
+
     static void OnPress(VCElem e, Vector2 p)
     {
         switch (e.type)
@@ -632,6 +732,23 @@ public static class VirtualControls
 
     static void SendButton(VCElem e, bool down)
     {
+        // 绑了技能的按键直接施放（原端"技能拖进快捷格，再按键出手"的屏上等价物）。
+        // 这里必须 return：继续往下发动作会让快捷格那条通道再放一次，
+        // 表现就是一次点击连放两个技能、第二个报"技能冷却中"。
+        if (e.skillId > 0)
+        {
+            if (down)
+            {
+                string why;
+                bool ok = SkillCast.TryCast(e.skillId, out why);
+                var data = SkillBook.Get(e.skillId);
+                lastPress = (data != null ? data.name : "技能") + (ok ? "" : " ✗");
+                lastNote = ok ? "" : (why ?? "");
+                pressMsgUntil = Time.unscaledTime + 1.2f;
+            }
+            return;
+        }
+
         var act = EffectiveAction(e);
         InputHub.SetVirtualAction(act, down);          // 动作永远发，保证点了就有反应
         // 显式绑了键的按钮 = 那个物理键的屏上替身：无条件把键也发一遍。
@@ -667,7 +784,7 @@ public static class VirtualControls
 
     static void UpdateStick(VCElem e, Vector2 p)
     {
-        var c = new Vector2(e.cx * UiKit.W, e.cy * UiKit.H);
+        var c = Center(e);
         float r = e.R;
         var off = p - c;
         float mag = off.magnitude;
@@ -713,7 +830,7 @@ public static class VirtualControls
 
     static void UpdateDpad(VCElem e, Vector2 p)
     {
-        var c = new Vector2(e.cx * UiKit.W, e.cy * UiKit.H);
+        var c = Center(e);
         var off = p - c;
         float r = e.R;
         float dz = r * 0.22f;
@@ -746,14 +863,50 @@ public static class VirtualControls
         var g = GameLoop.I;
         bool inGame = g != null && g.state == GameLoop.GameState.Playing;
         if (!inGame || VirtualControlsEditor.Visible || !OverlayVisible) return;
+
+        // 键盘设定窗口打开时不再整层消失：降到半透明照常画出来，
+        // 这样用户在"显示键盘"的同时仍能看见自己的屏上按键（也才能把技能拖上去）。
+        // 此时 VirtualControls.Tick 拿到的 feed=false，按键只显示、不注入。
+        float dim = KeyConfigWindow.Visible ? 0.42f : 1f;
+
+        foreach (var e in elems) DrawElement(e, dim);
         if (KeyConfigWindow.Visible) return;
 
-        foreach (var e in elems) DrawElement(e);
         DrawEditToggle();
         DrawPressToast();
 
         if (Input.GetKeyDown(KeyCode.F9)) ShowDebug = !ShowDebug;
         if (ShowDebug) DrawDebug();
+    }
+
+    // —————————— 拖技能时的可放置目标 ——————————
+    // 技能窗拖起图标后，每个按钮亮一圈蓝环；指针悬停的那个换成黄环。
+    // 这一层要画在浮窗之后（GameHUD 在 GameWindows.DrawAll 之后调用），
+    // 否则被键盘设定窗口盖住的按键就没人看得见 —— 那正是"拖不进去"的由来。
+    public static void DrawDropTargets()
+    {
+        if (!SkillWindow.Dragging) return;
+        Ensure();
+
+        foreach (var e in elems)
+        {
+            if (e.type != VCElemType.Button) continue;
+            var c = Center(e);
+            bool hover = e.Hit(Pointer.Pos);
+            float pulse = 0.55f + 0.30f * Mathf.Sin(Time.unscaledTime * 7f);
+            if (hover)
+                DrawAnnulus(c, e.R - 2f, e.R + 10f, new Color(1f, 0.86f, 0.32f, 0.95f), false);
+            else
+                DrawAnnulus(c, e.R + 1f, e.R + 7f, new Color(0.35f, 0.88f, 1f, pulse), false);
+        }
+
+        // 拖拽图标重画一遍，保证压在窗口/按键之上
+        var d = SkillBook.Get(SkillWindow.DragSkillId);
+        var icon = d != null && !string.IsNullOrEmpty(d.icon) ? Art.Tex(d.icon) : null;
+        if (icon == null) return;
+        float s = 32f;
+        GUI.DrawTexture(new Rect(Pointer.Pos.x - s * 0.5f, Pointer.Pos.y - s * 0.5f, s, s),
+            icon, ScaleMode.ScaleToFit);
     }
 
     // 按下虚拟键时在顶部提示 1.2 秒：能立刻区分"没收到按下"和"收到了但游戏没反应"
@@ -811,16 +964,18 @@ public static class VirtualControls
             " | 最近：" + lastPress, st);
     }
 
-    public static void DrawElement(VCElem e)
+    public static void DrawElement(VCElem e) => DrawElement(e, 1f);
+
+    public static void DrawElement(VCElem e, float dim)
     {
         bool active = e.type == VCElemType.Button ? e.held : e.finger >= 0;
-        float a = Mathf.Clamp(e.opacity, 0.05f, 1f);
+        float a = Mathf.Clamp(e.opacity, 0.05f, 1f) * Mathf.Clamp01(dim);
         var bgc = active ? e.bgDown : e.bg;
         var lnc = active ? e.lineDown : e.line;
         bgc.a *= a;
         lnc.a *= a;
 
-        var c = new Vector2(e.cx * UiKit.W, e.cy * UiKit.H);
+        var c = Center(e);
         float r = e.BaseR;
 
         // 旋转 / 缩放 / 纵横比例 全部交给矩阵，形状本身只用局部坐标画
@@ -829,6 +984,7 @@ public static class VirtualControls
             Quaternion.Euler(0f, 0f, e.rotation),
             new Vector3(Mathf.Max(0.05f, e.aspect) * Mathf.Max(0.05f, e.scale), Mathf.Max(0.05f, e.scale), 1f));
 
+        // 技能键的冷却遮罩要在形状之后、图标之前铺，才不会盖住描边
         if (e.type == VCElemType.Stick)
         {
             DrawStick(e, r, bgc, lnc, active, a);
@@ -851,7 +1007,14 @@ public static class VirtualControls
 
             var rect = new Rect(-r, -r, r * 2f, r * 2f);
             var icon = SlotIcon(e);
-            if (icon != null) GUI.DrawTexture(rect, icon, ScaleMode.ScaleToFit);
+            if (icon != null)
+            {
+                var old = GUI.color;
+                GUI.color = new Color(1f, 1f, 1f, a);
+                GUI.DrawTexture(rect, icon, ScaleMode.ScaleToFit);
+                GUI.color = old;
+                DrawCooldown(e, rect, a);
+            }
             else
             {
                 string text = ElementText(e);
@@ -867,6 +1030,26 @@ public static class VirtualControls
         }
 
         GUI.matrix = m;
+    }
+
+    // 技能键的冷却遮罩：复用技能窗导出的 16 帧 cool_*.png，
+    // 和底部快捷格、技能列表的遮罩是同一套素材，读起来一致。
+    static void DrawCooldown(VCElem e, Rect rect, float a)
+    {
+        if (e.skillId <= 0) return;
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        var sys = player != null ? player.GetComponent<SkillSystem>() : null;
+        if (sys == null) return;
+        float left = sys.RemainingById(e.skillId);
+        if (left <= 0.001f) return;
+        float total = Mathf.Max(0.01f, sys.CooldownOf(e.skillId));
+        int frame = Mathf.Clamp(Mathf.RoundToInt((1f - Mathf.Clamp01(left / total)) * 15f), 0, 15);
+        var cool = Art.Tex("ui/skillwin/cool_" + frame + ".png");
+        if (cool == null) return;
+        var old = GUI.color;
+        GUI.color = new Color(1f, 1f, 1f, a);
+        GUI.DrawTexture(rect, cool);
+        GUI.color = old;
     }
 
     // —————————— 摇杆 ——————————
@@ -1143,9 +1326,14 @@ public static class VirtualControls
     static Texture2D SlotIcon(VCElem e)
     {
         if (e.type != VCElemType.Button) return null;
-        int slot = SlotOfKey(e.Key);
-        if (slot < 0) return null;
-        int id = QuickSlots.Id(slot);
+        // ① 直接绑在按键上的技能（技能窗拖进来） ② 退回到"这个键对应的快捷格"
+        int id = e.skillId;
+        if (id <= 0)
+        {
+            int slot = SlotOfKey(e.Key);
+            if (slot < 0) return null;
+            id = QuickSlots.Id(slot);
+        }
         if (id <= 0) return null;
         var data = SkillBook.Get(id);
         return data != null && !string.IsNullOrEmpty(data.icon) ? Art.Tex(data.icon) : null;
@@ -1164,6 +1352,12 @@ public static class VirtualControls
     static string ElementText(VCElem e)
     {
         if (!string.IsNullOrEmpty(e.label)) return e.label;
+        // 技能键：有图标就不写字，图标缺失时退回技能名，至少还能认出来
+        if (e.skillId > 0)
+        {
+            var d = SkillBook.Get(e.skillId);
+            return d != null ? d.name : "";
+        }
         if (e.key != KeyCode.None) return ButtonLabel(e);
         return VirtualControlsEditor.Visible ? "" : ActionDisplayName(e.action);
     }

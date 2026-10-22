@@ -448,8 +448,10 @@ public static class Pointer
         if (Pressed)
         {
             PressPosition = Pos;
+            // 5 个虚拟像素的容差在手机上几乎不可能点中（等于 7~8 个物理像素），
+            // 技能窗双击施放、键位窗双击取回图标都会被判成两次单击。放到 16。
             doubleCandidate = Time.unscaledTime - lastClickTime <= 0.5f &&
-                              (Pos - lastClickPosition).sqrMagnitude <= 25f;
+                              (Pos - lastClickPosition).sqrMagnitude <= 256f;
         }
         if ((Down || Released) && !Dragging && (Pos - PressPosition).sqrMagnitude > 16f)
             DragStarted = Dragging = true;

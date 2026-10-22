@@ -1,0 +1,15 @@
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/bin/Release/net8.0/MapleDash.ScriptHarness
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/bin/Release/net8.0/MapleDash.ScriptHarness.deps.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/bin/Release/net8.0/MapleDash.ScriptHarness.runtimeconfig.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/bin/Release/net8.0/MapleDash.ScriptHarness.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/bin/Release/net8.0/MapleDash.ScriptHarness.pdb
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Release/net8.0/MapleDash.ScriptHarness.GeneratedMSBuildEditorConfig.editorconfig
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Release/net8.0/MapleDash.ScriptHarness.AssemblyInfoInputs.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Release/net8.0/MapleDash.ScriptHarness.AssemblyInfo.cs
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Release/net8.0/MapleDash.ScriptHarness.csproj.CoreCompileInputs.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Release/net8.0/MapleDash.ScriptHarness.sourcelink.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Release/net8.0/MapleDash.ScriptHarness.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Release/net8.0/refint/MapleDash.ScriptHarness.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Release/net8.0/MapleDash.ScriptHarness.pdb
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Release/net8.0/MapleDash.ScriptHarness.genruntimeconfig.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Release/net8.0/ref/MapleDash.ScriptHarness.dll

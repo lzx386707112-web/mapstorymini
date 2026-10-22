@@ -38,44 +38,98 @@ public static class WindowShell
 public static class StatWindow
 {
     public static bool Visible;
-    static Rect rect = new Rect(220, 120, 260, 250);
-    static bool detail;
+    static Vector2 pos = new Vector2(220, 80);
+    static bool detail = true, dragging;
+    // Reference client screenshot: all six AP arrows share the right-hand column.
+    const int ApArrowX = 185;
+    static Vector2 grab;
+    static float S => BottomBar.S;
+    static Rect At(Rect r, float x, float y, float w, float h) => new Rect(r.x + x * S, r.y + y * S, w * S, h * S);
+    static Texture2D Tex(string node) => Art.Tex("wz://UI/UIWindow.img/Stat/" + node);
+    static void Image(Rect r, string node, int x, int y)
+    {
+        var tex = Tex(node);
+        if (tex != null) GUI.DrawTexture(At(r, x, y, tex.width, tex.height), tex);
+    }
+    static void Text(Rect r, string text, int x, int y, int width = 135)
+    {
+        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(11 * S), clipping = TextClipping.Clip };
+        style.normal.textColor = Color.black;
+        GUI.Label(At(r, x, y, width, 17), text, style);
+    }
     public static void Toggle() { Visible = !Visible; SkillWindow.Visible = false; }
 
     public static void Draw()
     {
         if (!Visible || GameLoop.I == null || GameLoop.I.player == null) return;
-        var r = WindowShell.Frame("能力值", rect.x, rect.y, rect.width, rect.height, ref Visible);
+        var r = new Rect(pos.x * S, pos.y * S, 208 * S, 347 * S);
+        if (Event.current.type == EventType.Repaint && Pointer.Pressed && At(r, 0, 0, 184, 22).Contains(Pointer.Pos))
+        { dragging = true; grab = Pointer.Pos / S - pos; }
+        if (dragging && Pointer.Down)
+        {
+            pos = Pointer.Pos / S - grab;
+            pos.x = Mathf.Clamp(pos.x, 0, Mathf.Max(0, UiKit.W / S - 208));
+            pos.y = Mathf.Clamp(pos.y, 0, Mathf.Max(0, UiKit.H / S - 347));
+            r.position = pos * S;
+        }
+        if (!Pointer.Down) dragging = false;
+        Image(r, "backgrnd", 0, 0);
+        if (NativeUi.Button(At(r, 190, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
         var p = GameLoop.I.player;
-        float scale = BottomBar.S;
         var attrs = Profile.Attributes;
-        string[] values = { Profile.playerName, "新手", Profile.level.ToString(), "", Mathf.CeilToInt(p.hp) + " / " + Mathf.CeilToInt(p.hpMax), Mathf.CeilToInt(p.mp) + " / " + Mathf.CeilToInt(p.mpMax), Profile.experience.ToString(), "0" };
+        string[] values = { Profile.playerName, "", Profile.level.ToString(), "-",
+            Mathf.CeilToInt(p.hp) + " / " + Mathf.CeilToInt(p.hpMax), Mathf.CeilToInt(p.mp) + " / " + Mathf.CeilToInt(p.mpMax),
+            Profile.experience + " (" + (Profile.ExpRatio * 100).ToString("0.##") + "%)", "0" };
         int[] textY = { 33, 55, 79, 96, 115, 133, 151, 169 };
-        for (int i = 0; i < values.Length; i++)
-            WindowShell.Label(new Rect(r.x + 61 * scale, r.y + textY[i] * scale, 140 * scale, 18 * scale), values[i], Mathf.RoundToInt(11 * scale));
-        WindowShell.Label(new Rect(r.x + 64 * scale, r.y + 213 * scale, 80 * scale, 18 * scale), Profile.ap.ToString());
-        // CUIStat::OnCreate / SetButtons: original button locations, including title controls.
-        int[] upY = { 117, 135, 247, 265, 283, 301 };
-        foreach (int y in upY)
+        for (int i = 0; i < values.Length; i++) Text(r, values[i], 61, textY[i]);
+        int job = Profile.cls == "knight" ? 112 : Profile.cls == "warrior" ? 132 : Profile.cls == "mage" ? 212 : Profile.cls == "priest" ? 232 : Profile.cls == "archer" ? 312 : 0;
+        Image(r, "Job/main/" + job / 100, 61, 51);
+        Image(r, "Job/sub/" + job / 100 + "/" + job, 61, 64);
+
+        if (Profile.AutomaticAp) Image(r, "basicStat", 8, 195);
+        else
         {
-            var disabled = Art.Tex("wz://UI/UIWindow.img/Stat/BtApUp/disabled/0");
-            if (disabled != null) GUI.DrawTexture(new Rect(r.x + 153 * scale, r.y + y * scale, disabled.width * scale, disabled.height * scale), disabled);
+            var apStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(11 * S), alignment = TextAnchor.MiddleRight };
+            apStyle.normal.textColor = Color.black;
+            GUI.Label(At(r, 61, 213, 26, 16), Profile.ap.ToString(), apStyle);
+            // Original 11+ layout: compact automatic-allocation control beside the AP count.
+            var auto = Tex("BtAuto/disabled/0");
+            if (auto != null) GUI.DrawTexture(At(r, 97, 197, 73, 35), auto);
+            int[] stats = { attrs.str, attrs.dex, attrs.intelligence, attrs.luk };
+            for (int i = 0; i < stats.Length; i++)
+            {
+                // Unadvanced beginners use STR/DEX; INT/LUK labels are grey in the client.
+                if (Profile.cls == "beginner" && i >= 2)
+                    Image(r, "Disabled/" + (i == 2 ? "INT" : "LUK"), 8, 244 + i * 18);
+                Text(r, stats[i].ToString(), 61, 244 + i * 18);
+                var up = At(r, ApArrowX, 247 + i * 18, 12, 12);
+                if (!Profile.CanAssignAp(i)) Image(r, "BtApUp/disabled/0", ApArrowX, 247 + i * 18);
+                else if (NativeUi.Button(up, "UI/UIWindow.img/Stat/BtApUp")) Profile.AssignAp(i);
+            }
+            // HP/MP AP conversion is separate from the four base attributes.
+            Image(r, "BtApUp/disabled/0", ApArrowX, 117);
+            Image(r, "BtApUp/disabled/0", ApArrowX, 135);
         }
-        if (NativeUi.Button(new Rect(r.x + 124 * scale, r.y + 324 * scale, 75 * scale, 18 * scale), "UI/UIWindow.img/Stat/BtDetail")) detail = !detail;
-        if (detail)
-        {
-            var bg = Art.Tex("wz://UI/UIWindow.img/Stat/backgrnd2");
-            float dx = r.xMax + 4 * scale;
-            if (dx + bg.width * scale > UiKit.W) dx = Mathf.Max(0, r.x - (bg.width + 4) * scale);
-            var dr = new Rect(dx, r.y, bg.width * scale, bg.height * scale);
-            GUI.DrawTexture(dr, bg);
-            int watk, matk;
-            var combat = attrs.WithWeapon(WeaponDefs.Get(Profile.equipWeapon), 0, out watk, out matk);
-            string[] lines = { watk.ToString(), combat.weaponDefense.ToString(), matk.ToString(), combat.magicDefense.ToString(), combat.accuracy.ToString(), combat.avoidability.ToString() };
-            for (int i = 0; i < lines.Length; i++) WindowShell.Label(new Rect(dr.x + 84 * scale, dr.y + (7 + i * 18) * scale, 125 * scale, 16 * scale), lines[i]);
-        }
-        int[] stats = { attrs.str, attrs.dex, attrs.intelligence, attrs.luk };
-        for (int i = 0; i < stats.Length; i++) WindowShell.Label(new Rect(r.x + 61 * scale, r.y + (244 + i * 18) * scale, 130 * scale, 18 * scale), stats[i].ToString());
+        if (NativeUi.Button(At(r, 154, 324, 46, 19), "UI/UIWindow.img/Stat/BtDetail")) detail = !detail;
+        if (!detail) return;
+        // Original detail window bottom-aligns with the main panel (347-203=144).
+        float dx = r.xMax - S;
+        if (dx + 218 * S > UiKit.W) dx = Mathf.Max(0, r.x - 217 * S);
+        var dr = new Rect(dx, r.y + 144 * S, 218 * S, 203 * S);
+        Image(dr, "backgrnd2", 0, 0);
+        int watk, matk;
+        var weapon = WeaponDefs.Get(Profile.equipWeapon);
+        var combat = attrs.WithWeapon(weapon, 0, out watk, out matk);
+        bool dexWeapon = weapon.kind == WeaponKind.bow || weapon.kind == WeaponKind.crossbow || weapon.kind == WeaponKind.gun;
+        int main = weapon.kind == WeaponKind.claw ? combat.luk : dexWeapon ? combat.dex : combat.str;
+        int secondary = weapon.kind == WeaponKind.claw ? combat.dex + combat.str : dexWeapon ? combat.str : combat.dex;
+        int max = CombatRules.MaxPhysicalDamage(main, secondary, watk, weapon.multiplier);
+        int min = (int)System.Math.Floor((main * weapon.multiplier * .9 * combat.mastery + secondary) * watk / 100.0);
+        string[] lines = { min + " ~ " + max, combat.weaponDefense.ToString(), matk.ToString(), combat.magicDefense.ToString(),
+            Mathf.FloorToInt(combat.accuracy + combat.dex * .8f + combat.luk * .5f).ToString(),
+            Mathf.FloorToInt(combat.avoidability + combat.dex * .25f + combat.luk * .5f).ToString(),
+            (combat.dex + combat.intelligence + combat.luk).ToString(), "100%", "100%" };
+        for (int i = 0; i < lines.Length; i++) Text(dr, lines[i], 81, 7 + i * 18, 125);
     }
 }
 
@@ -102,24 +156,109 @@ public static class EquipWindow
 public static class InvenWindow
 {
     public static bool Visible;
-    static Rect rect = new Rect(200, 100, 320, 260);
+    static Vector2 pos = new Vector2(30, 90);
+    static bool expanded, dragging;
+    static Vector2 grab;
+    static int tab, scroll;
+    static float S => BottomBar.S;
+    static Texture2D Tex(string node) => Art.Tex("wz://UI/UIWindow.img/Item/" + node);
+    static Rect At(Rect r, float x, float y, float w, float h) => new Rect(r.x + x * S, r.y + y * S, w * S, h * S);
+    static void Image(Rect r, string node, float x, float y)
+    {
+        var tex = Tex(node);
+        if (tex != null) GUI.DrawTexture(At(r, x, y, tex.width, tex.height), tex);
+    }
+    static void Text(Rect r, string value, bool right = false, int size = 11)
+    {
+        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(size * S), alignment = right ? TextAnchor.MiddleRight : TextAnchor.MiddleLeft, clipping = TextClipping.Clip };
+        style.normal.textColor = Color.black;
+        GUI.Label(r, value, style);
+    }
     public static void Toggle() { Visible = !Visible; }
-
     public static void Draw()
     {
         if (!Visible) return;
-        var r = WindowShell.Frame("背包", rect.x, rect.y, rect.width, rect.height, ref Visible);
-        WindowShell.Label(new Rect(r.x + 25 * BottomBar.S, r.y + 268 * BottomBar.S, 116 * BottomBar.S, 16 * BottomBar.S), Profile.gold.ToString());
-        int slot = 0;
-        foreach (string id in Profile.OwnedWeapons)
+        float width = expanded ? 603 : 175;
+        pos.x = Mathf.Clamp(pos.x, 0, Mathf.Max(0, UiKit.W / S - width));
+        pos.y = Mathf.Clamp(pos.y, 0, Mathf.Max(0, UiKit.H / S - 289));
+        var r = new Rect(pos.x * S, pos.y * S, width * S, 289 * S);
+        bool press = Event.current.type == EventType.Repaint && Pointer.Pressed;
+        bool release = Event.current.type == EventType.Repaint && Pointer.Released;
+        if (press && At(r, 0, 0, width - 55, 22).Contains(Pointer.Pos)) { dragging = true; grab = Pointer.Pos / S - pos; }
+        if (dragging && Pointer.Down) { pos = Pointer.Pos / S - grab; r.position = pos * S; }
+        if (!Pointer.Down) dragging = false;
+        Image(r, expanded ? "FullBackgrnd" : "backgrnd", 0, 0);
+        if (NativeUi.Button(At(r, width - 19, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
+        if (NativeUi.Button(At(r, width - 49, 5, 12, 12), "UI/UIWindow.img/Item/" + (expanded ? "BtSmall" : "BtFull"))) { expanded = !expanded; scroll = 0; return; }
+        if (NativeUi.Button(At(r, width - 34, 5, 12, 12), "UI/UIWindow.img/Item/" + (sorted ? "BtSort" : "BtGather"))) sorted = !sorted;
+        for (int i = 0; i < 5; i++)
         {
-            var icon = Art.Tex("wz://Character/Weapon/" + int.Parse(id).ToString("D8") + ".img/info/icon");
-            var cell = new Rect(r.x + (10 + slot % 4 * 36) * BottomBar.S, r.y + (51 + slot / 4 * 34) * BottomBar.S, 30 * BottomBar.S, 30 * BottomBar.S);
-            if (icon != null) GUI.DrawTexture(cell, icon, ScaleMode.ScaleToFit);
-            if (Event.current.type == EventType.Repaint && Pointer.Released && cell.Contains(Pointer.Pos)) Profile.EquipWeapon(id);
-            if (++slot >= 24) break;
+            string state = i == tab ? "1" : "0";
+            GUI.DrawTexture(At(r, 8 + i * 29, 23, 21, 19), Art.Tex("wz://UI/Basic.img/Tab2/fill" + state));
+            GUI.DrawTexture(At(r, 4 + i * 29, 23, 4, 19), Art.Tex("wz://UI/Basic.img/Tab2/left" + state));
+            GUI.DrawTexture(At(r, 29 + i * 29, 23, 4, 19), Art.Tex("wz://UI/Basic.img/Tab2/right" + state));
+            Image(r, "Tab/" + (i == tab ? "enabled" : "disabled") + "/" + i, 5 + i * 29, i == tab ? 24 : 25);
+            if (release && At(r, 5 + i * 29, 23, 29, 18).Contains(Pointer.Pos)) { tab = i; scroll = 0; }
         }
+        int capacity = Profile.InventoryCapacity(tab);
+        int maxScroll = Mathf.Max(0, Mathf.CeilToInt(capacity / 4f) - 6);
+        scroll = Mathf.Clamp(scroll, 0, maxScroll);
+        var entries = new System.Collections.Generic.List<int>();
+        if (tab == 0)
+        {
+            bool equipped = false;
+            foreach (string id in Profile.OwnedWeapons)
+            {
+                // Equipped item occupies the EQUIPPED inventory, not a bag slot.
+                if (!equipped && id == Profile.equipWeapon) { equipped = true; continue; }
+                if (int.TryParse(id, out int number)) entries.Add(number);
+            }
+        }
+        entries.AddRange(Profile.InventoryItems(tab));
+        if (sorted) entries.Sort();
+        if (!expanded && maxScroll > 0 && Event.current.type == EventType.Repaint && At(r, 7, 50, 160, 205).Contains(Pointer.Pos))
+        {
+            float wheel = Input.mouseScrollDelta.y;
+            if (Mathf.Abs(wheel) > .01f) scroll = Mathf.Clamp(scroll - (int)Mathf.Sign(wheel), 0, maxScroll);
+        }
+        for (int cell = 0; cell < (expanded ? 96 : 24); cell++)
+        {
+            int index = expanded ? cell : scroll * 4 + cell;
+            int block = expanded ? cell / 24 : 0;
+            int local = cell % 24;
+            float x = 7 + block * 148 + local % 4 * 36;
+            float y = 50 + local / 4 * 34;
+            var slot = At(r, x, y, 32, 32);
+            if (index >= capacity) { Image(r, "disabled", x, y); continue; }
+            if (index >= entries.Count) continue;
+            int id = entries[index];
+            Texture2D icon = null;
+            if (FieldCatalog.Items.TryGetValue(id, out var info) && !string.IsNullOrEmpty(info.icon)) icon = Art.Tex(info.icon);
+            else if (tab == 0 && WeaponDefs.TryGet(id.ToString(), out _)) icon = Art.Tex("wz://Character/Weapon/" + id.ToString("D8") + ".img/info/icon");
+            if (icon != null) GUI.DrawTexture(slot, icon, ScaleMode.ScaleToFit);
+            if (tab != 0) Text(At(r, x, y + 20, 31, 12), Profile.ItemCount(id).ToString(), true, 9);
+            if (release && slot.Contains(Pointer.Pos) && tab == 0) Profile.EquipWeapon(id.ToString());
+        }
+        if (!expanded)
+        {
+            string root = "wz://UI/Basic.img/VScr4/" + (capacity > 24 ? "enabled/" : "disabled/");
+            var track = Art.Tex(root + "base");
+            if (track != null) GUI.DrawTexture(At(r, 154, 65, 15, 174), track);
+            var prev = At(r, 154, 50, 15, 15); var next = At(r, 154, 239, 15, 15);
+            GUI.DrawTexture(prev, Art.Tex(root + (capacity > 24 ? "prev0" : "prev")));
+            GUI.DrawTexture(next, Art.Tex(root + (capacity > 24 ? "next0" : "next")));
+            if (capacity > 24)
+            {
+                GUI.DrawTexture(At(r, 154, 65 + scroll * 149f / Mathf.Max(1, maxScroll), 15, 25), Art.Tex(root + "thumb0"));
+                if (press && prev.Contains(Pointer.Pos)) scroll = Mathf.Max(0, scroll - 1);
+                if (press && next.Contains(Pointer.Pos)) scroll = Mathf.Min(maxScroll, scroll + 1);
+            }
+        }
+        Text(At(r, 27, 267, 113, 16), Profile.gold.ToString(), true);
+        if (expanded && NativeUi.Button(At(r, width - 106, 267, 93, 18), "UI/UIWindow.img/Item/BtCashshop"))
+            BottomBar.Toast("容量扩充需在商城购买：2000点券增加4格，最多96格");
     }
+    static bool sorted;
 }
 
 public static class ShopWindow
@@ -147,11 +286,12 @@ public static class ShortcutWindow
         var anchor = BottomBar.BigButtonRect(3);
         NativeMenu.Draw("shortcut", new Vector2(anchor.xMax - 93 * BottomBar.S, anchor.y - 245 * BottomBar.S),
             new[] { "BtItem", "BtEquip", "BtStat", "BtSkill", "BtParty", "BtQuest", "BtMessenger", "BtGuild", "BtComm", "BtMobbook", "BtRanking" },
-            245, i => i < 4, i => {
+            245, i => i < 4 || i == 5, i => {
                 if (i == 0) InvenWindow.Toggle();
                 if (i == 1) EquipWindow.Toggle();
                 if (i == 2) StatWindow.Toggle();
                 if (i == 3) SkillWindow.Toggle();
+                if (i == 5) QuestWindow.Toggle();
                 Visible = false;
             });
     }
@@ -214,12 +354,18 @@ public static class GameMenuWindow
 // 所有浮窗的统一绘制顺序（技能窗在最后，压在虚拟键盘之上）
 public static class GameWindows
 {
+    public static bool AnyVisible =>
+        StatWindow.Visible || EquipWindow.Visible || InvenWindow.Visible ||
+        ShortcutWindow.Visible || HelpWindow.Visible || GameMenuWindow.Visible ||
+        SkillWindow.Visible || QuestWindow.Visible || KeyConfigWindow.Visible;
+
     public static void DrawAll()
     {
         StatWindow.Draw();
         EquipWindow.Draw();
         InvenWindow.Draw();
         ShopWindow.Draw();
+        QuestWindow.Draw();
         ShortcutWindow.Draw();
         HelpWindow.Draw();
         GameMenuWindow.Draw();

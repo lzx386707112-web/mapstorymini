@@ -61,6 +61,7 @@ public static class Profile
         bool missingName = string.IsNullOrEmpty(data.playerName);
         if (missingName) data.playerName = PlayerPrefs.GetString("mxd.name", DefaultName);
         LevelSystem.EnsureBaseline(data);
+        bool migratedAp = LevelSystem.MigrateNoviceAp(data);
 
         // 自动化测试用：临时覆盖职业，只影响本次运行，绝不写回存档。
         // 注意光在这里改 data.cls 是不够的 —— 游戏过程中任何一次 Save() 都会把
@@ -89,7 +90,7 @@ public static class Profile
                                   "（HP " + data.baseMaxHp + " / MP " + data.baseMaxMp + "）");
         }
 
-        if (gained > 0 || missingName) Save();
+        if (gained > 0 || missingName || migratedAp) Save();
     }
 
     public const string DefaultName = "枫叶旅人";
@@ -118,6 +119,36 @@ public static class Profile
     {
         if (Data.AddItem(id, count)) Save();
     }
+    public static bool RemoveItem(int id, int count)
+    {
+        if (!Data.RemoveItem(id, count)) return false;
+        Save();
+        return true;
+    }
+
+    // —— 任务（原端 Character.getQuest / updateQuestStatus）——
+    public static int QuestStatus(int id) => Data.QuestStatusOf(id);
+    public static bool IsQuestStarted(int id) => Data.QuestStatusOf(id) == PlayerProfileData.QuestStartedState;
+    public static bool IsQuestCompleted(int id) => Data.QuestStatusOf(id) == PlayerProfileData.QuestCompletedState;
+    public static long QuestCompletedTime(int id) => Data.QuestCompletedTime(id);
+    public static void StartQuest(int id) { Data.SetQuestStarted(id); Save(); }
+    public static void CompleteQuest(int id) { Data.SetQuestCompleted(id); Save(); }
+    public static void ResetQuest(int id) { Data.ResetQuest(id); Save(); }
+    public static string QuestProgress(int id, string key, string fallback = "0") => Data.GetQuestProgress(id, key, fallback);
+    public static int QuestProgressInt(int id, string key, int fallback = 0)
+    {
+        int v;
+        return int.TryParse(Data.GetQuestProgress(id, key, fallback.ToString()), out v) ? v : fallback;
+    }
+    // save=false 给"一次要改一批"的场景用（例如一次击杀推进多个任务），调用方收尾 Save() 一次
+    public static void SetQuestProgress(int id, string key, string value, bool save = true)
+    {
+        Data.SetQuestProgress(id, key, value);
+        if (save) Save();
+    }
+    public static IReadOnlyList<int> StartedQuests => Data.questStarted ?? EmptyQuests;
+    public static IReadOnlyList<int> CompletedQuests => Data.questCompleted ?? EmptyQuests;
+    static readonly List<int> EmptyQuests = new List<int>();
 
     // 原版地图模式当前所在位置（换图/重开用；不进存档事务，只记最后一张图）
     public static int LastMapId
@@ -173,6 +204,35 @@ public static class Profile
         if (!WeaponDefs.CanEquip(WeaponDefs.Get(Data.equipWeapon),Data.attributes,id)) Data.equipWeapon = "1302000";
         Save();
     }
+    public static bool AutomaticAp => cls == "beginner" && level <= 10;
+    public static bool CanAssignAp(int stat)
+    {
+        if (AutomaticAp || ap <= 0 || stat < 0 || stat > 3) return false;
+        var a = Data.attributes;
+        int value = stat == 0 ? a.str : stat == 1 ? a.dex : stat == 2 ? a.intelligence : a.luk;
+        return value < 32767;
+    }
+    public static bool AssignAp(int stat)
+    {
+        if (!CanAssignAp(stat)) return false;
+        if (stat == 0) Data.attributes.str++;
+        else if (stat == 1) Data.attributes.dex++;
+        else if (stat == 2) Data.attributes.intelligence++;
+        else Data.attributes.luk++;
+        Data.ap--;
+        Save();
+        return true;
+    }
+    public static int InventoryCapacity(int tab) => tab == 0 ? Data.equipmentSlots : tab == 4 ? 96 : 24;
+    public static List<int> InventoryItems(int tab)
+    {
+        var result = new List<int>();
+        if (Data.itemIds != null)
+            foreach (int id in Data.itemIds)
+                if (id / 1000000 - 1 == tab && Data.ItemCount(id) > 0) result.Add(id);
+        return result;
+    }
+
     public static void SetHair(string id)
     {
         if (!HairStyles.Contains(id)) return;
