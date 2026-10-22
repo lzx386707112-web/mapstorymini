@@ -1,13 +1,13 @@
 #!/bin/bash
-# 一键：同步关卡数据 → 构建 APK → 装到手机 → 启动
+# 一键：构建 APK → 装到手机 → 启动（资源由用户单独传输）
 # 用法：
 #   ./build_android.sh           # 构建 + 安装 + 启动
 #   ./build_android.sh --no-install   # 只出 APK，不碰手机
 set -e
 
 UNITY="/Applications/Unity/Unity.app/Contents/MacOS/Unity"
-PROJ="/Users/lizixian/MapleDash"
-DATA="/Users/lizixian/WorkBuddy/冒险岛小游戏/data"
+# 工程根目录 = 本脚本所在目录，仓库移动/换机器都不必再改路径
+PROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ADB="$HOME/Library/Android/sdk/platform-tools/adb"
 SDK="$HOME/Library/Android/sdk"
 NDK="$SDK/ndk/23.1.7779620"
@@ -18,8 +18,8 @@ T0=$(date +%s)
 NO_INSTALL=0
 [ "$1" = "--no-install" ] && NO_INSTALL=1
 
-# ---------- 0/6 前置检查（早失败，省得白等三分钟）----------
-echo "== 0/6 前置检查 =="
+# ---------- 0/5 前置检查（早失败，省得白等三分钟）----------
+echo "== 0/5 前置检查 =="
 
 # Unity 同一工程只能有一个进程持有；编辑器开着时 batchmode 会直接失败
 if pgrep -f "Unity.app/Contents/MacOS/Unity" >/dev/null 2>&1; then
@@ -59,20 +59,8 @@ if [ "$NO_INSTALL" = "0" ]; then
   echo "设备：$("$ADB" shell getprop ro.product.model 2>/dev/null | tr -d '\r')"
 fi
 
-# ---------- 1/6 同步关卡数据 ----------
-echo "== 1/6 同步关卡数据 =="
-mkdir -p "$PROJ/Assets/Resources/Stage"
-shopt -s nullglob
-SYNCED=0
-for f in "$DATA"/chapter*.json; do
-  cp "$f" "$PROJ/Assets/Resources/Stage/$(basename "$f")"
-  echo "   $(basename "$f")"
-  SYNCED=$((SYNCED + 1))
-done
-[ "$SYNCED" = "0" ] && echo "   ⚠️ $DATA 下没有 chapter*.json，沿用工程里的旧数据"
-
-# ---------- 2/6 构建 ----------
-echo "== 2/6 构建（IL2CPP / ARM64，约 2–6 分钟）=="
+# ---------- 1/5 构建 ----------
+echo "== 1/5 构建（IL2CPP / ARM64，约 2–6 分钟）=="
 cd "$PROJ"
 # 代理会让 Gradle 下载 dl.google.com 时 TLS 握手被中断，这里显式去掉
 unity_build() {
@@ -117,12 +105,12 @@ ls -lh "$PROJ/Builds/MapleDash.apk"
 
 if [ "$NO_INSTALL" = "1" ]; then
   echo "已跳过安装（--no-install）。APK：$PROJ/Builds/MapleDash.apk"
-  echo "APK 不含完整 Data；使用 ./install_apk.sh 安装并同步资源后再启动。"
+  echo "APK 不含完整 Data；资源请自行放到 /sdcard/mapstory，安装可用 ./install_apk.sh。"
   exit 0
 fi
 
-# ---------- 3/6 安装 ----------
-echo "== 3/6 安装 =="
+# ---------- 2/5 安装 ----------
+echo "== 2/5 安装 =="
 
 # 屏幕尺寸提前取好。安装过程中绝不能再发任何 adb 命令——
 # 并发会打断 streamed install，报 "protocol fault (couldn't read status): Connection reset by peer"
@@ -173,17 +161,14 @@ if [ "$INSTOK" != "1" ]; then
   exit 1
 fi
 
-# 完整 Data 独立于 APK 部署；首次约 6.8 GiB，后续按文件增量同步。
-python3 "$PROJ/tools/sync_android_data.py" --adb "$ADB"
-
-# ---------- 4/6 启动 ----------
-echo "== 4/6 启动 =="
+# ---------- 3/5 启动 ----------
+echo "== 3/5 启动 =="
 "$ADB" shell am force-stop "$APP_ID" 2>/dev/null || true
 "$ADB" shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
 sleep 6
 
-# ---------- 5/6 异常自检 ----------
-echo "== 5/6 异常自检 =="
+# ---------- 4/5 异常自检 ----------
+echo "== 4/5 异常自检 =="
 ERRS=$("$ADB" logcat -d -s Unity 2>/dev/null | grep -c "Exception" || true)
 if [ "${ERRS:-0}" -gt 0 ]; then
   echo "⚠️  运行日志里有 $ERRS 条 Exception："
@@ -192,8 +177,8 @@ else
   echo "   无 Exception ✓"
 fi
 
-# ---------- 6/6 截图 ----------
-echo "== 6/6 截图 =="
+# ---------- 5/5 截图 ----------
+echo "== 5/5 截图 =="
 "$ADB" exec-out screencap -p > /tmp/game_latest.png 2>/dev/null || true
 [ -s /tmp/game_latest.png ] && echo "   /tmp/game_latest.png"
 

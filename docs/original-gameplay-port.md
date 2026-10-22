@@ -287,16 +287,28 @@
 - 鼠标模式：整屏变触摸板，拖动移光标、轻点=左键，用来点技能窗/拖技能图标（Winlator 的鼠标模式同一套用法）。
 
 ### 技能窗（`SkillWindow.cs` + `SkillBook.cs`）
-- 窗口底板 `UIWindow.img/Skill/backgrnd`（175×289），条目 `skill0/skill1`（141×35），页签 `Tab/enabled/0..5`，
-  加点按钮 `BtSpUp`，全部原图。底板上的「选中技能名」暗条实测在原图 y62..80（它上面 y45..54 是一条浅色内嵌条），
-  技能名贴暗条画，否则上半截会消失在白条里。
-- 技能树整棵从 `Skill.wz/<job>.img/skill/<id>` 导出（`tools/wz_ui_bar.py`）：**5 条职业线 / 15 个转职页签 / 206 个技能**，
+- 窗口底板 `UIWindow.img/Skill/backgrnd`（175×289），条目 `skill0/skill1`（141×35），
+  加点按钮 `BtSpUp`，全部原图。行内只有「技能名 + 等级数字」，刻意不写 `Lv.` 前缀（原版就是纯数字）。
+- **页签条**在 backgrnd 的白区（y=22..41）：底板是原客户端 GDI 画的圆角块（选中粉红、未选中浅蓝白，
+  WZ 里没有对应贴图，运行时按原图配色生成 25×19），字形才是 `Skill/Tab/enabled|disabled/0..N`
+  （0 是空心圆点，即新手/初级页）。单页左对齐，多页沿页签条均匀铺开。
+- **书条**（橙框 y=56..78）：左侧书图标取 `Skill.wz/<job>.img/info/icon`（26×30，新手是金色书脊），
+  书名取 `String.wz/Skill.img/<job>/bookName`（新手 =「冒险的技术」「战士技能」…），不再拿职业名顶替。
+- **滚动条** `Basic.img/VScr`（12 宽，`enabled` / `disabled` 两套部件）：技能数超过 4 行才启用，
+  可点上/下箭头、拖滑块，滚轮翻行照旧。
+- **底部**：技能点数字右对齐在白色框内（x 58..108），右侧 `Basic.img/BtMacro`「宏指令」按钮
+  （技能组合栏 `UIWindow.img/SkillMacro` 尚未实现，点击给提示）。
+- **新手页**（`beginner`）固定 4 条：团队治疗 / 疾风步 / 蜗牛投掷术 / 精灵的祝福（含 id `12`），顺序与客户端一致；
+  精灵的祝福是账号级被动（`"auto": true`），加点按钮恒为 disabled。
+- 技能树整棵从 `Skill.wz/<job>.img/skill/<id>` 导出（`tools/wz_ui_bar.py`）：**6 条职业线（含新手）/ 20 个页签 / 216 个技能**，
   每个技能带中文名（`String.wz/Skill.img/<id>/name`）、说明、上限等级、类型、前置技能、逐级数值、32×32 原版图标。
 - 施放时按角色**已学等级**取 WZ 那一级的 `mpCon / damage / attackCount / mobCount / cooltime / lt / rb`，
   走的是和原来四格技能完全相同的判定与结算路径（`SkillSystem.TryCastSkill`）；没有特效部件的技能只是不播特效。
 - 技能点：服务端 `game_config.level_up_sp_gain = 3`，本地按 `(等级-1)*3` 累计（新手不受影响的规则没细分，已在下面登记）。
 - 绑定：已学技能从列表里拖到快捷格 = 绑到那一格；直接拖到虚拟键盘的某个键帽上 = 技能进第一个空快捷格，
   顺手把那把键改绑到这一格（`VirtualPad.HitKey` 用和绘制完全相同的键帽矩形做命中判定）。
+- **踩坑**：`GameLoop.Start()` 曾硬编码 `Profile.SetClass("beginner")`，每进一次游戏就把玩家职业重置成新手
+  并写回存档（技能窗/技能树随之变成新手页）。已删除，职业只由存档与大厅选择决定。
 
 ### 显式适配（不等于原端行为）
 

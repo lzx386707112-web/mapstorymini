@@ -70,8 +70,9 @@ public class GameLoop : MonoBehaviour
 
     void Start()
     {
+        // 职业由存档/大厅选择决定。这里曾经硬编码 SetClass("beginner")，
+        // 每进一次游戏就把玩家职业重置成新手并写回存档（技能窗/技能树跟着变）。
         Profile.Load();
-        Profile.SetClass("beginner");
         BuildBackground();           // 背景只建一次，进出大厅不重建
 
         // 摄像机（大厅与战斗共用，避免大厅里没有相机导致黑屏）

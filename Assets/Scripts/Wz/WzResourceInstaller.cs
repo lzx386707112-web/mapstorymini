@@ -29,6 +29,35 @@ public static class WzResourceInstaller
             progress?.Invoke(++count, files.Count);
         }
     }
+    // Fast startup check: hash only a spread-out sample instead of the whole Data tree.
+    // A matching install receipt + a passing sample means "installed and sane"; a full
+    // Verify is only needed when the sample fails (real corruption) or on first install.
+    public static void VerifySample(string root, string manifest, int sample)
+    {
+        var index = (Dictionary<string, object>)MiniJson.Parse(manifest);
+        var files = (List<object>)index["files"];
+        if (files.Count == 0) return;
+        int step = Math.Max(1, files.Count / Math.Max(1, sample));
+        int last = -1;
+        for (int i = 0; i < files.Count; i += step)
+        {
+            VerifyOne(root, (Dictionary<string, object>)files[i]);
+            last = i;
+        }
+        // Always include the final entry: the evenly spaced walk may stop just short of it.
+        if (last != files.Count - 1) VerifyOne(root, (Dictionary<string, object>)files[files.Count - 1]);
+    }
+    static void VerifyOne(string root, Dictionary<string, object> file)
+    {
+        string path = Path.Combine(root, "Data", (string)file["path"]);
+        if (!File.Exists(path)) throw new FileNotFoundException("资源缺失: " + file["path"]);
+        using (var input = File.OpenRead(path))
+        using (var sha = SHA256.Create())
+        {
+            string hash = BitConverter.ToString(sha.ComputeHash(input)).Replace("-", "").ToLowerInvariant();
+            if (hash != (string)file["sha256"]) throw new InvalidDataException("资源校验失败: " + file["path"]);
+        }
+    }
     public static void Install(string zipPath, string root, string expectedManifest, Action<int, int> progress)
     {
         string staging = Path.Combine(root, "Installing"), data = Path.Combine(root, "Data");

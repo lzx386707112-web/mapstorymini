@@ -3,7 +3,8 @@
 # 用法：./install_apk.sh [apk路径]
 set -e
 
-APK="${1:-/Users/lizixian/MapleDash/Builds/MapleDash.apk}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APK="${1:-$HERE/Builds/MapleDash.apk}"
 ADB="$HOME/Library/Android/sdk/platform-tools/adb"
 PKG="com.mapledash.game"
 ACTIVITY="com.unity3d.player.UnityPlayerActivity"
@@ -18,9 +19,6 @@ echo "== 设备 =="
 
 echo "== 安装（覆盖旧版本）=="
 "$ADB" install -r -d "$APK"
-
-PROJ="$(cd "$(dirname "$0")" && pwd)"
-python3 "$PROJ/tools/sync_android_data.py" --adb "$ADB"
 
 echo "== 启动 =="
 "$ADB" shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || \

@@ -9,7 +9,8 @@ using UnityEngine;
 //   skill0/skill1 141x35  未选中/高亮条目，条目内图标格 35 宽、y=17 是分隔线
 //   line 141x1            条目下方的分隔线（y=rowY+37）
 //   BtSpUp 12x12          加点按钮，四态；在条目右侧留白列（x=149）
-//   Tab/enabled|disabled  0/I/II/III/IV/V 页签
+//   Tab/enabled|disabled  0/N 页签字形（铺在 Basic.img/Tab2 的页签底板上）
+//   Tab/enabled|disabled  0..N 页签字形
 //   recommend 105x35      推荐技能橙色条，正好盖住条目文本区
 //   CoolTime 32x32 ×16    冷却遮罩，按剩余比例取帧
 //   tip0..2 193x102       首次操作提示气泡
@@ -26,31 +27,48 @@ public static class SkillWindow
     static float S => BottomBar.S;
     static Vector2 pos = new Vector2(-1f, -1f);
     static int tab;
-    static int selected;
+    static int selected = -1;   // -1 = 未选中任何技能行（原版打开时没有高亮行）
     static int scroll;
 
     const int WinW = 175, WinH = 289;
 
-    const int TabX = 30, TabY = 24, TabStep = 20, TabHitY = 20, TabHitH = 22;
+    // 页签条：backgrnd 的白区 y=22..41，页签底板是 Basic.img/Tab2 的三切片（4/8/4 × 19）
+    const int TabY = 22, TabH = 19, TabX = 2, TabW = 25;
+    const int TabGlyphY = 4;
+
+    // 书条：橙框 y=56..78，左侧是职业书图标 Skill/<job>.img/info/icon（26x30）
+    const int BookX = 5, BookY = 53, BookW = 24, BookH = 28;
+    const int BookTitleX = 32, BookTitleY = 57, BookTitleW = 138, BookTitleH = 20;
 
     const int RowX = 7, RowY = 99, RowStep = 40, RowW = 141, RowH = 35, Rows = 4;
     const int RowHitW = 154, RowHitH = 38;
     const int IconOffX = 3, IconOffY = 3, IconSize = 32;
+    const int NameX = 45, NameY = 4, NameW = 80, NameH = 14;
+    const int LevelX = 45, LevelY = 20, LevelW = 60, LevelH = 12;
     const int SpUpX = 131, SpUpY = 20, SpUpSize = 12;
 
-    const int FooterX = 61, FooterY = 265, FooterW = 51, FooterH = 16;
+    // 列表右侧滚动条（Basic.img/VScr，12 宽）
+    const int ScrollX = 161, ScrollW = 12, ScrollTop = 99, ScrollBottom = 254;
+
+    // 底栏：白色数字框 (57,265)-(115,282)，右侧是「宏指令」按钮
+    const int FooterX = 58, FooterY = 266, FooterW = 50, FooterH = 15;
+    const int MacroX = 121, MacroY = 264, MacroW = 48, MacroH = 18;
 
     const int RecOffX = 36, RecW = 105, RecH = 35;
 
     static readonly Color HeaderText = new Color(1f, 0.96f, 0.78f);
     static readonly Color NameOn = new Color(0.10f, 0.11f, 0.15f);
-    static readonly Color NameOff = new Color(0.36f, 0.38f, 0.44f);
+    static readonly Color NameOff = new Color(0.30f, 0.33f, 0.40f);
     static readonly Color LevelText = new Color(0.16f, 0.27f, 0.56f);
     static readonly Color SpNumber = new Color(0.10f, 0.23f, 0.72f);
     static readonly Color SpZero = new Color(0.38f, 0.42f, 0.50f);
 
     static Texture2D Tex(string name)
         => Art.Tex("ui/skillwin/" + name + ".png");
+
+    // 页签底板 / 滚动条 / 宏指令按钮都直接用原 IMG 节点，不再单独导出 PNG
+    static Texture2D Wz(string node)
+        => Art.Tex("wz://" + node);
 
     static Texture2D SkillIcon(SkillData d)
         => d == null || string.IsNullOrEmpty(d.icon) ? null : Art.Tex(d.icon);
@@ -102,22 +120,11 @@ public static class SkillWindow
         return list;
     }
 
-    // 职业 id → 转职阶段：100/200/300 = I，x10 = II，x11 = III，x12 = IV
-    static int StageOf(int job)
-    {
-        if (job < 100) return 0;
-        if (job % 100 == 0) return 1;
-        int d = job % 10;
-        if (d == 0) return 2;
-        if (d == 1) return 3;
-        return 4;
-    }
-
     static void ClampState(List<int> list)
     {
-        if (list.Count == 0) { selected = 0; scroll = 0; return; }
+        if (list.Count == 0) { selected = -1; scroll = 0; return; }
         scroll = Mathf.Clamp(scroll, 0, Mathf.Max(0, list.Count - Rows));
-        selected = Mathf.Clamp(selected, 0, list.Count - 1);
+        if (selected >= list.Count) selected = list.Count - 1;
     }
 
     public static void Draw()
@@ -142,6 +149,7 @@ public static class SkillWindow
         list = TabSkills();
 
         HandleScroll(win, list);
+        HandleScrollbar(win, list);
         ClampState(list);
 
         int hover = RowAt(win, list);
@@ -151,8 +159,9 @@ public static class SkillWindow
         DrawBackground(win);
         if (NativeUi.Button(At(win, 156, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
         DrawTabs(win, tabs);
-        DrawHeader(win, list, hover);
+        DrawHeader(win);
         DrawRows(win, list, hover);
+        DrawScrollbar(win, list);
         DrawFooter(win);
         DrawTooltip(win, list, hover);
         DrawTip();
@@ -181,19 +190,23 @@ public static class SkillWindow
     }
 
     // —— 页签 ——
+    // 原版页签条：底板是客户端 GDI 画的圆角块（WZ 里没有贴图，运行时生成），
+    // 上面的字形才是 Skill/Tab/enabled|disabled/N。
+    // 单页（新手）时底板左对齐，多页时沿页签条均匀铺开。
+    static float TabLeft(int i, int n)
+        => n <= 1 ? TabX : TabX + i * (167f - TabW) / (n - 1);
+
     static void HandleTabInput(Rect win, List<Dictionary<string, object>> tabs)
     {
         if (Event.current.type != EventType.Repaint || !Pointer.Pressed) return;
         for (int i = 0; i < tabs.Count && i < 6; i++)
         {
-            int stage = StageOf(Art.Int(tabs[i], "job", 0));
-            if (stage < 0 || stage > 5) continue;
-            var hit = At(win, TabX + TabStep * stage, TabHitY, TabStep, TabHitH);
+            var hit = At(win, TabLeft(i, tabs.Count), TabY, TabW, TabH);
             if (!hit.Contains(Pointer.Pos)) continue;
             if (tab != i)
             {
                 tab = i;
-                selected = 0;
+                selected = -1;
                 scroll = 0;
                 CancelDrag();
             }
@@ -207,28 +220,81 @@ public static class SkillWindow
         if (bg != null) GUI.DrawTexture(win, bg, ScaleMode.StretchToFill);
     }
 
+    // 页签底板：原客户端是 GDI 画的圆角块（选中粉红、未选中浅蓝白），
+    // WZ 里没有对应贴图，这里按原图配色在运行时生成一张 25x19 的。
+    static Texture2D tabOnTex, tabOffTex;
+
+    static Texture2D TabPlateTex(bool on)
+    {
+        if (on && tabOnTex != null) return tabOnTex;
+        if (!on && tabOffTex != null) return tabOffTex;
+
+        const int w = TabW, h = TabH, r = 4;
+        var tex = new Texture2D(w, h, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Point,
+            wrapMode = TextureWrapMode.Clamp,
+            name = on ? "skillTabOn" : "skillTabOff",
+        };
+        var px = new Color32[w * h];
+        var top = on ? new Color(1.00f, 0.88f, 0.94f) : new Color(0.95f, 0.97f, 1.00f);
+        var bot = on ? new Color(0.79f, 0.20f, 0.35f) : new Color(0.70f, 0.76f, 0.88f);
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float dx = Mathf.Max(0f, Mathf.Max(r - x, x - (w - 1 - r)));
+                float dy = Mathf.Max(0f, Mathf.Max(r - y, y - (h - 1 - r)));
+                bool inside = dx * dx + dy * dy <= r * r + 0.5f;
+                var c = Color.Lerp(bot, top, (float)y / (h - 1));
+                if (!inside) c.a = 0f;
+                px[y * w + x] = c;
+            }
+        tex.SetPixels32(px);
+        tex.Apply();
+        if (on) tabOnTex = tex; else tabOffTex = tex;
+        return tex;
+    }
+
+    static void DrawTabPlate(Rect r, bool on)
+    {
+        var plate = TabPlateTex(on);
+        if (plate != null) GUI.DrawTexture(r, plate, ScaleMode.StretchToFill);
+    }
+
     static void DrawTabs(Rect win, List<Dictionary<string, object>> tabs)
     {
         for (int i = 0; i < tabs.Count && i < 6; i++)
         {
-            int stage = StageOf(Art.Int(tabs[i], "job", 0));
-            if (stage < 0 || stage > 5) continue;
-            var t = Tex("tab_" + stage + (i == tab ? "" : "_off"));
-            if (t == null) continue;
-            float tx = TabX + TabStep * stage + (TabStep - t.width) * 0.5f;
-            GUI.DrawTexture(new Rect(win.x + tx * S, win.y + TabY * S, t.width * S, t.height * S),
-                t, ScaleMode.StretchToFill);
+            bool on = i == tab;
+            var plate = At(win, TabLeft(i, tabs.Count), TabY, TabW, TabH);
+            DrawTabPlate(plate, on);
+
+            var glyph = Wz("UI/UIWindow.img/Skill/Tab/" + (on ? "enabled" : "disabled") + "/" + i);
+            if (glyph == null) continue;
+            GUI.DrawTexture(new Rect(plate.x + (plate.width - glyph.width * S) * 0.5f,
+                                     plate.y + TabGlyphY * S, glyph.width * S, glyph.height * S),
+                glyph, ScaleMode.StretchToFill);
         }
     }
 
-    // —— 顶部选中技能名 ——
-    static void DrawHeader(Rect win, List<int> list, int hover)
+    // —— 书条：职业书图标 + 技能页书名（String.wz 的 bookName）——
+    static void DrawHeader(Rect win)
     {
-        // CUISkill::Draw 0x008AC738 draws the job name at (45,66), not the selected skill.
         var tabs = Tabs;
         if (tab < 0 || tab >= tabs.Count) return;
-        var name = tabs[tab].TryGetValue("name", out var value) ? value as string : "";
-        GUI.Label(At(win, 45, 61, 120, 19), name, Style(11, HeaderText, TextAnchor.MiddleLeft, false, true));
+        var t = tabs[tab];
+
+        // 原版这里的书就是 Skill.wz/<job>.img/info/icon（26x30）
+        int job = Art.Int(t, "job", 0);
+        var book = Art.Tex("wz://Skill/" + job.ToString("D3") + ".img/info/icon");
+        if (book != null)
+            GUI.DrawTexture(At(win, BookX, BookY, BookW, BookH), book, ScaleMode.StretchToFill);
+
+        string name = t.TryGetValue("book", out var b) ? b as string : null;
+        if (string.IsNullOrEmpty(name))
+            name = t.TryGetValue("name", out var n) ? n as string : "";
+        GUI.Label(At(win, BookTitleX, BookTitleY, BookTitleW, BookTitleH), name,
+            Style(12, HeaderText, TextAnchor.MiddleCenter, false, true));
     }
 
     // —— 列表 ——
@@ -352,10 +418,11 @@ public static class SkillWindow
             }
 
             int lv = SkillProgress.LevelOf(d.id);
-            var nameStyle = Style(10f, lv > 0 ? NameOn : NameOff, TextAnchor.MiddleLeft, false, true);
-            var lvStyle = Style(9f, LevelText, TextAnchor.MiddleLeft, false, true);
-            GUI.Label(At(win, 47f, y + 1f, 82f, 16f), d.name, nameStyle);
-            GUI.Label(At(win, 47f, y + 19f, 82f, 15f), "Lv. " + lv, lvStyle);
+            // 原版行内只有「技能名 + 等级数字」，没有 "Lv." 前缀
+            var nameStyle = Style(12f, lv > 0 ? NameOn : NameOff, TextAnchor.MiddleLeft, false, true);
+            var lvStyle = Style(10f, LevelText, TextAnchor.MiddleLeft, false, true);
+            GUI.Label(At(win, NameX, y + NameY, NameW, NameH), d.name, nameStyle);
+            GUI.Label(At(win, LevelX, y + LevelY, LevelW, LevelH), lv.ToString(), lvStyle);
 
             var plusRect = At(win, SpUpX, y + SpUpY, SpUpSize, SpUpSize);
             bool can = SkillProgress.CanRaise(d);
@@ -375,13 +442,79 @@ public static class SkillWindow
                 new Color(0.35f, 0.38f, 0.45f));
     }
 
-    // —— 底部技能点 ——
+    // —— 底栏：技能点 + 宏指令 ——
     static void DrawFooter(Rect win)
     {
         int sp = SkillProgress.AvailableSp;
-        var box = At(win, FooterX + 1f, FooterY, FooterW - 2f, FooterH);
-        var st = Style(10f, sp > 0 ? SpNumber : SpZero, TextAnchor.MiddleCenter);
-        GUI.Label(box, sp.ToString(), st);
+        var st = Style(11f, sp > 0 ? SpNumber : SpZero, TextAnchor.MiddleRight);
+        GUI.Label(At(win, FooterX, FooterY, FooterW, FooterH), sp.ToString(), st);
+
+        if (NativeUi.Button(At(win, MacroX, MacroY, MacroW, MacroH), "UI/Basic.img/BtMacro"))
+            BottomBar.Toast("技能组合栏暂未开放");
+    }
+
+    // —— 右侧滚动条（Basic.img/VScr）——
+    static bool scrollDrag;
+    static float scrollDragGrab;
+
+    static Rect ScrollPrevRect(Rect win) => At(win, ScrollX, ScrollTop, ScrollW, ScrollW);
+    static Rect ScrollNextRect(Rect win) => At(win, ScrollX, ScrollBottom - ScrollW, ScrollW, ScrollW);
+    static Rect ScrollTrackRect(Rect win)
+        => At(win, ScrollX, ScrollTop + ScrollW, ScrollW, Mathf.Max(0f, ScrollBottom - ScrollTop - ScrollW * 2));
+
+    static Rect ScrollThumbRect(Rect win, List<int> list)
+    {
+        var track = ScrollTrackRect(win);
+        if (list.Count <= Rows) return track;
+        float h = Mathf.Max(24f * S, track.height * (float)Rows / list.Count);
+        float maxScroll = Mathf.Max(1, list.Count - Rows);
+        float t = Mathf.Clamp01((float)scroll / maxScroll);
+        return new Rect(track.x, track.y + (track.height - h) * t, track.width, h);
+    }
+
+    static void HandleScrollbar(Rect win, List<int> list)
+    {
+        if (list.Count <= Rows) { scrollDrag = false; return; }
+        int max = Mathf.Max(0, list.Count - Rows);
+
+        if (Event.current.type == EventType.Repaint && Pointer.Pressed)
+        {
+            if (ScrollPrevRect(win).Contains(Pointer.Pos)) { scroll = Mathf.Max(0, scroll - 1); return; }
+            if (ScrollNextRect(win).Contains(Pointer.Pos)) { scroll = Mathf.Min(max, scroll + 1); return; }
+            var thumb = ScrollThumbRect(win, list);
+            if (thumb.Contains(Pointer.Pos))
+            {
+                scrollDrag = true;
+                scrollDragGrab = Pointer.Pos.y - thumb.y;
+                return;
+            }
+        }
+
+        if (scrollDrag && Pointer.Down)
+        {
+            var track = ScrollTrackRect(win);
+            float h = ScrollThumbRect(win, list).height;
+            float span = Mathf.Max(1f, track.height - h);
+            float t = Mathf.Clamp01((Pointer.Pos.y - scrollDragGrab - track.y) / span);
+            scroll = Mathf.RoundToInt(t * max);
+        }
+        if (!Pointer.Down) scrollDrag = false;
+    }
+
+    static void DrawScrollbar(Rect win, List<int> list)
+    {
+        bool on = list.Count > Rows;
+        string state = on ? "enabled" : "disabled";
+        var baseTex = Wz("UI/Basic.img/VScr/" + state + "/base");
+        var prev = Wz("UI/Basic.img/VScr/" + state + (on ? "/prev0" : "/prev"));
+        var next = Wz("UI/Basic.img/VScr/" + state + (on ? "/next0" : "/next"));
+        var thumb = Wz("UI/Basic.img/VScr/" + state + (on ? "/thumb0" : "/thumb"));
+
+        var track = ScrollTrackRect(win);
+        if (baseTex != null) GUI.DrawTexture(track, baseTex, ScaleMode.StretchToFill);
+        if (prev != null) GUI.DrawTexture(ScrollPrevRect(win), prev, ScaleMode.StretchToFill);
+        if (next != null) GUI.DrawTexture(ScrollNextRect(win), next, ScaleMode.StretchToFill);
+        if (thumb != null) GUI.DrawTexture(ScrollThumbRect(win, list), thumb, ScaleMode.StretchToFill);
     }
 
     // —— 首次操作提示（tip0..2，各自只出现一次） ——

@@ -25,11 +25,48 @@ public class VCElem
     public VCElemType type = VCElemType.Button;
     public GameAction action = GameAction.Jump;  // 旧存档/图标推导用（key 为空时兜底）
     public KeyCode key = KeyCode.None;           // 绑定键（任意键盘键，Winlator 同款）
+    public bool shiftMod;                        // Shift+ 组合（键盘面板的 Shift+ 页签）
     public float cx = 0.5f, cy = 0.5f;           // 归一化中心（×UiKit.W / ×UiKit.H）
-    public float size = 0.14f;                   // 直径，归一化到 UiKit.H
-    public int shape = 0;                        // Button: 0 圆形 1 圆角方
-    public float opacity = 0.55f;                // 0.15~1
+    public float size = 0.14f;                   // 基准直径，归一化到 UiKit.H
+    public float opacity = 1f;                   // 整体不透明度 0.15~1
     public string label = "";                    // 空则自动取键名/技能图标
+
+    // —— 基础属性（编辑面板） ——
+    public float scale = 1f;                     // 整体缩放
+    public float rotation = 0f;                  // 旋转角度（度）
+    public float aspect = 1f;                    // 纵横比例（宽/高）
+
+    // —— 外观样式 ——
+    // shape: 0 圆形 · 1 矩形 · 2 多边形 · 3 LT · 4 LB · 5 RT · 6 RB · 7 无
+    public int shape;
+    public float borderW = 2.2f;                 // 描边宽度（dp）
+    public float halo = 0.12f;                   // 光环宽度（相对半径）
+    public Color bg = new Color(0f, 0f, 0f, 0.20f);         // #33000000
+    public Color line = new Color(1f, 1f, 1f, 0.50f);       // #80FFFFFF
+    public Color bgDown = new Color(1f, 1f, 1f, 0.26f);     // #42FFFFFF
+    public Color lineDown = new Color(1f, 1f, 1f, 0.95f);   // #F2FFFFFF
+
+    // —— 摇杆 / 十字方向键的输入模式 ——
+    // 标准输入：摇杆直接输出模拟轴（游戏的上下左右），不碰键盘
+    // 自定义：推向某个方向时，顺手把该方向绑的键盘键按下（WASD 这类）
+    public bool stickStd = true;
+    public KeyCode upKey = KeyCode.None, downKey = KeyCode.None;
+    public KeyCode leftKey = KeyCode.None, rightKey = KeyCode.None;
+
+    // dir: 0 上 · 1 下 · 2 左 · 3 右
+    public KeyCode DirKey(int dir)
+        => dir == 0 ? upKey : dir == 1 ? downKey : dir == 2 ? leftKey : rightKey;
+
+    public void SetDirKey(int dir, KeyCode k)
+    {
+        if (dir == 0) upKey = k;
+        else if (dir == 1) downKey = k;
+        else if (dir == 2) leftKey = k;
+        else rightKey = k;
+    }
+
+    public bool HasDirKey => upKey != KeyCode.None || downKey != KeyCode.None
+                          || leftKey != KeyCode.None || rightKey != KeyCode.None;
 
     // —— 运行时状态，不序列化 ——
     public int finger = -1;                      // 占用的手指 id
@@ -39,28 +76,37 @@ public class VCElem
     // 实际注入的键：优先 key，旧存档没有 key 时退回动作当前键位
     public KeyCode Key => key != KeyCode.None ? key : KeyMap.Of(action);
 
-    public float R => size * 0.5f * UiKit.H;     // 屏幕像素半径（虚拟坐标）
+    public float BaseR => size * 0.5f * UiKit.H;          // 基准半径（未缩放）
+    public float R => BaseR * Mathf.Max(0.05f, scale);    // 屏幕像素半径（虚拟坐标）
+    public float HalfW => R * Mathf.Max(0.1f, aspect);
+
     public Rect Rect
     {
         get
         {
-            float r = R;
-            return new Rect(cx * UiKit.W - r, cy * UiKit.H - r, r * 2f, r * 2f);
+            float r = R, w = HalfW;
+            return new Rect(cx * UiKit.W - w, cy * UiKit.H - r, w * 2f, r * 2f);
         }
     }
 
     public VCElem Clone()
     {
-        return new VCElem { type = type, action = action, key = key, cx = cx, cy = cy,
-            size = size, shape = shape, opacity = opacity, label = label };
+        return new VCElem { type = type, action = action, key = key, shiftMod = shiftMod,
+            cx = cx, cy = cy, size = size, shape = shape, opacity = opacity, label = label,
+            scale = scale, rotation = rotation, aspect = aspect,
+            borderW = borderW, halo = halo, bg = bg, line = line, bgDown = bgDown, lineDown = lineDown,
+            stickStd = stickStd, upKey = upKey, downKey = downKey, leftKey = leftKey, rightKey = rightKey };
     }
 
     public bool Hit(Vector2 p)
     {
-        // 触摸命中半径放宽 1.35 倍，拇指定位比鼠标难
-        float r = R * 1.35f;
+        // 触摸命中放宽 1.35 倍，拇指定位比鼠标难；忽略旋转（近似即可）
+        float r = R * 1.35f, w = HalfW * 1.35f;
         var c = new Vector2(cx * UiKit.W, cy * UiKit.H);
-        return (p - c).sqrMagnitude <= r * r;
+        var d = p - c;
+        if (Mathf.Approximately(w, 0f) || Mathf.Approximately(r, 0f)) return false;
+        float k = d.x * d.x / (w * w) + d.y * d.y / (r * r);
+        return k <= 1f;
     }
 }
 
@@ -81,6 +127,19 @@ public static class VirtualControls
     static string ProfilePath(string name) => Path.Combine(Dir, name + ".json");
 
     // —————————— 载入 ——————————
+    // 摇杆的默认皮肤：深蓝黑底盘 + 亮蓝环。按钮那套白色描边放在摇杆上会"散"掉，
+    // 手游摇杆本身也多是冷色半透明，所以单独给一组（用户仍可在样式页改）。
+    public static void ApplyStickSkin(VCElem e)
+    {
+        e.borderW = 3.4f;
+        e.halo = 0.10f;
+        e.bg = new Color(0.055f, 0.085f, 0.125f, 0.82f);
+        e.line = new Color(0.29f, 0.62f, 1f, 0.95f);
+        e.bgDown = new Color(0.075f, 0.115f, 0.165f, 0.88f);
+        e.lineDown = new Color(0.50f, 0.80f, 1f, 1f);
+        e.shape = 0;
+    }
+
     public static void Ensure()
     {
         if (loaded) return;
@@ -129,7 +188,60 @@ public static class VirtualControls
         try
         {
             if (!File.Exists(ProfilePath(name))) return false;
-            var root = MiniJson.Parse(File.ReadAllText(ProfilePath(name))) as Dictionary<string, object>;
+            return ParseElements(File.ReadAllText(ProfilePath(name)));
+        }
+        catch { return false; }
+    }
+
+    // 编辑器「撤回 / 还原」用：整份布局进出一趟字符串，和存档格式完全一致
+    public static string ToJson()
+    {
+        var sb = new StringBuilder();
+        sb.Append("{\"elements\":[");
+        for (int i = 0; i < elems.Count; i++)
+        {
+            var e = elems[i];
+            if (i > 0) sb.Append(',');
+            sb.Append("{\"t\":").Append(Q(e.type.ToString()))
+              .Append(",\"a\":").Append(Q(e.action.ToString()))
+              .Append(",\"k\":").Append((int)e.key)
+              .Append(",\"sm\":").Append(e.shiftMod ? 1 : 0)
+              .Append(",\"x\":").Append(N(e.cx))
+              .Append(",\"y\":").Append(N(e.cy))
+              .Append(",\"s\":").Append(N(e.size))
+              .Append(",\"shape\":").Append(e.shape)
+              .Append(",\"op\":").Append(N(e.opacity))
+              .Append(",\"sc\":").Append(N(e.scale))
+              .Append(",\"rot\":").Append(N(e.rotation))
+              .Append(",\"asp\":").Append(N(e.aspect))
+              .Append(",\"bw\":").Append(N(e.borderW))
+              .Append(",\"hl\":").Append(N(e.halo))
+              .Append(",\"sbg\":").Append(Q(Hex(e.bg)))
+              .Append(",\"sln\":").Append(Q(Hex(e.line)))
+              .Append(",\"dbg\":").Append(Q(Hex(e.bgDown)))
+              .Append(",\"dln\":").Append(Q(Hex(e.lineDown)))
+              .Append(",\"label\":").Append(Q(e.label ?? ""))
+              .Append(",\"ssd\":").Append(e.stickStd ? 1 : 0)
+              .Append(",\"ku\":").Append((int)e.upKey)
+              .Append(",\"kd\":").Append((int)e.downKey)
+              .Append(",\"kl\":").Append((int)e.leftKey)
+              .Append(",\"kr\":").Append((int)e.rightKey)
+              .Append('}');
+        }
+        sb.Append("]}");
+        return sb.ToString();
+    }
+
+    public static void FromJson(string json)
+    {
+        if (!string.IsNullOrEmpty(json)) ParseElements(json);
+    }
+
+    static bool ParseElements(string json)
+    {
+        try
+        {
+            var root = MiniJson.Parse(json) as Dictionary<string, object>;
             if (root == null) return false;
             var list = root.TryGetValue("elements", out var o) ? o as List<object> : null;
             if (list == null) return false;
@@ -143,12 +255,42 @@ public static class VirtualControls
                 if (d.TryGetValue("a", out var a)) System.Enum.TryParse(a as string, out e.action);
                 if (d.TryGetValue("k", out var kk) && kk is double kd && System.Enum.IsDefined(typeof(KeyCode), (int)kd))
                     e.key = (KeyCode)(int)kd;
+                if (d.TryGetValue("sm", out var sm)) e.shiftMod = ToF(sm, 0f) > 0.5f;
                 if (d.TryGetValue("x", out var x)) e.cx = ToF(x, e.cx);
                 if (d.TryGetValue("y", out var y)) e.cy = ToF(y, e.cy);
                 if (d.TryGetValue("s", out var s)) e.size = ToF(s, e.size);
                 if (d.TryGetValue("shape", out var sh)) e.shape = Mathf.RoundToInt(ToF(sh, 0f));
                 if (d.TryGetValue("op", out var op)) e.opacity = ToF(op, e.opacity);
+                if (d.TryGetValue("sc", out var sc)) e.scale = ToF(sc, e.scale);
+                if (d.TryGetValue("rot", out var rot)) e.rotation = ToF(rot, e.rotation);
+                if (d.TryGetValue("asp", out var asp)) e.aspect = ToF(asp, e.aspect);
+                if (d.TryGetValue("bw", out var bw)) e.borderW = ToF(bw, e.borderW);
+                if (d.TryGetValue("hl", out var hl)) e.halo = ToF(hl, e.halo);
+                if (d.TryGetValue("sbg", out var sbg)) e.bg = ParseHex(sbg as string, e.bg);
+                if (d.TryGetValue("sln", out var sln)) e.line = ParseHex(sln as string, e.line);
+                if (d.TryGetValue("dbg", out var dbg)) e.bgDown = ParseHex(dbg as string, e.bgDown);
+                if (d.TryGetValue("dln", out var dln)) e.lineDown = ParseHex(dln as string, e.lineDown);
+                if (!d.ContainsKey("sbg"))
+                {
+                    // 旧存档没有样式字段：套一组和旧渲染接近的高对比默认值，避免升级后按键"看不见"
+                    e.bg = new Color(0f, 0f, 0f, 0.45f);
+                    e.line = new Color(1f, 1f, 1f, 0.82f);
+                    e.bgDown = new Color(1f, 1f, 1f, 0.26f);
+                    e.lineDown = new Color(1f, 1f, 1f, 0.95f);
+                }
                 if (d.TryGetValue("label", out var lb)) e.label = lb as string ?? "";
+
+                // 摇杆输入模式：没有 ssd 字段 = 老存档，按「标准输入」处理（和以前行为一致）
+                if (d.TryGetValue("ssd", out var ssd)) e.stickStd = ToF(ssd, 1f) > 0.5f;
+                if (d.TryGetValue("ku", out var ku) && ku is double kud && System.Enum.IsDefined(typeof(KeyCode), (int)kud)) e.upKey = (KeyCode)(int)kud;
+                if (d.TryGetValue("kd", out var kdn) && kdn is double kdd && System.Enum.IsDefined(typeof(KeyCode), (int)kdd)) e.downKey = (KeyCode)(int)kdd;
+                if (d.TryGetValue("kl", out var kl) && kl is double kld && System.Enum.IsDefined(typeof(KeyCode), (int)kld)) e.leftKey = (KeyCode)(int)kld;
+                if (d.TryGetValue("kr", out var krr) && krr is double krd && System.Enum.IsDefined(typeof(KeyCode), (int)krd)) e.rightKey = (KeyCode)(int)krd;
+
+                // 老存档的描边是 1dp：放到现在的渲染里只有一根发丝，统一抬到 2.2dp。
+                // 想要更细完全可以在「样式设置 → 描边宽度」里调回去，所以这里放心迁移。
+                if (e.borderW <= 1.05f) e.borderW = 2.2f;
+
                 parsed.Add(e);
             }
             elems = parsed;
@@ -165,25 +307,7 @@ public static class VirtualControls
         try
         {
             Directory.CreateDirectory(Dir);
-            var sb = new StringBuilder();
-            sb.Append("{\"elements\":[");
-            for (int i = 0; i < elems.Count; i++)
-            {
-                var e = elems[i];
-                if (i > 0) sb.Append(',');
-                sb.Append("{\"t\":").Append(Q(e.type.ToString()))
-                  .Append(",\"a\":").Append(Q(e.action.ToString()))
-                  .Append(",\"k\":").Append((int)e.key)
-                  .Append(",\"x\":").Append(N(e.cx))
-                  .Append(",\"y\":").Append(N(e.cy))
-                  .Append(",\"s\":").Append(N(e.size))
-                  .Append(",\"shape\":").Append(e.shape)
-                  .Append(",\"op\":").Append(N(e.opacity))
-                  .Append(",\"label\":").Append(Q(e.label ?? ""))
-                  .Append('}');
-            }
-            sb.Append("]}");
-            File.WriteAllText(ProfilePath(activeName), sb.ToString());
+            File.WriteAllText(ProfilePath(activeName), ToJson());
             if (!profileNames.Contains(activeName)) profileNames.Add(activeName);
             WriteManifest();
         }
@@ -226,7 +350,9 @@ public static class VirtualControls
     static void BuildDefaultLayout()
     {
         // 左摇杆（移动/换层/爬绳）
-        elems.Add(new VCElem { type = VCElemType.Stick, cx = 0.085f, cy = 0.70f, size = 0.40f, opacity = 0.6f });
+        var stick = new VCElem { type = VCElemType.Stick, cx = 0.085f, cy = 0.70f, size = 0.40f, opacity = 0.6f };
+        ApplyStickSkin(stick);
+        elems.Add(stick);
         // 右侧四格技能（对准快捷格 1-4，点了等于按对应键）
         elems.Add(new VCElem { type = VCElemType.Button, action = GameAction.Slot1, cx = 0.630f, cy = 0.76f, size = 0.19f, opacity = 0.75f });
         elems.Add(new VCElem { type = VCElemType.Button, action = GameAction.Slot2, cx = 0.755f, cy = 0.665f, size = 0.19f, opacity = 0.75f });
@@ -405,9 +531,15 @@ public static class VirtualControls
         }
 
         // —— 汇总移动轴（摇杆模拟量 + 十字键数字量，叠加后截断） ——
+        // 自定义摇杆不参与：InputHub.AxisX/Y 一旦有模拟量就会盖掉键盘按键，
+        // 那样用户选的 W/A/S/D 会被这层轴吃掉、等于没绑。让它只走键盘通道。
         float mx = 0f, my = 0f;
         foreach (var e in elems)
-            if (e.finger >= 0 && e.type != VCElemType.Button) { mx += e.axis.x; my += e.axis.y; }
+        {
+            if (e.finger < 0 || e.type == VCElemType.Button) continue;
+            if (e.type == VCElemType.Stick && !e.stickStd) continue;
+            mx += e.axis.x; my += e.axis.y;
+        }
         InputHub.SetVirtualAxis(Mathf.Clamp(mx, -1f, 1f), Mathf.Clamp(my, -1f, 1f));
 
         // 这次点击已经被虚拟控件吃掉：HUD/底部栏不要再响应同一帧的点击
@@ -502,8 +634,12 @@ public static class VirtualControls
     {
         var act = EffectiveAction(e);
         InputHub.SetVirtualAction(act, down);          // 动作永远发，保证点了就有反应
-        if (e.key != KeyCode.None && ActionOfKey(e.key) == null)
-            InputHub.SetVirtual(e.key, down);          // 游戏未映射的裸键：额外发一次
+        // 显式绑了键的按钮 = 那个物理键的屏上替身：无条件把键也发一遍。
+        // 只靠「键 → 动作」反查是不够的——比如攻击从 Ctrl 改到 C 后，
+        // 快捷格、技能栏这些按 KeyCode 判定的通道拿不到 C，就会出现
+        // 「按了 C 按钮，浏览器端动作没触发」的情况。
+        if (e.shiftMod) InputHub.SetVirtual(KeyCode.LeftShift, down);
+        if (e.key != KeyCode.None) InputHub.SetVirtual(e.key, down);
 
         if (down)
         {
@@ -512,6 +648,8 @@ public static class VirtualControls
                 ? "按动作触发"
                 : ActionOfKey(e.key) == null ? "键未映射 · 按动作触发" : "";
             pressMsgUntil = Time.unscaledTime + 1.2f;
+            Debug.Log("[Virtual] 按下 " + (e.key == KeyCode.None ? "无键" : e.key.ToString()) +
+                      " → " + act + "（攻击键位=" + KeyMap.Of(GameAction.Attack) + "）");
         }
     }
 
@@ -537,7 +675,40 @@ public static class VirtualControls
         float dz = 0.14f;                           // 死区
         float k = mag / r;
         k = k <= dz ? 0f : (k - dz) / (1f - dz);
-        e.axis = mag < 0.001f ? Vector2.zero : off.normalized * Mathf.Clamp01(k);
+        // GUI 坐标 y 轴向下，而 InputHub.AxisY 的约定是「上 = +1」，
+        // 这里把 y 翻一次符号，否则摇杆上下颠倒（往上推 = 下爬/下跳）。
+        var dir = new Vector2(off.x, -off.y);
+        e.axis = mag < 0.001f ? Vector2.zero : dir.normalized * Mathf.Clamp01(k);
+        SyncStickKeys(e);
+    }
+
+    // 自定义模式：把模拟轴翻译成四个方向的键盘按键。
+    // 用「分量阈值」而不是取主方向，斜推时可以同时按下两个键（和模拟器一致）。
+    // 轴本身照常输出——游戏读 AxisX/Y 的通道不受影响，读键盘的通道这才有了键。
+    const float StickKeyGate = 0.38f;
+
+    static void SyncStickKeys(VCElem e)
+    {
+        if (e.type != VCElemType.Stick || e.stickStd) return;
+        PressDir(e.upKey, e.axis.y > StickKeyGate);
+        PressDir(e.downKey, e.axis.y < -StickKeyGate);
+        PressDir(e.leftKey, e.axis.x < -StickKeyGate);
+        PressDir(e.rightKey, e.axis.x > StickKeyGate);
+    }
+
+    static void PressDir(KeyCode k, bool down)
+    {
+        if (k != KeyCode.None) InputHub.SetVirtual(k, down);
+    }
+
+    // 切回「标准输入」或正在改映射时调用：把可能还按着的四方向键全部抬起，避免粘键
+    public static void ReleaseStickKeys(VCElem e)
+    {
+        if (e == null) return;
+        PressDir(e.upKey, false);
+        PressDir(e.downKey, false);
+        PressDir(e.leftKey, false);
+        PressDir(e.rightKey, false);
     }
 
     static void UpdateDpad(VCElem e, Vector2 p)
@@ -548,7 +719,8 @@ public static class VirtualControls
         float dz = r * 0.22f;
         float dx = 0f, dy = 0f;
         if (off.x < -dz) dx = -1f; else if (off.x > dz) dx = 1f;
-        if (off.y > dz) dy = 1f; else if (off.y < -dz) dy = -1f;
+        // 同摇杆：GUI y 向下 → 翻符号，保证「上 = +1」
+        if (off.y > dz) dy = -1f; else if (off.y < -dz) dy = 1f;
         e.axis = new Vector2(dx, dy);
     }
 
@@ -556,6 +728,7 @@ public static class VirtualControls
     {
         e.finger = -1;
         e.axis = Vector2.zero;
+        SyncStickKeys(e);                        // 轴清零后这里会把四方向的键全部抬起，不粘键
         if (e.type == VCElemType.Button && e.held)
         {
             e.held = false;
@@ -640,58 +813,331 @@ public static class VirtualControls
 
     public static void DrawElement(VCElem e)
     {
-        // Winlator 键帽风格：深色半透明底 + 白描边 + 白字；按住时描边变青色
-        float o = Mathf.Clamp(e.opacity, 0.15f, 1f);
         bool active = e.type == VCElemType.Button ? e.held : e.finger >= 0;
+        float a = Mathf.Clamp(e.opacity, 0.05f, 1f);
+        var bgc = active ? e.bgDown : e.bg;
+        var lnc = active ? e.lineDown : e.line;
+        bgc.a *= a;
+        lnc.a *= a;
+
         var c = new Vector2(e.cx * UiKit.W, e.cy * UiKit.H);
-        var border = active ? Teal : new Color(1f, 1f, 1f, 0.85f * o);
-        var fill = new Color(0f, 0f, 0f, 0.45f * o);
-        const float bw = 2.5f;
+        float r = e.BaseR;
+
+        // 旋转 / 缩放 / 纵横比例 全部交给矩阵，形状本身只用局部坐标画
+        var m = GUI.matrix;
+        GUI.matrix = m * Matrix4x4.TRS(new Vector3(c.x, c.y, 0f),
+            Quaternion.Euler(0f, 0f, e.rotation),
+            new Vector3(Mathf.Max(0.05f, e.aspect) * Mathf.Max(0.05f, e.scale), Mathf.Max(0.05f, e.scale), 1f));
 
         if (e.type == VCElemType.Stick)
         {
-            Ring(c, e.R, border);
-            FillDisc(c, e.R - bw, fill);
-            var knob = c + (e.finger >= 0 ? e.axis * e.R : Vector2.zero);
-            float kr = e.R * 0.42f;
-            Ring(knob, kr, active ? Teal : new Color(1f, 1f, 1f, 0.9f * o));
-            FillDisc(knob, kr - bw, fill);
-            return;
+            DrawStick(e, r, bgc, lnc, active, a);
         }
-        if (e.type == VCElemType.Dpad)
+        else if (e.type == VCElemType.Dpad)
         {
-            Ring(c, e.R, border);
-            FillDisc(c, e.R - bw, fill);
-            float cap = e.R * 0.30f;
-            DrawDirCap(c + Vector2.up * e.R * 0.62f, cap, e.axis.y > 0f, o);
-            DrawDirCap(c + Vector2.down * e.R * 0.62f, cap, e.axis.y < 0f, o);
-            DrawDirCap(c + Vector2.left * e.R * 0.62f, cap, e.axis.x < 0f, o);
-            DrawDirCap(c + Vector2.right * e.R * 0.62f, cap, e.axis.x > 0f, o);
-            return;
-        }
-
-        // Button
-        var rect = e.Rect;
-        if (e.shape == 1)
-        {
-            RoundedRect(rect, Color.white, border.a);   // 外层当描边
-            var inner = new Rect(rect.x + bw, rect.y + bw, rect.width - bw * 2f, rect.height - bw * 2f);
-            RoundedRect(inner, Color.black, fill.a);
+            float sw = Mathf.Max(e.borderW, r * 0.032f);
+            if (e.halo > 0.004f) { var g = lnc; g.a *= 0.45f; DrawAnnulus(Vector2.zero, r + sw * 0.5f, r + sw * 0.5f + e.halo * r, g, true); }
+            FillDisc(Vector2.zero, Mathf.Max(0.1f, r - sw * 0.5f), bgc);
+            DrawAnnulus(Vector2.zero, Mathf.Max(0f, r - sw * 0.5f), r + sw * 0.5f, lnc, false);
+            float cap = r * 0.30f;
+            DrawDirCap(new Vector2(0f, -r * 0.62f), cap, e.axis.y > 0f, bgc, lnc);
+            DrawDirCap(new Vector2(0f, r * 0.62f), cap, e.axis.y < 0f, bgc, lnc);
+            DrawDirCap(new Vector2(-r * 0.62f, 0f), cap, e.axis.x < 0f, bgc, lnc);
+            DrawDirCap(new Vector2(r * 0.62f, 0f), cap, e.axis.x > 0f, bgc, lnc);
         }
         else
         {
-            Ring(c, e.R, border);
-            FillDisc(c, e.R - bw, fill);
+            DrawShape(e.shape, r, bgc, lnc, e.borderW, e.halo);
+
+            var rect = new Rect(-r, -r, r * 2f, r * 2f);
+            var icon = SlotIcon(e);
+            if (icon != null) GUI.DrawTexture(rect, icon, ScaleMode.ScaleToFit);
+            else
+            {
+                string text = ElementText(e);
+                if (!string.IsNullOrEmpty(text))
+                {
+                    // 字占直径约 30%，两个以上字符按长度回缩，避免顶到圆边上
+                    float fs = r * 0.60f;
+                    int n = text.Length;
+                    if (n >= 2) fs *= n == 2 ? 0.86f : n == 3 ? 0.68f : 0.52f;
+                    ShadowLabel(rect, text, Mathf.Max(9, Mathf.RoundToInt(fs)));
+                }
+            }
         }
 
-        // 技能图标优先（绑定到快捷格且已放技能时）
-        var icon = SlotIcon(e);
-        if (icon != null) GUI.DrawTexture(rect, icon, ScaleMode.ScaleToFit);
-        else
+        GUI.matrix = m;
+    }
+
+    // —————————— 摇杆 ——————————
+    // 参考图的分层：外发光 → 深色底盘 → 稍亮的内盘 → 内圈细线 → 外环 → 中心球钮。
+    // 五层都在"局部坐标"里画（调用方已经把缩放/旋转塞进 GUI.matrix），
+    // 所以缩放滑块一改，整套外观等比跟着变，不用另算。
+    static void DrawStick(VCElem e, float r, Color bg, Color line, bool active, float op)
+    {
+        float sw = Mathf.Max(e.borderW, r * 0.022f);
+        float ro = r + sw * 0.5f;
+        bool hasLine = line.a > 0.004f;
+
+        // ① 外发光：从外环外沿向外 t² 渐隐
+        if (e.halo > 0.004f && hasLine)
         {
-            string text = !string.IsNullOrEmpty(e.label) ? e.label : ButtonLabel(e);
-            if (!string.IsNullOrEmpty(text)) ShadowLabel(rect, text, Mathf.RoundToInt(e.R * 0.5f));
+            var g = line; g.a *= 0.38f;
+            DrawAnnulus(Vector2.zero, ro, ro + e.halo * r, g, true);
         }
+
+        // ② 底盘
+        FillDisc(Vector2.zero, Mathf.Max(0.1f, r - sw * 0.5f), bg);
+
+        // ③ 内盘：中心 78% 半径提一点亮度，摇杆才有纵向的"凹槽"层次
+        float ri = r * 0.78f;
+        FillDisc(Vector2.zero, ri, new Color(1f, 1f, 1f, 0.055f * op));
+
+        // ④ 内圈细线（比外环淡一档，不抢主轮廓）
+        if (hasLine)
+        {
+            var g = line; g.a *= 0.40f;
+            float iw = Mathf.Max(1.2f, sw * 0.5f);
+            DrawAnnulus(Vector2.zero, Mathf.Max(0f, ri - iw * 0.5f), ri + iw * 0.5f, g, false);
+        }
+
+        // ⑤ 外环
+        if (hasLine) DrawAnnulus(Vector2.zero, Mathf.Max(0f, r - sw * 0.5f), ro, line, false);
+
+        // ⑥ 中心球钮：闲置时居中，按住时跟着手指走
+        float kr = r * 0.40f;
+        var knob = e.finger >= 0 ? new Vector2(e.axis.x, -e.axis.y) * (r - kr) : Vector2.zero;
+
+        // 投影先铺：球压上去只在下沿露一线，做出厚度（比纯描边像"实体"）
+        FillDisc(knob + new Vector2(0f, kr * 0.12f), kr * 1.02f, new Color(0f, 0f, 0f, 0.22f * op));
+        FillBall(knob, kr, active ? new Color(0.74f, 0.78f, 0.82f, op) : new Color(0.60f, 0.63f, 0.66f, op));
+
+        if (hasLine)
+        {
+            var g = line; g.a *= 0.32f;
+            DrawAnnulus(knob, Mathf.Max(0f, kr - 1.2f), kr + 1.2f, g, false);
+        }
+    }
+
+    static void FillBall(Vector2 c, float r, Color col)
+    {
+        var old = GUI.color;
+        GUI.color = col;
+        GUI.DrawTexture(new Rect(c.x - r, c.y - r, r * 2f, r * 2f), BallTex());
+        GUI.color = old;
+    }
+
+    // shape: 0 圆 · 1 矩 · 2 多边形 · 3 LT · 4 LB · 5 RT · 6 RB · 7 无
+    public static void DrawShape(int shape, float r, Color bg, Color line, float bw, float halo)
+    {
+        if (shape == 7) return;                       // 无：只留热区，不画任何东西
+
+        // 描边下限：1dp 在小按键上只有一根发丝，放大到 3 倍屏就彻底看不见了。
+        // 这里按半径给保底（约 3.2% 半径），用户把描边调到很小也不会"消失"。
+        float w = Mathf.Max(bw, r * 0.032f);
+        bool hasLine = line.a > 0.004f && w > 0.05f;
+        bool hasHalo = halo > 0.004f && hasLine;
+
+        if (shape == 1) { DrawRectShape(r, bg, line, w, halo, hasLine, hasHalo); return; }
+        if (shape >= 2) { DrawPolyShape(shape, r, bg, line, w, halo, hasLine, hasHalo); return; }
+
+        // —— 圆形：光晕 / 底 / 描边环，三块几何上互不重叠（半透明色也不会叠出一圈深边）
+        if (hasHalo)
+        {
+            var g = line; g.a *= 0.45f;
+            float ri = r + w * 0.5f;
+            DrawAnnulus(Vector2.zero, ri, ri + halo * r, g, true);   // 外沿渐隐，才有发光感
+        }
+        FillDisc(Vector2.zero, Mathf.Max(0.1f, r - w * 0.5f), bg);
+        if (hasLine) DrawAnnulus(Vector2.zero, Mathf.Max(0f, r - w * 0.5f), r + w * 0.5f, line, false);
+    }
+
+    // —————————— 矩形 ——————————
+    // 圆角矩形：SoftTex 自带 8% 圆角 → 圆角半径 = 边长 * 0.16
+    // 描边 = 4 条直边 + 4 段圆弧。旧版只画了直边，圆角处留着四个豁口，
+    // 放大后非常明显（"按钮画得糙"的一大来源）。
+    static void DrawRectShape(float r, Color bg, Color line, float w, float halo, bool hasLine, bool hasHalo)
+    {
+        float rad = r * 0.16f;
+
+        if (hasHalo)
+        {
+            var g = line; g.a *= 0.22f;
+            float e = halo * r;
+            SoftRect(new Rect(-r - e, -r - e, (r + e) * 2f, (r + e) * 2f), g);
+            g.a *= 1.3f;
+            float e2 = e * 0.45f;
+            SoftRect(new Rect(-r - e2, -r - e2, (r + e2) * 2f, (r + e2) * 2f), g);
+        }
+
+        SoftRect(new Rect(-r, -r, r * 2f, r * 2f), bg);
+        if (!hasLine) return;
+
+        float h = Mathf.Max(0f, r - rad);
+        DrawLine(new Vector2(-h, -r), new Vector2(h, -r), line, w);
+        DrawLine(new Vector2(-h, r), new Vector2(h, r), line, w);
+        DrawLine(new Vector2(-r, -h), new Vector2(-r, h), line, w);
+        DrawLine(new Vector2(r, -h), new Vector2(r, h), line, w);
+
+        int seg = Mathf.Clamp(Mathf.CeilToInt(rad * 1.2f), 4, 20);
+        Arc(new Vector2(-h, -h), rad, Mathf.PI, Mathf.PI * 1.5f, seg, line, w);
+        Arc(new Vector2(h, -h), rad, Mathf.PI * 1.5f, Mathf.PI * 2f, seg, line, w);
+        Arc(new Vector2(h, h), rad, 0f, Mathf.PI * 0.5f, seg, line, w);
+        Arc(new Vector2(-h, h), rad, Mathf.PI * 0.5f, Mathf.PI, seg, line, w);
+    }
+
+    // 圆弧（GUI 坐标 y 向下，角度按 sin 取反理解即可）
+    static void Arc(Vector2 c, float rad, float a0, float a1, int seg, Color col, float w)
+    {
+        var prev = c + new Vector2(Mathf.Cos(a0), Mathf.Sin(a0)) * rad;
+        for (int i = 1; i <= seg; i++)
+        {
+            float a = Mathf.Lerp(a0, a1, i / (float)seg);
+            var p = c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * rad;
+            DrawLine(prev, p, col, w);
+            prev = p;
+        }
+    }
+
+    // —————————— 多边形 ——————————
+    static void DrawPolyShape(int shape, float r, Color bg, Color line, float w, float halo, bool hasLine, bool hasHalo)
+    {
+        var pts = ShapePts(shape, r);
+
+        if (hasHalo)
+        {
+            var g = line; g.a *= 0.22f;
+            FillPoly(OffsetPoly(pts, w * 0.5f + halo * r), g);
+        }
+
+        FillPoly(pts, bg);
+        if (!hasLine) return;
+
+        // 转角处补一个同色圆点当 round-join：比 miter 尖角圆润，也不会有缝
+        for (int i = 0; i < pts.Length; i++)
+        {
+            DrawLine(pts[i], pts[(i + 1) % pts.Length], line, w);
+            FillDisc(pts[i], w * 0.5f, line);
+        }
+    }
+
+    // 凸多边形等距外扩（d>0）/ 内缩（d<0）
+    // 法线朝向用"边中点 → 质心"判定，避免顶点顺时针/逆时针不同导致内外翻。
+    public static Vector2[] OffsetPoly(Vector2[] pts, float d)
+    {
+        int n = pts.Length;
+        var o = new Vector2[n];
+        var cen = Vector2.zero;
+        for (int i = 0; i < n; i++) cen += pts[i];
+        cen /= n;
+
+        for (int i = 0; i < n; i++)
+        {
+            var p = pts[i];
+            var prev = pts[(i - 1 + n) % n];
+            var next = pts[(i + 1) % n];
+
+            var n0 = OutNormal(prev, p, cen);
+            var n1 = OutNormal(p, next, cen);
+
+            var bis = n0 + n1;
+            if (bis.sqrMagnitude < 1e-4f) { o[i] = p + n0 * d; continue; }
+            bis.Normalize();
+            float cos = Mathf.Max(0.30f, Vector2.Dot(bis, n0));   // 限制 miter 长度
+            o[i] = p + bis * (d / cos);
+        }
+        return o;
+    }
+
+    static Vector2 OutNormal(Vector2 a, Vector2 b, Vector2 cen)
+    {
+        var e = (b - a).normalized;
+        var nrm = new Vector2(-e.y, e.x);
+        if (Vector2.Dot(nrm, cen - a) > 0f) nrm = -nrm;   // 指向质心的是内法线
+        return nrm;
+    }
+
+    // 形状顶点（局部坐标，半径 r）
+    public static Vector2[] ShapePts(int shape, float r)
+    {
+        if (shape == 2)
+        {
+            var hex = new Vector2[6];
+            for (int i = 0; i < 6; i++)
+            {
+                float ang = Mathf.PI * 0.5f + i * Mathf.PI / 3f;
+                hex[i] = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * r;
+            }
+            return hex;
+        }
+
+        // LT / LB / RT / RB：宽扁梯形，其中一个角切 45°
+        float hh = r * 0.62f, cut = r * 0.55f;
+        switch (shape)
+        {
+            case 3: return new[] { new Vector2(-r + cut, -hh), new Vector2(r, -hh), new Vector2(r, hh), new Vector2(-r, hh), new Vector2(-r, -hh + cut) };
+            case 4: return new[] { new Vector2(-r, -hh), new Vector2(r, -hh), new Vector2(r, hh), new Vector2(-r + cut, hh), new Vector2(-r, hh - cut) };
+            case 5: return new[] { new Vector2(-r, -hh), new Vector2(r - cut, -hh), new Vector2(r, -hh + cut), new Vector2(r, hh), new Vector2(-r, hh) };
+            default: return new[] { new Vector2(-r, -hh), new Vector2(r, -hh), new Vector2(r, hh - cut), new Vector2(r - cut, hh), new Vector2(-r, hh) };
+        }
+    }
+
+    // 扫描线填充凸多边形（局部坐标，跟随 GUI.matrix）
+    // 注意：步进必须 ≥ 条高。旧版 0.5 步进 + 1px 条高会重叠 50%，
+    // 半透明填充叠两遍就变深，边缘还会出现一条更实的"描边感"。
+    public static void FillPoly(Vector2[] pts, Color col)
+    {
+        if (pts == null || pts.Length < 3 || col.a <= 0.004f) return;
+        float minY = float.MaxValue, maxY = float.MinValue;
+        for (int i = 0; i < pts.Length; i++)
+        {
+            if (pts[i].y < minY) minY = pts[i].y;
+            if (pts[i].y > maxY) maxY = pts[i].y;
+        }
+
+        var old = GUI.color;
+        GUI.color = col;
+        int y0 = Mathf.FloorToInt(minY), y1 = Mathf.CeilToInt(maxY);
+        for (int yi = y0; yi <= y1; yi++)
+        {
+            float y = yi + 0.5f;
+            if (y < minY || y > maxY) continue;
+
+            float xa = float.MaxValue, xb = float.MinValue;
+            for (int i = 0; i < pts.Length; i++)
+            {
+                var p0 = pts[i];
+                var p1 = pts[(i + 1) % pts.Length];
+                if (Mathf.Approximately(p0.y, p1.y)) continue;
+                if (y < Mathf.Min(p0.y, p1.y) || y > Mathf.Max(p0.y, p1.y)) continue;
+                float t = (y - p0.y) / (p1.y - p0.y);
+                float x = p0.x + (p1.x - p0.x) * t;
+                if (x < xa) xa = x;
+                if (x > xb) xb = x;
+            }
+            if (xb < xa) continue;
+
+            // 主条带 + 左右各 1px 的半透明补丁（亚像素端点，斜边不再是硬台阶）
+            if (xb - xa > 2f)
+            {
+                GUI.DrawTexture(new Rect(xa + 1f, yi, xb - xa - 2f, 1f), Texture2D.whiteTexture);
+                var half = new Color(1f, 1f, 1f, 0.5f);
+                var keep = GUI.color;
+                GUI.color = keep * half;
+                GUI.DrawTexture(new Rect(xa, yi, 1.2f, 1f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(xb - 1.2f, yi, 1.2f, 1f), Texture2D.whiteTexture);
+                GUI.color = keep;
+            }
+            else GUI.DrawTexture(new Rect(xa, yi, Mathf.Max(1f, xb - xa), 1f), Texture2D.whiteTexture);
+        }
+        GUI.color = old;
+    }
+
+    public static void StrokePoly(Vector2[] pts, Color col, float w)
+    {
+        if (pts == null || pts.Length < 2) return;
+        for (int i = 0; i < pts.Length; i++)
+            DrawLine(pts[i], pts[(i + 1) % pts.Length], col, w);
     }
 
     static Texture2D SlotIcon(VCElem e)
@@ -710,13 +1156,22 @@ public static class VirtualControls
         // 没绑键的按钮（技能格这类动作默认无键）显示动作名，而不是"未绑定"
         if (e.key == KeyCode.None) return ActionDisplayName(e.action);
         var l = KeyLabel(e.key);
-        return string.IsNullOrEmpty(l) ? ActionName(e) : l;
+        if (string.IsNullOrEmpty(l)) l = ActionName(e);
+        return e.shiftMod ? "⇧" + l : l;
     }
 
-    static void DrawDirCap(Vector2 c, float r, bool active, float o)
+    // 控件上显示什么：自定义文字 > 绑定的键 > 动作名（编辑时不显示动作名，保持"所见即所配"）
+    static string ElementText(VCElem e)
     {
-        Ring(c, r, active ? Teal : new Color(1f, 1f, 1f, 0.8f * o));
-        FillDisc(c, Mathf.Max(1f, r - 2f), new Color(0f, 0f, 0f, 0.4f * o));
+        if (!string.IsNullOrEmpty(e.label)) return e.label;
+        if (e.key != KeyCode.None) return ButtonLabel(e);
+        return VirtualControlsEditor.Visible ? "" : ActionDisplayName(e.action);
+    }
+
+    static void DrawDirCap(Vector2 c, float r, bool active, Color bg, Color line)
+    {
+        Ring(c, r, line, Mathf.Max(1f, r * 0.10f));
+        FillDisc(c, Mathf.Max(1f, r - r * 0.10f), active ? line : bg);
     }
 
     static void FillDisc(Vector2 c, float r, Color col)
@@ -727,14 +1182,69 @@ public static class VirtualControls
         GUI.color = old;
     }
 
+    // 小圆角矩形（矩形形状用）：SoftTex 的 8% 圆角刚好
+    static void SoftRect(Rect r, Color col)
+    {
+        var old = GUI.color;
+        GUI.color = col;
+        GUI.DrawTexture(r, SoftTex());
+        GUI.color = old;
+    }
+
+    // —————————— 文字 ——————————
+    // 项目字体 Fonts/ui.ttf 是 Arial Unicode MS **Regular**（单字重、无 Bold face），
+    // FontStyle.Bold 在 Android/IL2CPP 上拿不到粗体字形，行为并不可靠。
+    // 所以"加粗"用同色左右各偏移半像素重绘一次实现：视觉上增重约 1px，字宽只增加 1px。
+    static readonly Dictionary<int, GUIStyle> _styles = new Dictionary<int, GUIStyle>();
+
+    static GUIStyle Style(int size, TextAnchor align)
+    {
+        int key = (size << 4) | ((int)align & 0xF);
+        if (_styles.TryGetValue(key, out var st) && st != null) return st;
+        st = new GUIStyle
+        {
+            alignment = align,
+            fontSize = Mathf.Max(6, size),
+            richText = false,
+            clipping = TextClipping.Overflow,
+            wordWrap = false,
+        };
+        _styles[key] = st;
+        return st;
+    }
+
+    // weight: 0 常规 · 1 半粗（2 遍）· 2 粗（4 遍）
+    public static void Label(Rect r, string s, int size, Color col, TextAnchor align, int weight = 1)
+    {
+        if (string.IsNullOrEmpty(s)) return;
+        var st = Style(size, align);
+        st.normal.textColor = col;
+
+        if (weight <= 0) { GUI.Label(r, s, st); return; }
+
+        float d = Mathf.Clamp(size * 0.030f, 0.6f, 1.6f);
+        GUI.Label(new Rect(r.x - d * 0.5f, r.y, r.width, r.height), s, st);
+        GUI.Label(new Rect(r.x + d * 0.5f, r.y, r.width, r.height), s, st);
+        if (weight >= 2)
+        {
+            GUI.Label(new Rect(r.x, r.y - d * 0.5f, r.width, r.height), s, st);
+            GUI.Label(new Rect(r.x, r.y + d * 0.5f, r.width, r.height), s, st);
+        }
+    }
+
+    // 按键上的字：深色描边 + 伪粗白字，压在任意背景上都读得清
     static void ShadowLabel(Rect r, string text, int size)
     {
-        var st = new GUIStyle { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.Max(9, size) };
-        st.normal.textColor = new Color(0f, 0f, 0f, 0.85f);
-        var r2 = new Rect(r.x + 1, r.y + 1, r.width, r.height);
-        GUI.Label(r2, text, st);
-        st.normal.textColor = Color.white;
-        GUI.Label(r, text, st);
+        var st = Style(size, TextAnchor.MiddleCenter);
+
+        float o = Mathf.Clamp(size * 0.055f, 1f, 2.2f);
+        st.normal.textColor = new Color(0f, 0f, 0f, 0.72f);
+        GUI.Label(new Rect(r.x, r.y + o, r.width, r.height), text, st);
+        GUI.Label(new Rect(r.x - o, r.y, r.width, r.height), text, st);
+        GUI.Label(new Rect(r.x + o, r.y, r.width, r.height), text, st);
+        GUI.Label(new Rect(r.x, r.y - o, r.width, r.height), text, st);
+
+        Label(r, text, size, Color.white, TextAnchor.MiddleCenter, 1);
     }
 
     // —— 圆 / 圆角方 贴图（运行时生成一次） ——
@@ -780,20 +1290,89 @@ public static class VirtualControls
         return _soft;
     }
 
+    // —— 球体贴图（摇杆中心钮）——
+    // 只烧明暗、不带颜色（最终由 GUI.color 着色），球体的体积感全靠这张图。
+    // 光源固定在左上，和界面其他部分的"上亮下暗"一致。
+    static Texture2D _ball;
+    public static Texture2D BallTex()
+    {
+        if (_ball != null) return _ball;
+        const int n = 192;
+        var t = new Texture2D(n, n, TextureFormat.ARGB32, false);
+        var px = new Color[n * n];
+        float cc = n * 0.5f - 0.5f;
+        float rr = n * 0.5f - 1f;
+        var L = new Vector3(-0.42f, -0.54f, 0.73f).normalized;   // GUI 的 y 向下 → 负 y 才是"上"
+        for (int y = 0; y < n; y++)
+        {
+            for (int x = 0; x < n; x++)
+            {
+                float dx = (x - cc) / rr, dy = (y - cc) / rr;
+                float dd = Mathf.Sqrt(dx * dx + dy * dy);
+                float a = Mathf.Clamp01(rr * (1f - dd) + 0.5f);   // 圆的 1 纹素抗锯齿
+                if (a <= 0.002f) { px[y * n + x] = new Color(1f, 1f, 1f, 0f); continue; }
+
+                float z = Mathf.Sqrt(Mathf.Max(0f, 1f - dd * dd));
+                float lam = Mathf.Clamp01(dx * L.x + dy * L.y + z * L.z);
+                float v = 0.56f + 0.44f * lam;                    // 环境光 + 漫反射
+                v += Mathf.Pow(lam, 26f) * 0.09f;                 // 左上高光（弱一点，才像哑光）
+                v *= 0.88f + 0.12f * z;                           // 轮廓压暗一点，边缘才不"发飘"
+                v = Mathf.Clamp01(v);
+                px[y * n + x] = new Color(v, v, v, a);
+            }
+        }
+        t.SetPixels(px);
+        t.filterMode = FilterMode.Bilinear;
+        t.wrapMode = TextureWrapMode.Clamp;
+        t.Apply();
+        t.hideFlags = HideFlags.HideAndDontSave;
+        _ball = t;
+        return _ball;
+    }
+
     delegate float AlphaFn(int x, int y, int n);
 
-    static Texture2D MakeAlphaTex(AlphaFn fn)
+    // 贴图分辨率：128 放大会糊、边缘发虚；256 在手机上又够清楚又只占 256KB/张
+    const int TexN = 256;
+
+    static Texture2D MakeAlphaTex(AlphaFn fn) => MakeAlphaTexN(TexN, fn);
+
+    static Texture2D MakeAlphaTexN(int n, AlphaFn fn)
     {
-        int n = 128;
         var t = new Texture2D(n, n, TextureFormat.ARGB32, false);
         var px = new Color[n * n];
         for (int y = 0; y < n; y++)
             for (int x = 0; x < n; x++)
-                px[y * n + x] = new Color(1f, 1f, 1f, fn(x, y, n));
+                px[y * n + x] = new Color(1f, 1f, 1f, Mathf.Clamp01(fn(x, y, n)));
         t.SetPixels(px);
+        t.filterMode = FilterMode.Bilinear;
+        t.wrapMode = TextureWrapMode.Clamp;
         t.Apply();
         t.hideFlags = HideFlags.HideAndDontSave;
         return t;
+    }
+
+    // —— 描线贴图（1×16 竖向羽化）——
+    // DrawLine 是把 1×1 白点拉到 (长 × 宽)，上下边缘永远是硬锯齿；
+    // 换成带渐隐的竖条后，线的两侧就有了 1.5 个纹素的过渡，圆环/图标/描边都不再毛刺。
+    static Texture2D _line;
+    public static Texture2D LineTex()
+    {
+        if (_line != null) return _line;
+        const int n = 16;
+        var t = new Texture2D(1, n, TextureFormat.ARGB32, false);
+        var px = new Color[n];
+        for (int y = 0; y < n; y++)
+        {
+            float d = Mathf.Min(y + 0.5f, n - 0.5f - y);
+            px[y] = new Color(1f, 1f, 1f, Mathf.Clamp01(d / 1.5f));
+        }
+        t.SetPixels(px);
+        t.filterMode = FilterMode.Bilinear;
+        t.wrapMode = TextureWrapMode.Clamp;
+        t.Apply();
+        t.hideFlags = HideFlags.HideAndDontSave;
+        return _line = t;
     }
 
     static void Disc(Vector2 c, float r, Color tint, float alpha, bool outline = false)
@@ -810,18 +1389,76 @@ public static class VirtualControls
         GUI.color = old;
     }
 
-    static void Ring(Vector2 c, float r, Color col)
+    // 圆环：直接用 SDF 生成的环贴图，不再用 N 段折线拼
+    // （折线在粗环/大半径下能明显看出多边形，段与段之间还会有缝）
+    static void Ring(Vector2 c, float r, Color col, float w = 0f)
     {
-        int seg = 40;
-        float w = Mathf.Max(1.5f, r * 0.05f);
-        for (int i = 0; i < seg; i++)
+        if (w <= 0f) w = Mathf.Max(1.5f, r * 0.05f);
+        DrawAnnulus(c, Mathf.Max(0f, r - w * 0.5f), r + w * 0.5f, col, false);
+    }
+
+    // —————————— 抗锯齿圆环 / 外发光 ——————————
+    // 贴图按 (内半径, 外半径) 量化缓存，绘制时把贴图铺到 [-ro, ro] 的方框里。
+    // 一张 160×160 的 ARGB32 ≈ 100KB，缓存上限 24 张 ≈ 2.4MB。
+    static readonly Dictionary<int, Texture2D> _annulus = new Dictionary<int, Texture2D>();
+    static readonly List<int> _annulusKeys = new List<int>();
+    const int AnnulusN = 160;
+    const int AnnulusKeep = 24;
+    const float AnnulusQ = 64f;          // 半径量化精度：1/64
+
+    public static void DrawAnnulus(Vector2 c, float ri, float ro, Color col, bool fade)
+    {
+        if (col.a <= 0.003f || ro <= 0.004f) return;
+
+        int roQ = Mathf.Clamp(Mathf.RoundToInt(ro * AnnulusQ), 1, 255);
+        int riQ = Mathf.Clamp(Mathf.RoundToInt(ri * AnnulusQ), 0, roQ);
+        float roq = roQ / AnnulusQ;
+
+        var tex = AnnulusTex(riQ, roQ, fade);
+        var old = GUI.color;
+        GUI.color = col;
+        GUI.DrawTexture(new Rect(c.x - roq, c.y - roq, roq * 2f, roq * 2f), tex);
+        GUI.color = old;
+    }
+
+    static Texture2D AnnulusTex(int riQ, int roQ, bool fade)
+    {
+        int key = (riQ << 12) | (roQ << 2) | (fade ? 1 : 0);
+        if (_annulus.TryGetValue(key, out var cached) && cached != null) return cached;
+
+        float ro = roQ / AnnulusQ;
+        float ri = Mathf.Min(riQ / AnnulusQ, ro * 0.995f);
+        bool inside = ri > 0.002f;
+        float band = Mathf.Max(0.0001f, ro - ri);
+
+        var tex = MakeAlphaTexN(AnnulusN, (x, y, n) =>
         {
-            float a0 = i / (float)seg * Mathf.PI * 2f;
-            float a1 = (i + 1) / (float)seg * Mathf.PI * 2f;
-            var p0 = c + new Vector2(Mathf.Cos(a0), Mathf.Sin(a0)) * (r - w * 0.5f);
-            var p1 = c + new Vector2(Mathf.Cos(a1), Mathf.Sin(a1)) * (r - w * 0.5f);
-            DrawLine(p0, p1, col, w);
+            // 贴图坐标 → r=1 单位
+            float px = ((x + 0.5f) / n - 0.5f) * 2f * ro;
+            float py = ((y + 0.5f) / n - 0.5f) * 2f * ro;
+            float d = Mathf.Sqrt(px * px + py * py);
+            float aa = ro * 1.15f / (n * 0.5f);                 // 约一个纹素宽
+
+            float a = Mathf.Clamp01((ro - d) / aa);             // 外沿
+            if (inside) a = Mathf.Min(a, Mathf.Clamp01((d - ri) / aa));   // 内沿
+            if (fade)
+            {
+                float t = Mathf.Clamp01((ro - d) / band);       // 越往外越淡
+                a *= t * t;
+            }
+            return a;
+        });
+
+        if (_annulusKeys.Count >= AnnulusKeep)
+        {
+            int oldKey = _annulusKeys[0];
+            _annulusKeys.RemoveAt(0);
+            if (_annulus.TryGetValue(oldKey, out var oldTex) && oldTex != null) Object.Destroy(oldTex);
+            _annulus.Remove(oldKey);
         }
+        _annulus[key] = tex;
+        _annulusKeys.Add(key);
+        return tex;
     }
 
     static void RoundedRect(Rect r, Color tint, float alpha)
@@ -837,13 +1474,14 @@ public static class VirtualControls
         var d = b - a;
         float len = d.magnitude;
         if (len < 0.01f) return;
+        if (col.a <= 0.002f) return;
         float ang = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;
         var m = GUI.matrix;   // 当前矩阵已含 UiKit 缩放，右乘即仍在虚拟坐标系内
         GUI.matrix = m * Matrix4x4.TRS(new Vector3(a.x, a.y, 0f),
             Quaternion.Euler(0f, 0f, ang), new Vector3(len, width, 1f));
         var old = GUI.color;
         GUI.color = col;
-        GUI.DrawTexture(new Rect(0f, -0.5f, 1f, 1f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(0f, -0.5f, 1f, 1f), LineTex());
         GUI.matrix = m;
         GUI.color = old;
     }
@@ -890,4 +1528,32 @@ public static class VirtualControls
 
     static string N(float v)
         => v.ToString("R", CultureInfo.InvariantCulture);
+
+    // —————————— 颜色 <-> #AARRGGBB（编辑面板显示用，和 Winlator 一致） ——————————
+    public static string Hex(Color c)
+    {
+        uint a = (uint)Mathf.RoundToInt(Mathf.Clamp01(c.a) * 255f);
+        uint r = (uint)Mathf.RoundToInt(Mathf.Clamp01(c.r) * 255f);
+        uint g = (uint)Mathf.RoundToInt(Mathf.Clamp01(c.g) * 255f);
+        uint b = (uint)Mathf.RoundToInt(Mathf.Clamp01(c.b) * 255f);
+        return "#" + ((a << 24) | (r << 16) | (g << 8) | b).ToString("X8");
+    }
+
+    public static Color ParseHex(string s, Color fallback)
+    {
+        if (string.IsNullOrEmpty(s)) return fallback;
+        var t = s.Trim().TrimStart('#');
+        try
+        {
+            if (t.Length == 6)
+                return new Color(Hx(t, 0) / 255f, Hx(t, 2) / 255f, Hx(t, 4) / 255f, 1f);
+            if (t.Length == 8)
+                return new Color(Hx(t, 2) / 255f, Hx(t, 4) / 255f, Hx(t, 6) / 255f, Hx(t, 0) / 255f);
+        }
+        catch { /* 非法值退回原色 */ }
+        return fallback;
+    }
+
+    static int Hx(string s, int at)
+        => int.Parse(s.Substring(at, 2), NumberStyles.HexNumber);
 }

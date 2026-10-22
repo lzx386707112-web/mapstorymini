@@ -79,6 +79,12 @@ public static class KeyMap
             // KeyCode 里 0 是 None；存档被写坏时退回默认，避免整局按不动
             bind[kv.Key] = System.Enum.IsDefined(typeof(KeyCode), kc) ? NativeKeyLayout.FunctionKey(kc) : kv.Value;
         }
+        // 开机打一行键位表：真机上排查「按键/虚拟键没反应」时，先确认动作到底绑在哪个键
+        var sb = new System.Text.StringBuilder("[KeyMap] ");
+        foreach (var kv in bind)
+            if (kv.Value != KeyCode.None)
+                sb.Append(kv.Key).Append('=').Append(kv.Value).Append(' ');
+        Debug.Log(sb.ToString());
     }
 
     public static KeyCode Of(GameAction a)

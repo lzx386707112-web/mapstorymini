@@ -19,6 +19,7 @@ public sealed class SkillData
     public int id, maxLevel, job;
     public string name, desc, type, icon;
     public bool magic;
+    public bool autoLearn;   // 不是手动加点的技能（如精灵的祝福，按账号等级自动习得）
     public List<int[]> req = new List<int[]>();      // [前置技能id, 需要等级]
     public Dictionary<string, object> levels = new Dictionary<string, object>();
 
@@ -68,6 +69,8 @@ public static class SkillBook
                 icon = d.TryGetValue("icon", out var ic) ? ic as string : "",
             };
             s.levels = d.TryGetValue("levels", out var lv) ? lv as Dictionary<string, object> : s.levels;
+            s.autoLearn = d.TryGetValue("auto", out var au) && au != null &&
+                          au.ToString().ToLowerInvariant() == "true";
             // 前置技能：[技能id, 需要等级]，客户端加点的硬性条件（服务端不校验）
             if (d.TryGetValue("req", out var rq) && rq is List<object> reqList)
                 foreach (var item in reqList)
@@ -88,20 +91,17 @@ public static class SkillBook
         return byId.TryGetValue(id, out var d) ? d : null;
     }
 
-    // 当前职业对应哪条线（ClassDefs 的 5 个职业 → 原版职业线 id）
+    // 当前职业对应哪条线（ClassDefs 的 5 个职业 → 原版职业线 id）。
+    // 新手（beginner）也在 jobs 里，页签名取自 String.wz/Skill.img/000/bookName：
+    // 「冒险的技术」，技能固定为 团队治疗/疾风步/蜗牛投掷术/精灵的祝福。
     public static Dictionary<string, object> LineFor(string cls)
     {
         Ensure();
-        if (cls == "beginner")
-        {
-            var ids = new List<object>();
-            foreach (var skill in byId.Values) if (skill.job == 0) ids.Add(skill.id);
-            ids.Sort((a, b) => ((int)a).CompareTo((int)b));
-            return new Dictionary<string, object> { { "id", "beginner" }, { "tabs", new List<object> {
-                new Dictionary<string, object> { { "job", 0 }, { "name", "新手" }, { "skills", ids } } } } };
-        }
         foreach (var line in lines)
             if (line.TryGetValue("id", out var id) && (string)id == cls) return line;
+        var known = new List<string>();
+        foreach (var line in lines) known.Add(line.TryGetValue("id", out var id) ? id.ToString() : "?");
+        Debug.LogWarning("[SkillBook] 没有职业线 " + cls + "，可用：" + string.Join(",", known.ToArray()));
         return lines.Count > 0 ? lines[0] : null;
     }
 
@@ -197,10 +197,11 @@ public static class SkillProgress
         return cache;
     }
 
-    // 前置技能没满点时不能加（原版 req 节点）
+    // 前置技能没满点时不能加（原版 req 节点）；自动习得的技能（精灵的祝福）永远不能手动加点
     public static bool CanRaise(SkillData d)
     {
-        if (d == null || LevelOf(d.id) >= d.maxLevel) return false;
+        if (d == null || d.autoLearn) return false;
+        if (LevelOf(d.id) >= d.maxLevel) return false;
         if (AvailableSp <= 0) return false;
         foreach (var r in d.req)
             if (LevelOf(r[0]) < r[1]) return false;

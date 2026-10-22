@@ -464,6 +464,9 @@ public class PlayerCtrl : MonoBehaviour
                 }
                 else
                 {
+                    // 没有目标也挥一下刀：普攻是自动索敌的，没有怪时原本连动作都没有，
+                    // 于是「按了攻击键」看不出任何反馈（虚拟键最容易被误判成没生效）
+                    if (attackRequested && vis != null) vis.PlayOnce("atk", 1f);
                     // 没目标时短轮询即可。若这里不重置，atkTimer 会一直 <=0，
                     // 于是每帧都跑一次 FindObjectsOfType —— 那是白白烧 CPU
                     atkTimer = 0.12f;

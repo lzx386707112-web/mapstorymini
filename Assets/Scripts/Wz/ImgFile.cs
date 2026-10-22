@@ -134,6 +134,26 @@ namespace MapleDash.Wz
                 return key[index];
             }
         }
+        // IL2CPP/Android 不内置 1252 代码页，Encoding.GetEncoding(1252) 会抛
+        // NotSupportedException，导致地图/角色读取中断、进游戏时相机没建起来（黑屏）。
+        // 这里直接按 CP1252 表解码：0x80-0x9F 是 Windows-1252 标点区，其余字节一一对应。
+        static readonly char[] Cp1252High =
+        {
+            '\u20AC','\u0081','\u201A','\u0192','\u201E','\u2026','\u2020','\u2021',
+            '\u02C6','\u2030','\u0160','\u2039','\u0152','\u008D','\u017D','\u008F',
+            '\u0090','\u2018','\u2019','\u201C','\u201D','\u2022','\u2013','\u2014',
+            '\u02DC','\u2122','\u0161','\u203A','\u0153','\u009D','\u017E','\u0178'
+        };
+        static string DecodeCp1252(byte[] bytes)
+        {
+            var chars = new char[bytes.Length];
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                byte b = bytes[i];
+                chars[i] = b >= 0x80 && b <= 0x9F ? Cp1252High[b - 0x80] : (char)b;
+            }
+            return new string(chars);
+        }
         readonly BinaryReader reader;
         public readonly ImgNode Root;
         public ImgFile(string path) : this(File.ReadAllBytes(path), path) { }
@@ -170,7 +190,7 @@ namespace MapleDash.Wz
                 }
                 else bytes[i] ^= (byte)(((0xaa + i) & 255) ^ KeyByte(i));
             }
-            return (unicode ? Encoding.Unicode : Encoding.GetEncoding(1252)).GetString(bytes);
+            return unicode ? Encoding.Unicode.GetString(bytes) : DecodeCp1252(bytes);
         }
         string StringBlock()
         {

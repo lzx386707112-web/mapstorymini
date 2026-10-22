@@ -81,6 +81,8 @@ public sealed class NativeCursor : MonoBehaviour
         // Restoring it during Repaint lets the lobby paint over the cursor.
         GUI.depth = -10000;
         if (!Application.isMobilePlatform || manifest == null || !Application.isFocused || Event.current.type != EventType.Repaint) return;
+        // 虚拟按键编辑器是纯触屏界面，里面不需要这只"手"，否则会挡在编辑面板上
+        if (VirtualControlsEditor.Visible) return;
         State selected = SelectState(state);
         if (selected == null || selected.frames.Length == 0) return;
         Frame frame = CurrentFrame(selected);
