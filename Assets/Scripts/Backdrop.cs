@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// 地图主体由 tools/wz_stage.py 按原坐标导出；back 按原 WZ 参数独立渲染。
+// 章节地图使用原始 IMG，主题配置只保留关卡出生锚点与配色。
 //
 // 主体与背景均保持「地图像素 1:1」，
 // 摆放位置由 manifest 里的 px（窗口左上角）、ground（地面锚点）算出来：
@@ -14,16 +14,6 @@ public class Backdrop : MonoBehaviour
     Transform artRoot;
     SpriteRenderer sky;
     string curTheme = "";
-    readonly System.Collections.Generic.List<NativeBack> nativeBacks =
-        new System.Collections.Generic.List<NativeBack>();
-
-    void LateUpdate()
-    {
-        var camera = Camera.main;
-        if (camera == null) return;
-        foreach (var back in nativeBacks) back.Update(camera);
-    }
-
     public bool HasStage { get; private set; }
     public float WalkMin { get; private set; } = -13f;
     public float WalkMax { get; private set; } = 13f;
@@ -50,14 +40,13 @@ public class Backdrop : MonoBehaviour
 
     void Rebuild(string theme, StageTheme t)
     {
-        nativeBacks.Clear();
         if (artRoot != null) Destroy(artRoot.gameObject);
         var go = new GameObject("Stage_" + theme);
         go.transform.SetParent(transform, false);
         artRoot = go.transform;
 
         var st = Art.Stage(theme);
-        if (st == null || (string.IsNullOrEmpty(st.fileBack) && string.IsNullOrEmpty(st.fileMid)))
+        if (st == null)
         {
             HasStage = false;
             WalkMin = -13f;
@@ -71,14 +60,8 @@ public class Backdrop : MonoBehaviour
         WalkMax = st.WalkMax;
         if (sky != null) sky.color = st.sky;
 
-        // 新导出使用独立 back；旧 manifest 仍兼容原来的三张切片。
-        if (st.backgrounds.Count > 0)
-            foreach (var entry in st.backgrounds)
-                nativeBacks.Add(new NativeBack(artRoot, st, entry));
-        else
-            Place(st.fileBack, st.orderBack, st);
-        Place(st.fileMid, st.orderMid, st);
-        Place(st.fileFront, st.orderFront, st);
+        artRoot.position = new Vector3(-st.ground.x / Art.PPU, PlayerCtrl.GroundY + st.ground.y / Art.PPU, 0);
+        artRoot.gameObject.AddComponent<NativeMapView>().Show(int.Parse(st.map));
 
         // 天空底板对准切片中心（尺寸远大于切片，四周都盖得住）
         if (sky != null)
@@ -86,97 +69,6 @@ public class Backdrop : MonoBehaviour
             sky.transform.position = new Vector3((st.LeftX + st.RightX) * 0.5f,
                                                  (st.TopY + st.BottomY) * 0.5f, 0f);
         }
-    }
-
-    // CMapLoadable::MakeBack / MakeGrid：每个 WZ back 独立定位和平铺，
-    // 不镜像补景、不 smear_fill，也不把 rx/ry 烘进固定背景图。
-    class NativeBack
-    {
-        readonly Art.StageInfo stage;
-        readonly Art.StageBack entry;
-        readonly Transform root;
-        readonly Sprite sprite;
-        readonly System.Collections.Generic.List<SpriteRenderer> cells =
-            new System.Collections.Generic.List<SpriteRenderer>();
-        readonly float started = Time.time;
-
-        public NativeBack(Transform parent, Art.StageInfo stage, Art.StageBack entry)
-        {
-            this.stage = stage;
-            this.entry = entry;
-            root = new GameObject("Back_" + entry.no).transform;
-            root.SetParent(parent, false);
-            sprite = Art.FrameBottom(entry.file);
-        }
-
-        public void Update(Camera camera)
-        {
-            if (sprite == null) return;
-            float mapX = camera.transform.position.x * Art.PPU + stage.ground.x;
-            float mapY = stage.ground.y - (camera.transform.position.y - PlayerCtrl.GroundY) * Art.PPU;
-            float halfY = camera.orthographicSize * Art.PPU;
-            float halfX = halfY * camera.aspect;
-            int type = entry.type;
-            bool scrollX = type == 4 || type == 6;
-            bool scrollY = type == 5 || type == 7;
-            bool repeatX = type == 1 || type == 3 || type == 4 || type == 6 || type == 7;
-            bool repeatY = type == 2 || type == 3 || type == 5 || type == 6 || type == 7;
-            float elapsed = Time.time - started;
-            // rx/ry 是相对相机的百分比；自动滚动轴则是 5*|r| px/s。
-            float bx = entry.x - entry.origin.x + mapX * (1f + (scrollX ? 0f : entry.rx / 100f));
-            float by = entry.y - entry.origin.y + mapY * (1f + (scrollY ? 0f : entry.ry / 100f));
-            if (scrollX) bx -= elapsed * 5f * entry.rx;
-            if (scrollY) by -= elapsed * 5f * entry.ry;
-            float stepX = entry.cx > 0 ? entry.cx : entry.size.x;
-            float stepY = entry.cy > 0 ? entry.cy : entry.size.y;
-            int left = repeatX ? Mathf.FloorToInt((mapX - halfX - bx - entry.size.x) / stepX) + 1 : 0;
-            int right = repeatX ? Mathf.CeilToInt((mapX + halfX - bx) / stepX) - 1 : 0;
-            int top = repeatY ? Mathf.FloorToInt((mapY - halfY - by - entry.size.y) / stepY) + 1 : 0;
-            int bottom = repeatY ? Mathf.CeilToInt((mapY + halfY - by) / stepY) - 1 : 0;
-            int count = 0;
-            for (int j = top; j <= bottom; j++)
-                for (int i = left; i <= right; i++)
-                {
-                    if (count == cells.Count)
-                    {
-                        var go = new GameObject("Tile");
-                        go.transform.SetParent(root, false);
-                        var sr = go.AddComponent<SpriteRenderer>();
-                        sr.sprite = sprite;
-                        sr.sortingOrder = (entry.front != 0 ? 600 : -800) + entry.no;
-                        sr.color = new Color(1f, 1f, 1f, entry.alpha / 255f);
-                        cells.Add(sr);
-                    }
-                    var cell = cells[count++];
-                    cell.enabled = true;
-                    cell.transform.position = new Vector3(stage.WorldX(bx + i * stepX),
-                        stage.WorldY(by + j * stepY + entry.size.y), 0f);
-                }
-            for (int i = count; i < cells.Count; i++) cells[i].enabled = false;
-        }
-    }
-
-    void Place(string rel, int order, Art.StageInfo st)
-    {
-        if (string.IsNullOrEmpty(rel) || st == null) return;
-
-        // FrameBottom：轴心取图片左下角，于是 transform.position 就是切片的左下角，
-        // 精灵世界尺寸 = 像素 / PPU（40），和地图 1:1，不用任何缩放。
-        var sp = Art.FrameBottom(rel);
-        if (sp == null)
-        {
-            Debug.LogWarning("[Backdrop] 缺少切片 " + rel);
-            return;
-        }
-
-        var g = new GameObject("Layer" + order);
-        g.transform.SetParent(artRoot, false);
-        var sr = g.AddComponent<SpriteRenderer>();
-        sr.sprite = sp;
-        sr.sortingOrder = order;
-        sr.color = Color.white;
-        g.transform.localScale = Vector3.one;
-        g.transform.position = new Vector3(st.LeftX, st.BottomY, 0f);
     }
 
     // 没有关卡切片时退回原来的纯色层次，保证任何状态下都能跑

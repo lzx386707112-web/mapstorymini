@@ -34,9 +34,11 @@ public static class NativeSkillVfx
                 var frames=new List<NativeVfxFrame>();
                 foreach(Dictionary<string,object> f in (List<object>)entry["frames"])
                 {
-                    var origin=(List<object>)f["origin"];
-                    frames.Add(new NativeVfxFrame {file=(string)f["file"], origin=new Vector2(Convert.ToSingle(origin[0]),Convert.ToSingle(origin[1])),
-                        delay=Mathf.Max(.001f,Art.Num(f,"delay",.1f)),alpha0=Art.Num(f,"a0",255)/255,alpha1=Art.Num(f,"a1",255)/255,z=(int)Art.Num(f,"z")});
+                    string source = (string)f["source"];
+                    var native = WzAssets.Node(source);
+                    var origin = WzAssets.Origin(native);
+                    frames.Add(new NativeVfxFrame {file="wz://"+source, origin=origin,
+                        delay=Mathf.Max(.001f,Mathf.Abs(native.Int("delay",100))/1000f),alpha0=native.Int("a0",255)/255f,alpha1=native.Int("a1",255)/255f,z=native.Int("z",(int)Art.Num(f,"z"))});
                 }
                 clips.Add(pair.Key,new NativeVfxClip {path=pair.Key,frames=frames.ToArray(),meta=(Dictionary<string,object>)entry["meta"]});
             }

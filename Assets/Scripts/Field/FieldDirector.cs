@@ -75,12 +75,15 @@ public sealed class FieldDirector : MonoBehaviour
     {
         FieldCatalog.Ensure();
         FieldMap map;
-        if (!FieldCatalog.Maps.TryGetValue(mapId, out map))
+        if ((map = FieldCatalog.GetMap(mapId)) == null)
         {
             Debug.LogWarning("[Field] 没有地图 " + mapId);
             return;
         }
 
+        // Resolve artwork before discarding the current scene; full Data can contain dangling links.
+        try { view.Show(map); }
+        catch (System.Exception e) { Debug.LogError("[Field] 无法进入地图 " + mapId + ": " + e.Message); return; }
         ClearMobs();
         // 章节/大厅遗留的 EnemyUnit 也会进 EnemyUnit.All：玩家会自动去打它们，
         // 它们也会照常攻击玩家（彩虹村这种 town 图本不该有怪）。原版模式下只留本图刷的怪。
@@ -97,7 +100,6 @@ public sealed class FieldDirector : MonoBehaviour
         player?.GetComponent<SkillSystem>()?.CancelActions();
 
         Map = map;
-        view.Show(map);
         ApplyGeometry(map);
         PlacePlayer(map, spawnPortalName);
 

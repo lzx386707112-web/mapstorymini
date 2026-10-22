@@ -593,8 +593,8 @@ public static class PlaySmokeTest
             cam.rect = new Rect(0f, 0f, 1f, 1f);
             cam.aspect = (float)W / H;
             // batchmode 的 Screen 可能仍是编辑器比例，背景平铺需按目标纹理重新铺满。
-            var backdrop = Object.FindObjectOfType<Backdrop>();
-            if (backdrop != null) backdrop.SendMessage("LateUpdate");
+            foreach (var view in Object.FindObjectsOfType<NativeMapView>())
+                view.SendMessage("LateUpdate");
             cam.Render();
             RenderTexture.active = rt;
             tex = new Texture2D(W, H, TextureFormat.RGB24, false);

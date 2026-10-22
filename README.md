@@ -197,5 +197,31 @@ python3 tools/wz_stage.py --unity
 需要 Pillow 和 `~/Documents/mxd/BeiDou-Server/tool/wz-python`。
 中间 PNG 位于 `Library/WzStage`；原始客户端文件只读。
 
-角色动作和移动参数从原端重新导出：`python3 tools/wz_actions.py`。
+以下旧导出流程仅保留作历史参考；当前分支请使用文末的原始 IMG 管线，无需重新导出人物或地图。
 基础移动/跳跃检查：Unity batchmode 执行 `MovementChecks.Run`，覆盖 30/60/120Hz 的台阶、落地和摇杆手指归属。
+
+## 原始 IMG 直接加载
+
+本分支默认从原始 IMG 读取地图、人物纸娃娃、怪物、技能、鼠标和 UI，不再加载离线导出的 PNG。
+首次拉取需运行 `tools/package_native_assets.py` 复制整个原始 Data（本机约 6.8 GiB）；原始 IMG 包不提交 Git。
+打包命令、架构与验证边界见 [直接加载说明](docs/direct-img-runtime.md)。
+
+Unity 菜单 **MapleDash → 地图目录（完整 Data）** 可搜索全部 6,336 张地图并进入，地图/怪物按需读取对应 IMG。
+
+## 独立资源目录
+
+完整原始资源现位于项目同级的 `../MapleDashResources/Data`，不在 Unity Assets 中。编辑器默认直接读取该目录，也可用 `MAPLEDASH_IMG_ROOT` 覆盖。更新资源使用 `tools/package_native_assets.py --data <源Data> --wzpy <wz-python>`。
+
+`rtk proxy python3 tools/build_resource_pack.py` 生成 `../MapleDashResources/MapleDashResources.zip`，含清单与完整 Data。Android 可直接同步目录（原安装脚本已适配），也可将 ZIP 放到 `/sdcard/mapstory/MapleDashResources.zip`，启动后点击“安装资源包”。ZIP 必须保留 `resource-manifest.json` 与 `Data/` 这一层结构；安装需预留 ZIP 加解压目录的空间，更新期间还会保留旧 Data。
+
+传输压缩包（APK 需重新构建以包含资源安装界面）：
+
+```sh
+rtk proxy python3 tools/build_resource_pack.py
+rtk proxy python3 tools/sync_android_data.py --zip
+```
+
+之后启动游戏，点击“安装资源包”。也可以在电脑解压后按原目录结构同步到手机 `files/Wz/Data`，使用目录同步脚本会自动生成完成标记。
+
+
+当前 Android 资源目录统一为 `/sdcard/mapstory`：可放 `MapleDashResources.zip`，也可放已展开的 `Data/`。游戏启动自动显示进度条；首次自动解压并逐文件校验，已安装资源启动时校验后进入游戏，无需点击安装按钮。Android 11 及以上首次需要在系统设置允许“所有文件访问”，Android 10 及以下申请存储权限。资源缺失、损坏或权限未授予时停留加载页并提示，不进入游戏。ZIP 保留，成功后可自行删除。此共享目录方案用于当前测试，应用商店发布时需调整为符合渠道要求的资源目录/分发方式。

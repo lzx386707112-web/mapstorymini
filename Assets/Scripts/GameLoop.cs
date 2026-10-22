@@ -44,6 +44,17 @@ public class GameLoop : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Boot()
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        WzWebLoader.Begin(CreateGame);
+#elif UNITY_ANDROID && !UNITY_EDITOR
+        WzAndroidLoader.Begin(CreateGame);
+#else
+        CreateGame();
+#endif
+    }
+
+    static void CreateGame()
+    {
         var go = new GameObject("[GameLoop]");
         DontDestroyOnLoad(go);
         go.AddComponent<HitFeelRunner>();
@@ -103,7 +114,7 @@ public class GameLoop : MonoBehaviour
             }
             if (!FieldCatalog.Maps.ContainsKey(startMap)) startMap = 1000000;
             field.Begin(startMap);
-            Debug.Log("[GameLoop] 原版地图模式：" + FieldCatalog.Maps.Count + " 张彩虹岛地图");
+            Debug.Log("[GameLoop] 原版地图模式：" + FieldCatalog.Maps.Count + " 张原始地图");
             if (PlayerPrefs.GetInt("debug_god", 0) == 1)
             {
                 PlayerPrefs.DeleteKey("debug_god");

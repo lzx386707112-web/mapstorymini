@@ -117,6 +117,7 @@ ls -lh "$PROJ/Builds/MapleDash.apk"
 
 if [ "$NO_INSTALL" = "1" ]; then
   echo "已跳过安装（--no-install）。APK：$PROJ/Builds/MapleDash.apk"
+  echo "APK 不含完整 Data；使用 ./install_apk.sh 安装并同步资源后再启动。"
   exit 0
 fi
 
@@ -171,6 +172,9 @@ if [ "$INSTOK" != "1" ]; then
   echo "   排查：数据线换口 / 手机上重开 USB 调试 / adb kill-server 后重试"
   exit 1
 fi
+
+# 完整 Data 独立于 APK 部署；首次约 6.8 GiB，后续按文件增量同步。
+python3 "$PROJ/tools/sync_android_data.py" --adb "$ADB"
 
 # ---------- 4/6 启动 ----------
 echo "== 4/6 启动 =="

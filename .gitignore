@@ -33,3 +33,7 @@
 *.unitypackage
 crashlytics-build.properties
 sysinfo.txt
+
+# Byte-identical original IMG package, recreated by tools/package_native_assets.py
+/Assets/StreamingAssets/Wz/Data/
+/Assets/StreamingAssets/Wz/Data.meta

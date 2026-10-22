@@ -1,33 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 素材库：把 tools/wz_assets.py 从客户端 WZ 抽出来的 PNG 读进 Unity。
-//
-// 为什么不放 Assets/Resources/Art/*.png：那样要靠 Unity 的贴图导入设置
-// （Texture Type = Sprite、pivot、PPU），换台机器/换个人重装项目就会走样。
-// 这里统一存成 .png.bytes（Unity 当二进制资源），运行时 Texture2D.LoadImage
-// 自己建 Sprite —— 轴心、PPU 全部来自 manifest.json，跨平台一致。
-//
-// manifest 结构见 art/manifest.json：chars / mobs / stages / damage；skills仅保留导出用ID元数据。
+// Native IMG artwork. Manifest holds game choices; pixels, origins and animation
+// frames are read from the original resources by WzAssets/WzCharacter.
 public static class Art
 {
     public const float PPU = 40f;          // 1 世界单位 = 40px（与 Px.ToUnit 一致）
 
     public static bool Ready { get; private set; }
     static bool tried;
-
-    class Sheet
-    {
-        public Vector2 pivot;              // 像素，左上原点
-        public Dictionary<string, object> anims;
-        public Dictionary<string, object> parts;   // 部件的原版标量参数（count/interval/effectDistance）
-    }
-
-    static readonly Dictionary<string, Sheet> sheets = new Dictionary<string, Sheet>();
-    static readonly Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>();
-    // 技能一个 key 下有多个部件（cast / ball / hit / tile ...），每个部件的画布和锚点都不同，
-    // 所以轴心按「帧路径」记录，而不是按整套技能一个 pivot。
-    static readonly Dictionary<string, Vector2> framePivot = new Dictionary<string, Vector2>();
 
     // —— 关卡背景（真实地图切片） ——
     //
@@ -172,6 +153,11 @@ public static class Art
                 st.orderMid = Int(ord, "mid", -400);
                 st.orderFront = Int(ord, "front", 600);
             }
+            var native = NativeMapView.LoadMap(new FieldMap { id = int.Parse(st.map) });
+            st.Footholds.Clear(); st.Climbs.Clear();
+            foreach (var f in native.footholds) st.Footholds.Add(new Vector4(st.WorldX(f.x1), st.WorldY(f.y1), st.WorldX(f.x2), st.WorldY(f.y2)));
+            foreach (var r in native.ropes) st.Climbs.Add(new ClimbLine { x = st.WorldX(r.x), top = st.WorldY(r.y1), bottom = st.WorldY(r.y2), ladder = r.ladder, upperExit = r.upperExit });
+            st.view = new Vector4(native.vr[0], native.vr[1], native.vr[2], native.vr[3]); st.hasView = true;
             stages[kv.Key] = st;
         }
     }
@@ -300,42 +286,11 @@ public static class Art
         var root = MiniJson.Parse(ta.text) as Dictionary<string, object>;
         if (root == null) { Debug.LogWarning("[Art] manifest 解析失败"); return; }
 
-        ReadSheets(root, "chars");
-        ReadSheets(root, "mobs");
         ReadStages(root);
         ReadDamage(root);
 
-        Ready = sheets.Count > 0;
-        if (Ready) Debug.Log("[Art] 素材就绪：" + sheets.Count + " 组");
-    }
-
-    static void ReadSheets(Dictionary<string, object> root, string kind)
-    {
-        if (!root.ContainsKey(kind)) return;
-        var dict = root[kind] as Dictionary<string, object>;
-        if (dict == null) return;
-        foreach (var kv in dict)
-        {
-            var node = kv.Value as Dictionary<string, object>;
-            if (node == null) continue;
-            var s = new Sheet { pivot = Vector2.zero };
-            s.pivot = ReadVec(node, "pivot");
-            s.anims = node.ContainsKey("anims") ? node["anims"] as Dictionary<string, object> : null;
-            s.parts = node.ContainsKey("parts") ? node["parts"] as Dictionary<string, object> : null;
-            sheets[kind + "/" + kv.Key] = s;
-
-            // 每个动画自带 pivot（技能部件用）；没有就回落到整套的 pivot（角色/怪物）
-            if (s.anims == null) continue;
-            foreach (var a in s.anims)
-            {
-                var anim = a.Value as Dictionary<string, object>;
-                if (anim == null || !anim.ContainsKey("frames")) continue;
-                var pivot = anim.ContainsKey("pivot") ? ReadVec(anim, "pivot") : s.pivot;
-                var frames = anim["frames"] as List<object>;
-                if (frames == null) continue;
-                foreach (var f in frames) framePivot[f.ToString()] = pivot;
-            }
-        }
+        Ready = WzAssets.Index != null;
+        if (Ready) Debug.Log("[Art] Native IMG resource library ready");
     }
 
     static Vector2 ReadVec(Dictionary<string, object> node, string key)    {
@@ -347,110 +302,33 @@ public static class Art
 
     static float ToF(object o) => o == null ? 0f : float.Parse(o.ToString(), System.Globalization.CultureInfo.InvariantCulture);
 
-    // Resources 里的贴图统一存成 "xxx.bytes"，但调用方传进来的 rel 可能是
-    // "xxx.png"（manifest 里的原始文件名）也可能是 "xxx.bytes"。
-    // 以前写死 rel.Length-4，只对 4 字符扩展名成立；".bytes" 会残留 ".b" 而加载不到。
-    static string StripExtension(string rel)
-    {
-        int dot = rel.LastIndexOf('.');
-        int slash = rel.LastIndexOf('/');
-        return dot > slash + 1 ? rel.Substring(0, dot) : rel;
-    }
-
     // —— 单帧 ——
     public static Sprite Frame(string rel)
     {
         Ensure();
-        if (!Ready || string.IsNullOrEmpty(rel)) return null;
-
-        int cut = rel.LastIndexOf('/');
-        string sheetKey = cut > 0 ? rel.Substring(0, cut) : rel;
-        Vector2 pivotPx = Vector2.zero;
-        Sheet sheet;
-        if (sheets.TryGetValue(sheetKey, out sheet)) pivotPx = sheet.pivot;
-        // 逐帧显式记录的轴心优先于整套动画默认值
-        Vector2 own;
-        if (framePivot.TryGetValue(rel, out own)) pivotPx = own;
-
-        // manifest 的 pivot 是像素、左上原点；换算出 Unity 的归一化轴心
-        return Frame(rel, pivotPx, true);
+        return string.IsNullOrEmpty(rel) ? null : WzAssets.Frame(rel);
     }
 
-    // 背景图层用：origin=(0,0) 在 WZ 里是「左上角」，当背景铺地要改成左下角
-    public static Sprite FrameBottom(string rel)
-    {
-        Ensure();
-        return Frame(rel, Vector2.zero, false);
-    }
+    public static Sprite FrameBottom(string rel) => Frame(rel);
 
     static Sprite Frame(string rel, Vector2 pivotPx, bool fromTop)
     {
-        string key = rel + (fromTop ? "" : "|bl");
-        Sprite sp;
-        if (cache.TryGetValue(key, out sp) && sp != null) return sp;
-
-        // 贴图存成 "xxx.bytes"（不带 .png），路径里也就不能带扩展名
-        string path = "Art/" + StripExtension(rel);
-        var ta = Resources.Load<TextAsset>(path);
-        if (ta == null) return null;
-
-        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-        if (!tex.LoadImage(ta.bytes)) { Object.Destroy(tex); return null; }
-        tex.filterMode = FilterMode.Point;
-        tex.wrapMode = TextureWrapMode.Clamp;
-        tex.name = rel;
-
-        float w = tex.width, h = tex.height;
-        Vector2 pivot = fromTop
-            ? new Vector2(w > 0 ? Mathf.Clamp01(pivotPx.x / w) : 0.5f,
-                          h > 0 ? Mathf.Clamp01(1f - pivotPx.y / h) : 0f)
-            : Vector2.zero;   // 左下角
-
-        sp = Sprite.Create(tex, new Rect(0, 0, w, h), pivot, PPU, 0, SpriteMeshType.FullRect);
-        sp.name = rel;
-        cache[key] = sp;
-        return sp;
+        // Original Canvas origin supersedes the former exported-frame/union pivot.
+        return Frame(rel);
     }
 
     public static Clip GetClip(string kind, string key, string anim)
     {
         Ensure();
-        Sheet s;
-        if (!sheets.TryGetValue(kind + "/" + key, out s) || s.anims == null) return null;
-        if (!s.anims.ContainsKey(anim)) return null;
-        var node = s.anims[anim] as Dictionary<string, object>;
-        if (node == null) return null;
-
-        var fl = node.ContainsKey("frames") ? node["frames"] as List<object> : null;
-        var dl = node.ContainsKey("delays") ? node["delays"] as List<object> : null;
-        if (fl == null || fl.Count == 0) return null;
-
-        var clip = new Clip
-        {
-            frames = new string[fl.Count],
-            delays = new float[fl.Count],
-        };
-        for (int i = 0; i < fl.Count; i++)
-        {
-            clip.frames[i] = fl[i].ToString();
-            clip.delays[i] = (dl != null && i < dl.Count) ? ToF(dl[i]) / 1000f : 0.15f;
-        }
-        return clip;
+        if (kind == "chars") return WzCharacter.Clip(key, anim);
+        if (kind == "mobs") return WzAssets.MobClip(key, anim);
+        return null;
     }
 
     public static bool Has(string kind, string key)
     {
         Ensure();
-        return sheets.ContainsKey(kind + "/" + key);
-    }
-
-    // 部件里的原版标量参数（special.count / special.interval / tile.effectDistance ...）
-    public static Dictionary<string, object> PartMeta(string kind, string key, string part)
-    {
-        Ensure();
-        Sheet s;
-        if (!sheets.TryGetValue(kind + "/" + key, out s) || s.parts == null) return null;
-        return s.parts.ContainsKey(part) ? s.parts[part] as Dictionary<string, object> : null;
+        return kind == "chars" ? WzCharacter.Has(key) : kind == "mobs" && (((Dictionary<string, object>)WzAssets.Index["mobs"]).ContainsKey(key) || int.TryParse(key, out _));
     }
 
     // 角色/怪物没有某个动作时的退化表：怪物没有 walk，只有 move
@@ -505,24 +383,11 @@ public static class Art
     // —— 技能图标 ——
     //
     // 图标是原版 32x32 的小图，用 IMGUI 画会糊成一片，所以统一按整数倍最近邻放大。
-    static readonly Dictionary<string, Texture2D> texCache = new Dictionary<string, Texture2D>();
 
     public static Texture2D Tex(string rel)
     {
         Ensure();
-        if (string.IsNullOrEmpty(rel)) return null;
-        Texture2D tex;
-        if (texCache.TryGetValue(rel, out tex) && tex != null) return tex;
-
-        string path = "Art/" + StripExtension(rel);
-        var ta = Resources.Load<TextAsset>(path);
-        if (ta == null) return null;
-        tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-        if (!tex.LoadImage(ta.bytes)) { Object.Destroy(tex); return null; }
-        tex.filterMode = FilterMode.Point;
-        tex.wrapMode = TextureWrapMode.Clamp;
-        texCache[rel] = tex;
-        return tex;
+        return string.IsNullOrEmpty(rel) ? null : WzAssets.Texture(rel);
     }
 
     public static string Str(Dictionary<string, object> d, string key, string def = "")

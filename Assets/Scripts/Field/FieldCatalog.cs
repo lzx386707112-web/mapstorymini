@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 原客户端地图数据（tools/wz_field.py 从 Map.wz / String.wz / Mob.wz / 原服 SQL 导出）。
+// 地图与怪物直接读取完整原始 Data；服务器掉落/物品配置仍沿用现有 SQL 导出。
 // 这里只做「读数据 + 坐标换算」，任何玩法数值都不在这里臆造：
 //   地图像素 → 世界单位：x / PPU、-y / PPU（地图 y 向下，世界 y 向上）
 
@@ -139,21 +139,20 @@ public static class FieldCatalog
         if (tried) return;
         tried = true;
 
-        var maps = Resources.Load<TextAsset>("Field/FieldMaps");
-        if (maps == null)
+        // Discover every map from the unchanged Data inventory. Parse only on entry.
+        var names = WzAssets.FileRoot("String/Map.img");
+        var labels = new Dictionary<int, MapleDash.Wz.ImgNode>();
+        foreach (var region in names.Children)
+            foreach (var entry in region.Children)
+                if (int.TryParse(entry.Name, out var id)) labels[id] = entry;
+        foreach (Dictionary<string, object> file in (List<object>)WzAssets.Index["files"])
         {
-            Debug.LogWarning("[Field] 缺少 Field/FieldMaps.json，原版地图模式不可用");
-            return;
+            string path = (string)file["path"];
+            if (!path.StartsWith("Map/Map/Map") || !path.EndsWith(".img")) continue;
+            if (!int.TryParse(System.IO.Path.GetFileNameWithoutExtension(path), out var id)) continue;
+            labels.TryGetValue(id, out var label);
+            Maps[id] = new FieldMap { id = id, name = label?.Text("mapName") ?? id.ToString(), street = label?.Text("streetName") ?? "" };
         }
-
-        var root = MiniJson.Parse(maps.text) as Dictionary<string, object>;
-        var list = GetList(root, "maps");
-        if (list != null)
-            foreach (var item in list)
-            {
-                var m = BuildMap(item as Dictionary<string, object>);
-                if (m != null) Maps[m.id] = m;
-            }
 
         var mobs = Resources.Load<TextAsset>("Field/FieldMobs");
         if (mobs != null)
@@ -235,6 +234,32 @@ public static class FieldCatalog
         Debug.Log("[Field] 原版地图 " + Maps.Count + " 张，怪物 " + Mobs.Count + " 种，掉落表 " +
                   Drops.Count + " 份，物品 " + Items.Count + " 件");
     }
+    static readonly HashSet<int> loadedMaps = new HashSet<int>();
+    public static FieldMap GetMap(int id)
+    {
+        Ensure();
+        if (!Maps.TryGetValue(id, out var map)) return null;
+        if (loadedMaps.Contains(id)) return map;
+        map = NativeMapView.LoadMap(map);
+        foreach (var spawn in map.spawns) LoadMob(spawn.mob);
+        Maps[id] = map; loadedMaps.Add(id);
+        return map;
+    }
+
+    static readonly HashSet<int> loadedMobs = new HashSet<int>();
+    static void LoadMob(int id)
+    {
+        if (loadedMobs.Contains(id)) return;
+        var root = WzAssets.FileRoot("Mob/" + id.ToString("D7") + ".img");
+        var info = root.Get("info");
+        var stats = new Dictionary<string, object>();
+        foreach (var property in info.Children)
+            if (property.Value != null) stats[property.Name] = property.Value;
+        var label = WzAssets.FileRoot("String/Mob.img").Get(id.ToString());
+        Mobs[id] = new FieldMob { id = id, name = label?.Text("name") ?? id.ToString(), artKey = id.ToString(), stats = stats };
+        loadedMobs.Add(id);
+    }
+
     static FieldMap BuildMap(Dictionary<string, object> d)
     {
         if (d == null || !d.ContainsKey("vr")) return null;
@@ -396,28 +421,11 @@ public static class FieldPortalArt
         if (tried) return;
         tried = true;
 
-        var ta = Resources.Load<TextAsset>("Field/FieldPortals");
-        if (ta == null)
+        foreach (var frame in WzAssets.Frames(WzAssets.Node("Map/MapHelper.img/portal/game/pv")))
         {
-            Debug.LogWarning("[Field] 缺少 Field/FieldPortals.json，传送门不会有光洞");
-            return;
-        }
-
-        var root = MiniJson.Parse(ta.text) as Dictionary<string, object>;
-        var pv = root != null && root.ContainsKey("pv") ? root["pv"] as Dictionary<string, object> : null;
-        var frames = FieldCatalog.GetList(pv, "frames");
-        if (frames == null) return;
-
-        foreach (var item in frames)
-        {
-            var d = item as Dictionary<string, object>;
-            if (d == null) continue;
-            Visible.Add(new Frame
-            {
-                file = FieldCatalog.Str(d, "file"),
-                origin = FieldCatalog.Vec(d, "origin"),
-                delay = Mathf.Max(0.03f, FieldCatalog.Num(d, "delay", 120f) / 1000f),
-            });
+            var node = frame.Resolve();
+            Visible.Add(new Frame { file = "wz://Map/MapHelper.img/portal/game/pv/" + frame.Name,
+                origin = WzAssets.Origin(node), delay = Mathf.Max(.001f, Mathf.Abs(node.Int("delay", 120)) / 1000f) });
         }
         Debug.Log("[Field] 传送门动画 " + Visible.Count + " 帧");
     }

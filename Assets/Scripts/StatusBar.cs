@@ -32,7 +32,7 @@ public static class StatusBar
     };
 
     static bool loaded;
-    static Texture2D panel, identityPanel, gray, digitSlash, digitPercent, digitLb, digitRb;
+    static Texture2D panel, gray, digitSlash, digitPercent, digitLb, digitRb;
     static Texture2D[] labels = new Texture2D[3], fills = new Texture2D[3], frames = new Texture2D[3];
     static Texture2D[] digits = new Texture2D[10], levelNo = new Texture2D[10];
     static Font font;
@@ -61,7 +61,6 @@ public static class StatusBar
         Panel = new Rect(0f, UiKit.H - h, w, h);
         GUI.DrawTexture(Panel, panel, ScaleMode.StretchToFill);
 
-        if (identityPanel != null) GUI.DrawTexture(At(0, 0, 210, 35), identityPanel);
         DrawLevelTag();
         DrawIdentity();
         DrawGauges();
@@ -239,7 +238,6 @@ public static class StatusBar
         loaded = true;
 
         panel = Art.Tex("ui/statusbar/bar_lv.bytes");
-        identityPanel = Art.Tex("ui/statusbar/identity_plate.bytes");
         for (int i = 0; i < 3; i++)
         {
             labels[i] = Art.Tex(LabelRel[i]);

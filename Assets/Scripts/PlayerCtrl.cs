@@ -275,15 +275,11 @@ public class PlayerCtrl : MonoBehaviour
     {
         Profile.Load();
         Profile.LeveledUp += OnLevelUp;
-        var physics = Resources.Load<TextAsset>("Physics");
-        if (physics != null)
-        {
-            var values = MiniJson.Parse(physics.text) as System.Collections.Generic.Dictionary<string, object>;
-            moveSpeed = Art.Num(values, "walkSpeed", 125f) / Art.PPU;
-            jumpSpeed = Art.Num(values, "jumpSpeed", 555f) / Art.PPU;
-            gravity = -Art.Num(values, "gravityAcc", 2000f) / Art.PPU;
-            fallSpeed = Art.Num(values, "fallSpeed", 670f) / Art.PPU;
-        }
+        var physics = WzAssets.FileRoot("Map/Physics.img");
+        moveSpeed = physics.Int("walkSpeed", 125) / Art.PPU;
+        jumpSpeed = physics.Int("jumpSpeed", 555) / Art.PPU;
+        gravity = -physics.Int("gravityAcc", 2000) / Art.PPU;
+        fallSpeed = physics.Int("fallSpeed", 670) / Art.PPU;
         laneVis = lane;
         // 根节点的 SpriteRenderer 只是「有没有素材」的占位，形状不放在这里：
         // 根节点一旦被非等比缩放（旧版 0.82 x 1.5），贴图就会被压扁拉长，

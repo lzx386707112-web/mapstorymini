@@ -19,7 +19,10 @@ echo "== 设备 =="
 echo "== 安装（覆盖旧版本）=="
 "$ADB" install -r -d "$APK"
 
-echo "== 授权悬浮窗/后台运行提示可忽略，直接启动 =="
+PROJ="$(cd "$(dirname "$0")" && pwd)"
+python3 "$PROJ/tools/sync_android_data.py" --adb "$ADB"
+
+echo "== 启动 =="
 "$ADB" shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || \
   "$ADB" shell am start -n "$PKG/$ACTIVITY"
 

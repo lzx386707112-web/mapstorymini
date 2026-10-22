@@ -65,6 +65,15 @@ public static class BuildWebGL
             Debug.LogError("[WebGL] 失败，详见上方日志");
             EditorApplication.Exit(1);
         }
+        // Publish external raw resources beside the web build, outside Unity's data archive.
+        var index = (System.Collections.Generic.Dictionary<string, object>)MiniJson.Parse(Resources.Load<TextAsset>("NativeAssetIndex").text);
+        foreach (System.Collections.Generic.Dictionary<string, object> file in (System.Collections.Generic.List<object>)index["files"])
+        {
+            string relative = (string)file["path"];
+            string target = Path.Combine(OutDir, "StreamingAssets/Wz/Data", relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(target));
+            File.Copy(Path.Combine(WzAssets.DataRoot, relative), target, true);
+        }
         EditorApplication.Exit(0);
     }
 

@@ -83,7 +83,7 @@ public static class BuildToDevice
         var s = report.summary;
 
         Debug.Log("[Build] 结果=" + s.result +
-                  " 大小=" + (s.totalSize / 1048576f).ToString("0.0") + "MB" +
+                  " APK大小=" + (File.Exists(ApkPath) ? (new FileInfo(ApkPath).Length / 1048576f).ToString("0.0") + "MB" : "未生成") +
                   " 耗时=" + s.totalTime.TotalSeconds.ToString("0") + "s" +
                   " 错误=" + s.totalErrors);
 

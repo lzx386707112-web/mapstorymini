@@ -29,7 +29,7 @@ public sealed class NativeSummon : MonoBehaviour
     float Duration(string name)
     {
         float duration = 0;
-        foreach (Dictionary<string,object> f in (List<object>)animations[name]) duration += Art.Num(f,"delay");
+        foreach (Dictionary<string,object> f in (List<object>)animations[name]) duration += Mathf.Max(.001f, Mathf.Abs(WzAssets.AliasNode((string)f["file"]).Int("delay",100))/1000f);
         return duration;
     }
     void Play(string name)
@@ -41,10 +41,10 @@ public sealed class NativeSummon : MonoBehaviour
     {
         var frames = (List<object>)animations[action];
         var data = (Dictionary<string,object>)frames[frame];
-        var origin = (List<object>)data["origin"];
-        body.sprite = Art.FrameAt((string)data["file"], new Vector2(System.Convert.ToSingle(origin[0]),System.Convert.ToSingle(origin[1])));
+        var native = WzAssets.AliasNode((string)data["file"]);
+        body.sprite = WzAssets.Sprite(native);
         body.flipX = facing > 0;
-        frameUntil = Time.unscaledTime + Mathf.Max(.001f,Art.Num(data,"delay"));
+        frameUntil = Time.unscaledTime + Mathf.Max(.001f, Mathf.Abs(native.Int("delay",100))/1000f);
     }
     void Update()
     {

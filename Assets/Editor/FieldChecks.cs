@@ -8,6 +8,7 @@ using UnityEngine;
 public static class FieldChecks
 {
     static int pass, fail;
+    static readonly Dictionary<int, FieldMap> maps = new Dictionary<int, FieldMap>();
 
     static void Check(bool ok, string what)
     {
@@ -20,22 +21,27 @@ public static class FieldChecks
     {
         pass = fail = 0;
         FieldCatalog.Ensure();
+        maps.Clear();
+        var baseline = (Dictionary<string, object>)MiniJson.Parse(Resources.Load<TextAsset>("Field/FieldMaps").text);
+        foreach (Dictionary<string, object> entry in (List<object>)baseline["maps"])
+        {
+            int id = (int)FieldCatalog.Num(entry, "id");
+            maps[id] = FieldCatalog.GetMap(id);
+        }
         Check(FieldCatalog.Ready, "FieldCatalog 未加载");
         if (!FieldCatalog.Ready) { Debug.LogError("[FieldCheck] 中止"); EditorApplication.Exit(1); return; }
 
         // 原端 String/Map.img 里 streetName=彩虹岛 的地图共 37 张（含该服自建的 4 号图）
-        Check(FieldCatalog.Maps.Count == 37, "地图数量 " + FieldCatalog.Maps.Count + " != 37");
+        Check(maps.Count == 37, "地图数量 " + maps.Count + " != 37");
         Check(FieldCatalog.Mobs.Count == 11, "怪物数量 " + FieldCatalog.Mobs.Count + " != 11");
 
         int totalSpawns = 0, totalPortals = 0, totalFootholds = 0, totalRopes = 0, totalNpcs = 0;
         int danglingTargets = 0, hiddenNpcs = 0;
-        foreach (var kv in FieldCatalog.Maps)
+        foreach (var kv in maps)
         {
             var m = kv.Value;
             string tag = m.id + " " + m.name;
-            Check(m.chunks.Count > 0, tag + " 没有地图主体贴图");
-            foreach (var c in m.chunks)
-                Check(Art.FrameBottom(c.file) != null, tag + " 贴图缺失 " + c.file);
+            Check(WzAssets.FileRoot(WzAssets.MapPath(m.id)) != null, tag + " 缺少原始 IMG");
             Check(m.footholds.Count > 0, tag + " 没有 foothold");
             Check(m.portals.Count > 0, tag + " 没有传送门");
             // 绳梯：y1 是顶端、y2 是底端（地图坐标 y 向下），必须 y2>y1 且不能是全 0。
@@ -51,22 +57,22 @@ public static class FieldChecks
             {
                 if (!p.Warps) continue;
                 if (p.tm == m.id) continue;
-                Check(FieldCatalog.Maps.ContainsKey(p.tm), tag + " 传送门 " + p.name + " 目标地图 " + p.tm + " 不在彩虹岛数据内");
+                Check(maps.ContainsKey(p.tm), tag + " 传送门 " + p.name + " 目标地图 " + p.tm + " 不在彩虹岛数据内");
                 // 原数据里存在悬空的 tn（例：40001 west00 → 40000 east00，而 40000 只有 out00）。
                 // 原客户端/服务端此时回退到目标图 portal 列表首条（Character.changeMap → getPortal(0)），
                 // 因此只统计、不判失败，但必须保证目标图至少有一个传送门可落地。
-                if (FieldCatalog.Maps.ContainsKey(p.tm) && !string.IsNullOrEmpty(p.targetName) &&
-                    FieldCatalog.Maps[p.tm].Portal(p.targetName) == null)
+                if (maps.ContainsKey(p.tm) && !string.IsNullOrEmpty(p.targetName) &&
+                    maps[p.tm].Portal(p.targetName) == null)
                 {
                     danglingTargets++;
-                    Check(FieldCatalog.Maps[p.tm].FirstPortal != null,
+                    Check(maps[p.tm].FirstPortal != null,
                           tag + " 传送门 " + p.name + " 目标点悬空且目标图无可落地传送门");
                 }
             }
             foreach (var n in m.npcs)
             {
                 if (n.hide != 0) { hiddenNpcs++; continue; }      // hide=1 原客户端不绘制
-                Check(n.art != null, tag + " NPC " + n.id + " 没有素材");
+                Check(WzAssets.FileRoot("Npc/" + n.id.ToString("D7") + ".img") != null, tag + " NPC " + n.id + " 没有原始 IMG");
             }
 
             totalSpawns += m.spawns.Count;
@@ -77,14 +83,14 @@ public static class FieldChecks
         }
 
         // 与原端抽样核对（数值由 tools/wz_field.py 从 WZ 直接读取）
-        var town = FieldCatalog.Maps[1000000];
+        var town = maps[1000000];
         Check(town.footholds.Count == 79, "彩虹村 foothold 应为 79，实际 " + town.footholds.Count);
         Check(town.ropes.Count == 2, "彩虹村 绳梯应为 2，实际 " + town.ropes.Count);
         Check(town.portals.Count == 13, "彩虹村 传送门应为 13，实际 " + town.portals.Count);
         Check(town.npcs.Count == 4, "彩虹村 NPC 应为 4，实际 " + town.npcs.Count);
-        Check(FieldCatalog.Maps[40001].spawns.Count == 27, "蜗牛打猎场Ⅱ 刷怪点应为 27");
-        Check(FieldCatalog.Maps[1010004].spawns.Count == 47, "蜗牛花园 刷怪点应为 47");
-        Check(FieldCatalog.Maps[60000].vr[2] - FieldCatalog.Maps[60000].vr[0] == 4680, "南港 VR 宽度应为 4680");
+        Check(maps[40001].spawns.Count == 27, "蜗牛打猎场Ⅱ 刷怪点应为 27");
+        Check(maps[1010004].spawns.Count == 47, "蜗牛花园 刷怪点应为 47");
+        Check(maps[60000].vr[2] - maps[60000].vr[0] == 4680, "南港 VR 宽度应为 4680");
 
         // —— 怪物行走速度 ——
         // Mob.wz/info/speed 是「相对 100% 的百分比偏移」；100% 取角色 walkSpeed（125px/s），
@@ -102,7 +108,7 @@ public static class FieldChecks
         // —— 普攻的垂直判定 ——
         // 用户截图：人物站在下层，能把最上层平台的怪打下来。旧版只比 |dx|，等于完全无视层高。
         int crossTier = 0;
-        foreach (var kv in FieldCatalog.Maps)
+        foreach (var kv in maps)
         {
             var m2 = kv.Value;
             for (int i = 0; i < m2.spawns.Count; i++)
@@ -134,7 +140,7 @@ public static class FieldChecks
             Check(f.delay > 0f, "传送门帧延时非法 " + f.file);
         }
         int visiblePortals = 0;
-        foreach (var kv in FieldCatalog.Maps)
+        foreach (var kv in maps)
             foreach (var p in kv.Value.portals)
             {
                 if (p.type != 2) continue;
@@ -153,7 +159,7 @@ public static class FieldChecks
         // 之前用「高度差 ≤ 0.6u 才算支撑」，台阶高过 24px 就判成踏空，下面又没段接住时角色会掉出地图。
         // 这里验证：凡是数据上端点相接的两条段，跟随必须成功。
         int joinedEnds = 0, followFails = 0, ropeNoFoot = 0, ropeNoTop = 0, ropeCount = 0;
-        foreach (var kv in FieldCatalog.Maps)
+        foreach (var kv in maps)
         {
             var m = kv.Value;
             var ts = new List<Vector4>();
@@ -258,15 +264,15 @@ public static class FieldChecks
         queue.Enqueue(1000000);
         while (queue.Count > 0)
         {
-            var cur = FieldCatalog.Maps[queue.Dequeue()];
+            var cur = maps[queue.Dequeue()];
             foreach (var p in cur.portals)
             {
                 if (!p.Warps || p.tm == cur.id) continue;
-                if (!FieldCatalog.Maps.ContainsKey(p.tm)) continue;
+                if (!maps.ContainsKey(p.tm)) continue;
                 if (seen.Add(p.tm)) queue.Enqueue(p.tm);
             }
         }
-        Debug.Log("[FieldCheck] 地图 " + FieldCatalog.Maps.Count + " 张（彩虹村可步行到达 " + seen.Count +
+        Debug.Log("[FieldCheck] 地图 " + maps.Count + " 张（彩虹村可步行到达 " + seen.Count +
                   " 张）；刷怪点 " + totalSpawns + "，传送门 " + totalPortals +
                   "，foothold " + totalFootholds + "，绳梯 " + totalRopes + "，NPC " + totalNpcs +
                   "（隐藏 " + hiddenNpcs + "）；掉落行 " + dropRows + "（chance=0 共 " + zeroChance +

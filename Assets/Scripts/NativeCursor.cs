@@ -14,8 +14,20 @@ public sealed class NativeCursor : MonoBehaviour
 
     void Awake()
     {
-        var data = Resources.Load<TextAsset>("Art/ui/cursor/manifest");
-        if (data != null) manifest = JsonUtility.FromJson<Manifest>(data.text);
+        var states = new System.Collections.Generic.List<State>();
+        foreach (var node in WzAssets.Node("UI/Basic.img/Cursor").Children)
+        {
+            if (!int.TryParse(node.Name, out var id)) continue;
+            var frames = new System.Collections.Generic.List<Frame>();
+            foreach (var frame in WzAssets.Frames(node))
+            {
+                var n = frame.Resolve(); var origin = WzAssets.Origin(n);
+                frames.Add(new Frame { file = "wz://UI/Basic.img/Cursor/" + id + "/" + frame.Name,
+                    x = (int)origin.x, y = (int)origin.y, delay = Math.Abs(n.Int("delay", 100)) });
+            }
+            states.Add(new State { id = id, frames = frames.ToArray() });
+        }
+        manifest = new Manifest { states = states.ToArray() };
         wasVisible = Cursor.visible;
     }
 
@@ -49,7 +61,7 @@ public sealed class NativeCursor : MonoBehaviour
             elapsed -= Mathf.Max(1, f.delay);
             if (elapsed < 0) break;
         }
-        var texture = Art.Tex("ui/cursor/" + frame.file);
+        var texture = Art.Tex(frame.file);
         if (texture == null) return;
         var matrix = GUI.matrix;
         var color = GUI.color;
