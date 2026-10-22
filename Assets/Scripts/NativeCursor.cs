@@ -11,6 +11,7 @@ public sealed class NativeCursor : MonoBehaviour
     int state;
     float since;
     bool wasVisible;
+    string activeFrame;
 
     void Awake()
     {
@@ -47,7 +48,11 @@ public sealed class NativeCursor : MonoBehaviour
             if (selected == null) return;
             var frame = CurrentFrame(selected);
             var texture = Art.Tex(frame.file);
-            if (texture != null) Cursor.SetCursor(texture, new Vector2(Mathf.Clamp(frame.x, 0, texture.width - 1), Mathf.Clamp(frame.y, 0, texture.height - 1)), CursorMode.ForceSoftware);
+            if (texture != null && activeFrame != frame.file)
+            {
+                Cursor.SetCursor(texture, new Vector2(Mathf.Clamp(frame.x, 0, texture.width - 1), Mathf.Clamp(frame.y, 0, texture.height - 1)), CursorMode.ForceSoftware);
+                activeFrame = frame.file;
+            }
         }
     }
 

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 KINDS = {"crush": "Dispel", "rage": "Buff", "magnet": "Pull", "libra": "Summon"}
 
 def export():
-    manifest = json.loads((ROOT / "Assets/Resources/Art/manifest.json").read_text())
+    manifest = json.loads((ROOT / "Assets/Resources/NativePresentation.json").read_text())
     manifest["skills"]["illusion_slash"] = {"id": "1121021"}
     manifest["skills"]["illusion_explosion"] = {"id": "1121022"}
     skills = []

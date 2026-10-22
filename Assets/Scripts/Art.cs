@@ -276,11 +276,10 @@ public static class Art
         if (tried) return;
         tried = true;
 
-        var ta = Resources.Load<TextAsset>("Art/manifest");
+        var ta = Resources.Load<TextAsset>("NativePresentation");
         if (ta == null)
         {
-            Debug.LogWarning("[Art] 找不到 Art/manifest，继续用纯色方块");
-            return;
+            throw new System.IO.InvalidDataException("Missing NativePresentation configuration");
         }
 
         var root = MiniJson.Parse(ta.text) as Dictionary<string, object>;

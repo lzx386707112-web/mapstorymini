@@ -1,9 +1,6 @@
 using UnityEngine;
 
-// 底部状态栏：槽体与等级数字来自客户端WZ。
-// 左侧身份区按用户提供的参考图复原银色边框、固定等级起点和两行浅灰文字；
-// identity_plate 为本地重建外框，LV. 字样仍取原版资源。
-// HP/MP/EXP槽宽、填充、刻度与数值位置保持不变。
+// Original StatusBar IMG canvas crops and native numeric glyphs; dynamic identity text is rendered at runtime.
 public static class StatusBar
 {
     // —— 原图像素常量 ——

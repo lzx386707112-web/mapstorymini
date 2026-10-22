@@ -23,7 +23,7 @@ public static class SkillWindow
 {
     public static bool Visible;
 
-    static float S => UiKit.H / 600f;
+    static float S => BottomBar.S;
     static Vector2 pos = new Vector2(-1f, -1f);
     static int tab;
     static int selected;
@@ -36,7 +36,7 @@ public static class SkillWindow
     const int RowX = 7, RowY = 99, RowStep = 40, RowW = 141, RowH = 35, Rows = 4;
     const int RowHitW = 154, RowHitH = 38;
     const int IconOffX = 3, IconOffY = 3, IconSize = 32;
-    const int SpUpX = 149, SpUpY = 12, SpUpSize = 12;
+    const int SpUpX = 131, SpUpY = 20, SpUpSize = 12;
 
     const int FooterX = 61, FooterY = 265, FooterW = 51, FooterH = 16;
 
@@ -149,6 +149,7 @@ public static class SkillWindow
         HandleHints(win, list, hover);
 
         DrawBackground(win);
+        if (NativeUi.Button(At(win, 156, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
         DrawTabs(win, tabs);
         DrawHeader(win, list, hover);
         DrawRows(win, list, hover);
@@ -223,16 +224,11 @@ public static class SkillWindow
     // —— 顶部选中技能名 ——
     static void DrawHeader(Rect win, List<int> list, int hover)
     {
-        int index = hover >= 0 ? hover : selected;
-        if (index < 0 || index >= list.Count) return;
-        var d = SkillBook.Get(list[index]);
-        if (d == null || string.IsNullOrEmpty(d.name)) return;
-
-        var rect = At(win, 7f, 61f, 161f, 19f);
-        var shadow = Style(11f, new Color(0f, 0f, 0f, 0.55f), TextAnchor.MiddleCenter, false, true);
-        var main = Style(11f, HeaderText, TextAnchor.MiddleCenter, false, true);
-        GUI.Label(new Rect(rect.x + S, rect.y + S, rect.width, rect.height), d.name, shadow);
-        GUI.Label(rect, d.name, main);
+        // CUISkill::Draw 0x008AC738 draws the job name at (45,66), not the selected skill.
+        var tabs = Tabs;
+        if (tab < 0 || tab >= tabs.Count) return;
+        var name = tabs[tab].TryGetValue("name", out var value) ? value as string : "";
+        GUI.Label(At(win, 45, 61, 120, 19), name, Style(11, HeaderText, TextAnchor.MiddleLeft, false, true));
     }
 
     // —— 列表 ——
@@ -358,8 +354,8 @@ public static class SkillWindow
             int lv = SkillProgress.LevelOf(d.id);
             var nameStyle = Style(10f, lv > 0 ? NameOn : NameOff, TextAnchor.MiddleLeft, false, true);
             var lvStyle = Style(9f, LevelText, TextAnchor.MiddleLeft, false, true);
-            GUI.Label(At(win, RowX + 38f, y + 1f, 104f, 16f), d.name, nameStyle);
-            GUI.Label(At(win, RowX + 38f, y + 18f, 104f, 15f), "Lv. " + lv, lvStyle);
+            GUI.Label(At(win, 47f, y + 1f, 82f, 16f), d.name, nameStyle);
+            GUI.Label(At(win, 47f, y + 19f, 82f, 15f), "Lv. " + lv, lvStyle);
 
             var plusRect = At(win, SpUpX, y + SpUpY, SpUpSize, SpUpSize);
             bool can = SkillProgress.CanRaise(d);

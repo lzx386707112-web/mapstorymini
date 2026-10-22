@@ -28,12 +28,13 @@ public class NativeUiReviewProbe : MonoBehaviour
         yield return new WaitForSecondsRealtime(2);
         if (GameLoop.I.state != GameLoop.GameState.Playing || Profile.cls != "beginner" || FindObjectOfType<Lobby>() != null)
         { Debug.LogError("[NativeUiReview] boot failed"); EditorApplication.Exit(1); yield break; }
-        foreach (string path in new[] { "UI/UIWindow.img/Stat/backgrnd", "UI/UIWindow.img/Equip/backgrnd", "UI/UIWindow.img/Item/backgrnd", "UI/Basic.img/Cursor/0/0", "Skill/000.img/skill/0001000/icon" })
+        foreach (string path in new[] { "UI/UIWindow.img/Stat/backgrnd", "UI/UIWindow.img/Equip/backgrnd", "UI/UIWindow.img/Item/backgrnd", "UI/Basic.img/Cursor/0/0", "Skill/000.img/skill/0001000/icon", "UI/UIWindow.img/Stat/BtApUp/disabled/0", "UI/UIWindow.img/Stat/BtDetail/normal/0", "UI/Basic.img/BtClose/normal/0", "UI/UIWindow.img/Skill/BtSpUp/normal/0" })
             if (Art.Tex("wz://" + path) == null) { Debug.LogError("[NativeUiReview] missing " + path); EditorApplication.Exit(1); yield break; }
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 6; i++)
         {
             StatWindow.Visible = i == 1; EquipWindow.Visible = i == 2; SkillWindow.Visible = i == 3;
-            if (i == 4) KeyConfigWindow.Toggle();
+            if (i == 4 || i == 5) KeyConfigWindow.Toggle();
+            InvenWindow.Visible = i == 5;
             yield return new WaitForSecondsRealtime(.5f);
             ScreenCapture.CaptureScreenshot("/tmp/mapledash-native-ui-" + i + ".png");
             yield return new WaitForSecondsRealtime(.5f);

@@ -104,7 +104,7 @@ public static class NativeAssetChecks
             var texture = WzAssets.Texture(pair.Key);
             Require(texture != null, pair.Key + " texture"); aliases++;
         }
-        var manifest = (System.Collections.Generic.Dictionary<string, object>)MiniJson.Parse(Resources.Load<TextAsset>("Art/manifest").text);
+        var manifest = (System.Collections.Generic.Dictionary<string, object>)MiniJson.Parse(File.ReadAllText("Assets/Editor/Fixtures/LegacyArtManifest.json"));
         foreach (string kind in new[] { "chars", "mobs" })
             foreach (var actor in (System.Collections.Generic.Dictionary<string, object>)manifest[kind])
             {

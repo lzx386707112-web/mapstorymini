@@ -9,7 +9,7 @@
 | `tools/wzmap.py` | 原始 IMG 读取、tile/obj/背景解码、地图栅格合成；DATA/WZPY 当前为本机路径 |
 | `tools/wz_stage.py` | STAGES 配置、全图 foothold/ladderRope、VR 和独立背景导出 |
 | `tools/wz_actions.py` | 职业/发型角色合成、原点还原、动作与 Physics 导出 |
-| `Assets/Resources/Art/manifest.json` | stages、角色帧/轴心、动作与素材索引 |
+| `Assets/Resources/NativePresentation.json` | stages、角色帧/轴心、动作与素材索引 |
 | `Assets/Scripts/Art.cs` | manifest 解析、StageInfo 世界坐标、ClimbLine、Sprite 创建 |
 | `Assets/Scripts/Backdrop.cs` | 地图主体和独立背景运行时渲染 |
 | `Assets/Scripts/CameraRig.cs` | 全屏、双轴跟随和原地图 VR 约束 |

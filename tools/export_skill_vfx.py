@@ -28,7 +28,7 @@ def scalar(n):
     return result
 
 def export():
-    manifest=json.loads((OUT/'Art/manifest.json').read_text())
+    manifest=json.loads((OUT/'NativePresentation.json').read_text())
     slots={k:int(v['id']) for k,v in manifest['skills'].items()}
     slots.update(illusion_slash=1121021,illusion_explosion=1121022)
     result=[]; audit=[]

@@ -72,30 +72,14 @@ public class EnemyUnit : MonoBehaviour
 
     void BuildVisual()
     {
-        if (body == null)
-        {
-            body = gameObject.GetComponent<SpriteRenderer>();
-            if (body == null)
-                body = SpriteFactory.Make("EnemyBody", transform, new Vector2(0.78f, 1.15f),
-                                          new Color(0.62f, 0.36f, 0.72f), 250);
-        }
-        body.color = elite ? new Color(0.85f, 0.25f, 0.3f) : tint;
+        var placeholder = gameObject.GetComponent<SpriteRenderer>();
+        if (placeholder != null) placeholder.enabled = false;
+        vis = Art.Has("mobs", artKey) ? Art.Attach(transform, "mobs", artKey, "stand", 0f) : null;
+        if (vis == null) throw new System.IO.InvalidDataException("Missing original monster IMG: " + artKey);
+        body = vis.Renderer;
         body.sortingOrder = 300 - lane * 12;
-
-        // 有素材就换真怪：方块只作为没有素材时的兜底
-        if (Art.Has("mobs", artKey))
-        {
-            vis = Art.Attach(transform, "mobs", artKey, "stand", 0f);
-            if (vis != null)
-            {
-                var vr = vis.Renderer;
-                vr.sortingOrder = 300 - lane * 12;
-                vr.color = elite ? new Color(1f, 0.82f, 0.82f) : Color.white;
-                if (body != null && body != vr) body.enabled = false;
-                body = vr;
-                visHeight = Mathf.Max(0.6f, body.bounds.size.y);
-            }
-        }
+        body.color = Color.white;
+        visHeight = Mathf.Max(0.6f, body.bounds.size.y);
 
         // 血条：底 + 条，用 scale 表现比例，不做图集。
         // 注意两者必须挂在同一个 scale=1 的空节点下，

@@ -88,6 +88,7 @@ public class GameHUD : MonoBehaviour
 
     void OnGUI()
     {
+        GUI.depth = 0;
         EnsureStyles();
         UiKit.Begin();
         _mouseGui = UiKit.MouseGui();

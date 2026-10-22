@@ -39,6 +39,7 @@ public static class StatWindow
 {
     public static bool Visible;
     static Rect rect = new Rect(220, 120, 260, 250);
+    static bool detail;
     public static void Toggle() { Visible = !Visible; SkillWindow.Visible = false; }
 
     public static void Draw()
@@ -49,11 +50,32 @@ public static class StatWindow
         float scale = BottomBar.S;
         var attrs = Profile.Attributes;
         string[] values = { Profile.playerName, "新手", Profile.level.ToString(), "", Mathf.CeilToInt(p.hp) + " / " + Mathf.CeilToInt(p.hpMax), Mathf.CeilToInt(p.mp) + " / " + Mathf.CeilToInt(p.mpMax), Profile.experience.ToString(), "0" };
+        int[] textY = { 33, 55, 79, 96, 115, 133, 151, 169 };
         for (int i = 0; i < values.Length; i++)
-            WindowShell.Label(new Rect(r.x + 59 * scale, r.y + (31 + i * 19.5f) * scale, 140 * scale, 18 * scale), values[i], Mathf.RoundToInt(11 * scale));
+            WindowShell.Label(new Rect(r.x + 61 * scale, r.y + textY[i] * scale, 140 * scale, 18 * scale), values[i], Mathf.RoundToInt(11 * scale));
         WindowShell.Label(new Rect(r.x + 64 * scale, r.y + 213 * scale, 80 * scale, 18 * scale), Profile.ap.ToString());
+        // CUIStat::OnCreate / SetButtons: original button locations, including title controls.
+        int[] upY = { 117, 135, 247, 265, 283, 301 };
+        foreach (int y in upY)
+        {
+            var disabled = Art.Tex("wz://UI/UIWindow.img/Stat/BtApUp/disabled/0");
+            if (disabled != null) GUI.DrawTexture(new Rect(r.x + 153 * scale, r.y + y * scale, disabled.width * scale, disabled.height * scale), disabled);
+        }
+        if (NativeUi.Button(new Rect(r.x + 124 * scale, r.y + 324 * scale, 75 * scale, 18 * scale), "UI/UIWindow.img/Stat/BtDetail")) detail = !detail;
+        if (detail)
+        {
+            var bg = Art.Tex("wz://UI/UIWindow.img/Stat/backgrnd2");
+            float dx = r.xMax + 4 * scale;
+            if (dx + bg.width * scale > UiKit.W) dx = Mathf.Max(0, r.x - (bg.width + 4) * scale);
+            var dr = new Rect(dx, r.y, bg.width * scale, bg.height * scale);
+            GUI.DrawTexture(dr, bg);
+            int watk, matk;
+            var combat = attrs.WithWeapon(WeaponDefs.Get(Profile.equipWeapon), 0, out watk, out matk);
+            string[] lines = { watk.ToString(), combat.weaponDefense.ToString(), matk.ToString(), combat.magicDefense.ToString(), combat.accuracy.ToString(), combat.avoidability.ToString() };
+            for (int i = 0; i < lines.Length; i++) WindowShell.Label(new Rect(dr.x + 84 * scale, dr.y + (7 + i * 18) * scale, 125 * scale, 16 * scale), lines[i]);
+        }
         int[] stats = { attrs.str, attrs.dex, attrs.intelligence, attrs.luk };
-        for (int i = 0; i < stats.Length; i++) WindowShell.Label(new Rect(r.x + 60 * scale, r.y + (244 + i * 19) * scale, 130 * scale, 18 * scale), stats[i].ToString());
+        for (int i = 0; i < stats.Length; i++) WindowShell.Label(new Rect(r.x + 61 * scale, r.y + (244 + i * 18) * scale, 130 * scale, 18 * scale), stats[i].ToString());
     }
 }
 

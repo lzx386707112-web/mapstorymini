@@ -362,15 +362,7 @@ public class PlayerCtrl : MonoBehaviour
             }
         }
 
-        // 兜底方块：形状放在子节点上，根节点保持 scale=1
-        var go = new GameObject("Body");
-        go.transform.SetParent(transform, false);
-        go.transform.localScale = new Vector3(0.82f, 1.5f, 1f);
-        var r = go.AddComponent<SpriteRenderer>();
-        r.sprite = SpriteFactory.Bottom();
-        r.color = new Color(0.95f, 0.72f, 0.35f);
-        r.sortingOrder = 300;
-        sr = r;
+        throw new System.IO.InvalidDataException("Missing original character IMG recipe: " + artKey);
     }
 
     // 武器属性 + 装扮覆盖层：每次（重新）进关都会按当前 Profile 重建
@@ -392,35 +384,14 @@ public class PlayerCtrl : MonoBehaviour
     // 和角色帧同尺寸同轴心，挂在素材节点下 → 翻转、缩放、换帧全部自动跟随。
     void BuildCosmetics()
     {
-        if (vis == null) return;
-        var host = vis.transform;
-
-        if (coatSr == null)
-        {
-            var gc = new GameObject("CoatDye");
-            gc.transform.SetParent(host, false);
-            coatSr = gc.AddComponent<SpriteRenderer>();
-            coatSr.sortingOrder = 301;
-        }
-
-        dyedFrame = null;
-        ApplyDye();
+        // Preserve original equipment pixels; old local dye overlays are not client equipment.
+        if (coatSr != null) coatSr.enabled = false;
     }
 
     // 只在动画换帧时重染（换帧才需要新贴图，缓存命中后几乎零开销）
     void ApplyDye()
     {
-        if (coatSr == null) return;
-        var src = sr != null ? sr.sprite : null;
-        if (src == null) return;
-        if (dyedFrame == src) return;
-        dyedFrame = src;
-
-        // 服饰：把角色原画的胸腹段保明暗换色（跳过皮肤），叠在角色之上
-        var cs = CosmeticFactory.DyeCoat(src, CosmeticFactory.OutfitColor(Profile.outfit));
-        if (coatSr.sprite != cs) coatSr.sprite = cs;
-        coatSr.enabled = cs != null && Profile.outfit != "none";
-        coatSr.flipX = sr.flipX;
+        if (coatSr != null) coatSr.enabled = false;
     }
 
     void Update()

@@ -189,7 +189,7 @@ public sealed class FieldDirector : MonoBehaviour
 
         var go = new GameObject("Mob_" + p.def.mob);
         var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = SpriteFactory.Bottom();
+        sr.enabled = false;
         var e = go.AddComponent<EnemyUnit>();
 
         e.artKey = string.IsNullOrEmpty(def.artKey) ? def.id.ToString() : def.artKey;
