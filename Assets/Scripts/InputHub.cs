@@ -170,7 +170,30 @@ public static class InputHub
     static readonly HashSet<KeyCode> virtualPressed = new HashSet<KeyCode>();
     static readonly HashSet<KeyCode> virtualReleaseNext = new HashSet<KeyCode>();
 
+    // 虚拟键直接按「动作」注入：技能格 1-4 这类动作默认没绑键盘键（KeyMap.Of = None），
+    // 只发 KeyCode 会变成空操作。屏上按钮因此有第二条通道。
+    static readonly HashSet<GameAction> virtualActionsHeld = new HashSet<GameAction>();
+    static readonly HashSet<GameAction> virtualActionsPressed = new HashSet<GameAction>();
+
     public static bool Enabled = true;
+
+    static Vector2 virtualAxis;
+    static bool virtualAxisActive;
+
+    // 屏上虚拟摇杆给模拟量（VirtualControls 每帧调用）；
+    // 有模拟量时 AxisX/Y 直接采用，盖过数字方向键——
+    // 游戏逻辑仍然只读 AxisX/Y，一层都不知道摇杆的存在。
+    public static void SetVirtualAxis(float x, float y)
+    {
+        virtualAxis = new Vector2(Mathf.Clamp(x, -1f, 1f), Mathf.Clamp(y, -1f, 1f));
+        virtualAxisActive = virtualAxis.sqrMagnitude > 0.0001f;
+    }
+
+    public static void ClearVirtualAxis()
+    {
+        virtualAxis = Vector2.zero;
+        virtualAxisActive = false;
+    }
 
     // 屏幕快捷格通过虚拟键接口发送按下/抬起；这里只记录"物理键码"，
     // 于是重绑一个虚拟键 = 换一个 KeyCode，游戏逻辑一行都不用改。
@@ -192,6 +215,7 @@ public static class InputHub
     public static bool Held(GameAction a)
     {
         if (!Enabled) return false;
+        if (virtualActionsHeld.Contains(a)) return true;
         var k = KeyMap.Of(a);
         if (k == KeyCode.None) return false;
         var other = NativeKeyLayout.OtherModifier(k);
@@ -201,16 +225,31 @@ public static class InputHub
     public static bool Pressed(GameAction a)
     {
         if (!Enabled) return false;
+        if (virtualActionsPressed.Contains(a)) return true;
         var k = KeyMap.Of(a);
         if (k == KeyCode.None) return false;
         var other = NativeKeyLayout.OtherModifier(k);
         return Input.GetKeyDown(k) || other != KeyCode.None && Input.GetKeyDown(other) || virtualPressed.Contains(k);
     }
 
+    // 屏上按钮绑的是「动作」而不是某个键时走这里（技能格、装备、背包…都一样）
+    public static void SetVirtualAction(GameAction a, bool down)
+    {
+        if (down)
+        {
+            if (virtualActionsHeld.Add(a)) virtualActionsPressed.Add(a);
+        }
+        else
+        {
+            virtualActionsHeld.Remove(a);
+        }
+    }
+
     public static float AxisX
     {
         get
         {
+            if (virtualAxisActive) return virtualAxis.x;
             float v = 0f;
             if (Held(GameAction.Left)) v -= 1f;
             if (Held(GameAction.Right)) v += 1f;
@@ -222,6 +261,7 @@ public static class InputHub
     {
         get
         {
+            if (virtualAxisActive) return virtualAxis.y;
             float v = 0f;
             if (Held(GameAction.Down)) v -= 1f;
             if (Held(GameAction.Up)) v += 1f;
@@ -234,6 +274,7 @@ public static class InputHub
     public static void EndFrame()
     {
         virtualPressed.Clear();
+        virtualActionsPressed.Clear();
         foreach (var k in virtualReleaseNext) virtualHeld.Remove(k);
         virtualReleaseNext.Clear();
     }
@@ -243,6 +284,9 @@ public static class InputHub
         virtualHeld.Clear();
         virtualPressed.Clear();
         virtualReleaseNext.Clear();
+        virtualActionsHeld.Clear();
+        virtualActionsPressed.Clear();
+        ClearVirtualAxis();
     }
 }
 
@@ -251,6 +295,11 @@ public static class InputHub
 public static class Pointer
 {
     public static Vector2 Pos;
+#if UNITY_EDITOR
+    public static Vector2? TestPos;
+    public static bool TestClick;
+    static bool testHeld;
+#endif
     public static bool Down;      // 本帧按住
     public static bool Pressed;   // 本帧按下（边沿）
     public static bool Released;  // 本帧抬起（边沿）
@@ -265,7 +314,8 @@ public static class Pointer
     static int frame = -1;
 
     public static bool UsesVirtualCursor { get; private set; }
-    static bool touchGesture, touchMoved, touchSecondary, touchHold;
+    static bool touchGesture, touchMoved, touchSecondary, touchHold, touchOnControl;
+    static bool mouseOnControl;   // 鼠标按下点落在虚拟控件上：整段手势不发鼠标事件
     static int touchId;
     static float touchSince;
     static Vector2 touchStart;
@@ -283,7 +333,8 @@ public static class Pointer
         }
         if (!Application.isFocused)
         {
-            touchGesture = touchHold = false;
+            touchGesture = touchHold = touchOnControl = false;
+            mouseOnControl = false;
             return;
         }
         if (Input.touchCount > 0)
@@ -299,6 +350,19 @@ public static class Pointer
                 touchStart = first.position;
                 touchSince = Time.unscaledTime;
                 touchMoved = touchSecondary = touchHold = false;
+                // 手指按在虚拟按键/摇杆上：整段手势归虚拟层，光标不跟随、也不产生点击
+                touchOnControl = VirtualControls.HitsAtScreen(first.position);
+            }
+            if (touchOnControl)
+            {
+                bool any = false;
+                for (int i = 0; i < Input.touchCount; i++)
+                {
+                    var tt = Input.GetTouch(i);
+                    if (tt.phase != TouchPhase.Ended && tt.phase != TouchPhase.Canceled) any = true;
+                }
+                if (!any) { touchGesture = false; touchOnControl = false; }
+                return;
             }
             int active = 0;
             bool cancelled = false;
@@ -317,7 +381,7 @@ public static class Pointer
             if (Input.touchCount >= 2 && !touchHold) touchSecondary = true;
             if (cancelled)
             {
-                touchGesture = touchHold = false;
+                touchGesture = touchHold = touchOnControl = false;
                 return;
             }
             if (active == 0)
@@ -347,7 +411,13 @@ public static class Pointer
             {
                 Pos = new Vector2(Input.mousePosition.x / UiKit.Scale,
                                   (Screen.height - Input.mousePosition.y) / UiKit.Scale);
-                left = Input.GetMouseButton(0);
+                // 鼠标按下的位置落在虚拟按键上：这次按下到抬起整段都归虚拟层，
+                // 不产生任何鼠标左键事件（HUD 不响应、光标也不做点击动画）。
+                bool raw = Input.GetMouseButton(0);
+                if (!raw) mouseOnControl = false;
+                else if (!mouseOnControl && VirtualControls.HitsAtScreen(Input.mousePosition))
+                    mouseOnControl = true;
+                left = raw && !mouseOnControl;
                 right = Input.GetMouseButton(1);
             }
         }
@@ -393,6 +463,21 @@ public static class Pointer
             Dragging = false;
             lastClickTime = -10f;
         }
+
+#if UNITY_EDITOR
+        // UI 截图自动化：编辑器脚本把指针钉在指定位置，只保留悬停、不产生点击
+        if (TestPos.HasValue)
+        {
+            Pos = TestPos.Value;
+            bool click = TestClick;
+            Pressed = click && !testHeld;
+            Released = !click && testHeld;
+            Down = click;
+            testHeld = click;
+            RightDown = RightPressed = RightReleased = false;
+            Clicked = DoubleClicked = DragStarted = DragEnded = false;
+        }
+#endif
     }
 }
 
@@ -419,6 +504,10 @@ public class InputBridge : MonoBehaviour
         UiKit.RefreshMetrics();
         Pointer.Tick();
 
+        // 屏上虚拟按键（摇杆/十字/按钮）：先把触摸翻译成注入，
+        // 后面读 AxisX/Pressed 时已经包含虚拟键的量。
+        VirtualControls.Tick(playing && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible);
+
         if (playing)
         {
             TouchInput.MoveH = InputHub.AxisX;
@@ -431,7 +520,7 @@ public class InputBridge : MonoBehaviour
             TouchInput.MoveV = 0f;
         }
 
-        if (playing && !KeyConfigWindow.Visible)
+        if (playing && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible)
         {
             if (InputHub.Pressed(GameAction.Equip)) EquipWindow.Toggle();
             if (InputHub.Pressed(GameAction.Inven)) InvenWindow.Toggle();
@@ -444,7 +533,7 @@ public class InputBridge : MonoBehaviour
             if (InputHub.Pressed(GameAction.Shortcut)) ShortcutWindow.Toggle();
             if (InputHub.Pressed(GameAction.Help)) HelpWindow.Toggle();
         }
-        if (KeyConfigWindow.Visible)
+        if (KeyConfigWindow.Visible || VirtualControlsEditor.Visible)
         {
             TouchInput.MoveH = TouchInput.MoveV = 0f;
             TouchInput.TakeJump();

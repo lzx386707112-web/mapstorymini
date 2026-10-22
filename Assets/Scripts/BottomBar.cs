@@ -148,7 +148,7 @@ public static class BottomBar
             string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
             var t = T(keys[i] + "_" + state) ?? T(keys[i] + "_normal");
             if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
-            if (!KeyConfigWindow.Visible && Event.current.type == EventType.Repaint && Pointer.Released && hover) PressBig(i);
+            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) PressBig(i);
         }
     }
 
@@ -173,7 +173,7 @@ public static class BottomBar
             string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
             var t = T(keys[i] + "_" + state) ?? T(keys[i] + "_normal");
             if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
-            if (!KeyConfigWindow.Visible && Event.current.type == EventType.Repaint && Pointer.Released && hover) { PressSmall(i); }
+            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) { PressSmall(i); }
         }
     }
 
@@ -235,9 +235,9 @@ public static class BottomBar
                 var attack = action.HasValue ? KeyConfigWindow.Icon(action.Value) : null;
                 if (attack != null) GUI.DrawTexture(r, attack, ScaleMode.ScaleToFit);
             }
-            if (!KeyConfigWindow.Visible && Event.current.type == EventType.Repaint && Pointer.RightPressed && r.Contains(Pointer.Pos))
+            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.RightPressed && r.Contains(Pointer.Pos))
                 { if (skillSlot >= 0) QuickSlots.Clear(skillSlot); }
-            if (!KeyConfigWindow.Visible && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
+            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
             {
                 if (id > 0) QuickSlots.Cast(skillSlot);
                 else if (key != KeyCode.None && key == KeyMap.Of(GameAction.Attack)) GameLoop.I.player.RequestAttack();

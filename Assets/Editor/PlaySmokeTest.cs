@@ -22,6 +22,8 @@ public static class PlaySmokeTest
     const string K_RUNPLAN = "PlaySmoke.runPlan";
     const string K_CLIMBALL = "PlaySmoke.climbAll";
     const string K_WARP   = "PlaySmoke.warp";
+    const string K_PROBE  = "PlaySmoke.uiProbe";
+    const string K_CLICKAT = "PlaySmoke.uiClickAt";
 
     static int climbIdx, climbOk, climbFail, climbSkip, climbPhase;
     static int climbMapIdx;
@@ -56,6 +58,15 @@ public static class PlaySmokeTest
         EditorApplication.playModeStateChanged += st =>
         {
             Debug.Log("[PlaySmoke] 播放状态 → " + st);
+            // 有图形界面时域重载可能吃掉好几秒，计时从真正进入 Play 重新起算
+            if (st == PlayModeStateChange.EnteredPlayMode && EditorPrefs.GetBool(K_RUN, false))
+            {
+                EditorPrefs.SetString(K_T0,
+                    EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture));
+                nextLog = 0;
+                nextShot = 2.0;
+                nextCast = 2.5;
+            }
         };
     }
 
@@ -126,6 +137,10 @@ public static class PlaySmokeTest
             if (args[i] == "-smokeClimbAll") EditorPrefs.SetBool(K_CLIMBALL, args[i + 1] != "0");
             // 换图渐变验证：站到第一个可见传送门上按 ↑，采样黑幕 alpha 与换图时机
             if (args[i] == "-smokeWarp") EditorPrefs.SetBool(K_WARP, args[i + 1] != "0");
+            // UI 悬停探针：把虚拟指针钉在 "x,y"（960x720 逻辑坐标），失焦跑截图时用来验 tooltip/提示
+            if (args[i] == "-smokeUiProbe") EditorPrefs.SetString(K_PROBE, args[i + 1]);
+            // 进入 Play 多少秒后在探针位置按一下左键（验证加点/页签）
+            if (args[i] == "-smokeUiClickAt") EditorPrefs.SetFloat(K_CLICKAT, float.Parse(args[i + 1], CultureInfo.InvariantCulture));
             // UI 验收：打开原版键位设置 / 技能窗（截图用，不写存档）
             if (args[i] == "-smokeKeyConfig") PlayerPrefs.SetInt("debug_keyconfig", args[i + 1] != "0" ? 1 : 0);
             if (args[i] == "-smokeSkill") PlayerPrefs.SetInt("debug_skillwin", args[i + 1] != "0" ? 1 : 0);
@@ -195,9 +210,26 @@ public static class PlaySmokeTest
             return;
         }
 
+        // 有图形界面跑截图时编辑器可能失焦，失焦默认会暂停播放，截图就只剩一帧
+        Application.runInBackground = true;
+
+        // 失焦时 Pointer 不再采样真实鼠标，正好用探针坐标驱动悬停
+        var probeArg = EditorPrefs.GetString(K_PROBE, "");
+        if (!string.IsNullOrEmpty(probeArg))
+        {
+            var parts = probeArg.Split(',');
+            if (parts.Length == 2 &&
+                float.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float px) &&
+                float.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float py))
+                Pointer.TestPos = new Vector2(px, py);
+        }
+
         double t0 = Parse(EditorPrefs.GetString(K_T0, "0"));
         double dur = EditorPrefs.GetInt(K_DUR, 30);
         double t = EditorApplication.timeSinceStartup;
+
+        float clickAt = EditorPrefs.GetFloat(K_CLICKAT, -1f);
+        if (clickAt >= 0f) Pointer.TestClick = t - t0 >= clickAt;
 
         DriveInput(t - t0);
         if (TickClimbAll()) return;
@@ -231,7 +263,8 @@ public static class PlaySmokeTest
                           " 击杀=" + gl.killCount +
                           " 死亡=" + gl.gameOver + pos +
                           " 怪伤=" + HurtCount() +
-                          " 通关=" + (st != null && st.allClear));
+                          " 通关=" + (st != null && st.allClear) +
+                          " 指针=" + Pointer.Pos + (Pointer.TestPos.HasValue ? " 探针" : ""));
 
                 // 怪物速度实测：跟住一只怪，每秒记一次 |Δx|（绕边界回头会拉低平均值）
                 var probe = EnemyUnit.All.Count > 0 ? EnemyUnit.All[0] : null;
@@ -613,6 +646,10 @@ public static class PlaySmokeTest
         EditorPrefs.DeleteKey(K_RUNPLAN);
         EditorPrefs.DeleteKey(K_CLIMBALL);
         EditorPrefs.DeleteKey(K_WARP);
+        EditorPrefs.DeleteKey(K_PROBE);
+        EditorPrefs.DeleteKey(K_CLICKAT);
+        Pointer.TestPos = null;
+        Pointer.TestClick = false;
         EditorApplication.update -= Tick;
         if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
         EditorApplication.Exit(code);

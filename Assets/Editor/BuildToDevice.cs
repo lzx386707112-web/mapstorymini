@@ -106,7 +106,9 @@ public static class BuildToDevice
         string jdk = "/Library/Java/JavaVirtualMachines/jdk-11.jdk/Contents/Home";
         // Unity 2022.3 只认 NDK r23b（23.1.7779620）。目录是从 r26d 克隆的、只改了版本号，
         // 工具链向后兼容，实测能编译；真要发布建议换成官方 r23b。
-        string ndk = Path.Combine(sdk, "ndk/23.1.7779620");
+        // 批量构建时可用环境变量 MAPLEDASH_NDK 指到别的 NDK 做对照排查。
+        string ndkEnv = Environment.GetEnvironmentVariable("MAPLEDASH_NDK");
+        string ndk = !string.IsNullOrEmpty(ndkEnv) ? ndkEnv : Path.Combine(sdk, "ndk/23.1.7779620");
 
         if (!Directory.Exists(sdk)) Debug.LogError("[Build] 找不到 SDK：" + sdk);
         if (!Directory.Exists(jdk)) Debug.LogError("[Build] 找不到 JDK：" + jdk);
@@ -114,13 +116,32 @@ public static class BuildToDevice
 
         EditorPrefs.SetString("AndroidSdkRoot", sdk);
         EditorPrefs.SetString("JdkPath", jdk);
-        EditorPrefs.SetString("AndroidNDKRoot", ndk);   // 真实键名（NDK 大写）
+        EditorPrefs.SetString("AndroidNDKRoot", ndk);   // 旧版键名（2021.1 及以前有效）
         EditorPrefs.SetString("AndroidNdkRoot", ndk);   // 兼容写法
         EditorPrefs.SetString("AndroidNdkRootR23", ndk);
         EditorPrefs.SetBool("AndroidNDKRootInstalledWithUnity", false);
         EditorPrefs.SetBool("AndroidUseEmbeddedSdk", false);
 
+        // 2021.2 起「外部工具」搬进了 UnityEditor.Android.AndroidExternalToolsSettings，
+        // 打包用的 NDK 校验读的是它，只写 EditorPrefs 会一直报 "Android NDK not found or invalid"。
+        // 该类型在 Android 支持模块里，没装模块时不存在，所以用反射，不硬引用。
+        SetAndroidTool("ndkRootPath", ndk);
+        SetAndroidTool("sdkRootPath", sdk);
+        SetAndroidTool("jdkRootPath", jdk);
+
         Debug.Log("[Build] SDK=" + sdk + "\nJDK=" + jdk + "\nNDK=" + ndk);
+    }
+
+    static void SetAndroidTool(string prop, string value)
+    {
+        var t = Type.GetType("UnityEditor.Android.AndroidExternalToolsSettings, UnityEditor.Android.Extensions");
+        var p = t?.GetProperty(prop, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+        if (p == null)
+        {
+            Debug.LogWarning("[Build] 无法设置 " + prop + "（找不到 AndroidExternalToolsSettings）");
+            return;
+        }
+        p.SetValue(null, value);
     }
 
     static void ConfigurePlayer()

@@ -170,7 +170,7 @@ public static class NativeMenu
             string state = !enabled(i) ? "disabled" : hover ? Pointer.Down ? "pressed" : "mouseOver" : "normal";
             var tex = Art.Tex("ui/" + folder + "/" + buttons[i] + "_" + state + ".bytes");
             if (tex != null) GUI.DrawTexture(r, tex);
-            if (!KeyConfigWindow.Visible && enabled(i) && Event.current.type == EventType.Repaint && Pointer.Released && hover) click(i);
+            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && enabled(i) && Event.current.type == EventType.Repaint && Pointer.Released && hover) click(i);
         }
     }
 }

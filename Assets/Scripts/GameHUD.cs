@@ -94,6 +94,8 @@ public class GameHUD : MonoBehaviour
 
         // 原版底部栏：底板 → 左段状态条 → 右侧按钮 + 快捷格（都在 BottomBar 里按顺序画）
         BottomBar.Draw();
+        // 屏上虚拟按键层（摇杆/十字/按钮），画在底部栏之上、浮窗之下
+        VirtualControls.Draw();
         DrawTopLeft();
         DrawStage();
         DrawLevelUp();
@@ -107,6 +109,8 @@ public class GameHUD : MonoBehaviour
             if (!KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
         }
         KeyConfigWindow.Draw();
+        // 虚拟按键编辑器：盖在最上层（编辑时游戏输入已在 InputBridge 冻结）
+        VirtualControlsEditor.Draw();
         if (showTuning && !HideTuning) DrawTuning();
 
         if (GameLoop.I != null && GameLoop.I.gameOver)
@@ -238,7 +242,7 @@ public class GameHUD : MonoBehaviour
         bs.alignment = TextAnchor.MiddleCenter;
         bs.normal.textColor = Color.white;
         GUI.Label(br, "返回大厅", bs);
-        if (Pointer.Pressed && br.Contains(_mouseGui))
+        if (!VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Pointer.Pressed && br.Contains(_mouseGui))
         {
             if (GameLoop.I != null) GameLoop.I.EnterLobby();
         }

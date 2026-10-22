@@ -68,6 +68,11 @@ public static class SkillBook
                 icon = d.TryGetValue("icon", out var ic) ? ic as string : "",
             };
             s.levels = d.TryGetValue("levels", out var lv) ? lv as Dictionary<string, object> : s.levels;
+            // 前置技能：[技能id, 需要等级]，客户端加点的硬性条件（服务端不校验）
+            if (d.TryGetValue("req", out var rq) && rq is List<object> reqList)
+                foreach (var item in reqList)
+                    if (item is List<object> reqPair && reqPair.Count >= 2)
+                        s.req.Add(new[] { int.Parse(reqPair[0].ToString()), int.Parse(reqPair[1].ToString()) });
             // 有 mad（魔法攻击力）的技能就是魔法技能，原版伤害公式按这个分流
             foreach (var row in s.levels.Values)
                 if (row is Dictionary<string, object> rd && rd.ContainsKey("mad")) { s.magic = true; break; }
@@ -163,11 +168,14 @@ public static class SkillProgress
 
     static readonly List<SkillData> cache = new List<SkillData>();
     static bool cacheReady;
+    static string cacheLine;
 
     static List<SkillData> AllSkills()
     {
-        if (cacheReady) return cache;
+        if (cacheReady && cacheLine == Profile.cls) return cache;
         cacheReady = true;
+        cacheLine = Profile.cls;
+        cache.Clear();
         var line = SkillBook.LineFor(Profile.cls);
         foreach (var tab in SkillBook.Tabs(line))
         {
