@@ -159,6 +159,22 @@ public class PlayerCtrl : MonoBehaviour
         return true;
     }
 
+    // 判断 x 处脚下是否存在可走的水平段（不含竖直 foothold 墙）。
+    // 「去掉自动上下台阶」后仅用于检测真悬崖：脚下有段就保持 grounded 直线行走，
+    // 脚下无段才转入下落，不再把地形高度吸附到 foothold 上。
+    static bool GroundExists(float x)
+    {
+        if (Terrain == null || Terrain.Count == 0) return true;
+        for (int i = 0; i < Terrain.Count; i++)
+        {
+            var f = Terrain[i];
+            if (Mathf.Abs(f.z - f.x) < 0.01f) continue;   // 竖直段是墙，不算地面
+            float lo = Mathf.Min(f.x, f.z), hi = Mathf.Max(f.x, f.z);
+            if (x >= lo && x <= hi) return true;
+        }
+        return false;
+    }
+
     // 原端 WalkSpeed 的 100% 基准（Character.wz 角色 info/walkSpeed = 125px/s）。
     // 怪物 info/speed 是「相对 100% 的百分比偏移」，两边共用这个基准，
     // 所以怪物速度也要用它换算，不能各写一个魔数（见 FieldDirector.ApplyStats）。
@@ -519,10 +535,10 @@ public class PlayerCtrl : MonoBehaviour
             }
         if (grounded)
         {
-            float gy;
-            if (FollowGround(worldX, terrainY, nextX, out gy))
-                terrainY = gy;
-            else
+            // 已去掉「走路自动上下台阶」：角色水平移动时不再把地形高度吸附到脚下
+            // foothold（含跨段台阶/斜坡的自动接续），保持当前 y 直线行走；只有跳跃
+            // （jumpY 抛物线）才改变高度。脚下没有任何可走段（真悬崖）时才转入下落。
+            if (!GroundExists(nextX))
             {
                 grounded = false;
                 vy = 0f;
