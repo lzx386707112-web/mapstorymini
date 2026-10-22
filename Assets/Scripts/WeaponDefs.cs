@@ -74,7 +74,7 @@ public static class WeaponDefs
     public static bool CanEquip(WeaponDef w, CharacterAttributes a, string cls)
     {
         var d = w.stats;
-        int mask = cls == "mage" || cls == "priest" ? 2 : cls == "archer" ? 4 : 1;
+        int mask = cls == "beginner" ? 0 : cls == "mage" || cls == "priest" ? 2 : cls == "archer" ? 4 : 1;
         int job = NativeCombatData.Int(d,"reqJob");
         return (job == 0 || (job > 0 && (job & mask) != 0)) && a.level >= NativeCombatData.Int(d,"reqLevel") &&
             a.str >= NativeCombatData.Int(d,"reqSTR") && a.dex >= NativeCombatData.Int(d,"reqDEX") &&

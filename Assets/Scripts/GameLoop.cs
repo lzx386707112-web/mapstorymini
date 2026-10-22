@@ -59,7 +59,6 @@ public class GameLoop : MonoBehaviour
         DontDestroyOnLoad(go);
         go.AddComponent<HitFeelRunner>();
         go.AddComponent<GameLoop>();
-        go.AddComponent<Lobby>();        // 大厅（装扮 / 角色 / 武器）
         go.AddComponent<InputBridge>();  // 键盘/虚拟键 → 游戏意图（原版是纯键盘操作）
     }
 
@@ -72,6 +71,7 @@ public class GameLoop : MonoBehaviour
     void Start()
     {
         Profile.Load();
+        Profile.SetClass("beginner");
         BuildBackground();           // 背景只建一次，进出大厅不重建
 
         // 摄像机（大厅与战斗共用，避免大厅里没有相机导致黑屏）
@@ -84,11 +84,7 @@ public class GameLoop : MonoBehaviour
         cam.orthographic = true;
         camRig = camGo.AddComponent<CameraRig>();
 
-        // 自动化测试 / 调试：直接出战；否则先进大厅
-        if (PlayerPrefs.GetInt("autostart", 0) == 1)
-            StartGame();
-        else
-            state = GameState.Lobby;
+        StartGame();
     }
 
     // 出战：构建战斗场景并（如有）进入关卡

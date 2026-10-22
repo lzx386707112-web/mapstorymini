@@ -96,9 +96,9 @@ public class GameHUD : MonoBehaviour
         BottomBar.Draw();
         // 屏上虚拟按键层（摇杆/十字/按钮），画在底部栏之上、浮窗之下
         VirtualControls.Draw();
-        DrawTopLeft();
-        DrawStage();
-        DrawLevelUp();
+
+
+
         // 浮窗（技能窗/能力值/帮助…）
         GameWindows.DrawAll();
         // 技能施放失败等即时提示
@@ -187,7 +187,8 @@ public class GameHUD : MonoBehaviour
         st.fontSize = 15;
         st.normal.textColor = new Color(1f, 0.94f, 0.72f);
         var r = new Rect(UiKit.W * 0.2f, UiKit.H - 96f, UiKit.W * 0.6f, 24f);
-        Fill(new Rect(r.x - 6, r.y - 3, r.width + 12, r.height + 6), new Color(0f, 0f, 0f, 0.62f));
+        NativeUi.Panel(new Rect(r.x - 6, r.y - 3, r.width + 12, r.height + 6));
+        st.normal.textColor = Color.black;
         GUI.Label(r, text, st);
     }
 

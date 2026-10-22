@@ -129,34 +129,44 @@ public sealed class NativeMapView : MonoBehaviour
         public Animation Art;
         public readonly List<SpriteRenderer> Cells = new List<SpriteRenderer>();
     }
+    sealed class MapDraw
+    {
+        public ImgNode Definition, Art;
+        public long Z;
+        public int Layer, Sequence;
+    }
     public void Show(int id)
     {
         var map = MapRoot(id);
         var body = new GameObject("MapLayers"); body.transform.SetParent(transform, false);
         body.AddComponent<UnityEngine.Rendering.SortingGroup>().sortingOrder = -400;
-        int bodyOrder = 0;
+        // Native layer z: RestoreTile 0x0063A91F and MakeObj 0x0063C289.
+        // Tiles and objects have different base bands; sorting both by their small z fields is wrong.
+        var draws = new List<MapDraw>();
         for (int layer = 0; layer < 9; layer++)
         {
             var n = map.Get(layer.ToString());
             if (n == null) continue;
-            var draws = new List<ImgNode>();
-            draws.AddRange(Children(n.Get("tile"))); draws.AddRange(Children(n.Get("obj")));
-            // Existing exporter sorts by layer, z and insertion order; stable tie order matters.
-            var indexed = new List<KeyValuePair<int, ImgNode>>();
-            for (int i = 0; i < draws.Count; i++) indexed.Add(new KeyValuePair<int, ImgNode>(i, draws[i]));
-            indexed.Sort((a, b) => {
-                int za = a.Value.Parent.Name == "tile" ? a.Value.Int("zM") * 100 : a.Value.Int("z");
-                int zb = b.Value.Parent.Name == "tile" ? b.Value.Int("zM") * 100 : b.Value.Int("z");
-                int z = za.CompareTo(zb); return z == 0 ? a.Key.CompareTo(b.Key) : z;
-            });
-            foreach (var pair in indexed)
+            foreach (var d in Children(n.Get("tile")))
             {
-                var d = pair.Value; ImgNode art;
-                if (d.Parent.Name == "tile") art = FileRoot("Map/Tile/" + n.Text("info/tS") + ".img").Get(d.Text("u") + "/" + d.Int("no"));
-                else art = FileRoot("Map/Obj/" + d.Text("oS") + ".img").Get(d.Text("l0") + "/" + d.Text("l1") + "/" + d.Text("l2"));
-                var draw = Draw(art, d.Parent.Name + "_" + layer + "_" + d.Name, d.Int("x"), d.Int("y"), bodyOrder++, d.Int("f") != 0);
-                draw.Renderer.transform.SetParent(body.transform, false);
+                var art = FileRoot("Map/Tile/" + n.Text("info/tS") + ".img").Get(d.Text("u") + "/" + d.Int("no"));
+                if (art == null) throw new InvalidDataException("Missing tile " + d.Name);
+                draws.Add(new MapDraw { Definition = d, Art = art, Layer = layer,
+                    Z = art.Resolve().Int("z") + 10L * (3000L * layer - d.Int("zM")) - 0x3FFFB1EA, Sequence = draws.Count });
             }
+            foreach (var d in Children(n.Get("obj")))
+            {
+                var art = FileRoot("Map/Obj/" + d.Text("oS") + ".img").Get(d.Text("l0") + "/" + d.Text("l1") + "/" + d.Text("l2"));
+                draws.Add(new MapDraw { Definition = d, Art = art, Layer = layer,
+                    Z = d.Int("z") + 30000L * layer - 0x3FFFF830, Sequence = draws.Count });
+            }
+        }
+        draws.Sort((a, b) => { int z = a.Z.CompareTo(b.Z); return z == 0 ? a.Sequence.CompareTo(b.Sequence) : z; });
+        for (int i = 0; i < draws.Count; i++)
+        {
+            var item = draws[i]; var d = item.Definition;
+            var draw = Draw(item.Art, d.Parent.Name + "_" + item.Layer + "_" + d.Name, d.Int("x"), d.Int("y"), i, d.Int("f") != 0);
+            draw.Renderer.transform.SetParent(body.transform, false);
         }
         foreach (var b in Children(map.Get("back")))
         {

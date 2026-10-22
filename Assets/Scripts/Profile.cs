@@ -51,7 +51,7 @@ public static class Profile
         if (!data.owned.Contains("1302000")) data.owned.Add("1302000");
         if (!data.owned.Contains(data.equipWeapon)) data.equipWeapon = "1302000";
         if (!HairStyles.Contains(data.hair)) data.hair = "h0";
-        if (ClassDefs.Get(data.cls).id != data.cls) data.cls = "knight";
+        if (ClassDefs.Get(data.cls).id != data.cls) data.cls = "beginner";
         if (data.outfit == null || !CosmeticFactory.OutfitColors.ContainsKey(data.outfit)) data.outfit = "none";
         if (!WeaponDefs.CanEquip(WeaponDefs.Get(data.equipWeapon),data.attributes,data.cls)) data.equipWeapon = "1302000";
 

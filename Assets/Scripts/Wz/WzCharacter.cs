@@ -21,6 +21,8 @@ public static class WzCharacter
     }
     static Dictionary<string, object> Recipe(string key)
     {
+        // The original starter outfit uses the same native IMG parts as the legacy knight recipe.
+        if (key.StartsWith("beginner_", StringComparison.Ordinal)) key = "knight_" + key.Substring(9);
         var recipes = (Dictionary<string, object>)WzAssets.Index["characters"];
         return recipes.TryGetValue(key, out var recipe) ? (Dictionary<string, object>)recipe : null;
     }

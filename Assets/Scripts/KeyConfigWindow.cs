@@ -148,7 +148,7 @@ public static class KeyConfigWindow
             int i = quickPage * 8 + cell;
             if (i >= QuickSlots.Count) break;
             var r = new Rect(x + (64 + cell % 4 * 35) * S, y + (113 + cell / 4 * 34) * S, 32 * S, 30 * S);
-            if (quickIndex == i) UiKit.Fill(r, new Color(0.3f, 0.6f, 1, 0.3f));
+
             var style = new GUIStyle { fontSize = Mathf.RoundToInt(9 * S), alignment = TextAnchor.MiddleCenter };
             style.normal.textColor = Color.black;
             GUI.Label(r, KeyMap.Label(quickDraft[i]), style);
@@ -159,10 +159,9 @@ public static class KeyConfigWindow
         var pageLabel = new GUIStyle { fontSize = Mathf.RoundToInt(10 * S), alignment = TextAnchor.MiddleCenter };
         pageLabel.normal.textColor = Color.black;
         GUI.Label(new Rect(x + 20 * S, y + 185 * S, 226 * S, 16 * S), "快捷格 " + (quickPage * 8 + 1) + "–" + Mathf.Min(26, quickPage * 8 + 8) + " / 26", pageLabel);
-        var pageStyle = new GUIStyle(GUI.skin.button) { fontSize = Mathf.RoundToInt(10 * S) };
-        if (GUI.Button(new Rect(x + 12 * S, y + 207 * S, 80 * S, 19 * S), "‹ 上一页", pageStyle))
+        if (NativeUi.Button(new Rect(x + 12 * S, y + 207 * S, 18 * S, 18 * S), "UI/Basic.img/BtUP"))
         { quickPage = (quickPage + 3) % 4; quickIndex = quickPage * 8; }
-        if (GUI.Button(new Rect(x + 174 * S, y + 207 * S, 80 * S, 19 * S), "下一页 ›", pageStyle))
+        if (NativeUi.Button(new Rect(x + 236 * S, y + 207 * S, 18 * S, 18 * S), "UI/Basic.img/BtDown"))
         { quickPage = (quickPage + 1) % 4; quickIndex = quickPage * 8; }
         var ok = new Rect(x + 109 * S, y + 207 * S, 47 * S, 19 * S);
         var tex = T("BtOK_normal");
@@ -241,7 +240,7 @@ public static class KeyConfigWindow
                 else icon = Icon(kv.Key);
                 if (icon != null) GUI.DrawTexture(r, icon, ScaleMode.ScaleToFit);
             }
-            if (selected == code) UiKit.Fill(r, new Color(0.2f, 0.5f, 1f, 0.24f));
+
             if (tick && !quickEdit && Pointer.DoubleClicked && r.Contains(Pointer.Pos))
             {
                 // Release of the second click returns the function to its tray.

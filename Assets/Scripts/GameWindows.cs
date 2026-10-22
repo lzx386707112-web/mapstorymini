@@ -1,14 +1,6 @@
 using UnityEngine;
 
-// ————————————————————————————————————————————————————————————
-// 底部栏按钮背后的各个窗口。
-//
-// 说明（也写进了 docs 的适配表）：
-//   技能窗  —— 用 UI.wz/UIWindow.img/Skill 的原版底板与条目，完整移植，见 SkillWindow.cs
-//   底部栏  —— 用 UI.wz/StatusBar.img 的原版按钮，见 BottomBar.cs
-//   其余窗口（商城/装备/背包/能力值/快捷键/帮助/菜单）这一轮先做出可用的面板骨架，
-//   贴图没有逐张从 WZ 里取，等对应系统真正移植时再换成原版对话框。
-// ————————————————————————————————————————————————————————————
+// Window artwork is loaded directly from the original UI IMG files.
 
 public static class WindowShell
 {
@@ -18,43 +10,27 @@ public static class WindowShell
 
     public static Rect Frame(string title, float x, float y, float w, float h, ref bool visible)
     {
-        var r = new Rect(x, y, w, h);
-        UiKit.Fill(new Rect(r.x - 2, r.y - 2, r.width + 4, r.height + 4), new Color(0f, 0f, 0f, 0.55f));
-        UiKit.Fill(r, Back);
-        UiKit.Fill(new Rect(r.x, r.y, r.width, 1.5f), Edge);
-        UiKit.Fill(new Rect(r.x, r.yMax - 1.5f, r.width, 1.5f), Edge);
-        UiKit.Fill(new Rect(r.x, r.y, 1.5f, r.height), Edge);
-        UiKit.Fill(new Rect(r.xMax - 1.5f, r.y, 1.5f, r.height), Edge);
-
-        var ts = new GUIStyle { fontSize = 14, fontStyle = FontStyle.Bold };
-        ts.normal.textColor = Title;
-        GUI.Label(new Rect(r.x + 8, r.y + 4, r.width - 40, 20), title, ts);
-
-        var close = new Rect(r.xMax - 22, r.y + 3, 18, 16);
-        UiKit.Fill(close, new Color(0.35f, 0.12f, 0.14f, 0.95f));
-        var cs = new GUIStyle { fontSize = 12, alignment = TextAnchor.MiddleCenter };
-        cs.normal.textColor = new Color(1f, 0.85f, 0.85f);
-        GUI.Label(close, "×", cs);
-        if (Pointer.Pressed && close.Contains(Pointer.Pos)) visible = false;
+        string folder = title == "能力值" ? "Stat" : title == "装备" ? "Equip" : "Item";
+        var bg = Art.Tex("wz://UI/UIWindow.img/" + folder + "/backgrnd");
+        var r = new Rect(x, y, bg.width * BottomBar.S, bg.height * BottomBar.S);
+        r.x = Mathf.Clamp(r.x, 0, Mathf.Max(0, UiKit.W - r.width));
+        r.y = Mathf.Clamp(r.y, 0, Mathf.Max(0, UiKit.H - BottomBar.Height - r.height));
+        GUI.DrawTexture(r, bg);
+        var close = new Rect(r.xMax - 19 * BottomBar.S, r.y + 5 * BottomBar.S, 12 * BottomBar.S, 12 * BottomBar.S);
+        if (NativeUi.Button(close, "UI/Basic.img/BtClose")) visible = false;
         return r;
     }
 
     public static bool Button(Rect r, string label, bool on = false)
     {
-        bool hover = r.Contains(Pointer.Pos);
-        UiKit.Fill(r, on ? new Color(0.30f, 0.42f, 0.58f, 0.96f)
-                         : hover ? new Color(0.22f, 0.28f, 0.38f, 0.96f)
-                                 : new Color(0.15f, 0.18f, 0.24f, 0.96f));
-        var st = new GUIStyle { fontSize = 12, alignment = TextAnchor.MiddleCenter };
-        st.normal.textColor = new Color(0.92f, 0.95f, 1f);
-        GUI.Label(r, label, st);
-        return Pointer.Pressed && hover;
+        bool clicked = NativeUi.Button(r, "UI/Basic.img/BtOK");
+        return clicked;
     }
 
     public static void Label(Rect r, string text, int size = 12, Color? color = null)
     {
         var st = new GUIStyle { fontSize = size };
-        st.normal.textColor = color ?? new Color(0.86f, 0.9f, 0.96f);
+        st.normal.textColor = color ?? Color.black;
         GUI.Label(r, text, st);
     }
 }
@@ -70,20 +46,14 @@ public static class StatWindow
         if (!Visible || GameLoop.I == null || GameLoop.I.player == null) return;
         var r = WindowShell.Frame("能力值", rect.x, rect.y, rect.width, rect.height, ref Visible);
         var p = GameLoop.I.player;
-        float y = r.y + 30;
-        WindowShell.Label(new Rect(r.x + 12, y, 240, 18), "等级   Lv." + Profile.level + "    " + ClassDefs.Get(Profile.cls).name);
-        y += 20;
-        WindowShell.Label(new Rect(r.x + 12, y, 240, 18), "HP     " + Mathf.CeilToInt(p.hp) + " / " + Mathf.CeilToInt(p.hpMax));
-        y += 18;
-        WindowShell.Label(new Rect(r.x + 12, y, 240, 18), "MP     " + Mathf.CeilToInt(p.mp) + " / " + Mathf.CeilToInt(p.mpMax));
-        y += 18;
-        WindowShell.Label(new Rect(r.x + 12, y, 240, 18), "经验   " + Profile.experience + " / " + Profile.ExpNeeded);
-        y += 18;
-        WindowShell.Label(new Rect(r.x + 12, y, 240, 18), "技能点 " + SkillProgress.AvailableSp + " / " + SkillProgress.TotalSp);
-        y += 18;
-        WindowShell.Label(new Rect(r.x + 12, y, 240, 18), "金币   " + Profile.gold);
-        y += 26;
-        WindowShell.Label(new Rect(r.x + 12, y, 240, 18), "AP 加点面板尚未移植", 11, new Color(0.7f, 0.75f, 0.82f));
+        float scale = BottomBar.S;
+        var attrs = Profile.Attributes;
+        string[] values = { Profile.playerName, "新手", Profile.level.ToString(), "", Mathf.CeilToInt(p.hp) + " / " + Mathf.CeilToInt(p.hpMax), Mathf.CeilToInt(p.mp) + " / " + Mathf.CeilToInt(p.mpMax), Profile.experience.ToString(), "0" };
+        for (int i = 0; i < values.Length; i++)
+            WindowShell.Label(new Rect(r.x + 59 * scale, r.y + (31 + i * 19.5f) * scale, 140 * scale, 18 * scale), values[i], Mathf.RoundToInt(11 * scale));
+        WindowShell.Label(new Rect(r.x + 64 * scale, r.y + 213 * scale, 80 * scale, 18 * scale), Profile.ap.ToString());
+        int[] stats = { attrs.str, attrs.dex, attrs.intelligence, attrs.luk };
+        for (int i = 0; i < stats.Length; i++) WindowShell.Label(new Rect(r.x + 60 * scale, r.y + (244 + i * 19) * scale, 130 * scale, 18 * scale), stats[i].ToString());
     }
 }
 
@@ -97,9 +67,13 @@ public static class EquipWindow
     {
         if (!Visible) return;
         var r = WindowShell.Frame("装备", rect.x, rect.y, rect.width, rect.height, ref Visible);
-        WindowShell.Label(new Rect(r.x + 12, r.y + 30, 280, 18), "当前武器：" + WeaponDefs.Get(Profile.equipWeapon).name);
-        WindowShell.Label(new Rect(r.x + 12, r.y + 58, 280, 18), "背包装备 " + Profile.OwnedWeapons.Count + " 件");
-        WindowShell.Label(new Rect(r.x + 12, r.y + 96, 280, 40), "装备栏/换装界面尚未移植，\n换装仍在大厅进行。", 11, new Color(0.7f, 0.75f, 0.82f));
+        string[] parts = { "Coat/01040002", "Pants/01060000", "Shoes/01070000", "Weapon/" + int.Parse(Profile.equipWeapon).ToString("D8") };
+        Vector2[] slots = { new Vector2(35, 133), new Vector2(35, 167), new Vector2(69, 201), new Vector2(103, 133) };
+        for (int i = 0; i < parts.Length; i++)
+        {
+            var icon = Art.Tex("wz://Character/" + parts[i] + ".img/info/icon");
+            if (icon != null) GUI.DrawTexture(new Rect(r.x + slots[i].x * BottomBar.S, r.y + slots[i].y * BottomBar.S, 30 * BottomBar.S, 30 * BottomBar.S), icon, ScaleMode.ScaleToFit);
+        }
     }
 }
 
@@ -113,8 +87,16 @@ public static class InvenWindow
     {
         if (!Visible) return;
         var r = WindowShell.Frame("背包", rect.x, rect.y, rect.width, rect.height, ref Visible);
-        WindowShell.Label(new Rect(r.x + 12, r.y + 30, 300, 18), "金币：" + Profile.gold);
-        WindowShell.Label(new Rect(r.x + 12, r.y + 56, 300, 18), "消耗/其他栏尚未移植（掉落会进存档）");
+        WindowShell.Label(new Rect(r.x + 25 * BottomBar.S, r.y + 268 * BottomBar.S, 116 * BottomBar.S, 16 * BottomBar.S), Profile.gold.ToString());
+        int slot = 0;
+        foreach (string id in Profile.OwnedWeapons)
+        {
+            var icon = Art.Tex("wz://Character/Weapon/" + int.Parse(id).ToString("D8") + ".img/info/icon");
+            var cell = new Rect(r.x + (10 + slot % 4 * 36) * BottomBar.S, r.y + (51 + slot / 4 * 34) * BottomBar.S, 30 * BottomBar.S, 30 * BottomBar.S);
+            if (icon != null) GUI.DrawTexture(cell, icon, ScaleMode.ScaleToFit);
+            if (Event.current.type == EventType.Repaint && Pointer.Released && cell.Contains(Pointer.Pos)) Profile.EquipWeapon(id);
+            if (++slot >= 24) break;
+        }
     }
 }
 
@@ -127,9 +109,8 @@ public static class ShopWindow
     public static void Draw()
     {
         if (!Visible) return;
-        var r = WindowShell.Frame("商城", rect.x, rect.y, rect.width, rect.height, ref Visible);
-        WindowShell.Label(new Rect(r.x + 12, r.y + 34, 300, 18), "商城（CashShop）尚未移植。");
-        WindowShell.Label(new Rect(r.x + 12, r.y + 60, 300, 40), "按钮版式已按原版摆好，\n商品数据要接服务端 CashShop 表。", 11, new Color(0.7f, 0.75f, 0.82f));
+        Visible = false;
+        BottomBar.Toast("商城功能尚未接入");
     }
 }
 
@@ -184,29 +165,8 @@ public static class HelpWindow
     public static void Draw()
     {
         if (!Visible) return;
-        var r = WindowShell.Frame("帮助 · 键位", rect.x, rect.y, rect.width, rect.height, ref Visible);
-        float y = r.y + 30;
-        string[] lines =
-        {
-            "← →   移动        ↑ ↓   上下绳/台阶",
-            "Alt   跳跃        Ctrl  普攻（点一下即挥）",
-            "Z     拾取        ↑     进传送门",
-            "",
-            "Shift/Ins/Home/PgUp/Ctrl/Del/End/PgDn → 快捷格 1~8",
-            "K 技能   S 能力值   E 装备   I 背包",
-            "\\ 键位    `  快捷栏   Tab 快捷键",
-            "Esc 菜单   F4 商城    F1 帮助",
-            "",
-            "屏幕左下角的虚拟键盘可以按住不放拖动，",
-            "键盘设定中拖动功能图标，确定后保存。",
-        };
-        foreach (var line in lines)
-        {
-            WindowShell.Label(new Rect(r.x + 14, y, r.width - 28, 18), line, 12);
-            y += 19;
-        }
-        if (WindowShell.Button(new Rect(r.x + 14, r.yMax - 34, 90, 24), "恢复默认键位"))
-            KeyMap.ResetAll();
+        Visible = false;
+        if (!KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
     }
 }
 
@@ -224,7 +184,7 @@ public static class GameMenuWindow
                 Visible = false;
                 if (i == 2) KeyConfigWindow.Toggle();
                 if (i == 3) HelpWindow.Toggle();
-                if (i == 4) GameLoop.I.EnterLobby();
+                if (i == 4) Application.Quit();
             });
     }
 }

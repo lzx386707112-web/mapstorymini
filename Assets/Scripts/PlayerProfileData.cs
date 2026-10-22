@@ -21,7 +21,7 @@ public sealed class PlayerProfileData
     public string playerName = "";
 
     public int equipmentSlots = 24;
-    public string cls = "knight";
+    public string cls = "beginner";
     public string equipWeapon = "1302000";
     public string hair = "h0";
     public string outfit = "none";

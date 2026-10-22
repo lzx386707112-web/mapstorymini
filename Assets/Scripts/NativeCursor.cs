@@ -34,22 +34,28 @@ public sealed class NativeCursor : MonoBehaviour
     void Update()
     {
         if (manifest == null) return;
-        Cursor.visible = !Application.isFocused;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = !Application.isMobilePlatform;
         // 0: pointing hand; 12: pressed hand; 1: native mouse animation.
         int next = Pointer.Down || Pointer.RightDown ? 12 :
                    Time.unscaledTime - since < 1f && state == 1 ? 1 : 0;
         if (Pointer.Released || Pointer.RightReleased) next = 1;
         if (next != state) { state = next; since = Time.unscaledTime; }
+        if (!Application.isMobilePlatform && Application.isFocused)
+        {
+            var selected = SelectState(state);
+            if (selected == null) return;
+            var frame = CurrentFrame(selected);
+            var texture = Art.Tex(frame.file);
+            if (texture != null) Cursor.SetCursor(texture, new Vector2(Mathf.Clamp(frame.x, 0, texture.width - 1), Mathf.Clamp(frame.y, 0, texture.height - 1)), CursorMode.ForceSoftware);
+        }
     }
 
-    void OnGUI()
+    State SelectState(int id) => Array.Find(manifest.states, s => s.id == id && s.frames.Length > 0)
+        ?? Array.Find(manifest.states, s => s.id == 0 && s.frames.Length > 0);
+
+    Frame CurrentFrame(State selected)
     {
-        // Set depth on every IMGUI event and retain it for this behaviour.
-        // Restoring it during Repaint lets the lobby paint over the cursor.
-        GUI.depth = -10000;
-        if (manifest == null || !Application.isFocused || Event.current.type != EventType.Repaint) return;
-        State selected = Array.Find(manifest.states, s => s.id == state);
-        if (selected == null || selected.frames.Length == 0) return;
         float elapsed = (Time.unscaledTime - since) * 1000f;
         int duration = 0;
         foreach (var f in selected.frames) duration += Mathf.Max(1, f.delay);
@@ -61,8 +67,20 @@ public sealed class NativeCursor : MonoBehaviour
             elapsed -= Mathf.Max(1, f.delay);
             if (elapsed < 0) break;
         }
+        return frame;
+    }
+
+    void OnGUI()
+    {
+        // Set depth on every IMGUI event and retain it for this behaviour.
+        // Restoring it during Repaint lets the lobby paint over the cursor.
+        GUI.depth = -10000;
+        if (!Application.isMobilePlatform || manifest == null || !Application.isFocused || Event.current.type != EventType.Repaint) return;
+        State selected = SelectState(state);
+        if (selected == null || selected.frames.Length == 0) return;
+        Frame frame = CurrentFrame(selected);
         var texture = Art.Tex(frame.file);
-        if (texture == null) return;
+        if (texture == null) { Cursor.visible = true; return; }
         var matrix = GUI.matrix;
         var color = GUI.color;
         GUI.color = Color.white;
@@ -73,5 +91,5 @@ public sealed class NativeCursor : MonoBehaviour
         GUI.color = color;
     }
 
-    void OnDisable() { Cursor.visible = wasVisible; }
+    void OnDisable() { Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto); Cursor.visible = wasVisible; }
 }

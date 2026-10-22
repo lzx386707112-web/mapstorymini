@@ -25,7 +25,7 @@ public static class LocalProfileStore
         return new PlayerProfileData
         {
             gold = PlayerPrefs.GetInt("mxd.gold", 0),
-            cls = PlayerPrefs.GetString("mxd.cls", "knight"),
+            cls = PlayerPrefs.GetString("mxd.cls", "beginner"),
             equipWeapon = PlayerPrefs.GetString("mxd.equip", "w_sword_basic"),
             hair = PlayerPrefs.GetString("mxd.hair", "h0"),
             outfit = PlayerPrefs.GetString("mxd.outfit", "none"),

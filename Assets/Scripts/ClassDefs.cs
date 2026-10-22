@@ -23,6 +23,7 @@ public static class ClassDefs
 {
     static readonly ClassDef[] All = new ClassDef[]
     {
+        new ClassDef { id = "beginner", name = "新手", artKey = "beginner", accent = Color.white, skills = new ClassSkill[0] },
         new ClassDef {
             id = "knight", name = "骑士", artKey = "knight", accent = new Color(0.95f, 0.62f, 0.28f),
             skills = new[] {

@@ -331,7 +331,6 @@ public static class SkillWindow
             bool on = index == selected || index == hover;
             var bg = Tex(on ? "skill1" : "skill0");
             if (bg != null) GUI.DrawTexture(row, bg, ScaleMode.StretchToFill);
-            else UiKit.Fill(row, on ? new Color(0.85f, 0.86f, 0.84f) : new Color(0.92f, 0.93f, 0.95f));
 
             if (recId == d.id)
             {
@@ -418,7 +417,6 @@ public static class SkillWindow
         x = Mathf.Clamp(x, 4f, Mathf.Max(4f, UiKit.W - w - 4f));
         y = Mathf.Clamp(y, 4f, Mathf.Max(4f, UiKit.H - h - 4f));
 
-        UiKit.Fill(new Rect(x + 2f, y + 2f, w, h), new Color(0f, 0f, 0f, 0.30f));
         GUI.DrawTexture(new Rect(x, y, w, h), tex, ScaleMode.StretchToFill);
     }
 
@@ -468,11 +466,9 @@ public static class SkillWindow
         x = Mathf.Clamp(x, 4f, Mathf.Max(4f, UiKit.W - w - 4f));
         y = Mathf.Clamp(y, 4f, Mathf.Max(4f, UiKit.H - h - 4f));
 
-        UiKit.Fill(new Rect(x + 2f, y + 2f, w, h), new Color(0f, 0f, 0f, 0.35f));
-        UiKit.Fill(new Rect(x, y, w, h), new Color(0.055f, 0.075f, 0.125f, 0.96f));
-        UiKit.Fill(new Rect(x, y, w, 1.5f), new Color(0.50f, 0.60f, 0.82f, 0.85f));
-        UiKit.Fill(new Rect(x, y + h - 1.5f, w, 1.5f), new Color(0.24f, 0.30f, 0.44f, 0.85f));
 
+        NativeUi.Panel(new Rect(x, y, w, h));
+        titleStyle.normal.textColor = levelStyle.normal.textColor = bodyStyle.normal.textColor = statStyle.normal.textColor = Color.black;
         float cy = y + pad;
         GUI.Label(new Rect(x + pad, cy, inner, titleH), d.name, titleStyle);
         cy += titleH;
@@ -490,7 +486,6 @@ public static class SkillWindow
         if (stats.Count > 0)
         {
             cy += 5f * S;
-            UiKit.Fill(new Rect(x + pad, cy - 2f * S, inner, 1f), new Color(0.30f, 0.38f, 0.55f, 0.7f));
             cy += 2f * S;
             for (int k = 0; k < stats.Count; k++)
             {

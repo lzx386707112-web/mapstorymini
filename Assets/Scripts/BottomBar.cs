@@ -131,9 +131,9 @@ public static class BottomBar
         { GUI.FocusControl(null); ChatFocused = false; e.Use(); }
         if (chatLines.Count == 0) return;
         var r = new Rect(3 * S, UiKit.H - (74 + chatLines.Count * 14) * S, 540 * S, chatLines.Count * 14 * S);
-        UiKit.Fill(r, new Color(0, 0, 0, 0.38f));
+        NativeUi.Panel(r);
         var text = new GUIStyle { fontSize = Mathf.RoundToInt(11 * S) };
-        text.normal.textColor = Color.white;
+        text.normal.textColor = Color.black;
         for (int i = 0; i < chatLines.Count; i++)
             GUI.Label(new Rect(r.x + 3 * S, r.y + i * 14 * S, r.width, 14 * S), chatLines[i], text);
     }
@@ -215,7 +215,8 @@ public static class BottomBar
                 if (left > 0f)
                 {
                     float k = Mathf.Clamp01(left / Mathf.Max(0.01f, sys.CooldownOf(id)));
-                    UiKit.Fill(new Rect(r.x, r.y, r.width, r.height * k), new Color(0.02f, 0.03f, 0.06f, 0.62f));
+                    var cool = Art.Tex("ui/skillwin/cool_" + Mathf.Clamp(Mathf.FloorToInt(k * 16), 0, 15) + ".png");
+                    if (cool != null) GUI.DrawTexture(r, cool);
                 }
                 if (lv > 0)
                 {
@@ -253,7 +254,7 @@ public static class BottomBar
         var st = new GUIStyle { fontSize = Mathf.RoundToInt(13f * S), alignment = TextAnchor.MiddleCenter };
         st.normal.textColor = new Color(1f, 0.95f, 0.72f);
         var r = new Rect(UiKit.W * 0.18f, UiKit.H - Height - 30f * S, UiKit.W * 0.64f, 22f * S);
-        UiKit.Fill(new Rect(r.x - 6, r.y - 2, r.width + 12, r.height + 4), new Color(0f, 0f, 0f, 0.6f));
+        NativeUi.Panel(new Rect(r.x - 6, r.y - 2, r.width + 12, r.height + 4));
         GUI.Label(r, text, st);
     }
 }

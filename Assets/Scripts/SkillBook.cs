@@ -92,6 +92,14 @@ public static class SkillBook
     public static Dictionary<string, object> LineFor(string cls)
     {
         Ensure();
+        if (cls == "beginner")
+        {
+            var ids = new List<object>();
+            foreach (var skill in byId.Values) if (skill.job == 0) ids.Add(skill.id);
+            ids.Sort((a, b) => ((int)a).CompareTo((int)b));
+            return new Dictionary<string, object> { { "id", "beginner" }, { "tabs", new List<object> {
+                new Dictionary<string, object> { { "job", 0 }, { "name", "新手" }, { "skills", ids } } } } };
+        }
         foreach (var line in lines)
             if (line.TryGetValue("id", out var id) && (string)id == cls) return line;
         return lines.Count > 0 ? lines[0] : null;
@@ -152,7 +160,7 @@ public static class SkillProgress
         PlayerPrefs.Save();
     }
 
-    public static int TotalSp => SpPerLevel * Mathf.Max(0, Profile.level - 1);
+    public static int TotalSp => Profile.cls == "beginner" ? Mathf.Clamp(Profile.level - 1, 0, 6) : SpPerLevel * Mathf.Max(0, Profile.level - 1);
 
     public static int SpentSp
     {

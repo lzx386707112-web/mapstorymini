@@ -8,6 +8,7 @@ using UnityEngine.Android;
 
 public sealed class WzAndroidLoader : MonoBehaviour
 {
+    Texture2D background;
     Action complete;
     string manifest, message, phase = "准备加载资源";
     const string Root = "/sdcard/mapstory";
@@ -15,10 +16,27 @@ public sealed class WzAndroidLoader : MonoBehaviour
     volatile int loaded, total;
     bool permissionRequested, failed, entering;
     int sdk;
+    GUIStyle titleStyle, detailStyle, buttonStyle;
+    float nextProgressUpdate, visibleProgress;
+    string progressText = "0%";
+    bool hasPermission;
+
+    void RefreshProgress()
+    {
+        if (Time.unscaledTime < nextProgressUpdate && !entering) return;
+        nextProgressUpdate = Time.unscaledTime + .1f;
+        int count = loaded, countTotal = total;
+        visibleProgress = entering ? 1f : countTotal > 0 ? Mathf.Clamp01((float)count / countTotal) : 0f;
+        progressText = Mathf.FloorToInt(visibleProgress * 100) + "%";
+    }
+
     public static void Begin(Action complete)
     {
         var go = new GameObject("[ResourceLoader]"); DontDestroyOnLoad(go);
         var loader = go.AddComponent<WzAndroidLoader>(); loader.complete = complete;
+        var image = Resources.Load<TextAsset>("LoadingBackground");
+        loader.background = new Texture2D(2, 2);
+        loader.background.LoadImage(image.bytes);
         loader.manifest = Resources.Load<TextAsset>("NativeAssetIndex").text;
         using (var version = new AndroidJavaClass("android.os.Build$VERSION")) loader.sdk = version.GetStatic<int>("SDK_INT");
     }
@@ -68,7 +86,9 @@ public sealed class WzAndroidLoader : MonoBehaviour
     void Update()
     {
         if (entering) { complete(); Destroy(gameObject); return; }
-        if (!HasPermission())
+        RefreshProgress();
+        hasPermission = HasPermission();
+        if (!hasPermission)
         {
             phase = "请允许访问资源目录";
             if (!permissionRequested)
@@ -78,22 +98,46 @@ public sealed class WzAndroidLoader : MonoBehaviour
         if (loading == null && !failed) StartLoading();
         if (loading == null || !loading.IsCompleted) return;
         if (loading.IsFaulted) { failed = true; message = loading.Exception.GetBaseException().Message; }
-        else { phase = "加载完成，正在进入游戏"; entering = true; }
+        else { phase = "加载完成，正在进入游戏"; entering = true; visibleProgress = 1f; progressText = "100%"; }
         loading = null;
     }
+    void OnDestroy() { if (background != null) Destroy(background); }
+
     void OnGUI()
     {
-        GUI.skin.font = Resources.Load<Font>("Fonts/ui");
-        float width = Mathf.Min(Screen.width - 64, 720), x = (Screen.width - width) / 2, y = Screen.height * .42f;
-        var style = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 22, wordWrap = true };
-        GUI.Label(new Rect(x, y - 70, width, 65), message ?? phase, style);
-        float progress = entering ? 1f : total > 0 ? (float)loaded / total : 0f;
-        GUI.DrawTexture(new Rect(x, y, width, 24), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.18f, .2f, .23f), 0, 0);
-        GUI.DrawTexture(new Rect(x, y, width * progress, 24), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.25f, .7f, .4f), 0, 0);
-        GUI.Label(new Rect(x, y + 32, width, 40), Mathf.FloorToInt(progress * 100) + "%", style);
-        if (failed && GUI.Button(new Rect(x, y + 88, width, 55), "重试")) failed = false;
-        if (permissionRequested && loading == null && !HasPermission() && GUI.Button(new Rect(x, y + 88, width, 55), "授予文件访问权限"))
-            try { RequestPermission(); } catch (Exception e) { message = e.Message; }
+        if (titleStyle == null)
+        {
+            var font = Resources.Load<Font>("Fonts/ui");
+            titleStyle = new GUIStyle(GUI.skin.label) { font = font, alignment = TextAnchor.MiddleCenter, fontSize = 19, wordWrap = true };
+            titleStyle.normal.textColor = Color.white;
+            detailStyle = new GUIStyle(titleStyle) { fontSize = 14 };
+            detailStyle.normal.textColor = new Color(.75f, .79f, .84f);
+            buttonStyle = new GUIStyle(GUI.skin.button) { font = font, fontSize = 20 };
+        }
+        var matrix = GUI.matrix; var color = GUI.color; int depth = GUI.depth;
+        try
+        {
+            GUI.depth = -1000;
+            GUI.color = Color.white;
+            // There is no game camera yet. Repaint an opaque background to clear old glyphs.
+            GUI.matrix = Matrix4x4.identity;
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.055f, .07f, .09f, 1), 0, 0);
+            if (background != null) GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), background, ScaleMode.ScaleAndCrop);
+            GUI.DrawTexture(new Rect(0, Screen.height * .74f, Screen.width, Screen.height * .26f), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .68f), 0, 0);
+            float scale = Mathf.Min(Screen.width / 960f, Screen.height / 540f);
+            GUI.matrix = Matrix4x4.TRS(new Vector3((Screen.width - 960 * scale) / 2, Screen.height - 540 * scale - Screen.safeArea.y, 0), Quaternion.identity, Vector3.one * scale);
+            GUI.Label(new Rect(120, 412, 720, 30), failed ? "资源加载失败" : phase, titleStyle);
+            GUI.DrawTexture(new Rect(160, 454, 640, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.18f, .2f, .23f), 0, 0);
+            if (visibleProgress > 0)
+                GUI.DrawTexture(new Rect(160, 454, 640 * visibleProgress, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.25f, .7f, .4f), 0, 0);
+            GUI.Label(new Rect(160, 470, 640, 22), progressText, detailStyle);
+            // Error/instruction text has its own region, separate from title and percentage.
+            if (!string.IsNullOrEmpty(message)) GUI.Label(new Rect(80, 324, 800, 65), message, detailStyle);
+            if (failed && GUI.Button(new Rect(330, 386, 300, 26), "重试", buttonStyle)) failed = false;
+            if (permissionRequested && loading == null && !hasPermission && GUI.Button(new Rect(330, 386, 300, 26), "授予文件访问权限", buttonStyle))
+                try { RequestPermission(); } catch (Exception e) { message = e.Message; }
+        }
+        finally { GUI.matrix = matrix; GUI.color = color; GUI.depth = depth; }
     }
 }
 #endif
