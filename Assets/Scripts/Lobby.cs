@@ -136,7 +136,7 @@ public class Lobby : MonoBehaviour
                       id => CosmeticFactory.OutfitColor(id), id => { Profile.SetOutfit(id); });
 
         y += 14f; SectionTitle(x, y, "武器外观（已拥有）"); y += 30f;
-        // 已拥有武器：点选即装备（改变手持外观）
+        // 原版鼠标语义：双击已拥有武器装备。
         float colW = 150f;
         int col = 0;
         foreach (var oid in Profile.OwnedWeapons)
@@ -147,7 +147,8 @@ public class Lobby : MonoBehaviour
             bool on = Profile.equipWeapon == oid;
             UiKit.Fill(r, on ? new Color(0.22f, 0.42f, 0.62f) : new Color(0.14f, 0.17f, 0.22f));
             GUI.Label(r, WeaponDefs.Get(oid).name, new GUIStyle(_sw) { alignment = TextAnchor.MiddleCenter });
-            if (Clicked(r)) { Profile.EquipWeapon(oid); }
+            if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && r.Contains(_mouse))
+                Profile.EquipWeapon(oid);
             col++;
         }
     }
@@ -296,5 +297,5 @@ public class Lobby : MonoBehaviour
         return y + sz + 6f;
     }
 
-    bool Clicked(Rect r) => Input.GetMouseButtonDown(0) && r.Contains(_mouse);
+    bool Clicked(Rect r) => Event.current.type == EventType.Repaint && Pointer.Pressed && r.Contains(_mouse);
 }

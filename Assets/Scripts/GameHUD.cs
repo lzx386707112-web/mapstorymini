@@ -238,7 +238,7 @@ public class GameHUD : MonoBehaviour
         bs.alignment = TextAnchor.MiddleCenter;
         bs.normal.textColor = Color.white;
         GUI.Label(br, "返回大厅", bs);
-        if (Input.GetMouseButtonDown(0) && br.Contains(_mouseGui))
+        if (Pointer.Pressed && br.Contains(_mouseGui))
         {
             if (GameLoop.I != null) GameLoop.I.EnterLobby();
         }

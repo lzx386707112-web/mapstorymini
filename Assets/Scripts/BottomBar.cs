@@ -235,9 +235,9 @@ public static class BottomBar
                 var attack = action.HasValue ? KeyConfigWindow.Icon(action.Value) : null;
                 if (attack != null) GUI.DrawTexture(r, attack, ScaleMode.ScaleToFit);
             }
-            if (!KeyConfigWindow.Visible && Event.current.type == EventType.Repaint && Input.GetMouseButtonDown(1) && r.Contains(Pointer.Pos))
+            if (!KeyConfigWindow.Visible && Event.current.type == EventType.Repaint && Pointer.RightPressed && r.Contains(Pointer.Pos))
                 { if (skillSlot >= 0) QuickSlots.Clear(skillSlot); }
-            if (!KeyConfigWindow.Visible && Event.current.type == EventType.Repaint && Pointer.Released && r.Contains(Pointer.Pos))
+            if (!KeyConfigWindow.Visible && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
             {
                 if (id > 0) QuickSlots.Cast(skillSlot);
                 else if (key != KeyCode.None && key == KeyMap.Of(GameAction.Attack)) GameLoop.I.player.RequestAttack();

@@ -1,0 +1,326 @@
+{
+  "states": [
+    {
+      "id": 0,
+      "frames": [
+        {
+          "file": "0_0.bytes",
+          "x": 0,
+          "y": 3,
+          "delay": 100
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "frames": [
+        {
+          "file": "1_0.bytes",
+          "x": 3,
+          "y": 6,
+          "delay": 500
+        },
+        {
+          "file": "1_1.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 500
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "frames": [
+        {
+          "file": "2_0.bytes",
+          "x": 3,
+          "y": 6,
+          "delay": 200
+        },
+        {
+          "file": "2_1.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 100
+        },
+        {
+          "file": "2_2.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 100
+        },
+        {
+          "file": "2_3.bytes",
+          "x": 3,
+          "y": 6,
+          "delay": 100
+        },
+        {
+          "file": "2_4.bytes",
+          "x": 3,
+          "y": 6,
+          "delay": 100
+        },
+        {
+          "file": "2_5.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 100
+        },
+        {
+          "file": "2_6.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 100
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "frames": [
+        {
+          "file": "3_0.bytes",
+          "x": 3,
+          "y": 9,
+          "delay": 200
+        },
+        {
+          "file": "3_1.bytes",
+          "x": 4,
+          "y": 15,
+          "delay": 200
+        },
+        {
+          "file": "3_2.bytes",
+          "x": 3,
+          "y": 15,
+          "delay": 200
+        },
+        {
+          "file": "3_3.bytes",
+          "x": 4,
+          "y": 9,
+          "delay": 200
+        },
+        {
+          "file": "3_4.bytes",
+          "x": 3,
+          "y": 15,
+          "delay": 200
+        },
+        {
+          "file": "3_5.bytes",
+          "x": 4,
+          "y": 15,
+          "delay": 200
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "frames": [
+        {
+          "file": "4_0.bytes",
+          "x": 3,
+          "y": 6,
+          "delay": 500
+        },
+        {
+          "file": "4_1.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 500
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "frames": [
+        {
+          "file": "5_0.bytes",
+          "x": 6,
+          "y": 7,
+          "delay": 250
+        },
+        {
+          "file": "5_1.bytes",
+          "x": 6,
+          "y": 3,
+          "delay": 100
+        },
+        {
+          "file": "5_2.bytes",
+          "x": 5,
+          "y": 2,
+          "delay": 200
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "frames": [
+        {
+          "file": "6_0.bytes",
+          "x": 3,
+          "y": 6,
+          "delay": 200
+        },
+        {
+          "file": "6_1.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 100
+        },
+        {
+          "file": "6_2.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 100
+        },
+        {
+          "file": "6_3.bytes",
+          "x": 3,
+          "y": 6,
+          "delay": 100
+        },
+        {
+          "file": "6_4.bytes",
+          "x": 3,
+          "y": 6,
+          "delay": 100
+        },
+        {
+          "file": "6_5.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 100
+        },
+        {
+          "file": "6_6.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 100
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "frames": [
+        {
+          "file": "7_0.bytes",
+          "x": 12,
+          "y": 11,
+          "delay": 200
+        },
+        {
+          "file": "7_1.bytes",
+          "x": 12,
+          "y": 13,
+          "delay": 200
+        },
+        {
+          "file": "7_2.bytes",
+          "x": 12,
+          "y": 14,
+          "delay": 200
+        },
+        {
+          "file": "7_4.bytes",
+          "x": 12,
+          "y": 13,
+          "delay": 200
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "frames": [
+        {
+          "file": "8_0.bytes",
+          "x": 9,
+          "y": 13,
+          "delay": 200
+        },
+        {
+          "file": "8_1.bytes",
+          "x": 11,
+          "y": 13,
+          "delay": 200
+        },
+        {
+          "file": "8_2.bytes",
+          "x": 12,
+          "y": 13,
+          "delay": 200
+        },
+        {
+          "file": "8_4.bytes",
+          "x": 11,
+          "y": 13,
+          "delay": 200
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "frames": [
+        {
+          "file": "9_0.bytes",
+          "x": 12,
+          "y": 14,
+          "delay": 100
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "frames": [
+        {
+          "file": "10_0.bytes",
+          "x": 12,
+          "y": 13,
+          "delay": 100
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "frames": [
+        {
+          "file": "11_0.bytes",
+          "x": 5,
+          "y": 2,
+          "delay": 100
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "frames": [
+        {
+          "file": "12_0.bytes",
+          "x": 4,
+          "y": 1,
+          "delay": 100
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "frames": [
+        {
+          "file": "13_0.bytes",
+          "x": 3,
+          "y": 6,
+          "delay": 500
+        },
+        {
+          "file": "13_1.bytes",
+          "x": 4,
+          "y": 4,
+          "delay": 500
+        }
+      ]
+    }
+  ]
+}

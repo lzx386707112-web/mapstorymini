@@ -255,18 +255,55 @@ public static class Pointer
     public static bool Pressed;   // 本帧按下（边沿）
     public static bool Released;  // 本帧抬起（边沿）
 
-    static bool lastDown;
-    public static bool Blocked;   // 被上层面板吃掉时不参与命中
+    public static bool RightDown, RightPressed, RightReleased;
+    public static bool Clicked, DoubleClicked, Dragging, DragStarted, DragEnded;
+    public static Vector2 PressPosition;
+    public static bool Blocked;
+    static float lastClickTime = -10f;
+    static Vector2 lastClickPosition;
+    static bool doubleCandidate;
+    static int frame = -1;
 
+    // Desktop mouse only. Trackpad two-finger secondary click arrives as button 1.
     public static void Tick()
     {
-        var p = UiKit.MouseGui();
-        bool d = Input.GetMouseButton(0);
-        Pos = p;
-        Pressed = d && !lastDown;
-        Released = !d && lastDown;
-        Down = d;
-        lastDown = d;
+        if (frame == Time.frameCount) return;
+        frame = Time.frameCount;
+        Pos = UiKit.MouseGui();
+        bool focused = Application.isFocused;
+        bool left = focused && Input.GetMouseButton(0);
+        bool right = focused && Input.GetMouseButton(1);
+        Pressed = left && !Down;
+        Released = !left && Down;
+        RightPressed = right && !RightDown;
+        RightReleased = !right && RightDown;
+        Down = left;
+        RightDown = right;
+        Clicked = DoubleClicked = DragStarted = DragEnded = false;
+        if (Pressed)
+        {
+            PressPosition = Pos;
+            doubleCandidate = Time.unscaledTime - lastClickTime <= 0.5f &&
+                              (Pos - lastClickPosition).sqrMagnitude <= 25f;
+        }
+        if ((Down || Released) && !Dragging && (Pos - PressPosition).sqrMagnitude > 16f)
+            DragStarted = Dragging = true;
+        if (Released)
+        {
+            DragEnded = Dragging;
+            Clicked = focused && !Dragging;
+            DoubleClicked = Clicked && doubleCandidate;
+            lastClickTime = Clicked && !DoubleClicked ? Time.unscaledTime : -10f;
+            lastClickPosition = Pos;
+            Dragging = false;
+        }
+        if (!focused)
+        {
+            // Focus loss cancels a gesture; it must never activate a release button.
+            Released = RightReleased = false;
+            Dragging = false;
+            lastClickTime = -10f;
+        }
     }
 }
 
@@ -277,7 +314,13 @@ public class InputBridge : MonoBehaviour
 {
     public static InputBridge I;
 
-    void Awake() { I = this; KeyMap.Ensure(); }
+    void Awake()
+    {
+        I = this;
+        KeyMap.Ensure();
+        Input.simulateMouseWithTouches = false;
+        if (GetComponent<NativeCursor>() == null) gameObject.AddComponent<NativeCursor>();
+    }
 
     void Update()
     {
@@ -285,6 +328,7 @@ public class InputBridge : MonoBehaviour
         bool playing = game != null && game.state == GameLoop.GameState.Playing &&
                        game.player != null && !game.gameOver && !PlayerCtrl.InputLocked && !BottomBar.ChatFocused;
         UiKit.RefreshMetrics();
+        Pointer.Tick();
 
         if (playing)
         {
@@ -340,7 +384,6 @@ public class InputBridge : MonoBehaviour
 
     void LateUpdate()
     {
-        Pointer.Tick();
         InputHub.EndFrame();
     }
 }
