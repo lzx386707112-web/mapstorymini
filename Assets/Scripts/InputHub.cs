@@ -264,15 +264,104 @@ public static class Pointer
     static bool doubleCandidate;
     static int frame = -1;
 
-    // Desktop mouse only. Trackpad two-finger secondary click arrives as button 1.
+    public static bool UsesVirtualCursor { get; private set; }
+    static bool touchGesture, touchMoved, touchSecondary, touchHold;
+    static int touchId;
+    static float touchSince;
+    static Vector2 touchStart;
+    static bool initialized;
+
+    // The screen acts as a relative trackpad: touching never teleports the cursor.
+    static void ReadDevice(out bool left, out bool right)
+    {
+        left = right = false;
+        if (!initialized)
+        {
+            initialized = true;
+            Pos = new Vector2(UiKit.W * 0.5f, UiKit.H * 0.5f);
+            UsesVirtualCursor = Application.isMobilePlatform;
+        }
+        if (!Application.isFocused)
+        {
+            touchGesture = touchHold = false;
+            return;
+        }
+        if (Input.touchCount > 0)
+        {
+            UsesVirtualCursor = true;
+            if (!touchGesture)
+            {
+                var first = Input.GetTouch(0);
+                // Do not restart a cancelled gesture while a finger remains on screen.
+                if (first.phase != TouchPhase.Began) return;
+                touchGesture = true;
+                touchId = first.fingerId;
+                touchStart = first.position;
+                touchSince = Time.unscaledTime;
+                touchMoved = touchSecondary = touchHold = false;
+            }
+            int active = 0;
+            bool cancelled = false;
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                var t = Input.GetTouch(i);
+                if (t.phase == TouchPhase.Canceled) cancelled = true;
+                if (t.phase != TouchPhase.Ended && t.phase != TouchPhase.Canceled) active++;
+                if (t.fingerId != touchId) continue;
+                if ((t.position - touchStart).sqrMagnitude > 64f * UiKit.Scale * UiKit.Scale)
+                    touchMoved = true;
+                if (!touchSecondary && t.phase != TouchPhase.Began && t.phase != TouchPhase.Canceled)
+                    Pos += new Vector2(t.deltaPosition.x, -t.deltaPosition.y) / UiKit.Scale;
+            }
+            // A second finger cancels any pending left tap. Hold stays left until released.
+            if (Input.touchCount >= 2 && !touchHold) touchSecondary = true;
+            if (cancelled)
+            {
+                touchGesture = touchHold = false;
+                return;
+            }
+            if (active == 0)
+            {
+                if (touchHold) left = false;
+                else if (!touchMoved && Time.unscaledTime - touchSince <= 0.35f)
+                {
+                    right = touchSecondary;
+                    left = !touchSecondary;
+                }
+                touchGesture = touchHold = false;
+            }
+            else
+            {
+                if (!touchSecondary && !touchMoved && Time.unscaledTime - touchSince >= 0.35f)
+                    touchHold = true;
+                left = touchHold;
+            }
+        }
+        else
+        {
+            touchGesture = touchHold = false;
+            if (Input.GetMouseButton(0) || Input.GetMouseButton(1) ||
+                Mathf.Abs(Input.GetAxisRaw("Mouse X")) > 0f || Mathf.Abs(Input.GetAxisRaw("Mouse Y")) > 0f)
+                UsesVirtualCursor = false;
+            if (!UsesVirtualCursor)
+            {
+                Pos = new Vector2(Input.mousePosition.x / UiKit.Scale,
+                                  (Screen.height - Input.mousePosition.y) / UiKit.Scale);
+                left = Input.GetMouseButton(0);
+                right = Input.GetMouseButton(1);
+            }
+        }
+        Pos = new Vector2(Mathf.Clamp(Pos.x, 0f, UiKit.W - 1f),
+                          Mathf.Clamp(Pos.y, 0f, UiKit.H - 1f));
+    }
+
+    // Sample once per frame before any UI reads the pointer.
     public static void Tick()
     {
         if (frame == Time.frameCount) return;
         frame = Time.frameCount;
-        Pos = UiKit.MouseGui();
+        ReadDevice(out bool left, out bool right);
         bool focused = Application.isFocused;
-        bool left = focused && Input.GetMouseButton(0);
-        bool right = focused && Input.GetMouseButton(1);
         Pressed = left && !Down;
         Released = !left && Down;
         RightPressed = right && !RightDown;

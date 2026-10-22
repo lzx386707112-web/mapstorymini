@@ -242,6 +242,17 @@ public static class KeyConfigWindow
                 if (icon != null) GUI.DrawTexture(r, icon, ScaleMode.ScaleToFit);
             }
             if (selected == code) UiKit.Fill(r, new Color(0.2f, 0.5f, 1f, 0.24f));
+            if (tick && !quickEdit && Pointer.DoubleClicked && r.Contains(Pointer.Pos))
+            {
+                // Release of the second click returns the function to its tray.
+                // Clear the pending drag so release handling cannot bind it back.
+                foreach (var action in palette)
+                    if (draft.TryGetValue(action, out var binding) && binding == code)
+                        draft[action] = KeyCode.None;
+                carried = null;
+                selected = KeyCode.None;
+                continue;
+            }
             if (tick && Pointer.Pressed && r.Contains(Pointer.Pos))
             {
                 selected = code;

@@ -8,7 +8,7 @@ public sealed class NativeCursor : MonoBehaviour
     [Serializable] class State { public int id; public Frame[] frames; }
     [Serializable] class Manifest { public State[] states; }
     Manifest manifest;
-    int state = -1;
+    int state;
     float since;
     bool wasVisible;
 
@@ -32,6 +32,9 @@ public sealed class NativeCursor : MonoBehaviour
 
     void OnGUI()
     {
+        // Set depth on every IMGUI event and retain it for this behaviour.
+        // Restoring it during Repaint lets the lobby paint over the cursor.
+        GUI.depth = -10000;
         if (manifest == null || !Application.isFocused || Event.current.type != EventType.Repaint) return;
         State selected = Array.Find(manifest.states, s => s.id == state);
         if (selected == null || selected.frames.Length == 0) return;
@@ -50,15 +53,12 @@ public sealed class NativeCursor : MonoBehaviour
         if (texture == null) return;
         var matrix = GUI.matrix;
         var color = GUI.color;
-        int depth = GUI.depth;
-        GUI.depth = -10000;
         GUI.color = Color.white;
         GUI.matrix = Matrix4x4.Scale(new Vector3(UiKit.Scale, UiKit.Scale, 1));
         GUI.DrawTexture(new Rect(Pointer.Pos.x - frame.x, Pointer.Pos.y - frame.y,
                                  texture.width, texture.height), texture);
         GUI.matrix = matrix;
         GUI.color = color;
-        GUI.depth = depth;
     }
 
     void OnDisable() { Cursor.visible = wasVisible; }

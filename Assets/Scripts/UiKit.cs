@@ -74,6 +74,7 @@ public static class UiKit
     // 触摸/鼠标位置转成虚拟坐标（GUI 原点在左上）
     public static Vector2 MouseGui()
     {
+        if (Pointer.UsesVirtualCursor) return Pointer.Pos;
         return new Vector2(Input.mousePosition.x / Scale,
                            (Screen.height - Input.mousePosition.y) / Scale);
     }
