@@ -144,6 +144,25 @@ CREATE TABLE keymap
     action      INTEGER NOT NULL DEFAULT 0
 );
 
+-- V1.0.5__create_buddies.sql: pending requests survive character switches.
+CREATE TABLE buddies
+(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid INTEGER NOT NULL,
+    buddyid INTEGER NOT NULL,
+    pending INTEGER NOT NULL DEFAULT 0,
+    `group` TEXT DEFAULT 'Default Group'
+);
+
+-- V1.0.23__create_monster.sql
+CREATE TABLE monsterbook
+(
+    charid INTEGER NOT NULL,
+    cardid INTEGER NOT NULL,
+    level INTEGER NOT NULL DEFAULT 1,
+    PRIMARY KEY (charid, cardid)
+);
+
 CREATE TABLE quickslotkeymapped
 (
     accountid INTEGER PRIMARY KEY,
@@ -312,3 +331,108 @@ INSERT INTO game_config (config_type, config_sub_type, config_clazz, config_code
 ('server', 'Game Mechanics', 'java.lang.Integer', 'level_up_ap_gain', '5', '每级AP'),
 ('server', 'Game Mechanics', 'java.lang.Integer', 'level_up_sp_gain', '3', '每级SP'),
 ('server', 'Game Mechanics', 'java.lang.Boolean', 'use_enforce_job_sp_range', 'false', '按职业限制SP上限');
+
+-- GuildOperationHandler / V1.0.15; members are characters.guildid/guildrank.
+CREATE TABLE guilds (
+ guildid INTEGER PRIMARY KEY AUTOINCREMENT,
+ leader INTEGER NOT NULL DEFAULT 0,
+ GP INTEGER NOT NULL DEFAULT 0,
+ name TEXT NOT NULL DEFAULT '',
+ rank1title TEXT DEFAULT 'Master',
+ rank2title TEXT DEFAULT 'Jr. Master',
+ rank3title TEXT DEFAULT 'Member',
+ rank4title TEXT DEFAULT 'Member',
+ rank5title TEXT DEFAULT 'Member',
+ capacity INTEGER DEFAULT 10,
+ logo INTEGER DEFAULT 0,
+ logoColor INTEGER DEFAULT 0,
+ logoBG INTEGER DEFAULT 0,
+ logoBGColor INTEGER DEFAULT 0,
+ notice TEXT DEFAULT '',
+ signature INTEGER DEFAULT 0,
+ allianceId INTEGER DEFAULT 0
+);
+CREATE TABLE family_character (
+ cid INTEGER PRIMARY KEY,
+ familyid INTEGER NOT NULL,
+ seniorid INTEGER DEFAULT 0,
+ reputation INTEGER DEFAULT 0,
+ todaysrep INTEGER DEFAULT 0,
+ totalreputation INTEGER DEFAULT 0,
+ reptosenior INTEGER DEFAULT 0,
+ precepts TEXT DEFAULT '',
+ lastresettime INTEGER DEFAULT 0
+);
+CREATE TABLE family_entitlement (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ charid INTEGER NOT NULL,
+ entitlementid INTEGER NOT NULL,
+ timestamp INTEGER DEFAULT 0
+);
+-- Local representation of active family buff timer (source Character.startFamilyBuffTimer).
+CREATE TABLE family_buff (
+ charid INTEGER PRIMARY KEY,
+ expires INTEGER DEFAULT 0,
+ expRate REAL DEFAULT 1,
+ dropRate REAL DEFAULT 1
+);
+-- Source modified_cash_item nullable overrides; zero is a real override, not absent.
+CREATE TABLE modified_cash_item (
+ sn INTEGER PRIMARY KEY,
+ item_id INTEGER,
+ count INTEGER,
+ price INTEGER,
+ period INTEGER,
+ on_sale INTEGER,
+ commodity_gender INTEGER,
+ priority INTEGER,
+ bonus INTEGER,
+ maple_point INTEGER,
+ meso INTEGER,
+ for_premium_user INTEGER,
+ class INTEGER,
+ limit INTEGER,
+ pb_cash INTEGER,
+ pb_point INTEGER,
+ pb_gift INTEGER,
+ package_sn INTEGER
+);
+CREATE TABLE cash_items (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ accountid INTEGER NOT NULL,
+ world INTEGER NOT NULL,
+ jobgroup INTEGER NOT NULL,
+ sn INTEGER NOT NULL,
+ itemid INTEGER NOT NULL,
+ quantity INTEGER DEFAULT 1,
+ expiration INTEGER DEFAULT -1,
+ characterid INTEGER DEFAULT 0,
+ inventoryitemid INTEGER DEFAULT 0,
+ giftFrom TEXT DEFAULT ''
+);
+CREATE TABLE cash_wishlist (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ characterid INTEGER NOT NULL,
+ sn INTEGER NOT NULL
+);
+CREATE TABLE cash_gifts (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ characterid INTEGER NOT NULL,
+ sn INTEGER NOT NULL,
+ sender TEXT DEFAULT '',
+ message TEXT DEFAULT ''
+);
+
+-- BossDamageGrowth kill progress and ExpeditionBossLog entry records.
+CREATE TABLE boss_growth (
+ characterid INTEGER NOT NULL,
+ boss TEXT NOT NULL,
+ kills INTEGER NOT NULL DEFAULT 0,
+ PRIMARY KEY (characterid, boss)
+);
+CREATE TABLE bosslog_daily (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ characterid INTEGER NOT NULL,
+ bosstype TEXT NOT NULL,
+ attempttime INTEGER NOT NULL
+);

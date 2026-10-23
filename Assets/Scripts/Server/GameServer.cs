@@ -8,6 +8,10 @@ public sealed class GameServer
     public DbStore Db { get; private set; }
     public ITransport Transport { get; private set; }
     public IMapInfo MapInfo { get; set; }   // 客户端注入（FieldCatalog 数据）
+    public NativeSocialService Social { get; private set; }
+    public NativeCommunityService Community { get; private set; }
+    public NativeCashService Cash { get; private set; }
+    public NativeBossService Bosses { get; private set; }
 
     // 单例（本地单机一个服务端实例）
     public static GameServer Local { get; private set; }
@@ -20,6 +24,10 @@ public sealed class GameServer
         {
             Db = DbStore.Open(path),
         };
+        srv.Social = new NativeSocialService(srv.Db);
+        srv.Community = new NativeCommunityService(srv.Db);
+        srv.Cash = new NativeCashService(srv.Db);
+        srv.Bosses = new NativeBossService(srv.Db);
         srv.Transport = new InProcessTransport(srv);
         Local = srv;
         return srv;
@@ -29,6 +37,10 @@ public sealed class GameServer
     public static GameServer StartWith(DbStore db)
     {
         var srv = new GameServer { Db = db };
+        srv.Social = new NativeSocialService(db);
+        srv.Community = new NativeCommunityService(db);
+        srv.Cash = new NativeCashService(db);
+        srv.Bosses = new NativeBossService(db);
         srv.Transport = new InProcessTransport(srv);
         Local = srv;
         return srv;

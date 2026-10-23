@@ -28,6 +28,8 @@ public static class GameSession
         if (Server != null) return;
         Server = GameServer.Start();
         Server.MapInfo = new FieldMapInfo();
+        Server.Community.CanFamilyTravel = NativeCommunityMaps.CanTravel;
+        Server.Cash.CanEnter = NativeCommunityMaps.CanEnterCash;
         Net = Server.Transport;
         MigrateLegacyProfile();
     }
@@ -166,6 +168,13 @@ public static class GameSession
         if (!res.ok || res.character == null) return false;
         CharacterId = characterId;
         Character = res.character;
+        BottomBar.ResetChat();
+        NativeSocialWindow.Reset();
+        NativeCommunityWindow.Reset();
+        NativeMedalWindow.Visible = false;
+        NativeCashWindow.Reset();
+        NativeMapWindows.WorldVisible = false;
+        NativeMonsterBook.Visible = false;
         InGame = true;
         ApplyToProfile();
         KeyMap.LoadCharacter(Character.keymap);
@@ -176,6 +185,8 @@ public static class GameSession
     public static void DeselectChar()
     {
         if (InGame) SaveToDb();
+        NativeCashWindow.Reset();
+        Net?.EndSocialSession(CharacterId);
         InGame = false;
         Character = null;
         CharacterId = 0;
@@ -184,6 +195,8 @@ public static class GameSession
     public static void Logout()
     {
         if (InGame) SaveToDb();
+        NativeCashWindow.Reset();
+        Net?.EndSocialSession(CharacterId);
         InGame = false;
         Character = null;
         CharacterId = 0;
@@ -228,14 +241,13 @@ public static class GameSession
         {
             // 装备：EQUIPPED 行（源端 inventoryitems 的 position 为 -1/-5/-6/-7/-8/-9/-10/-11）。
             // 以当前角色的数据库装备为准。
-            if (it.inventoryType == InventoryDao.Equipped)
+            if (it.inventoryType == InventoryDao.Equipped && it.position < 0)
             {
                 int pos = it.position;
                 if (pos == -11 || IsEquipSlot(pos)) d.SetEquipSlot(pos, it.itemId);
                 if (pos == -11) d.owned.Add(it.itemId.ToString());
                 continue;
             }
-            if (it.isEquip && it.inventoryType == InventoryDao.Equip) continue;   // 背包里的装备不放进消耗品栏
             d.AddItem(it.itemId, it.quantity);
         }
 
@@ -303,7 +315,7 @@ public static class GameSession
 
     // 装备槽位（源端 inventoryitems 的 position 为负值）：-1帽/-5衣/-6裤/-7鞋/-8手套/-9披风/-10盾
     static bool IsEquipSlot(int pos)
-        => pos == -1 || pos == -5 || pos == -6 || pos == -7 || pos == -8 || pos == -9 || pos == -10;
+        => pos == -49 || pos == -1 || pos == -5 || pos == -6 || pos == -7 || pos == -8 || pos == -9 || pos == -10;
 
     // 发型 id（源端 30000~39999 含发色）↔ 客户端 h0/h1… 标签
     static string HairFromId(int id)

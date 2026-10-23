@@ -15,6 +15,7 @@ public sealed class SkillEntry
 public sealed class InventoryEntry
 {
     public long itemRowId;
+    public long expiration = -1;
     public int itemId, inventoryType, position, quantity;
     public bool isEquip;
     // 装备属性（inventoryequipment 行；非装备为 0）
@@ -68,6 +69,7 @@ public static class CharService
             var e = new InventoryEntry
             {
                 itemRowId = Convert(r, "inventoryitemid"),
+                expiration = Convert(r, "expiration"),
                 itemId = (int)Convert(r, "itemid"),
                 inventoryType = (int)Convert(r, "inventorytype"),
                 position = (int)Convert(r, "position"),

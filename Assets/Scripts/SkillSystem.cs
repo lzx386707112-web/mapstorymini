@@ -110,6 +110,7 @@ public partial class SkillSystem : MonoBehaviour
         if (p == null || p.hp <= 0 || game == null || game.state != GameLoop.GameState.Playing || game.gameOver)
             return Reject("当前无法释放技能");
         if (p.IsClimbing) return Reject("攀爬时无法释放技能");
+        if (p.GetComponent<NativeMobDebuffs>()?.BlocksSkill == true) return Reject("异常状态下无法释放技能");
         if (Time.unscaledTime < actionUntil) return Reject("正在释放技能");
         if (s.native == null) return Reject("技能等级数据缺失");
         if (s.native.Kind == "Passive") return Reject("被动技能无需施放");
@@ -213,6 +214,7 @@ public partial class SkillSystem : MonoBehaviour
     {
         if (d == null || p == null || p.hp <= 0 || GameLoop.I == null || GameLoop.I.gameOver ||
             GameLoop.I.state != GameLoop.GameState.Playing) return 0;
+        if (p.GetComponent<NativeMobDebuffs>()?.BlocksSkill == true) return 0;
         var targets = new List<Component>();
         foreach (var b in FindObjectsOfType<BossUnit>()) if (!b.dead && (onlyTarget == b || (onlyTarget == null && InRange(b.transform.position, d, origin, facing)))) targets.Add(b);
         foreach (var e in EnemyUnit.All) if (!e.dead && (onlyTarget == e || (onlyTarget == null && InRange(e.transform.position, d, origin, facing)))) targets.Add(e);
@@ -251,7 +253,7 @@ public partial class SkillSystem : MonoBehaviour
                 var result = p.RollAttack(e != null ? e.CombatStats : b.CombatStats, d);
                 landed |= result.Amount > 0;
                 // 技能自带原版 hit 部件时，关掉占位的黄色柔光爆点
-                if (e != null) e.TakeHit(result, direction, true);
+                if (e != null) e.TakeHit(result, direction, true, d.Magic);
                 else if (b != null) b.TakeHit(result, direction, true);
             }
             Impact(s,d,targets[i],direction,landed);

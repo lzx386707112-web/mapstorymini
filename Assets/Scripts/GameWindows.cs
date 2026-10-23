@@ -168,7 +168,7 @@ public static class EquipWindow
         for (int i = 0; i < slots.Length; i++)
         {
             int slot = slots[i];
-            float x = colX[i / 4], y = rowY[i % 4];
+            float x = i == 8 ? 18 : colX[i / 4], y = i == 8 ? 205 : rowY[i % 4];
             GUI.Label(At(r, x, y, 24, 16), EquipSlot.NameOf(slot), nameStyle);
             int id = Profile.EquipOfSlot(slot);
             var iconRect = At(r, x + 26, y - 2, 30, 30);
@@ -179,7 +179,8 @@ public static class EquipWindow
                 // 点击脱下（武器必须一直持有，不允许在此卸下；换武器走背包）
                 if (release && iconRect.Contains(Pointer.Pos) && slot != EquipSlot.Weapon)
                 {
-                    Profile.SetEquipSlot(slot, 0);
+                    if (slot == EquipSlot.Medal) NativeMedalWindow.Wear(id, true);
+                    else Profile.SetEquipSlot(slot, 0);
                     BottomBar.Toast("已脱下" + EquipSlot.NameOf(slot));
                 }
             }
@@ -315,18 +316,10 @@ public static class InvenWindow
 public static class ShopWindow
 {
     public static bool Visible;
-    static Rect rect = new Rect(220, 110, 320, 220);
-    public static void Toggle() { Visible = !Visible; }
-
-    public static void Draw()
-    {
-        if (!Visible) return;
-        Visible = false;
-        BottomBar.Toast("商城功能尚未接入");
-    }
+    public static void Toggle() => NativeCashWindow.Toggle();
+    public static void Draw() => NativeCashWindow.Draw();
 }
 
-// 原版“界面”菜单；未迁移的系统显示原生 disabled 态。
 public static class ShortcutWindow
 {
     public static bool Visible { get => BottomBar.InterfaceVisible; set => BottomBar.InterfaceVisible = value; }
@@ -337,12 +330,17 @@ public static class ShortcutWindow
         var anchor = BottomBar.BigButtonRect(3);
         NativeMenu.Draw("shortcut", new Vector2(anchor.xMax - 93 * BottomBar.S, anchor.y - 245 * BottomBar.S),
             new[] { "BtItem", "BtEquip", "BtStat", "BtSkill", "BtParty", "BtQuest", "BtMessenger", "BtGuild", "BtComm", "BtMobbook", "BtRanking" },
-            245, i => i < 4 || i == 5, i => {
+            245, i => i < 10, i => {
                 if (i == 0) InvenWindow.Toggle();
                 if (i == 1) EquipWindow.Toggle();
                 if (i == 2) StatWindow.Toggle();
                 if (i == 3) SkillWindow.Toggle();
+                if (i == 4) NativeSocialWindow.Toggle(GameAction.Party);
                 if (i == 5) QuestWindow.Toggle();
+                if (i == 6) NativeSocialWindow.Toggle(GameAction.Messenger);
+                if (i == 7) NativeCommunityWindow.Toggle(GameAction.Family);
+                if (i == 8) NativeSocialWindow.Toggle(GameAction.Buddy);
+                if (i == 9) NativeMonsterBook.Toggle();
                 Visible = false;
             });
     }
@@ -372,14 +370,14 @@ public static class NativeMenu
 public static class HelpWindow
 {
     public static bool Visible;
-    static Rect rect = new Rect(180, 80, 380, 320);
     public static void Toggle() { Visible = !Visible; }
 
     public static void Draw()
     {
         if (!Visible) return;
         Visible = false;
-        if (!KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
+        // 源端 EnterMTSHandler.openCenterScript：帮助入口打开主菜单脚本。
+        if (!NpcSession.Blocking) NpcSession.Talk(9900001);
     }
 }
 
@@ -408,10 +406,14 @@ public static class GameWindows
     public static bool AnyVisible =>
         StatWindow.Visible || EquipWindow.Visible || InvenWindow.Visible ||
         ShortcutWindow.Visible || HelpWindow.Visible || GameMenuWindow.Visible ||
-        SkillWindow.Visible || QuestWindow.Visible || KeyConfigWindow.Visible;
+        SkillWindow.Visible || QuestWindow.Visible || KeyConfigWindow.Visible ||
+        NativeMapWindows.WorldVisible || NativeSocialWindow.Visible || NativeMonsterBook.Visible ||
+        NativeCommunityWindow.Visible || NativeMedalWindow.Visible || ShopWindow.Visible;
 
     public static void DrawAll()
     {
+        NativeCashWindow.Tick();
+        NativeMapWindows.DrawMini();
         StatWindow.Draw();
         EquipWindow.Draw();
         InvenWindow.Draw();
@@ -421,5 +423,11 @@ public static class GameWindows
         HelpWindow.Draw();
         GameMenuWindow.Draw();
         SkillWindow.Draw();
+        NativeMapWindows.DrawWorld();
+        NativeSocialWindow.Draw();
+        NativeMonsterBook.Draw();
+        NativeCommunityWindow.DrawBoard();
+        NativeCommunityWindow.Draw();
+        NativeMedalWindow.Draw();
     }
 }

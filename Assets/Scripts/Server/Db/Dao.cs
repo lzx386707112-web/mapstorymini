@@ -218,7 +218,7 @@ public static class InventoryDao
         int sum = 0;
         foreach (var r in ItemsByCharacter(db, characterId))
         {
-            if (DbStore.Long(r, "itemid", 0) == itemId && DbStore.Long(r, "inventorytype", 0) != Equipped)
+            if (DbStore.Long(r, "itemid", 0) == itemId && DbStore.Long(r, "position", 0) > 0)
                 sum += (int)DbStore.Long(r, "quantity", 0);
         }
         return sum;
@@ -237,7 +237,7 @@ public static class InventoryDao
         {
             if (left <= 0) break;
             if (DbStore.Long(r, "itemid", 0) != itemId) continue;
-            if (DbStore.Long(r, "inventorytype", 0) == Equipped) continue;
+            if (DbStore.Long(r, "position", 0) < 0) continue;
             int q = (int)DbStore.Long(r, "quantity", 0);
             int take = Math.Min(q, left);
             long id = DbStore.Long(r, "inventoryitemid", 0);

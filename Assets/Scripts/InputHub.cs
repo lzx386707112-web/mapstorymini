@@ -352,6 +352,10 @@ public static class Pointer
 
     // 模态面板（侧滑菜单）接管期间：冻结所有 Pointer 事件，避免抬手穿透到底层 HUD。
     public static bool Suppressed;
+    public static void ConsumeClick()
+    {
+        Clicked = DoubleClicked = Released = false;
+    }
     static float lastClickTime = -10f;
     static Vector2 lastClickPosition;
     static bool doubleCandidate;
@@ -566,7 +570,7 @@ public class InputBridge : MonoBehaviour
 
         bool playing = game != null && game.state == GameLoop.GameState.Playing &&
                        game.player != null && !game.gameOver && !PlayerCtrl.InputLocked && !BottomBar.ChatFocused &&
-                       !GameSideMenu.Blocking;
+                       !GameSideMenu.Blocking && !NpcSession.Blocking;
 
         // 屏上虚拟按键（摇杆/十字/按钮）：先把触摸翻译成注入，
         // 后面读 AxisX/Pressed 时已经包含虚拟键的量。
@@ -594,7 +598,7 @@ public class InputBridge : MonoBehaviour
             foreach (var action in new[] { GameAction.Menu, GameAction.Help, GameAction.QuickSlot })
                 if (InputHub.Pressed(action)) NativeKeyActions.Execute(action);
         }
-        if (KeyConfigWindow.Visible || VirtualControlsEditor.Visible)
+        if (KeyConfigWindow.Visible || VirtualControlsEditor.Visible || NpcSession.Blocking)
         {
             TouchInput.MoveH = TouchInput.MoveV = 0f;
             TouchInput.TakeJump();

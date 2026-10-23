@@ -96,6 +96,8 @@ public class GameHUD : MonoBehaviour
         _mouseGui = UiKit.MouseGui();
 
         // 原版底部栏：底板 → 左段状态条 → 右侧按钮 + 快捷格（都在 BottomBar 里按顺序画）
+        bool enabled = GUI.enabled;
+        GUI.enabled = enabled && !NpcSession.Blocking;
         BottomBar.Draw();
         // 屏上虚拟按键层（摇杆/十字/按钮），画在底部栏之上、浮窗之下
         VirtualControls.Draw();
@@ -106,6 +108,7 @@ public class GameHUD : MonoBehaviour
         GameWindows.DrawAll();
         // 从技能窗拖技能时，把可放置的虚拟按键提到最上层（否则被技能窗/键盘窗口盖住）
         VirtualControls.DrawDropTargets();
+        GUI.enabled = enabled;
         // 技能施放失败等即时提示
         DrawNotice();
         // NPC 对话（最上层）+ 靠近提示
@@ -194,9 +197,12 @@ public class GameHUD : MonoBehaviour
         st.alignment = TextAnchor.MiddleCenter;
         st.fontSize = 15;
         st.normal.textColor = new Color(1f, 0.94f, 0.72f);
-        var r = new Rect(UiKit.W * 0.2f, UiKit.H - 96f, UiKit.W * 0.6f, 24f);
-        NativeUi.Panel(new Rect(r.x - 6, r.y - 3, r.width + 12, r.height + 6));
-        st.normal.textColor = Color.black;
+        st.wordWrap = true;
+        float width = Mathf.Min(600f, UiKit.W - 40f);
+        float height = st.CalcHeight(new GUIContent(text), width);
+        float bottom = Mathf.Min(UiKit.H - BottomBar.Height - 18f, BottomBar.QuickPanelRect().y - 12f);
+        var r = new Rect((UiKit.W - width) * .5f, bottom - height, width, height);
+        UiKit.Fill(new Rect(r.x - 8, r.y - 4, r.width + 16, r.height + 8), new Color(0, 0, 0, .65f));
         GUI.Label(r, text, st);
     }
 

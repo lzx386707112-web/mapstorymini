@@ -20,6 +20,7 @@ public static class NpcField
         map = m;
         markers.Clear();
         markerRefresh = 0f;
+        alertsRefresh = 0f;
     }
 
     public static void Clear()
@@ -99,36 +100,122 @@ public static class NpcField
         return m;
     }
 
-    public static void InvalidateMarkers() => markers.Clear();
+    public static void InvalidateMarkers() { markers.Clear(); alertsRefresh = 0f; }
 
-    // 点击 NPC：有可交任务 → 交任务脚本；有可接任务 → 接任务脚本；否则跑 NPC 对白脚本。
+    public sealed class QuestChoice
+    {
+        public int npcId;
+        public QuestDef quest;
+        public bool complete;
+    }
+
+    public static List<QuestChoice> ChoicesFor(int npcId)
+    {
+        var choices = new List<QuestChoice>();
+        foreach (int id in QuestCatalog.ForNpc(npcId))
+        {
+            var q = QuestCatalog.Get(id);
+            if (q == null) continue;
+            if (QuestLogic.CanComplete(q, npcId)) choices.Add(new QuestChoice { npcId = npcId, quest = q, complete = true });
+            else if (QuestLogic.CanStart(q, npcId)) choices.Add(new QuestChoice { npcId = npcId, quest = q });
+        }
+        choices.Sort((a, b) => a.complete == b.complete ? a.quest.id.CompareTo(b.quest.id) : a.complete ? -1 : 1);
+        return choices;
+    }
+
+    public static string DefaultTalk(int npcId) => WzAssets.FileRoot("String/Npc.img").Get(npcId.ToString())?.Text("d0", "(...)") ?? "(...)";
+
     public static void Interact(int npcId)
     {
-        var ids = QuestCatalog.ForNpc(npcId);
-        for (int pass = 0; pass < 2; pass++)
-        {
-            for (int i = 0; i < ids.Count; i++)
+        if (NpcSession.Blocking) return;
+        var choices = ChoicesFor(npcId);
+        var scripts = new List<string>();
+        var entries = WzAssets.FileRoot("Npc/" + npcId.ToString("D7") + ".img").Get("info/script");
+        if (entries != null)
+            foreach (var entry in entries.Children)
             {
-                var q = QuestCatalog.Get(ids[i]);
-                if (q == null) continue;
-                bool wantComplete = pass == 0;
-                if (wantComplete && QuestLogic.CanComplete(q, npcId))
-                {
-                    NpcSession.TalkQuest(q, npcId, true);
-                    return;
-                }
-                if (!wantComplete && QuestLogic.CanStart(q, npcId))
-                {
-                    NpcSession.TalkQuest(q, npcId, false);
-                    return;
-                }
+                string name = entry.Text("script");
+                if (!string.IsNullOrEmpty(name)) scripts.Add(name);
+            }
+        if (choices.Count == 0 && scripts.Count == 0) { NpcSession.Talk(npcId); return; }
+        if (scripts.Count == 0 && ScriptSource.Has("npc", npcId)) scripts.Add("");
+        var session = NpcSession.Choose(npcId, DefaultTalk(npcId), index =>
+        {
+            if (index >= 0 && index < choices.Count) OpenQuest(choices[index]);
+            else if (index >= choices.Count && index < choices.Count + scripts.Count)
+                NpcSession.Talk(npcId, scripts[index - choices.Count]);
+        });
+        FillQuestMenu(session.Dialog.Content, choices);
+        if (scripts.Count > 0)
+        {
+            session.Dialog.Content.Selections.Add(new DialogSelection { Index = -1, HeaderArt = "list2" });
+            for (int i = 0; i < scripts.Count; i++)
+                session.Dialog.Content.Selections.Add(new DialogSelection { Index = choices.Count + i,
+                    Text = string.IsNullOrEmpty(scripts[i]) ? "与 " + WzNames.Npc(npcId) + " 对话" : scripts[i] });
+        }
+    }
+
+    static readonly List<QuestChoice> alerts = new List<QuestChoice>();
+    static float alertsRefresh;
+    public static IReadOnlyList<QuestChoice> QuestAlerts()
+    {
+        if (Time.unscaledTime < alertsRefresh) return alerts;
+        alertsRefresh = Time.unscaledTime + .4f;
+        alerts.Clear();
+        foreach (int id in QuestCatalog.Ids)
+        {
+            var q = QuestCatalog.Get(id);
+            if (q.autoComplete && QuestLogic.CanComplete(q, q.completeReq.npc))
+                alerts.Add(new QuestChoice { npcId = q.completeReq.npc, quest = q, complete = true });
+            else if (q.autoStart && QuestLogic.CanStart(q, q.startReq.npc))
+                alerts.Add(new QuestChoice { npcId = q.startReq.npc, quest = q });
+        }
+        return alerts;
+    }
+
+    static void FillQuestMenu(DialogContent content, IReadOnlyList<QuestChoice> choices)
+    {
+        foreach (bool complete in new[] { true, false })
+        {
+            bool header = false;
+            for (int i = 0; i < choices.Count; i++)
+            {
+                if (choices[i].complete != complete) continue;
+                if (!header) { content.Selections.Add(new DialogSelection { Index = -1, HeaderArt = complete ? "list1" : "list0" }); header = true; }
+                content.Selections.Add(new DialogSelection { Index = i, Text = choices[i].quest.name });
             }
         }
-        NpcSession.Talk(npcId);
+    }
+
+    public static void ShowQuestAlerts()
+    {
+        if (NpcSession.Blocking) return;
+        var choices = new List<QuestChoice>(QuestAlerts());
+        if (choices.Count == 0) return;
+        var session = NpcSession.Choose(choices[0].npcId, "冒险岛上有人要给你传话。", index =>
+        {
+            if (index >= 0 && index < choices.Count) OpenQuest(choices[index]);
+        });
+        FillQuestMenu(session.Dialog.Content, choices);
+    }
+
+    public static void OpenQuest(QuestChoice choice)
+    {
+        // QuestActionHandler.isNpcNearby: 1200px horizontally, 800px vertically.
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        if (map != null && player != null && !choice.quest.autoStart && !choice.quest.autoComplete)
+        {
+            bool nearby = map.npcs.Exists(n => n.id == choice.npcId && n.hide == 0 &&
+                Mathf.Abs(player.FeetPos.x - map.WorldX(n.x)) <= 1200f / Px &&
+                Mathf.Abs(player.FeetPos.y - map.WorldY(n.y)) <= 800f / Px);
+            if (!nearby) { BottomBar.Toast("目标 NPC 距离过远"); return; }
+        }
+        NpcSession.TalkQuest(choice.quest, choice.npcId, choice.complete);
     }
 
     public static bool TryInteractNearest()
     {
+        if (NpcSession.Blocking || GameWindows.AnyVisible || KeyConfigWindow.Visible || VirtualControlsEditor.Visible) return false;
         var player = GameLoop.I != null ? GameLoop.I.player : null;
         if (player == null) return false;
         var npc = Nearest(player.FeetPos);

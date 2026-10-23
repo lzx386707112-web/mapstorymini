@@ -445,6 +445,8 @@ public class PlayerCtrl : MonoBehaviour
         float h = TouchInput.MoveH;
         bool jumpReq = TouchInput.TakeJump();
         climbInput = TouchInput.MoveV;
+        var diseases = GetComponent<NativeMobDebuffs>();
+        diseases?.Input(ref h, ref jumpReq, ref climbInput);
         if (jumpReq || Mathf.Abs(h) > 0.15f || Mathf.Abs(climbInput) > 0.15f || !grounded) Sitting = false;
         int steps = Mathf.Max(1, Mathf.CeilToInt(dt / 0.008f));
         for (int i = 0; i < steps; i++) StepMovement(h, jumpReq && i == 0, dt / steps);
@@ -479,7 +481,7 @@ public class PlayerCtrl : MonoBehaviour
         // —— 自动普攻 ——
         // Boss 优先：Boss 体积大、通常只有一只，误判成本比杂兵高得多
         atkTimer -= dt;
-        if ((Terrain == null || attackRequested) && !IsClimbing && atkTimer <= 0f && (vis == null || !vis.IsOneShot))
+        if ((diseases == null || !diseases.BlocksAttack) && (Terrain == null || attackRequested) && !IsClimbing && atkTimer <= 0f && (vis == null || !vis.IsOneShot))
         {
             var b = FindBossTarget();
             if (b != null)
@@ -908,12 +910,31 @@ public class PlayerCtrl : MonoBehaviour
         if (hp <= 0f && GameLoop.I != null) GameLoop.I.OnPlayerDead();
     }
 
-    public void Heal(float v) => hp = Mathf.Min(hpMax, hp + v);
+    // Boss percent/fixed damage is authoritative: no defense roll or contact i-frame.
+    public void TakeBossDamage(float value)
+    {
+        if (hp <= 0 || value <= 0) return;
+        hp = Mathf.Max(0,hp-value);
+        DamageText.Show(new Vector3(FeetPos.x,FeetPos.y+2.55f,0),value,"blue",.85f);
+        if (hp <= 0 && GameLoop.I != null) GameLoop.I.OnPlayerDead();
+    }
+    public void DispelNativeBuffs()
+    {
+        attackBonus = 0; attackBonusUntil = 0;
+        GetComponent<SkillSystem>()?.CancelActions();
+    }
+    public void Heal(float v)
+    {
+        v = GetComponent<NativeMobDebuffs>()?.Healing(v) ?? v;
+        if (v < 0) TakeBossDamage(-v);
+        else hp = Mathf.Min(hpMax,hp+v);
+    }
 
     // 死亡确认后由服务端下发的血量复活（源端 Character.respawn）：
     // 不是满血 —— 常规 50，护符 30%，特殊图满血。
     public void Revive(int hpValue, int mpValue)
     {
+        GetComponent<NativeMobDebuffs>()?.Clear();
         CancelRush();
         climb = null;
         grabCooldown = 0f;

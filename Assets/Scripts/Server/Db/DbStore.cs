@@ -61,10 +61,11 @@ public sealed class DbTable
                 row[c.name] = Coerce(c, v);
                 continue;
             }
-            row[c.name] = c.defaultValue ?? DefaultFor(c.type);
+            row[c.name] = c.defaultValue ?? (c.notNull || c.primaryKey ? DefaultFor(c.type) : null);
         }
         rows.Add(row);
-        long id = row.ContainsKey(PrimaryName) ? Convert.ToInt64(row[PrimaryName], CultureInfo.InvariantCulture) : 0;
+        string primary = PrimaryName;
+        long id = primary != null && row.ContainsKey(primary) ? Convert.ToInt64(row[primary], CultureInfo.InvariantCulture) : 0;
         if (id >= nextId) nextId = id + 1;
         return id;
     }
@@ -340,7 +341,13 @@ public sealed class DbStore
         foreach (var kv in tables)
         {
             snap[kv.Key] = kv.Value;
-            rowsSnap[kv.Key] = new List<DbRow>(kv.Value.rows);
+            rowsSnap[kv.Key] = new List<DbRow>();
+            foreach (var row in kv.Value.rows)
+            {
+                var copy = new DbRow();
+                foreach (var cell in row) copy[cell.Key] = cell.Value;
+                rowsSnap[kv.Key].Add(copy);
+            }
         }
         txStack.Add(snap);
         txRows.Add(rowsSnap);

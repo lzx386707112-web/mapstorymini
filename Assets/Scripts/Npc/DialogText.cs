@@ -14,6 +14,7 @@ public sealed class DialogSelection
 {
     public int Index;
     public string Text;
+    public string HeaderArt;
 }
 
 public sealed class DialogContent
@@ -38,6 +39,7 @@ public static class DialogText
 
         var body = new StringBuilder(raw.Length);
         string color = null;
+        bool bold = false;
 
         int i = 0;
         while (i < raw.Length)
@@ -51,6 +53,14 @@ public static class DialogText
             char code = raw[i + 1];
             if (code == '#') { body.Append('#'); i += 2; continue; }
             if (code == 'l') { i += 2; continue; }
+            if (code == 'e' || code == 'n')
+            {
+                if (bold) body.Append("</b>");
+                bold = code == 'e';
+                if (bold) body.Append("<b>");
+                i += 2;
+                continue;
+            }
 
             // #L<idx># 选项
             if (code == 'L' || code == 'l')
@@ -71,9 +81,10 @@ public static class DialogText
             }
 
             // 颜色开关：没有闭合的 #
-            if ((code == 'b' || code == 'r' || code == 'g' || code == 'k' || code == 'y' || code == 'd' || code == 'w' || code == 'c' || code == 'o')
-                && (i + 2 >= raw.Length || raw[i + 2] != '#'))
+            if (code == 'b' || code == 'r' || code == 'g' || code == 'k' || code == 'y' || code == 'd' || code == 'w')
             {
+                if (bold) body.Append("</b>");
+                if (color != null) body.Append("</color>");
                 switch (code)
                 {
                     case 'b': color = CBlue; break;
@@ -81,15 +92,12 @@ public static class DialogText
                     case 'g': color = CGreen; break;
                     case 'y': color = COrange; break;
                     case 'd': color = CPurple; break;
-                    case 'c': color = CBlue; break;
+                    case 'w': color = "#FFFFFF"; break;
                     case 'k': color = null; break;
                     default: break;
                 }
-                if (code == 'b' || code == 'r' || code == 'g' || code == 'y' || code == 'd' || code == 'c' || code == 'k')
-                {
-                    body.Append("</color>");
-                    if (color != null) body.Append("<color=" + color + ">");
-                }
+                if (color != null) body.Append("<color=" + color + ">");
+                if (bold) body.Append("<b>");
                 i += 2;
                 continue;
             }
@@ -101,6 +109,9 @@ public static class DialogText
 
             switch (head)
             {
+                case "h": body.Append(Profile.playerName); break;
+                case "o": body.Append(WzNames.Mob(ToInt(payload))); break;
+                case "c": body.Append(Profile.ItemCount(ToInt(payload))); break;
                 case "m": body.Append(WzNames.Map(ToInt(payload))); break;
                 case "p": body.Append(WzNames.Npc(ToInt(payload))); break;
                 case "t": body.Append(WzNames.Item(ToInt(payload))); break;
@@ -113,6 +124,7 @@ public static class DialogText
             }
             i = close + 1;
         }
+        if (bold) body.Append("</b>");
         if (color != null) body.Append("</color>");
         content.Body = body.ToString().Trim('\n');
         return content;
@@ -137,7 +149,8 @@ public static class DialogText
             char code = raw[i + 1];
             if (code == '#') { sb.Append('#'); i += 2; continue; }
             if (code == 'l') { i += 2; continue; }
-            if (code == 'b' || code == 'r' || code == 'g' || code == 'k' || code == 'y' || code == 'd' || code == 'c')
+            if (code == 'e' || code == 'n') { i += 2; continue; }
+            if (code == 'b' || code == 'r' || code == 'g' || code == 'k' || code == 'y' || code == 'd' || code == 'w')
             {
                 i += 2;
                 continue;
@@ -146,6 +159,9 @@ public static class DialogText
             if (close < 0) break;
             string payload = raw.Substring(i + 2, close - i - 2);
             if (code == 'm') sb.Append(WzNames.Map(ToInt(payload)));
+            else if (code == 'h') sb.Append(Profile.playerName);
+            else if (code == 'c') sb.Append(Profile.ItemCount(ToInt(payload)));
+            else if (code == 'o') sb.Append(WzNames.Mob(ToInt(payload)));
             else if (code == 'p') sb.Append(WzNames.Npc(ToInt(payload)));
             else if (code == 't' || code == 'z') sb.Append(WzNames.Item(ToInt(payload)));
             else if (code == 'v' || code == 'i') sb.Append("[" + WzNames.Item(ToInt(payload)) + "]");

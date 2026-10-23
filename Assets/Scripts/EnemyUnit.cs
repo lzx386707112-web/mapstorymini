@@ -23,6 +23,7 @@ public class EnemyUnit : MonoBehaviour
     // 刷怪点给的巡逻范围（rx0..rx1）与出生点；玩家进入视野才追击，否则在自己的台子上来回走。
     public bool  fieldMode;
     public int   fieldMobId;
+    public bool nativeFloating;
     public float homeX;
     public float roamMin = float.NegativeInfinity, roamMax = float.PositiveInfinity;
     public float aggroRange = 8f;
@@ -45,7 +46,19 @@ public class EnemyUnit : MonoBehaviour
     float bodyHalfW = 0.39f;    // 身体半宽（接触判定用，随当前动画帧同步）
 
     public int Lane => lane;
-    public Dictionary<string, object> CombatStats => NativeCombatData.Mob(artKey);
+    public Dictionary<string, object> CombatStats
+    {
+        get
+        {
+            var stats = fieldMode && FieldCatalog.Mobs.TryGetValue(fieldMobId, out var mob) ? mob.stats : NativeCombatData.Mob(artKey);
+            return NativeController != null ? NativeController.EffectiveStats(stats) : stats;
+        }
+    }
+    public NativeMobController NativeController { get; private set; }
+    public bool IsBoss => NativeCombatData.Int(CombatStats, "boss") != 0;
+    public void BindNative(FieldDirector field) => NativeController = NativeMobController.Attach(this, field);
+    public void PlayNativeAction(string action) { if (vis != null) vis.PlayOnce(action, 1f); }
+    public void DefeatNative() { if (!dead) { hp = 0; Die(); } }
 
     // 怪物音效 ID：原版图模式用 fieldMobId，章节模式把 artKey 翻成源端怪物 ID
     // （mushmom→6130101、slimeking→9300003…，见 NativeAssetIndex.mobs）。
@@ -161,7 +174,7 @@ public class EnemyUnit : MonoBehaviour
             float dy = Mathf.Abs(p.FeetPos.y - transform.position.y);
             aggro = p.hp > 0f && Mathf.Abs(dx) <= aggroRange && dy <= 1.8f;
         }
-        if (!stunned)
+        if (!stunned && !nativeFloating && (NativeController == null || !NativeController.Busy))
         {
             if (fieldMode && !aggro)
             {
@@ -174,7 +187,7 @@ public class EnemyUnit : MonoBehaviour
                 float nx = transform.position.x + dir * speed * dt;
                 // 贴地形走：高出台阶 0.6u 以上的墙挡住（和玩家同一套规则）
                 float gy = PlayerCtrl.GroundAt(nx, terrainY);
-                if (gy <= terrainY + 0.6f)
+                if (gy <= terrainY + 0.6f && (NativeController == null || NativeController.CanMove))
                 {
                     transform.position = new Vector3(nx, transform.position.y, 0f);
                     terrainY = gy;
@@ -190,7 +203,8 @@ public class EnemyUnit : MonoBehaviour
                 if (atkTimer <= 0f && TouchesPlayer(p))
                 {
                     atkTimer = attackInterval;
-                    p.TakeDamage(damage, dx > 0f ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1));
+                    p.TakeDamage(NativeController != null ? NativeCombatData.Int(CombatStats,"PADamage") : damage,
+                        dx > 0f ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1));
                     // 有 attack1 的怪（蘑菇王/僵尸菇王…）接触攻击时播自己的攻击动作，按 WZ 时延；
                     // 没有的怪（蜗牛/猪…）原版就是纯接触伤害，不放动画。
                     if (vis != null && Art.GetClip("mobs", artKey, "attack1") != null)
@@ -206,7 +220,7 @@ public class EnemyUnit : MonoBehaviour
         if (vis != null)
         {
             vis.SetBase(moving ? "move" : "stand");
-            vis.SetFacing(faceDir);
+            vis.SetFacing(NativeController != null && NativeController.Busy ? NativeController.Direction : faceDir);
         }
         if (hpBar != null)
         {
@@ -227,6 +241,7 @@ public class EnemyUnit : MonoBehaviour
     bool Roam(float dt, out int faceDir)
     {
         faceDir = patrolDir;
+        if (NativeController != null && !NativeController.CanMove) return false;
         float nx = transform.position.x + patrolDir * speed * dt;
         if (nx < roamMin) { nx = roamMin; patrolDir = 1; }
         if (nx > roamMax) { nx = roamMax; patrolDir = -1; }
@@ -253,8 +268,11 @@ public class EnemyUnit : MonoBehaviour
     void SyncVisual()
     {
         // 每帧把脚下地形吸附到所在 x 的 foothold 上（击退、跟随都自然贴合）
-        terrainY = PlayerCtrl.GroundAt(transform.position.x, terrainY);
-        transform.position = new Vector3(transform.position.x, terrainY + DepthOffset, 0f);
+        if (!nativeFloating)
+        {
+            terrainY = PlayerCtrl.GroundAt(transform.position.x, terrainY);
+            transform.position = new Vector3(transform.position.x, terrainY + DepthOffset, 0f);
+        }
         if (body != null) body.sortingOrder = 300 - lane * 12;
         // 接触判定框随当前动画帧更新（走路/攻击帧宽高不同）
         if (body != null && body.sprite != null)
@@ -286,12 +304,14 @@ public class EnemyUnit : MonoBehaviour
     }
 
     // nativeHit：技能已经用原版 hit 部件打了爆点，这里就不再叠占位的黄色柔光
-    public void TakeHit(DamageResult hit, int fromDir, bool nativeHit = false)
+    public void TakeHit(DamageResult hit, int fromDir, bool nativeHit = false, bool magic = false)
     {
+        if (NativeController != null) hit = NativeController.FilterHit(hit, magic);
         if (dead || hit.Amount <= 0) return;
         bool crit = hit.Critical;
         float real = hit.Amount;
-        hp = Mathf.Max(0f, hp - real);
+        if (NativeController != null) NativeController.ApplyDamage(hit.Amount);
+        else hp = Mathf.Max(0f, hp - real);
 
         // 击退按原端 info/pushed 缩放：蜗牛 pushed=1 全额滑动，蘑菇王 pushed=1000 几乎不动。
         // 距离基准仍是面板上的 HitFeel.Knockback（0.9 单位 ≈ 36px 行程，衰减 26/s）。
@@ -337,6 +357,7 @@ public class EnemyUnit : MonoBehaviour
 
     public void PullTowards(float x)
     {
+        if (IsBoss) return;
         var pos = transform.position;
         pos.x = PlayerCtrl.ClampX(x + (pos.x >= x ? 1f : -1f));
         pos.y = PlayerCtrl.GroundAt(pos.x, pos.y);
@@ -349,7 +370,7 @@ public class EnemyUnit : MonoBehaviour
         knockV = direction * Mathf.Max(0f, skill.Max.x - skill.Min.x);
     }
 
-    public void Stun(float seconds) => stunUntil = Mathf.Max(stunUntil, Time.time + seconds);
+    public void Stun(float seconds) { if (!IsBoss) stunUntil = Mathf.Max(stunUntil, Time.time + seconds); }
 
     void Die()
     {

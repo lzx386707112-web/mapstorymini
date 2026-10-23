@@ -394,7 +394,7 @@
 任务（`isQuestStarted/getQuestStatus/getQuestProgress/setQuestProgress/startQuest/forceStartQuest/...`）、
 技能职业外观（`teachSkill/changeJobById/setHair/setFace/...`）、提示（`dropMessage/topMessage/openNpc/openShopNPC`）。
 
-交互语义照搬源端：继续 `(1,1)`、返回 `(0,1)`、确定 `(-1,0)`、是 `(1,0)`、否 `(0,0)`、选项 `(1,1,index)`。
+交互语义以 `NPCMoreTalkHandler` 的 `(mode,type,selection)` 为准：继续/确定 `(1,0,-1)`、返回 `(0,0,-1)`；YesNo 的 type=1，文本 type=2，数字 type=3，选项 type=4，接受/拒绝 type=12。文本取消直接释放会话；回复前消费旧页面，避免 dispose 后旧页面卡住。
 
 `dispose()` 只释放脚本管理器，**已经发出的对话框留在屏幕上**，玩家点掉最后一个按钮才真正关闭 ——
 这是源端 `sendOk + dispose` 的常见写法，如果 dispose 就清屏，玩家会看到对白一闪而过。
@@ -406,7 +406,7 @@
 
 ### 任务数据（Quest.wz）
 
-`QuestCatalog` 直接读 `Quest/Check.img`、`Act.img`、`QuestInfo.img`，字段与服务端
+`QuestCatalog` 直接读 `Quest/Check.img`、`Act.img`、`QuestInfo.img`，无脚本任务对白另读 `Quest/Say.img`。字段与服务端
 `Quest.java` + `requirements/*` + `actions/*` 一一对应，**不臆造任何数值**：
 
 - `Check.img/<id>/0`（开始需求）与 `/1`（完成需求）：`npc` `lvmin` `lvmax` `job` `item` `mob`
@@ -449,11 +449,10 @@
   底部按钮按 `Mode` 取 `BtNext/BtPrev/BtOK/BtYes/BtNo/BtQYes/BtQNo/BtClose`
 - `DialogText`：`#b/#r/#g/#y/#d/#c/#k` → `<color=…>`、`#L<idx>#…#l` → 选项、`#m/#p/#t/#z/#v/#i/#f/#s`
   做名字/数字替换（`String.wz` 取名，带缓存）
-- `NpcField`：靠近 110px 后可按 ↑ 或点击 NPC 交互，使用 `Quest.wz` 的条件判定可接/可交（0.4s 缓存，可交优先）。
-- `NpcDialogUi`：NPC 提示使用 `UIWindow.img/QuestIcon` 原生动画；角色头顶使用
-  `BasicEff.img/QuestAlert/Default` 灯泡。当前灯泡表示「本地图有可接任务」，点击后在附近交互，
-  距离不够则提示目标 NPC。此为本项目的本地图任务提醒，尚未实现原客户端完整的远程任务通知与选择列表。
-  没有满足条件的任务不会显示提示；隐藏 NPC 不参与提示。
+- `NpcField`：双击 NPC 打开任务/脚本选择，按可完成、可开始、其他分组；默认问候读取 `String/Npc.img/d0`，其他脚本读取 NPC `info/script`。命名脚本缺失时沿用源端数字 NPC 脚本兜底。
+- 对话使用原生 `UtilDlgEx/t,c,s`（中段平铺）、左侧 NPC 动画与 `bar` 名牌，右侧正文及原生任务分组标题；高度随内容变化。结束对话在左下，翻页/接受按钮在右侧正文下方。
+- NPC 提示使用 `UIWindow.img/QuestIcon` 动画；角色灯泡使用 `BasicEff.img/QuestAlert/Default`，列表仅收集符合条件且带 `autoStart/autoComplete/autoPreComplete` 的远程任务。`fieldEnter` 读取子项 `0`，避免地图限制失效。普通任务距离校验对应源端 1200×800；自动任务跳过距离限制。
+- 无 JS 的任务按 `Say.img/<quest>/<0|1>` 数字页显示，确认后执行开始/完成动作，拒绝走 `no`，接受后走 `yes`，支持前后翻页。尚未接入未完成任务的 `stop` 对话与全部富文本图像标签，不能视作完整客户端协议覆盖。
 - `QuestWindow`：`UI/UIWindow.img/Quest/backgrnd`(245×396)+`backgrnd2`(305×396)、`S=1.25`，
   两个页签（进行中/已完成）、详情与奖励、`BtGiveup` 放弃
 
@@ -499,3 +498,7 @@
   `QuestScriptManager` 实际按 `quest/<questid>.js` 加载，本实现跟着按 id 取，不按字段名取
 - 商店交易、仓库、宠物、公会、远征队这些被脚本调用的系统，客户端只给「空集合」语义
 - 反应堆脚本（`reactor/`）尚未接入
+
+### 2026-10-23 对话回归记录
+
+`QuestNpcChecks.Run`：24107 项通过、0 失败，含全地图任务关联扫描、按钮协议、希娜 1031 的 Say 翻页/拒绝及远程任务地图限制。脚本 harness 保持上表既有失败基线；compile-check Rebuild 为 0 error。最新布局的图形冒烟测试因已有 Unity 实例占用项目未完成，不能据此宣称视觉验收通过。截图中的两条自定义任务标题在本地后端/脚本及已扫描数据中仍未定位，未在 C# 中伪造标题或任务逻辑。

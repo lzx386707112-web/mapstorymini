@@ -697,7 +697,7 @@ public static class VirtualControls
     // 按键的短名（提示/面板用）：优先技能名，其次键名，最后动作名
     public static string ElementCaption(VCElem e)
     {
-        if (e != null && e.skillId > 0)
+        if (e != null && e.key == KeyCode.None && e.skillId > 0)
         {
             var d = SkillBook.Get(e.skillId);
             if (d != null) return d.name;
@@ -727,7 +727,7 @@ public static class VirtualControls
     // 否则 SetVirtual(None) 是空操作 —— 表现为"点按钮没反应，只触发了鼠标点击"。
     //
     // 实际生效的动作：按键若能映射到动作，以键为准（用户改了游戏键位也自动跟随）；
-    // 否则用元素自己记录的动作。两种情况都会直接注入"动作"，不依赖键位表是否有键。
+    // 否则用元素自己记录的动作（旧布局与显示信息的兜底）。显式绑键的输入只走键盘通道。
     public static GameAction EffectiveAction(VCElem e)
         => ActionOfKey(e.Key) ?? e.action;
 
@@ -736,7 +736,7 @@ public static class VirtualControls
         // 绑了技能的按键直接施放（原端"技能拖进快捷格，再按键出手"的屏上等价物）。
         // 这里必须 return：继续往下发动作会让快捷格那条通道再放一次，
         // 表现就是一次点击连放两个技能、第二个报"技能冷却中"。
-        if (e.skillId > 0)
+        if (e.key == KeyCode.None && e.skillId > 0)
         {
             if (down)
             {
@@ -750,8 +750,9 @@ public static class VirtualControls
             return;
         }
 
-        var act = EffectiveAction(e);
-        InputHub.SetVirtualAction(act, down);          // 动作永远发，保证点了就有反应
+        var act = e.key != KeyCode.None ? ActionOfKey(e.key) : (GameAction?)EffectiveAction(e);
+        // 显式绑键只走键盘通道；仅旧布局的动作按钮直接注入动作。
+        if (e.key == KeyCode.None) InputHub.SetVirtualAction(act.Value, down);
         // 显式绑了键的按钮 = 那个物理键的屏上替身：无条件把键也发一遍。
         // 只靠「键 → 动作」反查是不够的——比如攻击从 Ctrl 改到 C 后，
         // 快捷格、技能栏这些按 KeyCode 判定的通道拿不到 C，就会出现
@@ -761,10 +762,11 @@ public static class VirtualControls
 
         if (down)
         {
-            lastPress = (e.key != KeyCode.None ? KeyLabel(e.key) + " → " : "") + ActionDisplayName(act);
+            lastPress = (e.key != KeyCode.None ? KeyLabel(e.key) + " → " : "") +
+                (act.HasValue ? ActionDisplayName(act.Value) : "未绑定功能");
             lastNote = e.key == KeyCode.None
                 ? "按动作触发"
-                : ActionOfKey(e.key) == null ? "键未映射 · 按动作触发" : "";
+                : !act.HasValue ? "请在键盘设定中给此键绑定功能" : "";
             pressMsgUntil = Time.unscaledTime + 1.2f;
             Debug.Log("[Virtual] 按下 " + (e.key == KeyCode.None ? "无键" : e.key.ToString()) +
                       " → " + act + "（攻击键位=" + KeyMap.Of(GameAction.Attack) + "）");
@@ -1036,13 +1038,14 @@ public static class VirtualControls
     // 和底部快捷格、技能列表的遮罩是同一套素材，读起来一致。
     static void DrawCooldown(VCElem e, Rect rect, float a)
     {
-        if (e.skillId <= 0) return;
+        int skillId = ButtonSkill(e);
+        if (skillId <= 0) return;
         var player = GameLoop.I != null ? GameLoop.I.player : null;
         var sys = player != null ? player.GetComponent<SkillSystem>() : null;
         if (sys == null) return;
-        float left = sys.RemainingById(e.skillId);
+        float left = sys.RemainingById(skillId);
         if (left <= 0.001f) return;
-        float total = Mathf.Max(0.01f, sys.CooldownOf(e.skillId));
+        float total = Mathf.Max(0.01f, sys.CooldownOf(skillId));
         int frame = Mathf.Clamp(Mathf.RoundToInt((1f - Mathf.Clamp01(left / total)) * 15f), 0, 15);
         var cool = Art.Tex("ui/skillwin/cool_" + frame + ".png");
         if (cool == null) return;
@@ -1323,17 +1326,17 @@ public static class VirtualControls
             DrawLine(pts[i], pts[(i + 1) % pts.Length], col, w);
     }
 
+    static int ButtonSkill(VCElem e)
+    {
+        if (e.type != VCElemType.Button) return 0;
+        if (e.key == KeyCode.None && e.skillId > 0) return e.skillId;
+        int slot = SlotOfKey(e.Key);
+        return slot < 0 ? 0 : QuickSlots.Id(slot);
+    }
+
     static Texture2D SlotIcon(VCElem e)
     {
-        if (e.type != VCElemType.Button) return null;
-        // ① 直接绑在按键上的技能（技能窗拖进来） ② 退回到"这个键对应的快捷格"
-        int id = e.skillId;
-        if (id <= 0)
-        {
-            int slot = SlotOfKey(e.Key);
-            if (slot < 0) return null;
-            id = QuickSlots.Id(slot);
-        }
+        int id = ButtonSkill(e);
         if (id <= 0) return null;
         var data = SkillBook.Get(id);
         return data != null && !string.IsNullOrEmpty(data.icon) ? Art.Tex(data.icon) : null;
@@ -1353,7 +1356,7 @@ public static class VirtualControls
     {
         if (!string.IsNullOrEmpty(e.label)) return e.label;
         // 技能键：有图标就不写字，图标缺失时退回技能名，至少还能认出来
-        if (e.skillId > 0)
+        if (e.key == KeyCode.None && e.skillId > 0)
         {
             var d = SkillBook.Get(e.skillId);
             return d != null ? d.name : "";

@@ -360,6 +360,7 @@ public static partial class VirtualControlsEditor
 
         PushHistory();
         selected.key = k;
+        selected.skillId = 0;             // 改绑键盘键后，不再被旧的直绑技能截走输入
         selected.shiftMod = keyShift;
         var a = VirtualControls.ActionOfKey(k);
         if (a.HasValue) selected.action = a.Value;

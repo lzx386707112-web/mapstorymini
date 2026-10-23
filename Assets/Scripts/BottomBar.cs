@@ -73,7 +73,6 @@ public static class BottomBar
         if (!collapsed) DrawQuickSlots();
         // 小图标为独立入口，放在聊天条右侧，不与展开的快捷格重叠。
         DrawSmallButtons();
-        DrawToast();
     }
 
     static void DrawPlate()
@@ -92,34 +91,55 @@ public static class BottomBar
 
     public static bool ChatFocused;
     static bool focusChat;
+    public static NativeChatChannel ChatChannel { get; private set; }
+    static string whisperTarget = "";
+    static readonly string[] ChatNames = { "所有人", "悄悄话", "组队", "好友", "家族", "联盟", "夫妻", "讯息" };
     public static void FocusChat() { ChatFocused = true; focusChat = true; }
+    public static void FocusChat(NativeChatChannel channel, string target = "")
+    { ChatChannel = channel; whisperTarget = target; FocusChat(); }
+    public static void ResetChat()
+    { ChatFocused = focusChat = false; chatInput = whisperTarget = ""; chatLines.Clear(); ChatChannel = NativeChatChannel.All; }
     static string chatInput = "";
     static readonly List<string> chatLines = new List<string>();
+    public static IReadOnlyList<string> ChatHistory => chatLines;
+    public static bool SubmitChat(string text, NativeChatChannel channel, string target = "")
+    {
+        var result = NativeSocialWindow.Request(SocialOperation.SendChat, target, text, channel);
+        chatLines.Add(result.ok ? "[" + ChatNames[(int)channel] + "] " + Profile.playerName + " : " + text : result.error);
+        if (chatLines.Count > 200) chatLines.RemoveAt(0);
+        return result.ok;
+    }
 
     static void DrawChat()
     {
         float y = UiKit.H - 64 * S;
         var e = Event.current;
-        if (!ChatFocused && e.type == EventType.KeyDown && e.keyCode == KeyCode.Return)
+        if (!NpcSession.Blocking && !ChatFocused && e.type == EventType.KeyDown && e.keyCode == KeyCode.Return)
         { ChatFocused = true; focusChat = true; e.Use(); }
         var target = T("chatTarget_full");
         if (ChatFocused && target != null) GUI.DrawTexture(new Rect(2 * S, y, 81 * S, 20 * S), target);
+        if (ChatFocused && GUI.Button(new Rect(2 * S, y, 81 * S, 20 * S), ChatNames[(int)ChatChannel]))
+            ChatChannel = (NativeChatChannel)(((int)ChatChannel + 1) % ChatNames.Length);
         var style = new GUIStyle(GUI.skin.textField) { fontSize = Mathf.RoundToInt(11 * S) };
         style.normal.background = null;
         style.focused.background = null;
         style.normal.textColor = Color.black;
         GUI.SetNextControlName("NativeChat");
-        if (ChatFocused) chatInput = GUI.TextField(new Rect(86 * S, y, 448 * S, 20 * S), chatInput, 160, style);
+        if (ChatFocused) chatInput = GUI.TextField(new Rect(86 * S, y, 448 * S, 20 * S), chatInput, 127, style);
+        if (ChatFocused && ChatChannel == NativeChatChannel.Whisper)
+        {
+            GUI.Label(new Rect(3 * S, y - 24 * S, 54 * S, 20 * S), "收件人", style);
+            whisperTarget = GUI.TextField(new Rect(58 * S, y - 24 * S, 150 * S, 20 * S), whisperTarget, 13, style);
+        }
         if (focusChat && Event.current.type == EventType.Repaint)
         { GUI.FocusControl("NativeChat"); focusChat = false; }
-        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Return)
+        if (!NpcSession.Blocking && e.type == EventType.KeyDown && e.keyCode == KeyCode.Return)
         {
             if (ChatFocused)
             {
                 if (!string.IsNullOrWhiteSpace(chatInput))
                 {
-                    chatLines.Add(Profile.playerName + " : " + chatInput);
-                    if (chatLines.Count > 5) chatLines.RemoveAt(0);
+                    SubmitChat(chatInput, ChatChannel, whisperTarget);
                 }
                 chatInput = "";
                 GUI.FocusControl(null);
@@ -131,12 +151,12 @@ public static class BottomBar
         if (ChatFocused && e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
         { GUI.FocusControl(null); ChatFocused = false; e.Use(); }
         if (chatLines.Count == 0) return;
-        var r = new Rect(3 * S, UiKit.H - (74 + chatLines.Count * 14) * S, 540 * S, chatLines.Count * 14 * S);
-        NativeUi.Panel(r);
+        var r = new Rect(3 * S, UiKit.H - (74 + Mathf.Min(5, chatLines.Count) * 14) * S, 540 * S, Mathf.Min(5, chatLines.Count) * 14 * S);
+        UiKit.Fill(r, new Color(0f, 0f, 0f, .55f));
         var text = new GUIStyle { fontSize = Mathf.RoundToInt(11 * S) };
-        text.normal.textColor = Color.black;
-        for (int i = 0; i < chatLines.Count; i++)
-            GUI.Label(new Rect(r.x + 3 * S, r.y + i * 14 * S, r.width, 14 * S), chatLines[i], text);
+        text.normal.textColor = Color.white;
+        for (int i = 0; i < Mathf.Min(5, chatLines.Count); i++)
+            GUI.Label(new Rect(r.x + 3 * S, r.y + i * 14 * S, r.width, 14 * S), chatLines[Mathf.Max(0, chatLines.Count - 5) + i], text);
     }
 
     static void DrawBigButtons()
@@ -149,7 +169,7 @@ public static class BottomBar
             string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
             var t = T(keys[i] + "_" + state) ?? T(keys[i] + "_normal");
             if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
-            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) PressBig(i);
+            if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) PressBig(i);
         }
     }
 
@@ -174,7 +194,7 @@ public static class BottomBar
             string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
             var t = T(keys[i] + "_" + state) ?? T(keys[i] + "_normal");
             if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
-            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) { PressSmall(i); }
+            if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) { PressSmall(i); }
         }
     }
 
@@ -237,9 +257,9 @@ public static class BottomBar
                 var attack = action.HasValue ? KeyConfigWindow.Icon(action.Value) : null;
                 if (attack != null) GUI.DrawTexture(r, attack, ScaleMode.ScaleToFit);
             }
-            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.RightPressed && r.Contains(Pointer.Pos))
+            if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.RightPressed && r.Contains(Pointer.Pos))
                 { if (skillSlot >= 0) QuickSlots.Clear(skillSlot); }
-            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
+            if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
             {
                 AudioManager.Play("UI/BtMouseClick", 0.7f, false);
                 if (id > 0) QuickSlots.Cast(skillSlot);
@@ -249,14 +269,4 @@ public static class BottomBar
         }
     }
 
-    static void DrawToast()
-    {
-        string text = ActiveToast;
-        if (string.IsNullOrEmpty(text)) return;
-        var st = new GUIStyle { fontSize = Mathf.RoundToInt(13f * S), alignment = TextAnchor.MiddleCenter };
-        st.normal.textColor = new Color(1f, 0.95f, 0.72f);
-        var r = new Rect(UiKit.W * 0.18f, UiKit.H - Height - 30f * S, UiKit.W * 0.64f, 22f * S);
-        NativeUi.Panel(new Rect(r.x - 6, r.y - 2, r.width + 12, r.height + 4));
-        GUI.Label(r, text, st);
-    }
 }

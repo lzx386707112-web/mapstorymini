@@ -76,7 +76,22 @@ public static class NativeKeyActions
             case GameAction.Interface: GameHUD.InterfaceHidden = !GameHUD.InterfaceHidden; return;
             case GameAction.Sit: player?.ToggleSit(); return;
             case GameAction.NpcTalk: NpcField.TryInteractNearest(); return;
-            case GameAction.Chat: case GameAction.ChatAll: BottomBar.FocusChat(); return;
+            case GameAction.Chat: BottomBar.FocusChat(); return;
+            case GameAction.ChatAll: BottomBar.FocusChat(NativeChatChannel.All); return;
+            case GameAction.Family: case GameAction.School: case GameAction.ChatRoom:
+                NativeCommunityWindow.Toggle(action); return;
+            case GameAction.Medal: NativeMedalWindow.Toggle(); return;
+            case GameAction.MonsterBook: NativeMonsterBook.Toggle(); return;
+            case GameAction.ChatWhisper: BottomBar.FocusChat(NativeChatChannel.Whisper); return;
+            case GameAction.ChatParty: BottomBar.FocusChat(NativeChatChannel.Party); return;
+            case GameAction.ChatBuddy: BottomBar.FocusChat(NativeChatChannel.Buddy); return;
+            case GameAction.ChatFamily: BottomBar.FocusChat(NativeChatChannel.Guild); return;
+            case GameAction.ChatAlliance: BottomBar.FocusChat(NativeChatChannel.Alliance); return;
+            case GameAction.ChatSpouse: BottomBar.FocusChat(NativeChatChannel.Spouse); return;
+            case GameAction.WorldMap: NativeMapWindows.ToggleWorld(); return;
+            case GameAction.Minimap: NativeMapWindows.ToggleMini(); return;
+            case GameAction.Buddy: case GameAction.Party: case GameAction.PartySearch: case GameAction.Messenger:
+                NativeSocialWindow.Toggle(action); return;
         }
         if (entry != null) BottomBar.Toast(entry.name + "功能尚未开放");
     }

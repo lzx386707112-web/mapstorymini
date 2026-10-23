@@ -125,6 +125,12 @@ public interface ITransport
     PlayerDeadResponse PlayerDead(PlayerDeadRequest req);
     ChangeMapResponse ChangeMap(ChangeMapRequest req);
     void SaveCharacter(SaveCharacterRequest req);
+    SocialResponse Social(SocialRequest req);
+    CommunityResponse Community(CommunityRequest req);
+    BossResponse Boss(BossRequest req);
+    CashResponse Cash(CashRequest req);
+    InventoryChangeResponse ChangeInventory(InventoryChangeRequest req);
+    void EndSocialSession(int characterId);
 }
 
 /// <summary>
@@ -135,6 +141,12 @@ public sealed class InProcessTransport : ITransport
 {
     readonly GameServer server;
     public InProcessTransport(GameServer s) { server = s; }
+    public SocialResponse Social(SocialRequest r) => server.Social.Handle(r);
+    public CommunityResponse Community(CommunityRequest r) => server.Community.Handle(r);
+    public BossResponse Boss(BossRequest r) => server.Bosses.Handle(r);
+    public InventoryChangeResponse ChangeInventory(InventoryChangeRequest r) => NativeInventoryService.Handle(server.Db, r);
+    public CashResponse Cash(CashRequest r) => server.Cash.Handle(r);
+    public void EndSocialSession(int characterId) { server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); }
 
     public LoginResponse Login(LoginRequest r)
     {
@@ -173,6 +185,7 @@ public sealed class InProcessTransport : ITransport
     {
         var full = CharService.Load(server.Db, r.characterId);
         if (full == null) return new CharSelectResponse { ok = false };
+        server.Community.BeginSession(r.characterId);
         return new CharSelectResponse { ok = true, character = full };
     }
     public ImportLegacyResponse ImportLegacy(ImportLegacyRequest r)
@@ -239,6 +252,16 @@ public sealed class InProcessTransport : ITransport
     {
         if (r.character != null && r.character.record != null)
         {
+            var stored = CharactersDao.FindById(server.Db, r.characterId);
+            if (stored != null) {
+                // Community state is server-owned and may have changed since the last snapshot.
+                var incoming = r.character.record;
+                incoming.guildid = stored.guildid; incoming.guildrank = stored.guildrank;
+                incoming.familyId = stored.familyId; incoming.allianceRank = stored.allianceRank;
+                incoming.party = stored.party; incoming.monsterbookcover = stored.monsterbookcover;
+                if (incoming.level > stored.level) server.Community.GiveReputation(r.characterId,
+                    (incoming.level - stored.level) * GameConfigDao.GetInt(server.Db, "family_rep_per_level_up", 200));
+            }
             CharService.Save(server.Db, r.character);
             server.Db.Save();
             return;

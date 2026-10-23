@@ -52,6 +52,7 @@ public static class NpcApi
         cm.Set("getMap", Ret(_ => map));
         cm.Set("getMapId", Ret(_ => N(MapId)));
         cm.Set("getClient", Ret(_ => BuildClient(player)));
+        cm.Set("spawnMonster", Fn(c => SpawnScriptMob(Int(c,0),Int(c,1),Int(c,2))));
 
         // —— 对话 ——
         cm.Set("sendNext", Fn(c => session.SetDialog(NpcDialogMode.Next, Str(c, 0))));
@@ -82,7 +83,8 @@ public static class NpcApi
                 text += "\r\n#L" + i + "#" + HairStyles.NameOf(HairStyles.KeyOf(i)) + "#l";
             session.SetDialog(NpcDialogMode.Simple, text);
         }));
-        cm.Set("sendDefault", Fn(c => session.SetDialog(NpcDialogMode.Ok, "")));
+        cm.Set("sendDefault", Fn(c => session.SetDialog(NpcDialogMode.Ok,
+            WzAssets.FileRoot("String/Npc.img").Get(npcId.ToString())?.Text("d0", "(...)") ?? "(...)")));
         cm.Set("sendImage", Fn(c => session.SetDialog(NpcDialogMode.Ok, Str(c, 0))));
         cm.Set("sendNoExit", Fn(c => session.SetDialog(NpcDialogMode.Ok, Str(c, 0))));
         cm.Set("sendDirectionInfo", Fn(c => { }));
@@ -207,9 +209,10 @@ public static class NpcApi
 
         if (isQuest)
         {
+            cm.Set("getMedalName", Ret(_ => S(WzNames.Item(QuestCatalog.Get(questId)?.medalItem ?? 0))));
+            cm.Set("earnTitle", Fn(c => BottomBar.Toast(Str(c, 0))));
             cm.Set("getQuest", Ret(_ => N(questId)));
             cm.Set("isStart", Ret(_ => B(!session.QuestEnd)));
-            cm.Set("getMedalName", Ret(_ => S("")));
         }
         return cm;
     }
@@ -329,11 +332,49 @@ public static class NpcApi
             p.Set("getName", Ret(_ => S(Str(c, 0))));
             return p;
         }));
-        m.Set("getMobs", Ret(_ => new JsArray()));
+        m.Set("getMobs", Ret(_ => {
+            var result = new JsArray();
+            foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead) result.Items.Add(BuildMonster(mob));
+            return result;
+        }));
+        m.Set("countMonsters", Ret(_ => N(CountFieldMonsters())));
+        m.Set("getSpawnedMonstersOnMap", Ret(_ => N(CountFieldMonsters())));
+        m.Set("spawnMonsterOnGroundBelow", Fn(c => {
+            int id = c.Arg(0) is JsHostObject host ? JsConvert.ToInt32(host.Get("id")) : Int(c,0);
+            SpawnScriptMob(id,Int(c,1),Int(c,2));
+        }));
+        m.Set("killAllMonsters", Fn(c => {
+            bool rewards = c.ArgCount > 0 && JsConvert.ToBoolean(c.Arg(0));
+            foreach (var mob in new List<EnemyUnit>(EnemyUnit.All)) if (mob.fieldMode && !mob.dead)
+                if (rewards) mob.DefeatNative(); else { mob.dead=true; mob.gameObject.SetActive(false); UnityEngine.Object.Destroy(mob.gameObject); }
+        }));
         m.Set("getReactorById", Ret(_ => JsNull.Value));
         m.Set("getReactor", Ret(_ => JsNull.Value));
-        m.Set("getMonsterById", Ret(_ => JsNull.Value));
+        m.Set("getMonsterById", Ret(c => {
+            foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead && mob.fieldMobId == Int(c,0)) return BuildMonster(mob);
+            return JsNull.Value;
+        }));
         return m;
+    }
+
+    static int CountFieldMonsters()
+    {
+        int count = 0;
+        foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead) count++;
+        return count;
+    }
+    static void SpawnScriptMob(int id, int x, int y)
+        => GameLoop.I?.field?.SpawnNativeMob(id,new Vector3(x / Art.PPU,-y / Art.PPU,0));
+    static JsHostObject BuildMonster(EnemyUnit mob)
+    {
+        var result = new JsHostObject(mob);
+        result.Set("id",N(mob.fieldMobId));
+        result.Set("getId",Ret(_ => N(mob.fieldMobId)));
+        result.Set("getObjectId",Ret(_ => N(mob.GetInstanceID())));
+        result.Set("isAlive",Ret(_ => B(mob != null && !mob.dead)));
+        result.Set("getHp",Ret(_ => N(mob.hp)));
+        result.Set("getMaxHp",Ret(_ => N(mob.hpMax)));
+        return result;
     }
 
     static JsHostObject BuildPosition()

@@ -23,6 +23,7 @@ public sealed class FieldDirector : MonoBehaviour
     readonly List<Point> points = new List<Point>();
     readonly List<Point> candidates = new List<Point>();
     readonly Dictionary<int, Point> byMob = new Dictionary<int, Point>();
+    readonly List<EnemyUnit> dynamicMobs = new List<EnemyUnit>();
     readonly System.Random rng = new System.Random();
 
     float respawnTimer;
@@ -219,9 +220,30 @@ public sealed class FieldDirector : MonoBehaviour
 
         e.Init(2, x, refY);
         ApplyStats(e, def);
+        e.BindNative(this);
 
         p.mob = e;
         byMob[e.GetInstanceID()] = p;
+    }
+
+    // Monster.killBy revives / MobSkill.summonMonsters share the field lifecycle.
+    public EnemyUnit SpawnNativeMob(int mobId, Vector3 position, bool ground = true)
+    {
+        if (Map == null) return null;
+        FieldCatalog.LoadMob(mobId);
+        if (!FieldCatalog.Mobs.TryGetValue(mobId, out var def)) return null;
+        var go = new GameObject("Mob_" + mobId);
+        var e = go.AddComponent<EnemyUnit>();
+        e.artKey = def.artKey; e.fieldMode = true; e.fieldMobId = mobId; e.label = def.name;
+        e.homeX = position.x; e.roamMin = position.x; e.roamMax = position.x;
+        e.aggroRange = AggroRangePx / Art.PPU;
+        e.Init(2, position.x, position.y);
+        e.nativeFloating = !ground;
+        if (!ground) e.transform.position = position;
+        ApplyStats(e, def);
+        dynamicMobs.Add(e);
+        e.BindNative(this);
+        return e;
     }
 
     // 数值全部取 Mob.wz/info；未提供的量不回填任何自造值。
@@ -460,6 +482,8 @@ public sealed class FieldDirector : MonoBehaviour
     public void OnEnemyKilled(EnemyUnit e)
     {
         if (e == null) return;
+        e.NativeController?.OnKilled();
+        dynamicMobs.Remove(e);
         Point p;
         if (byMob.TryGetValue(e.GetInstanceID(), out p))
         {
@@ -473,7 +497,9 @@ public sealed class FieldDirector : MonoBehaviour
         if (!FieldCatalog.Mobs.TryGetValue(e.fieldMobId, out mob)) return;
 
         int exp = (int)Art.Num(mob.stats, "exp", 0);
-        if (exp > 0) Profile.GrantExperience(exp);
+        var rates = GameSession.InGame ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId, operation = CommunityOperation.RecordKill,
+            value = (int)Art.Num(mob.stats, "maxHP", 0), targetId = (int)Art.Num(mob.stats, "boss", 0) }) : new CommunityResponse();
+        if (exp > 0) Profile.GrantExperience((int)(exp * rates.expRate));
 
         // 任务击杀计数（原端 Character 收到 MOB_KILLED 后推进已接任务的 mob 进度）
         QuestLogic.OnMobKilled(mob.id);
@@ -501,7 +527,7 @@ public sealed class FieldDirector : MonoBehaviour
             if (itemId == 0) mesos += qty;
             n++;
             GroundItem.Spawn(itemId, qty, pos + Offset(d));
-        }, rng);
+        }, rng, GameSession.InGame ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId }).dropRate : 1);
         dropped += n;
         mesosTotal += mesos;
     }
@@ -514,6 +540,10 @@ public sealed class FieldDirector : MonoBehaviour
 
     public void ClearMobs()
     {
+        foreach (var mob in dynamicMobs)
+            if (mob != null) { mob.gameObject.SetActive(false); Destroy(mob.gameObject); }
+        dynamicMobs.Clear();
+        GetComponent<NativeBossEncounter>()?.Clear();
         foreach (var p in points)
             if (p.mob != null) { p.mob.gameObject.SetActive(false); Destroy(p.mob.gameObject); p.mob = null; }
         points.Clear();

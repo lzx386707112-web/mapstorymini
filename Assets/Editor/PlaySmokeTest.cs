@@ -24,6 +24,7 @@ public static class PlaySmokeTest
     const string K_WARP   = "PlaySmoke.warp";
     const string K_PROBE  = "PlaySmoke.uiProbe";
     const string K_CLICKAT = "PlaySmoke.uiClickAt";
+    const string K_DIALOG = "PlaySmoke.dialog";
 
     static int climbIdx, climbOk, climbFail, climbSkip, climbPhase;
     static int climbMapIdx;
@@ -141,6 +142,8 @@ public static class PlaySmokeTest
             if (args[i] == "-smokeUiProbe") EditorPrefs.SetString(K_PROBE, args[i + 1]);
             // 进入 Play 多少秒后在探针位置按一下左键（验证加点/页签）
             if (args[i] == "-smokeUiClickAt") EditorPrefs.SetFloat(K_CLICKAT, float.Parse(args[i + 1], CultureInfo.InvariantCulture));
+            // Positive NPC id opens original dialogue; negative id opens the quest chooser.
+            if (args[i] == "-smokeDialog") EditorPrefs.SetInt(K_DIALOG, int.Parse(args[i + 1]));
             // UI 验收：打开原版键位设置 / 技能窗（截图用，不写存档）
             if (args[i] == "-smokeKeyConfig") PlayerPrefs.SetInt("debug_keyconfig", args[i + 1] != "0" ? 1 : 0);
             if (args[i] == "-smokeSkill") PlayerPrefs.SetInt("debug_skillwin", args[i + 1] != "0" ? 1 : 0);
@@ -227,6 +230,14 @@ public static class PlaySmokeTest
         double t0 = Parse(EditorPrefs.GetString(K_T0, "0"));
         double dur = EditorPrefs.GetInt(K_DUR, 30);
         double t = EditorApplication.timeSinceStartup;
+
+        int dialogNpc = EditorPrefs.GetInt(K_DIALOG, 0);
+        if (dialogNpc != 0 && t - t0 >= 1 && GameLoop.I != null && GameLoop.I.field != null && GameLoop.I.field.Map != null)
+        {
+            EditorPrefs.DeleteKey(K_DIALOG);
+            if (dialogNpc > 0) NpcSession.Talk(dialogNpc);
+            else NpcField.Interact(-dialogNpc);
+        }
 
         float clickAt = EditorPrefs.GetFloat(K_CLICKAT, -1f);
         if (clickAt >= 0f) Pointer.TestClick = t - t0 >= clickAt;
@@ -648,6 +659,7 @@ public static class PlaySmokeTest
         EditorPrefs.DeleteKey(K_WARP);
         EditorPrefs.DeleteKey(K_PROBE);
         EditorPrefs.DeleteKey(K_CLICKAT);
+        EditorPrefs.DeleteKey(K_DIALOG);
         Pointer.TestPos = null;
         Pointer.TestClick = false;
         EditorApplication.update -= Tick;

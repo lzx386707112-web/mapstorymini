@@ -22,7 +22,9 @@ public sealed class QuestSkillReward
 
 public sealed class QuestRequirement
 {
-    public int level, maxLevel, meso, fame, npc = -1, interval, fieldEnter;
+    public int level, maxLevel, meso, fame, npc = -1, interval, fieldEnter, completedQuests, monsterBookMin, petTameness;
+    public string endDate = "";
+    public readonly List<int> pets = new List<int>();
     public readonly List<int> jobs = new List<int>();
     public readonly List<QuestItemReq> items = new List<QuestItemReq>();
     public readonly List<KeyValuePair<int, int>> quests = new List<KeyValuePair<int, int>>();   // (questId, state)
@@ -41,9 +43,10 @@ public sealed class QuestDef
 {
     public int id;
     public string name = "", parent = "";
-    public int area;
+    public int area, medalCategory, medalItem;
     public string[] info = Array.Empty<string>();
     public string startScript = "", endScript = "";
+    public bool autoStart, autoComplete;
 
     public QuestRequirement startReq = new QuestRequirement();
     public QuestRequirement completeReq = new QuestRequirement();
@@ -148,6 +151,10 @@ public static class QuestCatalog
             def.name = info.Text("name");
             def.parent = info.Text("parent");
             def.area = info.Int("area");
+            def.medalCategory = info.Int("medalCategory", -1);
+            def.medalItem = info.Int("viewMedalItem");
+            def.autoStart = info.Int("autoStart") == 1;
+            def.autoComplete = info.Int("autoComplete") == 1 || info.Int("autoPreComplete") == 1;
             var pages = new List<string>();
             for (int i = 0; ; i++)
             {
@@ -174,12 +181,18 @@ public static class QuestCatalog
         var r = new QuestRequirement();
         if (node == null) return r;
 
+        r.completedQuests = node.Int("questComplete");
+        r.monsterBookMin = node.Int("mbmin");
+        r.petTameness = node.Int("pettamenessmin");
+        r.endDate = node.Text("end", "");
+        var pets = node.Get("pet"); if (pets != null) foreach (var pet in pets.Children) r.pets.Add(pet.Int("id"));
         r.level = node.Int("lvmin", node.Int("level"));
         r.maxLevel = node.Int("lvmax", node.Int("maxLevel"));
         r.meso = node.Get("meso") != null ? node.Int("meso") : 0;
         r.fame = node.Get("fame") != null ? node.Int("fame") : 0;
         r.interval = node.Get("interval") != null ? node.Int("interval") : 0;
-        r.fieldEnter = node.Get("fieldEnter") != null ? node.Int("fieldEnter") : 0;
+        // FieldEnterRequirement.processData reads the first child, not the container.
+        r.fieldEnter = node.Get("fieldEnter/0") != null ? node.Int("fieldEnter/0") : 0;
         r.npc = node.Get("npc") != null ? node.Int("npc", -1) : -1;
 
         var jobs = node.Get("job");

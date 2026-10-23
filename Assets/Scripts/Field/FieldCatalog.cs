@@ -247,7 +247,7 @@ public static class FieldCatalog
     }
 
     static readonly HashSet<int> loadedMobs = new HashSet<int>();
-    static void LoadMob(int id)
+    public static void LoadMob(int id)
     {
         if (loadedMobs.Contains(id)) return;
         var root = WzAssets.FileRoot("Mob/" + id.ToString("D7") + ".img");

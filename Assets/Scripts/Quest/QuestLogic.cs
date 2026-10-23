@@ -49,6 +49,21 @@ public static class QuestLogic
     static bool Check(QuestRequirement r, int questId, int npcId, out string reason)
     {
         reason = null;
+        if (r.completedQuests > Profile.CompletedQuests.Count) { reason = "已完成任务数量不足 " + r.completedQuests; return false; }
+        if (r.monsterBookMin > 0) {
+            var book = GameSession.InGame ? GameSession.Net.Social(new SocialRequest { characterId = GameSession.CharacterId }) : null;
+            if (book == null || book.cards.Count < r.monsterBookMin) { reason = "怪物手册卡片种类不足 " + r.monsterBookMin; return false; }
+        }
+        // A pet in cash storage is not a summoned pet. Do not award pet medals for ownership alone.
+        if (r.pets.Count > 0 || r.petTameness > 0) { reason = "需要召唤符合条件及亲密度的宠物"; return false; }
+        if (r.endDate.Length == 10) {
+            if (int.TryParse(r.endDate.Substring(0, 4), out int year) && int.TryParse(r.endDate.Substring(4, 2), out int month) &&
+                int.TryParse(r.endDate.Substring(6, 2), out int day) && int.TryParse(r.endDate.Substring(8, 2), out int hour)) {
+                // Source Calendar.set uses zero-based months and explicitly exempts historical dates.
+                long end = new DateTimeOffset(new DateTime(year, 1, 1).AddMonths(month).AddDays(day - 1).AddHours(hour)).ToUnixTimeMilliseconds();
+                if (end >= 1732027571809L && end < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) { reason = "活动已结束"; return false; }
+            }
+        }
         if (r.level > 0 && Profile.level < r.level) { reason = "等级不足 Lv." + r.level; return false; }
         if (r.maxLevel > 0 && Profile.level > r.maxLevel) { reason = "等级过高"; return false; }
 

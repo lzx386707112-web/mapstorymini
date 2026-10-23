@@ -138,13 +138,23 @@ public static class Profile
     public static int ItemCount(int id) => Data.ItemCount(id);
     public static void AddItem(int id, int count)
     {
+        if (GameSession.InGame && !SyncInventory(id, count)) return;
         if (Data.AddItem(id, count)) Save();
     }
     public static bool RemoveItem(int id, int count)
     {
+        if (Data.ItemCount(id) < count) return false;
+        if (GameSession.InGame && !SyncInventory(id, -count)) return false;
         if (!Data.RemoveItem(id, count)) return false;
         Save();
         return true;
+    }
+
+    static bool SyncInventory(int id, int count)
+    {
+        var result = GameSession.Net.ChangeInventory(new InventoryChangeRequest { characterId = GameSession.CharacterId, itemId = id, quantity = count });
+        if (!result.ok) { BottomBar.Toast(result.error); return false; }
+        GameSession.Character.inventory = result.inventory; return true;
     }
 
     // —— 任务（原端 Character.getQuest / updateQuestStatus）——
@@ -265,7 +275,12 @@ public static class Profile
         Save();
         return true;
     }
-    public static int InventoryCapacity(int tab) => tab == 0 ? Data.equipmentSlots : tab == 4 ? 96 : 24;
+    public static int InventoryCapacity(int tab)
+    {
+        if (tab == 0) return Data.equipmentSlots;
+        var rec = GameSession.InGame ? GameSession.Character.record : null;
+        return tab == 4 ? 96 : rec == null ? 24 : tab == 1 ? rec.useslots : tab == 2 ? rec.setupslots : rec.etcslots;
+    }
     public static List<int> InventoryItems(int tab)
     {
         var result = new List<int>();

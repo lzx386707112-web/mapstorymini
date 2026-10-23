@@ -253,7 +253,70 @@ public static class Program
         edb.Save();
         File.Delete(e2ePath);
 
+        Console.WriteLine("== 默认键盘功能服务 ==");
+        string socialPath = Path.Combine(Path.GetTempPath(), "mapstory_social_" + Guid.NewGuid().ToString("N") + ".db");
+        var socialDb = DbStore.Create(socialPath);
+        var socialLogin = LoginService.Login(socialDb, "socialtest", "password123");
+        var makeFirst = CharFactory.CreateCharacter(socialDb, socialLogin.accountId, 0, "HeroOne", CharFactory.JobGroupAdventurer,
+            20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0);
+        var social = new NativeSocialService(socialDb);
+        int first = makeFirst.characterId;
+        var makeBuddy = CharFactory.CreateCharacter(socialDb, socialLogin.accountId, 0, "BuddyTwo", CharFactory.JobGroupAdventurer,
+            20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0);
+        int second = makeBuddy.characterId;
+        Check(makeBuddy.code == 0, "创建好友申请目标");
+        SocialResponse Social(int id, SocialOperation op, string target = "", int cardId = 0)
+            => social.Handle(new SocialRequest { characterId = id, operation = op, target = target, cardId = cardId });
+        Check(!Social(first, SocialOperation.AddBuddy, "HeroOne").ok, "拒绝添加自己");
+        Check(!Social(first, SocialOperation.AddBuddy, "MissingName").ok, "拒绝不存在的好友");
+        Check(Social(first, SocialOperation.AddBuddy, "BuddyTwo").ok, "给离线角色发送好友申请");
+        var pendingBuddy = Social(second, SocialOperation.Read);
+        Check(pendingBuddy.buddies.Count == 1 && pendingBuddy.buddies[0].pending, "对方收到持久化待接受申请");
+        Check(Social(second, SocialOperation.AcceptBuddy, "HeroOne").ok, "接受好友申请");
+        Check(!Social(second, SocialOperation.Read).buddies[0].pending, "接受后显示正式好友");
+        Check(!Social(second, SocialOperation.AcceptBuddy, "HeroOne").ok, "不能重复接受过期申请");
+        Check(!Social(second, SocialOperation.CreateParty).ok, "新手不能绕过源端10级组队条件");
+        var partyChar = CharactersDao.FindById(socialDb, second); partyChar.level = 10; CharactersDao.Save(socialDb, partyChar);
+        Check(Social(second, SocialOperation.CreateParty).party, "10级可创建组队");
+        Check(!Social(second, SocialOperation.CreateParty).ok, "不能重复创建组队");
+        Check(!Social(second, SocialOperation.InviteParty, "HeroOne").ok, "离线角色不会被伪装成在线队员");
+        Check(!social.Handle(new SocialRequest { characterId = second, operation = SocialOperation.SearchParty, minLevel = 1, maxLevel = 32 }).ok,
+            "搜索范围不能超过30级");
+        Check(!social.Handle(new SocialRequest { characterId = second, operation = SocialOperation.SearchParty, minLevel = 11, maxLevel = 30 }).ok,
+            "搜索范围必须包含自己");
+        Check(social.Handle(new SocialRequest { characterId = second, operation = SocialOperation.SearchParty, minLevel = 1, maxLevel = 30 }).searching,
+            "队长可发起有效搜索");
+        social.EndSession(second);
+        Check(!Social(second, SocialOperation.Read).party && !Social(second, SocialOperation.Read).searching, "退出角色释放组队和搜索状态");
+        Check(!social.Handle(new SocialRequest { characterId = first, operation = SocialOperation.SendChat, text = new string('a', 128) }).ok,
+            "聊天长度上限127");
+        Check(!social.Handle(new SocialRequest { characterId = first, operation = SocialOperation.SendChat, channel = NativeChatChannel.Spouse, text = "hi" }).ok,
+            "没有配偶不能发送夫妻消息");
+        Check(!social.Handle(new SocialRequest { characterId = first, operation = SocialOperation.SendChat, channel = NativeChatChannel.Party, text = "hi" }).ok,
+            "没有队伍不能发送组队消息");
+        Check(social.Handle(new SocialRequest { characterId = first, operation = SocialOperation.SendChat, text = "hello" }).ok, "所有人频道可发送消息");
+        Check(!social.Handle(new SocialRequest { characterId = first, operation = SocialOperation.SendChat, text = "spam" }).ok, "聊天200毫秒防刷屏");
+        for (int i = 0; i < 8; i++) Social(first, SocialOperation.AddMonsterCard, cardId: 2380000);
+        Check(Social(first, SocialOperation.Read).cards[2380000] == 5, "同一怪物卡片最多5张");
+        Check(Social(first, SocialOperation.Read).bookLevel == 1, "重复卡片不会增加手册等级");
+        for (int i = 1; i <= 10; i++) Social(first, SocialOperation.AddMonsterCard, cardId: 2380000 + i);
+        Check(Social(first, SocialOperation.Read).bookLevel == 2, "11种独立卡片升到手册2级");
+        Check(!Social(first, SocialOperation.AddMonsterCard, cardId: 2000000).ok, "拒绝非怪物卡片ID");
+        Check(Social(first, SocialOperation.SetBookCover, cardId: 2380000).bookCover == 2380000, "设置封面写回角色");
+        socialDb.Save();
+        var reopenedSocial = new NativeSocialService(DbStore.Open(socialPath));
+        var persisted = reopenedSocial.Handle(new SocialRequest { characterId = first });
+        Check(persisted.cards[2380000] == 5 && persisted.bookCover == 2380000 && persisted.buddies.Count > 0,
+            "重新开库恢复好友、卡片和封面");
+        CharactersDao.Delete(socialDb, first);
+        Check(socialDb.Table("buddies").Select(r => DbStore.Int(r, "characterid") == first || DbStore.Int(r, "buddyid") == first).Count == 0,
+            "删除角色清理双向好友关系");
+        Check(socialDb.Table("monsterbook").Select(r => DbStore.Int(r, "charid") == first).Count == 0,
+            "删除角色清理怪物手册");
+        File.Delete(socialPath);
+
         Console.WriteLine();
+        NativeSystemChecks.Run(Check);
         Console.WriteLine("通过 " + passed + " / 失败 " + failed);
         File.Delete(dbPath);
         return failed == 0 ? 0 : 1;

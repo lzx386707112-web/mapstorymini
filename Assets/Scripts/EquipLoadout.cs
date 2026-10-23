@@ -29,9 +29,10 @@ public static class EquipSlot
     public const int Cape = -9;
     public const int Shield = -10;
     public const int Weapon = -11;
+    public const int Medal = -49;
 
     // 客户端真正渲染/叠加的槽位（饰品的美术不在纸娃娃配方里，先不参与）
-    public static readonly int[] Worn = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon };
+    public static readonly int[] Worn = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon, Medal };
 
     public static string NameOf(int slot)
     {
@@ -48,6 +49,7 @@ public static class EquipSlot
             case Cape: return "披风";
             case Shield: return "盾牌";
             case Weapon: return "武器";
+            case Medal: return "勋章";
             default: return "装备";
         }
     }
@@ -67,6 +69,7 @@ public static class EquipSlot
             case 108: return Glove;
             case 109: return Shield;
             case 110: return Cape;
+            case 114: return Medal;
             default: return itemId / 10000 >= 121 && itemId / 10000 <= 160 ? Weapon : 0;
         }
     }

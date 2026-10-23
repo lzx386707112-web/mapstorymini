@@ -176,12 +176,16 @@ public static class CharactersDao
 
     public static void Delete(DbStore db, int characterId)
     {
+        new NativeCommunityService(db).DeleteCharacter(characterId);
+        new NativeBossService(db).DeleteCharacter(characterId);
         db.Table("characters").Delete(DbStore.Eq("id", (long)characterId));
         db.Table("skills").Delete(DbStore.Eq("characterid", (long)characterId));
         db.Table("keymap").Delete(DbStore.Eq("characterid", (long)characterId));
         db.Table("inventoryitems").Delete(DbStore.Eq("characterid", (long)characterId));
         db.Table("queststatus").Delete(DbStore.Eq("characterid", (long)characterId));
         db.Table("questprogress").Delete(DbStore.Eq("characterid", (long)characterId));
+        db.Table("buddies").Delete(r => DbStore.Int(r, "characterid") == characterId || DbStore.Int(r, "buddyid") == characterId);
+        db.Table("monsterbook").Delete(DbStore.Eq("charid", (long)characterId));
         db.Table("savedlocations").Delete(DbStore.Eq("characterid", (long)characterId));
     }
 

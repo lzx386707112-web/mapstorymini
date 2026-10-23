@@ -277,7 +277,11 @@ public sealed class GroundItem : MonoBehaviour
             FieldItemInfo info;
             string name = FieldCatalog.Items.TryGetValue(itemId, out info) && !string.IsNullOrEmpty(info.name)
                 ? info.name : itemId.ToString();
-            Profile.AddItem(itemId, amount);
+            if (itemId / 10000 == 238)
+            {
+                if (!NativeMonsterBook.Collect(itemId, amount)) return;
+            }
+            else Profile.AddItem(itemId, amount);
             lastPickup = name + " x" + amount;
         }
         lastPickupAt = Time.realtimeSinceStartupAsDouble;

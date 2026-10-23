@@ -21,7 +21,7 @@ public static class FieldLoot
     public static float OffsetPx(int d)
         => (d % 2 == 0) ? 25f * ((d + 1) / 2) : -25f * (d / 2);
 
-    public static void Roll(int mobId, DropSink sink, Random rng)
+    public static void Roll(int mobId, DropSink sink, Random rng, double dropRate = 1)
     {
         if (sink == null || rng == null) return;
         int d = 1;
@@ -33,7 +33,7 @@ public static class FieldLoot
             Shuffle(list, rng);
             foreach (var row in list)
             {
-                if (rng.Next(0, FieldCatalog.ChanceDenominator) >= row.chance) continue;
+                if (rng.Next(0, FieldCatalog.ChanceDenominator) >= row.chance * dropRate) continue;
                 if (row.item == 0)
                 {
                     // nextInt(Max - Min) + Min；Max == Min 时 nextInt(0) 在原服返回 0
@@ -54,7 +54,7 @@ public static class FieldLoot
         Shuffle(glob, rng);
         foreach (var row in glob)
         {
-            if (rng.Next(0, FieldCatalog.ChanceDenominator) >= row.chance) continue;
+            if (rng.Next(0, FieldCatalog.ChanceDenominator) >= row.chance * dropRate) continue;
             if (row.item == 0) continue;                     // 全局掉落不生成金币
             int min = Math.Max(1, row.min);
             int max = Math.Max(min, row.max);

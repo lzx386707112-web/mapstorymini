@@ -33,11 +33,68 @@ public static class QuestNpcChecks
         CheckScriptLookup();
         CheckDialogText();
         CheckQuestRules();
+        CheckDialogProtocol();
         CheckNewCharacterMarkers();
         CheckAllMapQuestLinks();
 
         Debug.Log("[QuestNpcCheck] 通过 " + pass + " 项，失败 " + fail + " 项");
         if (fail > 0 && Application.isBatchMode) EditorApplication.Exit(1);
+    }
+
+    static NpcSession ScriptSession(string source)
+    {
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var session = (NpcSession)Activator.CreateInstance(typeof(NpcSession), flags, null,
+            new object[] {2101, 0, false, false}, null);
+        typeof(NpcSession).GetMethod("Begin", flags).Invoke(session, new object[] {source, "dialog-check"});
+        return session;
+    }
+
+    static void CheckDialogProtocol()
+    {
+        var session = ScriptSession(@"
+            var step = 0;
+            function start() { cm.sendNext('next'); }
+            function action(mode,type,selection) {
+                if(mode != 1) { cm.dispose(); return; }
+                step++;
+                if(step == 1 && type == 0) cm.sendYesNo('yesno');
+                else if(step == 2 && type == 1) cm.sendSimple('#L7#seven#l');
+                else if(step == 3 && type == 4 && selection == 7) cm.sendAcceptDecline('accept');
+                else if(step == 4 && type == 12) cm.sendGetNumber('number',10,1,100);
+                else if(step == 5 && type == 3 && selection == 87) cm.sendGetText('text');
+                else if(step == 6 && type == 2 && cm.getText() == '测试') cm.sendOk('done');
+                else if(step == 7 && type == 0) cm.dispose();
+                else cm.sendOk('WRONG');
+            }");
+        session.Reply(1);
+        Check(session.Dialog.Mode == NpcDialogMode.YesNo, "继续按钮消息类型必须为0");
+        session.Reply(1);
+        Check(session.Dialog.Mode == NpcDialogMode.Simple, "是/否消息类型必须为1");
+        session.Reply(1, 7);
+        Check(session.Dialog.Mode == NpcDialogMode.AcceptDecline, "选项消息类型必须为4且保留索引");
+        session.Reply(1);
+        Check(session.Dialog.Mode == NpcDialogMode.GetNumber, "接受/拒绝消息类型必须为12");
+        session.Reply(1, 87);
+        Check(session.Dialog.Mode == NpcDialogMode.GetText, "数字输入消息类型必须为3且传递输入值");
+        session.Dialog.Input = "测试";
+        session.Reply(1);
+        Check(session.Dialog.RawText == "done", "文本输入消息类型必须为2且cm.getText保留输入");
+        session.Reply(1);
+        Check(session.Closed && !session.Dialog.Visible, "确定必须继续脚本；dispose不留旧页");
+
+        session = ScriptSession("function start(){cm.sendOk('last');cm.dispose();}");
+        Check(session.Disposed && session.Dialog.Visible, "sendOk+dispose必须保留最后一页");
+        session.Reply(1);
+        Check(session.Closed, "已dispose的最后一页应可关闭");
+        session = ScriptSession("function start(){cm.sendNext('a');} function action(m,t,s){cm.dispose();}");
+        session.Cancel();
+        Check(session.Closed, "取消必须关闭并释放会话");
+        int callbacks = 0;
+        session = NpcSession.Choose(2101, "#L0#选择#l", index => callbacks++);
+        session.Reply(1, 0);
+        session.Reply(1, 0);
+        Check(callbacks == 1 && NpcSession.Active == null, "一次选择只能执行一次，重复响应不得重复发放动作");
     }
 
     static void CheckNewCharacterMarkers()
@@ -64,6 +121,35 @@ public static class QuestNpcChecks
                 "罗杰应落在 fh7 的 y=65，而不是出生 y=58");
             Check(NpcField.MarkerOf(2101).start, "1 级新角色应看到希娜的可接任务标记");
             Check(QuestLogic.CanStart(QuestCatalog.Get(1031), 2101), "1 级新角色应可接希娜和莎丽");
+            NpcField.Interact(2101);
+            Check(NpcSession.Active != null && NpcSession.Active.Dialog.Mode == NpcDialogMode.Simple,
+                "点击NPC应显示任务/普通对话选择，而非自动接取第一个任务");
+            Check(!data.questStarted.Contains(1031), "打开NPC菜单不得自动接任务");
+            NpcSession.CloseActive();
+            var confirmation = NpcSession.TalkQuest(QuestCatalog.Get(1031), 2101, false);
+            Check(confirmation != null && confirmation.Dialog.Mode == NpcDialogMode.Next && confirmation.Dialog.RawText.Contains("新来的冒险家"),
+                "无脚本任务必须读取Say.img的首段对白");
+            confirmation?.Reply(1);
+            confirmation?.Reply(0);
+            Check(confirmation != null && confirmation.Dialog.RawText.Contains("新来的冒险家"), "返回按钮必须回到任务上一页");
+            confirmation?.Reply(1);
+            confirmation?.Reply(1);
+            confirmation?.Reply(1);
+            Check(confirmation != null && confirmation.Dialog.Mode == NpcDialogMode.AcceptDecline && !data.questStarted.Contains(1031),
+                "必须读完Say主对白并确认后才能接任务");
+            confirmation?.Reply(0);
+            Check(!data.questStarted.Contains(1031) && confirmation != null && confirmation.Dialog.RawText.Contains("心理准备"),
+                "拒绝任务必须显示Say/no且不得改状态");
+            confirmation?.Reply(1);
+            Check(NpcSession.Active == null, "拒绝对白结束必须释放会话");
+            data.level = 2;
+            NpcField.InvalidateMarkers();
+            Check(QuestCatalog.Get(1029).autoStart && QuestCatalog.Get(1030).autoComplete, "必须读取QuestInfo的远程任务标记");
+            Check(!QuestLogic.CanStart(QuestCatalog.Get(1047), 2006), "fieldEnter/0限制必须生效，不能显示999999999地图任务");
+            NpcField.ShowQuestAlerts();
+            Check(NpcSession.Active != null && NpcSession.Active.Dialog.Content.Selections.Count > 0,
+                "角色灯泡必须打开任务列表");
+            NpcSession.CloseActive();
             data.level = 11;
             NpcField.InvalidateMarkers();
             Check(!QuestLogic.CanStart(QuestCatalog.Get(1031), 2101), "1031 的 lvmax=10 未生效");
@@ -200,6 +286,10 @@ public static class QuestNpcChecks
         Check(c != null && c.Body.Contains("你好"), "正文丢了");
         Check(c != null && !c.Body.Contains("#L"), "#L 标记没有被吃掉");
         Check(c != null && c.Body.Contains("<color="), "#b 没有转成富文本颜色");
+        Check(DialogText.Parse("#b蓝#k普通").Body == "<color=#4A76C8>蓝</color>普通", "颜色标签必须配对，不能以孤立结束标签开头");
+        Check(DialogText.Parse("#k普通#b#e蓝#k黑#n").Body == "普通<color=#4A76C8><b>蓝</b></color><b>黑</b>", "相邻颜色/粗体标记不得吞掉正文或交叉标签");
+        Check(DialogText.Parse("#h #").Body == Profile.playerName, "角色名标记未解析");
+        Check(DialogText.Parse("#c4000000#").Body == Profile.ItemCount(4000000).ToString(), "道具数量标记应为数量而非颜色");
     }
 
     // ————— 任务规则 —————
