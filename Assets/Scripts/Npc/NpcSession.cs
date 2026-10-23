@@ -152,6 +152,7 @@ public sealed class NpcSession
             engine.Bind(IsQuest ? "qm" : "cm", cm);
             engine.Bind("pi", cm);                    // 少数脚本用 pi
             engine.Bind("player", NpcApi.BuildPlayer(this));
+            engine.Bind("Java", NpcApi.BuildJava());
             engine.Run();
 
             if (IsQuest)

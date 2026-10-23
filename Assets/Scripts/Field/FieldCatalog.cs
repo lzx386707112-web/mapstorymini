@@ -250,7 +250,9 @@ public static class FieldCatalog
     public static void LoadMob(int id)
     {
         if (loadedMobs.Contains(id)) return;
-        var root = WzAssets.FileRoot("Mob/" + id.ToString("D7") + ".img");
+        string path = "Mob/" + id.ToString("D7") + ".img";
+        if (!WzAssets.HasFile(path)) { Debug.LogWarning("[Field] Missing original monster IMG: " + path); return; }
+        var root = WzAssets.FileRoot(path);
         var info = root.Get("info");
         var stats = new Dictionary<string, object>();
         foreach (var property in info.Children)

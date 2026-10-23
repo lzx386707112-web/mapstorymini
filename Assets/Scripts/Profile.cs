@@ -190,6 +190,7 @@ public static class Profile
     // 返回本次结算升了几级（默认升级保护开启，所以通常是 0 或 1）。
     public static int GrantExperience(int amount)
     {
+        if (GameLoop.I?.player?.GetComponent<NativeMobDebuffs>()?.Has(124) == true) amount /= 2;
         if (amount <= 0) return 0;
         int before = Data.level;
         int levels = LevelSystem.AddExperience(Data, amount, LevelSystem.LevelUpProtect);

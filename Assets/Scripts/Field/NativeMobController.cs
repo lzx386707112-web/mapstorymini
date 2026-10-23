@@ -138,12 +138,23 @@ public sealed class NativeMobController : MonoBehaviour
             encounter.Schedule(mob, delay, () => {
                 var p = GameLoop.I?.player;
                 if (p == null || !AttackInRange(Range(data), p)) return;
-                int percent = data.Int("hpR"), fixedDamage = data.Int("fixedDamage");
-                if (percent > 0) p.TakeBossDamage(NativeBossRules.PercentDamage((int)p.hpMax, percent));
+                if (p.hp <= 0 || Time.unscaledTime < p.invulnUntil) return;
+                float before = p.hp;
+                int percent = data.Int("fixDamR"), fixedDamage = data.Int("fixedDamage");
+                if (data.Get("deadlyAttack") != null)
+                { p.TakeBossDamage(Mathf.Max(0,p.hp-1)); p.mp = Mathf.Min(p.mp,1); }
+                else if (percent > 0) p.TakeBossDamage(NativeBossRules.PercentDamage((int)p.hpMax, percent));
                 else if (fixedDamage > 0) p.TakeBossDamage(fixedDamage);
                 else p.TakeDamage(data.Int("PADamage", NativeCombatData.Int(mob.CombatStats, "PADamage")), Direction,
                     data.Int("magic") != 0, NativeCombatData.Int(mob.CombatStats, "level", 1));
-                if (data.Int("deadlyAttack") != 0) { p.hp = Math.Min(p.hp, 1); p.mp = Math.Min(p.mp, 1); }
+                p.mp = Mathf.Max(0,p.mp-data.Int("mpBurn"));
+                int disease = data.Int("disease"), level = data.Int("level");
+                if (p.hp < before && disease > 0)
+                {
+                    var effect = WzAssets.FileRoot("Skill/MobSkill.img").Get(disease+"/level/"+level);
+                    if (effect != null) Apply(new Cast { id=disease,level=level,x=effect.Int("x",1),y=effect.Int("y",1),
+                        probability=effect.Int("prop",100),count=effect.Int("count",1),duration=effect.Int("time")*1000L });
+                }
             });
             return;
         }
@@ -225,7 +236,7 @@ public sealed class NativeMobController : MonoBehaviour
                 if (p != null && InRange(c.range,p))
                 {
                     int map = root.Int("info/ban/banMap/0/field", -1);
-                    if (map > 0) field.WarpTo(map);
+                    if (map > 0) field.WarpTo(map,root.Text("info/ban/banMap/0/portal","sp"));
                 }
                 return;
             case 131:

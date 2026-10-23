@@ -202,7 +202,7 @@ public static class NpcApi
         cm.Set("getEvent", Ret(_ => JsNull.Value));
         cm.Set("getStorage", Ret(_ => JsNull.Value));
         cm.Set("getMTS", Ret(_ => JsNull.Value));
-        cm.Set("getCashShop", Ret(_ => JsNull.Value));
+        cm.Set("getCashShop", Ret(_ => GameSession.InGame ? BuildCashShop() : JsNull.Value));
 
         // 少数脚本用 cm.c.getPlayer()（Client 链）
         cm.Set("c", BuildClient(player));
@@ -215,6 +215,21 @@ public static class NpcApi
             cm.Set("isStart", Ret(_ => B(!session.QuestEnd)));
         }
         return cm;
+    }
+
+    static JsHostObject BuildCashShop()
+    {
+        var cash = new JsHostObject(null);
+        cash.Set("getCash", Ret(c => {
+            var state = GameSession.Net.Cash(new CashRequest { characterId = GameSession.CharacterId });
+            int type = Int(c, 0); return N(type == 1 ? state.credit : type == 2 ? state.points : type == 4 ? state.prepaid : 0);
+        }));
+        cash.Set("gainCash", Fn(c => {
+            var state = GameSession.Net.Cash(new CashRequest { characterId = GameSession.CharacterId,
+                operation = CashOperation.AdjustBalance, currency = Int(c, 0), amount = Int(c, 1) });
+            if (!state.ok) BottomBar.Toast(state.error);
+        }));
+        return cash;
     }
 
     static void ToastIfAny(string text)
@@ -297,6 +312,7 @@ public static class NpcApi
         p.Set("getEvents", Ret(_ => new JsArray()));
         p.Set("getAreaInfos", Ret(_ => new JsArray()));
         p.Set("getPartnerId", Ret(_ => N(0)));
+        p.Set("getCashShop", Ret(_ => GameSession.InGame ? BuildCashShop() : JsNull.Value));
         p.Set("getFamilyEntry", Ret(_ => JsNull.Value));
         p.Set("sendPacket", Fn(c => { }));
         p.Set("cancelEffect", Fn(c => { }));
@@ -341,13 +357,11 @@ public static class NpcApi
         m.Set("getSpawnedMonstersOnMap", Ret(_ => N(CountFieldMonsters())));
         m.Set("spawnMonsterOnGroundBelow", Fn(c => {
             int id = c.Arg(0) is JsHostObject host ? JsConvert.ToInt32(host.Get("id")) : Int(c,0);
-            SpawnScriptMob(id,Int(c,1),Int(c,2));
+            int x = Int(c,1), y = Int(c,2);
+            if (c.Arg(1) is JsHostObject point) { x = JsConvert.ToInt32(point.Get("x")); y = JsConvert.ToInt32(point.Get("y")); }
+            SpawnScriptMob(id,x,y,true);
         }));
-        m.Set("killAllMonsters", Fn(c => {
-            bool rewards = c.ArgCount > 0 && JsConvert.ToBoolean(c.Arg(0));
-            foreach (var mob in new List<EnemyUnit>(EnemyUnit.All)) if (mob.fieldMode && !mob.dead)
-                if (rewards) mob.DefeatNative(); else { mob.dead=true; mob.gameObject.SetActive(false); UnityEngine.Object.Destroy(mob.gameObject); }
-        }));
+        m.Set("killAllMonsters", Fn(c => GameLoop.I?.field?.ClearMobs()));
         m.Set("getReactorById", Ret(_ => JsNull.Value));
         m.Set("getReactor", Ret(_ => JsNull.Value));
         m.Set("getMonsterById", Ret(c => {
@@ -363,8 +377,35 @@ public static class NpcApi
         foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead) count++;
         return count;
     }
-    static void SpawnScriptMob(int id, int x, int y)
-        => GameLoop.I?.field?.SpawnNativeMob(id,new Vector3(x / Art.PPU,-y / Art.PPU,0));
+    static void SpawnScriptMob(int id, int x, int y, bool ground = false)
+        => GameLoop.I?.field?.SpawnNativeMob(id,new Vector3(x / Art.PPU,-y / Art.PPU,0),ground);
+    public static JsHostObject BuildJava()
+    {
+        var java = new JsHostObject(null);
+        java.Set("type",Ret(c => {
+            string name = Str(c,0);
+            if (name == "java.awt.Point") return JsFunction.FromNative("Point",args => {
+                var point = new JsHostObject(null);
+                point.Set("x",N(Int(args,0))); point.Set("y",N(Int(args,1)));
+                point.Set("getX",Ret(_ => point.Get("x"))); point.Set("getY",Ret(_ => point.Get("y")));
+                return point;
+            });
+            if (name == "org.gms.server.life.LifeFactory")
+            {
+                var factory = new JsHostObject(null);
+                factory.Set("getMonster",Ret(args => {
+                    int id = Int(args,0);
+                    FieldCatalog.LoadMob(id);
+                    var monster = new JsHostObject(null);
+                    monster.Set("id",N(id)); monster.Set("getId",Ret(_ => N(id)));
+                    return monster;
+                }));
+                return factory;
+            }
+            return JsNull.Value;
+        }));
+        return java;
+    }
     static JsHostObject BuildMonster(EnemyUnit mob)
     {
         var result = new JsHostObject(mob);

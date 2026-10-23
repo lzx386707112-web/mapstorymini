@@ -38,7 +38,7 @@ public sealed class NativeMobDebuffs : MonoBehaviour
     }
     public bool BlocksAttack => Has(123) || Has(128);
     public bool BlocksSkill => Has(120) || BlocksAttack;
-    public float Healing(float amount) => Has(133) ? -amount / 2 : amount;
+    public float Healing(float amount, bool skill) => Has(133) ? (skill ? -amount : amount / 2) : amount;
     void Update()
     {
         if (player == null || player.hp <= 0 || PlayerCtrl.InputLocked || Time.deltaTime <= 0) return;

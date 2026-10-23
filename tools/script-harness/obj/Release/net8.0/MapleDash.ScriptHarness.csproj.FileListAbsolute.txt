@@ -1,4 +1,3 @@
-/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/bin/Release/net8.0/MapleDash.ScriptHarness
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/bin/Release/net8.0/MapleDash.ScriptHarness.deps.json
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/bin/Release/net8.0/MapleDash.ScriptHarness.runtimeconfig.json
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/bin/Release/net8.0/MapleDash.ScriptHarness.dll

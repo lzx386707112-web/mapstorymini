@@ -16,9 +16,9 @@ public interface INativeCashCatalog {
     int EquipSlot(int itemId);
     string CanEquip(int itemId, CharRecord character);
 }
-public enum CashOperation { Open, Close, Read, Buy, Gift, ClaimGifts, Withdraw, Deposit, WishList, ExpandInventory, ExpandCharacters, Equip, Unequip }
+public enum CashOperation { Open, Close, Read, Buy, Gift, ClaimGifts, Withdraw, Deposit, WishList, ExpandInventory, ExpandCharacters, Equip, Unequip, AdjustBalance }
 public sealed class CashRequest {
-    public int characterId, sn, currency = 1, birthday, inventoryType;
+    public int characterId, sn, currency = 1, birthday, inventoryType, amount;
     public long itemId;
     public string target = "", message = "";
     public int[] wishes;
@@ -85,6 +85,14 @@ public sealed class NativeCashService {
         if (r.operation == CashOperation.Open) { if (Catalog == null) return "商城目录资源未加载"; if (c.hp <= 0 || CanEnter != null && !CanEnter(c.map)) return "当前状态或地图不能进入商城"; opened.Add(cid); return null; }
         if (r.operation == CashOperation.Close) { opened.Remove(cid); return null; }
         if (r.operation == CashOperation.Read) return null;
+        // Trusted original NPC scripts award/spend account cash outside the shop.
+        if (r.operation == CashOperation.AdjustBalance) {
+            var acc = AccountsDao.FindById(db, c.accountid); string col = Currency(r.currency);
+            if (acc == null || col == null) return "无效账号或余额类型";
+            long total = (long)DbStore.Int(acc, col) + r.amount;
+            if (total < 0 || total > int.MaxValue) return "余额不足或超出上限";
+            acc[col] = total; return null;
+        }
         if (!opened.Contains(cid)) return "请先进入商城";
         if (Catalog == null) return "商城目录资源未加载";
         var account = AccountsDao.FindById(db, c.accountid); if (account == null) return "账号不存在";

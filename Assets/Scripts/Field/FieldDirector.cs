@@ -47,6 +47,7 @@ public sealed class FieldDirector : MonoBehaviour
     float warpClock;             // 当前阶段已用时（真实秒）
     FieldPortal warpTarget;      // null = 死亡复活
     int pendingWarpMap = -1;     // 脚本 cm.warp / 任务传送到指定地图
+    string pendingWarpPortal;
 
     bool Warping => warpState != WarpState.None;
 
@@ -284,7 +285,7 @@ public sealed class FieldDirector : MonoBehaviour
         TickRespawn(dt);
 
         AliveCount = 0;
-        foreach (var p in points) if (p.mob != null && !p.mob.dead) AliveCount++;
+        foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead) AliveCount++;
 
         saveTimer += dt;
         if (saveTimer > 20f) { saveTimer = 0f; Profile.Save(); }
@@ -438,8 +439,10 @@ public sealed class FieldDirector : MonoBehaviour
                 {
                     int target = pendingWarpMap;
                     pendingWarpMap = -1;
+                    string portalName = pendingWarpPortal;
+                    pendingWarpPortal = null;
                     if (target <= 0) target = Map != null ? Map.returnMap : 1000000;
-                    Enter(target, null);
+                    Enter(target, portalName);
                 }
                 else if (warpTarget.tm == Map.id) WarpInsideMap(warpTarget);
                 else Enter(warpTarget.tm, string.IsNullOrEmpty(warpTarget.targetName) ? null : warpTarget.targetName);
@@ -522,12 +525,15 @@ public sealed class FieldDirector : MonoBehaviour
     {
         var pos = e.transform.position;
         int n = 0, mesos = 0;
+        double dropRate = GameSession.InGame ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId }).dropRate : 1;
+        if (e.IsBoss && GameSession.InGame)
+            dropRate *= GameSession.Net.Boss(new BossRequest { characterId = GameSession.CharacterId }).dropRate;
         FieldLoot.Roll(mob.id, (itemId, qty, d) =>
         {
             if (itemId == 0) mesos += qty;
             n++;
             GroundItem.Spawn(itemId, qty, pos + Offset(d));
-        }, rng, GameSession.InGame ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId }).dropRate : 1);
+        }, rng, dropRate);
         dropped += n;
         mesosTotal += mesos;
     }
@@ -552,11 +558,12 @@ public sealed class FieldDirector : MonoBehaviour
     }
 
     // 脚本 cm.warp(mapId)：和传送门一样走黑场过渡，而不是瞬间切图。
-    public void WarpTo(int mapId)
+    public void WarpTo(int mapId, string portalName = null)
     {
         if (Warping || mapId <= 0) return;
-        if (Map != null && Map.id == mapId) return;
+        if (Map != null && Map.id == mapId && string.IsNullOrEmpty(portalName)) return;
         pendingWarpMap = mapId;
+        pendingWarpPortal = portalName;
         StartWarp(null);
     }
 

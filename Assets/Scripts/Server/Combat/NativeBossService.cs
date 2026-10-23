@@ -13,6 +13,7 @@ public sealed class BossResponse
     public bool ok = true;
     public string error = "";
     public double multiplier = 1;
+    public double dropRate = 1;
 }
 
 // BossDamageGrowth / ExpeditionBossLog, persistence on the local server.
@@ -41,8 +42,11 @@ public sealed class NativeBossService
     {
         lock (db)
         {
-            if (CharactersDao.FindById(db,r.characterId) == null) return new BossResponse { ok=false,error="角色不存在" };
+            var character = CharactersDao.FindById(db,r.characterId);
+            if (character == null) return new BossResponse { ok=false,error="角色不存在" };
             var result = new BossResponse();
+            var world = db.Table("world_prop").Find(x => DbStore.Int(x,"id") == character.world);
+            result.dropRate = DbStore.Dbl(world,"boss_drop_rate",1);
             if (r.operation == BossOperation.RecordKill && Growths.TryGetValue(r.mobId,out var growth))
             {
                 if (string.IsNullOrEmpty(r.encounter)) return new BossResponse { ok=false,error="缺少击杀会话" };

@@ -1,0 +1,16 @@
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/bin/Debug/net8.0/Server/Db/Schema.sql
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/bin/Debug/net8.0/MapleDash.BossCheck
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/bin/Debug/net8.0/MapleDash.BossCheck.deps.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/bin/Debug/net8.0/MapleDash.BossCheck.runtimeconfig.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/bin/Debug/net8.0/MapleDash.BossCheck.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/bin/Debug/net8.0/MapleDash.BossCheck.pdb
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/obj/Debug/net8.0/MapleDash.BossCheck.GeneratedMSBuildEditorConfig.editorconfig
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/obj/Debug/net8.0/MapleDash.BossCheck.AssemblyInfoInputs.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/obj/Debug/net8.0/MapleDash.BossCheck.AssemblyInfo.cs
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/obj/Debug/net8.0/MapleDash.BossCheck.csproj.CoreCompileInputs.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/obj/Debug/net8.0/MapleDash.BossCheck.sourcelink.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/obj/Debug/net8.0/MapleDash.BossCheck.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/obj/Debug/net8.0/refint/MapleDash.BossCheck.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/obj/Debug/net8.0/MapleDash.BossCheck.pdb
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/obj/Debug/net8.0/MapleDash.BossCheck.genruntimeconfig.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/boss-check/obj/Debug/net8.0/ref/MapleDash.BossCheck.dll

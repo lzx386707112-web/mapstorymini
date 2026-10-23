@@ -923,9 +923,9 @@ public class PlayerCtrl : MonoBehaviour
         attackBonus = 0; attackBonusUntil = 0;
         GetComponent<SkillSystem>()?.CancelActions();
     }
-    public void Heal(float v)
+    public void Heal(float v, bool skill = false)
     {
-        v = GetComponent<NativeMobDebuffs>()?.Healing(v) ?? v;
+        v = GetComponent<NativeMobDebuffs>()?.Healing(v,skill) ?? v;
         if (v < 0) TakeBossDamage(-v);
         else hp = Mathf.Min(hpMax,hp+v);
     }

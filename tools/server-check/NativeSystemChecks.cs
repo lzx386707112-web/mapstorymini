@@ -74,6 +74,10 @@ static class NativeSystemChecks {
             CashResponse S(int cid, CashOperation operation = CashOperation.Read, int sn = 100, long item = 0, int currency = 1) => cash.Handle(new CashRequest { characterId = cid, operation = operation, sn = sn, itemId = item, currency = currency });
             Check(!S(leader, CashOperation.Buy).ok, "没有进入商城不能交易");
             Check(S(leader, CashOperation.Open).ok, "进入商城读取三类账号余额");
+            Check(cash.Handle(new CashRequest { characterId = junior, operation = CashOperation.AdjustBalance, currency = 1, amount = 500 }).credit == 20500,
+                "源端NPC可在商城外奖励账号点券");
+            Check(!cash.Handle(new CashRequest { characterId = junior, operation = CashOperation.AdjustBalance, currency = 1, amount = -99999 }).ok && S(leader).credit == 20500,
+                "NPC点券扣除失败不形成负余额");
             int balance = S(leader).credit;
             Check(!S(leader, CashOperation.Buy, currency: 3).ok && S(leader).credit == balance, "无效余额类型不扣款");
             var bought = S(leader, CashOperation.Buy);

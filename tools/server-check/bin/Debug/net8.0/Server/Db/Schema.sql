@@ -422,3 +422,17 @@ CREATE TABLE cash_gifts (
  sender TEXT DEFAULT '',
  message TEXT DEFAULT ''
 );
+
+-- BossDamageGrowth kill progress and ExpeditionBossLog entry records.
+CREATE TABLE boss_growth (
+ characterid INTEGER NOT NULL,
+ boss TEXT NOT NULL,
+ kills INTEGER NOT NULL DEFAULT 0,
+ PRIMARY KEY (characterid, boss)
+);
+CREATE TABLE bosslog_daily (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ characterid INTEGER NOT NULL,
+ bosstype TEXT NOT NULL,
+ attempttime INTEGER NOT NULL
+);
