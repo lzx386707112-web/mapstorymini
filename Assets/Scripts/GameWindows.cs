@@ -110,6 +110,17 @@ public static class StatWindow
             Image(r, "BtApUp/disabled/0", ApArrowX, 117);
             Image(r, "BtApUp/disabled/0", ApArrowX, 135);
         }
+        // 音量控制（音乐/音效分开，原端设置里也是两项）：
+        // 拖动即时生效并写 PlayerPrefs；BGM 音量变化同时作用到正在播的曲子。
+        var volStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(10 * S) };
+        volStyle.normal.textColor = Color.black;
+        GUI.Label(At(r, 8, 310, 34, 14), "音乐", volStyle);
+        float bgmVol = GUI.HorizontalSlider(At(r, 42, 314, 100, 12), AudioManager.BgmVolume, 0f, 1f);
+        if (!Mathf.Approximately(bgmVol, AudioManager.BgmVolume)) AudioManager.BgmVolume = bgmVol;
+        GUI.Label(At(r, 8, 328, 34, 14), "音效", volStyle);
+        float sfxVol = GUI.HorizontalSlider(At(r, 42, 332, 100, 12), AudioManager.SfxVolume, 0f, 1f);
+        if (!Mathf.Approximately(sfxVol, AudioManager.SfxVolume)) AudioManager.SfxVolume = sfxVol;
+
         if (NativeUi.Button(At(r, 154, 324, 46, 19), "UI/UIWindow.img/Stat/BtDetail")) detail = !detail;
         if (!detail) return;
         // Original detail window bottom-aligns with the main panel (347-203=144).
@@ -139,17 +150,47 @@ public static class EquipWindow
     static Rect rect = new Rect(200, 100, 300, 220);
     public static void Toggle() { Visible = !Visible; }
 
+    static float S => BottomBar.S;
+    static Rect At(Rect r, float x, float y, float w, float h) => new Rect(r.x + x * S, r.y + y * S, w * S, h * S);
+
     public static void Draw()
     {
         if (!Visible) return;
         var r = WindowShell.Frame("装备", rect.x, rect.y, rect.width, rect.height, ref Visible);
-        string[] parts = { "Coat/01040002", "Pants/01060000", "Shoes/01070000", "Weapon/" + int.Parse(Profile.equipWeapon).ToString("D8") };
-        Vector2[] slots = { new Vector2(35, 133), new Vector2(35, 167), new Vector2(69, 201), new Vector2(103, 133) };
-        for (int i = 0; i < parts.Length; i++)
+        bool release = Event.current.type == EventType.Repaint && Pointer.Released;
+        // 8 个穿戴槽位（与 EquipSlot.Worn 顺序一致：帽/衣/裤/鞋/手套/披风/盾/武器）。
+        // 直接读 Profile 当前所穿，不再写死具体道具 id。
+        int[] slots = EquipSlot.Worn;
+        float[] colX = { 18, 95 };
+        float[] rowY = { 45, 85, 125, 165 };
+        var nameStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(11 * S) };
+        nameStyle.normal.textColor = Color.black;
+        for (int i = 0; i < slots.Length; i++)
         {
-            var icon = Art.Tex("wz://Character/" + parts[i] + ".img/info/icon");
-            if (icon != null) GUI.DrawTexture(new Rect(r.x + slots[i].x * BottomBar.S, r.y + slots[i].y * BottomBar.S, 30 * BottomBar.S, 30 * BottomBar.S), icon, ScaleMode.ScaleToFit);
+            int slot = slots[i];
+            float x = colX[i / 4], y = rowY[i % 4];
+            GUI.Label(At(r, x, y, 24, 16), EquipSlot.NameOf(slot), nameStyle);
+            int id = Profile.EquipOfSlot(slot);
+            var iconRect = At(r, x + 26, y - 2, 30, 30);
+            if (id > 0)
+            {
+                var icon = ArmorIcon(id);
+                if (icon != null) GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
+                // 点击脱下（武器必须一直持有，不允许在此卸下；换武器走背包）
+                if (release && iconRect.Contains(Pointer.Pos) && slot != EquipSlot.Weapon)
+                {
+                    Profile.SetEquipSlot(slot, 0);
+                    BottomBar.Toast("已脱下" + EquipSlot.NameOf(slot));
+                }
+            }
         }
+    }
+
+    public static Texture2D ArmorIcon(int itemId)
+    {
+        var dir = EquipCatalog.DirOf(itemId);
+        if (dir == null) return null;
+        return Art.Tex("wz://Character/" + dir + "/" + itemId.ToString("D8") + ".img/info/icon");
     }
 }
 
@@ -235,9 +276,19 @@ public static class InvenWindow
             Texture2D icon = null;
             if (FieldCatalog.Items.TryGetValue(id, out var info) && !string.IsNullOrEmpty(info.icon)) icon = Art.Tex(info.icon);
             else if (tab == 0 && WeaponDefs.TryGet(id.ToString(), out _)) icon = Art.Tex("wz://Character/Weapon/" + id.ToString("D8") + ".img/info/icon");
+            else if (tab == 0 && EquipCatalog.DirOf(id) != null) icon = Art.Tex("wz://Character/" + EquipCatalog.DirOf(id) + "/" + id.ToString("D8") + ".img/info/icon");
             if (icon != null) GUI.DrawTexture(slot, icon, ScaleMode.ScaleToFit);
             if (tab != 0) Text(At(r, x, y + 20, 31, 12), Profile.ItemCount(id).ToString(), true, 9);
-            if (release && slot.Contains(Pointer.Pos) && tab == 0) Profile.EquipWeapon(id.ToString());
+            if (release && slot.Contains(Pointer.Pos) && tab == 0)
+            {
+                int eqSlot = EquipSlot.SlotOf(id);
+                if (eqSlot == EquipSlot.Weapon) Profile.EquipWeapon(id.ToString());
+                else if (eqSlot != 0)
+                {
+                    string err = EquipLoadout.Equip(id, Profile.Attributes);
+                    if (err != null) BottomBar.Toast(err);
+                }
+            }
         }
         if (!expanded)
         {

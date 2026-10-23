@@ -105,6 +105,10 @@ public sealed class FieldDirector : MonoBehaviour
         ApplyGeometry(map);
         PlacePlayer(map, spawnPortalName);
 
+        // 原版每张图自带 bgm（FieldMaps.json 的 info/bgm，如 Bgm00/FloralLife）；
+        // Sound/Weapon/Mob/Skill 等音效由各系统按需播放，这里只管地图音乐。
+        AudioManager.PlayBgm(map.bgm);
+
         BuildPoints(map);
         SpawnInitial();
 
@@ -384,6 +388,7 @@ public sealed class FieldDirector : MonoBehaviour
         PlayerCtrl.InputLocked = true;
         ScreenFade.Attach(this);
         ScreenFade.Set(0f);
+        AudioManager.Play("Game/Portal", 0.7f, false);   // 原版进门音效
 
         // 原版按下 ↑ 后人物立刻离开地图；这里黑幕有 0.3s，先给一段无敌，
         // 否则站在怪堆里的门上会被那 0.3s 白白打掉血。

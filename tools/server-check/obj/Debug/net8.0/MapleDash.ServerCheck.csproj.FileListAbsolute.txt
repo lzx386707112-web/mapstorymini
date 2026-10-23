@@ -1,0 +1,17 @@
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/MapleDash.ServerCheck.GeneratedMSBuildEditorConfig.editorconfig
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/MapleDash.ServerCheck.AssemblyInfoInputs.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/MapleDash.ServerCheck.AssemblyInfo.cs
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/MapleDash.ServerCheck.csproj.CoreCompileInputs.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/MapleDash.ServerCheck.sourcelink.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/bin/Debug/net8.0/Field/ExpTable.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/bin/Debug/net8.0/Server/Db/Schema.sql
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/bin/Debug/net8.0/MapleDash.ServerCheck
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/bin/Debug/net8.0/MapleDash.ServerCheck.deps.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/bin/Debug/net8.0/MapleDash.ServerCheck.runtimeconfig.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/bin/Debug/net8.0/MapleDash.ServerCheck.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/bin/Debug/net8.0/MapleDash.ServerCheck.pdb
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/MapleDash.ServerCheck.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/refint/MapleDash.ServerCheck.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/MapleDash.ServerCheck.pdb
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/MapleDash.ServerCheck.genruntimeconfig.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/ref/MapleDash.ServerCheck.dll

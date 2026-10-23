@@ -41,51 +41,6 @@ public static class BattleRewards
         int min = (int)Art.Num(meso, "minimum"), max = (int)Art.Num(meso, "maximum");
         int amount = RewardRules.RollMeso((int)Art.Num(meso, "chance"), min, max,
             UnityEngine.Random.Range(0, 999999), max > min ? UnityEngine.Random.Range(0, max - min) : 0);
-        if (amount > 0) MesoDrop.Spawn(amount, position);
-    }
-}
-
-// 本地掉落实体：击杀不直接加钱，接近后按 Z 拾取；移动端 HUD 提供同一入口。
-public sealed class MesoDrop : MonoBehaviour
-{
-    public static readonly List<MesoDrop> All = new List<MesoDrop>();
-    int amount;
-    double expires;
-    public static void Spawn(int amount, Vector3 position)
-    {
-        var sprite = SpriteFactory.Make("MesoDrop", null, new Vector2(0.25f, 0.25f), Color.yellow, 290);
-        sprite.transform.position = position + Vector3.up * 0.15f;
-        var drop = sprite.gameObject.AddComponent<MesoDrop>();
-        drop.amount = amount;
-        drop.expires = Time.realtimeSinceStartupAsDouble + 180;
-    }
-    void OnEnable() => All.Add(this);
-    void OnDisable() => All.Remove(this);
-    void Update()
-    {
-        if (Time.realtimeSinceStartupAsDouble >= expires) { Destroy(gameObject); return; }
-    }
-    public static void TryPickupNearest()
-    {
-        var game = GameLoop.I;
-        if (game == null || game.state != GameLoop.GameState.Playing || game.gameOver || game.player == null) return;
-        MesoDrop best = null;
-        float distance = 1.2f * 1.2f;
-        foreach (var drop in All)
-        {
-            if (!drop.enabled || drop.amount <= 0) continue;
-            float d = ((Vector2)drop.transform.position - game.player.FeetPos).sqrMagnitude;
-            if (d <= distance) { distance = d; best = drop; }
-        }
-        if (best == null || (long)Profile.gold + best.amount > int.MaxValue) return;
-        Profile.AddGold(best.amount);
-        best.amount = 0;
-        best.enabled = false;
-        Destroy(best.gameObject);
-    }
-    public static void Clear()
-    {
-        foreach (var drop in All.ToArray()) if (drop != null) { drop.enabled = false; Destroy(drop.gameObject); }
-        All.Clear();
+        if (amount > 0) GroundItem.Spawn(0, amount, position);
     }
 }

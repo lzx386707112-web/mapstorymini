@@ -65,6 +65,12 @@ public class StageDirector : MonoBehaviour
     IEnumerator RunLevel(StageLevel lv)
     {
         ApplyTheme(lv.theme);
+        // 关卡 BGM 按主题映射（chapter1 主题本身不带 bgm 字段，沿用同地貌的原版曲）：
+        // 南港→GoPicnic、树林/草原→RestNPeace、悬崖/雪原→SleepyWood
+        string bgm = "Bgm00/RestNPeace";
+        if (lv.theme == "harbor") bgm = "Bgm00/GoPicnic";
+        else if (lv.theme == "cliff" || lv.theme == "snow") bgm = "Bgm00/SleepyWood";
+        AudioManager.PlayBgm(bgm);
         if (!string.IsNullOrEmpty(lv.teaches)) Say(lv.teaches, 3.2f);
 
         for (segIndex = 0; segIndex < lv.segments.Count; segIndex++)

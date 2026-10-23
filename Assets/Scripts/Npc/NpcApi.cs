@@ -148,12 +148,16 @@ public static class NpcApi
             int id = Int(c, 0), level = Int(c, 1, 1);
             if (id > 0 && level > 0) SkillProgress.SetLevel(id, level);
         }));
+        // 转职走真实 job id：源端脚本 1022000.js 等是 changeJobById(100) 这种硬编码 id，
+        // 旧实现把它映射回 6 个玩具职业字符串，四转（112/212…）会被压成「战士」。
         cm.Set("changeJobById", Fn(c => ChangeJob(Int(c, 0))));
         cm.Set("getJobName", Ret(c => S(SkillBook.JobName(Int(c, 0)))));
         cm.Set("setHair", Fn(c => Profile.SetHair(HairStyles.KeyOf(Math.Abs(Int(c, 0)) % HairStyles.Count))));
         cm.Set("setFace", Fn(c => { }));
         cm.Set("setSkin", Fn(c => { }));
-        cm.Set("resetStats", Fn(c => { }));
+        // 一转后脚本紧跟 resetStats()：源端 Character.resetStats 按「当前职业」重排四维
+        // 并把新手期自动配的点数退回 AP，同时按等级补算 SP。
+        cm.Set("resetStats", Fn(c => JobSystem.ResetStats(Profile.JobId)));
 
         // —— 提示 / 其它 ——
         cm.Set("dropMessage", Fn(c =>
@@ -181,8 +185,11 @@ public static class NpcApi
         cm.Set("isUsingOldPqNpcStyle", Ret(_ => B(false)));
         cm.Set("getHourOfDay", Ret(_ => N(DateTime.Now.Hour)));
         cm.Set("canSpawnPlayerNpc", Ret(_ => B(false)));
-        cm.Set("canGetFirstJob", Ret(_ => B(false)));
-        cm.Set("getFirstJobStatRequirement", Ret(_ => S("")));
+        // 源端 AbstractPlayerInteraction.java:1350/1376。use_auto_assign_starters_ap 默认 true，
+        // 所以 canGetFirstJob 恒真；文案（"力量 35"）是 NPC 对白里直接拼的，不能返回空串，
+        // 否则 1022000.js 会显示「你至少得10级，并且」这种断句。
+        cm.Set("canGetFirstJob", Ret(c => B(JobSystem.CanGetFirstJob(Int(c, 0)))));
+        cm.Set("getFirstJobStatRequirement", Ret(c => S(JobSystem.FirstJobStatRequirement(Int(c, 0)))));
 
         // 单机没有的系统：返回 null，脚本里的 `if (x != null)` 分支会自然跳过。
         cm.Set("getEventManager", Ret(_ => JsNull.Value));
@@ -234,16 +241,13 @@ public static class NpcApi
         QuestLogic.Complete(QuestCatalog.Get(id), npcId, false);
     }
 
+    /// <summary>cm.changeJobById(jobId)：源端不做校验，直接执行 Character.changeJob。</summary>
     static void ChangeJob(int jobId)
     {
-        string cls = "beginner";
-        if (jobId >= 100 && jobId < 200) cls = "warrior";
-        else if (jobId >= 200 && jobId < 300) cls = "mage";
-        else if (jobId >= 300 && jobId < 400) cls = "archer";
-        else if (jobId >= 400 && jobId < 500) cls = "warrior";
-        if (jobId == 110) cls = "knight";
-        if (jobId == 230 || jobId == 231) cls = "priest";
-        Profile.SetClass(cls);
+        if (jobId <= 0) return;
+        if (!JobSystem.ChangeJobById(jobId)) return;
+        BottomBar.Toast("转职成功：" + JobDefs.NameOf(jobId));
+        Debug.Log("[Script] changeJobById(" + jobId + ") → " + JobDefs.NameOf(jobId));
     }
 
     public static JsHostObject BuildPlayer(NpcSession session)

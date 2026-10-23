@@ -71,13 +71,22 @@ public static class WeaponDefs
     public static WeaponDef Get(string id) => TryGet(id, out var item) ? item : Get("1302000");
     public static int Count { get { Ensure(); return all.Count; } }
     public static WeaponDef At(int i) { Ensure(); return all[i]; }
+    /// <summary>旧签名：cls 字符串 → job id（旧存档迁移/兼容调用方）。</summary>
     public static bool CanEquip(WeaponDef w, CharacterAttributes a, string cls)
+        => CanEquip(w, a, JobDefs.JobIdOf(cls));
+
+    /// <summary>
+    /// 装备门槛。reqJob 是位掩码（源端 EquipmentCatalogService.matchesJob）：
+    ///   0 = 全职业；1 战士 / 2 法师 / 4 弓手 / 8 飞侠 / 16 海盗，组合值按位与。
+    /// 之前只映射了 0/1/2/4，飞侠(8) 和海盗(16) 全被当成战士判可穿，这里按 jobId 归位。
+    /// </summary>
+    public static bool CanEquip(WeaponDef w, CharacterAttributes a, int jobId)
     {
         var d = w.stats;
-        int mask = cls == "beginner" ? 0 : cls == "mage" || cls == "priest" ? 2 : cls == "archer" ? 4 : 1;
-        int job = NativeCombatData.Int(d,"reqJob");
-        return (job == 0 || (job > 0 && (job & mask) != 0)) && a.level >= NativeCombatData.Int(d,"reqLevel") &&
-            a.str >= NativeCombatData.Int(d,"reqSTR") && a.dex >= NativeCombatData.Int(d,"reqDEX") &&
-            a.intelligence >= NativeCombatData.Int(d,"reqINT") && a.luk >= NativeCombatData.Int(d,"reqLUK");
+        int reqJob = NativeCombatData.Int(d, "reqJob");
+        if (reqJob != 0 && (reqJob & JobDefs.JobBit(jobId)) == 0) return false;
+        return a.level >= NativeCombatData.Int(d, "reqLevel") &&
+            a.str >= NativeCombatData.Int(d, "reqSTR") && a.dex >= NativeCombatData.Int(d, "reqDEX") &&
+            a.intelligence >= NativeCombatData.Int(d, "reqINT") && a.luk >= NativeCombatData.Int(d, "reqLUK");
     }
 }

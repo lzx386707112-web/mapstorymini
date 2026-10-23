@@ -19,12 +19,54 @@ public static class WzCharacter
         public readonly Dictionary<string, Vector2Int> Anchors = new Dictionary<string, Vector2Int>();
         public int Sequence, Z;
     }
+    // 注入装备武器后的配方缓存：Frame() 每帧都会走 Recipe，不能每次现拷集合
+    static readonly Dictionary<string, Dictionary<string, object>> swappedRecipes =
+        new Dictionary<string, Dictionary<string, object>>();
     static Dictionary<string, object> Recipe(string key)
     {
         // The original starter outfit uses the same native IMG parts as the legacy knight recipe.
         if (key.StartsWith("beginner_", StringComparison.Ordinal)) key = "knight_" + key.Substring(9);
         var recipes = (Dictionary<string, object>)WzAssets.Index["characters"];
-        return recipes.TryGetValue(key, out var recipe) ? (Dictionary<string, object>)recipe : null;
+        if (!recipes.TryGetValue(key, out var raw)) return null;
+        var recipe = (Dictionary<string, object>)raw;
+
+        // 装备中的武器替换配方里的职业默认武器（ids 最后一项）：
+        // 原版客户端的纸娃娃、stand/walk 变体、攻击动作全部由当前武器决定，
+        // 原来写死职业默认剑，导致换弓/换巨剑只是数值变化，动作和外观都不动。
+        string equipped = EquippedWeaponId();
+        if (equipped == null) return recipe;
+        string cacheKey = key + "|" + equipped;
+        if (swappedRecipes.TryGetValue(cacheKey, out var cached)) return cached;
+        var ids = (List<object>)recipe["ids"];
+        if (ids.Count == 0 || Category((string)ids[ids.Count - 1]) != "Weapon") return recipe;
+        var swapped = new Dictionary<string, object>(recipe);
+        var copy = new List<object>(ids);
+        copy[copy.Count - 1] = equipped;
+        swapped["ids"] = copy;
+        swappedRecipes[cacheKey] = swapped;
+        return swapped;
+    }
+
+    // Profile.equipWeapon（7 位物品 ID）→ Character/Weapon/<8 位>.img。
+    // 文件不存在（未打包/非武器）时返回 null，配方保持职业默认武器。
+    static string equippedIdFor, equippedIdCache;
+    static string EquippedWeaponId()
+    {
+        string eq = Profile.equipWeapon;
+        if (eq == equippedIdFor) return equippedIdCache;
+        equippedIdFor = eq;
+        equippedIdCache = null;
+        if (string.IsNullOrEmpty(eq)) return null;
+        string id;
+        try { id = WeaponDefs.Canonical(eq); } catch { return null; }
+        if (id.Length == 7) id = "0" + id;
+        if (id.Length != 8) return null;
+        int type;
+        try { type = int.Parse(id) / 10000; } catch { return null; }
+        if (type < 121 || type > 160) return null;      // 只接受武器类
+        if (!WzAssets.HasFile("Character/Weapon/" + id + ".img")) return null;
+        equippedIdCache = id;
+        return id;
     }
     public static bool Has(string key) => Recipe(key) != null;
     static string Category(string id)
@@ -53,7 +95,7 @@ public static class WzCharacter
         {
             case "stand": return "stand" + weapon.Int("info/stand", 1);
             case "walk": return "walk" + weapon.Int("info/walk", 1);
-            case "atk": return (string)recipe["attack"];
+            case "atk": return AttackPose(recipe, weapon);
             case "hit": return "alert";
             case "die": return "dead";
         }
@@ -74,6 +116,106 @@ public static class WzCharacter
         }
         return action;
     }
+    // —— 攻击动作：原版客户端按武器 info/attack（攻击类型索引）选姿势 ——
+    // 索引语义（用各职业武器文件的 info/attack 与姿势集反推验证）：
+    //   1=单手挥砍(剑/斧/钝器/短刀)  2=枪矛突刺  3=弓  4=弩  5=双手挥砍
+    //   6=魔杖/杖  7=拳爪  8=指虎  9=火器
+    // 主姿势身体没有时按回退链找，再不行退回配方里的职业默认动作。
+    // 指虎归突刺：Afterimage/knuckle.img 只覆盖 stabO1/stabO2（出拳是直线动作）。
+    static readonly string[][] attackFallback =
+    {
+        null,                                   // 0 不用
+        new[]{ "swingO1","swingO2","swingO3","stabO1","stabO2" },
+        new[]{ "stabT1","stabT2","swingT2","swingP1" },
+        new[]{ "shoot1","shoot2","shootF" },
+        new[]{ "shoot2","shoot1","shootF" },
+        new[]{ "swingT1","swingT2","swingT3" },
+        new[]{ "swingO1","swingO2","stabO1" },
+        new[]{ "stabO1","stabO2","swingO1" },
+        new[]{ "stabO1","stabO2","swingO1" },
+        new[]{ "shoot1","shoot2","shootF" },
+    };
+    static string AttackPose(Dictionary<string, object> recipe, ImgNode weapon)
+    {
+        var body = Equipment((string)((List<object>)recipe["ids"])[0]);
+        int t = weapon.Int("info/attack", 1);
+        if (t >= 1 && t < attackFallback.Length && attackFallback[t] != null)
+            foreach (var pose in attackFallback[t])
+                if (body.Get(pose) != null) return pose;
+        string fallback = recipe.ContainsKey("attack") ? recipe["attack"] as string : null;
+        if (fallback != null && body.Get(fallback) != null) return fallback;
+        return "swingO1";
+    }
+
+    // 当前(key+装备)下的普攻姿势名（swingO1/stabT1/shoot1…）：
+    // 残影数据按姿势名索引，外部拿不到 Pose() 就走这里。
+    public static string AttackPoseName(string key)
+    {
+        var recipe = Recipe(key);
+        return recipe == null ? null : Pose(recipe, "atk");
+    }
+
+    // 当前武器的攻击音效键（Sound/Weapon/<family>/Attack）。
+    // 原版按武器 info/attack 索引 Sound/Weapon.img 的家族名，与姿势同一套索引。
+    public static string AttackSoundKey(string key)
+    {
+        var recipe = Recipe(key); if (recipe == null) return null;
+        var ids = (List<object>)recipe["ids"];
+        if (ids.Count == 0) return null;
+        string id = (string)ids[ids.Count - 1];
+        int t;
+        try { t = Equipment(id).Int("info/attack", 1); } catch { return null; }
+        string family;
+        switch (t)
+        {
+            case 2: family = "poleArm"; break;   // 枪/矛突刺
+            case 3: family = "bow"; break;
+            case 4: family = "cBow"; break;
+            case 5: family = "swordS"; break;    // 双手挥砍
+            case 6: family = "mace"; break;      // 杖
+            case 7: family = "tGlove"; break;    // 拳爪
+            case 8: family = "knuckle"; break;   // 指虎
+            case 9: family = "gun"; break;       // 火器
+            default: family = "swordL"; break;   // 单手挥砍
+        }
+        return "Weapon/" + family + "/Attack";
+    }
+
+    // 当前武器的残影文件名（Character/Afterimage/<name>.img）。
+    // 取武器自己的 info/afterImage；文件没打包时按武器大类给最近的一档。
+    public static string Afterimage(string key)
+    {
+        var recipe = Recipe(key); if (recipe == null) return null;
+        string id = (string)((List<object>)recipe["ids"])[((List<object>)recipe["ids"]).Count - 1];
+        string name = null;
+        try { name = Equipment(id).Text("info/afterImage"); } catch { return null; }
+        if (string.IsNullOrEmpty(name)) name = AfterimageFallback(id);
+        if (string.IsNullOrEmpty(name)) return null;
+        return WzAssets.HasFile("Character/Afterimage/" + name + ".img") ? name : null;
+    }
+    static string AfterimageFallback(string id)
+    {
+        int type;
+        try { type = int.Parse(id) / 10000; } catch { return null; }
+        switch (type)
+        {
+            case 130: case 133: case 137: case 147: return "swordOL";
+            case 131: return "axe";
+            case 132: return "mace";
+            case 138: return "swordOL";
+            case 140: return "swordTS";
+            case 141: return "axe";
+            case 142: return "mace";
+            case 143: return "spear";
+            case 144: return "poleArm";
+            case 145: return "bow";
+            case 146: return "crossBow";
+            case 148: return "knuckle";
+            case 149: return "gun";
+            default: return null;
+        }
+    }
+
     public static Art.Clip Clip(string key, string action)
     {
         string cacheKey = key + "/" + action;

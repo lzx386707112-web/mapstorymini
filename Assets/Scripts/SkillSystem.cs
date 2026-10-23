@@ -142,6 +142,9 @@ public partial class SkillSystem : MonoBehaviour
             summon = NativeSummon.Spawn(this, p, s);
         }
 
+        // 施法音效（源端 Sound/Skill.img/<技能ID>/Use；原端没配音的技能不发声）
+        AudioManager.Play("Skill/" + s.native.Id + "/Use", 0.9f);
+
         if (s.art == "dash") StartCoroutine(Rush(s));
         else StartCoroutine(Cast(s,p.FeetPos,p.facing));
         return true;

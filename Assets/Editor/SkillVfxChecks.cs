@@ -75,7 +75,7 @@ public sealed class SkillVfxRuntimeChecks : MonoBehaviour
         var game=GameLoop.I;
         for(int cls=0;cls<ClassDefs.Count;cls++)
         {
-            game.EnterLobby();Profile.SetClass(ClassDefs.At(cls).id);
+            game.TeardownBattle();Profile.SetClass(ClassDefs.At(cls).id);
             game.StartGame();game.stage.StopSession();
             var p=game.player;p.invulnUntil=Time.unscaledTime+1000;p.mp=0;
             var sys=p.GetComponent<SkillSystem>();
@@ -117,7 +117,7 @@ public sealed class SkillVfxRuntimeChecks : MonoBehaviour
                 Debug.Log("[SkillVfxRuntimeChecks] PASS "+s.art);
             }
         }
-        game.EnterLobby();
+        game.TeardownBattle();
         SessionState.SetBool("MapleDash.SkillProblemOnly",false);
         Require(UnityEngine.Object.FindObjectsOfType<SkillFx>().Length==0,"lobby cleanup");
         Debug.Log("[SkillVfxRuntimeChecks] PASS "+checkedSkills+" casts / projectile timing / cancellation");

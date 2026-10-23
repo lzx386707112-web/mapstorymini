@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "MapleDash.ServerCheck/1.0.0": {
+        "runtime": {
+          "MapleDash.ServerCheck.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "MapleDash.ServerCheck/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -256,6 +256,30 @@ public class PlayerCtrl : MonoBehaviour
     SpriteAnim vis;          // 真素材动画（有素材时接管显示）
     bool moving;
 
+    // —— 普攻前摇 ——
+    // 原版的伤害不是按下就结算，而是挥到「砍中那一帧」才出来：
+    // swingO1 三帧 300/150/350ms，第 1 帧（150ms 起）才是刀划过的时候。
+    // 所以普攻先把前摇计时器挂上，到点再结算伤害/顿帧/飘字——
+    // 挥砍动作立即播，伤害晚一点点到，手感从「打空气」变成「刀确实砍中了」。
+    struct PendingHit
+    {
+        public EnemyUnit enemy;
+        public BossUnit boss;
+        public DamageResult hit;
+        public float timer;
+        public int facing;
+        public bool active;
+    }
+    PendingHit pending;
+
+    // 残影：与当前挥砍同步的帧表和游标
+    string trailName;
+    string trailPose;              // 残影数据索引用的普攻姿势名（起挥时算一次）
+    AfterimageFx.Frame[] trailFrames;
+    int trailCursor;
+    float swingPlayback = 1f;
+    float swingSfxAt = -1f;      // >=0：到点播挥砍音效（空挥路径，无 pending）
+
     // 装扮覆盖层（服饰）。武器不再单独叠层：
     // 原版客户端的武器是 CharacterRenderer 按 zmap 合成进角色帧的，
     // 程序化画的武器贴在身上只会变成「盖在脸上的静态色块」（武器永远不动，攻击像没动作）。
@@ -482,7 +506,7 @@ public class PlayerCtrl : MonoBehaviour
                 {
                     // 没有目标也挥一下刀：普攻是自动索敌的，没有怪时原本连动作都没有，
                     // 于是「按了攻击键」看不出任何反馈（虚拟键最容易被误判成没生效）
-                    if (attackRequested && vis != null) vis.PlayOnce("atk", 1f);
+                    if (attackRequested) SwingEmpty();
                     // 没目标时短轮询即可。若这里不重置，atkTimer 会一直 <=0，
                     // 于是每帧都跑一次 FindObjectsOfType —— 那是白白烧 CPU
                     atkTimer = 0.12f;
@@ -490,6 +514,95 @@ public class PlayerCtrl : MonoBehaviour
             }
         }
         attackRequested = false;
+
+        // —— 前摇结算 + 残影跟进（顿帧期间 dt==0，两者一起停，节奏不会乱）——
+        TickPendingHit(dt);
+        TickTrail();
+
+        // 走过就捡：原版自动拾取（按键 Pickup 是手动补拾，见 InputHub）
+        GroundItem.TryAutoPickup(FeetPos);
+    }
+
+    // 起一次挥砍：播动画、按攻击间隔换算播放速度、挂残影帧表，返回前摇秒数。
+    // 没有素材时返回 0，调用方立即结算。
+    float BeginSwing()
+    {
+        pending.active = false;      // 新挥砍开始，上一段前摇作废（理论上前摇必早于挥砍结束）
+        swingSfxAt = -1f;            // 上一段空挥计时作废
+        swingPlayback = 1f;
+        trailFrames = null;
+        trailPose = null;
+        trailCursor = 0;
+        if (vis == null) return 0f;
+        var clip = Art.GetClip(vis.kind, vis.key, "atk");
+        if (clip == null || clip.delays.Length == 0) return 0f;
+        // 挥砍播放速度：整套动作在攻击间隔的 90% 内播完。
+        // 原版挥砍速度由武器攻速决定（本地无该表，用间隔反推，快武器=快挥砍）。
+        swingPlayback = Mathf.Clamp(clip.Duration / Mathf.Max(0.12f, attackInterval * 0.9f), 0.8f, 2.2f);
+        vis.PlayOnce("atk", swingPlayback);
+
+        // 残影帧表：按当前武器 + 实际普攻姿势取（swingO1/stabT1/shoot1…）
+        trailName = WzCharacter.Afterimage(vis.key);
+        if (trailName != null)
+        {
+            trailPose = WzCharacter.AttackPoseName(vis.key);
+            var frames = trailPose != null ? AfterimageFx.Frames(trailName, trailPose) : null;
+            if (frames != null && frames.Length > 0) trailFrames = frames;
+        }
+        return clip.delays[0] / swingPlayback;   // 第 0 帧（起手）播完 = 刀挥到
+    }
+
+    // 空挥：没有目标也要有完整动作和速度
+    void SwingEmpty()
+    {
+        pending.active = false;
+        float windup = BeginSwing();
+        // 挥砍音效与伤害同帧：空挥没有 pending，用独立计时器到点播
+        swingSfxAt = windup > 0.001f ? windup : 0f;
+    }
+
+    // 挥砍音效（源端 Sound/Weapon.img 按武器 info/attack 取家族：单手剑/双手/弓/弩/枪/杖/爪/指虎/火器）
+    void PlaySwingSfx()
+    {
+        if (vis == null) return;
+        AudioManager.Play(WzCharacter.AttackSoundKey(vis.key) ?? "Weapon/swordL/Attack", 0.85f);
+    }
+
+    void TickPendingHit(float dt)
+    {
+        // 空挥音效计时（顿帧期间 dt==0，与伤害/刀光同步停）
+        if (swingSfxAt >= 0f)
+        {
+            swingSfxAt -= dt;
+            if (swingSfxAt < 0f) PlaySwingSfx();
+        }
+        if (!pending.active) return;
+        pending.timer -= dt;
+        if (pending.timer > 0f) return;
+        pending.active = false;
+        var p = pending;
+        if (p.boss != null)
+        {
+            if (!p.boss.dead) HitBoss(p.boss, p.hit);
+        }
+        else if (p.enemy != null && !p.enemy.dead)
+        {
+            HitEnemy(p.enemy, p.hit, p.facing);
+        }
+        // 挥砍音效与伤害同一帧发出
+        PlaySwingSfx();
+    }
+
+    // 残影跟进：角色挥到残影帧号时生成那一帧的全部画布。
+    // 受击反应（alert）会抢走一次性动作，那时不再出刀光。
+    void TickTrail()
+    {
+        if (trailFrames == null || vis == null || !vis.IsOneShot || vis.Current != "atk") return;
+        while (trailCursor < trailFrames.Length && trailFrames[trailCursor].index < vis.FrameIndex) trailCursor++;
+        if (trailCursor >= trailFrames.Length) return;
+        if (trailFrames[trailCursor].index != vis.FrameIndex) return;
+        AfterimageFx.Spawn(trailName, trailPose, trailFrames[trailCursor], vis.transform, facing, swingPlayback);
+        trailCursor++;
     }
 
     // 使用原 Map/Physics.img 的像素单位：125px/s、555px/s、2000px/s²。
@@ -517,6 +630,7 @@ public class PlayerCtrl : MonoBehaviour
         {
             vy = jumpSpeed;
             grounded = false;
+            AudioManager.Play("Game/Jump", 0.7f, false);
         }
         float previousY = terrainY + jumpY;
         float nextX = ClampX(worldX + h * moveSpeed * dt);
@@ -696,10 +810,15 @@ public class PlayerCtrl : MonoBehaviour
 
     void StrikeBoss(BossUnit b)
     {
-        b.TakeHit(RollAttack(b.CombatStats), facing);
-        HitFeel.Punch(1f);
-        if (vis != null) vis.PlayOnce("atk", 1f);
-        // 原版近战的视觉就是角色挥砍帧本身（武器合成在帧里），没有额外的弧光贴片
+        var hit = RollAttack(b.CombatStats);
+        float windup = BeginSwing();
+        if (windup <= 0.001f)
+        {
+            HitBoss(b, hit);
+            PlaySwingSfx();          // 无素材：立即出声
+            return;
+        }
+        pending = new PendingHit { boss = b, enemy = null, hit = hit, timer = windup, facing = facing, active = true };
     }
 
     EnemyUnit FindTarget()
@@ -739,10 +858,31 @@ public class PlayerCtrl : MonoBehaviour
 
     void Strike(EnemyUnit e)
     {
-        e.TakeHit(RollAttack(e.CombatStats), facing);
+        var hit = RollAttack(e.CombatStats);
+        float windup = BeginSwing();
+        if (windup <= 0.001f)
+        {
+            HitEnemy(e, hit, facing);
+            PlaySwingSfx();          // 无素材：立即出声
+            return;
+        }
+        pending = new PendingHit { enemy = e, boss = null, hit = hit, timer = windup, facing = facing, active = true };
+    }
+
+    // 前摇到点：真正结算。原版近战的视觉就是角色挥砍帧本身（武器合成在帧里），
+    // 没有额外的弧光贴片；伤害/顿帧/飘字都在这一下出去。
+    void HitEnemy(EnemyUnit e, DamageResult hit, int dir)
+    {
+        if (e == null || e.dead || hit.Amount <= 0) return;
+        e.TakeHit(hit, dir);
         HitFeel.Punch(1f);
-        if (vis != null) vis.PlayOnce("atk", 1f);
-        // 同 StrikeBoss：挥砍帧即视觉，不再叠黄色弧光
+    }
+
+    void HitBoss(BossUnit b, DamageResult hit)
+    {
+        if (b == null || b.dead || hit.Amount <= 0) return;
+        b.TakeHit(hit, facing);
+        HitFeel.Punch(1f);
     }
 
     public void TakeDamage(float dmg, int dir, bool magic = false, int attackerLevel = 1)
@@ -756,7 +896,12 @@ public class PlayerCtrl : MonoBehaviour
         if (IsClimbing) { climb = null; grabCooldown = 0.25f; vy = 0f; grounded = false; }
         worldX += dir * 0.25f;
         Fx.Flash(sr, new Color(1f, 0.35f, 0.35f));
-        if (vis != null) vis.PlayOnce(hp <= 0f ? "die" : "hit");
+        if (vis != null)
+        {
+            // 受击反应是 alert（3 帧 x 300ms）。原版播完整段，但本地玩家受击后还要继续跑，
+            // 整段 900ms 的硬直会把走路动画摁住，所以压到 1.6 倍速（≈560ms，接近无敌窗）
+            vis.PlayOnce(hp <= 0f ? "die" : "hit", hp <= 0f ? 1f : 1.6f);
+        }
         HitFeel.Punch(0.6f);
         // 玩家挨打是原版的蓝字（NoBlue），和打怪的红字区分开
         DamageText.Show(new Vector3(FeetPos.x, FeetPos.y + 2.55f, 0f), dmg, "blue", 0.85f);
@@ -764,6 +909,32 @@ public class PlayerCtrl : MonoBehaviour
     }
 
     public void Heal(float v) => hp = Mathf.Min(hpMax, hp + v);
+
+    // 死亡确认后由服务端下发的血量复活（源端 Character.respawn）：
+    // 不是满血 —— 常规 50，护符 30%，特殊图满血。
+    public void Revive(int hpValue, int mpValue)
+    {
+        CancelRush();
+        climb = null;
+        grabCooldown = 0f;
+        hp = Mathf.Clamp(hpValue, 1, hpMax);
+        mp = Mathf.Clamp(mpValue, 0, mpMax);
+        pending.active = false;
+        attackBonus = 0f; attackBonusUntil = 0f;
+        invulnUntil = Time.unscaledTime + 1.5f;
+        GetComponent<SkillSystem>()?.CancelActions();
+        if (vis != null) { vis.SetBase("stand"); vis.Play("stand", true); }
+        Fx.Flash(sr, new Color(1f, 1f, 1f));
+    }
+
+    // 死亡姿势：源端动作名是 dead（躺在地上），不是 die（倒地过程）
+    public void PlayDeadPose()
+    {
+        if (vis == null) return;
+        var action = Art.GetClip(vis.kind, vis.key, "dead") != null ? "dead" : "die";
+        vis.SetBase(action);
+        vis.Play(action, false);
+    }
 
     public void AddAttackBonus(float amount, float seconds)
     {
@@ -824,6 +995,7 @@ public class PlayerCtrl : MonoBehaviour
         hp = hpMax; mp = mpMax;
         CancelRush();
         attackBonus = 0; attackBonusUntil = 0;
+        pending.active = false;
         GetComponent<SkillSystem>()?.CancelActions();
     }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -31,6 +32,8 @@ public class EnemyUnit : MonoBehaviour
     float stunUntil;
     float knockV;
     float laneCooldown;
+    float dieT = -1f;          // >=0 表示正在播死亡动画（含末尾淡出）
+    float dieDur;
     float terrainY = PlayerCtrl.GroundY;   // 脚下地形 y（跟随 foothold 起伏）
     SpriteRenderer body;
     SpriteAnim vis;
@@ -43,6 +46,24 @@ public class EnemyUnit : MonoBehaviour
 
     public int Lane => lane;
     public Dictionary<string, object> CombatStats => NativeCombatData.Mob(artKey);
+
+    // 怪物音效 ID：原版图模式用 fieldMobId，章节模式把 artKey 翻成源端怪物 ID
+    // （mushmom→6130101、slimeking→9300003…，见 NativeAssetIndex.mobs）。
+    public string MobSoundId
+    {
+        get
+        {
+            if (fieldMode && fieldMobId > 0) return fieldMobId.ToString();
+            var mobs = (Dictionary<string, object>)WzAssets.Index["mobs"];
+            object raw;
+            if (mobs.TryGetValue(artKey, out raw))
+            {
+                double id;
+                if (double.TryParse(Convert.ToString(raw), out id)) return ((int)id).ToString();
+            }
+            return null;
+        }
+    }
 
     void OnEnable()  => All.Add(this);
     void OnDisable() => All.Remove(this);
@@ -105,7 +126,7 @@ public class EnemyUnit : MonoBehaviour
 
     void Update()
     {
-        if (dead) return;
+        if (dead) { TickDeathFade(); return; }
         float dt = Time.deltaTime;
         if (dt <= 0f) { SyncVisual(); return; }
 
@@ -170,7 +191,13 @@ public class EnemyUnit : MonoBehaviour
                 {
                     atkTimer = attackInterval;
                     p.TakeDamage(damage, dx > 0f ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1));
-                    if (vis != null) vis.PlayOnce("atk", 1.1f);
+                    // 有 attack1 的怪（蘑菇王/僵尸菇王…）接触攻击时播自己的攻击动作，按 WZ 时延；
+                    // 没有的怪（蜗牛/猪…）原版就是纯接触伤害，不放动画。
+                    if (vis != null && Art.GetClip("mobs", artKey, "attack1") != null)
+                        vis.PlayOnce("atk", 1f);
+                    string mid = MobSoundId;
+                    if (mid != null && AudioManager.Has("Mob/" + mid + "/Attack1"))
+                        AudioManager.PlayAt("Mob/" + mid + "/Attack1", transform.position, 0.9f, 10f);
                 }
             }
         }
@@ -209,6 +236,18 @@ public class EnemyUnit : MonoBehaviour
         transform.position = new Vector3(nx, transform.position.y, 0f);
         terrainY = gy;
         return true;
+    }
+
+    // 死亡动画末尾淡出（原版怪物消失前会透明掉）。顿帧期间 dt==0，淡出一起停。
+    void TickDeathFade()
+    {
+        if (dieT < 0f || body == null) return;
+        dieT += Time.deltaTime;
+        float from = dieDur * 0.65f;
+        float a = dieT <= from ? 1f : Mathf.Clamp01(1f - (dieT - from) / Mathf.Max(0.01f, dieDur - from));
+        var c = body.color;
+        c.a = a;
+        body.color = c;
     }
 
     void SyncVisual()
@@ -254,12 +293,26 @@ public class EnemyUnit : MonoBehaviour
         float real = hit.Amount;
         hp = Mathf.Max(0f, hp - real);
 
-        knockV = fromDir * HitFeel.Knockback * 14f;
+        // 击退按原端 info/pushed 缩放：蜗牛 pushed=1 全额滑动，蘑菇王 pushed=1000 几乎不动。
+        // 距离基准仍是面板上的 HitFeel.Knockback（0.9 单位 ≈ 36px 行程，衰减 26/s）。
+        // （原版普攻本身不推怪，这里保留一小段滑动是本地手感选择。）
+        int pushed = NativeCombatData.Int(CombatStats, "pushed", 1);
+        knockV = fromDir * HitFeel.Knockback * 6.1f * Mathf.Clamp01(1f / Mathf.Max(1f, pushed));
         Fx.Flash(body, Color.white);
-        if (vis != null) vis.PlayOnce("hit", 1.4f);
+        // hit1 是单帧长延迟（600ms）的「挨打定格」；原版只闪一下，所以按 0.3s 目标压着播
+        if (vis != null)
+        {
+            var clip = Art.GetClip("mobs", artKey, Art.Resolve("mobs", artKey, "hit", "hit1"));
+            float dur = clip != null ? clip.Duration : 0.6f;
+            vis.PlayOnce("hit", Mathf.Clamp(dur / 0.3f, 1f, 3f));
+        }
         if (!nativeHit)
             Fx.Burst(transform.position + Vector3.up * 0.7f, crit ? 0.6f : 0.45f,
                      new Color(1f, 0.9f, 0.5f, 0.9f));
+
+        // 受击音效按世界位置衰减（Mob/<id>/Damage，源端 Sound/Mob.img）
+        string mid = MobSoundId;
+        if (mid != null) AudioManager.PlayAt("Mob/" + mid + "/Damage", transform.position, 0.9f, 9f);
 
         DamageText.Show(HeadPos, real, crit ? "cri" : "red", crit ? 1.08f : 1f);
         if (crit) HitFeel.Punch(1.35f);
@@ -302,11 +355,26 @@ public class EnemyUnit : MonoBehaviour
     {
         dead = true;
         All.Remove(this);
+        if (hpRoot != null) hpRoot.gameObject.SetActive(false);   // 原版死亡即收血条
         Fx.Burst(transform.position + Vector3.up * 0.6f, 1.1f, new Color(1f, 0.8f, 0.35f, 0.95f), 0.3f);
         if (GameLoop.I != null) GameLoop.I.OnEnemyKilled(this);
 
-        // 有死亡动画就先播完再消失，0.5s 是"看得见"和"不拖节奏"的折中
-        if (vis != null) vis.PlayOnce("die", 1.2f);
-        Destroy(gameObject, vis != null ? 0.45f : 0f);
+        // 死亡动画按 WZ die 帧的总时延播（蜗牛 1260ms、猪 840ms、蘑菇王 1100ms），
+        // 1 倍速 = 原版节奏；末尾 35% 淡出，播完即毁。以前写死 0.45s，大部分怪的
+        // 死亡动作只播了 1/3 就被抹掉。
+        dieDur = DeathSeconds();
+        dieT = 0f;
+        if (vis != null) vis.PlayOnce("die", 1f);
+        string mid = MobSoundId;
+        if (mid != null) AudioManager.PlayAt("Mob/" + mid + "/Die", transform.position, 1f, 11f);
+        Destroy(gameObject, dieDur + 0.05f);
     }
+
+    // die clip 总时长；没有死亡动画时给一个「看得见」的下限
+    public static float DeathSeconds(EnemyUnit e)
+    {
+        var clip = Art.GetClip("mobs", e.artKey, Art.Resolve("mobs", e.artKey, "die", "die1"));
+        return clip != null ? clip.Duration : 0.45f;
+    }
+    float DeathSeconds() => DeathSeconds(this);
 }

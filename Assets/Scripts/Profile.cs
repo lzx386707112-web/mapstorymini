@@ -5,7 +5,9 @@ using UnityEngine;
 public static class Profile
 {
     static PlayerProfileData data;
-    static PlayerProfileData Data { get { Load(); return data; } }
+    // 对外可读：Client/GameSession 需要把整份存档写回数据库（Server 层不认识 Unity 存档）。
+    // 读写后请调用 Save()，否则改动不会落到本地盘。
+    public static PlayerProfileData Data { get { Load(); return data; } }
     public static int gold => Data.gold;
     public static CharacterAttributes Attributes => Data.attributes.Copy();
     public static long experience => Data.experience;
@@ -22,6 +24,10 @@ public static class Profile
         }
     }
     public static string cls => Data.cls;
+    // 职业 id（0 新手 / 100~522 冒险家 / 1000~1512 骑士团），规则见 JobSystem.cs
+    public static int JobId => Data.jobId;
+    // 可用 SP（一转起为存档累计字段；新手技能免费，TotalSp 由 SkillProgress 算）
+    public static int Sp => Data.sp;
     public static string equipWeapon => Data.equipWeapon;
     public static string hair => Data.hair;
     public static string outfit => Data.outfit;
@@ -52,8 +58,9 @@ public static class Profile
         if (!data.owned.Contains(data.equipWeapon)) data.equipWeapon = "1302000";
         if (!HairStyles.Contains(data.hair)) data.hair = "h0";
         if (ClassDefs.Get(data.cls).id != data.cls) data.cls = "beginner";
+        MigrateJob(data);
         if (data.outfit == null || !CosmeticFactory.OutfitColors.ContainsKey(data.outfit)) data.outfit = "none";
-        if (!WeaponDefs.CanEquip(WeaponDefs.Get(data.equipWeapon),data.attributes,data.cls)) data.equipWeapon = "1302000";
+        if (!WeaponDefs.CanEquip(WeaponDefs.Get(data.equipWeapon),data.attributes,data.jobId)) data.equipWeapon = "1302000";
 
         // —— 等级 / 经验迁移 ——
         // 旧版只累加 experience、从不升级；这里按原曲线把累计值补成等级。
@@ -70,6 +77,7 @@ public static class Profile
         if (!string.IsNullOrEmpty(debugCls) && ClassDefs.Get(debugCls).id == debugCls)
         {
             data.cls = debugCls;
+            data.jobId = JobDefs.JobIdOf(debugCls);
             debugOverride = true;
         }
 
@@ -94,6 +102,19 @@ public static class Profile
     }
 
     public const string DefaultName = "枫叶旅人";
+
+    // —— 职业迁移 ——
+    // 旧存档只有 cls 字符串（beginner/knight/warrior/mage/archer/priest 六个玩具职业）。
+    // jobId 按 JobDefs.LegacyCls 映射；sp 按旧公式 3*(等级-1) 播种（一转起），
+    // 之后走存档累计（升级 +3、转职按 JobSystem 授予），不再由等级反推。
+    static void MigrateJob(PlayerProfileData d)
+    {
+        if (d.jobId <= 0 || !JobDefs.IsValid(d.jobId)) d.jobId = JobDefs.JobIdOf(d.cls);
+        if (!JobDefs.IsValid(d.jobId)) d.jobId = 0;
+        d.cls = JobDefs.ClsOf(d.jobId);
+        if (d.sp <= 0 && d.jobId > 0)
+            d.sp = 3 * Mathf.Max(0, d.level - 1);
+    }
 
     public static void SetName(string value)
     {
@@ -201,10 +222,31 @@ public static class Profile
     {
         if (ClassDefs.Get(id).id != id) return;
         Data.cls = id;
+        Data.jobId = JobDefs.JobIdOf(id);
         if (!WeaponDefs.CanEquip(WeaponDefs.Get(Data.equipWeapon),Data.attributes,id)) Data.equipWeapon = "1302000";
         Save();
     }
-    public static bool AutomaticAp => cls == "beginner" && level <= 10;
+
+    // 转职/能力值重排等成长操作统一走 JobSystem（规则层），这里只做落盘
+    public static void SetJob(int id)
+    {
+        if (!JobDefs.IsValid(id)) return;
+        Data.SetJob(id);
+        if (!WeaponDefs.CanEquip(WeaponDefs.Get(Data.equipWeapon), Data.attributes, Data.jobId)) Data.equipWeapon = "1302000";
+        Save();
+    }
+    public static void AddSp(int delta) { Data.AddSp(delta); Save(); }
+    public static void AddAp(int delta) { Data.AddAp(delta); Save(); }
+    public static void AddBaseHpMp(int addHp, int addMp) { Data.AddBaseHpMp(addHp, addMp); Save(); }
+    public static void AddEquipSlots(int delta) { Data.AddEquipSlots(delta); Save(); }
+    public static void SetBaseStats(int str, int dex, int intl, int luk, int ap, int sp)
+    { Data.SetBaseStats(str, dex, intl, luk, ap, sp); Save(); }
+
+    // 防具槽位（与 EquipSlot 常量对应；源端在 inventoryitems 表里，单机走本地 JSON，DB 表结构仍对齐）
+    public static int EquipOfSlot(int slot) => Data.EquipOfSlot(slot);
+    public static void SetEquipSlot(int slot, int itemId) { Data.SetEquipSlot(slot, itemId); Save(); }
+
+    public static bool AutomaticAp => JobId == 0 && level <= 10;
     public static bool CanAssignAp(int stat)
     {
         if (AutomaticAp || ap <= 0 || stat < 0 || stat > 3) return false;

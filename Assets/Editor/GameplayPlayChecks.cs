@@ -60,7 +60,7 @@ public static class GameplayPlayChecks
             {
                 case 0:
                     typeof(Profile).GetField("data", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, new PlayerProfileData());
-                    if (game.player != null) game.EnterLobby();
+                    if (game.player != null) game.TeardownBattle();
                     game.StartGame();
                     game.stage.StopSession();
                     game.player.hp = game.player.hpMax;
@@ -89,8 +89,8 @@ public static class GameplayPlayChecks
                     InputHub.SetVirtual(slotKey, false);
                     float mp = game.player.mp;
                     Require(!sys.TryCast(0) && game.player.mp == mp, "rejected cast does not spend mana");
-                    game.EnterLobby();
-                    Require(game.player == null && game.stage == null && EnemyUnit.All.Count == 0 && MesoDrop.All.Count == 0, "lobby clears owned battle state");
+                    game.TeardownBattle();
+                    Require(game.player == null && game.stage == null && EnemyUnit.All.Count == 0 && GroundItem.All.Count == 0, "lobby clears owned battle state");
                     next = EditorApplication.timeSinceStartup + 1;
                     break;
                 case 2:
@@ -101,7 +101,7 @@ public static class GameplayPlayChecks
                     game.stage.StopSession();
                     game.player.mp = 5000;
                     Require(game.player.GetComponent<SkillSystem>().TryCast(3), "schedule native delayed illusion");
-                    game.EnterLobby();
+                    game.TeardownBattle();
                     next = EditorApplication.timeSinceStartup + 3.5;
                     break;
                 case 3:
@@ -117,7 +117,7 @@ public static class GameplayPlayChecks
                     Require(!game.gameOver && game.player.hp == game.player.hpMax && game.player.mp == game.player.mpMax, "retry resets vitality");
                     Require(game.player.EffectiveAtk == game.player.attackDamage, "retry removes temporary buff");
                     Require(UnityEngine.Object.FindObjectsOfType<StageDirector>().Length == 1, "retry keeps one director");
-                    game.EnterLobby();
+                    game.TeardownBattle();
                     CheckShop();
                     Profile.SetClass("priest");
                     game.StartGame(); game.stage.StopSession();
@@ -139,7 +139,7 @@ public static class GameplayPlayChecks
                     Require(!summon.gameObject.activeSelf,"summon lifetime removes actor");
                     var def = game.player.GetComponent<SkillSystem>().skills[3];
                     NativeSummon.Spawn(game.player.GetComponent<SkillSystem>(),game.player,def);
-                    game.EnterLobby();
+                    game.TeardownBattle();
                     next = EditorApplication.timeSinceStartup + .5;
                     break;
                 case 5:

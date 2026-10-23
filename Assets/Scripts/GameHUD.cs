@@ -241,17 +241,17 @@ public class GameHUD : MonoBehaviour
         GUI.Label(new Rect(18f, 38f, 320f, 20),
                   "金币 " + Profile.gold + "   武器：" + WeaponDefs.Get(Profile.equipWeapon).name, gold);
 
-        // 返回大厅按钮
+        // 退出到角色选择（原「返回大厅」：大厅与预设角色已删除）
         var br = new Rect(18f, 62f, 96f, 28f);
         Fill(br, new Color(0.16f, 0.2f, 0.3f, 0.92f));
         Fill(new Rect(br.x, br.y, br.width, 2f), new Color(0.5f, 0.8f, 1f));
         var bs = new GUIStyle(_small);
         bs.alignment = TextAnchor.MiddleCenter;
         bs.normal.textColor = Color.white;
-        GUI.Label(br, "返回大厅", bs);
+        GUI.Label(br, "更换角色", bs);
         if (!VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Pointer.Pressed && br.Contains(_mouseGui))
         {
-            if (GameLoop.I != null) GameLoop.I.EnterLobby();
+            if (GameLoop.I != null) GameLoop.I.ExitToCharSelect();
         }
     }
 

@@ -10,6 +10,8 @@ using System;
 //                       pirate 22..28 / 18..23
 //   use_randomize_hpmp_gain=true → 非法师 MP 再加 INT/10，法师加 INT/20
 //   level_up_ap_gain=5           → 每级 5 AP（新手前10次升级自动分配，之后累计）
+//   level_up_sp_gain=3           → 每级 3 SP，levelUpGainSp() 对新手（jobBranch==0）直接返回
+//   use_add_slots_by_level=false → 升级不加背包格（格子只在转职时 +4）
 //   use_level_up_protect=true    → 一次经验结算最多升 1 级（防止连升）
 //   getMaxClassLevel()=255       → 等级上限（V2.1.50 把 mxj_max_level 改成 255）
 //   升满级后经验封顶 99%（getMaxLevelExpLimit），避免客户端把终止经验值画崩
@@ -20,24 +22,34 @@ public enum JobBranch { Beginner, Warrior, Magician, Bowman, Thief, Pirate, Aran
 public static class LevelSystem
 {
     public const int ApPerLevel = 5;      // level_up_ap_gain
-    public const int SpPerLevel = 3;      // level_up_sp_gain（本地暂不消费）
+    public const int SpPerLevel = 3;      // level_up_sp_gain
     public const bool LevelUpProtect = true;
     public const bool RandomizeHpMpGain = true;
+    public const bool AddSlotsByLevel = false;   // use_add_slots_by_level
 
-    // 本项目五个职业 → 原端职业分支。原端没有“骑士/牧师”这两个独立分支，
-    // 骑士属战士系、牧师属法师系，这里按技能/武器归属映射，不另造成长曲线。
-    public static JobBranch BranchOf(string cls)
+    // 项目职业 id → 原端职业分支。骑士团五系按武器/技能归属映射到冒险家同分支，
+    // 魂骑士(1000) 是骑士团新手，走新手曲线；源端没有"骑士/牧师"独立分支，
+    // 骑士属战士系、牧师属法师系。
+    public static JobBranch BranchOf(int jobId)
     {
-        switch (cls)
+        switch (JobDefs.FamilyOf(jobId))
         {
-            case "knight":
-            case "warrior": return JobBranch.Warrior;
-            case "mage":
-            case "priest": return JobBranch.Magician;
-            case "archer": return JobBranch.Bowman;
-            default: return JobBranch.Beginner;
+            case "warrior":
+            case "cygnus-dawnwarrior": return JobBranch.Warrior;
+            case "magician":
+            case "cygnus-blazewizard": return JobBranch.Magician;
+            case "bowman":
+            case "cygnus-windarcher": return JobBranch.Bowman;
+            case "thief":
+            case "cygnus-nightwalker": return JobBranch.Thief;
+            case "pirate":
+            case "cygnus-thunderbreaker": return JobBranch.Pirate;
+            default: return JobBranch.Beginner;   // beginner / noblesse
         }
     }
+
+    // 兼容旧调用方（传 cls 字符串）
+    public static JobBranch BranchOf(string cls) => BranchOf(JobDefs.JobIdOf(cls));
 
     // 与 Character.levelUp 的 Randomizer.rand(min, max) 一致：上下界都包含。
     public static void HpMpRange(JobBranch branch, out int hpMin, out int hpMax, out int mpMin, out int mpMax)
@@ -143,7 +155,7 @@ public static class LevelSystem
     {
         if (d.noviceApMigrated) return false;
         d.noviceApMigrated = true;
-        if (d.cls != "beginner" || d.ap <= 0) return true;
+        if (d.jobId != 0 || d.ap <= 0) return true;
         int remaining = Math.Min(d.ap, Math.Min(10, Math.Max(0, d.level - 1)) * 5);
         for (int oldLevel = 1; oldLevel < Math.Min(d.level, 11) && remaining > 0; oldLevel++)
         {
@@ -157,7 +169,8 @@ public static class LevelSystem
 
     static void LevelUp(PlayerProfileData d)
     {
-        var branch = BranchOf(d.cls);
+        AudioManager.Play("Game/LevelUp", 0.9f, false);
+        var branch = BranchOf(d.jobId);
         HpMpRange(branch, out int hpMin, out int hpMax, out int mpMin, out int mpMax);
 
         int addHp = UnityEngine.Random.Range(hpMin, hpMax + 1);
@@ -179,7 +192,12 @@ public static class LevelSystem
             d.attributes.str += d.level - 1 < 6 ? 5 : 4;
             if (d.level - 1 >= 6) d.attributes.dex++;
         }
-        else d.ap = Math.Max(0, d.ap) + ApPerLevel;
+        else
+        {
+            d.ap = Math.Max(0, d.ap) + ApPerLevel;
+            // Character.levelUpGainSp：新手（jobBranch==0）升级不给 SP，其余每级 +3
+            if (branch != JobBranch.Beginner) d.sp = Math.Max(0, d.sp) + SpPerLevel;
+        }
 
         d.attributes.level = d.level;
         d.attributes.maxHp = d.baseMaxHp;

@@ -27,9 +27,15 @@ public class BossUnit : MonoBehaviour
     float laneVis = 2f;
     float flashT;
     float terrainY = PlayerCtrl.GroundY;   // 脚下地形 y（跟随 foothold 起伏）
+    float dieT = -1f;                      // >=0 表示正在播死亡动画（含末尾淡出）
+    float dieDur;
 
     SpriteRenderer body;
     SpriteAnim vis;
+    string bossArtKey = "mushmom";
+
+    // Boss 音效 ID：源端 Sound/Mob.img 按怪物 ID 组织（mushmom=6130101、slimeking=9300003）
+    string BossSoundId => bossArtKey == "slimeking" ? "9300003" : "6130101";
     Transform ring;
     SpriteRenderer ringSr;
     SpriteRenderer legShade;
@@ -86,10 +92,10 @@ public class BossUnit : MonoBehaviour
         // 以前这里按「世界高度 1.15 单位」缩放，蘑菇王 220px 的贴图被压到 46px，
         // 结果 Boss 比主角还小一号。原图本身就是 Boss 级体型（蘑菇王 ≈ 主角 2.6 倍），
         // 所以不需要再乘 JSON 里的 scale —— 那个倍率是给占位方块定的。
-        string artKey = d.type == "slime" ? "slimeking" : "mushmom";
-        if (Art.Has("mobs", artKey))
+        bossArtKey = d.type == "slime" ? "slimeking" : "mushmom";
+        if (Art.Has("mobs", bossArtKey))
         {
-            if (vis == null) vis = Art.Attach(transform, "mobs", artKey, "stand", 0f);
+            if (vis == null) vis = Art.Attach(transform, "mobs", bossArtKey, "stand", 0f);
             if (vis != null)
             {
                 var vr = vis.Renderer;
@@ -146,7 +152,8 @@ public class BossUnit : MonoBehaviour
 
     void Update()
     {
-        if (dead || def == null) return;
+        if (dead) { TickDeathFade(); return; }
+        if (def == null) return;
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
 
@@ -240,6 +247,7 @@ public class BossUnit : MonoBehaviour
         {
             contactTimer = 0.9f;
             p.TakeDamage(NativeCombatData.Int(CombatStats,"PADamage"), dx >= 0f ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1));
+            AudioManager.PlayAt("Mob/" + BossSoundId + "/Attack1", transform.position, 1f, 14f);
         }
     }
 
@@ -324,9 +332,19 @@ public class BossUnit : MonoBehaviour
             body.color = Color.white;
             flashT = HitFeel.FlashDur;
         }
+        // Boss 也有受击反应（hit1 单帧长延迟，压到 ~0.3s）；不会打断跳砸——
+        // Telegraph/Air 的 want 是 attack1，一次性动作播完自动回去。
+        if (vis != null)
+        {
+            var clip = Art.GetClip("mobs", bossArtKey, "hit1");
+            float dur = clip != null ? clip.Duration : 0.6f;
+            vis.PlayOnce("hit", Mathf.Clamp(dur / 0.3f, 1f, 3f));
+        }
         if (!nativeHit)
             Fx.Burst(transform.position + Vector3.up * 0.9f, crit ? 0.7f : 0.5f,
                      new Color(1f, 0.85f, 0.4f, 0.9f));
+
+        AudioManager.PlayAt("Mob/" + BossSoundId + "/Damage", transform.position, 1f, 14f);
 
         // Boss 体积大，数字要压到头顶，否则会被身体挡住
         float top = body != null && body.sprite != null
@@ -348,7 +366,12 @@ public class BossUnit : MonoBehaviour
     {
         dead = true;
         if (ringSr != null) ringSr.enabled = false;
-        if (vis != null) vis.PlayOnce("die");
+        // 死亡动画同样按 WZ die 帧总时延播，末尾淡出（见 TickDeathFade）
+        var clip = Art.GetClip("mobs", bossArtKey, Art.Resolve("mobs", bossArtKey, "die", "die1"));
+        dieDur = clip != null ? clip.Duration : 0.6f;
+        dieT = 0f;
+        if (vis != null) vis.PlayOnce("die", 1f);
+        AudioManager.PlayAt("Mob/" + BossSoundId + "/Die", transform.position, 1f, 16f);
         Fx.Burst(transform.position + Vector3.up * 1.0f, 3.2f, new Color(1f, 0.85f, 0.4f, 1f), 0.6f);
         Fx.Ring(transform.position + Vector3.up * 0.8f, 4.5f, new Color(1f, 0.9f, 0.5f, 0.95f), 0.5f);
         HitFeel.Punch(2.4f);
@@ -357,7 +380,19 @@ public class BossUnit : MonoBehaviour
             if (GameLoop.I.stage != null) GameLoop.I.stage.OnBossKilled(this);
             GameLoop.I.OnBossKilled(this);
         }
-        Destroy(gameObject, vis != null ? 0.6f : 0.05f);
+        Destroy(gameObject, dieDur + 0.05f);
+    }
+
+    // 死亡动画末尾 35% 淡出
+    void TickDeathFade()
+    {
+        if (dieT < 0f || body == null) return;
+        dieT += Time.deltaTime;
+        float from = dieDur * 0.65f;
+        float a = dieT <= from ? 1f : Mathf.Clamp01(1f - (dieT - from) / Mathf.Max(0.01f, dieDur - from));
+        var c = body.color;
+        c.a = a;
+        body.color = c;
     }
 
     void OnDestroy()

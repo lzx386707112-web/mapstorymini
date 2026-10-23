@@ -1,0 +1,322 @@
+{
+ "Bgm00/FloralLife": {
+  "ms": 137639,
+  "path": "Sound/Bgm/Bgm00_FloralLife.mp3"
+ },
+ "Bgm00/GoPicnic": {
+  "ms": 72829,
+  "path": "Sound/Bgm/Bgm00_GoPicnic.mp3"
+ },
+ "Bgm00/RestNPeace": {
+  "ms": 175151,
+  "path": "Sound/Bgm/Bgm00_RestNPeace.mp3"
+ },
+ "Bgm00/SleepyWood": {
+  "ms": 166635,
+  "path": "Sound/Bgm/Bgm00_SleepyWood.mp3"
+ },
+ "BgmJp/FirstStepMaster": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp_FirstStepMaster.mp3"
+ },
+ "BgmUI/Title": {
+  "ms": 376947,
+  "path": "Sound/Bgm/BgmUI_Title.mp3"
+ },
+ "Game/Buff": {
+  "ms": 3039,
+  "path": "Sound/Game/Buff.mp3"
+ },
+ "Game/DropItem": {
+  "ms": 367,
+  "path": "Sound/Game/DropItem.mp3"
+ },
+ "Game/GameIn": {
+  "ms": 1689,
+  "path": "Sound/Game/GameIn.mp3"
+ },
+ "Game/JobChanged": {
+  "ms": 2818,
+  "path": "Sound/Game/JobChanged.mp3"
+ },
+ "Game/Jump": {
+  "ms": 65,
+  "path": "Sound/Game/Jump.mp3"
+ },
+ "Game/LevelUp": {
+  "ms": 3586,
+  "path": "Sound/Game/LevelUp.mp3"
+ },
+ "Game/PickUpItem": {
+  "ms": 1036,
+  "path": "Sound/Game/PickUpItem.mp3"
+ },
+ "Game/Portal": {
+  "ms": 3413,
+  "path": "Sound/Game/Portal.mp3"
+ },
+ "Game/Portal2": {
+  "ms": 1235,
+  "path": "Sound/Game/Portal2.mp3"
+ },
+ "Game/QuestClear": {
+  "ms": 2411,
+  "path": "Sound/Game/QuestClear.mp3"
+ },
+ "Mob/100100/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/100100_Damage.mp3"
+ },
+ "Mob/100100/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/100100_Die.mp3"
+ },
+ "Mob/100101/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/100101_Damage.mp3"
+ },
+ "Mob/100101/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/100101_Die.mp3"
+ },
+ "Mob/120100/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/120100_Damage.mp3"
+ },
+ "Mob/120100/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/120100_Die.mp3"
+ },
+ "Mob/1210102/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/1210102_Damage.mp3"
+ },
+ "Mob/1210102/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/1210102_Die.mp3"
+ },
+ "Mob/130100/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/130100_Damage.mp3"
+ },
+ "Mob/130100/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/130100_Die.mp3"
+ },
+ "Mob/130101/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/130101_Damage.mp3"
+ },
+ "Mob/130101/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/130101_Die.mp3"
+ },
+ "Mob/210100/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/210100_Damage.mp3"
+ },
+ "Mob/210100/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/210100_Die.mp3"
+ },
+ "Mob/6130101/Attack1": {
+  "ms": 0,
+  "path": "Sound/Mob/6130101_Attack1.mp3"
+ },
+ "Mob/6130101/CharDam1": {
+  "ms": 0,
+  "path": "Sound/Mob/6130101_CharDam1.mp3"
+ },
+ "Mob/6130101/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/6130101_Damage.mp3"
+ },
+ "Mob/6130101/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/6130101_Die.mp3"
+ },
+ "Mob/9300003/Attack1": {
+  "ms": 0,
+  "path": "Sound/Mob/9300003_Attack1.mp3"
+ },
+ "Mob/9300003/CharDam1": {
+  "ms": 0,
+  "path": "Sound/Mob/9300003_CharDam1.mp3"
+ },
+ "Mob/9300003/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/9300003_Damage.mp3"
+ },
+ "Mob/9300003/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/9300003_Die.mp3"
+ },
+ "Mob/9300003/Skill1": {
+  "ms": 0,
+  "path": "Sound/Mob/9300003_Skill1.mp3"
+ },
+ "Mob/9300018/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/9300018_Damage.mp3"
+ },
+ "Mob/9300018/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/9300018_Die.mp3"
+ },
+ "Mob/9409000/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/9409000_Damage.mp3"
+ },
+ "Mob/9409000/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/9409000_Die.mp3"
+ },
+ "Mob/9409001/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/9409001_Damage.mp3"
+ },
+ "Mob/9409001/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/9409001_Die.mp3"
+ },
+ "Mob/9500102/Damage": {
+  "ms": 0,
+  "path": "Sound/Mob/9500102_Damage.mp3"
+ },
+ "Mob/9500102/Die": {
+  "ms": 0,
+  "path": "Sound/Mob/9500102_Die.mp3"
+ },
+ "Skill/1101006/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/1101006_Use.mp3"
+ },
+ "Skill/1111007/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/1111007_Use.mp3"
+ },
+ "Skill/1111008/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/1111008_Use.mp3"
+ },
+ "Skill/1121001/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/1121001_Use.mp3"
+ },
+ "Skill/1121006/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/1121006_Use.mp3"
+ },
+ "Skill/2101004/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/2101004_Use.mp3"
+ },
+ "Skill/2111002/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/2111002_Use.mp3"
+ },
+ "Skill/2121006/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/2121006_Use.mp3"
+ },
+ "Skill/2121007/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/2121007_Use.mp3"
+ },
+ "Skill/2301005/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/2301005_Use.mp3"
+ },
+ "Skill/2311004/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/2311004_Use.mp3"
+ },
+ "Skill/2321007/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/2321007_Use.mp3"
+ },
+ "Skill/3111003/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/3111003_Use.mp3"
+ },
+ "Skill/3111004/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/3111004_Use.mp3"
+ },
+ "Skill/3121003/Use": {
+  "ms": 0,
+  "path": "Sound/Skill/3121003_Use.mp3"
+ },
+ "UI/BtMouseClick": {
+  "ms": 177,
+  "path": "Sound/UI/BtMouseClick.mp3"
+ },
+ "UI/BtMouseOver": {
+  "ms": 174,
+  "path": "Sound/UI/BtMouseOver.mp3"
+ },
+ "UI/DragEnd": {
+  "ms": 367,
+  "path": "Sound/UI/DragEnd.mp3"
+ },
+ "UI/DragStart": {
+  "ms": 269,
+  "path": "Sound/UI/DragStart.mp3"
+ },
+ "UI/MenuDown": {
+  "ms": 109,
+  "path": "Sound/UI/MenuDown.mp3"
+ },
+ "UI/MenuUp": {
+  "ms": 312,
+  "path": "Sound/UI/MenuUp.mp3"
+ },
+ "UI/Tab": {
+  "ms": 68,
+  "path": "Sound/UI/Tab.mp3"
+ },
+ "Weapon/barehands/Attack": {
+  "ms": 171,
+  "path": "Sound/Weapon/barehands_Attack.mp3"
+ },
+ "Weapon/bow/Attack": {
+  "ms": 171,
+  "path": "Sound/Weapon/bow_Attack.mp3"
+ },
+ "Weapon/cBow/Attack": {
+  "ms": 377,
+  "path": "Sound/Weapon/cBow_Attack.mp3"
+ },
+ "Weapon/gun/Attack": {
+  "ms": 171,
+  "path": "Sound/Weapon/gun_Attack.mp3"
+ },
+ "Weapon/knuckle/Attack": {
+  "ms": 217,
+  "path": "Sound/Weapon/knuckle_Attack.mp3"
+ },
+ "Weapon/mace/Attack": {
+  "ms": 377,
+  "path": "Sound/Weapon/mace_Attack.mp3"
+ },
+ "Weapon/poleArm/Attack": {
+  "ms": 442,
+  "path": "Sound/Weapon/poleArm_Attack.mp3"
+ },
+ "Weapon/spear/Attack": {
+  "ms": 185,
+  "path": "Sound/Weapon/spear_Attack.mp3"
+ },
+ "Weapon/swordL/Attack": {
+  "ms": 363,
+  "path": "Sound/Weapon/swordL_Attack.mp3"
+ },
+ "Weapon/swordS/Attack": {
+  "ms": 171,
+  "path": "Sound/Weapon/swordS_Attack.mp3"
+ },
+ "Weapon/tGlove/Attack": {
+  "ms": 217,
+  "path": "Sound/Weapon/tGlove_Attack.mp3"
+ }
+}

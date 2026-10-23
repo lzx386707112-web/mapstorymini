@@ -18,16 +18,17 @@ public class GameLoop : MonoBehaviour
     public bool  gameOver;
     public string lastKiller = "";
 
-    // 大厅 / 出战 状态机：启动时先进大厅，出战后才构建战斗场景
-    public enum GameState { Lobby, Playing }
-    public GameState state = GameState.Lobby;
+    // 登录 / 出战 状态机：启动先走登录流程（正规 登录→选区→建号→选角），
+    // 选角成功后由 EnterGameFromLogin 进入战斗场景；退出战斗回到 Login 态的角色选择屏。
+    public enum GameState { Login, Playing }
+    public GameState state = GameState.Login;
 
     public bool StageMode => stage != null;
 
     float spawnTimer;
     float eliteTimer;
     float respawnTimer;
-    readonly DeathSettlement deaths = new DeathSettlement();
+    public readonly DeathSettlement deaths = new DeathSettlement();
     readonly System.Collections.Generic.Dictionary<int, SkillRuntimeState> playerCooldowns =
         new System.Collections.Generic.Dictionary<int, SkillRuntimeState>();
 
@@ -75,7 +76,7 @@ public class GameLoop : MonoBehaviour
         Profile.Load();
         BuildBackground();           // 背景只建一次，进出大厅不重建
 
-        // 摄像机（大厅与战斗共用，避免大厅里没有相机导致黑屏）
+        // 摄像机（登录/大厅与战斗共用，避免登录页里没有相机导致黑屏）
         var existing = GameObject.Find("Main Camera");
         if (existing != null && existing.GetComponent<CameraRig>() == null)
             existing.SetActive(false);
@@ -85,6 +86,19 @@ public class GameLoop : MonoBehaviour
         cam.orthographic = true;
         camRig = camGo.AddComponent<CameraRig>();
 
+        // 正规流程：未登录时先挂登录界面；已选区进游戏的直接开局（调试用）
+        if (!GameSession.InGame)
+        {
+            state = GameState.Login;
+            gameObject.AddComponent<LoginFlow>();
+        }
+        else StartGame();
+    }
+
+    // 登录流程选角完成 → 进入游戏（角色数据已由 GameSession.ApplyToProfile 灌入 Profile）
+    public void EnterGameFromLogin()
+    {
+        if (player != null) { state = GameState.Playing; return; }
         StartGame();
     }
 
@@ -150,10 +164,9 @@ public class GameLoop : MonoBehaviour
         }
     }
 
-    // 返回大厅：拆除战斗世界，保留背景
-    public void EnterLobby()
+    // 拆除战斗世界，保留背景（不切状态，调用方负责）
+    public void TeardownBattle()
     {
-        state = GameState.Lobby;
         gameOver = false;
         if (field != null) { field.Shutdown(); Destroy(field); field = null; }
         if (stage != null) { stage.StopSession(); Destroy(stage); stage = null; }
@@ -172,6 +185,21 @@ public class GameLoop : MonoBehaviour
         Profile.Save();
     }
 
+    /// <summary>
+    /// 退出战斗回到角色选择（替代原来的「返回大厅」：大厅已随预设角色一起删除）。
+    /// 先存档到 DB，再拆场景，最后把登录流程切回选角屏。
+    /// </summary>
+    public void ExitToCharSelect()
+    {
+        if (DeathFlow.I != null) DeathFlow.I.ForceClear();
+        GameSession.SaveToDb();
+        GameSession.DeselectChar();
+        TeardownBattle();
+        state = GameState.Login;
+        var flow = LoginFlow.I != null ? LoginFlow.I : gameObject.AddComponent<LoginFlow>();
+        flow.BackToCharSelect();
+    }
+
     void ClearBattleEntities()
     {
         foreach (var summon in FindObjectsOfType<NativeSummon>())
@@ -181,7 +209,6 @@ public class GameLoop : MonoBehaviour
         EnemyUnit.All.Clear();
         foreach (var b in FindObjectsOfType<BossUnit>())
             if (b != null) { b.gameObject.SetActive(false); Destroy(b.gameObject); }
-        MesoDrop.Clear();
         GroundItem.Clear();
         foreach (var fx in FindObjectsOfType<SkillFx>())
             if (fx != null) { fx.gameObject.SetActive(false); Destroy(fx.gameObject); }
@@ -284,7 +311,7 @@ public class GameLoop : MonoBehaviour
     {
         if (t == null) return;
         player?.GetComponent<SkillSystem>()?.CancelActions();
-        MesoDrop.Clear();
+        GroundItem.Clear();
         if (!string.IsNullOrEmpty(key)) themeKey = key;
 
         if (backdrop != null) backdrop.Apply(themeKey, t);
@@ -334,6 +361,8 @@ public class GameLoop : MonoBehaviour
 
         if (gameOver)
         {
+            // 死亡流程进行中（墓碑/确认弹窗）不自动重开，等玩家点确认
+            if (DeathFlow.I != null && DeathFlow.I.Active) return;
             respawnTimer -= Time.unscaledDeltaTime;
             if (respawnTimer <= 0f) Restart();
             return;
@@ -464,14 +493,33 @@ public class GameLoop : MonoBehaviour
         BattleRewards.Drop(boss.def.type == "slime" ? "slimeking" : "mushmom", boss.transform.position);
     }
 
+    // 数据现在落在数据库里（Server/Db），切后台/退出时要把运行时状态回写，
+    // 否则手机被系统回收进程后会丢掉这一局的进度。
+    void OnApplicationPause(bool paused)
+    {
+        if (paused) GameSession.SaveToDb();
+    }
+
+    void OnApplicationQuit()
+    {
+        GameSession.SaveToDb();
+        GameServer.Stop();
+    }
+
     public void OnPlayerDead()
     {
         if (gameOver) return;
         gameOver = true;
         stage?.StopSession();
         player?.GetComponent<SkillSystem>()?.CancelActions();
-        respawnTimer = 1.6f;
         HitFeel.Reset();
+
+        // 正规死亡流程：dead 姿势 + 墓碑 + 确认弹窗 + 回城（Client/DeathFlow）。
+        // 只有原版地图模式有 returnMap 概念；关卡/无限模式保留原来的自动重开。
+        var flow = DeathFlow.I != null ? DeathFlow.I : gameObject.AddComponent<DeathFlow>();
+        if (field != null) { flow.Begin(player); return; }
+
+        respawnTimer = 1.6f;
     }
 
     void Restart()

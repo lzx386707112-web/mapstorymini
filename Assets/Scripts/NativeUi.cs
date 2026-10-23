@@ -8,7 +8,10 @@ public static class NativeUi
         bool hover = rect.Contains(Pointer.Pos);
         var tex = Art.Tex("wz://" + node + "/" + (hover ? Pointer.Down ? "pressed" : "mouseOver" : "normal") + "/0");
         if (tex != null) GUI.DrawTexture(rect, tex);
-        return Event.current.type == EventType.Repaint && Pointer.Released && hover;
+        bool clicked = Event.current.type == EventType.Repaint && Pointer.Released && hover;
+        // 原版 UI 点击音（Sound/UI.img/BtMouseClick）；这里覆盖所有用原生 UI 资源的按钮
+        if (clicked) AudioManager.Play("UI/BtMouseClick", 0.7f, false);
+        return clicked;
     }
     public static void Panel(Rect rect)
     {

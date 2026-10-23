@@ -20,6 +20,13 @@ public class SpriteAnim : MonoBehaviour
     public bool IsOneShot => oneShot;
     public SpriteRenderer Renderer => sr;
 
+    // 当前clip总时长（秒）：死亡动画播多久、攻击前烧多长，都以 WZ 的 delay 为准
+    public float Duration => cur != null ? cur.Duration : 0f;
+    // 当前播到第几帧（0 起）：残影要「角色挥到第几帧才出哪张图」，必须能读到
+    public int FrameIndex => idx;
+    // 距当前帧结束还有多少秒：供外部在精确帧边界上触生效果
+    public float FrameRemaining => cur != null ? Mathf.Max(0f, cur.delays[idx] - t) : 0f;
+
     public void Init(string kind, string key, string idle, SpriteRenderer sr)
     {
         this.kind = kind;
@@ -37,18 +44,20 @@ public class SpriteAnim : MonoBehaviour
         if (!oneShot) Play(anim, false);
     }
 
-    // 一次性动作：播完回 base
-    public void PlayOnce(string anim, float speedMul = 1f)
+    // 一次性动作：播完回 base。
+    // force=true 时同一个动作也会从头重播——原版每一下普攻都重新起挥，
+    // 如果沿用「同名不重播」，攻速快于动画时长时挥砍会被吞掉，看起来像卡住。
+    public void PlayOnce(string anim, float speedMul = 1f, bool force = true)
     {
-        if (!Play(anim, true)) return;
+        if (!Play(anim, true, force)) return;
         this.speed = speedMul;
     }
 
-    public bool Play(string anim, bool once)
+    public bool Play(string anim, bool once, bool force = false)
     {
         var clip = Art.GetClip(kind, key, Art.Resolve(kind, key, anim, baseAnim));
         if (clip == null || clip.frames.Length == 0) return false;
-        if (curName == anim && oneShot == once) return true;
+        if (!force && curName == anim && oneShot == once) return true;
 
         cur = clip;
         curName = anim;

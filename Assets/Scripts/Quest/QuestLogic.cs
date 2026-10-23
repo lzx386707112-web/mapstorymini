@@ -22,7 +22,8 @@ public static class QuestLogic
         }
     }
 
-    public static int PlayerJob => JobId(Profile.cls);
+    // 职业主键已经是 job id（存档字段）；JobId(cls) 只留给旧存档迁移路径。
+    public static int PlayerJob => Profile.JobId;
 
     public static bool CanStart(QuestDef q, int npcId, out string reason)
     {

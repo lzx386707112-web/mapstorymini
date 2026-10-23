@@ -34,6 +34,15 @@ public static class Fx
         f.grow = new Vector3(2.2f, 2.2f, 1f);     // 由小扩大，像冲击波扩散
     }
 
+    // 小白点：掉落出现/拾取时的火花（原版掉落物出场与拾取都伴随一个白点）
+    public static void Sparkle(Vector3 pos, Color c, float size = 0.4f, float life = 0.18f)
+    {
+        var sr = Quad("FxSparkle", pos, FxTex.Glow(), new Vector2(size, size), c, 380);
+        var f = sr.gameObject.AddComponent<FxLife>();
+        f.life = life;
+        f.grow = new Vector3(1.7f, 1.7f, 1f);     // 由小放大后淡出
+    }
+
     public static SpriteRenderer Quad(string name, Vector3 pos, Sprite sp, Vector2 size, Color c, int order)
     {
         var go = new GameObject(name);

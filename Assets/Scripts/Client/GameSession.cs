@@ -1,0 +1,300 @@
+// 游戏会话：客户端与「服务端」之间的唯一通道。
+//
+// 单机模式：GameServer.Start() 起进程内服务端，InProcessTransport 直连。
+// 联机模式（将来）：把 Transport 换成 SocketTransport，业务代码零改动。
+//
+// 同时负责 DB 角色数据 ↔ 现有 PlayerProfileData 的双向同步：
+//   进游戏：FullCharacter → Profile.Data（现有玩法代码无感）
+//   存档：  Profile.Data → FullCharacter → DB
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public static class GameSession
+{
+    public static GameServer Server { get; private set; }
+    public static ITransport Net { get; private set; }
+
+    public static int AccountId { get; private set; }
+    public static string AccountName { get; private set; }
+    public static int World { get; private set; }
+    public static int Channel { get; private set; }
+    public static int CharacterId { get; private set; }
+    public static FullCharacter Character { get; private set; }
+    public static bool InGame { get; private set; }
+
+    public static void Boot()
+    {
+        if (Server != null) return;
+        Server = GameServer.Start();
+        Server.MapInfo = new FieldMapInfo();
+        Net = Server.Transport;
+        MigrateLegacyProfile();
+    }
+
+    /// <summary>
+    /// 旧存档迁移：PlayerPrefs 里的单人进度 → DB 的 local 账号角色（一次性）。
+    /// 只在 DB 没有任何角色时执行，避免覆盖新数据。
+    /// </summary>
+    public static void MigrateLegacyProfile()
+    {
+        Profile.Load();
+        var d = Profile.Data;
+        bool hasProgress = d.level > 1 || d.gold > 0 || d.experience > 0 ||
+                           (d.questCompleted != null && d.questCompleted.Count > 0);
+        if (!hasProgress) return;
+
+        var snap = new LegacyProfileSnapshot
+        {
+            name = d.playerName != "" ? d.playerName : "Migrated",
+            level = d.level,
+            exp = d.experience,
+            str = d.attributes.str, dex = d.attributes.dex,
+            int_ = d.attributes.intelligence, luk = d.attributes.luk,
+            maxHp = Mathf.Max(50, d.baseMaxHp), maxMp = Mathf.Max(5, d.baseMaxMp),
+            job = d.jobId,
+            map = Profile.LastMapId,
+            ap = d.ap,
+            sp = d.sp,
+            meso = d.gold,
+            equipSlots = d.equipmentSlots,
+        };
+        foreach (var kv in SkillProgress.AllLearned())
+            snap.skills.Add(new LegacySkillEntry { skillId = kv.Key, skillLevel = kv.Value });
+
+        var res = Net.ImportLegacy(new ImportLegacyRequest { snapshot = snap });
+        if (res != null && res.characterId > 0)
+            Debug.Log("[GameSession] 旧存档已迁移到 DB：角色 id=" + res.characterId);
+    }
+
+    // —————————————————— 登录态 ——————————————————
+
+    public static LoginResponse Login(string name, string password)
+        => Net.Login(new LoginRequest { name = name, password = password });
+
+    public static ServerListResponse ServerList()
+        => Net.ServerList(new ServerListRequest { accountId = AccountId });
+
+    public static CharListResponse CharList(int world, int channel)
+        => Net.CharList(new CharListRequest { accountId = AccountId, world = world, channel = channel });
+
+    public static CheckCharNameResponse CheckCharName(string name)
+        => Net.CheckCharName(new CheckCharNameRequest { name = name });
+
+    /// <summary>只判格式（4-13 位英文数字），不查重 —— 建号界面边打字边提示用。</summary>
+    public static bool NameFormatOk(string name) => CharNameRules.Valid(name);
+
+    public static CreateCharResponse CreateChar(CreateCharRequest req)
+    {
+        req.accountId = AccountId;
+        req.world = World;
+        return Net.CreateChar(req);
+    }
+
+    public static bool DeleteChar(int characterId)
+        => Net.DeleteChar(new DeleteCharRequest { accountId = AccountId, characterId = characterId }).ok;
+
+    // —————————————————— 死亡 / 复活（需求 3）——————————————————
+
+    /// <summary>上报死亡：服务端按 Character.playerDead 结算经验惩罚并消耗护符。</summary>
+    public static PlayerDeadResponse PlayerDead(int mapId)
+    {
+        if (!InGame) return new PlayerDeadResponse();
+        var res = Net.PlayerDead(new PlayerDeadRequest { characterId = CharacterId, mapId = mapId });
+        // 同步回本地存档，避免技能窗/经验条显示旧值
+        if (res != null && res.expLost > 0)
+        {
+            var d = Profile.Data;
+            d.experience = Math.Max(0L, d.experience - res.expLost);
+            Profile.Save();
+        }
+        return res ?? new PlayerDeadResponse();
+    }
+
+    /// <summary>只看目标地图，不落盘：给确认弹窗显示「复活地点」用。</summary>
+    public static int PeekRespawnMap(int mapId)
+    {
+        if (Server == null || Server.MapInfo == null) return -1;
+        return DeathService.RespawnTargetMap(mapId, Server.MapInfo);
+    }
+
+    /// <summary>确认复活：走 ChangeMap(fromDying=1)，血量由服务端按 respawn 规则给。</summary>
+    public static ChangeMapResponse Respawn(bool usedSafetyCharm)
+    {
+        if (!InGame) return new ChangeMapResponse { ok = false };
+        var res = Net.ChangeMap(new ChangeMapRequest
+        {
+            characterId = CharacterId,
+            fromDying = true,
+            usedSafetyCharm = usedSafetyCharm,
+        });
+        if (res != null && res.ok && Character != null)
+        {
+            Character.record.map = res.mapId;
+            Character.record.hp = res.hp;
+            Character.record.mp = res.mp;
+        }
+        return res ?? new ChangeMapResponse { ok = false };
+    }
+
+    public static void BeginSession(int accountId, string accountName, int world, int channel)
+    {
+        AccountId = accountId;
+        AccountName = accountName;
+        World = world;
+        Channel = channel;
+    }
+
+    public static bool SelectChar(int characterId)
+    {
+        var res = Net.CharSelect(new CharSelectRequest { accountId = AccountId, characterId = characterId });
+        if (!res.ok || res.character == null) return false;
+        CharacterId = characterId;
+        Character = res.character;
+        InGame = true;
+        ApplyToProfile();
+        return true;
+    }
+
+    /// <summary>只放开当前角色、保留账号登录态（退出战斗回选角用）。</summary>
+    public static void DeselectChar()
+    {
+        if (InGame) SaveToDb();
+        InGame = false;
+        Character = null;
+        CharacterId = 0;
+    }
+
+    public static void Logout()
+    {
+        if (InGame) SaveToDb();
+        InGame = false;
+        Character = null;
+        CharacterId = 0;
+        if (Server != null && AccountId > 0) LoginService.Logout(Server.Db, AccountId);
+        AccountId = 0;
+        AccountName = "";
+    }
+
+    // —————————————————— DB → 现有玩法数据 ——————————————————
+
+    public static void ApplyToProfile()
+    {
+        var d = Profile.Data;
+        var rec = Character.record;
+        d.playerName = rec.name;
+        d.level = rec.level;
+        d.experience = rec.exp;
+        d.attributes.str = rec.str;
+        d.attributes.dex = rec.dex;
+        d.attributes.intelligence = rec.int_;
+        d.attributes.luk = rec.luk;
+        d.baseMaxHp = rec.maxhp;
+        d.baseMaxMp = rec.maxmp;
+        d.attributes.maxHp = rec.maxhp;
+        d.attributes.maxMp = rec.maxmp;
+        d.ap = rec.ap;
+        d.SetJob(rec.job);
+        d.sp = rec.GetSp(JobDefs.SkillBookOf(rec.job));
+        d.gold = rec.meso;
+        d.equipmentSlots = rec.equipslots;
+        d.hair = HairFromId(rec.hair);
+        Profile.LastMapId = rec.map;
+
+        // 背包（ETC/USE 等非装备物品同步到现有 itemIds/itemCounts）
+        d.itemIds.Clear();
+        d.itemCounts.Clear();
+        foreach (var it in Character.inventory)
+        {
+            // 装备：EQUIPPED 行（源端 inventoryitems 的 position 为 -1/-5/-6/-7/-8/-9/-10/-11）。
+            // 本地 JSON 已穿戴（玩家手动换过）则优先，否则用源端默认外观/装备（衣/裤/鞋/武器）。
+            if (it.inventoryType == InventoryDao.Equipped)
+            {
+                int pos = it.position;
+                if (pos == -11) { if (d.equipWeapon == "1302000") d.equipWeapon = it.itemId.ToString(); }
+                else if (IsEquipSlot(pos) && d.EquipOfSlot(pos) == 0) d.SetEquipSlot(pos, it.itemId);
+                continue;
+            }
+            if (it.isEquip && it.inventoryType == InventoryDao.Equip) continue;   // 背包里的装备不放进消耗品栏
+            d.AddItem(it.itemId, it.quantity);
+        }
+
+        // 任务状态（服务端随角色一起下发，客户端不直接查表）
+        d.questStarted.Clear();
+        d.questCompleted.Clear();
+        d.questCompletedAt.Clear();
+        foreach (var q in Character.quests)
+        {
+            if (q.completed > 0 || q.status == 2) d.SetQuestCompleted(q.quest);
+            else if (q.status == 1) d.SetQuestStarted(q.quest);
+        }
+
+        // 技能等级
+        SkillProgress.ClearAll();
+        foreach (var s in Character.skills)
+            if (s.skillLevel > 0) SkillProgress.SetLearned(s.skillId, s.skillLevel);
+
+        Profile.Save();
+    }
+
+    // —————————————————— 现有玩法数据 → DB ——————————————————
+
+    public static void SaveToDb()
+    {
+        if (!InGame || Character == null) return;
+        var d = Profile.Data;
+        var rec = Character.record;
+        rec.level = d.level;
+        rec.exp = (int)Mathf.Min(int.MaxValue, d.experience);
+        rec.str = d.attributes.str;
+        rec.dex = d.attributes.dex;
+        rec.int_ = d.attributes.intelligence;
+        rec.luk = d.attributes.luk;
+        rec.maxhp = d.baseMaxHp;
+        rec.maxmp = d.baseMaxMp;
+        // 当前 HP/MP 取运行时玩家实体（PlayerCtrl.hp/mp）
+        var p = GameLoop.I != null ? GameLoop.I.player : null;
+        rec.hp = p != null ? Mathf.Clamp(Mathf.RoundToInt(p.hp), 1, d.baseMaxHp) : d.baseMaxHp;
+        rec.mp = p != null ? Mathf.Clamp(Mathf.RoundToInt(p.mp), 0, d.baseMaxMp) : d.baseMaxMp;
+        rec.ap = d.ap;
+        rec.job = d.jobId;
+        rec.SetSp(JobDefs.SkillBookOf(d.jobId), d.sp);
+        rec.meso = d.gold;
+        rec.map = Profile.LastMapId;
+        rec.hair = HairToId(d.hair);
+        rec.equipslots = d.equipmentSlots;
+
+        // 技能
+        Character.skills.Clear();
+        foreach (var kv in SkillProgress.AllLearned())
+            Character.skills.Add(new SkillEntry { skillId = kv.Key, skillLevel = kv.Value, masterLevel = SkillBook.MasterCapOf(kv.Key) });
+
+        // 任务（status 2=完成 / 1=进行中；已完成的不再记为进行中）
+        Character.quests.Clear();
+        foreach (var id in d.questCompleted)
+            Character.quests.Add(new QuestEntry { quest = id, status = 2, completed = 1 });
+        foreach (var id in d.questStarted)
+            if (!d.questCompleted.Contains(id))
+                Character.quests.Add(new QuestEntry { quest = id, status = 1, completed = 0 });
+
+        Net.SaveCharacter(new SaveCharacterRequest { characterId = CharacterId, character = Character });
+    }
+
+    // 装备槽位（源端 inventoryitems 的 position 为负值）：-1帽/-5衣/-6裤/-7鞋/-8手套/-9披风/-10盾
+    static bool IsEquipSlot(int pos)
+        => pos == -1 || pos == -5 || pos == -6 || pos == -7 || pos == -8 || pos == -9 || pos == -10;
+
+    // 发型 id（源端 30000~39999 含发色）↔ 客户端 h0/h1… 标签
+    static string HairFromId(int id)
+    {
+        int baseHair = id / 10 * 10;
+        int color = id % 10;
+        return "h" + (baseHair % 100);
+    }
+
+    static int HairToId(string tag)
+    {
+        if (string.IsNullOrEmpty(tag) || tag.Length < 2 || tag[0] != 'h') return 30000;
+        return int.TryParse(tag.Substring(1), out var v) ? 30000 + v : 30000;
+    }
+}

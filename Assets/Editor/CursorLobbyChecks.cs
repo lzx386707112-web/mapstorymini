@@ -41,9 +41,10 @@ public class CursorLobbyProbe : MonoBehaviour
         yield return new WaitForEndOfFrame();
         try
         {
-            if (GameLoop.I == null || GameLoop.I.state != GameLoop.GameState.Lobby)
-                throw new Exception("Boot did not enter lobby");
-            if (FindObjectOfType<NativeCursor>() == null) throw new Exception("Cursor component missing in lobby");
+            // 启动现在先进登录页（大厅与预设角色已删除），这里只验证光标组件在登录态就位
+            if (GameLoop.I == null || GameLoop.I.state != GameLoop.GameState.Login)
+                throw new Exception("Boot did not enter login screen");
+            if (FindObjectOfType<NativeCursor>() == null) throw new Exception("Cursor component missing on login screen");
             var hand = Art.Tex("ui/cursor/0_0.bytes");
             if (hand == null) throw new Exception("Cursor texture missing");
             var shot = ScreenCapture.CaptureScreenshotAsTexture();

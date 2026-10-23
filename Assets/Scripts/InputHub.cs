@@ -563,8 +563,7 @@ public class InputBridge : MonoBehaviour
 
         if (playing && InputHub.Pressed(GameAction.Pickup))
         {
-            if (game.field != null) GroundItem.TryPickupNearest();
-            else MesoDrop.TryPickupNearest();
+            GroundItem.TryPickupNearest();
         }
     }
 

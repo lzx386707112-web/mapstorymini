@@ -240,6 +240,7 @@ public static class BottomBar
                 { if (skillSlot >= 0) QuickSlots.Clear(skillSlot); }
             if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
             {
+                AudioManager.Play("UI/BtMouseClick", 0.7f, false);
                 if (id > 0) QuickSlots.Cast(skillSlot);
                 else if (key != KeyCode.None && key == KeyMap.Of(GameAction.Attack)) GameLoop.I.player.RequestAttack();
                 else if (key != KeyCode.None) { InputHub.SetVirtual(key, true); InputHub.SetVirtual(key, false); }

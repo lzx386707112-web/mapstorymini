@@ -30,17 +30,8 @@ public sealed class CharacterAttributes
 
     public CharacterAttributes WithWeapon(WeaponDef weapon, int attackBuff, out int watk, out int matk)
     {
-        var result = (CharacterAttributes)MemberwiseClone();
-        var d = weapon.stats;
-        result.str += NativeCombatData.Int(d,"incSTR"); result.dex += NativeCombatData.Int(d,"incDEX");
-        result.intelligence += NativeCombatData.Int(d,"incINT"); result.luk += NativeCombatData.Int(d,"incLUK");
-        result.maxHp += NativeCombatData.Int(d,"incMHP"); result.maxMp += NativeCombatData.Int(d,"incMMP");
-        result.weaponDefense += NativeCombatData.Int(d,"incPDD"); result.magicDefense += NativeCombatData.Int(d,"incMDD");
-        result.accuracy += NativeCombatData.Int(d,"incACC"); result.avoidability += NativeCombatData.Int(d,"incEVA");
-        watk = NativeCombatData.Int(d,"incPAD") + attackBuff;
-        // Character.reapplyLocalStats：INT 计入总魔攻，装备 INT 不重复累加。
-        matk = System.Math.Min(2000, result.intelligence + NativeCombatData.Int(d,"incMAD"));
-        result.maxHp = System.Math.Max(50, result.maxHp); result.maxMp = System.Math.Max(5, result.maxMp);
-        return result;
+        // 武器与身上防具统一在 EquipLoadout.Apply 里叠加（源端 Character.reapplyLocalStats），
+        // 出战 PlayerCtrl 与能力值窗 StatWindow 共用同一条路，避免两套属性不一致。
+        return EquipLoadout.Apply(this, weapon, attackBuff, out watk, out matk);
     }
 }
