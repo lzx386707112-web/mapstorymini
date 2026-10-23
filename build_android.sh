@@ -59,6 +59,24 @@ if [ "$NO_INSTALL" = "0" ]; then
   echo "设备：$("$ADB" shell getprop ro.product.model 2>/dev/null | tr -d '\r')"
 fi
 
+# ---------- 0.5/5 Schema 同步 ----------
+# Unity 只把 .txt/.json/.bytes 等已知扩展名当 TextAsset 收录，Schema.sql 放在
+# Assets/Scripts 下不会被 Resources.Load 找到，真机会抛「Schema.sql 缺失」。
+# Assets/Editor/SchemaSync.cs 会在编辑器内自动跟随，这里再兜一道，批处理构建也稳。
+SCHEMA_SRC="$PROJ/Assets/Scripts/Server/Db/Schema.sql"
+SCHEMA_DST="$PROJ/Assets/Resources/Server/Db/Schema.txt"
+if [ ! -f "$SCHEMA_SRC" ]; then
+  echo "❌ 找不到 $SCHEMA_SRC"; exit 1
+fi
+mkdir -p "$(dirname "$SCHEMA_DST")"
+if ! cmp -s "$SCHEMA_SRC" "$SCHEMA_DST"; then
+  cp "$SCHEMA_SRC" "$SCHEMA_DST"
+  echo "   已同步 Schema.sql → Assets/Resources/Server/Db/Schema.txt"
+fi
+if [ ! -s "$SCHEMA_DST" ]; then
+  echo "❌ 同步后的 Schema.txt 为空"; exit 1
+fi
+
 # ---------- 1/5 构建 ----------
 echo "== 1/5 构建（IL2CPP / ARM64，约 2–6 分钟）=="
 cd "$PROJ"

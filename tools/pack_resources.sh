@@ -19,7 +19,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJ="$(cd "$SCRIPT_DIR/.." && pwd)"                     # MapleDash 工程根（tools 的上一级）
-RESOURCES="$PROJ/../MapleDashResources"                  # 资源根：Data/ + resource-manifest.json
+RESOURCES="$(cd "$PROJ/../MapleDashResources" 2>/dev/null && pwd || echo "$PROJ/../MapleDashResources")"  # 资源根：Data/ + resource-manifest.json
 MANIFEST="$PROJ/Assets/Resources/NativeAssetIndex.json"  # 打进 zip 的清单来源（= APK 内嵌清单）
 SOURCE_DATA="$HOME/Documents/mxd/BeiDou-Server/clien/Data"
 WZPY="$HOME/Documents/mxd/BeiDou-Server/tool/wz-python"
@@ -74,8 +74,7 @@ PY
 
 echo
 echo "产物: $RESOURCES/MapleDashResources.zip"
-ZS=$(stat -c %s "$RESOURCES/MapleDashResources.zip")
-echo "大小: $("PY" -c "print('%.2f GiB' % ($ZS/1024**3))")"
+"$PY" -c "import os; z='$RESOURCES/MapleDashResources.zip'; print('大小: %.2f GiB' % (os.path.getsize(z)/1024**3))"
 echo
 echo "⚠️  ZI P 内的 resource-manifest.json 来自: $MANIFEST"
 echo "    若该清单与手机上 APK 内嵌的不一致，手机会报『资源包版本与当前游戏不匹配』。"

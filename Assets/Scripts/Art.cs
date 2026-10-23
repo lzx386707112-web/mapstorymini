@@ -299,7 +299,20 @@ public static class Art
         return new Vector2(ToF(arr[0]), ToF(arr[1]));
     }
 
-    static float ToF(object o) => o == null ? 0f : float.Parse(o.ToString(), System.Globalization.CultureInfo.InvariantCulture);
+    // 解析失败时返回 0f 而不是抛异常——数据里有布尔/脏值时（如 JobTree.json 的 resetStats:true）
+    // 一旦抛 FormatException 会连累整段解析（Profile.Load 崩溃、游戏场景加载不完 → 启动超时）。
+    static float ToF(object o)
+    {
+        if (o == null) return 0f;
+        if (o is bool b) return b ? 1f : 0f;
+        if (o is double d) return (float)d;
+        if (o is long l) return (float)l;
+        if (o is int i) return (float)i;
+        if (o is float f) return f;
+        if (o is string s && float.TryParse(s, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var v)) return v;
+        return 0f;
+    }
 
     // —— 单帧 ——
     public static Sprite Frame(string rel)
