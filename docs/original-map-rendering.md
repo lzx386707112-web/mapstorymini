@@ -129,3 +129,11 @@ items = [ (layer, 0, z,  'obj') ] + [ (layer, 1, zM, 'tile') ]   # 层 → 组 �
 ## 传送门「光洞」是独立资源
 
 `Map0/<id>.img/portal` 只有 `pn/tn/pt/tm/x/y/script`，没有贴图。`pt=2`（VISIBLE）的门由客户端用 `MapHelper.img/portal/game/pv` 的 8 帧动画绘制，锚点是每帧自己的 `origin`。因此地图主体烘焙图里永远没有门，运行时必须单独画（`FieldView.Portal`，`sortingOrder=200`）。帧上无 `delay`，取 120ms 并登记为适配项。
+
+
+## 2026-10-23：原始地图落脚位置修复
+
+- `FieldDirector.ApplyGeometry` 保留竖直 foothold 传给 PlayerCtrl；地面查询自行排除竖直段，横向移动仍使用它们挡墙。
+- 地面行走重新使用 `FollowGround` 跟随坡面。接续段必须 x/y 端点都重合，不能因为远下方有平台就悬空保持 grounded，也不能自动跳上有高度差的台阶。
+- 静态 NPC 缺少原客户端落地控制器，现在按 life/fh 指定段在 life/x 处插值，显示、交互及任务标记共用落地坐标；无有效支撑段保留原始 life/y，不猜测最近平台。此为静态落地适配，不等同于完整原客户端 NPC 移动模拟。
+- 原始 10000：希娜 life/y=293，cy=305，fh51=(96,305)→(174,305)，故应落在305（差12px）；莎丽 y=cy=125 不变。20000 罗杰 y=58，cy=65，fh7 支撑高度65（差7px）。地图/素材 origin/角色 Body 原点与 PPU 不作整体偏移。

@@ -29,6 +29,86 @@ public static class HudChecks
         view.GetType().GetProperty("selectedSizeIndex", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).SetValue(view, index);
     }
 
+    static void CheckNativeBindings()
+    {
+        var saved = new Dictionary<GameAction, KeyCode>();
+        foreach (var pair in KeyMap.All) saved[pair.Key] = pair.Value;
+        var exported = KeyMap.ExportCharacter();
+        var skills = new int[QuickSlots.Count];
+        for (int i = 0; i < skills.Length; i++) skills[i] = QuickSlots.Id(i);
+        try
+        {
+            var entries = new List<KeymapEntry>();
+            for (int i = 0; i < KeymapDao.DefaultKeys.Length; i++)
+                entries.Add(new KeymapEntry { key = KeymapDao.DefaultKeys[i], type = KeymapDao.DefaultTypes[i],
+                    action = KeymapDao.DefaultActions[i] });
+            KeyMap.LoadCharacter(entries);
+            Check(NativeKeyActions.Entries.Length == 40, "WZ 40 种功能全部可配置");
+            var occupied = new HashSet<KeyCode>();
+            foreach (var entry in entries)
+            {
+                Check(NativeKeyActions.Find(entry.type, entry.action, out var action), "默认功能可识别 " + entry.action);
+                var key = NativeKeyLayout.FromScanCode(entry.key);
+                Check(key != KeyCode.None && occupied.Add(key), "默认按键唯一且可识别 " + entry.key);
+                Check(KeyMap.Of(action) == key, "DB 默认绑定加载 " + entry.action);
+                Check(NativeKeyLayout.Positions.ContainsKey(key), "默认绑定位于键盘可配置区 " + entry.action);
+                Check(KeyConfigWindow.Icon(action) != null, "默认功能原始图标 " + entry.action);
+            }
+            KeyConfigWindow.Toggle();
+            foreach (var entry in NativeKeyActions.Entries)
+                Check(!KeyConfigWindow.InTray(entry.action), "默认 40 项均在键盘，托盘不重复 " + entry.id);
+            KeyConfigWindow.Toggle();
+            Check(KeyMap.Of(GameAction.Sit) == KeyCode.X, "X 坐下");
+            Check(KeyMap.Of(GameAction.NpcTalk) == KeyCode.Space, "Space NPC 对话");
+            Check(KeyMap.Of(GameAction.Quest) == KeyCode.Q, "Q 任务");
+            for (int i = 0; i < 7; i++)
+            {
+                NativeKeyActions.Find(6, 100 + i, out var face);
+                Check(KeyMap.Of(face) == (KeyCode)((int)KeyCode.F1 + i), "F1～F7 表情 " + i);
+                var tray = NativeKeyLayout.TrayPosition(face);
+                Check(tray == new Vector2(9 + (33 + i) % 18 * 34, 267 + (33 + i) / 18 * 34),
+                    "表情托盘原端位置 " + i);
+            }
+            KeyMap.Bind(GameAction.FaceSmile, KeyCode.A);
+            KeyConfigWindow.Toggle();
+            var draft = (Dictionary<GameAction, KeyCode>)typeof(KeyConfigWindow).GetField("draft", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+            draft[GameAction.FaceSmile] = KeyCode.None;
+            Check(KeyConfigWindow.InTray(GameAction.FaceSmile), "解绑表情可回托盘");
+            KeyConfigWindow.Toggle();
+            var roundTrip = KeyMap.ExportCharacter();
+            KeyMap.LoadCharacter(entries);
+            Check(KeyMap.Of(GameAction.FaceSmile) == KeyCode.F2, "切换角色不沿用前一人的表情绑定");
+            KeyMap.LoadCharacter(roundTrip);
+            Check(KeyMap.Of(GameAction.FaceSmile) == KeyCode.A, "表情自定义键位可读回");
+            KeyMap.LoadCharacter(new List<KeymapEntry> {
+                new KeymapEntry { key = 16, type = 1, action = 1001004 },
+                new KeymapEntry { key = 211, type = 2, action = 2000000 }
+            });
+            Check(KeyMap.Of(QuickSlots.Action(0)) == KeyCode.Q && QuickSlots.Id(0) == 1001004,
+                "角色技能绑定载入运行时");
+            Check(KeyMap.Of(GameAction.FaceSmile) == KeyCode.None, "角色主动清空的键位不能恢复默认");
+            KeyMap.Bind(GameAction.Stat, KeyCode.Delete);
+            var replaced = KeyMap.ExportCharacter();
+            Check(!replaced.Exists(e => e.type == 2), "扩展扫描码旧绑定在替换后移除");
+            KeyMap.LoadCharacter(new List<KeymapEntry>());
+            Check(QuickSlots.Id(0) == 0, "切换空配置角色清除上一人的技能");
+            var clip = WzCharacter.Clip("beginner_h0", "stand");
+            var normal = WzCharacter.Frame(clip.frames[0]);
+            foreach (var name in new[] { "hit", "smile", "troubled", "cry", "angry", "bewildered", "stunned" })
+            {
+                var expressed = WzCharacter.ExpressionFrame(clip.frames[0], name, 0f);
+                Check(expressed != null && expressed != normal, "原始脸部表情可合成 " + name);
+            }
+        }
+        finally
+        {
+            if (KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
+            KeyMap.LoadCharacter(exported);
+            KeyMap.Apply(saved);
+            QuickSlots.LoadCharacter(skills);
+        }
+    }
+
     public static void Run()
     {
         passed = failed = 0;
@@ -48,6 +128,7 @@ public static class HudChecks
         foreach (var kv in KeyMap.All) saved[kv.Key] = kv.Value;
         try
         {
+            CheckNativeBindings();
             for (char c = 'A'; c <= 'Z'; c++)
                 Check(NativeKeyLayout.Positions.ContainsKey((KeyCode)((int)KeyCode.A + c - 'A')), "字母映射 " + c);
             KeyMap.ResetAll();

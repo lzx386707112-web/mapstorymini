@@ -23,6 +23,26 @@ public sealed class NativeMapView : MonoBehaviour
         throw new InvalidDataException("Map link cycle: " + id);
     }
 
+    // Static NPCs have no movement controller to settle the spawn y onto their
+    // assigned foothold. Use that foothold, never a nearest unrelated platform.
+    public static float NpcGroundY(ImgNode map, ImgNode life)
+    {
+        int id = life.Int("fh");
+        float x = life.Int("x");
+        if (id > 0)
+            foreach (var layer in Children(map.Get("foothold")))
+                foreach (var group in layer.Children)
+                {
+                    var f = group.Get(id.ToString());
+                    if (f == null) continue;
+                    float x1 = f.Int("x1"), x2 = f.Int("x2");
+                    if (x1 == x2 || x < Math.Min(x1, x2) || x > Math.Max(x1, x2)) continue;
+                    return f.Int("y1") + (f.Int("y2") - f.Int("y1")) * (x - x1) / (x2 - x1);
+                }
+        // Unattached/floating NPCs retain their authored position.
+        return life.Int("y");
+    }
+
     public static FieldMap LoadMap(FieldMap previous)
     {
         var n = MapRoot(previous.id); var info = n.Get("info");
@@ -47,7 +67,7 @@ public sealed class NativeMapView : MonoBehaviour
                 mobTime = life.Int("mobTime"), fh = life.Int("fh"), team = life.Int("team", -1), dir = life.Int("f"),
                 x = life.Int("x"), y = life.Int("y"), cy = life.Int("cy"), rx0 = life.Int("rx0"), rx1 = life.Int("rx1") });
             else if (life.Text("type") == "n") m.npcs.Add(new FieldNpc { id = int.Parse(life.Text("id")),
-                hide = life.Int("hide"), x = life.Int("x"), y = life.Int("y") });
+                hide = life.Int("hide"), x = life.Int("x"), y = NpcGroundY(n, life) });
         }
         // Use source VR when present; maps without VR use a provisional foothold-based camera envelope.
         int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
@@ -185,7 +205,7 @@ public sealed class NativeMapView : MonoBehaviour
             string npcId = int.Parse(life.Text("id")).ToString("D7");
             var npc = FileRoot("Npc/" + npcId + ".img");
             if (npc.Get("info/link") != null) npc = FileRoot("Npc/" + Convert.ToInt32(npc.Get("info/link").Value).ToString("D7") + ".img");
-            Draw(npc.Get("stand"), "Npc_" + npcId, life.Int("x"), life.Int("y"), 100, life.Int("f") != 0);
+            Draw(npc.Get("stand"), "Npc_" + npcId, life.Int("x"), NpcGroundY(map, life), 100, life.Int("f") != 0);
         }
         foreach (var p in Children(map.Get("portal")))
             if (p.Int("pt") == 2) Draw(FileRoot("Map/MapHelper.img").Get("portal/game/pv"), "Portal_" + p.Name, p.Int("x"), p.Int("y"), 200, defaultDelay: 120);

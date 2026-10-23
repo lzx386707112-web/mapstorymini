@@ -15,7 +15,7 @@ public static class ProjectSetup
 
         // 2. 包名与产品名（包名一旦上架就不能改，先定死）
         PlayerSettings.companyName = "MapleDash";
-        PlayerSettings.productName = "枫叶闯关";
+        PlayerSettings.productName = "未来岛";
         PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "com.mapledash.game");
 
         // 3. 脚本后端：ARM64 只能用 IL2CPP，Mono 不支持

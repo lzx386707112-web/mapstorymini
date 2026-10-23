@@ -102,7 +102,7 @@ public static class EquipCatalog
     {
         if (cache.TryGetValue(itemId, out var hit)) return hit;
         var dir = DirOf(itemId);
-        var node = dir == null ? null : WzAssets.FileRoot("Character/" + dir + "/" + itemId.ToString("D8") + ".img/info");
+        var node = dir == null ? null : WzAssets.Node("Character/" + dir + "/" + itemId.ToString("D8") + ".img/info");
         cache[itemId] = node;
         return node;
     }

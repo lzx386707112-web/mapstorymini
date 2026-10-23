@@ -101,10 +101,8 @@ public class PlayerCtrl : MonoBehaviour
         return bestY;
     }
 
-    // 沿 foothold 走一步：段内线性插值；跨出端点时，若另一条段在同一 x 相接，
-    // 就当作同一块地面直接接续（原端 foothold 的 prev/next 语义）。
-    // 之前用「高度差 ≤ 0.6u 才算支撑」判接缝，台阶差 24px 以上就会误判成踏空，
-    // 下面又没有段接住时角色会一路掉到地图外。
+    // Follow the current foothold by interpolation. Continue only across endpoints
+    // that agree in both x and y; a disconnected lower platform requires falling.
     public static bool FollowGround(float fromX, float curY, float toX, out float outY)
     {
         outY = curY;
@@ -125,7 +123,7 @@ public class PlayerCtrl : MonoBehaviour
             float d = Mathf.Abs(y - curY);
             if (d < bestD) { bestD = d; cur = i; curLo = lo; curHi = hi; }
         }
-        if (cur < 0) return false;               // 脚下没有段：交给下落
+        if (cur < 0 || bestD > EdgeTol) return false;               // 脚下没有段：交给下落
 
         // 2) 目标 x 仍在同一条段上
         var c = Terrain[cur];
@@ -146,7 +144,9 @@ public class PlayerCtrl : MonoBehaviour
             if (Mathf.Abs(f.z - f.x) < 0.01f) continue;
             float lo = Mathf.Min(f.x, f.z), hi = Mathf.Max(f.x, f.z);
             bool joined = Mathf.Abs(lo - edge) <= EdgeTol || Mathf.Abs(hi - edge) <= EdgeTol;
-            if (!joined) continue;
+            float edgeY = Mathf.Lerp(c.y, c.w, (edge - c.x) / (c.z - c.x));
+            float joinY = Mathf.Lerp(f.y, f.w, (edge - f.x) / (f.z - f.x));
+            if (!joined || Mathf.Abs(edgeY - joinY) > EdgeTol || toX < lo || toX > hi) continue;
             float y = Mathf.Lerp(f.y, f.w, (Mathf.Clamp(toX, lo, hi) - f.x) / (f.z - f.x));
             float d = Mathf.Abs(y - curY);
             if (d < nextD) { nextD = d; next = i; }
@@ -157,22 +157,6 @@ public class PlayerCtrl : MonoBehaviour
         float nlo = Mathf.Min(n.x, n.z), nhi = Mathf.Max(n.x, n.z);
         outY = Mathf.Lerp(n.y, n.w, (Mathf.Clamp(toX, nlo, nhi) - n.x) / (n.z - n.x));
         return true;
-    }
-
-    // 判断 x 处脚下是否存在可走的水平段（不含竖直 foothold 墙）。
-    // 「去掉自动上下台阶」后仅用于检测真悬崖：脚下有段就保持 grounded 直线行走，
-    // 脚下无段才转入下落，不再把地形高度吸附到 foothold 上。
-    static bool GroundExists(float x)
-    {
-        if (Terrain == null || Terrain.Count == 0) return true;
-        for (int i = 0; i < Terrain.Count; i++)
-        {
-            var f = Terrain[i];
-            if (Mathf.Abs(f.z - f.x) < 0.01f) continue;   // 竖直段是墙，不算地面
-            float lo = Mathf.Min(f.x, f.z), hi = Mathf.Max(f.x, f.z);
-            if (x >= lo && x <= hi) return true;
-        }
-        return false;
     }
 
     // 原端 WalkSpeed 的 100% 基准（Character.wz 角色 info/walkSpeed = 125px/s）。
@@ -385,10 +369,20 @@ public class PlayerCtrl : MonoBehaviour
         if (grounded && !moving && climb == null) hp = Mathf.Min(hpMax, hp + 10f);
     }
 
+    public bool Sitting { get; private set; }
+    public void ToggleSit()
+    {
+        if (!grounded || IsClimbing || hp <= 0f) return;
+        Sitting = !Sitting;
+        if (vis != null) vis.SetBase(Sitting ? "sit" : "stand");
+    }
+    public void Express(int emote) { if (vis != null && hp > 0f) vis.Express(emote); }
+
     void BuildArt()
     {
-        // 发型是真实素材：artKey = 职业 + "_" + 发型下标（chars/<职业>_h0…）
-        string artKey = Profile.cls + "_" + HairStyles.KeyOf(HairStyles.IndexOf(Profile.hair));
+        // 已登录角色按真实外观合成；旧版离线入口才使用职业配方。
+        string artKey = WzCharacter.CurrentAppearanceKey()
+            ?? Profile.cls + "_" + HairStyles.KeyOf(HairStyles.IndexOf(Profile.hair));
         if (Art.Has("chars", artKey))
         {
             vis = Art.Attach(transform, "chars", artKey, "stand", 0f);
@@ -451,6 +445,7 @@ public class PlayerCtrl : MonoBehaviour
         float h = TouchInput.MoveH;
         bool jumpReq = TouchInput.TakeJump();
         climbInput = TouchInput.MoveV;
+        if (jumpReq || Mathf.Abs(h) > 0.15f || Mathf.Abs(climbInput) > 0.15f || !grounded) Sitting = false;
         int steps = Mathf.Max(1, Mathf.CeilToInt(dt / 0.008f));
         for (int i = 0; i < steps; i++) StepMovement(h, jumpReq && i == 0, dt / steps);
 
@@ -475,7 +470,7 @@ public class PlayerCtrl : MonoBehaviour
         if (vis != null)
         {
             string action = IsClimbing ? (climb.ladder ? "ladder" : "rope") :
-                !grounded ? "jump" : moving ? "walk" : "stand";
+                !grounded ? "jump" : moving ? "walk" : Sitting ? "sit" : "stand";
             vis.SetBase(action);
             if (IsClimbing) vis.Play(action, false); // 抓绳打断攻击/受击残留
             vis.speed = IsClimbing ? Mathf.Abs(climbInput) : 1f;
@@ -649,10 +644,15 @@ public class PlayerCtrl : MonoBehaviour
             }
         if (grounded)
         {
-            // 已去掉「走路自动上下台阶」：角色水平移动时不再把地形高度吸附到脚下
-            // foothold（含跨段台阶/斜坡的自动接续），保持当前 y 直线行走；只有跳跃
-            // （jumpY 抛物线）才改变高度。脚下没有任何可走段（真悬崖）时才转入下落。
-            if (!GroundExists(nextX))
+            // Only follow the supporting segment and geometrically connected slopes.
+            // An unrelated platform at the same x must not keep us suspended.
+            float supportY;
+            if (FollowGround(worldX, previousY, nextX, out supportY))
+            {
+                terrainY = supportY;
+                jumpY = 0f;
+            }
+            else
             {
                 grounded = false;
                 vy = 0f;
@@ -854,7 +854,7 @@ public class PlayerCtrl : MonoBehaviour
 
     // 键盘 Ctrl / 虚拟攻击键：把自动挥砍的计时器清零，下一次 Step 立刻结算。
     // 原版普攻是玩家主动挥的，这里保留自动索敌，只把「什么时候挥」交给玩家。
-    public void RequestAttack() { attackRequested = true; }
+    public void RequestAttack() { Sitting = false; attackRequested = true; }
 
     void Strike(EnemyUnit e)
     {

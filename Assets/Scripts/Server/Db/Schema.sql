@@ -275,7 +275,7 @@ CREATE TABLE world_prop
 INSERT INTO world_prop (id, flag, server_message, event_message, recommend_message,
                         channel_size, exp_rate, meso_rate, drop_rate, boss_drop_rate,
                         quest_rate, fishing_rate, travel_rate, level_exp_rate, enabled) VALUES
-(0, 0, '欢迎来到枫之谷！', '神说岛', '推荐新玩家进入', 3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1);
+(0, 0, '欢迎来到枫之谷！', '未来岛', '推荐新玩家进入', 3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1);
 
 CREATE TABLE game_config
 (

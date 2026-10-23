@@ -240,8 +240,8 @@ public static partial class VirtualControlsEditor
     }
 
     // —————————— 场景交互 ——————————
-    // lockSelection：面板打开时只用拖动"当前选中的那个"，点别处不改选中（否则面板会被关掉）
-    static void HandleScene(bool lockSelection)
+    // 面板打开时点击空白保留选中；点击其他控件则切换到它的基础编辑页。
+    static void HandleScene(bool keepSelectionOnEmpty)
     {
         // 摇杆四角手柄：拖它 = 改整体缩放（比滑到面板里再调更直觉）
         if (resizing)
@@ -302,9 +302,10 @@ public static partial class VirtualControlsEditor
         for (int i = list.Count - 1; i >= 0; i--)
             if (list[i].Hit(aPos)) { hit = list[i]; break; }
 
-        if (lockSelection)
+        if (keepSelectionOnEmpty)
         {
-            if (hit == null || hit != selected) return;
+            if (hit == null) return;
+            if (hit != selected) OpenPage(P_Edit);
         }
 
         selected = hit;
@@ -813,7 +814,9 @@ public static partial class VirtualControlsEditor
 
     // 一次点击：按下与抬起都在同一块区域内、且几乎没有移动
     static bool Tap(Rect r, bool act)
-        => act && aReleased && pressDist < 12f && r.Contains(aPos) && r.Contains(aPressPos);
+        // 切页后不能复用打开页面的抬手事件，否则会点穿到新页面同位置的控件。
+        => act && Time.frameCount != pageOpenedFrame && aReleased && pressDist < 12f
+            && r.Contains(aPos) && r.Contains(aPressPos);
 
     // 统一走 VirtualControls.Label：带伪粗（项目字体只有一个字重），
     // 面板/工具条的字因此比 GUI.Label 默认的细身字更有分量。

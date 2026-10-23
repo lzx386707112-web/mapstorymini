@@ -32,6 +32,14 @@ public static class MovementChecks
         {
             foreach (float dt in new[] {1f/30f,1f/60f,1f/120f})
             {
+                foreach (float direction in new[] {-1f, 1f})
+                {
+                    var slope = Create(new List<Vector4> {new Vector4(-10,-2,0,0),new Vector4(0,0,10,2)}, -direction * .1f, -direction * .02f);
+                    for (int i=0;i<Mathf.CeilToInt(.5f/dt);i++) Tick(slope,direction,false,dt);
+                    Require(slope.grounded && Mathf.Abs(slope.FeetPos.y - slope.worldX * .2f) < .001f,
+                        "feet lost connected slope at " + dt + " direction=" + direction);
+                    UnityEngine.Object.DestroyImmediate(slope.gameObject);
+                }
                 var terrain = new List<Vector4> {new Vector4(-10,0,2,0),new Vector4(2,0,2,1.5f),new Vector4(2,1.5f,10,1.5f)};
                 var p=Create(terrain,1.6f,0);
                 for(int i=0;i<Mathf.CeilToInt(0.3f/dt);i++) Tick(p,1,false,dt);

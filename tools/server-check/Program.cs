@@ -30,6 +30,7 @@ public static class Program
 
         Console.WriteLine("== 1. Schema ==");
         var db = DbStore.Open(dbPath);
+        Check(db.Table("keymap").Col("key") != null, "keymap.key 不能误识别为索引声明");
         Check(db.HasTable("accounts"), "accounts 表存在");
         Check(db.HasTable("characters"), "characters 表存在");
         Check(db.Table("characters").Col("damageCap") != null, "characters.damageCap（V2.1.68 ALTER）");
@@ -103,6 +104,29 @@ public static class Program
         Check(full.inventory.Count == 5, "背包 5 件读回");
         Check(full.keymap.Count == 40, "键位读回(40 项)");
         Check(full.record.sp == "0,0,0,0,0,0,0,0,0,0", "sp 串默认");
+
+        var originalKeys = new List<KeymapEntry>(full.keymap);
+        full.keymap.RemoveAll(k => k.type == 6 && k.action == 101);
+        full.keymap.Add(new KeymapEntry { key = 30, type = 6, action = 101 });
+        full.keymap.RemoveAll(k => k.type == 4 && k.action == 8);
+        full.keymap.Add(new KeymapEntry { key = 16, type = 1, action = 1001004 });
+        CharService.Save(db, full);
+        var customKeys = CharService.Load(db, (int)c0.id).keymap;
+        Check(customKeys.Count == 40, "键位保存覆盖原表，不累积旧行");
+        Check(customKeys.Exists(k => k.key == 30 && k.type == 6 && k.action == 101), "表情改绑保存/重读");
+        Check(!customKeys.Exists(k => k.key == 60), "表情原 F2 绑定已移除");
+        Check(customKeys.Exists(k => k.key == 16 && k.type == 1 && k.action == 1001004), "技能绑定保存/重读");
+        var secondKeys = CharService.Load(db, (int)CharactersDao.ByAccount(db, accId, 0)[1].id).keymap;
+        Check(secondKeys.Exists(k => k.key == 60 && k.type == 6 && k.action == 101), "其他角色仍保留默认表情绑定");
+        var damagedId = (int)CharactersDao.ByAccount(db, accId, 0)[1].id;
+        var damagedRows = db.Table("keymap").Select(DbStore.Eq("characterid", (long)damagedId));
+        foreach (var row in damagedRows) row.Remove("key");
+        Check(CharService.Load(db, damagedId).keymap.Exists(k => k.key == 60 && k.type == 6 && k.action == 101),
+            "旧存档缺失 key 列时修复为源端默认键位");
+        KeymapDao.Save(db, damagedId, new List<KeymapEntry>());
+        Check(CharService.Load(db, damagedId).keymap.Count == 0, "主动清空的键位表不被修复逻辑重置");
+        full.keymap = originalKeys;
+        CharService.Save(db, full);
 
         Console.WriteLine("== 6. 技能 / SP ==");
         SkillsDao.Upsert(db, (int)c0.id, 1001003, 5, 20);

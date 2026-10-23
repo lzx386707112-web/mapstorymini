@@ -22,6 +22,7 @@ public enum GameAction
     // Append to preserve existing serialized enum values.
     Slot9, Slot10, Slot11, Slot12, Slot13, Slot14, Slot15, Slot16, Slot17,
     Slot18, Slot19, Slot20, Slot21, Slot22, Slot23, Slot24, Slot25, Slot26,
+    Buddy, WorldMap, Chat, Minimap, Quest, ChatAll, ChatWhisper, ChatParty, ChatBuddy, Interface, ChatRoom, Family, ChatFamily, Party, Messenger, ChatSpouse, MonsterBook, ChatAlliance, PartySearch, School, Medal, Sit, NpcTalk, FaceHit, FaceSmile, FaceTroubled, FaceCry, FaceAngry, FaceBewildered, FaceStunned,
 }
 
 public static class KeyMap
@@ -30,39 +31,24 @@ public static class KeyMap
     //   移动 = 方向键，跳跃 = Alt，攻击 = Ctrl，拾取 = Z
     //   快捷栏八格 = Shift / Insert / Home / PgUp / Ctrl / Delete / End / PgDn
     //   装备 E、背包 I、能力值 S、技能 K
-    //   菜单 Esc、快捷键 Tab、帮助 F1、键位设置反斜杠
+    //   功能与表情完整复用 KeymapDao 的源端 40 项默认表；F1～F7 不再被帮助等功能占用。
     // 可在键盘设定窗口拖动图标重绑。
-    static readonly Dictionary<GameAction, KeyCode> defaults = new Dictionary<GameAction, KeyCode>
+    static readonly Dictionary<GameAction, KeyCode> defaults = BuildDefaults();
+    static Dictionary<GameAction, KeyCode> BuildDefaults()
     {
-        { GameAction.Left,  KeyCode.LeftArrow },
-        { GameAction.Right, KeyCode.RightArrow },
-        { GameAction.Up,    KeyCode.UpArrow },
-        { GameAction.Down,  KeyCode.DownArrow },
-        { GameAction.Jump,  KeyCode.LeftAlt },
-        { GameAction.Attack,KeyCode.LeftControl },
-        { GameAction.Pickup,KeyCode.Z },
-
-        { GameAction.Slot1, KeyCode.None },
-        { GameAction.Slot2, KeyCode.None },
-        { GameAction.Slot3, KeyCode.None },
-        { GameAction.Slot4, KeyCode.None },
-        { GameAction.Slot5, KeyCode.None },
-        { GameAction.Slot6, KeyCode.None },
-        { GameAction.Slot7, KeyCode.None },
-        { GameAction.Slot8, KeyCode.None },
-
-        { GameAction.Equip, KeyCode.E },
-        { GameAction.Inven, KeyCode.I },
-        { GameAction.Stat,  KeyCode.S },
-        { GameAction.Skill, KeyCode.K },
-        { GameAction.KeySet, KeyCode.Backslash },
-        { GameAction.QuickSlot, KeyCode.BackQuote },
-
-        { GameAction.Menu,  KeyCode.Escape },
-        { GameAction.Shop,  KeyCode.None },
-        { GameAction.Shortcut, KeyCode.RightBracket },
-        { GameAction.Help,  KeyCode.None },
-    };
+        var result = new Dictionary<GameAction, KeyCode> {
+            { GameAction.Left, KeyCode.LeftArrow }, { GameAction.Right, KeyCode.RightArrow },
+            { GameAction.Up, KeyCode.UpArrow }, { GameAction.Down, KeyCode.DownArrow },
+            { GameAction.Menu, KeyCode.Escape }, { GameAction.QuickSlot, KeyCode.None },
+            { GameAction.Help, KeyCode.None }
+        };
+        foreach (var entry in NativeKeyActions.Entries) result[entry.action] = KeyCode.None;
+        for (int i = 0; i < KeymapDao.DefaultKeys.Length; i++)
+            if (NativeKeyActions.Find(KeymapDao.DefaultTypes[i], KeymapDao.DefaultActions[i], out var action))
+                result[action] = NativeKeyLayout.FromScanCode(KeymapDao.DefaultKeys[i]);
+        for (int i = 0; i < QuickSlots.Count; i++) result[QuickSlots.Action(i)] = KeyCode.None;
+        return result;
+    }
 
     static readonly Dictionary<GameAction, KeyCode> bind = new Dictionary<GameAction, KeyCode>();
     static bool loaded;
@@ -85,6 +71,55 @@ public static class KeyMap
             if (kv.Value != KeyCode.None)
                 sb.Append(kv.Key).Append('=').Append(kv.Value).Append(' ');
         Debug.Log(sb.ToString());
+    }
+
+    static readonly List<KeymapEntry> unmapped = new List<KeymapEntry>();
+
+    public static void LoadCharacter(List<KeymapEntry> entries)
+    {
+        Ensure();
+        bind.Clear();
+        foreach (var pair in defaults) bind[pair.Key] = pair.Value;
+        foreach (var entry in NativeKeyActions.Entries) bind[entry.action] = KeyCode.None;
+        for (int i = 0; i < QuickSlots.Count; i++) bind[QuickSlots.Action(i)] = KeyCode.None;
+        var skills = new int[QuickSlots.Count];
+        int skillSlot = 0;
+        unmapped.Clear();
+        foreach (var entry in entries)
+        {
+            var key = NativeKeyLayout.FromScanCode(entry.key);
+            if (key != KeyCode.None && NativeKeyActions.Find(entry.type, entry.action, out var action))
+                bind[action] = key;
+            else if (key != KeyCode.None && entry.type == 1 && skillSlot < QuickSlots.Count)
+            {
+                bind[QuickSlots.Action(skillSlot)] = key;
+                skills[skillSlot++] = entry.action;
+            }
+            else unmapped.Add(entry);
+        }
+        QuickSlots.LoadCharacter(skills);
+    }
+
+    public static List<KeymapEntry> ExportCharacter()
+    {
+        Ensure();
+        var result = new List<KeymapEntry>();
+        var occupied = new HashSet<int>();
+        foreach (var pair in bind)
+        {
+            if (pair.Value == KeyCode.None) continue;
+            int scan = NativeKeyLayout.ToScanCode(pair.Value);
+            if (scan < 0) continue;
+            var entry = NativeKeyActions.Of(pair.Key);
+            int slot = QuickSlots.Index(pair.Key);
+            if (entry == null && (slot < 0 || QuickSlots.Id(slot) <= 0)) continue;
+            result.Add(new KeymapEntry { key = scan, type = entry != null ? entry.Type : 1,
+                action = entry != null ? entry.id : QuickSlots.Id(slot) });
+            occupied.Add(scan);
+        }
+        foreach (var entry in unmapped)
+            if (!occupied.Contains(NativeKeyLayout.ToScanCode(NativeKeyLayout.FromScanCode(entry.key)))) result.Add(entry);
+        return result;
     }
 
     public static KeyCode Of(GameAction a)
@@ -314,6 +349,9 @@ public static class Pointer
     public static bool Clicked, DoubleClicked, Dragging, DragStarted, DragEnded;
     public static Vector2 PressPosition;
     public static bool Blocked;
+
+    // 模态面板（侧滑菜单）接管期间：冻结所有 Pointer 事件，避免抬手穿透到底层 HUD。
+    public static bool Suppressed;
     static float lastClickTime = -10f;
     static Vector2 lastClickPosition;
     static bool doubleCandidate;
@@ -436,6 +474,20 @@ public static class Pointer
     {
         if (frame == Time.frameCount) return;
         frame = Time.frameCount;
+
+        if (Suppressed)
+        {
+            Pressed = Released = RightPressed = RightReleased = false;
+            Clicked = DoubleClicked = DragStarted = DragEnded = false;
+            Down = RightDown = false;
+            Dragging = false;
+            doubleCandidate = false;
+            touchGesture = touchHold = touchOnControl = false;
+            mouseOnControl = false;
+            lastClickTime = -10f;
+            return;
+        }
+
         ReadDevice(out bool left, out bool right);
         bool focused = Application.isFocused;
         Pressed = left && !Down;
@@ -507,10 +559,14 @@ public class InputBridge : MonoBehaviour
     void Update()
     {
         var game = GameLoop.I;
-        bool playing = game != null && game.state == GameLoop.GameState.Playing &&
-                       game.player != null && !game.gameOver && !PlayerCtrl.InputLocked && !BottomBar.ChatFocused;
         UiKit.RefreshMetrics();
+        // 侧滑菜单先读原始触摸：它决定本帧要不要冻结下面的游戏输入。
+        GameSideMenu.Tick();
         Pointer.Tick();
+
+        bool playing = game != null && game.state == GameLoop.GameState.Playing &&
+                       game.player != null && !game.gameOver && !PlayerCtrl.InputLocked && !BottomBar.ChatFocused &&
+                       !GameSideMenu.Blocking;
 
         // 屏上虚拟按键（摇杆/十字/按钮）：先把触摸翻译成注入，
         // 后面读 AxisX/Pressed 时已经包含虚拟键的量。
@@ -530,16 +586,13 @@ public class InputBridge : MonoBehaviour
 
         if (playing && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible)
         {
-            if (InputHub.Pressed(GameAction.Equip)) EquipWindow.Toggle();
-            if (InputHub.Pressed(GameAction.Inven)) InvenWindow.Toggle();
-            if (InputHub.Pressed(GameAction.Stat)) StatWindow.Toggle();
-            if (InputHub.Pressed(GameAction.Skill)) SkillWindow.Toggle();
-            if (InputHub.Pressed(GameAction.KeySet)) KeyConfigWindow.Toggle();
-            if (InputHub.Pressed(GameAction.QuickSlot)) BottomBar.QuickCollapsed = !BottomBar.QuickCollapsed;
-            if (InputHub.Pressed(GameAction.Menu)) GameMenuWindow.Toggle();
-            if (InputHub.Pressed(GameAction.Shop)) ShopWindow.Toggle();
-            if (InputHub.Pressed(GameAction.Shortcut)) ShortcutWindow.Toggle();
-            if (InputHub.Pressed(GameAction.Help)) HelpWindow.Toggle();
+            foreach (var entry in NativeKeyActions.Entries)
+            {
+                if (entry.action == GameAction.Jump || entry.action == GameAction.Attack || entry.action == GameAction.Pickup) continue;
+                if (InputHub.Pressed(entry.action)) NativeKeyActions.Execute(entry.action);
+            }
+            foreach (var action in new[] { GameAction.Menu, GameAction.Help, GameAction.QuickSlot })
+                if (InputHub.Pressed(action)) NativeKeyActions.Execute(action);
         }
         if (KeyConfigWindow.Visible || VirtualControlsEditor.Visible)
         {
@@ -570,5 +623,16 @@ public class InputBridge : MonoBehaviour
     void LateUpdate()
     {
         InputHub.EndFrame();
+    }
+
+    // 全局悬浮球/菜单覆盖层：加载页在 InputBridge 创建之前，所以这里天然不画；
+    // 悬浮球仅在游戏内显示。depth 低于 GameHUD/LoginFlow，画在最上层。
+    void OnGUI()
+    {
+        if (GameLoop.I == null) return;
+        GUI.depth = -200;
+        UiKit.Begin();
+        GameSideMenu.Draw();
+        VirtualControlsEditor.Draw();
     }
 }

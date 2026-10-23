@@ -75,8 +75,23 @@ public static class GameSession
     public static ServerListResponse ServerList()
         => Net.ServerList(new ServerListRequest { accountId = AccountId });
 
+    static readonly System.Collections.Generic.Dictionary<long, string[]> appearances =
+        new System.Collections.Generic.Dictionary<long, string[]>();
+
     public static CharListResponse CharList(int world, int channel)
-        => Net.CharList(new CharListRequest { accountId = AccountId, world = world, channel = channel });
+    {
+        var list = Net.CharList(new CharListRequest { accountId = AccountId, world = world, channel = channel });
+        appearances.Clear();
+        foreach (var rec in list.characters)
+        {
+            var full = Net.CharSelect(new CharSelectRequest { accountId = AccountId, characterId = (int)rec.id });
+            if (full.ok && full.character != null)
+                appearances[rec.id] = WzCharacter.CharacterIds(rec, full.character.inventory);
+        }
+        return list;
+    }
+
+    public static string[] PreviewAppearance(CharRecord rec) => appearances[rec.id];
 
     public static CheckCharNameResponse CheckCharName(string name)
         => Net.CheckCharName(new CheckCharNameRequest { name = name });
@@ -153,6 +168,7 @@ public static class GameSession
         Character = res.character;
         InGame = true;
         ApplyToProfile();
+        KeyMap.LoadCharacter(Character.keymap);
         return true;
     }
 
@@ -201,18 +217,22 @@ public static class GameSession
         d.hair = HairFromId(rec.hair);
         Profile.LastMapId = rec.map;
 
+        // 共享 Profile 只是当前角色的镜像，切角时必须清掉上一人的装备。
+        foreach (int slot in EquipSlot.Worn) d.SetEquipSlot(slot, 0);
+        d.owned.Clear();
+
         // 背包（ETC/USE 等非装备物品同步到现有 itemIds/itemCounts）
         d.itemIds.Clear();
         d.itemCounts.Clear();
         foreach (var it in Character.inventory)
         {
             // 装备：EQUIPPED 行（源端 inventoryitems 的 position 为 -1/-5/-6/-7/-8/-9/-10/-11）。
-            // 本地 JSON 已穿戴（玩家手动换过）则优先，否则用源端默认外观/装备（衣/裤/鞋/武器）。
+            // 以当前角色的数据库装备为准。
             if (it.inventoryType == InventoryDao.Equipped)
             {
                 int pos = it.position;
-                if (pos == -11) { if (d.equipWeapon == "1302000") d.equipWeapon = it.itemId.ToString(); }
-                else if (IsEquipSlot(pos) && d.EquipOfSlot(pos) == 0) d.SetEquipSlot(pos, it.itemId);
+                if (pos == -11 || IsEquipSlot(pos)) d.SetEquipSlot(pos, it.itemId);
+                if (pos == -11) d.owned.Add(it.itemId.ToString());
                 continue;
             }
             if (it.isEquip && it.inventoryType == InventoryDao.Equip) continue;   // 背包里的装备不放进消耗品栏
@@ -261,7 +281,7 @@ public static class GameSession
         rec.SetSp(JobDefs.SkillBookOf(d.jobId), d.sp);
         rec.meso = d.gold;
         rec.map = Profile.LastMapId;
-        rec.hair = HairToId(d.hair);
+        // 原始发型 ID 含发色，不能由旧版 h0/h1 标签反推覆盖。
         rec.equipslots = d.equipmentSlots;
 
         // 技能
@@ -277,6 +297,7 @@ public static class GameSession
             if (!d.questCompleted.Contains(id))
                 Character.quests.Add(new QuestEntry { quest = id, status = 1, completed = 0 });
 
+        Character.keymap = KeyMap.ExportCharacter();
         Net.SaveCharacter(new SaveCharacterRequest { characterId = CharacterId, character = Character });
     }
 
@@ -292,9 +313,5 @@ public static class GameSession
         return "h" + (baseHair % 100);
     }
 
-    static int HairToId(string tag)
-    {
-        if (string.IsNullOrEmpty(tag) || tag.Length < 2 || tag[0] != 'h') return 30000;
-        return int.TryParse(tag.Substring(1), out var v) ? 30000 + v : 30000;
-    }
+
 }

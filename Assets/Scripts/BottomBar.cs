@@ -92,6 +92,7 @@ public static class BottomBar
 
     public static bool ChatFocused;
     static bool focusChat;
+    public static void FocusChat() { ChatFocused = true; focusChat = true; }
     static string chatInput = "";
     static readonly List<string> chatLines = new List<string>();
 

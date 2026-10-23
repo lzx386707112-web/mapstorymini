@@ -7,12 +7,14 @@ public static class NpcDialogUi
     const string BtnRoot = "UI/UIWindow.img/UtilDlgEx/";
 
     static Vector2 scroll;
-    static GUIStyle body, title, rowStyle, markerStyle, hint;
+    static GUIStyle body, title, rowStyle, hint;
 
     public static void Draw()
     {
         NpcSession.Tick();
         DrawMarkers();
+        DrawPlayerQuestAlert();
+        HandleNpcClick();
         var session = NpcSession.Active;
         if (session != null && session.Dialog.Visible) DrawDialog(session);
     }
@@ -33,15 +35,80 @@ public static class NpcDialogUi
             if (!marker.start && !marker.complete) continue;
 
             float wx = map.WorldX(npc.x);
-            float wy = map.WorldY(npc.y) + 1.15f;      // 头顶
+            float wy = map.WorldY(npc.y) + 80f / Art.PPU;      // 原生像素高度，避免标记压在 NPC 身体内
             var sp = cam.WorldToScreenPoint(new Vector3(wx, wy, 0f));
             if (sp.z < 0f) continue;
             var gui = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);
             if (gui.x < -40f || gui.x > UiKit.W + 40f || gui.y < -40f || gui.y > UiKit.H + 40f) continue;
 
-            markerStyle.normal.textColor = marker.complete ? new Color(0.30f, 0.85f, 0.42f) : new Color(0.98f, 0.80f, 0.20f);
-            GUI.Label(new Rect(gui.x - 12f, gui.y - 20f, 32f, 32f), marker.complete ? "?" : "!", markerStyle);
+            DrawQuestIcon("UI/UIWindow.img/QuestIcon/" + (marker.complete ? "2" : "0"), gui);
         }
+    }
+
+    static Rect DrawQuestIcon(string path, Vector2 anchor)
+    {
+        var frames = WzAssets.Frames(WzAssets.Node(path));
+        if (frames.Count == 0) return new Rect();
+        float total = 0f;
+        foreach (var frame in frames) total += Mathf.Max(1, frame.Int("delay", 120));
+        float time = Mathf.Repeat(Time.unscaledTime * 1000f, total);
+        var current = frames[0];
+        foreach (var frame in frames)
+        {
+            current = frame;
+            time -= Mathf.Max(1, frame.Int("delay", 120));
+            if (time < 0f) break;
+        }
+        var tex = WzAssets.Texture(current);
+        var origin = WzAssets.Origin(current);
+        float scale = Screen.height / 768f / UiKit.Scale;
+        var rect = new Rect(anchor.x - origin.x * scale, anchor.y - origin.y * scale,
+            tex.width * scale, tex.height * scale);
+        GUI.DrawTexture(rect, tex);
+        return rect;
+    }
+
+    static bool CanClickField => !GameWindows.AnyVisible && !ShopWindow.Visible &&
+        !GameSideMenu.Blocking && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer &&
+        NpcSession.Active == null && GameLoop.I != null && !GameLoop.I.gameOver &&
+        GameLoop.I.field != null && !PlayerCtrl.InputLocked;
+
+    static void HandleNpcClick()
+    {
+        if (Event.current.type != EventType.Repaint || !Pointer.Clicked || !CanClickField) return;
+        if (Pointer.Pos.y >= UiKit.H - BottomBar.Height) return;
+        var npc = NpcField.Pick(Pointer.Pos);
+        if (npc != null) InteractNearby(npc);
+    }
+
+    static void InteractNearby(FieldNpc npc)
+    {
+        var player = GameLoop.I.player;
+        if (player == null) return;
+        var map = NpcField.Map;
+        if (Mathf.Abs(player.FeetPos.x - map.WorldX(npc.x)) > 110f / Art.PPU ||
+            Mathf.Abs(player.FeetPos.y - map.WorldY(npc.y)) > 110f / Art.PPU)
+        { BottomBar.Toast("请靠近「" + WzNames.Npc(npc.id) + "」后再对话"); return; }
+        NpcField.Interact(npc.id);
+    }
+
+    static void DrawPlayerQuestAlert()
+    {
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        var map = NpcField.Map;
+        var cam = Camera.main;
+        if (player == null || map == null || cam == null) return;
+        // 当前地图确有可接任务时才提示，点击仍走同一套任务条件与源端脚本。
+        FieldNpc target = null;
+        foreach (var npc in map.npcs)
+            if (npc.hide == 0 && NpcField.MarkerOf(npc.id).start) { target = npc; break; }
+        if (target == null) return;
+        var sp = cam.WorldToScreenPoint(new Vector3(player.FeetPos.x, player.FeetPos.y + 1.3f, 0f));
+        if (sp.z < 0f) return;
+        var anchor = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);
+        var rect = DrawQuestIcon("Effect/BasicEff.img/QuestAlert/Default", anchor);
+        if (Event.current.type == EventType.Repaint && Pointer.Clicked && CanClickField && rect.Contains(Pointer.Pos))
+            InteractNearby(target);
     }
 
     // ——————————————— 对话框 ———————————————
@@ -205,7 +272,6 @@ public static class NpcDialogUi
 
         title = new GUIStyle { fontSize = 15, fontStyle = FontStyle.Bold };
         rowStyle = new GUIStyle { fontSize = 13, alignment = TextAnchor.MiddleLeft };
-        markerStyle = new GUIStyle { fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
         hint = new GUIStyle { fontSize = 11, alignment = TextAnchor.MiddleCenter };
     }
 

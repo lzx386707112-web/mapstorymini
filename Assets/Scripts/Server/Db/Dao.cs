@@ -94,7 +94,27 @@ public static class KeymapDao
     public static readonly int[] DefaultActions = { 0, 106, 10, 1, 12, 13, 18, 24, 8, 5, 4, 19, 14, 15, 2, 17, 11, 3, 20, 16, 9, 50, 51, 6, 7, 53, 100, 101, 102, 103, 104, 105, 54, 22, 52, 21, 25, 26, 23, 27 };
 
     public static List<DbRow> ByCharacter(DbStore db, int characterId)
-        => db.Table("keymap").Select(DbStore.Eq("characterid", (long)characterId));
+    {
+        var rows = db.Table("keymap").Select(DbStore.Eq("characterid", (long)characterId));
+        // 旧 Schema 解析器曾忽略 key 列。仅恢复这种无法表示有效键位的整表，
+        // 保留正常自定义表以及用户主动清空的空表。
+        if (rows.Count > 0 && rows.TrueForAll(r => !r.ContainsKey("key") || Convert.ToInt64(r["key"]) == 0))
+        {
+            db.Table("keymap").Delete(DbStore.Eq("characterid", (long)characterId));
+            SeedDefaults(db, characterId);
+            rows = db.Table("keymap").Select(DbStore.Eq("characterid", (long)characterId));
+        }
+        return rows;
+    }
+
+    public static void Save(DbStore db, int characterId, List<KeymapEntry> entries)
+    {
+        var table = db.Table("keymap");
+        table.Delete(DbStore.Eq("characterid", (long)characterId));
+        foreach (var entry in entries)
+            table.Insert(new DbRow { ["characterid"] = (long)characterId, ["key"] = (long)entry.key,
+                ["type"] = (long)entry.type, ["action"] = (long)entry.action });
+    }
 
     public static void SeedDefaults(DbStore db, int characterId)
     {

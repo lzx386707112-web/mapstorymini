@@ -38,9 +38,10 @@ public sealed class NativeCursor : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = !Application.isMobilePlatform;
         // 0: pointing hand; 12: pressed hand; 1: native mouse animation.
-        int next = Pointer.Down || Pointer.RightDown ? 12 :
+        int next = GameSideMenu.Blocking ? 0 :
+                   Pointer.Down || Pointer.RightDown ? 12 :
                    Time.unscaledTime - since < 1f && state == 1 ? 1 : 0;
-        if (Pointer.Released || Pointer.RightReleased) next = 1;
+        if (!GameSideMenu.Blocking && (Pointer.Released || Pointer.RightReleased)) next = 1;
         if (next != state) { state = next; since = Time.unscaledTime; }
         if (!Application.isMobilePlatform && Application.isFocused)
         {
@@ -81,7 +82,8 @@ public sealed class NativeCursor : MonoBehaviour
         // Restoring it during Repaint lets the lobby paint over the cursor.
         GUI.depth = -10000;
         if (!Application.isMobilePlatform || manifest == null || !Application.isFocused || Event.current.type != EventType.Repaint) return;
-        // 虚拟按键编辑器是纯触屏界面，里面不需要这只"手"，否则会挡在编辑面板上
+        // 拖动悬浮球时 Pointer 已冻结；保留原位光标，避免拖球导致鼠标消失。
+        // 全屏按键编辑器使用绝对触摸，不显示相对光标。
         if (VirtualControlsEditor.Visible) return;
         State selected = SelectState(state);
         if (selected == null || selected.frames.Length == 0) return;

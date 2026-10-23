@@ -419,6 +419,13 @@ public static class QuickSlots
         for (int i = 0; i < Count; i++) ids[i] = PlayerPrefs.GetInt("mxd.qs." + i, 0);
     }
 
+    public static void LoadCharacter(int[] skills)
+    {
+        loaded = true;
+        System.Array.Clear(ids, 0, ids.Length);
+        System.Array.Copy(skills, ids, System.Math.Min(skills.Length, ids.Length));
+    }
+
     public static int Id(int slot)
     {
         Ensure();

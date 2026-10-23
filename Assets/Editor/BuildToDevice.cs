@@ -147,7 +147,7 @@ public static class BuildToDevice
     static void ConfigurePlayer()
     {
         PlayerSettings.companyName = "MapleDash";
-        PlayerSettings.productName = "枫叶闯关";
+        PlayerSettings.productName = "未来岛";
         PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "com.mapledash.game");
 
         // Unity 2022.3 的 Android Mono 后端不支持 ARM64（设了也会被清空，报 Target architecture not specified），

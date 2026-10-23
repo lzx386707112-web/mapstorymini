@@ -402,6 +402,13 @@ public static class Art
         return string.IsNullOrEmpty(rel) ? null : WzAssets.Texture(rel);
     }
 
+    public static Vector2 Origin(string rel)
+    {
+        Ensure();
+        var node = string.IsNullOrEmpty(rel) ? null : WzAssets.Node(rel);
+        return node == null ? Vector2.zero : WzAssets.Origin(node);
+    }
+
     public static string Str(Dictionary<string, object> d, string key, string def = "")
         => d != null && d.ContainsKey(key) && d[key] != null ? d[key].ToString() : def;
 

@@ -24,21 +24,111 @@ public static class NativeKeyLayout
     // 0x00836C82 maps tray indices 28..32 to function IDs 50..54.
     public static Vector2 TrayPosition(GameAction action)
     {
-        int index;
-        switch (action)
-        {
-            case GameAction.Equip: index = 0; break;
-            case GameAction.Inven: index = 1; break;
-            case GameAction.Stat: index = 2; break;
-            case GameAction.Skill: index = 3; break;
-            case GameAction.KeySet: index = 9; break;
-            case GameAction.Shortcut: index = 15; break;
-            case GameAction.Pickup: index = 28; break;
-            case GameAction.Attack: index = 30; break;
-            case GameAction.Jump: index = 31; break;
-            default: return Vector2.zero;
-        }
+        var entry = NativeKeyActions.Of(action);
+        if (entry == null) return Vector2.zero;
+        int index = entry.id >= 100 ? entry.id - 100 + 33 : entry.id >= 50 ? entry.id - 50 + 28 : entry.id;
         return new Vector2(9 + index % 18 * 34, 267 + index / 18 * 34);
+    }
+
+    static readonly Dictionary<int, KeyCode> scanCodes = new Dictionary<int, KeyCode> {
+        { 1, KeyCode.Escape },
+        { 2, KeyCode.Alpha1 },
+        { 3, KeyCode.Alpha2 },
+        { 4, KeyCode.Alpha3 },
+        { 5, KeyCode.Alpha4 },
+        { 6, KeyCode.Alpha5 },
+        { 7, KeyCode.Alpha6 },
+        { 8, KeyCode.Alpha7 },
+        { 9, KeyCode.Alpha8 },
+        { 10, KeyCode.Alpha9 },
+        { 11, KeyCode.Alpha0 },
+        { 12, KeyCode.Minus },
+        { 13, KeyCode.Equals },
+        { 14, KeyCode.Backspace },
+        { 15, KeyCode.Tab },
+        { 16, KeyCode.Q },
+        { 17, KeyCode.W },
+        { 18, KeyCode.E },
+        { 19, KeyCode.R },
+        { 20, KeyCode.T },
+        { 21, KeyCode.Y },
+        { 22, KeyCode.U },
+        { 23, KeyCode.I },
+        { 24, KeyCode.O },
+        { 25, KeyCode.P },
+        { 26, KeyCode.LeftBracket },
+        { 27, KeyCode.RightBracket },
+        { 28, KeyCode.Return },
+        { 29, KeyCode.LeftControl },
+        { 30, KeyCode.A },
+        { 31, KeyCode.S },
+        { 32, KeyCode.D },
+        { 33, KeyCode.F },
+        { 34, KeyCode.G },
+        { 35, KeyCode.H },
+        { 36, KeyCode.J },
+        { 37, KeyCode.K },
+        { 38, KeyCode.L },
+        { 39, KeyCode.Semicolon },
+        { 40, KeyCode.Quote },
+        { 41, KeyCode.BackQuote },
+        { 42, KeyCode.LeftShift },
+        { 43, KeyCode.Backslash },
+        { 44, KeyCode.Z },
+        { 45, KeyCode.X },
+        { 46, KeyCode.C },
+        { 47, KeyCode.V },
+        { 48, KeyCode.B },
+        { 49, KeyCode.N },
+        { 50, KeyCode.M },
+        { 51, KeyCode.Comma },
+        { 52, KeyCode.Period },
+        { 53, KeyCode.Slash },
+        { 54, KeyCode.RightShift },
+        { 56, KeyCode.LeftAlt },
+        { 57, KeyCode.Space },
+        { 58, KeyCode.CapsLock },
+        { 59, KeyCode.F1 },
+        { 60, KeyCode.F2 },
+        { 61, KeyCode.F3 },
+        { 62, KeyCode.F4 },
+        { 63, KeyCode.F5 },
+        { 64, KeyCode.F6 },
+        { 65, KeyCode.F7 },
+        { 66, KeyCode.F8 },
+        { 67, KeyCode.F9 },
+        { 68, KeyCode.F10 },
+        { 71, KeyCode.Home },
+        { 73, KeyCode.PageUp },
+        { 79, KeyCode.End },
+        { 81, KeyCode.PageDown },
+        { 82, KeyCode.Insert },
+        { 83, KeyCode.Delete },
+        { 87, KeyCode.F11 },
+        { 88, KeyCode.F12 },
+        { 89, KeyCode.RightControl },
+        { 90, KeyCode.RightAlt },
+        { 157, KeyCode.RightControl },
+        { 184, KeyCode.RightAlt },
+        { 199, KeyCode.Home },
+        { 200, KeyCode.UpArrow },
+        { 201, KeyCode.PageUp },
+        { 203, KeyCode.LeftArrow },
+        { 205, KeyCode.RightArrow },
+        { 207, KeyCode.End },
+        { 208, KeyCode.DownArrow },
+        { 209, KeyCode.PageDown },
+        { 210, KeyCode.Insert },
+        { 211, KeyCode.Delete },
+    };
+    public static KeyCode FromScanCode(int scan)
+        => scanCodes.TryGetValue(scan, out var key) ? FunctionKey(key) : KeyCode.None;
+    public static int ToScanCode(KeyCode key)
+    {
+        key = FunctionKey(key);
+        foreach (var pair in scanCodes)
+            if (pair.Value == key) return pair.Key;
+        return -1;
     }
 
     public static readonly Dictionary<KeyCode, Vector2> Positions = new Dictionary<KeyCode, Vector2>

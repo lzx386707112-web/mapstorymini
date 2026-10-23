@@ -9,9 +9,8 @@ public static class KeyConfigWindow
     static readonly GameAction[] palette = BuildPalette();
     static GameAction[] BuildPalette()
     {
-        var actions = new List<GameAction> { GameAction.Equip, GameAction.Inven, GameAction.Stat,
-            GameAction.Skill, GameAction.KeySet, GameAction.Shortcut, GameAction.Pickup,
-            GameAction.Attack, GameAction.Jump };
+        var actions = new List<GameAction>();
+        foreach (var entry in NativeKeyActions.Entries) actions.Add(entry.action);
         return actions.ToArray();
     }
     static KeyCode[] quickDraft;
@@ -74,23 +73,8 @@ public static class KeyConfigWindow
             var skill = SkillBook.Get(QuickSlots.Id(QuickSlots.Index(action)));
             return skill != null && !string.IsNullOrEmpty(skill.icon) ? Art.Tex(skill.icon) : null;
         }
-        int id;
-        switch (action)
-        {
-            case GameAction.Equip: id = 0; break;
-            case GameAction.Inven: id = 1; break;
-            case GameAction.Stat: id = 2; break;
-            case GameAction.Skill: id = 3; break;
-            case GameAction.KeySet: id = 9; break;
-            case GameAction.Menu: return null;
-            case GameAction.Shortcut: id = 15; break;
-            case GameAction.Help: return null;
-            case GameAction.Pickup: id = 50; break;
-            case GameAction.Attack: id = 52; break;
-            case GameAction.Jump: id = 53; break;
-            default: return null;
-        }
-        return T("icon_" + id);
+        var entry = NativeKeyActions.Of(action);
+        return entry != null ? T("icon_" + entry.id) : null;
     }
 
     public static bool InTray(GameAction action)
@@ -245,9 +229,8 @@ public static class KeyConfigWindow
             {
                 // Release of the second click returns the function to its tray.
                 // Clear the pending drag so release handling cannot bind it back.
-                foreach (var action in palette)
-                    if (draft.TryGetValue(action, out var binding) && binding == code)
-                        draft[action] = KeyCode.None;
+                foreach (var action in new List<GameAction>(draft.Keys))
+                    if (draft[action] == code) draft[action] = KeyCode.None;
                 carried = null;
                 selected = KeyCode.None;
                 continue;
@@ -288,6 +271,7 @@ public static class KeyConfigWindow
             QuickBarKeys.Save(quickDraft);
             KeyMap.Apply(draft);
             foreach (var kv in skillDraft) QuickSlots.Bind(kv.Key, kv.Value);
+            if (GameSession.InGame) GameSession.SaveToDb();
             Close(); return;
         }
         if (Button("BtDefault", 112, 236, 65, 19)) { confirmMode = 1; carried = null; }

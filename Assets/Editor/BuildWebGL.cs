@@ -80,7 +80,7 @@ public static class BuildWebGL
     static void Configure()
     {
         PlayerSettings.companyName = "MapleDash";
-        PlayerSettings.productName = "枫叶闯关";
+        PlayerSettings.productName = "未来岛";
 
         // WebGL 只有 IL2CPP
         PlayerSettings.SetScriptingBackend(BuildTargetGroup.WebGL, ScriptingImplementation.IL2CPP);

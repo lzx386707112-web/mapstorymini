@@ -174,8 +174,8 @@ public static class QuestCatalog
         var r = new QuestRequirement();
         if (node == null) return r;
 
-        r.level = node.Get("level") != null ? node.Int("level") : 0;
-        r.maxLevel = node.Get("maxLevel") != null ? node.Int("maxLevel") : 0;
+        r.level = node.Int("lvmin", node.Int("level"));
+        r.maxLevel = node.Int("lvmax", node.Int("maxLevel"));
         r.meso = node.Get("meso") != null ? node.Int("meso") : 0;
         r.fame = node.Get("fame") != null ? node.Int("fame") : 0;
         r.interval = node.Get("interval") != null ? node.Int("interval") : 0;

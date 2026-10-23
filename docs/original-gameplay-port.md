@@ -409,7 +409,7 @@
 `QuestCatalog` 直接读 `Quest/Check.img`、`Act.img`、`QuestInfo.img`，字段与服务端
 `Quest.java` + `requirements/*` + `actions/*` 一一对应，**不臆造任何数值**：
 
-- `Check.img/<id>/0`（开始需求）与 `/1`（完成需求）：`npc` `level` `maxLevel` `job` `item` `mob`
+- `Check.img/<id>/0`（开始需求）与 `/1`（完成需求）：`npc` `lvmin` `lvmax` `job` `item` `mob`
   `quest` `interval` `infoEx` `fieldEnter` `startscript` `endscript`
 - `Act.img/<id>/0` / `/1`：`exp` `money` `fame` `item`（含 `prop` 权重）`skill` `nextQuest`
 - `QuestInfo.img/<id>`：`name` `area` `0..n`（分页正文）
@@ -449,7 +449,11 @@
   底部按钮按 `Mode` 取 `BtNext/BtPrev/BtOK/BtYes/BtNo/BtQYes/BtQNo/BtClose`
 - `DialogText`：`#b/#r/#g/#y/#d/#c/#k` → `<color=…>`、`#L<idx>#…#l` → 选项、`#m/#p/#t/#z/#v/#i/#f/#s`
   做名字/数字替换（`String.wz` 取名，带缓存）
-- `NpcField`：靠近 110px 才可交互，头顶图标 `!` 可接 / `?` 可交（0.4s 缓存，「可交」优先）
+- `NpcField`：靠近 110px 后可按 ↑ 或点击 NPC 交互，使用 `Quest.wz` 的条件判定可接/可交（0.4s 缓存，可交优先）。
+- `NpcDialogUi`：NPC 提示使用 `UIWindow.img/QuestIcon` 原生动画；角色头顶使用
+  `BasicEff.img/QuestAlert/Default` 灯泡。当前灯泡表示「本地图有可接任务」，点击后在附近交互，
+  距离不够则提示目标 NPC。此为本项目的本地图任务提醒，尚未实现原客户端完整的远程任务通知与选择列表。
+  没有满足条件的任务不会显示提示；隐藏 NPC 不参与提示。
 - `QuestWindow`：`UI/UIWindow.img/Quest/backgrnd`(245×396)+`backgrnd2`(305×396)、`S=1.25`，
   两个页签（进行中/已完成）、详情与奖励、`BtGiveup` 放弃
 

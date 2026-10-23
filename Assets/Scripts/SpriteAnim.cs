@@ -15,6 +15,20 @@ public class SpriteAnim : MonoBehaviour
     bool oneShot;
     float t;
     int idx;
+    string expression;
+    float expressionStarted, lastExpression = -10f;
+
+    public bool Express(int emote)
+    {
+        // FaceExpressionHandler: basic faces 1..7, five-second timeout; Character throttles at 1.5s.
+        string[] names = { "hit", "smile", "troubled", "cry", "angry", "bewildered", "stunned" };
+        if (kind != "chars" || emote < 1 || emote > names.Length ||
+            Time.unscaledTime - lastExpression < 1.5f) return false;
+        expression = names[emote - 1];
+        expressionStarted = lastExpression = Time.unscaledTime;
+        Apply(idx);
+        return true;
+    }
 
     public string Current => curName;
     public bool IsOneShot => oneShot;
@@ -79,13 +93,20 @@ public class SpriteAnim : MonoBehaviour
     void Apply(int i)
     {
         if (cur == null || sr == null || i < 0 || i >= cur.frames.Length) return;
-        var sp = Art.Frame(cur.frames[i]);
+        var sp = expression != null && kind == "chars"
+            ? WzCharacter.ExpressionFrame(cur.frames[i], expression, Time.unscaledTime - expressionStarted)
+            : Art.Frame(cur.frames[i]);
         if (sp != null) sr.sprite = sp;
     }
 
     void Update()
     {
         if (cur == null || sr == null) return;
+        if (expression != null)
+        {
+            if (Time.unscaledTime - expressionStarted >= 5f) expression = null;
+            Apply(idx);
+        }
         float dt = Time.deltaTime * Mathf.Max(0f, speed);
         if (dt <= 0f) return;
 

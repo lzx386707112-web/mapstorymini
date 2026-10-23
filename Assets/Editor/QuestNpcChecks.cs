@@ -33,9 +33,97 @@ public static class QuestNpcChecks
         CheckScriptLookup();
         CheckDialogText();
         CheckQuestRules();
+        CheckNewCharacterMarkers();
+        CheckAllMapQuestLinks();
 
         Debug.Log("[QuestNpcCheck] 通过 " + pass + " 项，失败 " + fail + " 项");
         if (fail > 0 && Application.isBatchMode) EditorApplication.Exit(1);
+    }
+
+    static void CheckNewCharacterMarkers()
+    {
+        var data = Profile.Data;
+        string snapshot = JsonUtility.ToJson(data);
+        var previousMap = NpcField.Map;
+        try
+        {
+            data.level = 1;
+            data.SetJob(0);
+            data.questStarted.Clear();
+            data.questCompleted.Clear();
+            data.itemIds.Clear();
+            data.itemCounts.Clear();
+            FieldCatalog.Ensure();
+            var map = FieldCatalog.GetMap(CharFactory.MapMushroomTown);
+            NpcField.Bind(map);
+            Check(map.npcs.Exists(n => n.id == 2101), "出生地图缺少希娜");
+            Check(map.npcs.Exists(n => n.id == 2101 && n.x == 130 && n.y == 305),
+                "希娜应落在 fh51 的 y=305，而不是出生 y=293");
+            Check(map.npcs.Exists(n => n.id == 2100 && n.y == 125), "已对齐 NPC 不应产生额外偏移");
+            Check(FieldCatalog.GetMap(20000).npcs.Exists(n => n.id == 2000 && n.y == 65),
+                "罗杰应落在 fh7 的 y=65，而不是出生 y=58");
+            Check(NpcField.MarkerOf(2101).start, "1 级新角色应看到希娜的可接任务标记");
+            Check(QuestLogic.CanStart(QuestCatalog.Get(1031), 2101), "1 级新角色应可接希娜和莎丽");
+            data.level = 11;
+            NpcField.InvalidateMarkers();
+            Check(!QuestLogic.CanStart(QuestCatalog.Get(1031), 2101), "1031 的 lvmax=10 未生效");
+            Check(QuestCatalog.Get(2000).startReq.level == 10, "2000 的 lvmin=10 未读取");
+            var session = NpcSession.TalkQuest(QuestCatalog.Get(1021), 2000, false);
+            Check(session != null && session.LastError == null && session.Dialog.Visible,
+                "罗杰任务脚本未产生对话");
+            session?.Close();
+            Check(WzAssets.Frames(WzAssets.Node("UI/UIWindow.img/QuestIcon/0")).Count > 0,
+                "缺少 NPC 原生任务提示动画");
+            Check(WzAssets.Frames(WzAssets.Node("Effect/BasicEff.img/QuestAlert/Default")).Count > 0,
+                "缺少角色头顶灯泡动画");
+        }
+        finally
+        {
+            NpcSession.CloseActive();
+            JsonUtility.FromJsonOverwrite(snapshot, data);
+            NpcField.Bind(previousMap);
+        }
+    }
+
+    static void CheckAllMapQuestLinks()
+    {
+        FieldCatalog.Ensure();
+        int maps = 0, npcs = 0, linked = 0, errors = 0, settled = 0, matchesCy = 0;
+        foreach (var entry in FieldCatalog.Maps)
+        {
+            try
+            {
+                // 只读 life，不生成场景、不读取怪物或贴图。
+                var root = NativeMapView.MapRoot(entry.Key);
+                maps++;
+                var life = root.Get("life");
+                if (life == null) continue;
+                foreach (var npc in life.Children)
+                {
+                    if (npc.Text("type") != "n" || npc.Int("hide") != 0) continue;
+                    int id = int.Parse(npc.Text("id"));
+                    npcs++;
+                    float groundY = NativeMapView.NpcGroundY(root, npc);
+                    if (Mathf.Abs(groundY - npc.Int("y")) > .01f) settled++;
+                    if (Mathf.Abs(groundY - npc.Int("cy")) < .01f) matchesCy++;
+                    Check(!float.IsNaN(groundY) && !float.IsInfinity(groundY), "NPC 落脚坐标非法 " + entry.Key + "/" + id);
+                    foreach (int qid in QuestCatalog.ForNpc(id))
+                    {
+                        var quest = QuestCatalog.Get(qid);
+                        Check(quest.startReq.npc == id || quest.completeReq.npc == id,
+                            "NPC 与任务索引不一致：" + id + "/" + qid);
+                    }
+                    if (QuestCatalog.ForNpc(id).Count > 0) linked++;
+                }
+            }
+            catch (Exception e)
+            {
+                if (errors++ < 10) Debug.LogError("[QuestNpcCheck] 地图 " + entry.Key + ": " + e.Message);
+            }
+        }
+        Check(errors == 0, "地图 NPC/任务关联读取失败 " + errors + " 张");
+        Debug.Log("[QuestNpcCheck] 全地图扫描 maps=" + maps + " visibleNpcs=" + npcs +
+            " questLinkedNpcs=" + linked + " settledNpcs=" + settled + " matchesCy=" + matchesCy + " errors=" + errors);
     }
 
     // ————— 打包通道 —————

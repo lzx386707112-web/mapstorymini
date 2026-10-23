@@ -622,7 +622,8 @@ public static class VirtualControls
         {
             var g = GameLoop.I;
             return g != null && g.state == GameLoop.GameState.Playing
-                   && OverlayVisible && !VirtualControlsEditor.Visible && !KeyConfigWindow.Visible;
+                   && OverlayVisible && !VirtualControlsEditor.Visible && !KeyConfigWindow.Visible
+                   && !GameSideMenu.Blocking;
         }
     }
 
@@ -872,7 +873,6 @@ public static class VirtualControls
         foreach (var e in elems) DrawElement(e, dim);
         if (KeyConfigWindow.Visible) return;
 
-        DrawEditToggle();
         DrawPressToast();
 
         if (Input.GetKeyDown(KeyCode.F9)) ShowDebug = !ShowDebug;
@@ -1594,8 +1594,8 @@ public static class VirtualControls
     // —————————— 抗锯齿圆环 / 外发光 ——————————
     // 贴图按 (内半径, 外半径) 量化缓存，绘制时把贴图铺到 [-ro, ro] 的方框里。
     // 一张 160×160 的 ARGB32 ≈ 100KB，缓存上限 24 张 ≈ 2.4MB。
-    static readonly Dictionary<int, Texture2D> _annulus = new Dictionary<int, Texture2D>();
-    static readonly List<int> _annulusKeys = new List<int>();
+    static readonly Dictionary<long, Texture2D> _annulus = new Dictionary<long, Texture2D>();
+    static readonly List<long> _annulusKeys = new List<long>();
     const int AnnulusN = 160;
     const int AnnulusKeep = 24;
     const float AnnulusQ = 64f;          // 半径量化精度：1/64
@@ -1604,7 +1604,7 @@ public static class VirtualControls
     {
         if (col.a <= 0.003f || ro <= 0.004f) return;
 
-        int roQ = Mathf.Clamp(Mathf.RoundToInt(ro * AnnulusQ), 1, 255);
+        int roQ = Mathf.Max(1, Mathf.RoundToInt(ro * AnnulusQ));
         int riQ = Mathf.Clamp(Mathf.RoundToInt(ri * AnnulusQ), 0, roQ);
         float roq = roQ / AnnulusQ;
 
@@ -1617,7 +1617,7 @@ public static class VirtualControls
 
     static Texture2D AnnulusTex(int riQ, int roQ, bool fade)
     {
-        int key = (riQ << 12) | (roQ << 2) | (fade ? 1 : 0);
+        long key = ((long)riQ << 32) | ((long)roQ << 1) | (fade ? 1L : 0L);
         if (_annulus.TryGetValue(key, out var cached) && cached != null) return cached;
 
         float ro = roQ / AnnulusQ;
@@ -1645,7 +1645,7 @@ public static class VirtualControls
 
         if (_annulusKeys.Count >= AnnulusKeep)
         {
-            int oldKey = _annulusKeys[0];
+            long oldKey = _annulusKeys[0];
             _annulusKeys.RemoveAt(0);
             if (_annulus.TryGetValue(oldKey, out var oldTex) && oldTex != null) Object.Destroy(oldTex);
             _annulus.Remove(oldKey);
@@ -1678,22 +1678,6 @@ public static class VirtualControls
         GUI.DrawTexture(new Rect(0f, -0.5f, 1f, 1f), LineTex());
         GUI.matrix = m;
         GUI.color = old;
-    }
-
-    // —————————— 编辑入口按钮（统一走 Pointer：桌面=鼠标，与全部 HUD 按钮同一套输入） ——————————
-    static void DrawEditToggle()
-    {
-        var r = new Rect(UiKit.W - 60f, 12f, 48f, 48f);
-        bool hover = r.Contains(Pointer.Pos);
-        float a = Pointer.Down && hover ? 0.62f : hover ? 0.45f : 0.30f;
-        RoundedRect(r, Color.black, a);
-        ShadowLabel(r, "键", 20);
-        // 按下与抬起都要在这个按钮上，且未滑动，才算一次点击（防误触）
-        if (Event.current.type == EventType.Repaint && Pointer.Released && hover
-            && r.Contains(Pointer.PressPosition))
-            VirtualControlsEditor.Toggle();
-        if (Input.GetKeyDown(KeyCode.F8))
-            VirtualControlsEditor.Toggle();
     }
 
     // —————————— JSON 小工具 ——————————

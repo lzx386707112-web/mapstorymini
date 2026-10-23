@@ -307,3 +307,6 @@
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/bin/Debug/netstandard2.1/PlayerBuildProgramLibrary.Data.pdb
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/bin/Debug/netstandard2.1/ScriptCompilationBuildProgram.Data.pdb
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/bin/Debug/netstandard2.1/BeeBuildProgramCommon.Data.pdb
+/tmp/mapledash-login-compile/AssemblyCSharpCheck.deps.json
+/tmp/mapledash-login-compile/AssemblyCSharpCheck.dll
+/tmp/mapledash-login-compile/AssemblyCSharpCheck.pdb

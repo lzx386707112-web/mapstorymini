@@ -218,7 +218,9 @@ public sealed class DbStore
             // 注意：MySQL 的 KEY 后面一定跟空格/反引号/括号，列名 keymap 不会被误伤。
             if (upper.StartsWith("UNIQUE") || upper.StartsWith("PRIMARY KEY") || upper.StartsWith("FOREIGN KEY") ||
                 upper.StartsWith("CONSTRAINT") || upper.StartsWith("INDEX") || upper.StartsWith("FULLTEXT") ||
-                (upper.StartsWith("KEY") && upper.Length > 3 && (char.IsWhiteSpace(upper[3]) || upper[3] == '`' || upper[3] == '(')))
+                (upper.StartsWith("KEY") && upper.Length > 3 &&
+                    !upper.Substring(3).TrimStart().StartsWith("INTEGER", StringComparison.Ordinal) &&
+                    (char.IsWhiteSpace(upper[3]) || upper[3] == '`' || upper[3] == '(')))
                 continue;
 
             // 列名 类型 [约束...]

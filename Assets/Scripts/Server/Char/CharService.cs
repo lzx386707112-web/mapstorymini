@@ -112,6 +112,7 @@ public static class CharService
         CharactersDao.Save(db, full.record);
 
         int cid = (int)full.record.id;
+        KeymapDao.Save(db, cid, full.keymap);
         foreach (var s in full.skills)
             SkillsDao.Upsert(db, cid, s.skillId, s.skillLevel, s.masterLevel, s.expiration);
         foreach (var q in full.quests)

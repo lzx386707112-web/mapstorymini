@@ -133,7 +133,6 @@ public sealed class FieldDirector : MonoBehaviour
         {
             float x1 = map.WorldX(f.x1), y1 = map.WorldY(f.y1);
             float x2 = map.WorldX(f.x2), y2 = map.WorldY(f.y2);
-            if (Mathf.Abs(x2 - x1) < 0.01f) continue;      // 竖直 foothold 是墙，不当地面
             terrain.Add(new Vector4(x1, y1, x2, y2));
             minX = Mathf.Min(minX, x1); maxX = Mathf.Max(maxX, x2);
         }

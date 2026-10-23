@@ -24,6 +24,7 @@ public static class WzCharacter
         new Dictionary<string, Dictionary<string, object>>();
     static Dictionary<string, object> Recipe(string key)
     {
+        if (appearanceRecipes.TryGetValue(key, out var appearance)) return appearance;
         // The original starter outfit uses the same native IMG parts as the legacy knight recipe.
         if (key.StartsWith("beginner_", StringComparison.Ordinal)) key = "knight_" + key.Substring(9);
         var recipes = (Dictionary<string, object>)WzAssets.Index["characters"];
@@ -68,6 +69,41 @@ public static class WzCharacter
         equippedIdCache = id;
         return id;
     }
+    // 登录预览与场景共用完整的原生 ID，保留性别、肤色、脸型和发色。
+    public static string[] CharacterIds(CharRecord rec, IEnumerable<InventoryEntry> inventory)
+    {
+        var ids = new List<string> { (2000 + rec.skincolor).ToString("D8"),
+            (12000 + rec.skincolor).ToString("D8"), rec.face.ToString("D8"), rec.hair.ToString("D8") };
+        int weapon = 0;
+        foreach (var item in inventory)
+        {
+            if (item.inventoryType != InventoryDao.Equipped) continue;
+            if (item.position == EquipSlot.Weapon) weapon = item.itemId;
+            else if (Array.IndexOf(EquipSlot.Worn, item.position) >= 0 && item.itemId > 0)
+                ids.Add(item.itemId.ToString("D8"));
+        }
+        if (weapon > 0) ids.Add(weapon.ToString("D8"));
+        return ids.ToArray();
+    }
+
+    public static string CurrentAppearanceKey()
+    {
+        if (!GameSession.InGame || GameSession.Character == null) return null;
+        var inventory = new List<InventoryEntry>();
+        foreach (int slot in EquipSlot.Worn)
+        {
+            int id = Profile.Data.EquipOfSlot(slot);
+            if (id > 0) inventory.Add(new InventoryEntry { inventoryType = InventoryDao.Equipped,
+                position = slot, itemId = id });
+        }
+        var ids = CharacterIds(GameSession.Character.record, inventory);
+        string key = "character_" + string.Join("_", ids);
+        if (!appearanceRecipes.ContainsKey(key))
+            appearanceRecipes.Add(key, new Dictionary<string, object> {
+                { "ids", new List<object>(ids) }, { "attack", "swingO1" } });
+        return key;
+    }
+
     public static bool Has(string key) => Recipe(key) != null;
     static string Category(string id)
     {
@@ -76,6 +112,8 @@ public static class WzCharacter
         {
             case 0: return "Body"; case 1: return "Head"; case 2: case 5: return "Face";
             case 3: case 4: case 6: return "Hair"; case 104: return "Coat";
+            case 100: return "Cap"; case 105: return "Longcoat";
+            case 108: return "Glove"; case 109: return "Shield"; case 110: return "Cape";
             case 106: return "Pants"; case 107: return "Shoes";
             default:
                 if (type >= 121 && type <= 160) return "Weapon";
@@ -305,7 +343,13 @@ public static class WzCharacter
             string category = Category(id);
             var root = Equipment(id);
             var paths = new List<string> { pose + "/" + frame };
-            if (category == "Face") { paths.Clear(); paths.Add("default"); }
+            if (category == "Face")
+            {
+                paths.Clear();
+                if (recipe.TryGetValue("expression", out var expression))
+                    paths.Add((string)expression + "/" + recipe["expressionFrame"]);
+                paths.Add("default");
+            }
             else if (category == "Head") paths.Add("front");
             else if (category == "Hair") paths.Add("default");
             var seen = new HashSet<ImgNode>(); var seenZ = new HashSet<string>();
@@ -356,12 +400,88 @@ public static class WzCharacter
         parts.Sort((a, b) => { int z = a.Z.CompareTo(b.Z); return z != 0 ? z : a.Sequence.CompareTo(b.Sequence); });
         return parts;
     }
+    public static Sprite ExpressionFrame(string uri, string expression, float elapsed)
+    {
+        string[] address = uri.Substring("avatar://".Length).Split('/');
+        var recipe = Recipe(address[0]);
+        if (recipe == null) return Frame(uri);
+        ImgNode face = null;
+        foreach (string id in (List<object>)recipe["ids"])
+            if (Category(id) == "Face") { face = Equipment(id); break; }
+        var frames = WzAssets.Frames(face?.Get(expression));
+        if (frames.Count == 0) return Frame(uri);
+        float duration = 0f;
+        foreach (var frame in frames) duration += Math.Max(1, frame.Int("delay", 100));
+        float time = Mathf.Repeat(elapsed * 1000f, duration);
+        var selected = frames[0];
+        foreach (var frame in frames)
+        {
+            selected = frame;
+            time -= Math.Max(1, frame.Int("delay", 100));
+            if (time < 0f) break;
+        }
+        string cacheKey = uri + "|" + expression + "/" + selected.Name;
+        if (cache.TryGetValue(cacheKey, out var sprite)) return sprite;
+        var expressed = new Dictionary<string, object>(recipe) {
+            ["expression"] = expression, ["expressionFrame"] = selected.Name
+        };
+        return Compose(cacheKey, expressed, address[1], int.Parse(address[2]));
+    }
+
     public static Sprite Frame(string uri)
     {
         if (cache.TryGetValue(uri, out var sprite)) return sprite;
         string[] address = uri.Substring("avatar://".Length).Split('/');
         var recipe = Recipe(address[0]); if (recipe == null) throw new InvalidDataException(uri);
         string pose = address[1]; int frame = int.Parse(address[2]);
+        return Compose(uri, recipe, pose, frame);
+    }
+
+    static readonly Dictionary<string, Dictionary<string, object>> appearanceRecipes =
+        new Dictionary<string, Dictionary<string, object>>();
+
+    // 登录/选角/建号界面的预览：外观由 CHARLIST/建号选项直接给装备 ID，
+    // 不经过职业配方，仍由同一套原版部件合成器拼帧。
+    // Login previews use the weapon-selected native stand pose and body delays.
+    public static int AppearanceFrame(string[] ids, float elapsed)
+    {
+        var weapon = Equipment(ids[ids.Length - 1]);
+        string pose = "stand" + weapon.Int("info/stand", 1);
+        var frames = Equipment(ids[0]).Get(pose);
+        if (frames == null) return 0;
+        float duration = 0f;
+        int count = 0;
+        for (; frames.Get(count.ToString()) != null; count++)
+            duration += Math.Max(1, frames.Get(count.ToString()).Int("delay", 100)) / 1000f;
+        if (count == 0) return 0;
+        float time = Mathf.Repeat(Mathf.Max(0f, elapsed), duration);
+        for (int i = 0; i < count; i++)
+        {
+            time -= Math.Max(1, frames.Get(i.ToString()).Int("delay", 100)) / 1000f;
+            if (time < 0f) return i;
+        }
+        return count - 1;
+    }
+
+    public static Sprite Appearance(string key, string[] ids, int frame = 0)
+    {
+        string cacheKey = "appearance://" + key + "/stand/" + frame;
+        if (cache.TryGetValue(cacheKey, out var sprite)) return sprite;
+        Dictionary<string, object> recipe;
+        if (!appearanceRecipes.TryGetValue(key, out recipe))
+        {
+            var list = new List<object>(ids.Length);
+            foreach (string id in ids) list.Add(id);
+            recipe = new Dictionary<string, object> { { "ids", list }, { "attack", "swingO1" } };
+            appearanceRecipes.Add(key, recipe);
+        }
+        string pose = Pose(recipe, "stand");
+        if (pose == null) return null;
+        return Compose(cacheKey, recipe, pose, frame);
+    }
+
+    static Sprite Compose(string uri, Dictionary<string, object> recipe, string pose, int frame)
+    {
         var parts = Placements(recipe, ref pose, ref frame);
         int left = 0, top = 0, right = 1, bottom = 1;
         foreach (var part in parts)
@@ -387,7 +507,7 @@ public static class WzCharacter
             }
         }
         var texture = WzAssets.Upload(pixels, width, height, uri);
-        sprite = UnityEngine.Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(-left / (float)width, 1f + top / (float)height), Art.PPU, 0, SpriteMeshType.FullRect);
+        var sprite = UnityEngine.Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(-left / (float)width, 1f + top / (float)height), Art.PPU, 0, SpriteMeshType.FullRect);
         sprite.name = uri; cache.Add(uri, sprite); return sprite;
     }
 }

@@ -9,6 +9,7 @@ public class GameHUD : MonoBehaviour
 
     // 截图/录屏时把调参面板收起来（它会挡住右边三分之一的画面）
     public static bool HideTuning;
+    public static bool InterfaceHidden;
 
     Texture2D _white;
     GUIStyle _cell, _cellTxt, _small, _box;
@@ -88,6 +89,7 @@ public class GameHUD : MonoBehaviour
 
     void OnGUI()
     {
+        if (InterfaceHidden && !KeyConfigWindow.Visible) return;
         GUI.depth = 0;
         EnsureStyles();
         UiKit.Begin();
@@ -115,8 +117,8 @@ public class GameHUD : MonoBehaviour
             if (!KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
         }
         KeyConfigWindow.Draw();
-        // 虚拟按键编辑器：盖在最上层（编辑时游戏输入已在 InputBridge 冻结）
-        VirtualControlsEditor.Draw();
+        // 悬浮球/快捷菜单由 InputBridge.OnGUI 绘制（仅游戏内显示）
+        // 虚拟按键编辑器也由 InputBridge.OnGUI 全局绘制。
         if (showTuning && !HideTuning) DrawTuning();
 
         if (GameLoop.I != null && GameLoop.I.gameOver)

@@ -271,14 +271,14 @@ Assets/Scripts/
 
 ```
 Boot → Login(账号/密码, 自动注册开关同源端)
-     → ServerSelect(world_prop: flag 图标/滚动消息/频道数/倍率)
-     → ChannelSelect
-     → CharSelect(角色位 3 个, 删除角色, 「创建新角色」)
-     → CharCreate(职业群: 冒险家/骑士团 → 脸/发/发色/肤/衣/裤/鞋/武器/性别, 名字唯一校验)
-     → InGame(初始地图: 冒险家 10000 / 骑士团 130030000)
+     → WorldSelect(world_prop: 大区木牌/频道列表/倍率, 卷轴展开)
+     → CharSelect(角色位 3 个, 删除角色, 「创建角色」)
+     → RaceSelect(冒险家/骑士团/战神)
+     → CharCreate(脸/发/发色/肤/衣/裤/鞋/武器/性别, 名字唯一校验)
+     → InGame(初始地图: 冒险家 10000 / 骑士团 130030000 / 战神 914000000)
 ```
 
-资源：登录界面背景/按钮在 `MapleDashResources/Data/UI/Login.img`（已随资源包落地），死亡窗 `UI/UIWindow.img/raise`。
+资源与坐标：`docs/login-ui-source-analysis.md`（源端 1280×720 设计稿、`back/11` 相机裁切、`UI/Login.img` 原版控件、`String/Eqp.img` 物品名）。死亡窗 `UI/UIWindow.img/raise`。
 
 ---
 
@@ -310,7 +310,7 @@ Boot → Login(账号/密码, 自动注册开关同源端)
 |---|---|---|
 | S1 数据库 | `Assets/Scripts/Server/Db/{Schema.sql,DbStore.cs,MiniJsonDb.cs,Dao.cs,CharactersDao.cs}` | ✅ 72 项离线自检全过 |
 | S2 服务端 | `Server/{GameServer.cs,PlatformRes.cs}`、`Server/Login`、`Server/World`、`Server/Char/{CharFactory,CharService,ServerExpTable,JobBook,CharNameRules,LegacyImport}`、`Server/Death/DeathService`、`Server/Protocol/Protocol.cs` | ✅ |
-| S3 登录 UI | `Client/LoginFlow.cs`（5 屏：登录/选区/频道/选角/建号 + 删除二次确认）；已删除 `Assets/Scripts/Lobby.cs`（预设角色）与 `Assets/Editor/LobbyShot.cs` | ✅ 编译通过 |
+| S3 登录 UI | `Client/LoginFlow.cs`（5 屏：登录/选区/选角/职业/建号 + 删除二次确认，直接读 `UI/Login.img`、`Map/Obj/login.img`、`Map/Back/login.img/back/11`；布局见 `docs/login-ui-source-analysis.md`）；已删除 `Assets/Scripts/Lobby.cs` 与 `Assets/Editor/LobbyShot.cs` | ✅ 编译 + 截图核对 + 指针点击 |
 | S4 死亡 | `Client/DeathFlow.cs` + `PlayerCtrl.PlayDeadPose/Revive` + `GameLoop.OnPlayerDead/Update` 联动 | ✅ 编译通过 |
 
 ### 分层约定（需求 4）
