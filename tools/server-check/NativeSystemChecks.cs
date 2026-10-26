@@ -15,6 +15,7 @@ static class NativeSystemChecks {
         public CashCommodity Find(int sn) => entries.TryGetValue(sn, out var e) ? e : null;
         public IList<int> Package(int id) => id == 9100000 ? new[] { 100, 101 } : null;
         public bool Exists(int id) => id > 0;
+        public bool Complete(int id) => id > 0;
         public bool IsCash(int id) => true;
         public DbRow Equipment(int id) => new DbRow { ["str"] = 3L, ["watk"] = 5L };
         public int EquipSlot(int id) => -1;
@@ -98,7 +99,9 @@ static class NativeSystemChecks {
             Check(S(leader, CashOperation.Equip, item: equipment).character.inventory.Exists(x => x.itemId == 1000000 && x.position == -1), "现金装备穿戴并持久化负槽位");
             Check(!S(leader, CashOperation.Deposit, item: equipment).ok, "穿戴中的现金装备不能存仓");
             Check(S(leader, CashOperation.Unequip, item: equipment).ok && S(leader, CashOperation.Deposit, item: equipment).ok, "卸下后可以存回现金仓库");
-            var over = db.Table("modified_cash_item"); over.Insert(new DbRow { ["sn"] = 100L, ["price"] = 0L });
+            // 源端 CashShopService.changeOnSale 是 deleteById 后再 insertSelective，这里同样先删后插。
+            var over = db.Table("modified_cash_item"); over.Delete(x => DbStore.Int(x, "sn") == 100);
+            over.Insert(new DbRow { ["sn"] = 100L, ["price"] = 0L });
             Check(cash.Commodity(100).price == 0 && cash.Commodity(100).onSale == 1 && cash.Commodity(100).count == 1, "商城nullable覆写保留未指定字段且零价有效");
             over.Update(x => DbStore.Int(x, "sn") == 100, new DbRow { ["on_sale"] = 0L });
             Check(!S(leader, CashOperation.Buy).ok, "数据库下架优先于WZ在售标志");

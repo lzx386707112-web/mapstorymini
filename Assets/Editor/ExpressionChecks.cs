@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using UnityEditor;
@@ -130,12 +131,116 @@ public static class ExpressionChecks
         }
         SessionState.SetString(Key + "report", report);
 
-        // 3) 节流：连续两次必须只认第一下（原端 Character 1.5s）
-        typeof(SpriteAnim).GetField("lastExpression", flags).SetValue(animation, -10f);
-        Require(animation.Express(1), "受伤表情首次没有生效");
-        var first = animation.Renderer.sprite;
-        var second = animation.Express(2) ? animation.Renderer.sprite : null;
-        Require(second == null || second == first, "1.5s 内连按两次表情被重复覆盖");
+        // 3) 节流：原端 0xA244B5 是 GetTickCount 差 < 0x7D0（2000ms）丢弃，
+        //    不是服务端注释里的 1.5 秒。1.6s 必被吞，2.1s 必须放行。
+        var lastField = typeof(SpriteAnim).GetField("lastExpression", flags);
+        lastField.SetValue(animation, Time.unscaledTime - 1.6f);
+        var held = animation.Renderer.sprite;
+        Require(!animation.Express(2), "1.6s 内第二次表情没有被 2 秒节流挡住");
+        Require(animation.Renderer.sprite == held, "被节流挡住时画面仍然变了");
+        lastField.SetValue(animation, Time.unscaledTime - 2.1f);
+        Require(animation.Express(2), "超过 2 秒后表情仍然被节流挡住");
+        Require(animation.Renderer.sprite.name.Contains("|smile/"), "2 秒后放行的表情没有换到 smile");
+
+        // 4) 名字表 / 合法范围：0xBEC284 那 23 项，顺序不能靠 Face.img 的节点罗列顺序猜
+        CheckEmoteTable(animation, flags);
+
+        // 5) 改绑到 1/2/3 之后还能不能触发
+        CheckRebind(animation, flags);
+    }
+
+    static void CheckEmoteTable(SpriteAnim animation, BindingFlags flags)
+    {
+        string[] expect =
+        {
+            "blink", "hit", "smile", "troubled", "cry", "angry", "bewildered", "stunned",
+            "vomit", "oops", "cheers", "chu", "wink", "pain", "glitter", "blaze",
+            "shine", "love", "despair", "hum", "bowing", "hot", "dam",
+        };
+        Require(SpriteAnim.EmoteNames.Length == expect.Length, "表情名表长度不是 23");
+        for (int i = 0; i < expect.Length; i++)
+            Require(SpriteAnim.EmoteNames[i] == expect[i],
+                "表情名表第 " + i + " 项应为 " + expect[i] + "，实际 " + SpriteAnim.EmoteNames[i]);
+
+        var lastField = typeof(SpriteAnim).GetField("lastExpression", flags);
+        var player = GameLoop.I.player;
+        lastField.SetValue(animation, Time.unscaledTime - 10f);
+        Require(!animation.Express(0), "0 号（blink）不该当按键表情用");
+        Require(!animation.Express(23), "23 超出 0x17 上界却仍被接受");
+        Require(!animation.Express(-1), "负数表情没有被拒绝");
+
+        // 8..22 是现金表情道具：没有 5159992+emote（5160000..5160014）就不显示。
+        animation.Play("stand", false);
+        lastField.SetValue(animation, Time.unscaledTime - 10f);
+        player.Express(8);
+        Require(!animation.Renderer.sprite.name.Contains("|vomit/"), "没有现金表情道具也显示了 vomit");
+
+        var character = GameSession.Character;
+        if (character != null && character.inventory != null)
+        {
+            character.inventory.Add(new InventoryEntry { itemId = 5160000, quantity = 1, inventoryType = 5 });
+            try
+            {
+                animation.Play("stand", false);
+                lastField.SetValue(animation, Time.unscaledTime - 10f);
+                player.Express(8);
+                var sprite = animation.Renderer.sprite;
+                Debug.Log("[ExpressionChecks] 持有 5160000 后 8 号表情 sprite=" + sprite.name);
+                Require(sprite.name.Contains("|vomit/"), "持有 5160000 后 8 号表情没有换成 vomit（实际 " + sprite.name + "）");
+            }
+            finally { character.inventory.RemoveAt(character.inventory.Count - 1); }
+        }
+        else Debug.Log("[ExpressionChecks] 没有 GameSession.Character，跳过现金表情道具门控");
+        lastField.SetValue(animation, Time.unscaledTime - 10f);
+        animation.ClearExpression();
+    }
+
+    // 用户在键盘设定里把表情拖到 1/2/3 却「点了没反应」，这里按同一条路径复现：
+    // KeyMap.Apply（键盘设定按确定时走的就是它）→ 按下沿 → InputBridge 那张派发表 → 换帧。
+    static void CheckRebind(SpriteAnim animation, BindingFlags flags)
+    {
+        var saved = new Dictionary<GameAction, KeyCode>();
+        foreach (var kv in KeyMap.All) saved[kv.Key] = kv.Value;
+        try
+        {
+            var draft = KeyMap.Defaults();
+            draft[GameAction.FaceSmile] = KeyCode.Alpha1;
+            draft[GameAction.FaceTroubled] = KeyCode.Alpha2;
+            draft[GameAction.FaceCry] = KeyCode.Alpha3;
+            KeyMap.Apply(draft);
+            Debug.Log("[ExpressionChecks] rebind 1/2/3 -> " +
+                KeyMap.Of(GameAction.FaceSmile) + "/" + KeyMap.Of(GameAction.FaceTroubled) + "/" + KeyMap.Of(GameAction.FaceCry));
+            Require(KeyMap.Of(GameAction.FaceSmile) == KeyCode.Alpha1, "键盘设定按确定后 1 没有绑到微笑");
+            // 1 号键原默认是「对所有人聊天」。原端 keymap 以扫描码为唯一键，
+            // 一个键不可能同时挂聊天和表情；这里必须把旧主人清掉，否则按下 1 先开聊天、
+            // 聊天框抢走焦点后所有动作都不再派发 —— 表现就是「点了没反应」。
+            foreach (var kv in KeyMap.All)
+                Require(kv.Value != KeyCode.Alpha1 || kv.Key == GameAction.FaceSmile,
+                    "1 键仍同时被 " + kv.Key + " 占用（会先开聊天抢焦点）");
+            var rows = KeyMap.ExportCharacter();
+            var alpha1 = rows.FindAll(r => r.key == 2);
+            Require(alpha1.Count == 1, "导出键位表里扫描码 2 有 " + alpha1.Count + " 行（原端一码一行）");
+            Require(alpha1[0].type == 6 && alpha1[0].action == 101,
+                "导出扫描码 2 应为 type6/action101，实际 " + alpha1[0].type + "/" + alpha1[0].action);
+
+            typeof(SpriteAnim).GetField("lastExpression", flags).SetValue(animation, -10f);
+            animation.Play("stand", false);
+            // 屏上虚拟按键和物理键都归到这一条：注入按下沿，再跑 InputBridge 的派发循环
+            InputHub.SetVirtual(KeyCode.Alpha1, true);
+            bool pressed = InputHub.Pressed(GameAction.FaceSmile);
+            if (pressed) NativeKeyActions.Execute(GameAction.FaceSmile);
+            InputHub.EndFrame();
+            InputHub.SetVirtual(KeyCode.Alpha1, false);
+            Require(pressed, "按下 1 没有产生 FaceSmile 的按下沿");
+            var sprite = animation.Renderer.sprite;
+            Debug.Log("[ExpressionChecks] 1 键派发后 sprite=" + sprite.name);
+            Require(sprite.name.Contains("|smile/"), "按下 1 没有换到微笑脸（实际 " + sprite.name + "）");
+        }
+        finally
+        {
+            KeyMap.Apply(saved);
+            InputHub.ReleaseAllVirtual();
+        }
     }
 
     struct Shot { public Color32[] pixels; public int width, height; }

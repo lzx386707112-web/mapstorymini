@@ -403,7 +403,28 @@ public class PlayerCtrl : MonoBehaviour
         Sitting = !Sitting;
         if (vis != null) vis.SetBase(Sitting ? "sit" : "stand");
     }
-    public void Express(int emote) { if (vis != null && hp > 0f) vis.Express(emote); }
+    // 原端链路：键位 type6 → CWvsContext::SendEmotion(0xA24470) → 本地 SetEmotion + 封包 0x33。
+    // 0xA24470 只要求角色存在；1..22 合法，节流 2 秒（见 SpriteAnim）。
+    // 8..22 是现金表情道具（FaceExpressionHandler：emote>7 需要 5159992+emote，即 5160000..5160014），
+    // 没有道具时服务端直接丢弃，这里同样不显示。
+    public void Express(int emote)
+    {
+        if (vis == null || hp <= 0f) return;
+        if (emote == 0) { vis.ClearExpression(); return; }
+        if (emote < 1 || emote > SpriteAnim.MaxEmote) return;
+        if (emote > 7 && !OwnsFaceExpression(emote)) return;
+        vis.Express(emote);
+    }
+
+    static bool OwnsFaceExpression(int emote)
+    {
+        var inventory = GameSession.Character != null ? GameSession.Character.inventory : null;
+        if (inventory == null) return false;
+        int itemId = 5159992 + emote;
+        foreach (var item in inventory)
+            if (item != null && item.itemId == itemId) return true;
+        return false;
+    }
 
     void BuildArt()
     {

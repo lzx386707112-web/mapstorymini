@@ -270,26 +270,73 @@ public static class WzNames
         return v;
     }
 
+    // 是否真有名字。Item() 对查不到的 id 会兜底成「道具 xxxxx」，
+    // 判定商品数据是否完整时必须用这个，不能用 Item() 的返回值非空来判断。
+    public static bool HasItem(int id)
+    {
+        if (named.TryGetValue(id, out var has)) return has;
+        has = !string.IsNullOrEmpty(ItemUncached(id));
+        named[id] = has;
+        return has;
+    }
+    static readonly Dictionary<int, bool> named = new Dictionary<int, bool>();
+
     static string ItemUncached(int id)
     {
         int cat = id / 1000000;
         try
         {
-            if (cat == 1)
+            switch (cat)
             {
-                // Eqp.img/<类别>/<id>/name；类别名未知时遍历一层
-                var eqp = WzAssets.FileRoot("String/Eqp.img");
-                foreach (var group in eqp.Children)
-                {
-                    var n = group.Get(id.ToString())?.Text("name");
-                    if (!string.IsNullOrEmpty(n)) return n;
-                }
-                return null;
+                case 1: return EquipItem(id);
+                case 2: return FlatItem("String/Consume.img", id);
+                case 3: return FlatItem("String/Ins.img", id);
+                // String/Etc.img 多包一层同名节点：Etc/Etc/<id>/name
+                case 4: return FlatItem("String/Etc.img", "Etc", id);
+                // 宠物名不在 Cash.img，在 String/Pet.img/<id>/name
+                case 5: return FlatItem("String/Cash.img", id) ?? FlatItem("String/Pet.img", id);
+                // 910xxxx 礼包不在 String.wz，Item.wz/Special 自带 name
+                case 9: return SpecialItem(id);
+                default: return null;
             }
-            string file = cat == 2 ? "Consume" : cat == 3 ? "Ins" : cat == 4 ? "Etc" : cat == 5 ? "Cash" : null;
-            if (file == null) return null;
-            return WzAssets.FileRoot("String/" + file + ".img").Get(id.ToString())?.Text("name");
         }
         catch { return null; }
+    }
+
+    // String/Eqp.img 的真实层级是 Eqp/Eqp/<类别>/<id>/name，类别名随版本变化，按层遍历。
+    static string EquipItem(int id)
+    {
+        var root = WzAssets.FileRoot("String/Eqp.img");
+        foreach (var group in (root.Get("Eqp") ?? root).Children)
+        {
+            var n = group.Get(id.ToString())?.Text("name");
+            if (!string.IsNullOrEmpty(n)) return n;
+        }
+        return null;
+    }
+
+    // Consume / Ins / Cash / Pet 的 <id> 节点直接在根层；Etc 要先下钻一层同名节点。
+    static string FlatItem(string file, int id) => FlatItem(file, null, id);
+
+    static string FlatItem(string file, string inner, int id)
+    {
+        var root = WzAssets.FileRoot(file);
+        if (inner != null) root = root.Get(inner) ?? root;
+        var name = root.Get(id.ToString())?.Text("name");
+        return string.IsNullOrEmpty(name) ? null : name;
+    }
+
+    // Item.wz/Special/0910.img 里 910xxxx 的节点名是 7 位（不带补零），且 name 直接挂在节点下。
+    static string SpecialItem(int id)
+    {
+        string file = "Item/Special/" + (id / 10000).ToString("D4") + ".img";
+        if (!WzAssets.HasFile(file)) return null;
+        var root = WzAssets.FileRoot(file);
+        foreach (string key in new[] { id.ToString(), id.ToString("D8") })
+        {
+            var name = root.Get(key)?.Text("name");
+            if (!string.IsNullOrEmpty(name)) return name;
+        }
+        return null;
     }
 }

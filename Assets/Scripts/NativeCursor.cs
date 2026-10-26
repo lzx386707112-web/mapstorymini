@@ -13,6 +13,19 @@ public sealed class NativeCursor : MonoBehaviour
     bool wasVisible;
     string activeFrame;
 
+    // —— 拖拽类交互的光标（原图 Basic.img/Cursor）——
+    // 11 = 张开手（悬停在可抓的功能上）；12 = 握拳（已经抓在手上）。
+    // 两个状态名不能凭视觉猜：0 是普通指向手，11/12 是同一只手的手势变化，
+    // 和 docs/original-mouse-port.md 里记录的 0–13 分组一致。
+    public const int StateDefault = 0;
+    public const int StateGrab = 11;
+    public const int StateHold = 12;
+
+    // 窗口在 OnGUI 里登记本帧想要的光标；Update（下一帧）取用一次后清空。
+    // 不直接把 Cursor.SetCursor 交给 UI：桌面走系统光标、手机走自绘，两条路要同一个来源。
+    static int request = -1;
+    public static void Request(int id) { request = id; }
+
     void Awake()
     {
         var states = new System.Collections.Generic.List<State>();
@@ -38,9 +51,13 @@ public sealed class NativeCursor : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = !Application.isMobilePlatform;
         // 0: pointing hand; 12: pressed hand; 1: native mouse animation.
-        int next = GameSideMenu.Blocking ? 0 :
-                   Pointer.Down || Pointer.RightDown ? 12 :
-                   Time.unscaledTime - since < 1f && state == 1 ? 1 : 0;
+        // 窗口登记的光标优先（键位窗悬停/抓着功能时用 11/12）。
+        int asked = request;
+        request = -1;
+        int next = asked >= 0 ? asked :
+                   GameSideMenu.Blocking ? StateDefault :
+                   Pointer.Down || Pointer.RightDown ? StateHold :
+                   Time.unscaledTime - since < 1f && state == 1 ? 1 : StateDefault;
         if (!GameSideMenu.Blocking && (Pointer.Released || Pointer.RightReleased)) next = 1;
         if (next != state) { state = next; since = Time.unscaledTime; }
         if (!Application.isMobilePlatform && Application.isFocused)

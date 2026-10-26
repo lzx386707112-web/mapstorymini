@@ -12,6 +12,7 @@ public static class NpcDialogUi
     public static void Draw()
     {
         NpcSession.Tick();
+        OnlineTime.Tick();
         DrawMarkers();
         DrawPlayerQuestAlert();
         HandleNpcClick();

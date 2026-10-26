@@ -144,8 +144,17 @@ public static class NpcApi
         cm.Set("canHold", Ret(_ => B(true)));
         cm.Set("canHoldAll", Ret(_ => B(true)));
         cm.Set("canGenerateItem", Ret(_ => B(true)));
+        // NPCConversationManager.isNotCanHold(type[, count])：源端在背包满时**自己**发 sendOk
+        // 再 dispose，返回 true 表示脚本该 return。单机背包不限格数，与 canHold 恒真保持一致。
+        cm.Set("isNotCanHold", Ret(_ => B(false)));
+        // ItemInformationProvider.getName / itemDataExists 的等价判断：WZ 里有没有这件道具。
+        cm.Set("itemExists", Ret(c => B(!string.IsNullOrEmpty(WzNames.Item(Int(c, 0))))));
+        cm.Set("hasItemData", Ret(c => B(!string.IsNullOrEmpty(WzNames.Item(Int(c, 0))))));
         cm.Set("getInventory", Ret(c => BuildInventory(Int(c, 0))));
         cm.Set("removeAll", Fn(c => { }));
+        cm.Set("removeAllByInventory", Fn(c => RemoveInventory(Int(c, 0))));
+        // 单机没有「格位」概念（inventoryitems 一行一道具），拿到 slot 也无法定位，明确不装作成功。
+        cm.Set("removeAllByInventorySlot", Fn(c => throw new JsRuntimeException("单机没有背包格位概念：removeAllByInventorySlot")));
 
         // —— 传送 ——
         cm.Set("warp", Fn(c => session.RequestWarp(Int(c, 0))));
@@ -159,6 +168,8 @@ public static class NpcApi
         cm.Set("saveOrUpdateCharacterExtendValue", Fn(c => ExtendValue(c, false, true)));
         cm.Set("saveOrUpdateAccountExtendValue", Fn(c => ExtendValue(c, true, true)));
         cm.Set("getCurrentTime", Ret(_ => N(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())));
+        // AbstractPlayerInteraction.getOnlineTime → 当日累计在线秒数（见 OnlineTime.cs）
+        cm.Set("getOnlineTime", Ret(_ => N(OnlineTime.Seconds)));
         cm.Set("getScriptName", Ret(_ => S(session.ScriptName)));
 
         // —— 任务状态 ——
@@ -273,6 +284,82 @@ public static class NpcApi
         host.Set("getSavedLocation", Ret(c => Location(ScriptOperation.GetLocation, Str(c, 0))));
         host.Set("clearSavedLocation", Fn(c => Location(ScriptOperation.ClearLocation, Str(c, 0))));
     }
+
+    // SavedLocationType 全量，顺序与源端枚举一致（server/maps/SavedLocationType.java）。
+    static readonly string[] SavedLocationTypes =
+    {
+        "FREE_MARKET", "WORLDTOUR", "FLORINA", "INTRO", "SUNDAY_MARKET", "MIRROR",
+        "EVENT", "BOSSPQ", "HAPPYVILLE", "MONSTER_CARNIVAL", "DEVELOPER", "JAIL"
+    };
+
+    // Character.saveLocation(type)：把「当前地图 + 最近的传送门」写进这一格。
+    static void SaveLocation(string type)
+    {
+        if (string.IsNullOrEmpty(type)) return;
+        if (!GameSession.InGame) throw new JsRuntimeException("Saved locations require an active character");
+        GameSession.Net.Script(new ScriptRequest
+        {
+            operation = ScriptOperation.SaveLocation, characterId = GameSession.CharacterId,
+            location = type, mapId = MapId, portalId = ClosestPortalId()
+        });
+    }
+
+    // Character.saveLocationOnWarp()：只补还空着的格子，已有记录一律不动
+    // （源端循环里只判 savedLocations[i] == null，不是覆盖写）。
+    static void SaveLocationOnWarp()
+    {
+        foreach (string type in SavedLocationTypes)
+            if (JsConvert.ToInt32(Location(ScriptOperation.PeekLocation, type)) < 0) SaveLocation(type);
+    }
+
+    // MapleMap.findClosestPortal：按 distanceSq 找最近的门，返回它在 WZ portal 列表里的下标（= 源端 Portal.getId）。
+    static int ClosestPortalId()
+    {
+        var field = GameLoop.I != null ? GameLoop.I.field : null;
+        var map = field != null ? field.Map : null;
+        var pc = Pc;
+        if (map == null || pc == null || map.portals.Count == 0) return 0;
+        float px = pc.worldX * Art.PPU, py = -pc.FeetPos.y * Art.PPU;
+        int best = 0;
+        float bestDistance = float.MaxValue;
+        for (int i = 0; i < map.portals.Count; i++)
+        {
+            var portal = map.portals[i];
+            float dx = portal.x - px, dy = portal.y - py;
+            float distance = dx * dx + dy * dy;
+            if (distance < bestDistance) { bestDistance = distance; best = i; }
+        }
+        return best;
+    }
+
+    struct Totals { public int str, dex, intelligence, luk, watk, matk; }
+
+    // Character.reapplyLocalStats 的等价：基础属性 + 武器 + 全部防具（与能力值窗同一条路）。
+    static Totals PlayerTotals()
+    {
+        var weapon = WeaponDefs.Get(Profile.equipWeapon);
+        var combat = Profile.Attributes.WithWeapon(weapon, 0, out int watk, out int matk);
+        return new Totals
+        {
+            str = combat.str, dex = combat.dex, intelligence = combat.intelligence, luk = combat.luk,
+            watk = watk, matk = matk
+        };
+    }
+
+    // NPCConversationManager.removeAllByInventory(invType)：1 装备 2 消耗 3 设置 4 其他 5 特殊。
+    // 道具 id 的首位数字就是栏位（ItemConstants.getInventoryType），单机用它判定。
+    static void RemoveInventory(int type)
+    {
+        var data = Profile.Data;
+        if (type < 1 || type > 5 || data?.itemIds == null) return;
+        foreach (int id in new List<int>(data.itemIds))
+        {
+            if (id / 1000000 != type) continue;
+            int count = Profile.ItemCount(id);
+            if (count > 0) Profile.RemoveItem(id, count);
+        }
+    }
+
     static JsValue Location(ScriptOperation operation, string type)
     {
         if (!GameSession.InGame) throw new JsRuntimeException("Saved locations require an active character");
@@ -362,7 +449,28 @@ public static class NpcApi
         p.Set("getName", Ret(_ => S(Profile.playerName)));
         p.Set("isGM", Ret(_ => B((GameSession.Character?.record.gm ?? 0) > 1)));
         p.Set("getDamageCap", Ret(_ => N(GameSession.Character?.record.damageCap ?? 19999999)));
+        // PacketCreator.calculateNameplatePower 就是拿这六个总属性算战力。
+        // 之前只绑了 getDamageCap，脚本里的 try/catch 把「未迁移接口」的异常吞掉返回 0，
+        // 于是战力只剩「MaxHP/10 + MaxMP/20」那一段，咖位永远停在最低档。
+        Totals totals = default;
+        bool totalsReady = false;
+        Totals Total() { if (!totalsReady) { totals = PlayerTotals(); totalsReady = true; } return totals; }
+        p.Set("getTotalStr", Ret(_ => N(Total().str)));
+        p.Set("getTotalDex", Ret(_ => N(Total().dex)));
+        p.Set("getTotalInt", Ret(_ => N(Total().intelligence)));
+        p.Set("getTotalLuk", Ret(_ => N(Total().luk)));
+        p.Set("getTotalWatk", Ret(_ => N(Total().watk)));
+        p.Set("getTotalMagic", Ret(_ => N(Total().matk)));
+        p.Set("getItemQuantity", Ret(c => N(Profile.ItemCount(Int(c, 0)))));
+        p.Set("getItemName", Ret(c => S(WzNames.Item(Int(c, 0)))));
+        // 源端这两个是服务器喇叭；单机没有别的玩家，落成底部提示才对得上「玩家看到了什么」。
+        p.Set("checkoutBroadcast", Ret(_ => B(false)));
+        p.Set("sendFullServerBroadcast", Fn(c => ToastIfAny(Str(c, 0))));
+        p.Set("sendBroadcast", Fn(c => ToastIfAny(Int(c, 0) == 0 ? Str(c, 2) : Str(c, 1) + "：" + Str(c, 2))));
         BindSavedLocations(p);
+        // Character.saveLocation(type) / saveLocationOnWarp()：warp 前记住「从哪来」（Character.java:8120/8131）
+        p.Set("saveLocation", Fn(c => SaveLocation(Str(c, 0))));
+        p.Set("saveLocationOnWarp", Fn(_ => SaveLocationOnWarp()));
         p.Set("getParty", Ret(_ => BuildParty(session)));
         p.Set("getId", Ret(_ => N(GameSession.InGame ? GameSession.CharacterId : 1)));
         p.Set("getMeso", Ret(_ => N(Profile.gold)));
@@ -519,10 +627,69 @@ public static class NpcApi
                 }));
                 return factory;
             }
+            // 脚本里的枚举/工具类引用：值语义对了，逻辑就能照源端原样跑。
+            // InventoryType 的数值取「道具 id 首位」（EQUIP=1 USE=2 SETUP=3 ETC=4 CASH=5），
+            // 因为脚本是把它当 int 传给 getInventory(type) 的。
+            if (name == "org.gms.client.inventory.InventoryType")
+            {
+                var type = new JsHostObject(null);
+                type.Set("EQUIP", N(1)); type.Set("USE", N(2)); type.Set("SETUP", N(3));
+                type.Set("ETC", N(4)); type.Set("CASH", N(5)); type.Set("EQUIPPED", N(-1));
+                return type;
+            }
+            // org.gms.constants.game.ExpTable：客户端已按原经验表算好，直接查同一张表
+            if (name == "org.gms.constants.game.ExpTable")
+            {
+                var table = new JsHostObject(null);
+                Lenient(table, "ExpTable");
+                table.Set("getExpNeededForLevel", Ret(args => N(ExpTable.Needed(Int(args, 0)))));
+                return table;
+            }
+            // slf4j 只用于排查日志：落到 Unity 日志即可，不能因为「类不存在」中断整段对话
+            if (name == "org.slf4j.LoggerFactory")
+            {
+                var factory = new JsHostObject(null);
+                factory.Set("getLogger", Ret(args => BuildLogger(Str(args, 0))));
+                return factory;
+            }
+            // CashShop 的货币编号常量（CashShop.java:72-75）。脚本只拿它们当 type 传给 getCash/gainCash。
+            if (name == "org.gms.server.CashShop")
+            {
+                var cash = new JsHostObject(null);
+                Lenient(cash, "CashShop");
+                cash.Set("NX_CREDIT", N(1)); cash.Set("MAPLE_POINT", N(2)); cash.Set("NX_PREPAID", N(4));
+                cash.Set("MAX_CASH_INVENTORY_SAFE", N(1000));
+                return cash;
+            }
             return JsNull.Value;
         }));
         return java;
     }
+    // slf4j Logger 的替身：info/debug 落普通日志，warn/error 落警告。
+    static JsHostObject BuildLogger(string name)
+    {
+        var logger = new JsHostObject(null);
+        Lenient(logger, "logger");
+        foreach (string level in new[] { "trace", "debug", "info", "warn", "error" })
+        {
+            string tag = level;
+            logger.Set(level, Fn(c =>
+            {
+                var text = new System.Text.StringBuilder();
+                for (int i = 0; i < c.ArgCount; i++)
+                {
+                    if (i > 0) text.Append(' ');
+                    text.Append(JsConvert.ToString(c.Arg(i)));
+                }
+                if (tag == "warn" || tag == "error") Debug.LogWarning("[Script/" + name + "] " + text);
+                else Debug.Log("[Script/" + name + "] " + text);
+            }));
+        }
+        logger.Set("isDebugEnabled", Ret(_ => B(false)));
+        logger.Set("isInfoEnabled", Ret(_ => B(true)));
+        return logger;
+    }
+
     static JsHostObject BuildMonster(EnemyUnit mob)
     {
         var result = new JsHostObject(mob);
@@ -550,7 +717,26 @@ public static class NpcApi
         c.Set("getPlayer", Ret(_ => player));
         c.Set("getChannel", Ret(_ => N(GameSession.Channel)));
         c.Set("getWorld", Ret(_ => N(GameSession.World)));
+        c.Set("getChannelServer", Ret(_ => BuildChannelServer(player)));
         return c;
+    }
+
+    // 单机只有自己在线：ChannelServer.getPlayerStorage().getAllCharacters() 只装自己一个。
+    // 共同富裕 / 冒险炒股 这类「给当前频道所有人发点券」的脚本靠这条链跑通，
+    // 语义上等价于「发给自己」。
+    static JsHostObject BuildChannelServer(JsHostObject player)
+    {
+        var server = new JsHostObject(null);
+        Lenient(server, "channelServer");
+        var storage = new JsHostObject(null);
+        Lenient(storage, "playerStorage");
+        storage.Set("getAllCharacters", Ret(_ => new JsArray(new JsValue[] { player })));
+        storage.Set("getAllCharactersCount", Ret(_ => N(1)));
+        storage.Set("getCharacterById", Ret(_ => player));
+        server.Set("getPlayerStorage", Ret(_ => storage));
+        server.Set("getChannel", Ret(_ => N(GameSession.Channel)));
+        server.Set("getWorld", Ret(_ => N(GameSession.World)));
+        return server;
     }
 
     static JsHostObject BuildJob(int jobId)

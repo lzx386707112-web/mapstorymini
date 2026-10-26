@@ -89,10 +89,10 @@ public static class KeyMap
         {
             var key = NativeKeyLayout.FromScanCode(entry.key);
             if (key != KeyCode.None && NativeKeyActions.Find(entry.type, entry.action, out var action))
-                bind[action] = key;
+                Claim(action, key);
             else if (key != KeyCode.None && entry.type == 1 && skillSlot < QuickSlots.Count)
             {
-                bind[QuickSlots.Action(skillSlot)] = key;
+                Claim(QuickSlots.Action(skillSlot), key);
                 skills[skillSlot++] = entry.action;
             }
             else unmapped.Add(entry);
@@ -100,26 +100,49 @@ public static class KeyMap
         QuickSlots.LoadCharacter(skills);
     }
 
+    // 一个键只服务一个动作（原端 keymap 以扫描码为唯一键）。
+    // 读档时若同一扫描码出现两次，后读到的那个动作拿走键，旧主人清成 None；
+    // 否则这个键会同时派发两个动作，聊天框一抢焦点后面所有动作都停摆。
+    static void Claim(GameAction action, KeyCode key)
+    {
+        if (key == KeyCode.None) { bind[action] = key; return; }
+        foreach (var other in new List<GameAction>(bind.Keys))
+            if (other != action && bind[other] == key) bind[other] = KeyCode.None;
+        bind[action] = key;
+    }
+
     public static List<KeymapEntry> ExportCharacter()
     {
         Ensure();
+        // 原端 keymap 以「扫描码」为唯一键：键位数组按 VK 索引（0xBED5A0），
+        // 一个键只可能有一种 type/action。这里按固定顺序输出并按键去重，
+        // 否则 Dictionary 的随机遍历顺序会让同一个扫描码写出两行——
+        // 读档后同一个键会同时挂两个动作（例如 1 号键既开聊天又做表情）。
         var result = new List<KeymapEntry>();
         var occupied = new HashSet<int>();
-        foreach (var pair in bind)
+        foreach (var entry in NativeKeyActions.Entries) AppendKeymap(result, occupied, entry.action);
+        for (int i = 0; i < QuickSlots.Count; i++) AppendKeymap(result, occupied, QuickSlots.Action(i));
+        foreach (var entry in unmapped)
         {
-            if (pair.Value == KeyCode.None) continue;
-            int scan = NativeKeyLayout.ToScanCode(pair.Value);
-            if (scan < 0) continue;
-            var entry = NativeKeyActions.Of(pair.Key);
-            int slot = QuickSlots.Index(pair.Key);
-            if (entry == null && (slot < 0 || QuickSlots.Id(slot) <= 0)) continue;
-            result.Add(new KeymapEntry { key = scan, type = entry != null ? entry.Type : 1,
-                action = entry != null ? entry.id : QuickSlots.Id(slot) });
+            int scan = NativeKeyLayout.ToScanCode(NativeKeyLayout.FromScanCode(entry.key));
+            if (scan < 0 || occupied.Contains(scan)) continue;
+            result.Add(entry);
             occupied.Add(scan);
         }
-        foreach (var entry in unmapped)
-            if (!occupied.Contains(NativeKeyLayout.ToScanCode(NativeKeyLayout.FromScanCode(entry.key)))) result.Add(entry);
         return result;
+    }
+
+    static void AppendKeymap(List<KeymapEntry> result, HashSet<int> occupied, GameAction action)
+    {
+        if (!bind.TryGetValue(action, out var key) || key == KeyCode.None) return;
+        int scan = NativeKeyLayout.ToScanCode(key);
+        if (scan < 0 || occupied.Contains(scan)) return;
+        var entry = NativeKeyActions.Of(action);
+        int slot = QuickSlots.Index(action);
+        if (entry == null && (slot < 0 || QuickSlots.Id(slot) <= 0)) return;
+        result.Add(new KeymapEntry { key = scan, type = entry != null ? entry.Type : 1,
+            action = entry != null ? entry.id : QuickSlots.Id(slot) });
+        occupied.Add(scan);
     }
 
     public static KeyCode Of(GameAction a)
@@ -153,8 +176,20 @@ public static class KeyMap
         Ensure();
         foreach (var kv in values)
         {
-            bind[kv.Key] = NativeKeyLayout.FunctionKey(kv.Value);
-            PlayerPrefs.SetInt("mxd.key." + kv.Key, (int)bind[kv.Key]);
+            var code = NativeKeyLayout.FunctionKey(kv.Value);
+            // 原版一个键只服务一个动作。整张表应用时如果新绑定抢了别人的键，
+            // 必须把旧主人清成 None：否则按一下会同时触发两件事——比如表情改绑到 1 号键、
+            // 而 1 号键原本是「对所有人聊天」，按下会先开聊天（抢走焦点，之后所有动作都不派发），
+            // 表情就变成「看起来没反应」。
+            if (code != KeyCode.None)
+                foreach (var other in new List<GameAction>(bind.Keys))
+                    if (other != kv.Key && bind[other] == code)
+                    {
+                        bind[other] = KeyCode.None;
+                        PlayerPrefs.SetInt("mxd.key." + other, (int)KeyCode.None);
+                    }
+            bind[kv.Key] = code;
+            PlayerPrefs.SetInt("mxd.key." + kv.Key, (int)code);
         }
         PlayerPrefs.Save();
     }

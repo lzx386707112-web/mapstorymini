@@ -106,7 +106,7 @@
 
 | 键 | 功能 | 结论 |
 | --- | --- | --- |
-| F1～F7 | 7 个表情 | 通：`NativeKeyActions → PlayerCtrl.Express → SpriteAnim.Express → WzCharacter.ExpressionFrame` 真的把当前帧换成原 WZ `Face/<表情>`，1.5 秒节流生效（本轮新增回归直接比对贴图对象，不是只看返回值） |
+| F1～F7 | 7 个表情 | 通：`NativeKeyActions → PlayerCtrl.Express → SpriteAnim.Express → WzCharacter.ExpressionFrame` 真的把当前帧换成原 WZ `Face/<表情>`（本轮把节流改成原端核实值 2 秒，见下节） |
 | Alt | 跳跃 | 通；新增 ↓+Alt 下跳 |
 | Ctrl | 攻击 | 通；无目标也挥砍，快捷格占用同键时让位给技能 |
 | Z / X / Space | 拾取 / 坐下 / NPC 对话 | 通（Space 与 ↑ 都能对话，对话里 Space/Enter 翻页、Esc 取消） |
@@ -127,3 +127,78 @@
 - `MovementChecks.Run` 通过：原图绳梯与上层出口、全部 foothold 落地、30/60/120Hz 步长、悬崖与触摸归属。
 - `FieldChecks.Run` 1684 通过 / 19 失败，失败项全部落在本轮未改动区域（底栏平铺与大按钮间距、转职页签、快捷格显示键、AP 分配、4 处 foothold 端点跟随）。最后一项属 `FollowGround` 判定，本轮只给 `FindLanding` 加了默认 `-1` 的跳过索引（等价原逻辑），未改 `FollowGround`。
 - 无 APK 构建，无真机触屏/视觉验收：下跳与 Esc 都还需要在手机上看一眼实际手感与端序。
+
+## 表情链路复核（2026-10-26 二轮，按 exe/IMG/服务端/脚本取证）
+
+用户反馈「把表情移到 1/2/3 之后点了没反应」。这一轮不再从 Unity 侧猜，先按 `AGENTS.md` 的要求把四层依据取全，再改。
+
+### 取证结果
+
+| 层 | 依据 | 结论 |
+| --- | --- | --- |
+| 客户端 EXE | `0x94F2ED` 键位分派、`0x94F4D1` type6 分支、`0xA24470` SendEmotion、`0x451CF6` SetEmotion、静态名表 `0xBEC284`（初始化 `0x45E8E8..0x45EDFA`） | 键位表**按扫描码索引**（一码一条记录），type6 的 `data-0x63` 就是表情号；客户端节流 **2000ms**（`< 0x7D0` 丢弃）；合法 `0..22`；先本地换脸再发 0x33 包；type6 没有动作/状态门控 |
+| IMG | `UI/UIWindow.img/KeyConfig/icon`（40 个：0..27、50..54、**100..106**）、`KeyConfig/key/<扫描码>`、`Character/Face/<id>.img` 的 27 个表情节点 | 100..106 就是 7 个基础表情的托盘图标 → 表情 1..7 |
+| 服务端 | `RecvOpcode.FACE_EXPRESSION(0x33)`、`FaceExpressionHandler`、`Character.changeFaceExpression`、`PacketCreator.facialExpression` | `emote>7` 需要背包有 `5159992+emote`（5160000..5160014）；`emote<1` 丢弃；广播用 `false`（**不发给自己**），自己的脸只能靠客户端本地设置；1500ms 只是广播节流 |
+| 脚本 | `NPCConversationManager`、`scripts-zh-CN` 全量检索 | **没有表情接口**，表情只有输入一条路径，脚本不会驱动表情 |
+
+表情名表（23 项，顺序以 exe 为准，不能按 `Face.img` 节点罗列顺序推）：
+
+`blink, hit, smile, troubled, cry, angry, bewildered, stunned, vomit, oops, cheers, chu, wink, pain, glitter, blaze, shine, love, despair, hum, bowing, hot, dam`
+
+其中 14..18 是 `glitter/blaze/shine/love/despair`，而 `Face.img` 节点顺序是 `glitter/despair/love/shine/blaze`，两者不同。
+
+### 改动
+
+- `SpriteAnim`：名表换成上面 23 项；节流 `1.5s → 2.0s`；新增 `MaxEmote=22`、`EmoteDuration=5s`、`ClearExpression()`（表情 0 = 回默认脸）。
+- `PlayerCtrl.Express`：`0` 回默认脸；`1..22` 合法；`8..22` 必须有 `5159992+emote`（对齐服务端门控），否则不显示。
+- **键位一键一职**（原端 keymap 一码一行）：新增 `KeyMap.Claim`（读档去重）、`KeyMap.Apply`（整表应用去重）、`KeyMap.ExportCharacter`（固定顺序 + 按扫描码去重）。
+  这条是「点了没反应」的根因候选：1 号键默认是「对所有人聊天」，若和表情共键，按 1 会先开聊天并抢走焦点，`playing` 变 false，之后所有动作都不再派发。
+- `VirtualControls.ActionDisplayName`：按键位表中文名显示，屏上按键按下时的回执从「1 → FaceSmile」变成「1 → 微笑」/「1 → 对所有人」，真机上能直接看出键是否对上。
+
+### 验证（真实游玩环境）
+
+- `ExpressionChecks.Run` PASS：7 个基础表情逐像素差异 90/190/133/141/220/161/142；节流 1.6s 被挡、2.1s 放行；名表 23 项逐项一致；`0/23/-1` 拒绝；
+  8 号无道具时不显示、塞入 `5160000` 后换成 `vomit`（顺带证明 8=vomit）；改绑 1/2/3 后键位表无重复扫描码，按下 1 换成 `smile`。
+- 全量 C# 重编译 0 error / 0 warning。
+
+### 真机仍然「没反应」时的三个检查点
+
+1. 屏上按键按下时有没有出现「虚拟键 → 1 → 微笑」的浮条：没有 → 按键没被喂进游戏（编辑器还开着、侧滑菜单压着、或按钮没吃到触摸）；有但显示「1 → 对所有人」→ 按钮的键和表情的键不是同一个。
+2. 按钮绑的键必须等于表情绑的键。把表情从 F1~F7 挪到 1/2/3 之后，之前绑 F1~F7 的按钮不会自动跟着改。
+3. 连按两次会被 2 秒节流吞掉；表情只换脸（原生尺寸约 15×12 像素），对着头部看。
+
+## 键位窗「搬功能」交互（2026-10-26 三轮）
+
+用户反馈：键盘设定窗里把功能按钮挪到别的键，现在要「按住拖动」才算数（触屏还得先长按）。
+要求与原端一致——**只有一种移动操作**：悬停在功能上变抓手，点一下按钮跟到鼠标上，在目标键位再点一下就落下。
+
+### 依据
+
+| 项 | 依据 | 结论 |
+| --- | --- | --- |
+| 光标素材 | `UI/Basic.img/Cursor` 共 14 组；`11` = 22×21 张开的手，`12` = 25×23 握拳 | 原图自带「可以抓」和「正抓着」两态，不需要自绘 |
+| 原端表现 | 用户提供的原端截图：悬停在功能图标上是张开手，抓着「Alt 跳跃」时是握拳 | 悬停 = `Cursor/11`，抓着 = `Cursor/12` |
+| 本地旧实现 | `KeyConfigWindow` 在 `Pointer.Pressed` 拿起、`Pointer.Released` 放下；触屏要先按住 350ms 才产生左键按下（`InputHub.ReadDevice`） | 于是表现为「长按才能拖」，一次轻点等于原地放下 |
+
+### 改动
+
+- `KeyConfigWindow`：搬运改成「一次按下只做一件事」——手上有功能就放下，没有就拿起。
+  两个动作都走 `Pointer.Pressed`，**不再依赖 `Pointer.Dragging`**，触屏单击即可，不用长按。
+- 拿起后图标跟着光标走（松手也还在手上），原来那一格（键位或托盘）先空出来。
+- 落到键位 = 换过去，原占这个键的功能回托盘（一键一职）；落到下方托盘区 = 收回托盘；
+  点窗口空白 = 取消这次搬运，并且吞掉这次抬手，免得顺手按到底部按钮。
+- Esc：手上有功能时只取消搬运，不关窗；手上空着才关窗。
+- `NativeCursor`：新增 `Request(StateGrab / StateHold)`，窗口在 OnGUI 里登记，
+  桌面走 `Cursor.SetCursor`、手机走自绘，两条路同一个来源。
+- 双击「把功能退回托盘」的旧路径删除——退托盘现在也是同一次搬运（拿起 → 点托盘）。
+
+### 验证
+
+- 回归 `NativeKeyboardChecks.CheckKeyConfigCarry`：点一下拿起（键位不变）、再点一下落到 1 号键、
+  被挤走的功能回托盘、一个键只留一个功能、其他键位不受影响、点托盘收回、Esc 取消搬运不改键位。
+
+### 未核实
+
+- 原端 `BeiDou.exe` 里键位窗的点击函数没有定位到，这条交互是**按用户指定的产品行为 + 原图光标素材**实现的，
+  不声明「已证明与 EXE 完全一致」。
+- 手机上的手感（单击拿起、点目标放下）尚未真机验收。

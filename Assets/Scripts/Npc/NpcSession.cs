@@ -329,7 +329,18 @@ public sealed class NpcSession
     {
         LastError = e.Message;
         Debug.LogError("[Script] " + (IsQuest ? "quest/" + QuestId : "npc/" + NpcId) + " :: " + e.Message);
-        BottomBar.Toast("对话脚本出错（详见日志）");
+        // 点到的功能只是「客户端还没接这个服务端接口」时，把缺的东西直接报出来。
+        // 原来一律显示「对话脚本出错」，玩家和看日志的人都不知道到底缺什么。
+        const string apiPrefix = "Unmigrated server API: ";
+        const string classPrefix = "Java interop: class not migrated: ";
+        string api = null, missing = null;
+        if (e.Message != null && e.Message.StartsWith(apiPrefix, StringComparison.Ordinal))
+            api = e.Message.Substring(apiPrefix.Length);
+        else if (e.Message != null && e.Message.StartsWith(classPrefix, StringComparison.Ordinal))
+            missing = e.Message.Substring(classPrefix.Length);
+        BottomBar.Toast(api != null ? "该功能尚未接入（缺少 " + api + "）"
+            : missing != null ? "该功能需要未接入的服务端类 " + missing
+            : "对话脚本出错（详见日志）");
         Dialog.Hide();
         CloseImmediate();
     }

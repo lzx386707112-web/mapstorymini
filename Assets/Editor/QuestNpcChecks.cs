@@ -79,6 +79,100 @@ public static class QuestNpcChecks
         if (Application.isBatchMode) EditorApplication.Exit(fail == 0 ? 0 : 1);
     }
 
+    // 逐个点开 9900001 主菜单里的每一条 #L，验证「点了真的有反应、且不抛脚本错误」。
+    // 需要整套系统才能跑的功能（仓库 / 转生 / 保底抽奖 / MTS …）允许报「未迁移接口」，
+    // 但除此之外的任何异常都算回归 —— 之前 自由市场 就是死在 player.saveLocationOnWarp 没绑。
+    public static void RunMenu()
+    {
+        pass = fail = 0;
+        string path = Path.Combine(Path.GetTempPath(), "mapledash-menu-" + Guid.NewGuid() + ".json");
+        int savedMap = Profile.LastMapId;
+        var errors = new List<string>();
+        Application.LogCallback hook = (condition, stack, type) =>
+        {
+            if (type == LogType.Error && condition.StartsWith("[Script] ", StringComparison.Ordinal))
+                errors.Add(condition);
+        };
+        try
+        {
+            var db = DbStore.Create(path);
+            var character = new CharRecord { accountid = 1, name = "MenuTest", level = 200,
+                damageCap = 25000000, gm = 0 };
+            int id = (int)CharactersDao.Insert(db, character);
+            character.id = id;
+            var server = GameServer.StartWith(db);
+            var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public;
+            foreach (var pair in new Dictionary<string, object> {
+                ["Net"] = server.Transport, ["CharacterId"] = id, ["InGame"] = true,
+                ["Character"] = new FullCharacter { record = character } })
+                typeof(GameSession).GetProperty(pair.Key, flags).GetSetMethod(true).Invoke(null, new[] { pair.Value });
+            Profile.Data.level = 200;
+            ScriptSource.ClearCache();
+            Application.logMessageReceived += hook;
+
+            var opener = NpcSession.Talk(9900001);
+            Check(opener != null && opener.LastError == null, "拍卖主菜单须能打开：" + opener?.LastError);
+            if (opener == null) return;
+            var content = opener.Dialog.Content;
+            var links = new List<int>();
+            foreach (var run in content.Runs)
+                if (run.Kind == DialogRunKind.Link && !links.Contains(run.Link)) links.Add(run.Link);
+            Check(links.Count >= 25, "主菜单可点选项偏少：" + links.Count);
+
+            int gaps = 0, broken = 0;
+            var failed = new Dictionary<int, string>();
+            foreach (int link in links)
+            {
+                NpcSession.CloseActive();
+                errors.Clear();
+                var session = NpcSession.Talk(9900001);
+                if (session == null) { Check(false, "菜单项 " + link + " 重新打开主菜单失败"); continue; }
+                string label = LinkLabel(content, link);
+                session.Reply(1, link);
+                NpcSession.CloseActive();
+                string error = errors.Find(e => e.Contains("Unmigrated server API") || e.Contains("class not migrated"))
+                    ?? (errors.Count > 0 ? errors[0] : null);
+                if (error == null) { Debug.Log("[MenuCheck] OK   " + link + " " + label); continue; }
+                // 两种「缺东西」都算已知缺口：缺服务端接口、缺整个 Java 类（仓库/转生/MTS/Boss成长…）。
+                // 它们要么等整套系统，要么只能给玩家一句明确的「尚未接入」，不算回归。
+                if (error.Contains("Unmigrated server API") || error.Contains("class not migrated"))
+                {
+                    gaps++;
+                    failed[link] = label;
+                    Debug.Log("[MenuCheck] GAP  " + link + " " + label + " :: " + error);
+                    continue;
+                }
+                broken++;
+                failed[link] = label;
+                Check(false, "菜单项 " + link + " " + label + " 脚本异常：" + error);
+            }
+            // 这两项是纯传送，不依赖任何未迁移系统：一旦退化说明 savedlocations / warp 链路坏了。
+            Check(!failed.ContainsKey(0), "自由市场必须可用（saveLocationOnWarp + warp）");
+            Check(!failed.ContainsKey(1), "传送系统（万能传送）必须可用");
+            Debug.Log("[MenuCheck] 主菜单 " + links.Count + " 项：正常 " + (links.Count - gaps - broken)
+                      + "，待接系统 " + gaps + "，异常 " + broken);
+            Debug.Log("[QuestNpcCheck] 通过 " + pass + " 项，失败 " + fail + " 项");
+        }
+        catch (Exception e) { Check(false, e.ToString()); }
+        finally
+        {
+            Application.logMessageReceived -= hook;
+            NpcSession.CloseActive();
+            GameServer.Stop();
+            Profile.LastMapId = savedMap;
+            if (File.Exists(path)) File.Delete(path);
+            if (Application.isBatchMode) EditorApplication.Exit(fail == 0 ? 0 : 1);
+        }
+    }
+
+    // Link 游标自己就带着可见文字（Kind=Link 的 run 同时是正文的一部分）
+    static string LinkLabel(DialogContent content, int link)
+    {
+        foreach (var run in content.Runs)
+            if (run.Kind == DialogRunKind.Link && run.Link == link) return (run.Text ?? "").Trim();
+        return "";
+    }
+
     static NpcSession ScriptSession(string source)
     {
         var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;

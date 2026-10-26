@@ -123,7 +123,8 @@ public static class SkillWindow
             PlayerPrefs.DeleteKey("debug_skillwin");
             Visible = true;
         }
-        if (!Visible || GameLoop.I == null || GameLoop.I.player == null) return;
+        if (!Visible) { CancelDrag(); return; }      // 任何关窗路径都要把手上的技能收回去
+        if (GameLoop.I == null || GameLoop.I.player == null) return;
         if (pos.x < 0f) pos = new Vector2(18f, 70f);
 
         var win = new Rect(pos.x * S, pos.y * S, WinW * S, WinH * S);
@@ -141,12 +142,21 @@ public static class SkillWindow
         ClampState(list);
 
         int hover = RowAt(win, list);
+        // 手上有技能时，这次按下按「放下」处理：落到目标就结束；
+        // 没落到目标只是取消，还要继续走单击拾起 / 双击施放，否则双击会被吃掉。
+        if (Dragging && Pointer.Pressed)
+        {
+            bool placed = DropOnSlot(dragId);
+            CancelDrag();
+            if (placed) return;
+        }
         HandleRows(win, list);
         HandleHints(win, list, hover);
+        UpdateCursor(win, list, hover);
 
         DrawMacro();
         DrawBackground(win);
-        if (NativeUi.Button(At(win, 156, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
+        if (NativeUi.Button(At(win, 156, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; CancelDrag(); return; }
         DrawTabs(win, tabs);
         DrawHeader(win);
         DrawRows(win, list, hover);
@@ -267,6 +277,18 @@ public static class SkillWindow
         return -1;
     }
 
+    // 光标：悬停在能拿起的技能行上 = 张开手（原图 Cursor/11），手上拿着 = 握拳（Cursor/12）。
+    // 和键位窗同一套：源端 DragStart 之后图标跟着光标，直到下一次点击落下。
+    static void UpdateCursor(Rect win, List<int> list, int hover)
+    {
+        if (carrying && dragId != 0) { NativeCursor.Request(NativeCursor.StateHold); return; }
+        if (Pointer.Down || Pointer.RightDown) return;
+        if (hover < 0 || hover >= list.Count) return;
+        var d = SkillBook.Get(list[hover]);
+        if (d == null || SkillProgress.LevelOf(d.id) <= 0) return;
+        NativeCursor.Request(NativeCursor.StateGrab);
+    }
+
     static void HandleScroll(Rect win, List<int> list)
     {
         if (Event.current.type != EventType.Repaint) return;
@@ -333,12 +355,12 @@ public static class SkillWindow
                 SkillProgress.Raise(d);
                 return;
             }
-            // 整行都能拾起（原版是拖图标，但手机上 32px 图标太难点中）
+            // 整行都能拿起（原版是拖图标，但手机上 32px 图标太难点中）。
+            // 按下即 DragStart，不等位移阈值、也不等松手——源端没有松开分支。
             if (SkillProgress.LevelOf(d.id) > 0)
             {
                 dragId = d.id;
-                dragStarted = false;
-                lastPress = Pointer.Pos;
+                carrying = true;
             }
             return;
         }
@@ -673,7 +695,8 @@ public static class SkillWindow
     // —— 悬停说明 ——
     static void DrawTooltip(Rect win, List<int> list, int hover)
     {
-        if (hover < 0 || hover >= list.Count || dragStarted) return;
+        // 手上有技能时不弹说明：图标正跟着光标走，说明框会挡住落点
+        if (hover < 0 || hover >= list.Count || carrying) return;
         if (tipName == "tip0" && Time.unscaledTime < tipUntil) return;
 
         int i = hover - scroll;
@@ -827,58 +850,78 @@ public static class SkillWindow
         return id;
     }
 
-    // —— 拖拽到快捷格 ——
+    // —— 把技能放到快捷格 / 宏 / 键位 ——
+    // 原端（BeiDou.exe 0x8ABA6B 技能窗、0x8A98FE 组合栏）在 WM_LBUTTONDOWN(0x201) 里就发
+    // "DragStart"（字符串池 1847），两个窗口都**没有 WM_LBUTTONUP(0x202) 分支**；
+    // 双击走 0x203。也就是说源端是「点一下拿起、再点一下放下」，不是按住拖。
     static int dragId;
-    static bool dragStarted;
-    static Vector2 lastPress;
+    static bool carrying;          // 手上有技能（源端 DragStart 之后的状态）
 
-    // 给虚拟按键层用：拖动中有没有技能、拖的是哪个
-    public static bool Dragging => dragId != 0 && dragStarted;
+    // 给虚拟按键层用：手上有没有技能、是哪个
+    public static bool Dragging => dragId != 0 && carrying;
     public static int DragSkillId => dragId;
 
     static void CancelDrag()
     {
         dragId = 0;
-        dragStarted = false;
+        carrying = false;
+    }
+
+    // 手上有技能时右键 / 关窗都要能收回去
+    public static void CancelSkillDrag() => CancelDrag();
+
+    // 供自检用：手上有技能时，下一次按下 = 放下（落不到任何目标就当作取消）
+    public static bool HandleDrop()
+    {
+        if (!Dragging || !Pointer.Pressed) return false;
+        bool placed = DropOnSlot(dragId);
+        CancelDrag();
+        return placed;
+    }
+
+    // 自检用：不经过 IMGUI 直接把某个技能拿到手上
+    public static void PickForTest(int id) { dragId = id; carrying = id != 0; }
+
+    // 自检用：把手上的技能放到指定屏幕坐标（原端「再点一下放下」）
+    public static bool DropAt(Vector2 point)
+    {
+        if (!Dragging) return false;
+        var saved = Pointer.Pos;
+        Pointer.Pos = point;
+        bool placed = DropOnSlot(dragId);
+        Pointer.Pos = saved;
+        CancelDrag();
+        return placed;
     }
 
     static void DrawDragGhost()
     {
-        if (dragId == 0) { dragStarted = false; return; }
-        if (!dragStarted && Pointer.Down)
-        {
-            if ((Pointer.Pos - lastPress).sqrMagnitude > 16f) dragStarted = true;
-        }
-        if (dragStarted && Pointer.Down)
-        {
-            var d = SkillBook.Get(dragId);
-            var icon = SkillIcon(d);
-            if (icon != null)
-                GUI.DrawTexture(new Rect(Pointer.Pos.x - 16f * S, Pointer.Pos.y - 16f * S, 32f * S, 32f * S),
-                    icon, ScaleMode.ScaleToFit);
-        }
-        if (!Pointer.Down)
-        {
-            if (dragStarted) DropOnSlot();
-            CancelDrag();
-        }
+        if (!Dragging) return;
+        var d = SkillBook.Get(dragId);
+        var icon = SkillIcon(d);
+        if (icon != null)
+            GUI.DrawTexture(new Rect(Pointer.Pos.x - 16f * S, Pointer.Pos.y - 16f * S, 32f * S, 32f * S),
+                icon, ScaleMode.ScaleToFit);
     }
 
-    static void DropOnSlot()
+    static bool DropOnSlot(int id)
     {
-        if (DropOnMacro(dragId)) return;
-        // 拖到屏上虚拟按键：把这个按键直接变成该技能键（原版"技能拖进快捷格"的屏上等价物）。
+        if (DropOnMacro(id)) return true;
+        // 放到屏上虚拟按键：把这个按键直接变成该技能键（原版"技能拖进快捷格"的屏上等价物）。
         // 键盘设定窗口盖住按键时，落在键帽上的优先算键位绑定——视觉在上面的那个先收到。
-        bool overKeycap = KeyConfigWindow.Visible && KeyConfigWindow.HitKey(Pointer.Pos) != KeyCode.None;
-        if (!overKeycap && VirtualControls.TryBindSkill(Pointer.Pos, dragId)) return;
-        if (KeyConfigWindow.DropSkill(Pointer.Pos, dragId)) return;
+        // 但键位窗自己也拿着功能时让位给它，一次按下只做一件事。
+        bool overKeycap = KeyConfigWindow.Visible && !KeyConfigWindow.Carrying
+                          && KeyConfigWindow.HitKey(Pointer.Pos) != KeyCode.None;
+        if (!overKeycap && VirtualControls.TryBindSkill(Pointer.Pos, id)) return true;
+        if (overKeycap && KeyConfigWindow.DropSkill(Pointer.Pos, id)) return true;
         for (int i = 0; i < QuickSlots.Count; i++)
         {
             if (!BottomBar.SlotRect(i).Contains(Pointer.Pos)) continue;
-            if (!QuickBarKeys.BindSkill(i, dragId)) return;
+            if (!QuickBarKeys.BindSkill(i, id)) return true;
             BottomBar.QuickCollapsed = false;
             BottomBar.Toast("已绑定到快捷格 " + (i + 1) + "（键 " + KeyMap.Label(QuickBarKeys.Of(i)) + "）");
-            return;
+            return true;
         }
+        return false;
     }
 }

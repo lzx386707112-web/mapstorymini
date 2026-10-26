@@ -529,7 +529,11 @@ public static class VirtualControls
             case GameAction.Help: return "帮助";
             default:
                 int slot = QuickSlots.Index(action);
-                return slot >= 0 ? "技能格 " + (slot + 1) : action.ToString();
+                if (slot >= 0) return "技能格 " + (slot + 1);
+                // 键位表里的中文名（含表情 100~106）。屏上按键的按下回执要显示
+                // "1 → 微笑" 还是 "1 → 对所有人"，全靠这里；没有名字就只能打印枚举名。
+                var entry = NativeKeyActions.Of(action);
+                return entry != null ? entry.name : action.ToString();
         }
     }
 

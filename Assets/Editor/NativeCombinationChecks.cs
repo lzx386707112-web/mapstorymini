@@ -83,7 +83,7 @@ public static class NativeCombinationChecks
         Require(before != null, "表情检查拿不到当前角色帧");
         Require(animation.Express(2), "微笑表情没有进入 SpriteAnim.Express");
         Require(animation.Renderer.sprite != before, "微笑表情没有替换当前帧（原 WZ face/smile 未合成）");
-        Require(!animation.Express(3), "表情没有按原端 1.5 秒节流");
+        Require(!animation.Express(3), "表情没有按原端 2 秒节流（0xA244B5: < 0x7D0 丢弃）");
     }
 
     // ↓ + 跳跃 = 穿过脚下平台（源端 0x94C4F8 / 0x9B1C51）。

@@ -16,7 +16,11 @@ PE 导入表包含 `dinput8.dll!DirectInput8Create`、`user32.dll!ShowCursor`，
 - 系统触控板开启“双指辅助点按”后，双指点击也可由系统转换为右键。
 - 单击：原有按钮。双击：大厅已拥有武器装备；统一入口提供 `DoubleClicked`。
 - 右键：快捷栏清除技能。
-- 按住并移动：窗口标题、技能和键位的现有拖放。实体鼠标无需等待；屏幕虚拟鼠标需先长按 350ms 再拖。
+- 按住并移动：只剩窗口标题拖动。实体鼠标无需等待；屏幕虚拟鼠标需先长按 350ms 再拖。
+- 搬东西（键盘设定窗的功能按钮、技能窗的技能）**都不走拖动**：悬停变张开手（Cursor/11）、按下即拿起（Cursor/12）、
+  在目标上再按下放下。源端依据见 skill 的 [UI 拖动语义](../MapleDash/.agents/skills/beidou-client-reverse/references/ui-drag-and-drop.md)：
+  技能窗 `0x8ABA6B` 与组合栏 `0x8A98FE` 在 `WM_LBUTTONDOWN(0x201)` 里就发 `DragStart`（字符串池 1847），
+  两个函数都没有 `WM_LBUTTONUP(0x202)` 分支；双击走 `0x203`。
 - 快捷栏仅在没有拖动的左键释放时激活，拖入技能不再额外施放一次。
 - 输入在 Update 开头采样一次，避免原先 LateUpdate 才更新指针导致 UI 落后一帧。失焦不产生点击释放。
 

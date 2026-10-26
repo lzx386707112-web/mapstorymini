@@ -23,3 +23,23 @@ Direct3D8 的 `SetTextureStageState` vtable offset 为 `0xFC`（由本机 mingw 
 没有修改IMG像素、原点、人物尺寸或全局UI贴图采样。当前适配只覆盖项目中无旋转的正交人物图层，不等于整个原端Gr2D所有变换分支。
 `NativeCharacterSamplingChecks.Run` 已验证同一缓存帧的1:1→1.40625倍→1:1采样切换，保存并检查了两张Unity渲染图：
 `Library/UiInputAnalysis/sampling-192.png`、`sampling-270.png`。人物有正常显示，没有发现新增透明黑框；Android实际画面仍待实测。
+
+## 悬空 UOL：一条坏链接不能打断整帧合成（2026-10-26 核实并修复）
+
+- 现象：商城里点/双击商品「电焊工面具」试穿后，预览区整块空白（修复前截图）；在未加保护的调用路径上，这条异常会打断整个 OnGUI，表现为界面数据全没。
+- 数据事实（本版 `clien/Data`，wzpy 逐节点核对）：`Character/Cap/01002470.img` 每个动作帧下都有两个 UOL —
+  `default → ../../default/default`（存在）和 `defalutAc → ../../default/defaultAc`（**目标节点不存在，节点名本身也是拼错的**）。
+  该文件共 89 条悬空 UOL。`Character/Cap` 3353 个 IMG 里 44 个有此问题，另有 4 个是 UOL 成环
+  （`01000098`、`01005080`、`01005299`、`01005301`，wzpy 直接 RecursionError）；`Character` 全量扫描仍在累计（已见 190+ 件）。
+- 原端语义：UOL 解析失败按「没有这个节点」返回 null，调用方跳过（`CData::GetItem` 返回 null 的同一口径），不会中断绘制。
+- 端口缺陷：`ImgNode.Resolve()` 对悬空 UOL 抛 `InvalidDataException("Missing UOL target: …")`；
+  `WzCharacter.Placements` 逐帧对每个 canvas 子节点调 `Resolve()`，于是一个拼错的 UOL 让整个角色合成失败。
+- 修复：新增不抛异常的 `ImgNode.TryResolve()`（悬空/成环返回 null），`Resolve()` 改为在其之上抛错；
+  `Get()` 路径中间遇到 UOL 也走 `TryResolve`；`WzCharacter.Placements` 的路径节点与子节点、`WzAssets.Frames` 改用 `TryResolve`。
+  `WzAssets.Canvas` 保留抛错语义（显式请求一个不存在的画布仍应报错）。
+- 复现/验证：`Assets/Editor/CashItemDiagnostics.cs`（合成 + 服务端取出口径，含 7 个悬空/成环帽子批量）与
+  `Assets/Editor/CashPreviewProbe.cs`（真实 OnGUI 里点商品格截图）。
+  Unity batch：修复前 `Missing UOL target: defalutAc` @ `WzCharacter.cs:414`，修复后 `sprite=48x69`、7 个帽子全部合成成功，
+  预览截图 `docs/hud-review/cash-preview-1002470.png` 正常戴帽；服务端 Buy→Withdraw→Read 不受影响。
+  两个诊断脚本是临时工具，验证完已删除，需要时按本节重建。
+- 边界：只处理「UOL 解析不到」这一类；IMG 解析本身失败、Canvas 像素损坏仍按原样抛错。

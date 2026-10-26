@@ -24,7 +24,9 @@ namespace MapleDash.Wz
             {
                 if (part == "" || part == ".") continue;
                 if (part == "..") { n = n == null ? null : n.Parent; continue; }
-                n = n == null ? null : n.Resolve().Children.Find(c => c.Name == part);
+                // 路径中间遇到 UOL 时用不抛异常的解析：原端数据里有悬空 UOL（见 TryResolve），
+                // 这里按「没有这个节点」返回 null，交给调用方决定是否必需。
+                n = n == null ? null : n.TryResolve()?.Children.Find(c => c.Name == part);
             }
             return n;
         }
@@ -34,16 +36,26 @@ namespace MapleDash.Wz
             return v == null ? fallback : Convert.ToInt32(v);
         }
         public string Text(string path, string fallback = "") => Get(path)?.Value as string ?? fallback;
-        public ImgNode Resolve()
+        // 原端 CData::GetItem 对解析不到的 UOL 返回 null，调用方按「没有这个节点」跳过；
+        // 本版 WZ 里确实存在悬空 UOL（如 Character/Cap/01002470.img 的 defalutAc →
+        // ../../default/defaultAc，目标节点不存在，名字本身也是拼错的），
+        // 一条坏链接不能把整帧合成/整个 OnGUI 打断，所以这里提供不抛异常的解析。
+        public ImgNode TryResolve()
         {
             var n = this;
             for (int i = 0; i < 64; i++)
             {
-                if (n == null) throw new InvalidDataException("Missing UOL target: " + Name);
+                if (n == null) return null;
                 if (n.Kind != "UOL") return n;
                 n = n.Parent?.Get((string)n.Value);
             }
-            throw new InvalidDataException("IMG UOL cycle: " + Name);
+            return null; // UOL 自引用/成环
+        }
+        public ImgNode Resolve()
+        {
+            var n = TryResolve();
+            if (n == null) throw new InvalidDataException("Missing UOL target: " + Name);
+            return n;
         }
         public byte[] Rgba()
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 
 public static class NativeCashWindow {
@@ -31,7 +32,11 @@ public static class NativeCashWindow {
     public static void Reset() { if (ShopWindow.Visible && Time.timeScale == 0) Time.timeScale = previousTimeScale; ShopWindow.Visible = false; state = null; giftVisible = purchaseVisible = birthdayVisible = false; }
     static CashResponse Request(CashOperation operation, long itemId = 0, int inventory = 0, int[] wishes = null) {
         if (!GameSession.InGame) { BottomBar.Toast("请先选择角色"); return null; }
-        if (GameSession.Server.Cash.Catalog == null) GameSession.Server.Cash.Catalog = new NativeCashCatalog();
+        // 目录解析在 OnGUI 里做，解析失败不能让整个 HUD 每帧抛异常。
+        if (GameSession.Server.Cash.Catalog == null) {
+            try { GameSession.Server.Cash.Catalog = new NativeCashCatalog(); }
+            catch (Exception e) { BottomBar.Toast("商城目录解析失败：" + e.Message); return null; }
+        }
         GameSession.SaveToDb(); int.TryParse(birthday, out int date);
         state = GameSession.Net.Cash(new CashRequest { characterId = GameSession.CharacterId, operation = operation,
             sn = selected, itemId = itemId, currency = currencies[currency], target = target, message = message + (messageSecond.Length > 0 ? "\r\n" + messageSecond : ""), birthday = date, inventoryType = inventory, wishes = wishes });
@@ -70,6 +75,13 @@ public static class NativeCashWindow {
     // BeiDou.exe 004B965F: ten cells, two columns, 206px / 81px strides.
     // Button coordinates: 004BA74B, 004BA7F1, 004BA8EB.
     public static Rect CatalogCell(int index) => new Rect(index % 2 * 206, index / 2 * 81 + 2, 200, 80);
+    // 004B8A5A → 0x988690 逐位倒序每 3 位插入 0x2C 逗号，之后拼货币串（571=" NX"，5639="meso"）；
+    // 004B8B1A 起商品数量 >1 时再追加 "(%d)"（572）。
+    static string PriceText(CashCommodity entry) {
+        string text = entry.price.ToString("N0", CultureInfo.InvariantCulture) +
+            (entry.itemId >= 80000000 && entry.itemId < 90000000 ? " 金币" : " 点券");
+        return entry.count > 1 ? text + "(" + entry.count + ")" : text;
+    }
     static void DrawCatalog(Vector2 origin, List<CashCommodity> entries) {
         const string root = "UI/CashShop.img/CSList/";
         // Pointer has already been transformed into the native 800x600 scene.
@@ -81,13 +93,14 @@ public static class NativeCashWindow {
             var cell = CatalogCell(i); cell.position += origin;
             var background = Art.Tex("wz://" + root + "Base");
             if (background != null) GUI.DrawTexture(cell, background);
-            // Name at +82,+6; item drawing baseline at +7,+73 (004B8066).
+            // Name at +82,+6 (width 112, 004B81CC..004B81E1); icon bottom-left baseline at +7,+73 (004B8066).
             GUI.Label(new Rect(cell.x + 82, cell.y + 6, 112, 23), WzNames.Item(entry.itemId), label);
             var icon = NativeItemSource.Icon(entry.itemId);
-            if (icon != null) GUI.DrawTexture(new Rect(cell.x + 7, cell.y + 73 - icon.height,
-                icon.width, icon.height), icon);
+            // 原端把 32px 道具图标按 2 倍点阵贴进 68x70 图标白框，左下角对齐 (7,73)。
+            if (icon != null) GUI.DrawTexture(new Rect(cell.x + 7, cell.y + 73 - icon.height * 2,
+                icon.width * 2, icon.height * 2), icon);
             if (Hit(new Rect(cell.x,cell.y,78,80))) previewItem = entry.itemId;
-            GUI.Label(new Rect(cell.x + 82, cell.y + 31, 112, 18), entry.price + " 点", label);
+            GUI.Label(new Rect(cell.x + 82, cell.y + 31, 112, 18), PriceText(entry), label);
             if (NativeUi.Button(new Rect(cell.x + 80, cell.y + 53, 37, 19), root + "BtBuy", pointer)) {
                 selected = entry.sn;
                 purchaseMask = (state.credit >= entry.price ? 1 : 0) | (state.points >= entry.price ? 2 : 0) | (state.prepaid >= entry.price ? 4 : 0);
@@ -281,25 +294,29 @@ public static class NativeCashWindow {
         Image("Base/Preview/" + previewBackground,24,40);
         if (Hit(new Rect(24,40,212,165)) || Hit(new Rect(95,5,30,25))) previewEnabled = !previewEnabled;
         if (state.character != null && previewEnabled) {
-            var appearance = new List<InventoryEntry>(state.character.inventory);
-            if (previewUndressed) appearance.Clear();
-            if (previewItem / 1000000 == 1) {
-                int slot = EquipSlot.SlotOf(previewItem);
-                appearance.RemoveAll(x => x.position == slot && x.inventoryType == InventoryDao.Equipped);
-                appearance.Add(new InventoryEntry { itemId=previewItem,position=slot,inventoryType=InventoryDao.Equipped });
+            // 合成走的是 OnGUI，单个坏道具不能把整个商城 UI 拖崩。
+            try {
+                var appearance = new List<InventoryEntry>(state.character.inventory);
+                if (previewUndressed) appearance.Clear();
+                if (previewItem / 1000000 == 1) {
+                    int slot = EquipSlot.SlotOf(previewItem);
+                    appearance.RemoveAll(x => x.position == slot && x.inventoryType == InventoryDao.Equipped);
+                    appearance.Add(new InventoryEntry { itemId=previewItem,position=slot,inventoryType=InventoryDao.Equipped });
+                }
+                var ids = WzCharacter.CharacterIds(state.character.record,appearance);
+                int frame = WzCharacter.AppearanceFrame(ids,Time.unscaledTime);
+                string key = string.Join("_",ids) + "/" + frame;
+                if (!previewFrames.TryGetValue(key,out var sprite)) {
+                    sprite = WzCharacter.Appearance(string.Join("_",ids),ids,frame); previewFrames[key] = sprite;
+                }
+                if (sprite != null) {
+                    GUI.BeginGroup(new Rect(24,40,212,165));
+                    GUI.DrawTexture(new Rect(130 - sprite.pivot.x,125 - (sprite.rect.height - sprite.pivot.y),
+                        sprite.rect.width,sprite.rect.height),sprite.texture);
+                    GUI.EndGroup();
+                }
             }
-            var ids = WzCharacter.CharacterIds(state.character.record,appearance);
-            int frame = WzCharacter.AppearanceFrame(ids,Time.unscaledTime);
-            string key = string.Join("_",ids) + "/" + frame;
-            if (!previewFrames.TryGetValue(key,out var sprite)) {
-                sprite = WzCharacter.Appearance(string.Join("_",ids),ids,frame); previewFrames[key] = sprite;
-            }
-            if (sprite != null) {
-                GUI.BeginGroup(new Rect(24,40,212,165));
-                GUI.DrawTexture(new Rect(130 - sprite.pivot.x,125 - (sprite.rect.height - sprite.pivot.y),
-                    sprite.rect.width,sprite.rect.height),sprite.texture);
-                GUI.EndGroup();
-            }
+            catch (Exception) { }
         }
         if (state.character != null) {
             GUI.Label(new Rect(50,268,175,16),state.character.record.name,TextStyle(true));
@@ -325,7 +342,7 @@ public static class NativeCashWindow {
         var icon = NativeItemSource.Icon(entry.itemId);
         if (icon != null) GUI.DrawTexture(new Rect(origin.x + 21,origin.y + 57 - icon.height,icon.width,icon.height),icon);
         GUI.Label(new Rect(origin.x + 63,origin.y + 27,202,16),WzNames.Item(entry.itemId),TextStyle());
-        GUI.Label(new Rect(origin.x + 63,origin.y + 43,202,16),entry.price + " NX",TextStyle());
+        GUI.Label(new Rect(origin.x + 63,origin.y + 43,202,16),PriceText(entry),TextStyle());
         var center = TextStyle(); center.alignment = TextAnchor.UpperCenter;
         GUI.Label(new Rect(origin.x,origin.y + 73,286,16),"确定要购买这个道具吗？",center);
         // 00469FDF: points/prepaid/credit controls at x25, height-95/-80/-65.

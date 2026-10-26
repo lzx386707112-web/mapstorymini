@@ -18,16 +18,41 @@ public class SpriteAnim : MonoBehaviour
     string expression;
     float expressionStarted, lastExpression = -10f;
 
+    // 表情名表：BeiDou.exe 0xBEC284 的 23 项静态数组（初始化 0x45E8E8..0x45EDFA，
+    // 每项由字符串池 GetString 填充）。下标就是表情编号，和 Face.img 的节点同名。
+    //   1 hit / 2 smile / 3 troubled / 4 cry / 5 angry / 6 bewildered / 7 stunned
+    //   8 vomit / 9 oops / 10 cheers / 11 chu / 12 wink / 13 pain / 14 glitter
+    //   15 blaze / 16 shine / 17 love / 18 despair / 19 hum / 20 bowing / 21 hot / 22 dam
+    // 注意 14..18 的顺序和 Face.img 节点罗列顺序不同，必须以这张表为准。
+    // 0 号是 blink，客户端不会把它当表情用（SetEmotion 只从 1 起生效）。
+    public static readonly string[] EmoteNames =
+    {
+        "blink", "hit", "smile", "troubled", "cry", "angry", "bewildered", "stunned",
+        "vomit", "oops", "cheers", "chu", "wink", "pain", "glitter", "blaze",
+        "shine", "love", "despair", "hum", "bowing", "hot", "dam",
+    };
+    public const int MaxEmote = 22;
+    // 0xA244B5：GetTickCount() - lastEmotion < 0x7D0 直接丢弃 = 客户端 2 秒节流。
+    public const float EmoteCooldown = 2f;
+    // 表情到点回默认脸（服务端 FaceExpressionHandler 注释：5 秒超时）。
+    public const float EmoteDuration = 5f;
+
     public bool Express(int emote)
     {
-        // FaceExpressionHandler: basic faces 1..7, five-second timeout; Character throttles at 1.5s.
-        string[] names = { "hit", "smile", "troubled", "cry", "angry", "bewildered", "stunned" };
-        if (kind != "chars" || emote < 1 || emote > names.Length ||
-            Time.unscaledTime - lastExpression < 1.5f) return false;
-        expression = names[emote - 1];
+        if (kind != "chars" || emote < 1 || emote > MaxEmote) return false;
+        if (Time.unscaledTime - lastExpression < EmoteCooldown) return false;
+        expression = EmoteNames[emote];
         expressionStarted = lastExpression = Time.unscaledTime;
         Apply(idx);
         return true;
+    }
+
+    // 0 号表情 = 回默认脸（SetEmotion(0) 的有效路径）。
+    public void ClearExpression()
+    {
+        if (expression == null) return;
+        expression = null;
+        Apply(idx);
     }
 
     public string Current => curName;
@@ -132,7 +157,7 @@ public class SpriteAnim : MonoBehaviour
         if (cur == null || sr == null) return;
         if (expression != null)
         {
-            if (Time.unscaledTime - expressionStarted >= 5f) expression = null;
+            if (Time.unscaledTime - expressionStarted >= EmoteDuration) expression = null;
             Apply(idx);
         }
         float dt = Time.deltaTime * Mathf.Max(0f, speed);

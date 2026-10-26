@@ -191,7 +191,9 @@ public static class WzAssets
     {
         var result = new List<ImgNode>();
         if (action == null) return result;
-        action = action.Resolve();
+        // 动作节点本身也可能是悬空 UOL（如 01004648 的 defaultPront）；解析不到就当没有帧。
+        action = action.TryResolve();
+        if (action == null) return result;
         if (action.Kind == "Canvas") { result.Add(action); return result; }
         foreach (var n in action.Children) if (int.TryParse(n.Name, out _)) result.Add(n);
         result.Sort((a, b) => int.Parse(a.Name).CompareTo(int.Parse(b.Name)));

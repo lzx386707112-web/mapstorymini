@@ -97,6 +97,11 @@ public static class EquipCatalog
             default:
                 int t = itemId / 10000;
                 if (t >= 112 && t <= 119) return "Accessory";
+                // 客户端 Character/PetEquip 实际只有 180~183（180:296, 181:10, 182:1, 183:1）。
+                if (t >= 180 && t <= 183) return "PetEquip";
+                // 客户端 Character/Weapon 实际含 130~151、160、169、170（170 有 1040 个文件，
+                // 商城里 259 件点装武器都是 170xxxx），169/170 必须映射过来，否则图标取不到。
+                if (t == 169 || t == 170) return "Weapon";
                 return t >= 121 && t <= 160 ? "Weapon" : null;
         }
     }

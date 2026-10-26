@@ -308,8 +308,12 @@
 - 施放时按角色**已学等级**取 WZ 那一级的 `mpCon / damage / attackCount / mobCount / cooltime / lt / rb`，
   走的是和原来四格技能完全相同的判定与结算路径（`SkillSystem.TryCastSkill`）；没有特效部件的技能只是不播特效。
 - 技能点：服务端 `game_config.level_up_sp_gain = 3`，本地按 `(等级-1)*3` 累计（新手不受影响的规则没细分，已在下面登记）。
-- 绑定：已学技能从列表里拖到快捷格 = 绑到那一格；直接拖到虚拟键盘的某个键帽上 = 技能进第一个空快捷格，
-  顺手把那把键改绑到这一格（`VirtualPad.HitKey` 用和绘制完全相同的键帽矩形做命中判定）。
+- 绑定：已学技能从列表里**点一下拿起**（图标跟着光标，光标变握拳），再在快捷格上**点一下**= 绑到那一格；
+  落在虚拟键盘的某个键帽上 = 技能进第一个空快捷格，顺手把那把键改绑到这一格；
+  点到屏幕虚拟按键上 = 那个按键直接变成技能键。点空白 / 右键 = 取消；双击技能 = 直接施放。
+- 这条不是"按住拖"：源端 `BeiDou.exe 0x8ABA6B`（技能窗）与 `0x8A98FE`（组合栏）在
+  `WM_LBUTTONDOWN(0x201)` 里就发 `DragStart`（字符串池 1847），两个函数都没有 `WM_LBUTTONUP(0x202)` 分支
+  （依据与复现命令见 `.agents/skills/beidou-client-reverse/references/ui-drag-and-drop.md`）。
 - **踩坑**：`GameLoop.Start()` 曾硬编码 `Profile.SetClass("beginner")`，每进一次游戏就把玩家职业重置成新手
   并写回存档（技能窗/技能树随之变成新手页）。已删除，职业只由存档与大厅选择决定。
 
@@ -475,8 +479,41 @@
 | 正则字面量 `/.../g` | 2 | 词法器不支持 `/` 的两种含义（除号/正则）歧义判定 |
 | `for...of` / 解构参数 `([a,b]) => …` / 箭头函数 | 9 | ES6 语法，当时按 ES5 目标实现 |
 
-这些脚本走到时给的是 `BottomBar.Toast("对话脚本出错（详见日志）")` + 一条 `[Script]` error 日志，
-不会静默假装成功。
+这些脚本走到时给的是 `BottomBar.Toast(...)` + 一条 `[Script]` error 日志，不会静默假装成功。
+提示语已经改成能直接定位问题的形式（原来是笼统的「对话脚本出错（详见日志）」）：
+
+- 缺服务端接口 → `该功能尚未接入（缺少 cm.xxx / player.xxx）`
+- 缺整个 Java 类 → `该功能需要未接入的服务端类 org.gms.xxx.Yyy`
+
+### 脚本点击链路（`QuestNpcChecks.RunMenu`）
+
+拍卖行中心主菜单（`npc/9900001.js`）31 个选项逐个点开实测：**23 项正常 / 8 项等整套系统 / 0 项异常**。
+这条检查的价值是把「点了没反应」变成可定位的清单，而 `cm/player` 接口漏绑是此前最主要的原因
+（`player.saveLocationOnWarp` 没绑 → 自由市场、万能传送整片报错）。
+
+| 缺口 | 缺什么 | 说明 |
+| --- | --- | --- |
+| 随身仓库 | `player.getStorage` | 仓库系统未建（`Schema.sql` 无 storages 表） |
+| 狩猎 | `org.gms.server.timer.HuntTaskAutoPublisher` | 需定时狩猎任务调度器 |
+| 战力系统 | `org.gms.util.DatabaseConnection` | 脚本直接跑 SQL 查装备/排行榜 |
+| 究极进化 | `player.getMaxClassLevel` / `rebirth` | 需转生系统 |
+| 怪物卡戒 | `player.getMonsterBook` | `monsterbook` 表在，但界面/逻辑未接 |
+| Boss成长 | `org.gms.server.BossDamageGrowth` | 需 Boss 伤害成长系统 |
+| 抽奖保底 | `cm.getTotalGachaponCount` / `doGuaranteedGachapon` | 需抽奖保底系统 |
+| 拍卖行 | `org.gms.net.server.channel.handlers.EnterMTSHandler` | MTS 玩家交易系统 |
+
+为了让菜单真正可点，本轮补了这批**源端确实存在**的接口（不是自造）：
+`player.saveLocation(type)` / `saveLocationOnWarp()`、`player.getTotalStr/Dex/Int/Luk/Watk/Magic`
+（战力公式 `PacketCreator.calculateNameplatePower` 的六个入参，缺了会让脚本 try/catch 吃掉异常、
+战力只剩血蓝那一段，咖位永远最低档）、`player.getItemQuantity/getItemName/checkoutBroadcast`、
+`cm.isNotCanHold/itemExists/hasItemData/removeAllByInventory/getOnlineTime`，以及三个类适配：
+`InventoryType`（枚举值按道具 id 首位）、`ExpTable.getExpNeededForLevel`（查客户端同一张经验表）、
+`LoggerFactory`（落 Unity 日志）、`CashShop`（NX_CREDIT=1 / MAPLE_POINT=2 / NX_PREPAID=4）、
+`client.getChannelServer().getPlayerStorage().getAllCharacters()`（单机只有自己）。
+
+`cm.getOnlineTime()` 走新增的 `OnlineTime.cs`：对应源端 `OnlineTimeTask`（每 5 秒 +5 秒、
+写账号扩展值「每日在线时间」、跨日归零），单机改成按真实经过时间补算、每 60 秒落一次库，
+跨日归零交给 `extend_value` 的 `period=1` 自动清理。
 
 ### 验证入口
 
@@ -490,6 +527,8 @@
 - `QuestNpcChecks.Run`（编辑器，可不进 Play）：
   `Unity -batchmode -projectPath MapleDash -executeMethod QuestNpcChecks.Run -logFile /tmp/quest_npc.log`
   校验脚本包条数/可解析性、Quest.wz 装载、任务 1021 的脚本与条件、对白标记转换、JobId 映射
+- `QuestNpcChecks.RunMenu`：逐个点开 `npc/9900001` 主菜单的每条 `#L`，验证「点了有反应、且不抛脚本错误」。
+  缺接口/缺 Java 类算已知缺口（打印 `GAP` 清单），其它异常一律算回归（`exit 1`）。
 
 ### 已知边界
 

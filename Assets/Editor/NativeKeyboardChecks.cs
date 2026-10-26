@@ -58,6 +58,8 @@ public static class NativeKeyboardChecks
 
             CheckMouseControlRelease();
             CheckEscapeLayers();
+            CheckKeyConfigCarry();
+            CheckSkillWindowCarry();
 
             // ↓+跳跃的门控要读得到原图属性：10000 号图有一整片 forbidFallDown 的段
             bool forbidParsed = false;
@@ -128,6 +130,102 @@ public static class NativeKeyboardChecks
             StatWindow.Visible = stat; InvenWindow.Visible = inven; EquipWindow.Visible = equip;
             GameMenuWindow.Visible = menu; SkillWindow.Visible = skill; QuestWindow.Visible = quest;
             GameWindows.TrackPanels();
+        }
+    }
+
+    // 键盘设定窗搬功能只有一种操作：点一下拿起、再点一下放下。
+    // 这条路径不走 Pointer.Dragging，触屏也就不会被「按住 350ms」卡住。
+    static void CheckKeyConfigCarry()
+    {
+        bool wasVisible = KeyConfigWindow.Visible;
+        var saved = KeyMap.ExportCharacter();
+        try
+        {
+            // 前面几项检查把键位表清空过，这里先回到源端默认表再验搬运
+            var defaults = new List<KeymapEntry>();
+            for (int i = 0; i < KeymapDao.DefaultKeys.Length; i++)
+                defaults.Add(new KeymapEntry { key = KeymapDao.DefaultKeys[i], type = KeymapDao.DefaultTypes[i], action = KeymapDao.DefaultActions[i] });
+            KeyMap.LoadCharacter(defaults);
+
+            if (wasVisible) KeyConfigWindow.Toggle();
+            KeyConfigWindow.Toggle();
+            Check(KeyConfigWindow.Visible, "键盘设定窗可打开");
+
+            var alt = KeyMap.Of(GameAction.Jump);
+            Check(alt == KeyCode.LeftAlt && KeyConfigWindow.DraftKey(GameAction.Jump) == alt, "跳跃默认在 Alt");
+
+            Check(KeyConfigWindow.PickAction(GameAction.Jump) && KeyConfigWindow.Carrying, "点一下拿起功能（不需要按住或长按）");
+            Check(KeyConfigWindow.DraftKey(GameAction.Jump) == alt, "拿起时键位还没变");
+
+            Check(KeyConfigWindow.DropOnKey(KeyCode.Alpha1), "再点一下目标键位就落下");
+            Check(!KeyConfigWindow.Carrying, "落下后手上清空");
+            Check(KeyConfigWindow.DraftKey(GameAction.Jump) == KeyCode.Alpha1, "跳跃落到 1 号键");
+            Check(KeyConfigWindow.DraftKey(GameAction.ChatAll) == KeyCode.None, "原占 1 号键的功能被挤回托盘");
+            Check(KeyConfigWindow.DraftUsers(KeyCode.Alpha1) == 1, "一个键只留一个功能");
+            Check(KeyConfigWindow.DraftKey(GameAction.Attack) == KeyCode.LeftControl, "其他键位不受影响");
+
+            var jump = KeyConfigWindow.DraftKey(GameAction.Jump);
+            Check(jump == KeyCode.Alpha1 && KeyConfigWindow.PickAction(GameAction.Jump), "键位上的功能也能再拿起");
+            Check(KeyConfigWindow.ReturnToTray() && KeyConfigWindow.DraftKey(GameAction.Jump) == KeyCode.None,
+                "点托盘区把功能收回");
+
+            KeyConfigWindow.PickAction(GameAction.Jump);
+            Check(KeyConfigWindow.Carrying, "再拿起一次");
+            KeyConfigWindow.CancelCarry();
+            Check(!KeyConfigWindow.Carrying && KeyConfigWindow.DraftKey(GameAction.Jump) == KeyCode.None,
+                "Esc 只取消搬运，不改键位");
+
+            // 抓手光标用的是原图 Basic.img/Cursor/11（张开手）与 /12（握拳）
+            Check(WzAssets.Node("UI/Basic.img/Cursor/11") != null, "原图有「可以抓」光标 Cursor/11");
+            Check(WzAssets.Node("UI/Basic.img/Cursor/12") != null, "原图有「抓着」光标 Cursor/12");
+        }
+        finally
+        {
+            if (KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
+            KeyMap.LoadCharacter(saved);
+        }
+    }
+
+    // 技能窗搬技能同样是「点一下拿起、再点一下放下」（BeiDou.exe 0x8ABA6B / 0x8A98FE 在
+    // WM_LBUTTONDOWN 里发 DragStart，两个窗口都没有 WM_LBUTTONUP 分支）。
+    static void CheckSkillWindowCarry()
+    {
+        var savedSlots = new int[QuickSlots.Count];
+        for (int i = 0; i < savedSlots.Length; i++) savedSlots[i] = QuickSlots.Id(i);
+        var savedKeys = QuickBarKeys.Copy();
+        try
+        {
+            int id = 0;
+            foreach (var tab in SkillBook.Tabs(SkillBook.LineFor(Profile.cls)))
+            {
+                if (!tab.TryGetValue("skills", out var raw)) continue;
+                foreach (var o in (List<object>)raw) { id = int.Parse(o.ToString()); break; }
+                if (id != 0) break;
+            }
+            Check(id > 0 && SkillBook.Get(id) != null, "技能树里能取到一个技能用于回归");
+
+            SkillWindow.PickForTest(id);
+            Check(SkillWindow.Dragging && SkillWindow.DragSkillId == id, "点一下拿起技能（不等位移、不等松手）");
+
+            var slot = BottomBar.SlotRect(0);
+            Check(SkillWindow.DropAt(new Vector2(slot.center.x, slot.center.y)), "再点一下快捷格就放下");
+            Check(!SkillWindow.Dragging, "放下后手上清空");
+            bool bound = false;
+            for (int i = 0; i < QuickSlots.Count; i++) if (QuickSlots.Id(i) == id) bound = true;
+            Check(bound, "技能真的进了快捷格");
+
+            SkillWindow.PickForTest(id);
+            Check(!SkillWindow.DropAt(new Vector2(4f, 4f)), "点空白不算放下");
+            Check(!SkillWindow.Dragging, "点空白后手上清空（取消这次搬运）");
+
+            SkillWindow.CancelSkillDrag();
+            Check(!SkillWindow.Dragging, "右键/关窗能把技能收回去");
+        }
+        finally
+        {
+            SkillWindow.CancelSkillDrag();
+            for (int i = 0; i < savedSlots.Length; i++) QuickSlots.Bind(i, savedSlots[i]);
+            QuickBarKeys.Save(savedKeys);
         }
     }
 

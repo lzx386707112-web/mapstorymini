@@ -116,7 +116,9 @@ public static class WzCharacter
             case 108: return "Glove"; case 109: return "Shield"; case 110: return "Cape";
             case 106: return "Pants"; case 107: return "Shoes";
             default:
-                if (type >= 121 && type <= 160) return "Weapon";
+                // 169/170 也是 Weapon（Character/Weapon 实际含 130~151、160、169、170，
+                // 商城 259 件点装武器都是 170xxxx），与 EquipCatalog.DirOf 保持一致。
+                if (type >= 121 && type <= 160 || type == 169 || type == 170) return "Weapon";
                 throw new NotSupportedException("Character equipment category " + type);
         }
     }
@@ -293,6 +295,10 @@ public static class WzCharacter
         clips.Add(cacheKey, clip); return clip;
     }
     static Vector2Int Vector(ImgNode node) => new Vector2Int(node?.X ?? 0, node?.Y ?? 0);
+    // 源端 wzpy/character.py _z_index + _heuristic_anchor（1062 行起）：
+    // stock zmap 没有的槽位按名字推断层级，不能一刀切放中间——
+    // capBelowHairOverHead（overCapRemap 的目标）/ capBelowBody 等帽类 Below 槽
+    // 落到 zmap 正中（91）会被 body/head/hair 全部盖住，帽子就画到角色身后了。
     static int BaseZ(string slot)
     {
         var names = (List<object>)WzAssets.Index["zOrder"];
@@ -313,7 +319,34 @@ public static class WzCharacter
             }
             return Math.Max(1, names.IndexOf("body") - 1);
         }
-        return names.Count / 2;
+        // cap*Below*（如 remap 出的 capBelowHairOverHead、个别帽子的 capBelowBody）：
+        // 这类画布常是帽子的主体，放到 cap 前一格，保证画在头发/头之上。
+        string lower = slot.ToLowerInvariant();
+        if (lower.StartsWith("cap") && lower.Contains("below"))
+        {
+            int cap = names.IndexOf("cap");
+            if (cap >= 0) return Math.Max(1, cap - 1);
+        }
+        // …Below… → 目标之前；…Over… → 目标之后；其余默认画在最前。
+        foreach (string sep in new[] { "Below", "below" })
+        {
+            int split = slot.IndexOf(sep, StringComparison.Ordinal);
+            if (split < 0) continue;
+            string tail = slot.Substring(split + sep.Length);
+            if (tail == "") continue;
+            int at = names.IndexOf(char.ToLowerInvariant(tail[0]) + tail.Substring(1));
+            if (at >= 0) return Math.Max(1, at - 1);
+        }
+        foreach (string sep in new[] { "Over", "over" })
+        {
+            int split = slot.IndexOf(sep, StringComparison.Ordinal);
+            if (split < 0) continue;
+            string tail = slot.Substring(split + sep.Length);
+            if (tail == "") continue;
+            int at = names.IndexOf(char.ToLowerInvariant(tail[0]) + tail.Substring(1));
+            if (at >= 0) return Math.Min(names.Count - 1, at + 1);
+        }
+        return names.Count - 1;
     }
     static int Z(Part part, string pose)
     {
@@ -373,12 +406,14 @@ public static class WzCharacter
             var seen = new HashSet<ImgNode>(); var seenZ = new HashSet<string>();
             foreach (string path in paths)
             {
-                var node = root.Get(path)?.Resolve(); if (node == null) continue;
+                var node = root.Get(path)?.TryResolve(); if (node == null) continue;
                 int before = parts.Count;
                 foreach (var child in node.Children)
                 {
                     if (category == "Head" && child.Name != "head" && child.Name != "humanEar") continue;
-                    var canvas = child.Resolve(); if (canvas.Kind != "Canvas" || !seen.Add(canvas)) continue;
+                    // 悬空 UOL 是原端数据现状（如 01002470 的 defalutAc），按原端语义跳过这一层，
+                    // 不能让一条坏链接抛异常把整个角色合成/商城预览打断。
+                    var canvas = child.TryResolve(); if (canvas == null || canvas.Kind != "Canvas" || !seen.Add(canvas)) continue;
                     string slot = canvas.Get("z")?.Value as string;
                     if (slot != null && !seenZ.Add(slot)) continue;
                     var part = new Part { Category = category, Name = child.Name, Slot = slot, Node = canvas,

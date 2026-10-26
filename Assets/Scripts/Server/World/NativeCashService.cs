@@ -2,8 +2,12 @@ using System;
 using System.Collections.Generic;
 
 // CashShop.CashItemFactory / ModifiedCashItemDO / CashOperationHandler.
+// 字段与源端 ModifiedCashItemDO 对齐：Etc/Commodity.img 只提供其中一部分，
+// 其余字段由 modified_cash_item 表覆盖（等价于 CashItemFactory.getItem 的逐字段 null 保留）。
 public sealed class CashCommodity {
     public int sn, itemId, count = 1, price, period = 1, onSale, gender = 2;
+    public int priority, bonus, maplePoint, meso, forPremiumUser, clz, limit;
+    public int pbCash, pbPoint, pbGift, packageSn;
     public CashCommodity Copy() => (CashCommodity)MemberwiseClone();
 }
 public interface INativeCashCatalog {
@@ -11,6 +15,8 @@ public interface INativeCashCatalog {
     CashCommodity Find(int sn);
     IList<int> Package(int itemId);
     bool Exists(int itemId);
+    // 商品在客户端是否完整（既有名字又有图标）；残缺商品不入库、不展示。
+    bool Complete(int itemId);
     bool IsCash(int itemId);
     DbRow Equipment(int itemId);
     int EquipSlot(int itemId);
@@ -50,18 +56,65 @@ public sealed class NativeCashService {
     bool Own(DbRow row, CharRecord c) => DbStore.Int(row, "accountid") == c.accountid && DbStore.Int(row, "world") == c.world && DbStore.Int(row, "jobgroup") == Group(c);
     List<DbRow> Stock(CharRecord c) => db.Table("cash_items").Select(r => Own(r, c) && DbStore.Int(r, "characterid") == 0);
     static string Currency(int type) => type == 1 ? "nxCredit" : type == 2 ? "maplePoint" : type == 4 ? "nxPrepaid" : null;
-    public CashCommodity Commodity(int sn) {
-        var item = Catalog?.Find(sn)?.Copy(); if (item == null) return null;
-        var row = db.Table("modified_cash_item").Find(r => DbStore.Int(r, "sn") == sn);
+    // 与 CashShop.CashItemFactory.getItem 同构：WZ 记录为基线，modified_cash_item 的列为覆盖
+    // （列为空 = 保留原值）。表里单独存在的 SN 也能独立定义一个商品。
+    public CashCommodity Commodity(int sn) => Commodity(db.Table("modified_cash_item").Find(r => DbStore.Int(r, "sn") == sn), sn);
+    // 列表整表遍历时按行走，避免每行再线性 Find 一次（表上千行时是 O(n²)）。
+    public CashCommodity Commodity(DbRow row, int sn) {
+        var item = Catalog?.Find(sn)?.Copy();
         if (row == null) return item;
-        item.itemId = Override(row, "item_id", item.itemId); item.price = Override(row, "price", item.price);
-        item.count = Override(row, "count", item.count); item.period = Override(row, "period", item.period);
-        item.onSale = Override(row, "on_sale", item.onSale); item.gender = Override(row, "commodity_gender", item.gender); return item;
+        if (item == null) item = new CashCommodity { sn = sn };
+        item.itemId = Override(row, "item_id", item.itemId);
+        item.price = Override(row, "price", item.price);
+        item.count = Override(row, "count", item.count);
+        item.period = Override(row, "period", item.period);
+        item.onSale = Override(row, "on_sale", item.onSale);
+        item.gender = Override(row, "commodity_gender", item.gender);
+        item.priority = Override(row, "priority", item.priority);
+        item.bonus = Override(row, "bonus", item.bonus);
+        item.maplePoint = Override(row, "maple_point", item.maplePoint);
+        item.meso = Override(row, "meso", item.meso);
+        item.forPremiumUser = Override(row, "for_premium_user", item.forPremiumUser);
+        item.clz = Override(row, "class", item.clz);
+        item.limit = Override(row, "limit", item.limit);
+        item.pbCash = Override(row, "pb_cash", item.pbCash);
+        item.pbPoint = Override(row, "pb_point", item.pbPoint);
+        item.pbGift = Override(row, "pb_gift", item.pbGift);
+        item.packageSn = Override(row, "package_sn", item.packageSn);
+        return item;
     }
     static int Override(DbRow row, string key, int fallback) => row.TryGetValue(key, out var v) && v != null ? Convert.ToInt32(v) : fallback;
+    // 商品信息存数据库：首次进入商城时把 WZ 里「完整且上架」的商品写进 modified_cash_item，
+    // 之后商城一律以表为准（改价/上下架改表即可，和原端后台面板改这张表是一样的）。
+    // 残缺商品（客户端取不到名字或图标）不入库，也就不会出现在列表里。
+    bool imported;
+    public void ImportCommodities() {
+        if (imported || Catalog == null) return;
+        imported = true;
+        var table = db.Table("modified_cash_item");
+        var existing = new HashSet<int>();
+        foreach (var r in table.Select(x => true)) existing.Add(DbStore.Int(r, "sn"));
+        int added = 0;
+        foreach (var entry in Catalog.All) {
+            if (entry.onSale != 1 || !Catalog.Complete(entry.itemId)) continue;
+            if (existing.Contains(entry.sn)) continue;
+            table.Insert(new DbRow {
+                ["sn"] = (long)entry.sn, ["item_id"] = (long)entry.itemId,
+                ["count"] = (long)entry.count, ["price"] = (long)entry.price,
+                ["period"] = (long)entry.period, ["on_sale"] = (long)entry.onSale,
+                ["commodity_gender"] = (long)entry.gender, ["priority"] = (long)entry.priority,
+                ["class"] = (long)entry.clz, ["limit"] = (long)entry.limit,
+                ["pb_cash"] = (long)entry.pbCash, ["pb_point"] = (long)entry.pbPoint,
+                ["pb_gift"] = (long)entry.pbGift
+            });
+            added++;
+        }
+        if (added > 0) db.Save();
+    }
     public CashResponse Handle(CashRequest r) {
         lock (db) {
             var c = CharactersDao.FindById(db, r.characterId); if (c == null) return new CashResponse { ok = false, error = "角色不存在" };
+            ImportCommodities();
             Sweep();
             string error; db.BeginTransaction();
             try { error = Apply(c, r); if (error == null) db.Commit(); else db.Rollback(); }
@@ -217,7 +270,11 @@ public sealed class NativeCashService {
     CashResponse Read(CharRecord c) {
         var account = AccountsDao.FindById(db, c.accountid);
         var result = new CashResponse { opened = opened.Contains((int)c.id), credit = DbStore.Int(account, "nxCredit"), points = DbStore.Int(account, "maplePoint"), prepaid = DbStore.Int(account, "nxPrepaid"), character = CharService.Load(db, (int)c.id) };
-        if (Catalog != null) foreach (var entry in Catalog.All) { var item = Commodity(entry.sn); if (item.onSale == 1) result.catalog.Add(item); }
+        // 商城列表读 modified_cash_item（数据库），不直接遍历 WZ；残缺商品不展示。
+        if (Catalog != null) foreach (var row in db.Table("modified_cash_item").Select(x => true)) {
+            var item = Commodity(row, DbStore.Int(row, "sn"));
+            if (item != null && item.itemId != 0 && item.onSale == 1 && Catalog.Complete(item.itemId)) result.catalog.Add(item);
+        }
         result.catalog.Sort((a, b) => a.sn.CompareTo(b.sn));
         foreach (var row in db.Table("cash_items").Select(x => Own(x, c) && (DbStore.Int(x, "characterid") == 0 || DbStore.Int(x, "characterid") == c.id)))
             result.stock.Add(new CashStock { id = DbStore.Long(row, "id"), sn = DbStore.Int(row, "sn"), itemId = DbStore.Int(row, "itemid"), quantity = DbStore.Int(row, "quantity"), expiration = DbStore.Long(row, "expiration"), characterId = DbStore.Int(row, "characterid"), giftFrom = DbStore.Str(row, "giftFrom") });

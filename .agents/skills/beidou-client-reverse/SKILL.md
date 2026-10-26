@@ -21,6 +21,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | Point/Linear 采样、虚拟控制层、已有验证范围 | [渲染与验证](references/rendering-and-validation.md) |
 | 哪些 UI 尚未替换、原端与移动适配的区别 | [UI 迁移审计](references/ui-audit.md) |
 | 相机 VR、分辨率补丁、背景滚动；技能窗已定位函数 | [地图与技能窗入口](references/map-and-skill-window.md) |
+| 鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义 | [UI 拖动语义](references/ui-drag-and-drop.md) |
 | NPC 对话窗口素材、纸面几何、共享滚动条、`#L` 行内选项 | [NPC 对话窗口](references/npc-dialog.md) |
 
 地图坐标/脚底/平台/绳梯的运行时约定另见 [mapledash-map-port](../mapledash-map-port/SKILL.md)。服务端和脚本语义仍以源端服务端/脚本为依据，不能用 EXE 的显示行为替代服务端规则。

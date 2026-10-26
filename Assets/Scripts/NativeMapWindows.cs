@@ -78,6 +78,10 @@ public static class NativeMapWindows
         float height = miniMode == 2 ? 20 : mapHeight + (miniMode == 0 ? 87 : 43);
         var panel = new Rect(8, 8, width * s, height * s);
         const string root = "UI/UIWindow.img/MiniMap/";
+        // 小地图背景直接由 IMG 的 c 片提供：MiniMap/MaxMap|MinMap/c 是
+        // 1x1、RGBA(255,255,255,119) 的半透明白，叠在游戏画面上就是原端外观
+        // （能透出地图）。不要在此铺不透明白底：源端小地图无此操作，
+        // 该做法曾导致背景变为纯白、与地图不一致（已撤销）。
         if (miniMode == 2)
         {
             DrawPart(root + "Min/w", panel.x, panel.y, 8 * s, panel.height);

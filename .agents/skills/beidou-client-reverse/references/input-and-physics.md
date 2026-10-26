@@ -59,3 +59,59 @@ Unity `NativeCombinationChecks.Run` 已通过攻速2/6/10的逐帧时长、90ms�
 - 原端 Esc 只对应系统菜单动作，关窗口靠各窗口的 X，没有「Esc 逐层关窗」的行为。
 - 本地按用户明确要求另加：Esc 先关最后打开的面板（`GameWindows.CloseTop` + `TrackPanels` 观测打开顺序），没有面板才开系统菜单。这属于本地产品决定，不能记成原端逻辑。
 - 键位窗、虚拟键编辑器、侧滑菜单、聊天输入、频道下拉、NPC 对话各自处理 Esc，`InputBridge` 在这些层让出这一次按键，避免一键关两层。
+
+## 表情（键位 type6 / FaceExpression，2026-10-26 已核实）
+
+### 键位表结构与分派
+
+- 键位表按虚拟键索引：`[0xBED5A0]` 指向数组，每项 = 1 字节 type + 4 字节 data。`0x94F382` 读 `al = byte[esi]`，`0x94F429`/`0x94F4C1` 读 `dword[esi+1]`。
+  **一个扫描码只有一条记录**，原端不存在「同一个键挂两个动作」。本地键位模型必须保持「一键一职」。
+- 分派入口 `0x94F2ED`，`type-1` 逐级 `dec/je`：1 技能、2 道具、3 现金道具、5 菜单动作（data-0x32）、6 表情、7 另一类动作。
+- type6 分支 `0x94F4D1`：`data - 0x63(99)` 后跳 `0x94F692`，`ecx = [0xBE7918]` 调 `0xA24470`。
+  因此 KeyConfig 图标编号 **100..106 就是表情 1..7**（和 `icon/100..106` 节点一一对应）。
+- type6 分支**没有动作/状态门控**（type2 会先查攻击动作，type5/7 会查 `[0xBEC1F8+0x3C]`），
+  跳跃、攻击、移动中按表情都能生效。
+
+### SendEmotion 0xA24470（this = `[0xBE7918]` CWvsContext）
+
+- `user = [0xBEBF98]`；为空直接返回。
+- `[user+0x528] != 0`（骑乘/机械形态）改走 `0xA2A193`。
+- `now = [0xBF060C]()`；`now - [this+0x3528] < 0x7D0` → 丢弃。**客户端表情节流是 2000ms**，不是服务端注释里的 1.5 秒。
+- `emote < 0 || emote >= 0x17(23)` → 丢弃。
+- 先调 `SetEmotion(user+0x88, emote, -1)` **本地立刻换脸**，再组 0x33 号封包发送。
+
+### SetEmotion 0x451CF6（this = CUserLocal+0x88）
+
+- `0x451D4F`：`emote >= 0x17` 拒绝；`0x451D47` 对负数也拒绝。
+- `0x451D60`：`0x4165B1(index, &this+0x490)` 取名字对象存 `+0x498`，`+0x49C = 0`。
+- `[this+0x4E0] != 0` 时跳过时长/效果设置（`0x453696`）。
+- `0x451D8A`：`[0xBEC284 + emote*4]` 非空时拼 `Etc/EmotionEffect/%s`（字符串池 986）生成表情特效；`[0xBEBF6C]==0` 时整段跳过。
+- 名表 `0xBEC284` 是 23 项静态数组（初始化 `0x45E8E8..0x45EDFA`，逐项 GetString）：
+  `blink, hit, smile, troubled, cry, angry, bewildered, stunned, vomit, oops, cheers, chu, wink, pain, glitter, blaze, shine, love, despair, hum, bowing, hot, dam`。
+  **14..18 是 glitter/blaze/shine/love/despair**，和 `Face.img` 节点罗列顺序（…glitter, despair, love, shine, blaze…）不同，必须按这张表，不能按节点顺序推。
+
+### IMG 节点
+
+- `UI/UIWindow.img/KeyConfig/icon`：40 个，编号 0..27、50..54、**100..106**。100..106 = 7 个基础表情的托盘图标。
+- `UI/UIWindow.img/KeyConfig/key/<扫描码>`：键帽字形（11~13px 点阵小图），底栏键名也走这套。
+- `Character/Face/<faceId>.img`：`default/blink/hit/smile/troubled/cry/angry/bewildered/stunned/vomit/oops/cheers/chu/wink/pain/glitter/despair/love/shine/blaze/hum/bowing/hot/dam`（其后的 `bangle/setback/wickedness` 属更高版本，083 不可达）。
+
+### 服务端
+
+- `RecvOpcode.FACE_EXPRESSION(0x33)`；`FaceExpressionHandler`：`emote > 7` 时要求背包有 `5159992+emote`（即 5160000..5160014，`ItemId.isFaceExpression`），`emote < 1` 直接丢弃。
+- `Character.changeFaceExpression`：`now - lastExpression > 1500` 才 `broadcastMessage(this, facialExpression, false)`。
+  **`false` = 不发给自己**，所以自己的脸只能靠客户端 `SetEmotion`；服务端的 1500ms 只是广播节流。
+- `PacketCreator.facialExpression`：`chrId + expression`。
+- 脚本层没有表情接口：`NPCConversationManager`、`gms-server/scripts-zh-CN` 全量检索无 emotion/setEmotion。表情只有「输入 → 本地换脸 + 封包」这一条路径。
+
+### 本地迁移与验证（2026-10-26）
+
+- `SpriteAnim.EmoteNames` = 上表 23 项；`EmoteCooldown = 2s`；`EmoteDuration = 5s` 回默认脸。
+- `PlayerCtrl.Express`：`emote == 0` 回默认脸；`1..22` 合法；`8..22` 需要 `GameSession.Character.inventory` 里有 `5159992+emote`（对应服务端门控）。
+- 键位一键一职：`KeyMap.Claim`（读档）、`KeyMap.Apply`（整表应用）、`KeyMap.ExportCharacter`（写库一码一行），
+  避免 1 号键默认的「对所有人聊天」和表情共键——共键会先开聊天抢焦点，`playing` 变 false，后面所有动作都不再派发，表现为「点了没反应」。
+- 屏上按键的按下回执 `VirtualControls.ActionDisplayName` 走键位表中文名，会打印「1 → 微笑 / 1 → 对所有人」，供真机排查键是否对上。
+- 回归 `ExpressionChecks.Run`：7 个基础表情逐像素、2 秒节流（1.6s 挡 / 2.1s 放）、名表 23 项、`0/23/-1` 拒绝、
+  8 号无道具不显示 / 持有 5160000 后换成 `vomit`、改绑 1/2/3 后键位表无重复且按下能换脸。
+- 待核实：`0x451CF6` 的时长参数调用方一律传 `-1`，exe 里没定位到「5 秒回默认脸」的常量；
+  当前 5 秒取自服务端 `FaceExpressionHandler` 的注释，属实现约定，不是已核实的客户端行为。

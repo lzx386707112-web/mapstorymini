@@ -436,3 +436,14 @@ CREATE TABLE bosslog_daily (
  bosstype TEXT NOT NULL,
  attempttime INTEGER NOT NULL
 );
+
+-- V1.1.2__create_extend_value.sql：源端账号/角色永久、日清、周清脚本数据。
+CREATE TABLE extend_value (
+    extend_id TEXT NOT NULL,
+    extend_type INTEGER NOT NULL,
+    extend_name TEXT NOT NULL,
+    extend_value TEXT,
+    create_time BIGINT NOT NULL DEFAULT 0,
+    update_time BIGINT DEFAULT 0,
+    PRIMARY KEY (extend_id, extend_type, extend_name)
+);

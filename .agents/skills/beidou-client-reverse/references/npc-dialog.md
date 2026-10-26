@@ -51,3 +51,29 @@
   自由折行（行首不折行、折行处丢行首空格），滚动条用 `UI/Basic.img/VScr4/enabled` 的 prev/next/base/thumb，
   支持点箭头翻行、拖滑块、滚轮。任务菜单（`DialogContent.Selections`）仍按 dot0/dot1 + `listN` 标题图渲染。
 - 验证：`Assets/Editor/QuestNpcChecks.cs`（对白标记解析）+ 批处理 Play 截图（npc 9900001 主菜单、超长文本滚动、任务菜单）。
+
+## 点「选项」之后跑什么（脚本侧接口面）
+
+对话窗口只负责把 `#L<idx>#` 的序号回给脚本（`NpcSession.Reply(1, idx)` → `action(mode=1, type, selection=idx)`），
+真正做事的是脚本调用的 `cm.*` / `player.*`。所以「点了没反应」几乎都不是界面问题，而是**接口没绑**：
+`NpcApi.Lenient` 在 `JsHostObject.Missing` 里直接抛 `Unmigrated server API: <owner>.<name>`，
+整段 `action` 就此中断（源端这里是真实 Java 调用，不会中断）。
+
+对齐依据必须回源端 Java，不能凭脚本猜：
+
+| 脚本调用 | 源端位置 | MapleDash |
+| --- | --- | --- |
+| `player.saveLocation(type)` / `saveLocationOnWarp()` | `Character.java:8131 / 8120` | 写 `savedlocations` 表；`saveLocationOnWarp` **只补空格子**，portal 取 `distanceSq` 最近的门 |
+| `player.getTotalStr/Dex/Int/Luk/Watk/Magic` | `Character.java:5238-5260`（`localstr`…） | `EquipLoadout.Apply(基础属性, 武器, 0)` 的产出 |
+| 战力数值本身 | `PacketCreator.calculateNameplatePower` | `stats*max(1,max(watk,magic)) + maxHp/10 + maxMp/20` |
+| `cm.isNotCanHold(type,count)` | `NPCConversationManager.java:1608` | 单机背包不限格，恒 false（与 `canHold` 一致） |
+| `cm.getOnlineTime()` | `AbstractPlayerInteraction.java:1547` → `OnlineTimeTask` | `Npc/OnlineTime.cs`，账号扩展值「每日在线时间」，`period=1` 自动跨日归零 |
+| `Java.type('...InventoryType')` | `org.gms.client.inventory.InventoryType` | 数值取道具 id 首位（EQUIP=1 USE=2 SETUP=3 ETC=4 CASH=5） |
+| `Java.type('...ExpTable')` | `constants.game.ExpTable` | 客户端 `ExpTable.Needed(level)`（同一张 WZ 经验表） |
+| `Java.type('org.slf4j.LoggerFactory')` | — | 落 Unity 日志，避免「类不存在」中断对话 |
+| `Java.type('org.gms.server.CashShop')` | `CashShop.java:72` | `NX_CREDIT=1 MAPLE_POINT=2 NX_PREPAID=4` |
+| `client.getChannelServer().getPlayerStorage().getAllCharacters()` | `Channel/PlayerStorage` | 只返回自己一个（单机只有自己在频道里） |
+
+验证入口：`QuestNpcChecks.RunMenu` 逐个点开 `npc/9900001` 的 31 个选项，
+缺接口/缺 Java 类打印 `GAP`，其它异常算回归。**新写/迁移 NPC 脚本相关 API 前先跑它**，
+不要再用「对话脚本出错」这种笼统提示去猜。

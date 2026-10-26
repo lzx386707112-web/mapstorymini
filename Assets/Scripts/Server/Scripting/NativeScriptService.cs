@@ -116,7 +116,26 @@ public sealed class NativeScriptService
                 if (raw.TrimStart().StartsWith("{", StringComparison.Ordinal) || raw.TrimStart().StartsWith("[", StringComparison.Ordinal)) return FromConfig(MiniJsonDb.Parse(raw));
                 throw new JsRuntimeException("Unmigrated GameConfig value type: " + clazz);
             }));
+        // 源端还有按作用域读的版本（GameConfig.getValueProp("server"/"world", key)）。
+        // scripts 里的 GameConfig.getServerInt("rebirth_level") 走的是这一层，不能只按 config_code 查。
+        config.Set("getServerInt", JsFunction.FromNative("getServerInt",
+            call => new JsNumber(JsConvert.StringToNumber(Scoped("server", call, false)))));
+        config.Set("getServerString", JsFunction.FromNative("getServerString",
+            call => new JsString(Scoped("server", call, true))));
+        config.Set("getServerBoolean", JsFunction.FromNative("getServerBoolean",
+            call => JsBoolean.Of(Scoped("server", call, true) is string raw
+                && (raw == "1" || raw.Equals("true", StringComparison.OrdinalIgnoreCase)))));
         return config;
+    }
+
+    // 找不到键时按源端默认值返回：getServerInt → 0，getServerString → ""
+    string Scoped(string scope, JsCall call, bool asText)
+    {
+        string key = JsConvert.ToString(call.Arg(0));
+        var row = db.Table("game_config").Find(r =>
+            string.Equals(DbStore.Str(r, "config_type"), scope, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(DbStore.Str(r, "config_code"), key, StringComparison.OrdinalIgnoreCase));
+        return row == null ? (asText ? "" : "0") : DbStore.Str(row, "config_value");
     }
 
     static JsValue FromConfig(object value)

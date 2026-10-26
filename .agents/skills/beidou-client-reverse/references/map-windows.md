@@ -20,6 +20,36 @@ MaxMap/MinMap 使用 nw/n/ne/w/e/sw/s/se/c 九片，Min 使用 w/c/e 三片。
 
 已修改：原素材拼接、三种模式、快捷键循环、视口裁切/滚动、原生按钮与标记/徽标。
 未完成：原端文字阴影的逐像素匹配、保存窗口位置/拖动及手机视觉对照。
+
+## 小地图背景（2026-10-26 核实；此前「不透明底」结论作废）
+
+**结论：源端小地图背景就是半透明的，不应铺不透明白底。**
+
+- `UI/UIWindow.img/MiniMap/MaxMap|MinMap/c` 是 **1×1、RGBA(255,255,255,119)** 的半透明白片；
+  地图 `miniMap/canvas` 本身也是透明底（100000000 实测 465×87、仅 49% 不透明，内容是灰色线稿+半透明地块，
+  中排 alpha 序列含 0/187/170/210/255）。
+- 因此原端外观 = 半透明白叠在游戏画面上，**能透出地图**，而不是纯白。
+- 曾经按「与大地图 FillRect 同款」的推断加了整面板不透明白底，结果与源端不符
+  （用户反馈自由市场小地图背景变成白色），**已撤销**。该推断没有源端依据，
+  且大地图的 `FillRect(2,2,W-4,H-4,0xFFFFFFFF)`（0x9EC12A..0x9EC143）是**大地图**窗口的，
+  不能直接套到小地图上。
+
+**待核实（未下结论）**：小地图绘制中 0x859279 / 0x8592CD 两处 `call [reg+0x8c]`
+（同一矩形 `(scrollX, scrollY, vportW, vportH)`，颜色常量 `0xffffff` 与 `0xa0000000`）
+的目标对象与颜色格式尚未定死，不能据此断言背景色。
+
+`0x8588FF` 常量已在当前 EXE 复核：`cmp ecx,0x118`(280)→`mov ecx,0xd2`(210)；`cmp eax,0x96`(150)→`push 0x70`(112)。
+面板尺寸公式（+12/最小 0x78=120、高 +0x2B=43 / +0x57=87、Min 宽 +0x50=80、高 0x14=20）与运行时一致；
+0x856487 起另有 0x30C(780)/0x244(580) 的上限 clamp，语义（量宽还是面板）未核实，运行时未加。
+
+**标记素材（已核实存在）**：`Map/MapHelper.img/minimap/` 下有
+`user`(6×6)、`another`、`friend`、`guild`、`guildmaster`、`match`、`party`、`partymaster`、
+`npc`(4×7)、`startnpc`、`endnpc`、`usertrader`、`anothertrader`、`portal`(8×8)、
+`arrowup/down/right/left/upright/upleft/downright/downleft`。
+
+**教训（流程纪律）**：不得用截图/像素比对反推源端逻辑——截图只能用来发现
+「与源端不符」的线索，真正的依据必须来自 EXE 反汇编、服务端代码或脚本。
+上一版把推测写进 skill 记为「已核实」是错误做法。
 ## 大地图边框核实
 
 `0x9EB594` 创建666×524窗口；`0x9EBA31` 将BaseImg复制到(13,35)，标记和MapLink沿用BaseImg/0的origin。
