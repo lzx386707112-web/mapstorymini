@@ -397,6 +397,7 @@ public static class NpcApi
                     int id = Int(args,0);
                     FieldCatalog.LoadMob(id);
                     var monster = new JsHostObject(null);
+                    Lenient(monster,"monster");
                     monster.Set("id",N(id)); monster.Set("getId",Ret(_ => N(id)));
                     return monster;
                 }));

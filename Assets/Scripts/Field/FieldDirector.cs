@@ -228,7 +228,7 @@ public sealed class FieldDirector : MonoBehaviour
     }
 
     // Monster.killBy revives / MobSkill.summonMonsters share the field lifecycle.
-    public EnemyUnit SpawnNativeMob(int mobId, Vector3 position, bool ground = true)
+    public EnemyUnit SpawnNativeMob(int mobId, Vector3 position, bool ground = true, bool floating = false)
     {
         if (Map == null) return null;
         FieldCatalog.LoadMob(mobId);
@@ -239,7 +239,7 @@ public sealed class FieldDirector : MonoBehaviour
         e.homeX = position.x; e.roamMin = position.x; e.roamMax = position.x;
         e.aggroRange = AggroRangePx / Art.PPU;
         e.Init(2, position.x, position.y);
-        e.nativeFloating = !ground;
+        e.nativeFloating = floating;
         if (!ground) e.transform.position = position;
         ApplyStats(e, def);
         dynamicMobs.Add(e);

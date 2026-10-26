@@ -63,9 +63,10 @@ public sealed class NativeBossService
             if ((r.operation == BossOperation.CheckEntry || r.operation == BossOperation.Enter) &&
                 GameConfigDao.GetBool(db,"use_enable_daily_expeditions") && Entries.TryGetValue(r.boss ?? "",out int maximum))
             {
-                long start = new DateTimeOffset(Clock().Date,Clock().Offset).ToUnixTimeMilliseconds();
+                var time = Clock();
+                long start = new DateTimeOffset(time.Date,time.Offset).ToUnixTimeMilliseconds();
                 var table = db.Table("bosslog_daily");
-                table.Delete(x => DbStore.Long(x,"attempttime") <= start);
+                table.Delete(x => DbStore.Long(x,"attempttime") < start);
                 int count = table.Select(x => DbStore.Int(x,"characterid") == r.characterId && DbStore.Str(x,"bosstype") == r.boss).Count;
                 if (r.channel < 0 || count >= maximum) { result.ok=false; result.error="已达到该 Boss 的挑战次数限制"; }
                 else if (r.operation == BossOperation.Enter)

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MapleDash.BossCheck")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c9dfadbc2f32d7e327518052b0e534837769e5c0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+422e4856e8222e0a138794a91cb60926bc478af5")]
 [assembly: System.Reflection.AssemblyProductAttribute("MapleDash.BossCheck")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MapleDash.BossCheck")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

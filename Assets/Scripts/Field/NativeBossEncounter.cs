@@ -86,7 +86,7 @@ public sealed class NativeBossEncounter : MonoBehaviour
         return count;
     }
     public EnemyUnit Spawn(int id, Vector2 pixels, bool ground = true)
-        => field.SpawnNativeMob(id,new Vector3(pixels.x / Art.PPU,-pixels.y / Art.PPU,0),ground);
+        => field.SpawnNativeMob(id,new Vector3(pixels.x / Art.PPU,-pixels.y / Art.PPU,0),ground,!ground);
 }
 
 // Ported from LucidBossCompat. Coordinates/timers are source values, not stage JSON.
@@ -254,7 +254,7 @@ public sealed partial class NativeLucidEncounter
         failed = true;
         Vector3 pos = boss.transform.position;
         owner.Remove(8880152);
-        var fail = field.SpawnNativeMob(8880154,pos,false);
+        var fail = field.SpawnNativeMob(8880154,pos,false,true);
         fail?.NativeController?.BlockFor(10000);
         owner.Schedule(fail,3000,() => owner.Damage(fail,100));
         owner.Schedule(fail,10000,() => {
