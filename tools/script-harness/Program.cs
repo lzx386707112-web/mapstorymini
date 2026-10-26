@@ -33,14 +33,15 @@ internal static class Program
             var body = kv.Value as string;
             if (body == null) continue;
             bytes += body.Length;
-            if (kv.Key.StartsWith("npc/", StringComparison.Ordinal)) npc++; else quest++;
+            if (kv.Key.StartsWith("npc/", StringComparison.Ordinal)) npc++;
+            else if (kv.Key.StartsWith("quest/", StringComparison.Ordinal)) quest++;
 
             if (body.IndexOf('\uFFFD') >= 0 && mangled++ < 5)
                 Console.WriteLine("  MANGLED " + kv.Key + " :: 含替换字符，源端文件本身是乱码");
             try { new JsEngine(body, kv.Key); }
             catch (Exception e)
             {
-                if (parseFail++ < 8) Console.WriteLine("  PARSE " + kv.Key + " :: " + e.Message);
+                parseFail++; Console.WriteLine("  PARSE " + kv.Key + " :: " + e.Message);
             }
         }
         Console.WriteLine($"pack={map.Count} npc={npc} quest={quest} chars={bytes / 1024}KiB "
@@ -51,6 +52,7 @@ internal static class Program
     static int Main(string[] args)
     {
         string mode = args.Length > 0 ? args[0] : "--run";
+        if (mode == "--self-test") return ScriptRuntimeChecks.Run();
         if (mode == "--pack") return CheckPack(args[1]);
         if (mode == "--img") return DumpImg(args[1], args.Length > 2 ? args[2] : "");
         if (mode == "--quest") return DumpQuests(args[1]);
@@ -220,7 +222,7 @@ internal static class Program
 
         for (int i = 0; i < 14 && mock.DialogCount < 40; i++)
         {
-            if (!engine.HasFunction("action") && !isQuest) break;
+            if (isQuest ? !engine.HasFunction("start") : !engine.HasFunction("action")) break;
             double mode = i % 4 == 2 ? 0 : 1;
             double type = i % 2 == 0 ? 1 : 0;
             double selection = i % 3;
@@ -229,7 +231,7 @@ internal static class Program
                 if (isQuest) engine.Call("start", new JsNumber(mode), new JsNumber(type), new JsNumber(selection));
                 else engine.Call("action", new JsNumber(mode), new JsNumber(type), new JsNumber(selection));
             }
-            catch (JsRuntimeException) { break; }
+            catch (JsRuntimeException) { throw; }
             if (mock.Disposed) break;
         }
 
@@ -237,7 +239,7 @@ internal static class Program
         {
             mock.ResetDispose();
             try { engine.Call("end", new JsNumber(1), new JsNumber(0), new JsNumber(0)); }
-            catch (JsRuntimeException) { }
+            catch (JsRuntimeException) { throw; }
         }
 
         dialogs = mock.DialogCount;

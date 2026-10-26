@@ -54,7 +54,8 @@ public sealed class NativeMapView : MonoBehaviour
             foreach (var group in layer.Children)
                 foreach (var f in group.Children)
                     m.footholds.Add(new FieldFoothold { id = int.Parse(f.Name), layer = int.Parse(layer.Name),
-                        group = int.Parse(group.Name), x1 = f.Int("x1"), y1 = f.Int("y1"), x2 = f.Int("x2"), y2 = f.Int("y2") });
+                        group = int.Parse(group.Name), x1 = f.Int("x1"), y1 = f.Int("y1"), x2 = f.Int("x2"), y2 = f.Int("y2"),
+                        forbidFallDown = f.Int("forbidFallDown") });
         foreach (var r in Children(n.Get("ladderRope")))
             m.ropes.Add(new FieldRope { x = r.Int("x"), y1 = r.Int("y1"), y2 = r.Int("y2"),
                 ladder = r.Int("l") != 0, upperExit = r.Int("uf") != 0 });

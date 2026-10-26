@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Window artwork is loaded directly from the original UI IMG files.
@@ -410,8 +411,92 @@ public static class GameWindows
         NativeMapWindows.WorldVisible || NativeSocialWindow.Visible || NativeMonsterBook.Visible ||
         NativeCommunityWindow.Visible || NativeMedalWindow.Visible || ShopWindow.Visible;
 
+    // ——————————————— Esc 分层关闭 ———————————————
+    // 原版 Esc 是「系统菜单」键，但用户要求：只要有面板开着，Esc 先关面板。
+    // 为了「后开的先关」，这里按打开顺序记录一个栈；打开入口五花八门
+    // （快捷键 / 底部栏按钮 / 快捷菜单），所以在绘制阶段统一观测可见性变化，
+    // 不要求每个入口都记得来登记。
+    enum Panel
+    {
+        Stat, Equip, Inven, Shop, Quest, Shortcut, Help, GameMenu, Skill,
+        World, Social, MonsterBook, Community, Medal,
+    }
+    static readonly Panel[] panels = (Panel[])System.Enum.GetValues(typeof(Panel));
+    static readonly List<Panel> openOrder = new List<Panel>();
+    static readonly Dictionary<Panel, bool> lastVisible = new Dictionary<Panel, bool>();
+
+    static bool VisibleOf(Panel p)
+    {
+        switch (p)
+        {
+            case Panel.Stat: return StatWindow.Visible;
+            case Panel.Equip: return EquipWindow.Visible;
+            case Panel.Inven: return InvenWindow.Visible;
+            case Panel.Shop: return ShopWindow.Visible;
+            case Panel.Quest: return QuestWindow.Visible;
+            case Panel.Shortcut: return ShortcutWindow.Visible;
+            case Panel.Help: return HelpWindow.Visible;
+            case Panel.GameMenu: return GameMenuWindow.Visible;
+            case Panel.Skill: return SkillWindow.Visible;
+            case Panel.World: return NativeMapWindows.WorldVisible;
+            case Panel.Social: return NativeSocialWindow.Visible;
+            case Panel.MonsterBook: return NativeMonsterBook.Visible;
+            case Panel.Community: return NativeCommunityWindow.Visible;
+            case Panel.Medal: return NativeMedalWindow.Visible;
+        }
+        return false;
+    }
+
+    static void ClosePanel(Panel p)
+    {
+        switch (p)
+        {
+            case Panel.Stat: StatWindow.Visible = false; return;
+            case Panel.Equip: EquipWindow.Visible = false; return;
+            case Panel.Inven: InvenWindow.Visible = false; return;
+            // 商城开着的期间 timeScale=0，必须走 Reset 才会把时间轴还回去
+            case Panel.Shop: NativeCashWindow.Reset(); return;
+            case Panel.Quest: QuestWindow.Visible = false; return;
+            case Panel.Shortcut: ShortcutWindow.Visible = false; return;
+            case Panel.Help: HelpWindow.Visible = false; return;
+            case Panel.GameMenu: GameMenuWindow.Visible = false; return;
+            case Panel.Skill: SkillWindow.Visible = false; return;
+            case Panel.World: NativeMapWindows.CloseWorld(); return;
+            case Panel.Social: NativeSocialWindow.Close(); return;
+            case Panel.MonsterBook: NativeMonsterBook.Visible = false; return;
+            case Panel.Community: NativeCommunityWindow.Reset(); return;
+            case Panel.Medal: NativeMedalWindow.Visible = false; return;
+        }
+    }
+
+    public static void TrackPanels()
+    {
+        foreach (var p in panels)
+        {
+            bool now = VisibleOf(p);
+            lastVisible.TryGetValue(p, out bool before);
+            if (now == before) continue;
+            lastVisible[p] = now;
+            openOrder.Remove(p);
+            if (now) openOrder.Add(p);
+        }
+    }
+
+    // 关掉最后打开的那个面板；没有面板时返回 false（调用方去开系统菜单）。
+    public static bool CloseTop()
+    {
+        TrackPanels();
+        if (openOrder.Count == 0) return false;
+        var top = openOrder[openOrder.Count - 1];
+        openOrder.RemoveAt(openOrder.Count - 1);
+        ClosePanel(top);
+        lastVisible[top] = VisibleOf(top);
+        return true;
+    }
+
     public static void DrawAll()
     {
+        TrackPanels();
         NativeCashWindow.Tick();
         NativeMapWindows.DrawMini();
         StatWindow.Draw();

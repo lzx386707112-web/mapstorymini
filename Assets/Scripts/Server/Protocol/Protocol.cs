@@ -125,6 +125,8 @@ public interface ITransport
     PlayerDeadResponse PlayerDead(PlayerDeadRequest req);
     ChangeMapResponse ChangeMap(ChangeMapRequest req);
     void SaveCharacter(SaveCharacterRequest req);
+    ScriptResponse Script(ScriptRequest req);
+    ScriptValueResponse ScriptValue(ScriptValueRequest req);
     SocialResponse Social(SocialRequest req);
     CommunityResponse Community(CommunityRequest req);
     BossResponse Boss(BossRequest req);
@@ -141,12 +143,14 @@ public sealed class InProcessTransport : ITransport
 {
     readonly GameServer server;
     public InProcessTransport(GameServer s) { server = s; }
+    public ScriptValueResponse ScriptValue(ScriptValueRequest r) => server.ScriptValues.Handle(r);
+    public ScriptResponse Script(ScriptRequest r) => server.Scripts.Handle(r);
     public SocialResponse Social(SocialRequest r) => server.Social.Handle(r);
     public CommunityResponse Community(CommunityRequest r) => server.Community.Handle(r);
     public BossResponse Boss(BossRequest r) => server.Bosses.Handle(r);
     public InventoryChangeResponse ChangeInventory(InventoryChangeRequest r) => NativeInventoryService.Handle(server.Db, r);
     public CashResponse Cash(CashRequest r) => server.Cash.Handle(r);
-    public void EndSocialSession(int characterId) { server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); }
+    public void EndSocialSession(int characterId) { server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); }
 
     public LoginResponse Login(LoginRequest r)
     {

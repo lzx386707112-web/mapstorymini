@@ -1,62 +1,53 @@
 #!/usr/bin/env python3
-"""把源端 NPC / 任务脚本同步进客户端。
+"""同步源端全部 JS：保存逐字节原件，并生成中文优先的运行时脚本包。
 
-数据来源（优先级从高到低，空文件视为缺失）：
-    BeiDou-Server/gms-server/scripts-zh-CN/{npc,quest}/*.js
-    BeiDou-Server/gms-server/scripts/{npc,quest}/*.js
-
-输出两份，运行期都能读到：
-    1) MapleDashResources/Data/scripts/{npc,quest}/{id}.js   —— 编辑器/桌面直接读文件，方便改
-    2) MapleDash/Assets/Resources/Scripts/npc_scripts.json   —— 打包进 Resources，
-       Android / WebGL 走这一份（不依赖 /sdcard 上是否安装了脚本文件）
-
-脚本按原样复制，不做任何改写：源端行为要一致，就不能在同步阶段动手脚。
+不修改脚本逻辑、不筛除负数 ID/模板/空文件。原件保存在 Data/script-sources/，
+运行时 UTF-8 文本保存在 Data/scripts/ 与 Resources/Scripts/npc_scripts.json。
 """
 import argparse
+from collections import Counter
+import hashlib
 import json
-import shutil
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]          # MapleDash/
-REPO = ROOT.parent                                   # mxd-android/
+ROOT = Path(__file__).resolve().parents[1]
+REPO = ROOT.parent
 DEFAULT_SERVER = REPO.parent / "BeiDou-Server"
-KINDS = ("npc", "quest")
 
 
-def decode(path: Path) -> str:
-    """源端脚本编码混杂：多数是 UTF-8，少数老脚本是 GBK（中文注释/对白）。
-
-    按 utf-8 → gb18030 顺序严格尝试，都不行才用替换字符兜底。以前一律用
-    errors="replace" 会把 GBK 中文变成 U+FFFD，进游戏就是一堆乱码对白。
-    """
-    raw = path.read_bytes()
-    for enc in ("utf-8-sig", "gb18030"):
+def decode(raw: bytes):
+    for encoding in ("utf-8-sig", "gb18030"):
         try:
-            return raw.decode(enc)
+            return raw.decode(encoding), encoding
         except UnicodeDecodeError:
-            continue
-    return raw.decode("utf-8", errors="replace")
+            pass
+    raise ValueError("源脚本既不是 UTF-8，也不是 GB18030；禁止替换字符后继续打包")
 
 
-def read_scripts(base: Path, kind: str):
-    folder = base / kind
-    if not folder.is_dir():
-        return {}
-    out = {}
-    for path in folder.glob("*.js"):
-        stem = path.stem
-        # 以 "-" 开头的（如 quest/-31069.js）在 Quest.wz 里查无此 id，是 TMS 遗留内容，
-        # 客户端永远走不到；其余自定义名（gachapon、changeName、坐骑领取…）由
-        # cm.openNpc(id, 名字) 一类调用触发，必须一起带上。
-        if stem.startswith("-"):
-            continue
-        try:
-            text = decode(path)
-        except OSError:
-            continue
-        if text.strip():
-            out[stem] = text
-    return out
+def digest(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def write_if_changed(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists() or path.read_bytes() != data:
+        path.write_bytes(data)
+
+
+def collect(server):
+    originals, effective = {}, {}
+    for language in ("scripts", "scripts-zh-CN"):
+        base = server / "gms-server" / language
+        for path in sorted(base.rglob("*.js")):
+            relative = path.relative_to(base).as_posix()
+            raw = path.read_bytes()
+            text, encoding = decode(raw)
+            record = {"source": language + "/" + relative, "sha256": digest(raw),
+                      "encoding": encoding, "bytes": len(raw)}
+            originals[record["source"]] = (raw, record)
+            # 与 AbstractScriptManager 一致：中文文件存在就优先，包括空文件。
+            effective[relative[:-3]] = (text, record)
+    return originals, effective
 
 
 def main():
@@ -64,43 +55,46 @@ def main():
     parser.add_argument("--server", type=Path, default=DEFAULT_SERVER)
     parser.add_argument("--resources", type=Path, default=REPO / "MapleDashResources")
     parser.add_argument("--assets", type=Path, default=ROOT / "Assets")
-    parser.add_argument("--clean", action="store_true", help="删除目标目录里已不在源端的脚本")
+    parser.add_argument("--clean", action="store_true", help="清理同步目录中源端已删除的 JS")
+    parser.add_argument("--check", action="store_true", help="只核对全部原件、文本、脚本包和清单")
     args = parser.parse_args()
+    originals, effective = collect(args.server)
+    if not originals:
+        raise SystemExit("找不到源端 JS：" + str(args.server))
 
-    zh_root = args.server / "gms-server" / "scripts-zh-CN"
-    en_root = args.server / "gms-server" / "scripts"
-    if not zh_root.is_dir() and not en_root.is_dir():
-        raise SystemExit(f"找不到源端脚本目录: {zh_root}")
+    data = args.resources / "Data"
+    outputs = {}
+    for key, (raw, _) in originals.items():
+        outputs[data / "script-sources" / key] = raw
+    packed, records = {}, {}
+    for key, (text, record) in effective.items():
+        packed[key] = text
+        raw = text.encode("utf-8")
+        outputs[data / "scripts" / (key + ".js")] = raw
+        records[key] = dict(record, textSha256=digest(raw))
+    manifest = {"schemaVersion": 1, "originalCount": len(originals), "scriptCount": len(packed),
+                "originals": {k: v[1] for k, v in originals.items()}, "scripts": records}
+    bundle = args.assets / "Resources" / "Scripts"
+    for path, obj in ((bundle / "npc_scripts.json", packed), (bundle / "script_manifest.json", manifest)):
+        outputs[path] = (json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
 
-    packed = {}
-    total_bytes = 0
-    for kind in KINDS:
-        en = read_scripts(en_root, kind)
-        zh = read_scripts(zh_root, kind)
-        merged = dict(en)                       # 英文兜底
-        merged.update(zh)                       # 中文覆盖
-        if not merged:
-            continue
-
-        dest = args.resources / "Data" / "scripts" / kind
-        dest.mkdir(parents=True, exist_ok=True)
+    stale = []
+    for folder in (data / "scripts", data / "script-sources"):
+        stale.extend(p for p in folder.rglob("*.js") if p not in outputs)
+    if args.check:
+        bad = [str(p) for p, content in outputs.items() if not p.is_file() or p.read_bytes() != content]
+        bad.extend(str(p) + " (已从源端删除)" for p in stale)
+        if bad:
+            raise SystemExit("脚本同步不一致：\n" + "\n".join(bad))
+    else:
+        for path, content in outputs.items():
+            write_if_changed(path, content)
         if args.clean:
-            for old in dest.glob("*.js"):
-                if old.stem not in merged:
-                    old.unlink()
-        for key, text in merged.items():
-            (dest / f"{key}.js").write_text(text, encoding="utf-8")
-            packed[f"{kind}/{key}"] = text
-            total_bytes += len(text.encode("utf-8"))
-
-        print(f"{kind}: zh={len(zh)} en={len(en)} -> {len(merged)}  中文覆盖 "
-              f"{len(set(zh) & set(en))}/{len(en)}")
-
-    out_dir = args.assets / "Resources" / "Scripts"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out = out_dir / "npc_scripts.json"
-    out.write_text(json.dumps(packed, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"scripts={len(packed)} packed={out.stat().st_size/1048576:.2f} MiB -> {out}")
+            for path in stale:
+                path.unlink()
+    counts = Counter(k.split("/")[0] if "/" in k else "(root)" for k in packed)
+    print("originals=" + str(len(originals)) + " effective=" + str(len(packed)) + " categories=" + str(dict(sorted(counts.items()))))
+    print("全部原件/运行文本/脚本包/哈希清单一致" if args.check else "已同步全部 JS（原件保持字节一致，运行文本仅转换编码）")
 
 
 if __name__ == "__main__":

@@ -1,13 +1,13 @@
 using UnityEngine;
 
 // 对话窗口 + NPC 任务图标。图片全部来自原版 UI/UIWindow.img/UtilDlgEx。
-// Button replies preserve NPCMoreTalkHandler lastMsg and action values.
+// 正文排版/滚动在 DialogFlow（#L 选项是行内链接，滚动条用原版 VScr4）。
 public static class NpcDialogUi
 {
     const string BtnRoot = "UI/UIWindow.img/UtilDlgEx/";
 
-    static Vector2 scroll;
-    static GUIStyle body, title, rowStyle, hint;
+    static float scrollY;
+    static GUIStyle title, hint;
 
     public static void Draw()
     {
@@ -103,62 +103,34 @@ public static class NpcDialogUi
     static void DrawDialog(NpcSession session)
     {
         EnsureStyles();
-        if (session.Dialog.ScrollReset) { scroll = Vector2.zero; session.Dialog.ScrollReset = false; }
+        if (session.Dialog.ScrollReset) { scrollY = 0f; session.Dialog.ScrollReset = false; }
         var e = Event.current;
         if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
         { session.Cancel(); e.Use(); return; }
         if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyMap.Of(GameAction.NpcTalk)) &&
             (session.Dialog.Mode == NpcDialogMode.Next || session.Dialog.Mode == NpcDialogMode.NextPrev || session.Dialog.Mode == NpcDialogMode.Ok))
         { session.Reply(1); e.Use(); return; }
-        float w = Mathf.Min(529f, UiKit.W - 36f);
+
+        float w = Mathf.Min(529f, UiKit.W - 20f);          // 原端窗口固定 529 宽
         var content = session.Dialog.Content;
-        float contentW = w - 180f;
-        float textH = body.CalcHeight(new GUIContent(content.Body), contentW);
-        int count = content.Selections.Count;
-        float listH = 0f;
-        foreach (var selection in content.Selections)
-            listH += selection.HeaderArt != null ? 34f : Mathf.Max(22f, rowStyle.CalcHeight(new GUIContent(selection.Text), contentW - 20f) + 4f);
-        float h = Mathf.Min(Mathf.Max(200f, textH + listH + 120f), UiKit.H - BottomBar.Height - 80f);
+        float contentH = DialogFlow.ContentHeight(content, w);
+        // 窗口高度跟正文走（原端也是这么自适应），超过一屏才滚动
+        float h = Mathf.Clamp(DialogFlow.PaperY + 8f + contentH + 8f + DialogFlow.PaperBottom,
+                              220f, UiKit.H - BottomBar.Height - 16f);
         var rect = new Rect((UiKit.W - w) * .5f, (UiKit.H - h) * .5f, w, h);
         NativeUi.DialogPanel(rect);
         DrawPortrait(session.NpcId, rect);
 
         var closeSize = BtnSize("BtClose");
-        var closeRect = new Rect(rect.x + 10f, rect.yMax - 23f, closeSize.x, closeSize.y);
-        if (NativeUi.Button(closeRect, BtnRoot + "BtClose")) { session.Cancel(); return; }
+        if (NativeUi.Button(new Rect(rect.x + 10f, rect.yMax - 27f, closeSize.x, closeSize.y), BtnRoot + "BtClose"))
+        { session.Cancel(); return; }
 
-        var view = new Rect(rect.x + 160f, rect.y + 35f, contentW + 18f, rect.height - 104f);
-        float totalH = Mathf.Max(view.height, textH + listH + 6f);
-        scroll = GUI.BeginScrollView(view, scroll, new Rect(0f, 0f, contentW + 18f, totalH));
-        GUI.Label(new Rect(0f, 0f, contentW, textH), content.Body, body);
+        int picked = DialogFlow.DrawPane(rect, content, ref scrollY);
+        if (picked >= 0) { session.Reply(1, picked); return; }
 
-        float y = textH + 6f;
-        for (int i = 0; i < count; i++)
-        {
-            var sel = content.Selections[i];
-            float rowH = sel.HeaderArt != null ? 34f : Mathf.Max(22f, rowStyle.CalcHeight(new GUIContent(sel.Text), contentW - 20f) + 4f);
-            if (sel.HeaderArt != null)
-            {
-                var header = Art.Tex("wz://" + BtnRoot + sel.HeaderArt);
-                if (header != null) GUI.DrawTexture(new Rect(0, y + 8f, header.width, header.height), header);
-                y += rowH;
-                continue;
-            }
-            var row = new Rect(0f, y, contentW, rowH);
-            var hit = new Rect(view.x, view.y + y - scroll.y, contentW, rowH);
-            if (SelectionRow(row, sel.Text, view.Contains(Pointer.Pos) && hit.Contains(Pointer.Pos)))
-            {
-                GUI.EndScrollView();
-                session.Reply(1, sel.Index);
-                return;
-            }
-            y += rowH;
-        }
-        GUI.EndScrollView();
-
-        // 底部按钮
+        // 底部按钮：原端放在 s 的蓝灰底板上（窗口底往上 30..6 行）
         float bx = rect.xMax - 18f;
-        float by = rect.yMax - 74f;
+        float by = rect.yMax - 27f;
 
         switch (session.Dialog.Mode)
         {
@@ -216,7 +188,7 @@ public static class NpcDialogUi
             npc = WzAssets.FileRoot("Npc/" + npcId.ToString("D7") + ".img");
         }
         var frames = WzAssets.Frames(npc.Get("stand"));
-        float feet = rect.y + (rect.height - 32f) * .5f + 24f;
+        float feet = rect.y + DialogFlow.PaperY + (rect.height - DialogFlow.PaperY - DialogFlow.PaperBottom) * .5f;
         if (frames.Count > 0)
         {
             float total = 0;
@@ -293,25 +265,10 @@ public static class NpcDialogUi
         return tex != null ? new Vector2(tex.width, tex.height) : new Vector2(58f, 22f);
     }
 
-    static bool SelectionRow(Rect rect, string text, bool hover)
-    {
-        var dot = Art.Tex("wz://" + BtnRoot + (hover ? "dot0" : "dot1"));
-        if (dot != null) GUI.DrawTexture(new Rect(rect.x + 10, rect.y + 7, dot.width, dot.height), dot);
-        rowStyle.normal.textColor = new Color(.32f, .25f, .45f);
-        GUI.Label(new Rect(rect.x + 22f, rect.y + 2f, rect.width - 24f, rect.height), text, rowStyle);
-        bool clicked = Event.current.type == EventType.Repaint && Pointer.Clicked && hover;
-        if (clicked) Pointer.ConsumeClick();
-        return clicked;
-    }
-
     static void EnsureStyles()
     {
-        if (body != null) return;
-        body = new GUIStyle { fontSize = 13, wordWrap = true, richText = true, alignment = TextAnchor.UpperLeft };
-        body.normal.textColor = new Color(0.12f, 0.12f, 0.14f);
-
+        if (title != null) return;
         title = new GUIStyle { fontSize = 15, fontStyle = FontStyle.Bold };
-        rowStyle = new GUIStyle { fontSize = 13, wordWrap = true, richText = true, alignment = TextAnchor.MiddleLeft };
         hint = new GUIStyle { fontSize = 11, alignment = TextAnchor.MiddleCenter };
     }
 

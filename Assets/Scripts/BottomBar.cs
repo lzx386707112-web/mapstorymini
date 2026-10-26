@@ -98,7 +98,7 @@ public static class BottomBar
     public static void FocusChat(NativeChatChannel channel, string target = "")
     { ChatChannel = channel; whisperTarget = target; FocusChat(); }
     public static void ResetChat()
-    { ChatFocused = focusChat = false; chatInput = whisperTarget = ""; chatLines.Clear(); ChatChannel = NativeChatChannel.All; }
+    { ChatFocused = focusChat = false; chatInput = whisperTarget = ""; chatLines.Clear(); ChatChannel = NativeChatChannel.All; channelOpen = false; }
     static string chatInput = "";
     static readonly List<string> chatLines = new List<string>();
     public static IReadOnlyList<string> ChatHistory => chatLines;
@@ -112,25 +112,60 @@ public static class BottomBar
 
     static void DrawChat()
     {
+        // 原版聊天区完全落在底板自带的白色条上（backgrnd2 的 y7..28，x2..568，正好 566 宽）：
+        //   频道按钮 chatTarget(81×20) 贴左边 → 右边是输入行 → 行下沿压一条 base/chat 凹线。
+        // 聊天记录不铺任何底板，白字黑描边直接压在画面上（原版就是这样，不做“聊天框”这种东西）。
         float y = UiKit.H - 64 * S;
         var e = Event.current;
         if (!NpcSession.Blocking && !ChatFocused && e.type == EventType.KeyDown && e.keyCode == KeyCode.Return)
         { ChatFocused = true; focusChat = true; e.Use(); }
-        var target = T("chatTarget_full");
-        if (ChatFocused && target != null) GUI.DrawTexture(new Rect(2 * S, y, 81 * S, 20 * S), target);
-        if (ChatFocused && GUI.Button(new Rect(2 * S, y, 81 * S, 20 * S), ChatNames[(int)ChatChannel]))
-            ChatChannel = (NativeChatChannel)(((int)ChatChannel + 1) % ChatNames.Length);
+
+        // 频道按钮就是原版 base/chatTarget（81×20）——客户端 exe 的字符串池里直接引用的就是这个路径，
+        // 是专门给聊天目标做的按钮皮肤。展开时按钮本身换成 ComboBox2/pressed 表示“按下”。
+        var targetRect = new Rect(2 * S, y, 81 * S, 20 * S);
+        bool overTarget = targetRect.Contains(Pointer.Pos);
+        var comb = channelOpen ? (T("combo_pressed") ?? T("chatTarget_full")) : T("chatTarget_full");
+        if (comb != null) GUI.DrawTexture(targetRect, comb, ScaleMode.StretchToFill);
+        // 频道名：原版这张深蓝按钮上就是白字，这里用同一套字体居中
+        ShadowLabel(targetRect, ChatNames[(int)ChatChannel], Style(11, Color.white, TextAnchor.MiddleCenter));
+        if (!NpcSession.Blocking && Event.current.type == EventType.Repaint && Pointer.Clicked && overTarget)
+        {
+            channelOpen = !channelOpen;
+            if (channelOpen) { ChatFocused = false; GUI.FocusControl(null); }
+        }
+
         var style = new GUIStyle(GUI.skin.textField) { fontSize = Mathf.RoundToInt(11 * S) };
         style.normal.background = null;
         style.focused.background = null;
         style.normal.textColor = Color.black;
-        GUI.SetNextControlName("NativeChat");
-        if (ChatFocused) chatInput = GUI.TextField(new Rect(86 * S, y, 448 * S, 20 * S), chatInput, 127, style);
+        // 白条内的可用宽度：x86..534（566 宽的白条，右边留 34 给滚动条/边距）
+        float inputX = 86f, inputW = 448f;
+        // 悄悄话：原版没有额外弹层，就是在同一行输入里先写收件人（To. 名字），后面接正文。
+        // 之前把它放在底栏上面一行、黑字压在游戏画面上，既看不清也不是原版排法。
         if (ChatFocused && ChatChannel == NativeChatChannel.Whisper)
         {
-            GUI.Label(new Rect(3 * S, y - 24 * S, 54 * S, 20 * S), "收件人", style);
-            whisperTarget = GUI.TextField(new Rect(58 * S, y - 24 * S, 150 * S, 20 * S), whisperTarget, 13, style);
+            // 不加 padding 的纯文字标签：白条上的黑字，位置按原图坐标走
+            var lab = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = style.fontSize,
+                alignment = TextAnchor.MiddleLeft,
+                wordWrap = false,
+                clipping = TextClipping.Clip,
+                padding = new RectOffset(0, 0, 0, 0)
+            };
+            lab.normal.textColor = Color.black;
+            GUI.Label(new Rect(inputX * S, y, 18 * S, 20 * S), "To.", lab);
+            GUI.SetNextControlName("NativeWhisper");
+            whisperTarget = GUI.TextField(new Rect((inputX + 20f) * S, y, 118 * S, 20 * S), whisperTarget, 13, style);
+            GUI.Label(new Rect((inputX + 142f) * S, y, 12 * S, 20 * S), ":", lab);
+            inputX += 158f;
+            inputW -= 158f;
         }
+        GUI.SetNextControlName("NativeChat");
+        if (ChatFocused) chatInput = GUI.TextField(new Rect(inputX * S, y, inputW * S, 20 * S), chatInput, 127, style);
+        // 输入行下沿：base/chat 的 566×5 凹线，紧贴白色条的下边缘（底板内 y28）
+        var groove = T("chat_full");
+        if (groove != null) GUI.DrawTexture(new Rect(2 * S, UiKit.H - 43 * S, 566 * S, 5 * S), groove);
         if (focusChat && Event.current.type == EventType.Repaint)
         { GUI.FocusControl("NativeChat"); focusChat = false; }
         if (!NpcSession.Blocking && e.type == EventType.KeyDown && e.keyCode == KeyCode.Return)
@@ -150,13 +185,82 @@ public static class BottomBar
         }
         if (ChatFocused && e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
         { GUI.FocusControl(null); ChatFocused = false; e.Use(); }
-        if (chatLines.Count == 0) return;
-        var r = new Rect(3 * S, UiKit.H - (74 + Mathf.Min(5, chatLines.Count) * 14) * S, 540 * S, Mathf.Min(5, chatLines.Count) * 14 * S);
-        UiKit.Fill(r, new Color(0f, 0f, 0f, .55f));
-        var text = new GUIStyle { fontSize = Mathf.RoundToInt(11 * S) };
-        text.normal.textColor = Color.white;
-        for (int i = 0; i < Mathf.Min(5, chatLines.Count); i++)
-            GUI.Label(new Rect(r.x + 3 * S, r.y + i * 14 * S, r.width, 14 * S), chatLines[Mathf.Max(0, chatLines.Count - 5) + i], text);
+
+        // 聊天记录：原版没有聊天框，就是几行带黑描边的白字压在画面上。
+        int shown = Mathf.Min(5, chatLines.Count);
+        if (shown > 0)
+        {
+            var text = Style(11, Color.white, TextAnchor.UpperLeft);
+            float lineH = 14f * S;
+            float top = UiKit.H - (74 + shown * 14) * S;
+            for (int i = 0; i < shown; i++)
+                ShadowLabel(new Rect(3 * S, top + i * lineH, 540 * S, lineH), chatLines[chatLines.Count - shown + i], text);
+        }
+        DrawChannelList(targetRect);
+    }
+
+    static bool channelOpen;
+    // 频道下拉自己吃 Esc；InputBridge 靠这个属性让出这一次按键
+    public static bool ChannelListOpen => channelOpen;
+
+    // 频道下拉：原版同一张 ComboBox2（81×20）逐行拼成 8 个频道，按钮在下沿，列表往上展开。
+    // 当前频道用 pressed 态、悬停用 mouseOver 态；全部是原素材，不上色、不画框。
+    static void DrawChannelList(Rect anchor)
+    {
+        if (!channelOpen) return;
+        int n = ChatNames.Length;
+        float rowH = 20f * S;
+        float top = anchor.y - rowH * n;
+        var block = new Rect(anchor.x, top, anchor.width, rowH * n);
+
+        for (int i = 0; i < n; i++)
+        {
+            var r = new Rect(anchor.x, top + i * rowH, anchor.width, rowH);
+            bool over = r.Contains(Pointer.Pos);
+            var tex = T("combo_" + (i == (int)ChatChannel ? "pressed" : over ? "mouseOver" : "normal")) ?? T("combo_normal");
+            if (tex != null) GUI.DrawTexture(r, tex, ScaleMode.StretchToFill);
+            ShadowLabel(r, ChatNames[i], Style(11, Color.white, TextAnchor.MiddleCenter));
+            if (Event.current.type == EventType.Repaint && Pointer.Clicked && over)
+            {
+                ChatChannel = (NativeChatChannel)i;
+                channelOpen = false;
+                return;
+            }
+        }
+
+        var e = Event.current;
+        if (e.type == EventType.Repaint && Pointer.Clicked && !block.Contains(Pointer.Pos) && !anchor.Contains(Pointer.Pos))
+            channelOpen = false;
+        else if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
+        { channelOpen = false; e.Use(); }
+    }
+
+    // 聊天区的文字沿用底板同一套字体；GUI.Label 只画字，不画任何底板/边框。
+    static readonly GUIStyle chatStyle = new GUIStyle();
+
+    static GUIStyle Style(int size, Color color, TextAnchor anchor)
+    {
+        chatStyle.font = UiKit.Font;
+        chatStyle.fontSize = Mathf.Max(8, Mathf.RoundToInt(size * S));
+        chatStyle.alignment = anchor;
+        chatStyle.normal.textColor = color;
+        chatStyle.wordWrap = false;
+        chatStyle.clipping = TextClipping.Clip;
+        return chatStyle;
+    }
+
+    // 原版白字带黑描边：四向偏移各画一次黑字再画本字，不加底框。
+    static void ShadowLabel(Rect r, string value, GUIStyle style)
+    {
+        var old = style.normal.textColor;
+        style.normal.textColor = new Color(0f, 0f, 0f, 0.9f);
+        float d = Mathf.Max(0.5f, S * 0.5f);
+        GUI.Label(new Rect(r.x - d, r.y, r.width, r.height), value, style);
+        GUI.Label(new Rect(r.x + d, r.y, r.width, r.height), value, style);
+        GUI.Label(new Rect(r.x, r.y - d, r.width, r.height), value, style);
+        GUI.Label(new Rect(r.x, r.y + d, r.width, r.height), value, style);
+        style.normal.textColor = old;
+        GUI.Label(r, value, style);
     }
 
     static void DrawBigButtons()
@@ -239,24 +343,20 @@ public static class BottomBar
                     var cool = Art.Tex("ui/skillwin/cool_" + Mathf.Clamp(Mathf.FloorToInt(k * 16), 0, 15) + ".png");
                     if (cool != null) GUI.DrawTexture(r, cool);
                 }
-                if (lv > 0)
-                {
-                    var st = new GUIStyle { fontSize = Mathf.RoundToInt(9f * S), alignment = TextAnchor.LowerRight };
-                    st.normal.textColor = new Color(1f, 1f, 1f, 0.92f);
-                    GUI.Label(new Rect(r.x, r.y, r.width - 1, r.height - 1), lv.ToString(), st);
-                }
+                if (lv > 0) DrawSlotLevel(lv, r);
             }
-            // 键名必须跟随实际绑定；标签靠上沿，不能盖在技能图标正中央。
-
-            var label = new GUIStyle { fontSize = Mathf.Max(8, Mathf.RoundToInt(8f * S)), alignment = TextAnchor.UpperLeft };
-            label.normal.textColor = new Color(0.15f, 0.17f, 0.22f);
-            GUI.Label(new Rect(r.x, r.y - 2 * S, r.width, 12 * S), KeyMap.Label(key), label);
             if (id == 0 && key != KeyCode.None)
             {
                 var action = QuickBarKeys.Function(key);
                 var attack = action.HasValue ? KeyConfigWindow.Icon(action.Value) : null;
                 if (attack != null) GUI.DrawTexture(r, attack, ScaleMode.ScaleToFit);
             }
+            // 键名必须跟随实际绑定：贴原版字形（KeyConfig/key/<扫描码>），压在格子左上角。
+            // 原版键盘底图里所有键名都贴左上角，这里保持同一套参数；没有对应字形的键不画。
+            var nameTex = NativeKeyLayout.NameTexture(key);
+            if (nameTex != null)
+                GUI.DrawTexture(new Rect(r.x + 1f * S, r.y + 1f * S,
+                    nameTex.width * S, nameTex.height * S), nameTex);
             if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.RightPressed && r.Contains(Pointer.Pos))
                 { if (skillSlot >= 0) QuickSlots.Clear(skillSlot); }
             if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
@@ -266,6 +366,21 @@ public static class BottomBar
                 else if (key != KeyCode.None && key == KeyMap.Of(GameAction.Attack)) GameLoop.I.player.RequestAttack();
                 else if (key != KeyCode.None) { InputHub.SetVirtual(key, true); InputHub.SetVirtual(key, false); }
             }
+        }
+    }
+
+    // 技能等级：原版 StatusBar.img/number 的 5×7 点阵数字，右对齐贴格子右下角。
+    // 之前这里用 GUI.Label 画文字，缩放后糊成一团，也不属于原版素材。
+    static void DrawSlotLevel(int level, Rect cell)
+    {
+        string s = level.ToString();
+        float x = cell.xMax - (s.Length * 6f - 1f) * S;
+        float y = cell.yMax - 8f * S;
+        for (int i = 0; i < s.Length; i++)
+        {
+            var t = Art.Tex("ui/statusbar/num_" + s[i] + ".bytes");
+            if (t == null) continue;
+            GUI.DrawTexture(new Rect(x + i * 6f * S, y, t.width * S, t.height * S), t);
         }
     }
 

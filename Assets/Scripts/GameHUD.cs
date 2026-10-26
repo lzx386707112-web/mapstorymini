@@ -94,20 +94,21 @@ public class GameHUD : MonoBehaviour
         EnsureStyles();
         UiKit.Begin();
         _mouseGui = UiKit.MouseGui();
+        if (ShopWindow.Visible) {
+            GameWindows.TrackPanels();
+            NativeCashWindow.Tick();
+            NativeCashWindow.Draw();
+            DrawNotice();
+            return;
+        }
 
         // 原版底部栏：底板 → 左段状态条 → 右侧按钮 + 快捷格（都在 BottomBar 里按顺序画）
         bool enabled = GUI.enabled;
         GUI.enabled = enabled && !NpcSession.Blocking;
         BottomBar.Draw();
-        // 屏上虚拟按键层（摇杆/十字/按钮），画在底部栏之上、浮窗之下
-        VirtualControls.Draw();
-
-
 
         // 浮窗（技能窗/能力值/帮助…）
         GameWindows.DrawAll();
-        // 从技能窗拖技能时，把可放置的虚拟按键提到最上层（否则被技能窗/键盘窗口盖住）
-        VirtualControls.DrawDropTargets();
         GUI.enabled = enabled;
         // 技能施放失败等即时提示
         DrawNotice();
@@ -202,7 +203,16 @@ public class GameHUD : MonoBehaviour
         float height = st.CalcHeight(new GUIContent(text), width);
         float bottom = Mathf.Min(UiKit.H - BottomBar.Height - 18f, BottomBar.QuickPanelRect().y - 12f);
         var r = new Rect((UiKit.W - width) * .5f, bottom - height, width, height);
-        UiKit.Fill(new Rect(r.x - 8, r.y - 4, r.width + 16, r.height + 8), new Color(0, 0, 0, .65f));
+        // 原版这类系统提示是「白字 + 黑描边」直接压在画面上，没有自绘黑框。
+        // 之前这里铺了一层 0.65 alpha 的黑色 Fill，属于自绘成分，已去掉。
+        var old = st.normal.textColor;
+        st.normal.textColor = new Color(0f, 0f, 0f, 0.9f);
+        float d = Mathf.Max(0.5f, BottomBar.S * 0.5f);
+        GUI.Label(new Rect(r.x - d, r.y, r.width, r.height), text, st);
+        GUI.Label(new Rect(r.x + d, r.y, r.width, r.height), text, st);
+        GUI.Label(new Rect(r.x, r.y - d, r.width, r.height), text, st);
+        GUI.Label(new Rect(r.x, r.y + d, r.width, r.height), text, st);
+        st.normal.textColor = old;
         GUI.Label(r, text, st);
     }
 

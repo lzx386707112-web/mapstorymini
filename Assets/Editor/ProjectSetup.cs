@@ -46,8 +46,11 @@ public static class ProjectSetup
         // 8. 默认出 APK（国内渠道要 APK；上 Google Play 时再勾 Build App Bundle）
         EditorUserBuildSettings.buildAppBundle = false;
 
+        // 9. 桌面图标：Assets/Branding/AppIcon.png（方形全出血，启动器自己套遮罩）
+        AppIconSetup.Apply(false);
+
         AssetDatabase.SaveAssets();
-        Debug.Log("[MapleDash] Android 导出配置完成：ARM64 / IL2CPP / API26 / 横屏 / 60fps");
+        Debug.Log("[MapleDash] Android 导出配置完成：ARM64 / IL2CPP / API26 / 横屏 / 60fps / 图标");
         EditorUtility.DisplayDialog("配置完成",
             "已设置：\n\n• 横屏（左右自动旋转）\n• ARM64 + IL2CPP\n• 最低 API 26\n• 60fps，关闭抗锯齿\n\n" +
             "接下来：File → Build Settings → Build And Run\n（手机用 USB 连上并开启「开发者选项 → USB 调试」）",

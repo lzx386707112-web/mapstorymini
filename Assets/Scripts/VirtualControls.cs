@@ -125,7 +125,36 @@ public static class VirtualControls
     public static List<VCElem> elems = new List<VCElem>();
     public static string activeName = "默认";
     public static List<string> profileNames = new List<string>();
-    public static bool OverlayVisible = true;
+
+    // —————————— 整层显示开关（侧边栏「虚拟按键」项控制） ——————————
+    // 关掉后既不绘制也不吃触摸（Capturing / Draw / Tick 三处都读这个值），
+    // 键盘照常可用；选择写进 PlayerPrefs，重开游戏保持。
+    const string PrefOverlay = "mxd.vc.overlay";
+    static bool overlayVisible = true;
+    static bool overlayLoaded;
+
+    public static bool OverlayVisible
+    {
+        get
+        {
+            if (!overlayLoaded)
+            {
+                overlayLoaded = true;
+                overlayVisible = PlayerPrefs.GetInt(PrefOverlay, 1) != 0;
+            }
+            return overlayVisible;
+        }
+        set
+        {
+            overlayLoaded = true;
+            if (overlayVisible == value) return;
+            overlayVisible = value;
+            // 隐藏的瞬间必须把所有按住的键松开，否则手指抬起时已经没人收尾，会卡键
+            if (!value) ReleaseAll();
+            PlayerPrefs.SetInt(PrefOverlay, value ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+    }
 
     // —————————— 系统输入法避让 ——————————
     // 聊天框/宏名字输入时，安卓会弹出输入法，屏幕下半被整体盖住：
@@ -513,21 +542,10 @@ public static class VirtualControls
         Ensure();
         UpdateLift();
 
-        // 门控关闭（大厅/暂停/编辑器/键位窗口）：全部松开，别把状态带进下一局
-        if (!feed)
+        // 门控关闭（大厅/暂停/编辑器/键位窗口/整层隐藏）：全部松开，别把状态带进下一局
+        if (!feed || !OverlayVisible || !Application.isFocused)
         {
-            for (int i = elems.Count - 1; i >= 0; i--)
-                if (elems[i].finger >= 0) Release(elems[i]);
-            if (anyPushed)
-            {
-                foreach (var e in elems)
-                    if (e.type == VCElemType.Button && e.held)
-                        SendButton(e, false);
-                anyPushed = false;
-            }
-            InputHub.ClearVirtualAxis();
-            BlockingPointer = false;
-            wasOnControl = false;
+            ReleaseAll();
             return;
         }
 
@@ -581,7 +599,7 @@ public static class VirtualControls
             {
                 // 按键抬起 / 手指全离开：兜底释放，防粘键
                 for (int i = elems.Count - 1; i >= 0; i--)
-                    if (elems[i].finger >= 0) Release(elems[i]);
+                    if (elems[i].finger != -1) Release(elems[i]);
             }
         }
 
@@ -591,7 +609,7 @@ public static class VirtualControls
         float mx = 0f, my = 0f;
         foreach (var e in elems)
         {
-            if (e.finger < 0 || e.type == VCElemType.Button) continue;
+            if (e.finger == -1 || e.type == VCElemType.Button) continue;
             if (e.type == VCElemType.Stick && !e.stickStd) continue;
             mx += e.axis.x; my += e.axis.y;
         }
@@ -639,7 +657,7 @@ public static class VirtualControls
     static bool AnyHeld()
     {
         for (int i = 0; i < elems.Count; i++)
-            if (elems[i].finger >= 0) return true;
+            if (elems[i].finger != -1) return true;
         return false;
     }
 
@@ -851,15 +869,34 @@ public static class VirtualControls
         SyncStickKeys(e);                        // 轴清零后这里会把四方向的键全部抬起，不粘键
         if (e.type == VCElemType.Button && e.held)
         {
-            e.held = false;
             SendButton(e, false);
         }
+        e.held = false;
     }
 
     // 编辑器删除元素前调用，防止把按下状态带进坟墓
     public static void ReleaseForEdit(VCElem e) => Release(e);
 
-    // —————————— 绘制（GameHUD.OnGUI 调用，UiKit.Begin 之后） ——————————
+    // 整层被关掉（切场景/整层隐藏/失焦）时的统一收尾：
+    // 手指占位、按钮按下态、摇杆模拟轴、指针阻塞标记一次清干净，不留粘键。
+    static void ReleaseAll()
+    {
+        for (int i = elems.Count - 1; i >= 0; i--)
+            if (elems[i].finger != -1) Release(elems[i]);
+
+        if (anyPushed)
+        {
+            foreach (var e in elems)
+                if (e.type == VCElemType.Button && e.held) SendButton(e, false);
+            anyPushed = false;
+        }
+
+        InputHub.ClearVirtualAxis();
+        BlockingPointer = false;
+        wasOnControl = false;
+    }
+
+    // —————————— 绘制（InputBridge.OnGUI 调用，UiKit.Begin 之后） ——————————
     public static void Draw()
     {
         Ensure();
@@ -970,7 +1007,7 @@ public static class VirtualControls
 
     public static void DrawElement(VCElem e, float dim)
     {
-        bool active = e.type == VCElemType.Button ? e.held : e.finger >= 0;
+        bool active = e.type == VCElemType.Button ? e.held : e.finger != -1;
         float a = Mathf.Clamp(e.opacity, 0.05f, 1f) * Mathf.Clamp01(dim);
         var bgc = active ? e.bgDown : e.bg;
         var lnc = active ? e.lineDown : e.line;
@@ -1092,7 +1129,7 @@ public static class VirtualControls
 
         // ⑥ 中心球钮：闲置时居中，按住时跟着手指走
         float kr = r * 0.40f;
-        var knob = e.finger >= 0 ? new Vector2(e.axis.x, -e.axis.y) * (r - kr) : Vector2.zero;
+        var knob = e.finger != -1 ? new Vector2(e.axis.x, -e.axis.y) * (r - kr) : Vector2.zero;
 
         // 投影先铺：球压上去只在下沿露一线，做出厚度（比纯描边像"实体"）
         FillDisc(knob + new Vector2(0f, kr * 0.12f), kr * 1.02f, new Color(0f, 0f, 0f, 0.22f * op));

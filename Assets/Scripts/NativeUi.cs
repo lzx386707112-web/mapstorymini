@@ -5,8 +5,12 @@ public static class NativeUi
 {
     public static bool Button(Rect rect, string node)
     {
-        bool hover = rect.Contains(Pointer.Pos);
-        var tex = Art.Tex("wz://" + node + "/" + (hover ? Pointer.Down ? "pressed" : "mouseOver" : "normal") + "/0");
+        return Button(rect, node, Pointer.Pos);
+    }
+    public static bool Button(Rect rect, string node, Vector2 pointer)
+    {
+        bool hover = rect.Contains(pointer);
+        var tex = Art.Tex("wz://" + node + "/" + (!GUI.enabled ? "disabled" : hover ? Pointer.Down ? "pressed" : "mouseOver" : "normal") + "/0");
         if (tex != null) GUI.DrawTexture(rect, tex);
         bool clicked = GUI.enabled && Event.current.type == EventType.Repaint && Pointer.Clicked && hover;
         // 原版 UI 点击音（Sound/UI.img/BtMouseClick）；这里覆盖所有用原生 UI 资源的按钮

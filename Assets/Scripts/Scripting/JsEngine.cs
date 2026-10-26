@@ -27,6 +27,7 @@ namespace MapleDash.Js
 
         public void Run(Action<JsScope> bindGlobals = null)
         {
+            Interp.ResetSteps();
             bindGlobals?.Invoke(Scope);
             Program.Run(Interp, Scope);
         }
@@ -34,6 +35,7 @@ namespace MapleDash.Js
         // 直接调用脚本顶层函数（start/action/end），异常交给调用方决定如何收尾。
         public JsValue Call(string fn, params JsValue[] args)
         {
+            Interp.ResetSteps();
             var value = Scope.Get(fn);
             if (!(value is JsFunction))
                 throw new JsRuntimeException("Script " + Name + " has no function " + fn + "()");

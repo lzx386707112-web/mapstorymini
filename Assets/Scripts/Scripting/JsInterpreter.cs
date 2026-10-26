@@ -14,6 +14,7 @@ namespace MapleDash.Js
 
         readonly Random rng = new Random();
         public Action<string> Trace;
+        public Func<string, JsValue> ResolveHostType;
 
         public JsInterpreter()
         {
@@ -44,22 +45,25 @@ namespace MapleDash.Js
             {
                 scope.DeclareVar(f.Name, new JsFunction
                 {
-                    Name = f.Name, Parameters = f.Parameters, Body = f.Body, Closure = scope,
+                    Name = f.Name, Parameters = f.Parameters, Patterns = f.Patterns, Body = f.Body, Closure = scope,
                 });
                 return;
             }
             if (n is JsVarDecl v)
             {
                 for (int i = 0; i < v.Decls.Count; i++)
-                    if (!scope.FunctionScope.HasOwn(v.Decls[i].Name))
+                    if (v.Decls[i].Pattern != null) JsPatterns.Hoist(v.Decls[i].Pattern, scope);
+                    else if (!scope.FunctionScope.HasOwn(v.Decls[i].Name))
                         scope.DeclareVar(v.Decls[i].Name, JsUndefined.Value);
                 return;
             }
+            if (n is JsLabel label) { HoistNode(label.Body, scope); return; }
             if (n is JsBlock b) { Hoist(b.Body, scope); return; }
             if (n is JsIf f2) { HoistNode(f2.Then, scope); HoistNode(f2.Else, scope); return; }
             if (n is JsFor f3) { HoistNode(f3.Init, scope); HoistNode(f3.Body, scope); return; }
             if (n is JsForIn f4)
             {
+                if (f4.Pattern != null) JsPatterns.Hoist(f4.Pattern, scope);
                 if (!string.IsNullOrEmpty(f4.VarName) && !scope.FunctionScope.HasOwn(f4.VarName))
                     scope.DeclareVar(f4.VarName, JsUndefined.Value);
                 HoistNode(f4.Body, scope);
@@ -99,7 +103,10 @@ namespace MapleDash.Js
             try
             {
                 var scope = new JsScope(fn.Closure ?? Global, true);
-                scope.Declare("this", thisValue ?? JsUndefined.Value);
+                scope.Declare("this", fn.Arrow && fn.Closure.TryGet("this", out var lexicalThis) ? lexicalThis : thisValue ?? JsUndefined.Value);
+                if (fn.Patterns != null)
+                    for (int n = 0; n < fn.Patterns.Length; n++)
+                        JsPatterns.Bind(fn.Patterns[n], args != null && n < args.Length ? args[n] : JsUndefined.Value, this, scope, true);
                 var ps = fn.Parameters ?? Array.Empty<string>();
                 for (int i = 0; i < ps.Length; i++)
                     scope.Declare(ps[i], args != null && i < args.Length ? args[i] : JsUndefined.Value);
@@ -133,6 +140,8 @@ namespace MapleDash.Js
         {
             if (obj == null) obj = JsUndefined.Value;
 
+            if (obj is JsDate date) return date.Get(key);
+            if (obj is JsRegExp regex) return regex.Get(key);
             if (obj is JsHostObject h) return h.Get(key);
             if (obj is JsObject o) return o.Get(key);
             if (obj is JsArray a)
@@ -198,7 +207,7 @@ namespace MapleDash.Js
         // 如果这里直接抛错，整段脚本就断在第一步，玩家看到的是一句"脚本出错"。所以对
         // null/undefined 上的读取返回一个空收件人：size()=0、isEmpty()=true、其余调用=null。
         // 需要排查真实空指针时把 StrictNullMembers 打开（验收工具就是用它）。
-        public static bool StrictNullMembers;
+        public static bool StrictNullMembers = true;
 
         static JsValue NullMember(string key)
         {
@@ -215,6 +224,7 @@ namespace MapleDash.Js
         public void SetMember(JsValue obj, string key, JsValue value)
         {
             value = value ?? JsNull.Value;
+            if (obj is JsRegExp regex && key == "lastIndex") { regex.SetLastIndex(value); return; }
             if (obj is JsHostObject h) { h.Set(key, value); return; }
             if (obj is JsObject o) { o.Set(key, value); return; }
             if (obj is JsArray a) { a.Set(key, value); return; }

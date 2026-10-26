@@ -1,5 +1,9 @@
 # 项目协作说明
 
+## BeiDou 逆向知识 skill
+
+分析或修改原端相关功能前，先读 [beidou-client-reverse](.agents/skills/beidou-client-reverse/SKILL.md)，按模块复用已确定的函数、资源与逻辑。逆向有新发现或纠正旧结论时，在本次工作结束前更新相应 reference 及索引；区分确定逻辑、待核实线索和当前迁移状态，避免每次重新逆向。完整要求见上级 `AGENTS.md` 第 7 条。
+
 ## 地图与角色迁移 skill
 
 处理原版 WZ 地图迁移、地图显示比例与相机、人物脚底锚点、平台碰撞或绳梯动作时，先读取项目内的 skill：

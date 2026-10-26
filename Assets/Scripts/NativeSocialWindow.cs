@@ -37,6 +37,12 @@ public static class NativeSocialWindow
     }
     public static void Reset()
     { Visible = false; state = null; target = ""; }
+    // 关闭按钮 / Esc 共用：信使要先按源端发一条关闭，再收起窗口
+    public static void Close()
+    {
+        if (Visible && action == GameAction.Messenger) Run(SocialOperation.CloseMessenger);
+        Visible = false;
+    }
     public static void Draw()
     {
         if (!Visible || state == null) return;
@@ -50,7 +56,7 @@ public static class NativeSocialWindow
         style.normal.textColor = Color.black;
         GUI.Label(new Rect(r.x + 12 * s, r.y + 5 * s, r.width - 40 * s, 24 * s), title, style);
         if (NativeUi.Button(new Rect(r.xMax - 20 * s, r.y + 5 * s, 12 * s, 12 * s), "UI/Basic.img/BtClose"))
-        { if (action == GameAction.Messenger) Run(SocialOperation.CloseMessenger); Visible = false; return; }
+        { Close(); return; }
         GUILayout.BeginArea(new Rect(r.x + 15 * s, r.y + 48 * s, r.width - 30 * s, r.height - 66 * s));
         var oldFont = GUI.skin.font; GUI.skin.font = UiKit.Font;
         scroll = GUILayout.BeginScrollView(scroll);

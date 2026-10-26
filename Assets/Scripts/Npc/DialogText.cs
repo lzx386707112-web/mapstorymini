@@ -5,11 +5,27 @@ using MapleDash.Wz;
 using UnityEngine;
 
 // 原端 NPC 对话文本标记解析：
-//   #b #r #g #k   颜色开关（无结尾 #）
-//   #L<idx>#...#l 选项
-//   #m<id># 地图名   #p<id># NPC 名   #t<id># 道具名   #v/#i<id># 道具图标
-//   #f<path># 图片   （单机版无对应资源时直接略去）
-// 解析结果给 IMGUI 用：正文用 rich text 颜色，选项单独成行。
+//   #b #r #g #y #d #w #k   颜色开关（无结尾 #）
+//   #e / #n                粗体开 / 关
+//   #L<idx>#...#l          选项。原端是「正文流里的行内可点文字」，
+//                          不是另起一段列表，所以这里只在流里打 Link 标记，不搬走文字。
+//   #m<id># 地图名   #p<id># NPC 名   #t<id>#/#z<id># 道具名
+//   #i<id># / #v<id>#  道具图标（原端就是画图标，不画名字）
+//   #f<path># 图片   #h 角色名   #c<id># 持有数量   #s<string># 原样文字
+public enum DialogRunKind { Text, Link, Icon }
+
+public sealed class DialogRun
+{
+    public DialogRunKind Kind;
+    public string Text = "";        // Text / Link：可见文字
+    public int Link = -1;           // Link：回给脚本的选项号
+    public bool Bold;
+    public Color Color = DialogText.Ink;
+    public string Art = "";         // Icon：WZ 路径（相对 Data 根）
+    public string Fallback = "";    // Icon：取不到图时退回的文字
+}
+
+// 程序生成的列表行（任务菜单 / 多脚本选择）。与 #L 无关，画在正文下方。
 public sealed class DialogSelection
 {
     public int Index;
@@ -19,63 +35,71 @@ public sealed class DialogSelection
 
 public sealed class DialogContent
 {
-    public string Body = "";
+    public string Body = "";        // 纯文本快照（日志/检查用）
+    public readonly List<DialogRun> Runs = new List<DialogRun>();
     public readonly List<DialogSelection> Selections = new List<DialogSelection>();
 }
 
 public static class DialogText
 {
-    const string CBlue = "#4A76C8";
-    const string CRed = "#C8483C";
-    const string CGreen = "#3E9450";
-    const string COrange = "#C08030";
-    const string CPurple = "#8A5AC8";
-    const string CDefault = "#1E1E1E";
+    public static readonly Color Ink = new Color(0.12f, 0.12f, 0.14f);
+    public static readonly Color Blue = new Color(0.29f, 0.46f, 0.78f);
+    public static readonly Color Red = new Color(0.78f, 0.28f, 0.23f);
+    public static readonly Color Green = new Color(0.24f, 0.58f, 0.31f);
+    public static readonly Color Orange = new Color(0.75f, 0.50f, 0.19f);
+    public static readonly Color Purple = new Color(0.54f, 0.35f, 0.78f);
+    public static readonly Color White = Color.white;
 
     public static DialogContent Parse(string raw)
     {
         var content = new DialogContent();
         if (string.IsNullOrEmpty(raw)) return content;
 
-        var body = new StringBuilder(raw.Length);
-        string color = null;
+        var buffer = new StringBuilder(raw.Length);
+        var color = Ink;
         bool bold = false;
+        int link = -1;
+
+        void Flush()
+        {
+            if (buffer.Length == 0) return;
+            string text = buffer.ToString();
+            buffer.Length = 0;
+            content.Runs.Add(new DialogRun
+            {
+                Kind = link >= 0 ? DialogRunKind.Link : DialogRunKind.Text,
+                Link = link,
+                Text = text,
+                Bold = bold,
+                Color = color,
+            });
+        }
 
         int i = 0;
         while (i < raw.Length)
         {
             char ch = raw[i];
             if (ch == '\r') { i++; continue; }
-            if (ch == '\n') { body.Append('\n'); i++; continue; }
-            if (ch != '#') { body.Append(ch); i++; continue; }
-            if (i + 1 >= raw.Length) { body.Append('#'); break; }
+            if (ch == '\t') { buffer.Append("    "); i++; continue; }   // 原端 tab 定宽，脚本用它对列
+            if (ch != '#') { buffer.Append(ch); i++; continue; }
+            if (i + 1 >= raw.Length) { buffer.Append('#'); break; }
 
             char code = raw[i + 1];
-            if (code == '#') { body.Append('#'); i += 2; continue; }
-            if (code == 'l') { i += 2; continue; }
-            if (code == 'e' || code == 'n')
-            {
-                if (bold) body.Append("</b>");
-                bold = code == 'e';
-                if (bold) body.Append("<b>");
-                i += 2;
-                continue;
-            }
+            if (code == '#') { buffer.Append('#'); i += 2; continue; }
+            if (code == 'n') { if (bold) { Flush(); bold = false; } i += 2; continue; }
+            if (code == 'e') { if (!bold) { Flush(); bold = true; } i += 2; continue; }
+            if (code == 'l') { if (link >= 0) { Flush(); link = -1; } i += 2; continue; }
 
-            // #L<idx># 选项
-            if (code == 'L' || code == 'l')
+            // #L<idx>#：开始一个行内选项，文字继续留在正文流里
+            if (code == 'L')
             {
                 int j = i + 2;
                 while (j < raw.Length && char.IsDigit(raw[j])) j++;
-                if (j < raw.Length && raw[j] == '#')
+                if (j > i + 2 && j < raw.Length && raw[j] == '#')
                 {
-                    int idx;
-                    int.TryParse(raw.Substring(i + 2, j - i - 2), out idx);
-                    int end = raw.IndexOf("#l", j + 1, StringComparison.Ordinal);
-                    string text = end < 0 ? raw.Substring(j + 1) : raw.Substring(j + 1, end - j - 1);
-                    content.Selections.Add(new DialogSelection { Index = idx, Text = StripMarkup(text).Trim() });
-                    i = end < 0 ? raw.Length : end + 2;
-                    body.Append('\n');
+                    Flush();
+                    int.TryParse(raw.Substring(i + 2, j - i - 2), out link);
+                    i = j + 1;
                     continue;
                 }
             }
@@ -83,50 +107,54 @@ public static class DialogText
             // 颜色开关：没有闭合的 #
             if (code == 'b' || code == 'r' || code == 'g' || code == 'k' || code == 'y' || code == 'd' || code == 'w')
             {
-                if (bold) body.Append("</b>");
-                if (color != null) body.Append("</color>");
-                switch (code)
-                {
-                    case 'b': color = CBlue; break;
-                    case 'r': color = CRed; break;
-                    case 'g': color = CGreen; break;
-                    case 'y': color = COrange; break;
-                    case 'd': color = CPurple; break;
-                    case 'w': color = "#FFFFFF"; break;
-                    case 'k': color = null; break;
-                    default: break;
-                }
-                if (color != null) body.Append("<color=" + color + ">");
-                if (bold) body.Append("<b>");
+                Flush();
+                color = code == 'b' ? Blue : code == 'r' ? Red : code == 'g' ? Green :
+                        code == 'y' ? Orange : code == 'd' ? Purple : code == 'w' ? White : Ink;
                 i += 2;
                 continue;
             }
 
             int close = raw.IndexOf('#', i + 2);
-            if (close < 0) { i = raw.Length; break; }
+            if (close < 0) break;
             string payload = raw.Substring(i + 2, close - i - 2);
-            string head = code.ToString();
 
-            switch (head)
+            switch (code)
             {
-                case "h": body.Append(Profile.playerName); break;
-                case "o": body.Append(WzNames.Mob(ToInt(payload))); break;
-                case "c": body.Append(Profile.ItemCount(ToInt(payload))); break;
-                case "m": body.Append(WzNames.Map(ToInt(payload))); break;
-                case "p": body.Append(WzNames.Npc(ToInt(payload))); break;
-                case "t": body.Append(WzNames.Item(ToInt(payload))); break;
-                case "z": body.Append(WzNames.Item(ToInt(payload))); break;
-                case "v":
-                case "i": body.Append("[" + WzNames.Item(ToInt(payload)) + "]"); break;
-                case "f": break;                                    // UI 图片：略
-                case "s": body.Append(payload); break;
+                case 'h': buffer.Append(Profile.playerName); break;
+                case 'o': buffer.Append(WzNames.Mob(ToInt(payload))); break;
+                case 'c': buffer.Append(Profile.ItemCount(ToInt(payload))); break;
+                case 'm': buffer.Append(WzNames.Map(ToInt(payload))); break;
+                case 'p': buffer.Append(WzNames.Npc(ToInt(payload))); break;
+                case 't':
+                case 'z': buffer.Append(WzNames.Item(ToInt(payload))); break;
+                case 's': buffer.Append(payload); break;
+                case 'v':
+                case 'i':
+                    {
+                        Flush();
+                        int id = ToInt(payload);
+                        content.Runs.Add(new DialogRun
+                        {
+                            Kind = DialogRunKind.Icon,
+                            Art = ItemIconPath(id) ?? "",
+                            Fallback = "[" + WzNames.Item(id) + "]",
+                        });
+                        break;
+                    }
+                case 'f':
+                    Flush();
+                    if (payload.Length > 0) content.Runs.Add(new DialogRun { Kind = DialogRunKind.Icon, Art = payload });
+                    break;
                 default: break;
             }
             i = close + 1;
         }
-        if (bold) body.Append("</b>");
-        if (color != null) body.Append("</color>");
-        content.Body = body.ToString().Trim('\n');
+        Flush();
+
+        var plain = new StringBuilder();
+        foreach (var run in content.Runs)
+            plain.Append(run.Kind == DialogRunKind.Icon ? run.Fallback : run.Text);
+        content.Body = plain.ToString().Trim('\n');
         return content;
     }
 
@@ -136,7 +164,26 @@ public static class DialogText
         return int.TryParse(s, out v) ? v : 0;
     }
 
-    // 选项文字里的颜色/图标标记也要去掉
+    // 道具图标节点：#i<id>#/#v<id># 在原端画的是 IMG 里的 info/icon。
+    public static string ItemIconPath(int id)
+    {
+        if (id <= 0) return null;
+        int category = id / 1000000;
+        if (category == 1)
+        {
+            var dir = EquipCatalog.DirOf(id);
+            if (!string.IsNullOrEmpty(dir)) return "Character/" + dir + "/" + id.ToString("D8") + ".img/info/icon";
+            if (WeaponDefs.TryGet(id.ToString(), out _)) return "Character/Weapon/" + id.ToString("D8") + ".img/info/icon";
+            return null;
+        }
+        string folder = category == 2 ? "Consume" : category == 3 ? "Install" :
+                        category == 4 ? "Etc" : category == 5 ? "Cash" : null;
+        if (folder == null) return null;
+        return "Item/" + folder + "/" + (id / 10000).ToString("D4") + ".img/" +
+               id.ToString("D8") + "/info/icon";
+    }
+
+    // 选项文字里的颜色/图标标记也要去掉（程序生成的列表行用不到标记，这里只兜底）
     public static string StripMarkup(string raw)
     {
         var sb = new StringBuilder(raw.Length);

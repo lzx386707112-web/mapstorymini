@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-// 源端脚本的取用入口。两条通道，内容完全一样：
-//   1) Data/scripts/{npc,quest}/<名字>.js —— 编辑器/桌面直接读文件，改完马上生效，方便对拍源端
+// 全类别源端脚本取用入口。两条通道的逻辑文本一致（原件见 Data/script-sources）：
+//   1) Data/scripts/{kind}/<名字>.js —— 编辑器/桌面直接读文件，改完马上生效，方便对拍源端
 //   2) Resources/Scripts/npc_scripts.json —— 打包进包体，Android / WebGL 不需要 /sdcard 上装脚本
 // 两份都由 tools/sync_npc_scripts.py 从 BeiDou-Server/gms-server/scripts-zh-CN（缺中文回落
 // scripts）逐字节复制过来。脚本必须原样执行，所以同步阶段不做任何改写。
@@ -23,6 +23,31 @@ public static class ScriptSource
     public static string Root => Path.Combine(WzAssets.DataRoot, "scripts");
     public static string Evidence => Root + " | Resources/" + PackedResource;
 
+    // NPCScriptManager：命名 npc → BeiDouSpecial → 数字 npc，保留子目录名。
+    public static string LoadNpc(int npcId, string scriptName, out string key)
+    {
+        var candidates = string.IsNullOrEmpty(scriptName)
+            ? new[] { "npc/" + npcId }
+            : new[] { "npc/" + scriptName, "BeiDouSpecial/" + scriptName, "npc/" + npcId };
+        foreach (string candidate in candidates)
+        {
+            var text = LoadKey(candidate);
+            if (text != null) { key = candidate; return text; }
+        }
+        key = candidates[0];
+        return null;
+    }
+
+    public static string LoadKey(string key)
+    {
+        if (string.IsNullOrEmpty(key) || key.StartsWith("/", StringComparison.Ordinal) || key.IndexOf('\\') >= 0)
+            throw new ArgumentException("Invalid script key", nameof(key));
+        foreach (string part in key.Split('/'))
+            if (part.Length == 0 || part == "." || part == "..") throw new ArgumentException("Invalid script key", nameof(key));
+        int slash = key.IndexOf('/');
+        return slash < 0 ? Load("", key) : Load(key.Substring(0, slash), key.Substring(slash + 1));
+    }
+
     public static bool Has(string kind, int id) => !string.IsNullOrEmpty(Load(kind, id));
 
     public static string Load(string kind, int id) => Load(kind, id.ToString());
@@ -30,7 +55,10 @@ public static class ScriptSource
     public static string Load(string kind, string name)
     {
         if (string.IsNullOrEmpty(name)) return null;
-        string key = kind + "/" + name;
+        string key = string.IsNullOrEmpty(kind) ? name : kind + "/" + name;
+        if (Path.IsPathRooted(key) || key.IndexOf('\\') >= 0) throw new ArgumentException("Invalid script path");
+        foreach (string part in key.Split('/'))
+            if (part.Length == 0 || part == "." || part == "..") throw new ArgumentException("Invalid script path");
         if (cache.TryGetValue(key, out var text)) return text;
         if (missing.Contains(key)) return null;
 

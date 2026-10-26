@@ -127,6 +127,8 @@ namespace MapleDash.Js
     {
         public string Name = "";
         public string[] Parameters = Array.Empty<string>();
+        public JsNode[] Patterns;
+        public bool Arrow;
         public JsBlock Body;                   // 函数体块；原生函数为 null
         public JsScope Closure;
         public Func<JsCall, JsValue> Native;
@@ -180,8 +182,8 @@ namespace MapleDash.Js
         public JsReturnSignal(JsValue v) { Value = v; }
     }
 
-    public sealed class JsBreakSignal : Exception { }
-    public sealed class JsContinueSignal : Exception { }
+    public sealed class JsBreakSignal : Exception { public readonly string Label; public JsBreakSignal(string label = null) { Label = label; } }
+    public sealed class JsContinueSignal : Exception { public readonly string Label; public JsContinueSignal(string label = null) { Label = label; } }
 
     // JS 类型转换规则（ECMA-262 相关章节的实用子集）
     public static class JsConvert
@@ -200,6 +202,7 @@ namespace MapleDash.Js
             if (v == null || v is JsUndefined) return double.NaN;
             if (v is JsNull) return 0;
             if (v is JsNumber n) return n.Value;
+            if (v is JsDate date) return date.Milliseconds;
             if (v is JsBoolean b) return b.Value ? 1 : 0;
             if (v is JsString s) return StringToNumber(s.Value);
             return double.NaN;

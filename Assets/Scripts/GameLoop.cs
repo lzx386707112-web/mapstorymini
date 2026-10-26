@@ -45,6 +45,9 @@ public class GameLoop : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Boot()
     {
+#if UNITY_EDITOR
+        if (UnityEditor.SessionState.GetBool("NativeCashSceneChecks", false)) return;
+#endif
 #if UNITY_WEBGL && !UNITY_EDITOR
         WzWebLoader.Begin(CreateGame);
 #elif UNITY_ANDROID && !UNITY_EDITOR
@@ -323,7 +326,7 @@ public class GameLoop : MonoBehaviour
             var st = Art.Stage(themeKey);
             PlayerCtrl.SetBounds(backdrop.WalkMin, backdrop.WalkMax);
             // foothold 地形交给角色/怪物：贴台阶、走斜坡、到段尽头被挡住
-            PlayerCtrl.SetTerrain(st != null ? st.Footholds : null);
+            PlayerCtrl.SetTerrain(st != null ? st.Footholds : null, st != null ? st.ForbidFallDown : null);
             PlayerCtrl.Climbs = st != null ? st.Climbs : null;
             if (camRig != null && st != null) camRig.SetStage(st);
         }

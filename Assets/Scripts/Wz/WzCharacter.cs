@@ -193,6 +193,24 @@ public static class WzCharacter
         return recipe == null ? null : Pose(recipe, "atk");
     }
 
+    public static int WeaponAttackSpeed(string key)
+    {
+        var recipe = Recipe(key);
+        if (recipe == null) return 6;
+        var ids = (List<object>)recipe["ids"];
+        foreach (string id in ids)
+            if (Category(id) == "Weapon") return Equipment(id).Int("info/attackSpeed", 6);
+        return 6; // EXE 0040A845: missing attackSpeed defaults to 6.
+    }
+
+    // EXE 00454776..004547E8: clamp speed to 2..10, then truncate each
+    // frame's integer milliseconds separately, rather than scaling the total.
+    public static float AttackFrameDelay(float delay, int attackSpeed)
+    {
+        int milliseconds = Mathf.RoundToInt(delay * 1000f);
+        return milliseconds * (Mathf.Clamp(attackSpeed, 2, 10) + 10) / 16 / 1000f;
+    }
+
     // 当前武器的攻击音效键（Sound/Weapon/<family>/Attack）。
     // 原版按武器 info/attack 索引 Sound/Weapon.img 的家族名，与姿势同一套索引。
     public static string AttackSoundKey(string key)

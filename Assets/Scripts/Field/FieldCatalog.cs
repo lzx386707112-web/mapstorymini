@@ -9,6 +9,8 @@ public sealed class FieldFoothold
 {
     public int id, layer, group;
     public float x1, y1, x2, y2;
+    // 原端 foothold 的 forbidFallDown 属性：这一格禁止 ↓+跳跃穿下去
+    public int forbidFallDown;
 }
 
 public sealed class FieldRope

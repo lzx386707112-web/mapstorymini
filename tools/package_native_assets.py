@@ -187,6 +187,20 @@ def main():
             match = next(((int(x),int(y)) for y,x in candidates if np.array_equal(native[y:y+th,x:x+tw],target)),None)
             if match:
                 aliases[alias] = {"source":"UI/StatusBar.img/"+node,"crop":[*match,tw,th]}; break
+    # 底板右半段要按 71 像素整列铺：旧裁片只取深色 35 行，拉长后会盖掉底板顶部的白色渐变。
+    # 键名字形不登记别名：运行期按扫描码直接读 UIWindow.img/KeyConfig/key/<scan>。
+    aliases["ui/bar/plate_col"] = {"source": "UI/StatusBar.img/base/backgrnd", "crop": [400, 0, 1, 71]}
+    # 聊天输入行下沿的凹线：客户端字符串池里有 UI/StatusBar.img/base/chat，之前一直没画。
+    aliases.setdefault("ui/bar/chat_full", {"source": "UI/StatusBar.img/base/chat"})
+    # 聊天目标按钮：原版专用皮肤（exe 字符串池直接引用 UI/StatusBar.img/base/chatTarget）。
+    aliases.setdefault("ui/bar/chatTarget_full", {"source": "UI/StatusBar.img/base/chatTarget"})
+    # 掉血/掉蓝闪烁的两帧（0/1 交替）与聊天频道下拉用的原版 ComboBox2（81×20 四态）。
+    for _n, _s in (("hpflash_0", "gauge/hpFlash/0"), ("hpflash_1", "gauge/hpFlash/1"),
+                   ("mpflash_0", "gauge/mpFlash/0"), ("mpflash_1", "gauge/mpFlash/1")):
+        aliases.setdefault("ui/statusbar/" + _n, {"source": "UI/StatusBar.img/" + _s})
+    for _s in ("normal", "mouseOver", "pressed", "disabled"):
+        aliases.setdefault("ui/bar/combo_" + _s, {"source": "UI/Basic.img/ComboBox2/" + _s + "/0"})
+
     unmatched = sorted(alias for group in targets.values() for alias in group if alias not in aliases and alias != "ui/statusbar/identity_plate")
     (ROOT / "Library/NativeAssets-unmatched.json").write_text(json.dumps(unmatched, indent=2))
     print("Unmatched UI/FX aliases:", unmatched, flush=True)

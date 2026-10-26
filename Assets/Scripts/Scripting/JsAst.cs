@@ -62,6 +62,7 @@ namespace MapleDash.Js
     {
         public int Line;
         public int Column;
+        public string Label;
 
         public virtual JsValue Eval(JsInterpreter it, JsScope scope)
             => throw new JsRuntimeException("Cannot evaluate statement as expression");
@@ -92,6 +93,16 @@ namespace MapleDash.Js
         }
     }
 
+    public sealed class JsLabel : JsNode
+    {
+        public JsNode Body;
+        public override void Exec(JsInterpreter it, JsScope scope)
+        {
+            try { Body.Exec(it, scope); }
+            catch (JsBreakSignal signal) when (signal.Label == Label) { }
+        }
+    }
+
     public sealed class JsEmpty : JsNode
     {
         public override void Exec(JsInterpreter it, JsScope scope) { }
@@ -101,6 +112,7 @@ namespace MapleDash.Js
     {
         public string Name;
         public JsNode Init;
+        public JsNode Pattern;
     }
 
     public sealed class JsVarDecl : JsNode
@@ -113,10 +125,12 @@ namespace MapleDash.Js
                 var d = Decls[i];
                 if (d.Init == null)
                 {
+                    if (d.Pattern != null) throw new JsRuntimeException("SyntaxError: destructuring declaration requires initializer");
                     if (!scope.FunctionScope.HasOwn(d.Name)) scope.DeclareVar(d.Name, JsUndefined.Value);
                     continue;
                 }
-                scope.DeclareVar(d.Name, d.Init.Eval(it, scope));
+                if (d.Pattern != null) JsPatterns.Bind(d.Pattern, d.Init.Eval(it, scope), it, scope, true);
+                else scope.DeclareVar(d.Name, d.Init.Eval(it, scope));
             }
         }
     }
@@ -125,6 +139,7 @@ namespace MapleDash.Js
     {
         public string Name;
         public string[] Parameters;
+        public JsNode[] Patterns;
         public JsBlock Body;
 
         public override void Exec(JsInterpreter it, JsScope scope)
@@ -166,8 +181,8 @@ namespace MapleDash.Js
             {
                 it.Step();
                 try { Body?.Exec(it, scope); }
-                catch (JsBreakSignal) { break; }
-                catch (JsContinueSignal) { }
+                catch (JsBreakSignal signal) when (signal.Label == null || signal.Label == Label) { break; }
+                catch (JsContinueSignal signal) when (signal.Label == null || signal.Label == Label) { }
                 Update?.Eval(it, scope);
             }
         }
@@ -179,10 +194,26 @@ namespace MapleDash.Js
         public JsNode Target;           // for (k in o)
         public JsNode ObjectExpr;
         public JsNode Body;
+        public bool Values;
+        public JsNode Pattern;
 
         public override void Exec(JsInterpreter it, JsScope scope)
         {
             var obj = ObjectExpr.Eval(it, scope);
+            if (Values)
+            {
+                foreach (var value in JsPatterns.Iterate(obj))
+                {
+                    it.Step();
+                    if (Pattern != null) JsPatterns.Bind(Pattern, value, it, scope, true);
+                    else if (VarName != null) scope.DeclareVar(VarName, value);
+                    else JsPatterns.Bind(Target, value, it, scope, false);
+                    try { Body?.Exec(it, scope); }
+                    catch (JsBreakSignal signal) when (signal.Label == null || signal.Label == Label) { break; }
+                    catch (JsContinueSignal signal) when (signal.Label == null || signal.Label == Label) { }
+                }
+                return;
+            }
             var keys = new List<string>();
             if (obj is JsObject o) keys.AddRange(o.Props.Keys);
             else if (obj is JsArray a)
@@ -205,8 +236,8 @@ namespace MapleDash.Js
                     it.SetMember(host, mem.PropertyName(it, scope), kv);
                 }
                 try { Body?.Exec(it, scope); }
-                catch (JsBreakSignal) { break; }
-                catch (JsContinueSignal) { }
+                catch (JsBreakSignal signal) when (signal.Label == null || signal.Label == Label) { break; }
+                catch (JsContinueSignal signal) when (signal.Label == null || signal.Label == Label) { }
             }
         }
     }
@@ -220,8 +251,8 @@ namespace MapleDash.Js
             {
                 it.Step();
                 try { Body?.Exec(it, scope); }
-                catch (JsBreakSignal) { break; }
-                catch (JsContinueSignal) { }
+                catch (JsBreakSignal signal) when (signal.Label == null || signal.Label == Label) { break; }
+                catch (JsContinueSignal signal) when (signal.Label == null || signal.Label == Label) { }
             }
         }
     }
@@ -235,8 +266,8 @@ namespace MapleDash.Js
             {
                 it.Step();
                 try { Body?.Exec(it, scope); }
-                catch (JsBreakSignal) { break; }
-                catch (JsContinueSignal) { }
+                catch (JsBreakSignal signal) when (signal.Label == null || signal.Label == Label) { break; }
+                catch (JsContinueSignal signal) when (signal.Label == null || signal.Label == Label) { }
             }
             while (JsConvert.ToBoolean(Test.Eval(it, scope)));
         }
@@ -251,12 +282,12 @@ namespace MapleDash.Js
 
     public sealed class JsBreak : JsNode
     {
-        public override void Exec(JsInterpreter it, JsScope scope) => throw new JsBreakSignal();
+        public override void Exec(JsInterpreter it, JsScope scope) => throw new JsBreakSignal(Label);
     }
 
     public sealed class JsContinue : JsNode
     {
-        public override void Exec(JsInterpreter it, JsScope scope) => throw new JsContinueSignal();
+        public override void Exec(JsInterpreter it, JsScope scope) => throw new JsContinueSignal(Label);
     }
 
     public sealed class JsThrow : JsNode
@@ -324,7 +355,7 @@ namespace MapleDash.Js
                 for (int i = start; i < Cases.Count; i++)
                     for (int k = 0; k < Cases[i].Body.Count; k++) Cases[i].Body[k].Exec(it, scope);
             }
-            catch (JsBreakSignal) { }
+            catch (JsBreakSignal signal) when (signal.Label == null || signal.Label == Label) { }
         }
     }
 
@@ -354,7 +385,8 @@ namespace MapleDash.Js
         {
             var a = new JsArray();
             for (int i = 0; i < Items.Count; i++)
-                a.Items.Add(Items[i] == null ? JsUndefined.Value : Items[i].Eval(it, scope));
+                if (Items[i] is JsSpread spread) a.Items.AddRange(JsPatterns.Iterate(spread.Value.Eval(it, scope)));
+                else a.Items.Add(Items[i] == null ? JsUndefined.Value : Items[i].Eval(it, scope));
             return a;
         }
     }
@@ -366,7 +398,12 @@ namespace MapleDash.Js
         {
             var o = new JsObject();
             for (int i = 0; i < Props.Count; i++)
-                o.Set(Props[i].Key, Props[i].Value.Eval(it, scope));
+                if (Props[i].Value is JsSpread spread)
+                {
+                    var source = spread.Value.Eval(it, scope);
+                    foreach (var key in JsPatterns.Keys(source)) o.Set(key, it.GetMember(source, key));
+                }
+                else o.Set(Props[i].Key, Props[i].Value.Eval(it, scope));
             return o;
         }
     }
@@ -376,8 +413,10 @@ namespace MapleDash.Js
         public string Name;
         public string[] Parameters;
         public JsBlock Body;
+        public JsNode[] Patterns;
+        public bool Arrow;
         public override JsValue Eval(JsInterpreter it, JsScope scope)
-            => new JsFunction { Name = Name ?? "", Parameters = Parameters, Body = Body, Closure = scope };
+            => new JsFunction { Name = Name ?? "", Parameters = Parameters, Patterns = Patterns, Arrow = Arrow, Body = Body, Closure = scope };
     }
 
     public sealed class JsUnary : JsNode
@@ -466,6 +505,7 @@ namespace MapleDash.Js
         public override JsValue Eval(JsInterpreter it, JsScope scope)
         {
             var l = Left.Eval(it, scope);
+            if (Op == "??") return l is JsNull || l is JsUndefined ? Right.Eval(it, scope) : l;
             if (Op == "&&") return JsConvert.ToBoolean(l) ? Right.Eval(it, scope) : l;
             return JsConvert.ToBoolean(l) ? l : Right.Eval(it, scope);
         }
@@ -497,7 +537,8 @@ namespace MapleDash.Js
                 result = JsInterpreter.Binary(Op.Substring(0, Op.Length - 1), cur, rhs);
             }
 
-            if (Target is JsIdentifier id) scope.Set(id.Name, result);
+            if (Target is JsArrayLiteral || Target is JsObjectLiteral) JsPatterns.Bind(Target, result, it, scope, false);
+            else if (Target is JsIdentifier id) scope.Set(id.Name, result);
             else if (Target is JsMember m)
             {
                 var host = m.Object.Eval(it, scope);
@@ -513,6 +554,7 @@ namespace MapleDash.Js
         public JsNode Object;
         public JsNode Property;          // 计算属性
         public string Name;              // 点号属性
+        public bool Optional;
 
         public string PropertyName(JsInterpreter it, JsScope scope)
             => Name ?? JsConvert.ToString(Property.Eval(it, scope));
@@ -520,6 +562,7 @@ namespace MapleDash.Js
         public override JsValue Eval(JsInterpreter it, JsScope scope)
         {
             var host = Object.Eval(it, scope);
+            if (Optional && (host is JsNull || host is JsUndefined)) return JsUndefined.Value;
             return it.GetMember(host, PropertyName(it, scope));
         }
     }
@@ -535,7 +578,24 @@ namespace MapleDash.Js
             if (Callee is JsMember m)
             {
                 thisVal = m.Object.Eval(it, scope);
+                if (m.Optional && (thisVal is JsNull || thisVal is JsUndefined)) return JsUndefined.Value;
                 fn = it.GetMember(thisVal, m.PropertyName(it, scope));
+            }
+            else if (Callee is JsIdentifier direct && direct.Name == "eval" && !scope.TryGet("eval", out _))
+            {
+                if (Args.Count == 0) return JsUndefined.Value;
+                var input = Args[0].Eval(it, scope);
+                if (!(input is JsString text)) return input;
+                var program = new JsParser(text.Value).ParseProgram();
+                it.Hoist(program.Body, scope);
+                JsValue result = JsUndefined.Value;
+                foreach (var statement in program.Body)
+                {
+                    it.Step();
+                    if (statement is JsExprStmt expression) result = expression.Expr.Eval(it, scope);
+                    else { statement.Exec(it, scope); result = JsUndefined.Value; }
+                }
+                return result;
             }
             else fn = Callee.Eval(it, scope);
 
@@ -544,8 +604,7 @@ namespace MapleDash.Js
                 string label = Callee is JsMember jm && !string.IsNullOrEmpty(jm.Name) ? jm.Name : "expression";
                 throw new JsRuntimeException("TypeError: " + label + " is not a function (" + JsConvert.ToString(fn) + ")");
             }
-            var args = new JsValue[Args.Count];
-            for (int i = 0; i < Args.Count; i++) args[i] = Args[i].Eval(it, scope);
+            var args = JsPatterns.Arguments(Args, it, scope);
             return it.Call(fn, thisVal, args);
         }
     }
@@ -558,12 +617,10 @@ namespace MapleDash.Js
         public override JsValue Eval(JsInterpreter it, JsScope scope)
         {
             var fn = Callee.Eval(it, scope);
-            var args = new JsValue[Args.Count];
-            for (int i = 0; i < Args.Count; i++) args[i] = Args[i].Eval(it, scope);
-            if (fn is JsFunction f && f.Name == "Date") return new JsString(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            var args = JsPatterns.Arguments(Args, it, scope);
             var obj = new JsObject();
             var ret = it.Call(fn, obj, args);
-            return ret is JsObject || ret is JsArray || ret is JsHostObject ? ret : obj;
+            return ret is JsObject || ret is JsArray || ret is JsHostObject || ret is JsDate || ret is JsRegExp ? ret : obj;
         }
     }
 

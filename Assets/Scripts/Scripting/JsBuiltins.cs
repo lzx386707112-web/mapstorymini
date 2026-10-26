@@ -37,8 +37,32 @@ namespace MapleDash.Js
             var boolFn = JsFunction.FromNative("Boolean", c => JsBoolean.Of(JsConvert.ToBoolean(c.Arg(0))));
             scope.Declare("Boolean", boolFn);
 
+            scope.Declare("Date", JsDate.Constructor());
             scope.Declare("Math", BuildMath(it));
             scope.Declare("JSON", BuildJson(it));
+            var objectFn = JsFunction.FromNative("Object", c => c.ArgCount == 0 || c.Arg(0) is JsNull || c.Arg(0) is JsUndefined ? new JsObject() : c.Arg(0));
+            foreach (var method in new[] { "keys", "values", "entries" })
+                objectFn.Members.Set(method, JsFunction.FromNative(method, c =>
+                {
+                    var result = new JsArray();
+                    foreach (var key in JsPatterns.Keys(c.Arg(0)))
+                    {
+                        var value = it.GetMember(c.Arg(0), key);
+                        result.Items.Add(method == "keys" ? (JsValue)new JsString(key) : method == "values" ? value : new JsArray(new JsValue[] { new JsString(key), value }));
+                    }
+                    return result;
+                }));
+            scope.Declare("Object", objectFn);
+            scope.Declare("Set", JsFunction.FromNative("Set", c =>
+            {
+                var values = new List<JsValue>();
+                if (c.ArgCount > 0) foreach (var value in JsPatterns.Iterate(c.Arg(0)))
+                    if (!values.Exists(v => JsConvert.StrictEquals(v, value))) values.Add(value);
+                var set = new JsHostObject(values);
+                set.Set("has", JsFunction.FromNative("has", a => JsBoolean.Of(values.Exists(v => JsConvert.StrictEquals(v, a.Arg(0))))));
+                set.Set("add", JsFunction.FromNative("add", a => { if (!values.Exists(v => JsConvert.StrictEquals(v, a.Arg(0)))) values.Add(a.Arg(0)); return set; }));
+                return set;
+            }));
 
             var arrayFn = JsFunction.FromNative("Array", c => new JsArray());
             var arrayProto = new JsObject();
@@ -51,12 +75,7 @@ namespace MapleDash.Js
             foreach (var name in StringMethodNames) stringProto.Set(name, StringMethod(it, name));
             stringFn.Members.Set("prototype", stringProto);
 
-            // 单机客户端没有 JVM：显式报错，脚本按原端「异常 → dispose」路径收尾，而不是静默错乱。
-            var java = new JsObject();
-            java.Set("type", JsFunction.FromNative("type", c =>
-                throw new JsRuntimeException("Java interop (" + JsConvert.ToString(c.Arg(0)) + ") is not available in MapleDash")));
-            scope.Declare("Java", java);
-            scope.Declare("java", java);       // 个别脚本用小写 java 包名访问
+            JsJavaInterop.Install(it, scope);
 
             // 少量脚本用 console.log 打调试信息；客户端没有控制台，全部吞掉。
             var console = new JsObject();
@@ -139,7 +158,7 @@ namespace MapleDash.Js
         {
             "charAt", "charCodeAt", "indexOf", "lastIndexOf", "substring", "substr", "slice",
             "split", "replace", "toLowerCase", "toUpperCase", "trim", "concat", "toString",
-            "startsWith", "endsWith", "includes", "repeat", "valueOf",
+            "startsWith", "endsWith", "includes", "repeat", "valueOf", "match", "padEnd", "padStart",
         };
 
         public static bool HasStringMethod(string name)
@@ -196,6 +215,11 @@ namespace MapleDash.Js
                             var sep = c.Arg(0);
                             var arr = new JsArray();
                             if (sep is JsUndefined) { arr.Items.Add(new JsString(s)); return arr; }
+                            if (sep is JsRegExp splitRegex)
+                            {
+                                foreach (var part in splitRegex.Regex.Split(s)) arr.Items.Add(new JsString(part));
+                                return arr;
+                            }
                             string sp = JsConvert.ToString(sep);
                             if (sp.Length == 0)
                             {
@@ -207,10 +231,34 @@ namespace MapleDash.Js
                         }
                     case "replace":
                         {
+                            if (c.Arg(0) is JsRegExp replaceRegex)
+                            {
+                                string replacement = JsConvert.ToString(c.Arg(1));
+                                return new JsString(replaceRegex.Regex.Replace(s, replacement, replaceRegex.Global ? int.MaxValue : 1));
+                            }
                             string find = JsConvert.ToString(c.Arg(0));
                             string repl = JsConvert.ToString(c.Arg(1));
                             int idx = s.IndexOf(find, StringComparison.Ordinal);
                             return idx < 0 ? new JsString(s) : new JsString(s.Substring(0, idx) + repl + s.Substring(idx + find.Length));
+                        }
+                    case "match":
+                        {
+                            var regex = c.Arg(0) as JsRegExp ?? new JsRegExp(JsConvert.ToString(c.Arg(0)), "");
+                            var result = new JsArray();
+                            if (!regex.Global) return it.Call(regex.Get("exec"), regex, new JsValue[] { new JsString(s) });
+                            foreach (System.Text.RegularExpressions.Match match in regex.Regex.Matches(s)) result.Items.Add(new JsString(match.Value));
+                            return result.Items.Count == 0 ? (JsValue)JsNull.Value : result;
+                        }
+                    case "padEnd": case "padStart":
+                        {
+                            int target = JsConvert.ToInt32(c.Arg(0));
+                            if (target > 100000) throw new JsRuntimeException("RangeError: padded string exceeds budget");
+                            string fill = c.ArgCount < 2 ? " " : JsConvert.ToString(c.Arg(1));
+                            if (fill.Length == 0 || target <= s.Length) return new JsString(s);
+                            var padding = new StringBuilder();
+                            while (padding.Length < target - s.Length) padding.Append(fill);
+                            string pad = padding.ToString(0, target - s.Length);
+                            return new JsString(name == "padEnd" ? s + pad : pad + s);
                         }
                     case "toLowerCase": return new JsString(s.ToLowerInvariant());
                     case "toUpperCase": return new JsString(s.ToUpperInvariant());
@@ -239,7 +287,7 @@ namespace MapleDash.Js
             "push", "pop", "shift", "unshift", "splice", "slice", "join", "indexOf",
             "lastIndexOf", "reverse", "sort", "concat", "forEach", "map", "filter", "toString",
             // Java List/Set 风格：源端脚本对 cm 返回的集合直接调 size()/get()/isEmpty()
-            "size", "get", "isEmpty", "contains", "add", "toArray",
+            "size", "get", "isEmpty", "contains", "add", "toArray", "reduce", "some", "every", "find", "findIndex", "includes",
         };
 
         public static bool HasArrayMethod(string name)
@@ -370,6 +418,31 @@ namespace MapleDash.Js
                             }
                             return res;
                         }
+                    case "reduce":
+                        {
+                            int index = 0;
+                            JsValue accumulator;
+                            if (c.ArgCount > 1) accumulator = c.Arg(1);
+                            else if (a.Items.Count > 0) accumulator = a.Items[index++];
+                            else throw new JsRuntimeException("TypeError: reduce of empty array with no initial value");
+                            for (; index < a.Items.Count; index++) accumulator = it.Call(c.Arg(0), JsUndefined.Value, new JsValue[] { accumulator, a.Items[index], new JsNumber(index), a });
+                            return accumulator;
+                        }
+                    case "some": case "every": case "find": case "findIndex":
+                        {
+                            for (int index = 0; index < a.Items.Count; index++)
+                            {
+                                bool match = JsConvert.ToBoolean(it.Call(c.Arg(0), c.Arg(1), new JsValue[] { a.Items[index], new JsNumber(index), a }));
+                                if (match && name == "find") return a.Items[index];
+                                if (match && name == "findIndex") return new JsNumber(index);
+                                if (match && name == "some") return JsBoolean.True;
+                                if (!match && name == "every") return JsBoolean.False;
+                            }
+                            if (name == "find") return JsUndefined.Value;
+                            if (name == "findIndex") return new JsNumber(-1);
+                            return JsBoolean.Of(name == "every");
+                        }
+                    case "includes": return JsBoolean.Of(a.Items.Exists(v => JsConvert.StrictEquals(v, c.Arg(0))));
                     case "forEach":
                         {
                             var fn = c.Arg(0) as JsFunction;

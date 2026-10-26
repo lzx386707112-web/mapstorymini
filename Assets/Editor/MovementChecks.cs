@@ -34,6 +34,17 @@ public static class MovementChecks
             {
                 foreach (float direction in new[] {-1f, 1f})
                 {
+                    // 上层侧壁穿过下层地面；下层跨段仍连续，不能当成台阶。
+                    var underWall = Create(new List<Vector4> {
+                        new Vector4(-10,0,1,0), new Vector4(1,0,10,0),
+                        new Vector4(1,-1,1,3), new Vector4(1,3,5,3)
+                    }, 1f - direction * .2f, 0f);
+                    for (int i=0;i<Mathf.CeilToInt(.3f/dt);i++) Tick(underWall,direction,false,dt);
+                    Require((underWall.worldX-1f)*direction>.5f && underWall.grounded &&
+                        Mathf.Abs(underWall.FeetPos.y)<.001f,
+                        "upper sidewall blocked continuous lower ground at " + dt + " direction=" + direction);
+                    UnityEngine.Object.DestroyImmediate(underWall.gameObject);
+
                     var slope = Create(new List<Vector4> {new Vector4(-10,-2,0,0),new Vector4(0,0,10,2)}, -direction * .1f, -direction * .02f);
                     for (int i=0;i<Mathf.CeilToInt(.5f/dt);i++) Tick(slope,direction,false,dt);
                     Require(slope.grounded && Mathf.Abs(slope.FeetPos.y - slope.worldX * .2f) < .001f,

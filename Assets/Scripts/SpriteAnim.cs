@@ -67,6 +67,17 @@ public class SpriteAnim : MonoBehaviour
         this.speed = speedMul;
     }
 
+    public void PlayNativeAttack(string anim, int attackSpeed)
+    {
+        if (!Play(anim, true, true)) return;
+        var delays = new float[cur.delays.Length];
+        for (int i = 0; i < delays.Length; i++)
+            delays[i] = WzCharacter.AttackFrameDelay(cur.delays[i], attackSpeed);
+        // Do not mutate the shared original clip: skills and other actors use it.
+        cur = new Art.Clip { frames = cur.frames, delays = delays };
+        speed = 1f;
+    }
+
     public bool Play(string anim, bool once, bool force = false)
     {
         var clip = Art.GetClip(kind, key, Art.Resolve(kind, key, anim, baseAnim));
@@ -97,6 +108,23 @@ public class SpriteAnim : MonoBehaviour
             ? WzCharacter.ExpressionFrame(cur.frames[i], expression, Time.unscaledTime - expressionStarted)
             : Art.Frame(cur.frames[i]);
         if (sp != null) sr.sprite = sp;
+    }
+
+    void LateUpdate()
+    {
+        if (kind != "chars" || sr == null || sr.sprite == null) return;
+        var camera = Camera.main;
+        if (camera == null || !camera.orthographic) return;
+        // Gr2D_DX8.dll 0x5040E2FD: native-size, unrotated copies use POINT;
+        // scaled copies use LINEAR (0x5040E377/0x5040E387). Mobile viewport
+        // scaling must be included even though the character's world scale is 1.
+        float pixelsPerUnit = camera.pixelHeight / (2f * camera.orthographicSize);
+        Vector3 scale = transform.lossyScale;
+        float sx = pixelsPerUnit * Mathf.Abs(scale.x) / sr.sprite.pixelsPerUnit;
+        float sy = pixelsPerUnit * Mathf.Abs(scale.y) / sr.sprite.pixelsPerUnit;
+        bool nativeSize = Mathf.Abs(sx - 1f) < .0001f && Mathf.Abs(sy - 1f) < .0001f;
+        var mode = nativeSize ? FilterMode.Point : FilterMode.Bilinear;
+        if (sr.sprite.texture.filterMode != mode) sr.sprite.texture.filterMode = mode;
     }
 
     void Update()

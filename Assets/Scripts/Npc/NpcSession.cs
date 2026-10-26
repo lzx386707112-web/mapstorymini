@@ -20,8 +20,31 @@ public sealed class NpcSession
     public bool Disposed;
     public bool Closed;
     public string LastError;
+    public string ScriptName { get; private set; }
 
-    JsEngine engine;
+    int scriptSessionId;
+    int scriptCharacterId;
+    bool hasStart, hasAction, hasEnd;
+    ITransport scriptTransport;
+    NativeScriptService offlineScripts;
+
+    ScriptResponse Dispatch(ScriptRequest request)
+    {
+        request.characterId = scriptCharacterId;
+        request.sessionId = scriptSessionId;
+        return scriptTransport != null ? scriptTransport.Script(request) : offlineScripts.Handle(request);
+    }
+
+    void CallScript(string function, params JsValue[] arguments)
+        => Dispatch(new ScriptRequest { operation = ScriptOperation.Call, function = function, arguments = arguments });
+
+    void ReleaseScript()
+    {
+        if (scriptSessionId == 0) return;
+        Dispatch(new ScriptRequest { operation = ScriptOperation.Close });
+        scriptSessionId = 0;
+    }
+    public readonly NativeScriptRoute Route = new NativeScriptRoute();
     JsHostObject cm;
     int pendingWarp = -1;
     int pendingNpc = -1;
@@ -57,10 +80,8 @@ public sealed class NpcSession
     public static NpcSession Talk(int npcId, string scriptName)
     {
         CloseActive();
-        string source = string.IsNullOrEmpty(scriptName)
-            ? ScriptSource.Load("npc", npcId)
-            : ScriptSource.Load("npc", scriptName);
-        if (string.IsNullOrEmpty(source) && !string.IsNullOrEmpty(scriptName)) source = ScriptSource.Load("npc", npcId);
+        string scriptKey;
+        string source = ScriptSource.LoadNpc(npcId, scriptName, out scriptKey);
         if (string.IsNullOrEmpty(source))
         {
             BottomBar.Toast(WzNames.Npc(npcId) + " 没有对白脚本");
@@ -68,7 +89,7 @@ public sealed class NpcSession
         }
         var session = new NpcSession(npcId, 0, false, false);
         Active = session;
-        session.Begin(source, string.IsNullOrEmpty(scriptName) ? "npc/" + npcId : "npc/" + scriptName);
+        session.Begin(source, scriptKey);
         session.FinishInvocation();
         return session;
     }
@@ -147,25 +168,32 @@ public sealed class NpcSession
     {
         try
         {
-            engine = new JsEngine(source, name);
+            int slash = name.IndexOf('/');
+            ScriptName = slash < 0 ? name : name.Substring(slash + 1);
+            scriptTransport = GameSession.Net;
+            scriptCharacterId = GameSession.CharacterId;
+            if (scriptTransport == null) offlineScripts = new NativeScriptService(); // 编辑器离线检查
             cm = NpcApi.Build(this, NpcId, QuestId, IsQuest);
-            engine.Bind(IsQuest ? "qm" : "cm", cm);
-            engine.Bind("pi", cm);                    // 少数脚本用 pi
-            engine.Bind("player", NpcApi.BuildPlayer(this));
-            engine.Bind("Java", NpcApi.BuildJava());
-            engine.Run();
+            var bindings = new Dictionary<string, JsValue>
+            {
+                [IsQuest ? "qm" : "cm"] = cm, ["pi"] = cm,
+                ["player"] = NpcApi.BuildPlayer(this), ["Java"] = NpcApi.BuildJava()
+            };
+            var opened = Dispatch(new ScriptRequest { operation = ScriptOperation.Open, name = name, source = source, bindings = bindings });
+            scriptSessionId = opened.sessionId;
+            hasStart = opened.hasStart; hasAction = opened.hasAction; hasEnd = opened.hasEnd;
 
             if (IsQuest)
             {
-                if (engine.HasFunction(QuestEnd ? "end" : "start"))
-                    engine.Call(QuestEnd ? "end" : "start", new JsNumber(1), new JsNumber(0), new JsNumber(0));
+                if ((QuestEnd ? hasEnd : hasStart))
+                    CallScript(QuestEnd ? "end" : "start", new JsNumber(1), new JsNumber(0), new JsNumber(0));
                 else
                     Disposed = true;
             }
             else
             {
-                if (!engine.HasFunction("start")) { Disposed = true; return; }
-                engine.Call("start");
+                if (!hasStart) { Disposed = true; return; }
+                CallScript("start");
             }
         }
         catch (JsRuntimeException e)
@@ -199,8 +227,13 @@ public sealed class NpcSession
             }
             // Consume the old page. dispose() without a new send must not leave it stuck.
             Dialog.Mode = NpcDialogMode.None;
-            if (IsQuest) engine.Call(QuestEnd ? "end" : "start", new JsNumber(mode), new JsNumber(type), new JsNumber(selection));
-            else if (engine.HasFunction("action")) engine.Call("action", new JsNumber(mode), new JsNumber(type), new JsNumber(selection));
+            if (Route.type != NativeScriptRouteType.None)
+            {
+                if (!Route.Resolve(mode, selection, Dialog.Input, out var function, out var arguments)) { Close(); return; }
+                CallScript(function, arguments);
+            }
+            else if (IsQuest) CallScript(QuestEnd ? "end" : "start", new JsNumber(mode), new JsNumber(type), new JsNumber(selection));
+            else if (hasAction) CallScript("action", new JsNumber(mode), new JsNumber(type), new JsNumber(selection));
             else Close();
             FinishInvocation();
         }
@@ -220,6 +253,7 @@ public sealed class NpcSession
 
     void FinishInvocation()
     {
+        if (Disposed) ReleaseScript();
         if (!Closed && Disposed && !Dialog.Visible) Close();
     }
 
@@ -255,6 +289,7 @@ public sealed class NpcSession
 
     void CloseImmediate()
     {
+        ReleaseScript();
         Closed = true;
         Disposed = true;
         Dialog.Hide();

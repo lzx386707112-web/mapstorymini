@@ -1,0 +1,2237 @@
+{
+  "scriptCount": 2777,
+  "parseable": 2777,
+  "standardJavaScriptInvalid": [],
+  "embeddedParserInvalid": [],
+  "validJavaScriptRejectedByEmbeddedParser": [],
+  "sourceInvalidAcceptedByEmbeddedParser": [],
+  "javaTypeDependencies": {
+    "java.awt.Point": [
+      "BeiDouSpecial/万能传送",
+      "event/AkayrumFSB",
+      "event/AmoriaPQ",
+      "event/AreaBossBamboo",
+      "event/AreaBossCentipede",
+      "event/AreaBossDeo",
+      "event/AreaBossDoor1",
+      "event/AreaBossDoor2",
+      "event/AreaBossDoor3",
+      "event/AreaBossDoor4",
+      "event/AreaBossDoor5",
+      "event/AreaBossDoor6",
+      "event/AreaBossDyle",
+      "event/AreaBossEliza1",
+      "event/AreaBossFaust1",
+      "event/AreaBossFaust2",
+      "event/AreaBossKimera",
+      "event/AreaBossKingClang",
+      "event/AreaBossKingSageCat",
+      "event/AreaBossLeviathan",
+      "event/AreaBossMano",
+      "event/AreaBossNineTailedFox",
+      "event/AreaBossSeruf",
+      "event/AreaBossSnackBar",
+      "event/AreaBossStumpy",
+      "event/AreaBossTaeRoon",
+      "event/AreaBossTimer1",
+      "event/AreaBossTimer2",
+      "event/AreaBossTimer3",
+      "event/AreaBossZeno",
+      "event/BalrogBattle",
+      "event/BalrogBattle_Easy",
+      "event/BalrogQuest",
+      "event/CommerciVoyage",
+      "event/CygnusBattle",
+      "event/HolidayPQ_1",
+      "event/HolidayPQ_2",
+      "event/HolidayPQ_3",
+      "event/HorntailBattle",
+      "event/LucidBattle",
+      "event/MK_PrimeMinister",
+      "event/MK_PrimeMinister2",
+      "event/MagatiaPQ_A",
+      "event/MagatiaPQ_Z",
+      "event/PinkBeanBattle",
+      "event/PrincessNoBattle",
+      "event/RanmaruBattle",
+      "event/RanmaruHardBattle",
+      "event/RescueGaga",
+      "event/SeedTower20",
+      "event/WeddingCathedral",
+      "event/WeddingChapel",
+      "map/onUserEnter/108010101",
+      "map/onUserEnter/108010201",
+      "map/onUserEnter/108010301",
+      "map/onUserEnter/108010401",
+      "map/onUserEnter/108010501",
+      "map/onUserEnter/108010600",
+      "map/onUserEnter/108010610",
+      "map/onUserEnter/108010620",
+      "map/onUserEnter/108010630",
+      "map/onUserEnter/108010640",
+      "map/onUserEnter/677000001",
+      "map/onUserEnter/677000003",
+      "map/onUserEnter/677000005",
+      "map/onUserEnter/677000007",
+      "map/onUserEnter/677000009",
+      "map/onUserEnter/677000012",
+      "map/onUserEnter/910510000",
+      "map/onUserEnter/912000000",
+      "map/onUserEnter/925040100",
+      "map/onUserEnter/armoredSamuraiBoss",
+      "map/onUserEnter/emperorToadBoss",
+      "map/onUserEnter/pepeking_effect",
+      "npc/1032109",
+      "npc/1063017",
+      "npc/1104002",
+      "npc/1104100",
+      "npc/1104101",
+      "npc/1104102",
+      "npc/1104103",
+      "npc/1104104",
+      "npc/2112000",
+      "npc/2112010",
+      "npc/9000055",
+      "npc/9040006",
+      "npc/9105004",
+      "npc/9201044",
+      "npc/9201047",
+      "npc/9900002",
+      "portal/davy_next4",
+      "portal/enterInfo",
+      "portal/enterMCave",
+      "portal/enterNepenthes",
+      "portal/enterPort",
+      "portal/karingDoolToGoongiPortal",
+      "portal/karingDoolToHondonPortal",
+      "portal/karingGoongiToDoolPortal",
+      "portal/karingGoongiToHondonPortal",
+      "portal/karingHondonToDoolPortal",
+      "portal/karingHondonToGoongiPortal",
+      "portal/shenshuoBossRetry",
+      "quest/21401",
+      "reactor/boss3"
+    ],
+    "java.awt.Rectangle": [
+      "npc/9020001",
+      "reactor/2519000",
+      "reactor/2519001",
+      "reactor/2519002",
+      "reactor/2519003"
+    ],
+    "java.io.File": [
+      "BeiDouSpecial/万能传送",
+      "BeiDouSpecial/新高级boss传送"
+    ],
+    "java.lang.Integer": [
+      "npc/9900001"
+    ],
+    "java.lang.Short": [
+      "event/CommerciVoyage",
+      "npc/9390220",
+      "npc/9390221"
+    ],
+    "java.text.SimpleDateFormat": [
+      "npc/9390220"
+    ],
+    "java.util.ArrayList": [
+      "BeiDouSpecial/巡逻",
+      "event/ArkariumBattle",
+      "event/LucidBattle"
+    ],
+    "java.util.Calendar": [
+      "npc/9071005",
+      "npc/mPark_retire",
+      "portal/mPark_final"
+    ],
+    "java.util.Collections": [
+      "BeiDouSpecial/时装属性转移"
+    ],
+    "java.util.Date": [
+      "npc/9390220"
+    ],
+    "java.util.HashMap": [
+      "BeiDouSpecial/巡逻"
+    ],
+    "java.util.concurrent.ThreadLocalRandom": [
+      "event/LucidBattle"
+    ],
+    "java.util.concurrent.TimeUnit": [
+      "BeiDouSpecial/副本相关/副本积分兑换"
+    ],
+    "org.gms.client.BuffStat": [
+      "npc/2081005",
+      "npc/2103000",
+      "npc/2111015",
+      "portal/ariant_queens",
+      "quest/3314",
+      "quest/3514",
+      "quest/3941"
+    ],
+    "org.gms.client.Character": [
+      "npc/changeName"
+    ],
+    "org.gms.client.Client": [
+      "BeiDouSpecial/巡逻"
+    ],
+    "org.gms.client.Job": [
+      "BeiDouSpecial/战力系统",
+      "BeiDouSpecial/更换职业",
+      "BeiDouSpecial/装备制作/套装进化",
+      "quest/2001",
+      "quest/20101",
+      "quest/20102",
+      "quest/20103",
+      "quest/20104",
+      "quest/20105",
+      "quest/20201",
+      "quest/20202",
+      "quest/20203",
+      "quest/20204",
+      "quest/20205",
+      "quest/20311",
+      "quest/20312",
+      "quest/20313",
+      "quest/20314",
+      "quest/20315",
+      "quest/2034",
+      "quest/3414",
+      "quest/3414_free10rate",
+      "quest/3437"
+    ],
+    "org.gms.client.MonsterBook": [
+      "npc/scroll_generator"
+    ],
+    "org.gms.client.SkillFactory": [
+      "BeiDouSpecial/技能中心",
+      "npc/9900001"
+    ],
+    "org.gms.client.Stat": [
+      "BeiDouSpecial/时装属性转移"
+    ],
+    "org.gms.client.command.CommandsExecutor": [
+      "BeiDouSpecial/常用指令",
+      "npc/commands"
+    ],
+    "org.gms.client.inventory.InventoryType": [
+      "BeiDouSpecial/一键出售",
+      "BeiDouSpecial/任务/狩猎",
+      "BeiDouSpecial/副本相关/副本积分累计奖励",
+      "BeiDouSpecial/时装属性转移",
+      "BeiDouSpecial/灵魂戒指升级",
+      "BeiDouSpecial/称号系列选择",
+      "BeiDouSpecial/苍穹霸主戒",
+      "BeiDouSpecial/装备分解",
+      "BeiDouSpecial/装备制作/套装进化",
+      "BeiDouSpecial/装备制作/星级强化",
+      "BeiDouSpecial/装备制作/武器制作",
+      "BeiDouSpecial/装备制作/装备制作",
+      "BeiDouSpecial/装备制作/装备制作old",
+      "BeiDouSpecial/装备制作/装备制作补偿",
+      "BeiDouSpecial/装备制作/项链制作",
+      "BeiDouSpecial/装备制作/项链升级",
+      "BeiDouSpecial/钓鱼/戒指兑换",
+      "npc/1022101_old",
+      "npc/1032102",
+      "npc/1063000",
+      "npc/1063001",
+      "npc/1063002",
+      "npc/2042000",
+      "npc/2042001",
+      "npc/2042002",
+      "npc/9000019",
+      "npc/9330045",
+      "npc/scroll_generator",
+      "npc/waterOfLife",
+      "npc/坐骑领取",
+      "quest/2001",
+      "quest/2034",
+      "quest/3239",
+      "quest/3414",
+      "quest/3437",
+      "quest/3452",
+      "quest/3454",
+      "quest/3833"
+    ],
+    "org.gms.client.inventory.Item": [
+      "BeiDouSpecial/起源之塔/抽奖",
+      "BeiDouSpecial/起源之塔/积分商店",
+      "event/CafePQ_1",
+      "event/CafePQ_2",
+      "event/CafePQ_3",
+      "event/CafePQ_4",
+      "event/CafePQ_5",
+      "event/CafePQ_6",
+      "event/HolidayPQ_1",
+      "event/HolidayPQ_2",
+      "event/HolidayPQ_3",
+      "event/PinkBeanBattle",
+      "event/SeedTower20",
+      "reactor/2408002"
+    ],
+    "org.gms.client.inventory.ModifyInventory": [
+      "BeiDouSpecial/时装属性转移"
+    ],
+    "org.gms.client.inventory.Pet": [
+      "BeiDouSpecial/宠物"
+    ],
+    "org.gms.client.inventory.manipulator.InventoryManipulator": [
+      "BeiDouSpecial/其他功能",
+      "BeiDouSpecial/副本相关/副本积分累计奖励",
+      "BeiDouSpecial/宠物",
+      "BeiDouSpecial/灵魂戒指升级",
+      "BeiDouSpecial/苍穹霸主戒",
+      "BeiDouSpecial/装备分解",
+      "BeiDouSpecial/装备制作/套装进化",
+      "BeiDouSpecial/装备制作/星级强化",
+      "BeiDouSpecial/装备制作/武器制作",
+      "BeiDouSpecial/装备制作/装备制作",
+      "BeiDouSpecial/装备制作/装备制作old",
+      "BeiDouSpecial/装备制作/项链制作",
+      "BeiDouSpecial/装备制作/项链升级",
+      "BeiDouSpecial/钓鱼/戒指兑换",
+      "npc/1032102"
+    ],
+    "org.gms.client.inventory.manipulator.KarmaManipulator": [
+      "BeiDouSpecial/其他功能"
+    ],
+    "org.gms.client.processor.action.MakerProcessor": [
+      "npc/9000040",
+      "npc/9000040_1"
+    ],
+    "org.gms.config.GameConfig": [
+      "BeiDouSpecial/一键转生",
+      "event/AKAYRUMBattle",
+      "event/AmoriaPQ",
+      "event/BalrogBattle",
+      "event/BalrogBattle_Easy",
+      "event/BossRushPQ",
+      "event/CWKPQ",
+      "event/CafePQ_1",
+      "event/CafePQ_2",
+      "event/CafePQ_3",
+      "event/CafePQ_4",
+      "event/CafePQ_5",
+      "event/CafePQ_6",
+      "event/DelliBattle",
+      "event/ElementalBattle",
+      "event/EllinPQ",
+      "event/ElnathPQ",
+      "event/GuildQuest",
+      "event/HenesysPQ",
+      "event/HolidayPQ_1",
+      "event/HolidayPQ_2",
+      "event/HolidayPQ_3",
+      "event/HorntailBattle",
+      "event/HorntailPQ",
+      "event/KerningPQ",
+      "event/LatanicaBattle",
+      "event/LudiMazePQ",
+      "event/LudiPQ",
+      "event/MK_PrimeMinister",
+      "event/MK_PrimeMinister2",
+      "event/MagatiaPQ_A",
+      "event/MagatiaPQ_Z",
+      "event/OrbisPQ",
+      "event/PapulatusBattle",
+      "event/PinkBeanBattle",
+      "event/PiratePQ",
+      "event/RanmaruBattle",
+      "event/RanmaruHardBattle",
+      "event/RescueGaga",
+      "event/ScargaBattle",
+      "event/ShowaBattle",
+      "event/TD_Battle1",
+      "event/TD_Battle2",
+      "event/TD_Battle3",
+      "event/TD_Battle4",
+      "event/TD_Battle5",
+      "event/TreasurePQ",
+      "event/WuGongPQ",
+      "event/YaoSengPQ",
+      "event/ZakumBattle",
+      "event/ZakumPQ",
+      "npc/2010007",
+      "npc/2010008",
+      "npc/2013001",
+      "npc/2020008",
+      "npc/2020009",
+      "npc/2020010",
+      "npc/2020011",
+      "npc/2020013",
+      "npc/2042000",
+      "npc/2042001",
+      "npc/2042002",
+      "npc/2042005",
+      "npc/2082014",
+      "npc/2083000",
+      "npc/2091005",
+      "npc/9000017",
+      "npc/9000036",
+      "npc/9000040",
+      "npc/9000040_1",
+      "npc/9020001",
+      "npc/9201002",
+      "npc/9201011",
+      "npc/9201101",
+      "npc/mapleTV",
+      "npc/scroll_generator",
+      "quest/21101",
+      "quest/21201",
+      "quest/21302"
+    ],
+    "org.gms.constants.game.ExpTable": [
+      "BeiDouSpecial/任务/世界任务",
+      "BeiDouSpecial/任务/跑环",
+      "item/WorldQuest",
+      "npc/9020002",
+      "quest/20514"
+    ],
+    "org.gms.constants.game.GameConstants": [
+      "npc/1012100",
+      "npc/1022000",
+      "npc/1032001",
+      "npc/1032001_nextLevel",
+      "npc/1052001",
+      "npc/1090000",
+      "npc/1101001",
+      "npc/1102003",
+      "npc/1202010",
+      "npc/2091005_old",
+      "npc/2101017",
+      "npc/cpqchallenge",
+      "npc/cpqchallenge2",
+      "npc/rank_user",
+      "npc/scroll_generator",
+      "quest/2260"
+    ],
+    "org.gms.constants.id.ItemId": [
+      "npc/9330045"
+    ],
+    "org.gms.constants.id.MapId": [
+      "npc/2091005",
+      "portal/dojang_up"
+    ],
+    "org.gms.constants.inventory.ItemConstants": [
+      "BeiDouSpecial/其他功能",
+      "BeiDouSpecial/发色选择",
+      "BeiDouSpecial/起源之塔/抽奖",
+      "BeiDouSpecial/起源之塔/积分商店"
+    ],
+    "org.gms.constants.string.ExtendType": [
+      "npc/9071000",
+      "npc/mPark_in00",
+      "npc/mPark_in01",
+      "npc/mPark_in02",
+      "npc/mPark_welcome"
+    ],
+    "org.gms.manager.ServerManager": [
+      "npc/gachaponInfo"
+    ],
+    "org.gms.net.server.Server": [
+      "BeiDouSpecial/任务/主线任务",
+      "BeiDouSpecial/任务/每日任务",
+      "BeiDouSpecial/任务/狩猎",
+      "BeiDouSpecial/任务/血衣合成",
+      "BeiDouSpecial/其他功能",
+      "BeiDouSpecial/副本相关/副本积分兑换",
+      "BeiDouSpecial/副本相关/副本积分累计奖励",
+      "BeiDouSpecial/副本相关/副本道具兑换道具",
+      "BeiDouSpecial/在线奖励",
+      "BeiDouSpecial/巡逻",
+      "BeiDouSpecial/快速转职",
+      "BeiDouSpecial/新人福利",
+      "BeiDouSpecial/每日签到",
+      "BeiDouSpecial/每日装备强化",
+      "BeiDouSpecial/灵魂戒指升级",
+      "BeiDouSpecial/物品兑换",
+      "BeiDouSpecial/苍穹霸主戒",
+      "BeiDouSpecial/装备制作/装备制作",
+      "BeiDouSpecial/装备制作/装备制作old",
+      "BeiDouSpecial/装备制作/项链升级",
+      "BeiDouSpecial/金币兑换",
+      "BeiDouSpecial/钓鱼/道具兑换",
+      "BeiDouSpecial/钓鱼/鱼的兑换",
+      "event/2xEvent",
+      "item/WorldQuest",
+      "npc/2006",
+      "npc/9900001",
+      "portal/rankDeveloperRoom"
+    ],
+    "org.gms.net.server.channel.Channel": [
+      "npc/9201005",
+      "npc/9201008"
+    ],
+    "org.gms.net.server.channel.handlers.EnterMTSHandler": [
+      "npc/9900001"
+    ],
+    "org.gms.net.server.channel.handlers.RingActionHandler": [
+      "npc/9201002",
+      "npc/9201004",
+      "npc/9201011"
+    ],
+    "org.gms.net.server.guild.Guild": [
+      "npc/2010007"
+    ],
+    "org.gms.net.server.world.PartyCharacter[]": [
+      "event/AmoriaPQ",
+      "event/BalrogBattle",
+      "event/BalrogBattle_Easy",
+      "event/BossRushPQ",
+      "event/CafePQ_1",
+      "event/CafePQ_2",
+      "event/CafePQ_3",
+      "event/CafePQ_4",
+      "event/CafePQ_5",
+      "event/CafePQ_6",
+      "event/CommerciVoyage",
+      "event/DelliBattle",
+      "event/ElementalBattle",
+      "event/EllinPQ",
+      "event/ElnathPQ",
+      "event/GuildQuest",
+      "event/HenesysPQ",
+      "event/HolidayPQ_1",
+      "event/HolidayPQ_2",
+      "event/HolidayPQ_3",
+      "event/HorntailPQ",
+      "event/KerningPQ",
+      "event/LatanicaBattle",
+      "event/LudiMazePQ",
+      "event/LudiPQ",
+      "event/MK_PrimeMinister",
+      "event/MK_PrimeMinister2",
+      "event/MagatiaPQ_A",
+      "event/MagatiaPQ_Z",
+      "event/MonsterPark",
+      "event/OrbisPQ",
+      "event/PapulatusBattle",
+      "event/PiratePQ",
+      "event/PrincessNoBattle",
+      "event/RescueGaga",
+      "event/TD_Battle1",
+      "event/TD_Battle2",
+      "event/TD_Battle3",
+      "event/TD_Battle4",
+      "event/TD_Battle5",
+      "event/TreasurePQ",
+      "event/WuGongPQ",
+      "event/YaoSengPQ",
+      "event/ZakumPQ",
+      "event/s4aWorld"
+    ],
+    "org.gms.server.BossDamageGrowth": [
+      "BeiDouSpecial/Boss成长系统"
+    ],
+    "org.gms.server.CashShop": [
+      "BeiDouSpecial/共同富裕",
+      "BeiDouSpecial/装备制作/项链升级",
+      "BeiDouSpecial/金融/冒险炒股"
+    ],
+    "org.gms.server.EquipmentCubeManager": [
+      "BeiDouSpecial/魔方洗练"
+    ],
+    "org.gms.server.ItemInformationProvider": [
+      "BeiDouSpecial/一键出售",
+      "BeiDouSpecial/任务/血衣合成",
+      "BeiDouSpecial/任务/跑环",
+      "BeiDouSpecial/宠物",
+      "BeiDouSpecial/当前地图掉落_当前地图",
+      "BeiDouSpecial/当前地图掉落_物品查询",
+      "BeiDouSpecial/时装属性转移",
+      "BeiDouSpecial/灵魂戒指升级",
+      "BeiDouSpecial/爆率一览",
+      "BeiDouSpecial/称号系列选择",
+      "BeiDouSpecial/苍穹霸主戒",
+      "BeiDouSpecial/装备制作/套装进化",
+      "BeiDouSpecial/装备制作/星级强化",
+      "BeiDouSpecial/装备制作/装备制作补偿",
+      "BeiDouSpecial/装备制作/项链升级",
+      "BeiDouSpecial/起源之塔/奖池预览",
+      "BeiDouSpecial/起源之塔/抽奖",
+      "BeiDouSpecial/起源之塔/积分商店",
+      "npc/2006",
+      "npc/9900001",
+      "npc/scroll_generator",
+      "quest/20514"
+    ],
+    "org.gms.server.ShopFactory": [
+      "BeiDouSpecial/一键出售",
+      "npc/11000"
+    ],
+    "org.gms.server.expeditions.ExpeditionType": [
+      "BeiDouSpecial/露希妲远征",
+      "npc/1061014",
+      "npc/2030013",
+      "npc/2083004",
+      "npc/2101014",
+      "npc/2101017",
+      "npc/2141001",
+      "npc/2143003",
+      "npc/2143004",
+      "npc/9120201",
+      "npc/9201113",
+      "npc/9270047",
+      "npc/akayrumbattle"
+    ],
+    "org.gms.server.gachapon.Gachapon": [
+      "npc/gachaponInfo"
+    ],
+    "org.gms.server.life.LifeFactory": [
+      "BeiDouSpecial/万能传送",
+      "event/AKAYRUMBattle",
+      "event/AkayrumFSB",
+      "event/AmoriaPQ",
+      "event/AreaBossBamboo",
+      "event/AreaBossCentipede",
+      "event/AreaBossDeo",
+      "event/AreaBossDoor1",
+      "event/AreaBossDoor2",
+      "event/AreaBossDoor3",
+      "event/AreaBossDoor4",
+      "event/AreaBossDoor5",
+      "event/AreaBossDoor6",
+      "event/AreaBossDyle",
+      "event/AreaBossEliza1",
+      "event/AreaBossFaust1",
+      "event/AreaBossFaust2",
+      "event/AreaBossKimera",
+      "event/AreaBossKingClang",
+      "event/AreaBossKingSageCat",
+      "event/AreaBossLeviathan",
+      "event/AreaBossMano",
+      "event/AreaBossNineTailedFox",
+      "event/AreaBossSeruf",
+      "event/AreaBossSnackBar",
+      "event/AreaBossStumpy",
+      "event/AreaBossTaeRoon",
+      "event/AreaBossTimer1",
+      "event/AreaBossTimer2",
+      "event/AreaBossTimer3",
+      "event/AreaBossZeno",
+      "event/BalrogBattle",
+      "event/BalrogBattle_Easy",
+      "event/Boats",
+      "event/CommerciVoyage",
+      "event/CygnusBattle",
+      "event/HolidayPQ_1",
+      "event/HolidayPQ_2",
+      "event/HolidayPQ_3",
+      "event/HorntailBattle",
+      "event/LucidBattle",
+      "event/MK_PrimeMinister",
+      "event/MK_PrimeMinister2",
+      "event/MagatiaPQ_A",
+      "event/MagatiaPQ_Z",
+      "event/PinkBeanBattle",
+      "event/PrincessNoBattle",
+      "event/RanmaruBattle",
+      "event/RanmaruHardBattle",
+      "event/SeedTower20",
+      "event/WeddingCathedral",
+      "event/WeddingChapel",
+      "event/WuGongPQ",
+      "event/YaoSengPQ",
+      "map/onUserEnter/108010101",
+      "map/onUserEnter/108010201",
+      "map/onUserEnter/108010301",
+      "map/onUserEnter/108010401",
+      "map/onUserEnter/108010501",
+      "map/onUserEnter/677000001",
+      "map/onUserEnter/677000003",
+      "map/onUserEnter/677000005",
+      "map/onUserEnter/677000007",
+      "map/onUserEnter/677000009",
+      "map/onUserEnter/677000012",
+      "map/onUserEnter/910510000",
+      "map/onUserEnter/912000000",
+      "map/onUserEnter/925040100",
+      "map/onUserEnter/armoredSamuraiBoss",
+      "map/onUserEnter/emperorToadBoss",
+      "map/onUserEnter/pepeking_effect",
+      "npc/1032109",
+      "npc/1063017",
+      "npc/1104002",
+      "npc/1104100",
+      "npc/1104101",
+      "npc/1104102",
+      "npc/1104103",
+      "npc/1104104",
+      "npc/2112000",
+      "npc/2112010",
+      "npc/9000055",
+      "npc/9040006",
+      "npc/9105004",
+      "npc/9201044",
+      "npc/9201047",
+      "npc/9900002",
+      "npc/scroll_generator",
+      "portal/davy_next4",
+      "portal/enterInfo",
+      "portal/enterMCave",
+      "portal/enterNepenthes",
+      "portal/enterPort",
+      "portal/karingDoolToGoongiPortal",
+      "portal/karingDoolToHondonPortal",
+      "portal/karingGoongiToDoolPortal",
+      "portal/karingGoongiToHondonPortal",
+      "portal/karingHondonToDoolPortal",
+      "portal/karingHondonToGoongiPortal",
+      "portal/shenshuoBossRetry",
+      "quest/21401",
+      "reactor/2708000",
+      "reactor/6701000",
+      "reactor/6701001",
+      "reactor/6701002",
+      "reactor/boss3"
+    ],
+    "org.gms.server.life.LucidBossCompat": [
+      "event/LucidBattle"
+    ],
+    "org.gms.server.life.MonsterInformationProvider": [
+      "BeiDouSpecial/当前地图掉落_当前地图",
+      "BeiDouSpecial/当前地图掉落_物品查询",
+      "BeiDouSpecial/爆率一览",
+      "BeiDouSpecial/装备制作/项链升级"
+    ],
+    "org.gms.server.life.PlayerNPC": [
+      "npc/1012100",
+      "npc/1022000",
+      "npc/1032001",
+      "npc/1032001_nextLevel",
+      "npc/1052001",
+      "npc/1090000",
+      "npc/1102003",
+      "npc/1202010"
+    ],
+    "org.gms.server.life.SeedTowerCompat": [
+      "event/SeedTower20"
+    ],
+    "org.gms.server.maps.AbstractAnimatedMapObject": [
+      "event/LucidBattle"
+    ],
+    "org.gms.server.maps.FieldLimit": [
+      "BeiDouSpecial/起源之塔/抽奖",
+      "BeiDouSpecial/起源之塔/积分商店"
+    ],
+    "org.gms.server.quest.Quest": [
+      "BeiDouSpecial/当前地图掉落_当前地图",
+      "BeiDouSpecial/当前地图掉落_物品查询",
+      "BeiDouSpecial/爆率一览",
+      "BeiDouSpecial/装备制作/套装进化",
+      "npc/9130000",
+      "npc/9310005"
+    ],
+    "org.gms.server.timer.HuntTaskAutoPublisher": [
+      "BeiDouSpecial/任务/狩猎"
+    ],
+    "org.gms.util.DatabaseConnection": [
+      "BeiDouSpecial/当前地图掉落_物品查询",
+      "BeiDouSpecial/战力系统",
+      "BeiDouSpecial/装备制作/项链升级",
+      "BeiDouSpecial/金融/冒险炒股"
+    ],
+    "org.gms.util.ExtendUtil": [
+      "npc/9071000",
+      "npc/mPark_in00",
+      "npc/mPark_in01",
+      "npc/mPark_in02",
+      "npc/mPark_welcome"
+    ],
+    "org.gms.util.I18nUtil": [
+      "BeiDouSpecial/宠物",
+      "npc/9900001"
+    ],
+    "org.gms.util.JsUtils": [
+      "BeiDouSpecial/查询掉落"
+    ],
+    "org.gms.util.PacketCreator": [
+      "BeiDouSpecial/任务/主线任务",
+      "BeiDouSpecial/任务/每日任务",
+      "BeiDouSpecial/任务/血衣合成",
+      "BeiDouSpecial/共同富裕",
+      "BeiDouSpecial/其他功能",
+      "BeiDouSpecial/副本相关/副本积分兑换",
+      "BeiDouSpecial/副本相关/副本积分累计奖励",
+      "BeiDouSpecial/副本相关/副本道具兑换道具",
+      "BeiDouSpecial/在线奖励",
+      "BeiDouSpecial/快速转职",
+      "BeiDouSpecial/新人福利",
+      "BeiDouSpecial/时装属性转移",
+      "BeiDouSpecial/每日签到",
+      "BeiDouSpecial/每日装备强化",
+      "BeiDouSpecial/灵魂戒指升级",
+      "BeiDouSpecial/物品兑换",
+      "BeiDouSpecial/苍穹霸主戒",
+      "BeiDouSpecial/装备制作/装备制作",
+      "BeiDouSpecial/装备制作/装备制作old",
+      "BeiDouSpecial/装备制作/项链升级",
+      "BeiDouSpecial/装备洗练",
+      "BeiDouSpecial/金币兑换",
+      "BeiDouSpecial/钓鱼/道具兑换",
+      "BeiDouSpecial/钓鱼/鱼的兑换",
+      "BeiDouSpecial/露希妲远征",
+      "event/2xEvent",
+      "event/3rdJob_bowman",
+      "event/3rdJob_magician",
+      "event/3rdJob_mount",
+      "event/3rdJob_pirate",
+      "event/3rdJob_thief",
+      "event/3rdJob_warrior",
+      "event/Aran_2ndmount",
+      "event/Aran_3rdmount",
+      "event/AreaBossBamboo",
+      "event/AreaBossCentipede",
+      "event/AreaBossDeo",
+      "event/AreaBossDoor1",
+      "event/AreaBossDoor2",
+      "event/AreaBossDoor3",
+      "event/AreaBossDoor4",
+      "event/AreaBossDoor5",
+      "event/AreaBossDoor6",
+      "event/AreaBossDyle",
+      "event/AreaBossEliza1",
+      "event/AreaBossFaust1",
+      "event/AreaBossFaust2",
+      "event/AreaBossKimera",
+      "event/AreaBossKingClang",
+      "event/AreaBossKingSageCat",
+      "event/AreaBossLeviathan",
+      "event/AreaBossMano",
+      "event/AreaBossNineTailedFox",
+      "event/AreaBossSeruf",
+      "event/AreaBossSnackBar",
+      "event/AreaBossStumpy",
+      "event/AreaBossTaeRoon",
+      "event/AreaBossTimer1",
+      "event/AreaBossTimer2",
+      "event/AreaBossTimer3",
+      "event/AreaBossZeno",
+      "event/BalrogQuest",
+      "event/Boats",
+      "event/DollHouse",
+      "event/Hak",
+      "event/HenesysPQ",
+      "event/KerningTrain",
+      "event/LucidBattle",
+      "event/RescueGaga",
+      "event/SeedTower20",
+      "item/WorldQuest",
+      "map/onUserEnter/200090000",
+      "map/onUserEnter/200090010",
+      "npc/1022101_old",
+      "npc/1061014",
+      "npc/2006",
+      "npc/2012027",
+      "npc/2012028",
+      "npc/2012029",
+      "npc/2012030",
+      "npc/2012031",
+      "npc/2012032",
+      "npc/2012033",
+      "npc/2030013",
+      "npc/2083004",
+      "npc/2141001",
+      "npc/2143003",
+      "npc/2143004",
+      "npc/9000019",
+      "npc/9120201",
+      "npc/9201002",
+      "npc/9201011",
+      "npc/9201113",
+      "npc/9270047",
+      "npc/9900001",
+      "npc/9977777",
+      "npc/MagatiaPassword",
+      "npc/akayrumbattle",
+      "portal/party3_jailin",
+      "reactor/9101000"
+    ],
+    "org.gms.util.packets.Fishing": [
+      "npc/9330045"
+    ],
+    "org.slf4j.LoggerFactory": [
+      "BeiDouSpecial/查询掉落",
+      "BeiDouSpecial/装备制作/装备制作",
+      "BeiDouSpecial/装备制作/装备制作补偿",
+      "event/AreaBossBamboo",
+      "event/AreaBossCentipede",
+      "event/AreaBossDeo",
+      "event/AreaBossDoor1",
+      "event/AreaBossDoor2",
+      "event/AreaBossDoor3",
+      "event/AreaBossDoor4",
+      "event/AreaBossDoor5",
+      "event/AreaBossDoor6",
+      "event/AreaBossDyle",
+      "event/AreaBossEliza1",
+      "event/AreaBossFaust1",
+      "event/AreaBossFaust2",
+      "event/AreaBossKimera",
+      "event/AreaBossKingClang",
+      "event/AreaBossKingSageCat",
+      "event/AreaBossLeviathan",
+      "event/AreaBossMano",
+      "event/AreaBossNineTailedFox",
+      "event/AreaBossSeruf",
+      "event/AreaBossSnackBar",
+      "event/AreaBossStumpy",
+      "event/AreaBossTaeRoon",
+      "event/AreaBossTimer1",
+      "event/AreaBossTimer2",
+      "event/AreaBossTimer3",
+      "event/AreaBossZeno"
+    ],
+    "soloMapling.ArtificialPlayer.BotBossCombatManager": [
+      "npc/9000055",
+      "npc/9900002"
+    ],
+    "soloMapling.ArtificialPlayer.BotTypes.Blackjack.BlackjackDealerBot": [
+      "npc/9000055"
+    ],
+    "tools.packets.Wedding": [
+      "event/WeddingCathedral",
+      "event/WeddingChapel"
+    ]
+  },
+  "directConversationMethodsNotExplicitlyBound": {
+    "addPqPoints": [
+      "npc/1012114",
+      "npc/2040035",
+      "npc/2094001",
+      "npc/2133001",
+      "npc/9020002",
+      "npc/9900001"
+    ],
+    "answerCPQChallenge": [
+      "npc/cpqchallenge",
+      "npc/cpqchallenge2"
+    ],
+    "askYesNo": [
+      "quest/31105"
+    ],
+    "blockPortal": [
+      "portal/DragonEggNotice",
+      "portal/aranTutorArrow0",
+      "portal/aranTutorArrow1",
+      "portal/aranTutorArrow2",
+      "portal/aranTutorArrow3",
+      "portal/aranTutorGuide0",
+      "portal/aranTutorGuide1",
+      "portal/aranTutorGuide2",
+      "portal/aranTutorLost",
+      "portal/aranTutorMono0",
+      "portal/aranTutorMono1",
+      "portal/aranTutorMono2",
+      "portal/aranTutorMono3",
+      "portal/dragoneyes",
+      "portal/evanRoom0",
+      "portal/evanRoom1",
+      "portal/evantalk00",
+      "portal/evantalk01",
+      "portal/evantalk02",
+      "portal/evantalk10",
+      "portal/evantalk11",
+      "portal/evantalk20",
+      "portal/evantalk21",
+      "portal/evantalk40",
+      "portal/evantalk41",
+      "portal/evantalk42",
+      "portal/evantalk50",
+      "portal/evantalk60",
+      "portal/infoAttack",
+      "portal/infoMinimap",
+      "portal/infoPickup",
+      "portal/infoReactor",
+      "portal/infoSkill",
+      "portal/infoWorldmap",
+      "portal/mirtalk00",
+      "portal/mirtalk01",
+      "portal/reundodraco",
+      "portal/rienTutor5",
+      "portal/rienTutor6",
+      "portal/tutoChatNPC",
+      "portal/tutorHelper",
+      "portal/tutorMinimap"
+    ],
+    "bonus_PyramidSubway": [
+      "npc/1052115"
+    ],
+    "canBeUsedAllianceName": [
+      "npc/2010009"
+    ],
+    "canEnterPQ": [
+      "npc/9310006",
+      "npc/9310039"
+    ],
+    "canHoldAllAfterRemoving": [
+      "npc/equipment_fusion"
+    ],
+    "cancelCPQLobby": [
+      "npc/2042003",
+      "npc/2042004",
+      "npc/2042008",
+      "npc/2042009"
+    ],
+    "cancelItem": [
+      "portal/templeenter",
+      "portal/undodraco"
+    ],
+    "challengeParty": [
+      "npc/2042000",
+      "npc/2042001",
+      "npc/2042002"
+    ],
+    "challengeParty2": [
+      "npc/2042005"
+    ],
+    "changeJob": [
+      "quest/20101",
+      "quest/20102",
+      "quest/20103",
+      "quest/20104",
+      "quest/20105"
+    ],
+    "changeMusic": [
+      "npc/2101010",
+      "portal/EBoat1",
+      "portal/EBoat2",
+      "portal/OBoat1",
+      "portal/OBoat2",
+      "portal/kinggate2_open",
+      "portal/kinggate_open"
+    ],
+    "clear": [
+      "npc/9000004"
+    ],
+    "consumptionPqPoints": [
+      "BeiDouSpecial/副本相关/副本积分兑换"
+    ],
+    "containsAreaInfo": [
+      "npc/1202000",
+      "portal/DragonEggNotice",
+      "portal/aranTutorArrow0",
+      "portal/aranTutorArrow1",
+      "portal/aranTutorArrow2",
+      "portal/aranTutorArrow3",
+      "portal/aranTutorGuide0",
+      "portal/aranTutorGuide1",
+      "portal/aranTutorGuide2",
+      "portal/aranTutorLost",
+      "portal/aranTutorMono0",
+      "portal/aranTutorMono1",
+      "portal/aranTutorMono2",
+      "portal/aranTutorMono3",
+      "portal/evanRoom0",
+      "portal/evanRoom1",
+      "portal/evantalk00",
+      "portal/evantalk01",
+      "portal/evantalk02",
+      "portal/evantalk10",
+      "portal/evantalk11",
+      "portal/evantalk20",
+      "portal/evantalk21",
+      "portal/evantalk40",
+      "portal/evantalk41",
+      "portal/evantalk42",
+      "portal/evantalk50",
+      "portal/evantalk60",
+      "portal/mirtalk00",
+      "portal/mirtalk01"
+    ],
+    "countMonster": [
+      "npc/2144016",
+      "npc/2144017",
+      "npc/2144020"
+    ],
+    "cpqLobby": [
+      "npc/2042000",
+      "npc/2042001",
+      "npc/2042002"
+    ],
+    "cpqLobby2": [
+      "npc/2042005"
+    ],
+    "createAlliance": [
+      "npc/2010009"
+    ],
+    "createExpedition": [
+      "BeiDouSpecial/露希妲远征",
+      "npc/1061014",
+      "npc/2030013",
+      "npc/2083004",
+      "npc/2101014",
+      "npc/2141001",
+      "npc/2143003",
+      "npc/2143004",
+      "npc/9120201",
+      "npc/9201113",
+      "npc/9270047",
+      "npc/akayrumbattle"
+    ],
+    "createMarriageWishlist": [
+      "npc/9201006",
+      "npc/9201010"
+    ],
+    "createPyramid": [
+      "npc/2103013"
+    ],
+    "disbandAlliance": [
+      "npc/2010009"
+    ],
+    "displayGuildRanks": [
+      "npc/9040004",
+      "npc/9040008"
+    ],
+    "divideTeams": [
+      "npc/9000001"
+    ],
+    "doGachapon": [
+      "npc/9270043",
+      "npc/gachapon",
+      "npc/gachaponold"
+    ],
+    "doGuaranteedGachapon": [
+      "BeiDouSpecial/抽奖保底"
+    ],
+    "doRemoteGachapon": [
+      "npc/gachaponRemote"
+    ],
+    "eatEquip": [
+      "npc/9100001"
+    ],
+    "enableActions": [
+      "portal/dojang_up"
+    ],
+    "endExpedition": [
+      "BeiDouSpecial/露希妲远征",
+      "npc/1061014",
+      "npc/2030013",
+      "npc/2083004",
+      "npc/2101017",
+      "npc/2141001",
+      "npc/2143003",
+      "npc/2143004",
+      "npc/9120201",
+      "npc/9201113",
+      "npc/9270047",
+      "npc/akayrumbattle"
+    ],
+    "evolvePet": [
+      "npc/1032102",
+      "quest/4659",
+      "quest/8185",
+      "quest/8189"
+    ],
+    "fieldLobbied": [
+      "npc/2042000",
+      "npc/2042001",
+      "npc/2042002"
+    ],
+    "fieldLobbied2": [
+      "npc/2042005"
+    ],
+    "fieldTaken": [
+      "npc/2042000",
+      "npc/2042001",
+      "npc/2042002"
+    ],
+    "fieldTaken2": [
+      "npc/2042005"
+    ],
+    "forceChangeMap": [
+      "BeiDouSpecial/巡逻"
+    ],
+    "forceStartReactor": [
+      "npc/2141000"
+    ],
+    "gainEquip": [
+      "BeiDouSpecial/装备制作/套装进化"
+    ],
+    "gainItemPeriod": [
+      "npc/9001000"
+    ],
+    "gainNX": [
+      "npc/1052005"
+    ],
+    "gainPQExp": [
+      "npc/1012114",
+      "npc/2040035",
+      "npc/2094001",
+      "npc/2133001"
+    ],
+    "gainTameness": [
+      "npc/1012007",
+      "npc/2040033"
+    ],
+    "getAllianceCapacity": [
+      "npc/2010009"
+    ],
+    "getAvailableMasteryBooks": [
+      "npc/9209000"
+    ],
+    "getAvailableSkillBooks": [
+      "npc/9209000"
+    ],
+    "getChannelServer": [
+      "npc/9000011"
+    ],
+    "getConnection": [
+      "npc/9000018"
+    ],
+    "getCosmeticItem": [
+      "BeiDouSpecial/皇家发型",
+      "npc/1012104",
+      "npc/1012117",
+      "npc/1052004",
+      "npc/1052100",
+      "npc/1052101",
+      "npc/2010001",
+      "npc/2010002",
+      "npc/2012007",
+      "npc/2012009",
+      "npc/2040019",
+      "npc/2041007",
+      "npc/2041009",
+      "npc/2041010",
+      "npc/2090100",
+      "npc/2090101",
+      "npc/2090103",
+      "npc/2090104",
+      "npc/2100005",
+      "npc/2100006",
+      "npc/2100008",
+      "npc/2100009",
+      "npc/9120100",
+      "npc/9120101",
+      "npc/9120102",
+      "npc/9120103",
+      "npc/9200100",
+      "npc/9200101",
+      "npc/9200102",
+      "npc/9201015",
+      "npc/9201016",
+      "npc/9201017",
+      "npc/9201018",
+      "npc/9201019",
+      "npc/9201039",
+      "npc/9201061",
+      "npc/9201062",
+      "npc/9201063",
+      "npc/9201064",
+      "npc/9201069",
+      "npc/9201070",
+      "npc/9270023",
+      "npc/9270024",
+      "npc/9270026",
+      "npc/9270036",
+      "npc/9270037",
+      "npc/9310031",
+      "npc/9310032",
+      "npc/9310036",
+      "npc/9310037",
+      "npc/9900000"
+    ],
+    "getDamageSkinId": [
+      "npc/9900009"
+    ],
+    "getDamageSkinIds": [
+      "npc/9900009"
+    ],
+    "getDamageSkinName": [
+      "npc/9900009"
+    ],
+    "getDisconnected": [
+      "npc/9001000"
+    ],
+    "getDriedPets": [
+      "npc/waterOfLife"
+    ],
+    "getEquipInSlot": [
+      "npc/9100001"
+    ],
+    "getExpeditionMemberNames": [
+      "npc/2101014",
+      "npc/2101017"
+    ],
+    "getGuild": [
+      "npc/9040003",
+      "npc/9040006",
+      "npc/9040009",
+      "npc/9040010"
+    ],
+    "getItemCount": [
+      "npc/3003151",
+      "npc/3003152",
+      "npc/3003153",
+      "npc/3003154",
+      "npc/3003155"
+    ],
+    "getJailTimeLeft": [
+      "portal/jail_out"
+    ],
+    "getMarketPortalId": [
+      "portal/market00"
+    ],
+    "getMonsterCount": [
+      "portal/treeboss00"
+    ],
+    "getNamesWhoDropsItem": [
+      "npc/9209000"
+    ],
+    "getOnlineTime": [
+      "BeiDouSpecial/在线奖励"
+    ],
+    "getPQEnterMaxCount": [
+      "npc/9310006",
+      "npc/9310039"
+    ],
+    "getPQEnteredCount": [
+      "BeiDouSpecial/每日装备强化",
+      "npc/1012114",
+      "npc/2040035",
+      "npc/2094001",
+      "npc/2133001",
+      "npc/9020002"
+    ],
+    "getPlayerNPCByScriptid": [
+      "npc/rank_user"
+    ],
+    "getPlayerStat": [
+      "quest/8724"
+    ],
+    "getPortal": [
+      "portal/apqDoor",
+      "portal/gendergo",
+      "portal/jnr5_rp",
+      "portal/party3_r4pt",
+      "portal/party3_r6pt",
+      "portal/rnj5_rp",
+      "portal/seedTower"
+    ],
+    "getQuestRecord": [
+      "npc/1052115",
+      "npc/9000011",
+      "npc/9001000"
+    ],
+    "getSkillBookInfo": [
+      "npc/9209000"
+    ],
+    "getSpace": [
+      "npc/9000018"
+    ],
+    "getTest": [
+      "npc/9900001"
+    ],
+    "getTotalGachaponCount": [
+      "BeiDouSpecial/抽奖保底"
+    ],
+    "getUnclaimedMarriageGifts": [
+      "npc/9201005",
+      "npc/9201008",
+      "npc/9201014"
+    ],
+    "giveCharacterExp": [
+      "portal/TD_MC_enterboss2",
+      "portal/go_6ChaLuKou",
+      "portal/go_futuredoor",
+      "portal/go_secretroom"
+    ],
+    "givePartyExp": [
+      "npc/9000004"
+    ],
+    "givePartyItems": [
+      "npc/9310056"
+    ],
+    "goDojoUp": [
+      "portal/dojang_up"
+    ],
+    "hasItemData": [
+      "BeiDouSpecial/一键刷道具"
+    ],
+    "hasLevel30Character": [
+      "portal/tutoChatNPC"
+    ],
+    "hasMerchant": [
+      "npc/9030000"
+    ],
+    "hasMerchantItems": [
+      "npc/9030000"
+    ],
+    "isAllReactorState": [
+      "npc/9201110"
+    ],
+    "isCosmeticEquipped": [
+      "BeiDouSpecial/发色选择",
+      "BeiDouSpecial/皇家发型",
+      "npc/1012104",
+      "npc/1012117",
+      "npc/1052004",
+      "npc/1052100",
+      "npc/1052101",
+      "npc/2010001",
+      "npc/2010002",
+      "npc/2012007",
+      "npc/2012009",
+      "npc/2040019",
+      "npc/2041007",
+      "npc/2041009",
+      "npc/2041010",
+      "npc/2090100",
+      "npc/2090101",
+      "npc/2090103",
+      "npc/2090104",
+      "npc/2100005",
+      "npc/2100006",
+      "npc/2100008",
+      "npc/2100009",
+      "npc/9120100",
+      "npc/9120101",
+      "npc/9120102",
+      "npc/9120103",
+      "npc/9200100",
+      "npc/9200101",
+      "npc/9200102",
+      "npc/9201015",
+      "npc/9201016",
+      "npc/9201017",
+      "npc/9201018",
+      "npc/9201019",
+      "npc/9201039",
+      "npc/9201061",
+      "npc/9201062",
+      "npc/9201063",
+      "npc/9201064",
+      "npc/9201069",
+      "npc/9201070",
+      "npc/9270023",
+      "npc/9270024",
+      "npc/9270026",
+      "npc/9270036",
+      "npc/9270037",
+      "npc/9310031",
+      "npc/9310032",
+      "npc/9310036",
+      "npc/9310037",
+      "npc/9900000"
+    ],
+    "isGuildLeader": [
+      "npc/9040000"
+    ],
+    "isLeaderExpedition": [
+      "npc/2101017"
+    ],
+    "isMonsterVacActive": [
+      "npc/monster_vac_toggle"
+    ],
+    "isNotCanHold": [
+      "BeiDouSpecial/一键转生",
+      "BeiDouSpecial/任务/世界任务",
+      "BeiDouSpecial/任务/主线任务",
+      "BeiDouSpecial/任务/每日任务",
+      "BeiDouSpecial/其他功能",
+      "BeiDouSpecial/快速转职",
+      "BeiDouSpecial/新人福利",
+      "BeiDouSpecial/每日签到",
+      "npc/2040035",
+      "npc/2133001"
+    ],
+    "itemExists": [
+      "BeiDouSpecial/一键刷道具",
+      "BeiDouSpecial/发色选择"
+    ],
+    "linkSystemAdd": [
+      "npc/link_system"
+    ],
+    "linkSystemOverview": [
+      "npc/link_system"
+    ],
+    "lockUI": [
+      "npc/10200",
+      "npc/10201",
+      "npc/10202",
+      "npc/10203",
+      "npc/10204"
+    ],
+    "lockUI2": [
+      "portal/cannon_tuto_06",
+      "portal/cannon_tuto_07"
+    ],
+    "logLeaf": [
+      "npc/1022101_old"
+    ],
+    "mapEffect": [
+      "portal/mirtalk00",
+      "portal/mirtalk01"
+    ],
+    "mapMobCount": [
+      "npc/9000004"
+    ],
+    "maxMastery": [
+      "npc/9000021_old"
+    ],
+    "mentorshipApprenticeCoins": [
+      "npc/3003107"
+    ],
+    "mentorshipCancel": [
+      "npc/3003107"
+    ],
+    "mentorshipClaimStages": [
+      "npc/3003107"
+    ],
+    "mentorshipClaimWeekly": [
+      "npc/3003107"
+    ],
+    "mentorshipCreateFromParty": [
+      "npc/3003107"
+    ],
+    "mentorshipDuelStatus": [
+      "npc/3003107"
+    ],
+    "mentorshipHasPartyMasterCandidate": [
+      "npc/3003107"
+    ],
+    "mentorshipJoinDuel": [
+      "npc/3003107"
+    ],
+    "mentorshipOverview": [
+      "npc/3003107"
+    ],
+    "mentorshipPartyMasterMenu": [
+      "npc/3003107"
+    ],
+    "mentorshipRanking": [
+      "npc/3003107"
+    ],
+    "mentorshipSpendApprentice": [
+      "npc/3003107"
+    ],
+    "mentorshipSpendVirtue": [
+      "npc/3003107"
+    ],
+    "mentorshipStartDuel": [
+      "npc/3003107"
+    ],
+    "mentorshipVirtueCoins": [
+      "npc/3003107"
+    ],
+    "mobCount": [
+      "npc/9000004"
+    ],
+    "openUI": [
+      "npc/2103013"
+    ],
+    "partyMembersInMap": [
+      "npc/2042000",
+      "npc/2042001",
+      "npc/2042002",
+      "npc/2042005"
+    ],
+    "playPortalSound": [
+      "portal/08_xmas_out",
+      "portal/1stTowerTop",
+      "portal/2ndTowerTop",
+      "portal/3rdTowerTop",
+      "portal/BPReturnVanleon2",
+      "portal/BPReturn_Akayrum",
+      "portal/BPReturn_Vanleon",
+      "portal/BPReturn_ranmaru",
+      "portal/Boss7_floor1",
+      "portal/Depart_ToKerning",
+      "portal/Depart_goBack00",
+      "portal/Depart_goBack01",
+      "portal/Depart_goFoward0",
+      "portal/Depart_goFoward1",
+      "portal/Depart_topOut",
+      "portal/EBoat1",
+      "portal/EBoat2",
+      "portal/MC2revive",
+      "portal/MCrevive1",
+      "portal/MCrevive2",
+      "portal/MCrevive3",
+      "portal/MCrevive4",
+      "portal/MCrevive5",
+      "portal/MCrevive6",
+      "portal/MD_cakeEnter",
+      "portal/MD_drakeroom",
+      "portal/MD_error",
+      "portal/MD_golem",
+      "portal/MD_high",
+      "portal/MD_longkiss",
+      "portal/MD_longkiss_1",
+      "portal/MD_mushroom",
+      "portal/MD_pig",
+      "portal/MD_protect",
+      "portal/MD_rabbit",
+      "portal/MD_remember",
+      "portal/MD_roundTable",
+      "portal/MD_sand",
+      "portal/MD_treasure",
+      "portal/Masteria_B1_1",
+      "portal/Masteria_B2_1",
+      "portal/Masteria_B3_1",
+      "portal/Masteria_CC1_A",
+      "portal/Masteria_CC6_A",
+      "portal/Masteria_CM1_A",
+      "portal/Masteria_CM1_B",
+      "portal/Masteria_CM1_C",
+      "portal/Masteria_CM1_D",
+      "portal/Masteria_CM2_B",
+      "portal/Masteria_CM2_C",
+      "portal/Masteria_CM2_D",
+      "portal/Masteria_CM2_E",
+      "portal/Masteria_U2_1",
+      "portal/Masteria_U3_1",
+      "portal/Masteria_U5_1",
+      "portal/Masteria_U5_2",
+      "portal/Masteria_U6_1",
+      "portal/NextMap",
+      "portal/OBoat1",
+      "portal/OBoat2",
+      "portal/PPinkOut",
+      "portal/Pianus",
+      "portal/Pinkin",
+      "portal/Populatus00",
+      "portal/Spacegaga_out0",
+      "portal/Spacegaga_out1",
+      "portal/Spacegaga_out2",
+      "portal/Spacegaga_out3",
+      "portal/TD_Boss_enter",
+      "portal/TD_MC_Egate",
+      "portal/TD_MC_enterboss1",
+      "portal/TD_MC_enterboss2",
+      "portal/TD_MC_first",
+      "portal/TD_MC_jump",
+      "portal/TD_neo_inTree",
+      "portal/Zakum03",
+      "portal/Zakum05",
+      "portal/aMatchMove2",
+      "portal/apq00",
+      "portal/apq01",
+      "portal/apq02",
+      "portal/apq1",
+      "portal/apq2",
+      "portal/apq3",
+      "portal/apqDoor",
+      "portal/aqua_pq_boss_0",
+      "portal/aranTutorAloneX",
+      "portal/aranTutorOut1",
+      "portal/aranTutorOut2",
+      "portal/aranTutorOut3",
+      "portal/ariantMout",
+      "portal/ariantMout2",
+      "portal/ariant_Agit",
+      "portal/ariant_castle",
+      "portal/ariant_queens",
+      "portal/babyPigOut",
+      "portal/back_cygnus",
+      "portal/balogTemple",
+      "portal/balog_end",
+      "portal/bedroom_out",
+      "portal/blackdracoout",
+      "portal/captinsg00",
+      "portal/catPriest_map",
+      "portal/check_Portal0",
+      "portal/check_Portal1",
+      "portal/check_Portal2",
+      "portal/check_Portal3",
+      "portal/check_Portal5",
+      "portal/check_Portal6",
+      "portal/check_eNum",
+      "portal/contactDragon",
+      "portal/curseforest",
+      "portal/davy2_hd1",
+      "portal/davy3_hd1",
+      "portal/davy_next0",
+      "portal/davy_next1",
+      "portal/davy_next2",
+      "portal/davy_next3",
+      "portal/davy_next4",
+      "portal/dojang_exit",
+      "portal/dojang_next",
+      "portal/dojang_tuto",
+      "portal/dracoout",
+      "portal/dragonNest",
+      "portal/east_807000000",
+      "portal/elevator",
+      "portal/eliza_Garden",
+      "portal/end_black",
+      "portal/end_cow",
+      "portal/enterAchter",
+      "portal/enterBackStreet",
+      "portal/enterDisguise0",
+      "portal/enterDisguise1",
+      "portal/enterDisguise2",
+      "portal/enterDisguise3",
+      "portal/enterDisguise4",
+      "portal/enterDisguise5",
+      "portal/enterDollWay",
+      "portal/enterDollcave",
+      "portal/enterDollcave_1",
+      "portal/enterEvanRoom",
+      "portal/enterFirstDH",
+      "portal/enterGym",
+      "portal/enterInfo",
+      "portal/enterMCave",
+      "portal/enterMagiclibrar",
+      "portal/enterNepenthes",
+      "portal/enterPort",
+      "portal/enterRider",
+      "portal/enterRienFirst",
+      "portal/enterSecondDH",
+      "portal/enterVL00",
+      "portal/enterWarehouse",
+      "portal/enterWitch",
+      "portal/enter_earth00",
+      "portal/enter_earth01",
+      "portal/enter_nautil",
+      "portal/enter_td",
+      "portal/enterfourthDH",
+      "portal/enterthirdDH",
+      "portal/entertraining",
+      "portal/evanEntrance",
+      "portal/evanFall",
+      "portal/evanFarmCT",
+      "portal/evanGarden0",
+      "portal/evanGarden1",
+      "portal/evanlivingRoom",
+      "portal/exit_puppeteer",
+      "portal/female00",
+      "portal/foxLaidy_map",
+      "portal/gaga_success",
+      "portal/gendergo",
+      "portal/ghostgate_open",
+      "portal/glpqEnter",
+      "portal/glpqPortal0",
+      "portal/glpqPortal00",
+      "portal/glpqPortal01",
+      "portal/glpqPortal02",
+      "portal/glpqPortal03",
+      "portal/glpqPortal04",
+      "portal/glpqPortal1",
+      "portal/glpqPortal2",
+      "portal/glpqPortal3",
+      "portal/glpqPortal4",
+      "portal/glpqPortal5",
+      "portal/glpqPortal6",
+      "portal/glpqPortal7",
+      "portal/glpqPortalDummy",
+      "portal/go_6ChaLuKou",
+      "portal/go_futuredoor",
+      "portal/go_secretroom",
+      "portal/gotoAni",
+      "portal/gotoDoor",
+      "portal/gotoNext1",
+      "portal/gotoNext2_1",
+      "portal/gotoNext2_2",
+      "portal/gotoNext3_1",
+      "portal/gotoNext3_2",
+      "portal/gotoNext3_3",
+      "portal/gotoNext4",
+      "portal/gotocastle",
+      "portal/gryphius",
+      "portal/guild1F00",
+      "portal/guild1F01",
+      "portal/guild1F02",
+      "portal/guild1F03",
+      "portal/guild1F04",
+      "portal/guildwaitingenter",
+      "portal/guildwaitingexit",
+      "portal/guyfawkes0_esc",
+      "portal/halloween_enter",
+      "portal/hontale_BR",
+      "portal/hontale_Bopen",
+      "portal/hontale_BtoB1",
+      "portal/hontale_C",
+      "portal/hontale_morph2",
+      "portal/hontale_out1",
+      "portal/inDragonEgg",
+      "portal/inERShip",
+      "portal/inNix1",
+      "portal/inNix2",
+      "portal/in_crossRoad",
+      "portal/in_cygnusGarden",
+      "portal/in_knights",
+      "portal/in_knights00",
+      "portal/in_knights01",
+      "portal/in_nextD",
+      "portal/in_secretGarden",
+      "portal/jail_in",
+      "portal/jail_out",
+      "portal/jnr12_in",
+      "portal/jnr1_out",
+      "portal/jnr1_pt00",
+      "portal/jnr2_out",
+      "portal/jnr3_in0",
+      "portal/jnr3_in1",
+      "portal/jnr3_out",
+      "portal/jnr4_r1",
+      "portal/jnr4_r2",
+      "portal/jnr4_r3",
+      "portal/jnr4_r4",
+      "portal/jnr5_rp",
+      "portal/jnr6_out",
+      "portal/jnr_201_0",
+      "portal/jnr_202",
+      "portal/jnr_exit",
+      "portal/karingDoolToGoongiPortal",
+      "portal/karingDoolToHondonPortal",
+      "portal/karingGoongiToDoolPortal",
+      "portal/karingGoongiToHondonPortal",
+      "portal/karingHondonToDoolPortal",
+      "portal/karingHondonToGoongiPortal",
+      "portal/kinggate2_open",
+      "portal/kinggate_open",
+      "portal/kpq0",
+      "portal/kpq1",
+      "portal/kpq2",
+      "portal/kpq3",
+      "portal/kpq4",
+      "portal/lionCastle_enter",
+      "portal/lioncastleout",
+      "portal/lpq0",
+      "portal/lpq1",
+      "portal/lpq2",
+      "portal/lpq3",
+      "portal/lpq4",
+      "portal/lpq5",
+      "portal/lpq6",
+      "portal/lpq7",
+      "portal/mPark_final",
+      "portal/mPark_nextStage",
+      "portal/magatia_alc0",
+      "portal/magatia_dark0",
+      "portal/male00",
+      "portal/mapleMarket7_out",
+      "portal/market00",
+      "portal/market01",
+      "portal/market02",
+      "portal/market03",
+      "portal/market04",
+      "portal/market05",
+      "portal/market06",
+      "portal/market07",
+      "portal/market08",
+      "portal/market09",
+      "portal/market10",
+      "portal/market11",
+      "portal/market12",
+      "portal/market13",
+      "portal/market14",
+      "portal/market15",
+      "portal/market16",
+      "portal/market17",
+      "portal/market18",
+      "portal/market19",
+      "portal/market20",
+      "portal/market21",
+      "portal/market22",
+      "portal/market23",
+      "portal/market24",
+      "portal/market26",
+      "portal/market52",
+      "portal/market53",
+      "portal/market54",
+      "portal/market55",
+      "portal/market56",
+      "portal/mayong",
+      "portal/mc_out",
+      "portal/met_in",
+      "portal/met_out",
+      "portal/metalgate_open",
+      "portal/minar_elli",
+      "portal/minar_job4",
+      "portal/moveBefore",
+      "portal/moveNext",
+      "portal/move_elin",
+      "portal/nets_in",
+      "portal/nets_out",
+      "portal/obstacle",
+      "portal/outAkayrumP2",
+      "portal/outAkayrumPrison",
+      "portal/outArchterMap",
+      "portal/outChild",
+      "portal/outDarkEreb",
+      "portal/outMagiclib",
+      "portal/outMaha",
+      "portal/outNix1",
+      "portal/outNix2",
+      "portal/outPerrion_1",
+      "portal/outPerrion_2",
+      "portal/outPrison",
+      "portal/outRider",
+      "portal/outSpecialSchool",
+      "portal/outTemple",
+      "portal/out_ani",
+      "portal/out_cygnusBackGarden",
+      "portal/out_knights",
+      "portal/out_pepeking",
+      "portal/outpasttemple",
+      "portal/outportalNPC",
+      "portal/outtestWolf",
+      "portal/party3_gardenin",
+      "portal/party3_jail1",
+      "portal/party3_jail2",
+      "portal/party3_jail3",
+      "portal/party3_jailin",
+      "portal/party3_r4pt",
+      "portal/party3_r4pt1",
+      "portal/party3_r6pt",
+      "portal/party3_room1",
+      "portal/party3_room2",
+      "portal/party3_room3",
+      "portal/party3_room4",
+      "portal/party3_room5",
+      "portal/party3_room6",
+      "portal/party3_room8",
+      "portal/party3_roomout",
+      "portal/party6_out",
+      "portal/party6_stage",
+      "portal/party6_stage501",
+      "portal/party6_stage502",
+      "portal/party6_stage503",
+      "portal/party6_stage504",
+      "portal/party6_stage505",
+      "portal/party6_stage506",
+      "portal/party6_stage507",
+      "portal/party6_stage508",
+      "portal/party6_stage509",
+      "portal/party6_stage510",
+      "portal/party6_stage511",
+      "portal/party6_stage512",
+      "portal/party6_stage513",
+      "portal/party6_stage514",
+      "portal/party6_stage515",
+      "portal/party6_stage800",
+      "portal/portalNPC",
+      "portal/portalNPC1",
+      "portal/ptKaringOut",
+      "portal/pt_ranmaruOut",
+      "portal/pt_rosegarden",
+      "portal/pt_rosegardenout",
+      "portal/q2073",
+      "portal/q3366in",
+      "portal/q3366out",
+      "portal/q3367in",
+      "portal/q3367out",
+      "portal/q3368in",
+      "portal/q3368out",
+      "portal/raid_rest",
+      "portal/raid_stage",
+      "portal/raidout",
+      "portal/rankDeveloperRoom",
+      "portal/rankRoom",
+      "portal/rienCaveEnter",
+      "portal/rienTutor1",
+      "portal/rienTutor2",
+      "portal/rienTutor3",
+      "portal/rienTutor4",
+      "portal/rienTutor7",
+      "portal/rienTutor8",
+      "portal/rnj12_in",
+      "portal/rnj1_out",
+      "portal/rnj1_pt00",
+      "portal/rnj2_out",
+      "portal/rnj3_in0",
+      "portal/rnj3_in1",
+      "portal/rnj3_out",
+      "portal/rnj4_r1",
+      "portal/rnj4_r2",
+      "portal/rnj4_r3",
+      "portal/rnj4_r4",
+      "portal/rnj5_rp",
+      "portal/rnj6_out",
+      "portal/rnj_201_0",
+      "portal/rnj_202",
+      "portal/rnj_exit",
+      "portal/s4berserk",
+      "portal/s4berserk_move",
+      "portal/s4common1_exit",
+      "portal/s4firehawk",
+      "portal/s4hitman",
+      "portal/s4iceeagle",
+      "portal/s4mind_end",
+      "portal/s4nest",
+      "portal/s4resur_enter",
+      "portal/s4resur_out",
+      "portal/s4resurrection",
+      "portal/s4rush",
+      "portal/s4ship_out",
+      "portal/s4super_out",
+      "portal/s4tornado_enter",
+      "portal/secretDoor",
+      "portal/secretgate1_open",
+      "portal/secretgate2_open",
+      "portal/secretgate3_open",
+      "portal/shenshuoBossRetry",
+      "portal/skyrom",
+      "portal/space_return",
+      "portal/speargate_open",
+      "portal/stageBogo",
+      "portal/statuegate_open",
+      "portal/stonegate_open",
+      "portal/subway_in2",
+      "portal/tamepig_out2",
+      "portal/templeenter",
+      "portal/timeCrack",
+      "portal/timeQuest",
+      "portal/treeboss00",
+      "portal/tristanEnter",
+      "portal/tutorquest",
+      "portal/under30gate",
+      "portal/undodraco",
+      "portal/watergate_open"
+    ],
+    "recordEntryPQ": [
+      "npc/1012114",
+      "npc/2040035",
+      "npc/2094001",
+      "npc/2133001",
+      "npc/9020002",
+      "npc/9310006",
+      "npc/9310039"
+    ],
+    "removeAllByInventory": [
+      "BeiDouSpecial/一键删除道具",
+      "BeiDouSpecial/删除道具"
+    ],
+    "removeAllByInventorySlot": [
+      "BeiDouSpecial/一键删除道具",
+      "BeiDouSpecial/删除道具"
+    ],
+    "removeEquipFromSlot": [
+      "quest/21001"
+    ],
+    "removeGuide": [
+      "portal/rienTutor6"
+    ],
+    "removeItem": [
+      "npc/9100001"
+    ],
+    "removeNPC": [
+      "npc/1096005"
+    ],
+    "removeNpc": [
+      "npc/2141000"
+    ],
+    "removePartyItems": [
+      "npc/9310056"
+    ],
+    "resetDojoEnergy": [
+      "npc/2091005"
+    ],
+    "resetMapObjects": [
+      "portal/s4berserk",
+      "portal/s4firehawk",
+      "portal/s4hitman",
+      "portal/s4iceeagle",
+      "portal/s4nest",
+      "portal/s4resurrection",
+      "portal/s4tornado_enter"
+    ],
+    "resetPartyDojoEnergy": [
+      "npc/2091005"
+    ],
+    "saveReturnLocation": [
+      "npc/9200000"
+    ],
+    "scheduleMonsterOnGroundBelowIfMissing": [
+      "portal/karingDoolToGoongiPortal",
+      "portal/karingDoolToHondonPortal",
+      "portal/karingGoongiToDoolPortal",
+      "portal/karingGoongiToHondonPortal",
+      "portal/karingHondonToDoolPortal",
+      "portal/karingHondonToGoongiPortal"
+    ],
+    "sendCPQMapLists": [
+      "npc/2042000",
+      "npc/2042001",
+      "npc/2042002"
+    ],
+    "sendCPQMapLists2": [
+      "npc/2042005"
+    ],
+    "sendMarriageGifts": [
+      "npc/9201014"
+    ],
+    "sendMarriageWishlist": [
+      "npc/9201014"
+    ],
+    "serverNotice": [
+      "npc/9110015",
+      "npc/9110016",
+      "npc/9110115"
+    ],
+    "setDamageSkin": [
+      "npc/9900009"
+    ],
+    "setDirectionStatus": [
+      "portal/cannon_tuto_06",
+      "portal/cannon_tuto_07"
+    ],
+    "setNPCValue": [
+      "portal/cannon_tuto_07"
+    ],
+    "setNameplateSeries": [
+      "BeiDouSpecial/称号系列选择"
+    ],
+    "showEffect": [
+      "npc/2013001",
+      "npc/2110002",
+      "npc/9110115",
+      "npc/9120026",
+      "npc/9310056"
+    ],
+    "showFredrick": [
+      "npc/9030000"
+    ],
+    "showInfoText": [
+      "npc/2103013",
+      "portal/rienTutor7",
+      "portal/rienTutor8",
+      "quest/29900",
+      "quest/29901",
+      "quest/29902",
+      "quest/29903"
+    ],
+    "showInstruction": [
+      "portal/advice00",
+      "portal/advice01",
+      "portal/advice02",
+      "portal/advice03",
+      "portal/advice04",
+      "portal/advice05",
+      "portal/advice06",
+      "portal/advice07",
+      "portal/advice08",
+      "portal/advice09",
+      "portal/adviceMap",
+      "portal/glTutoMsg0"
+    ],
+    "showWZEffect": [
+      "portal/metro_Chat00"
+    ],
+    "spawnGuide": [
+      "npc/1202000",
+      "portal/tutorHelper"
+    ],
+    "spawnMonsterOnGroundBelowIfMissing": [
+      "BeiDouSpecial/新高级boss传送"
+    ],
+    "spawnNPC": [
+      "portal/cannon_tuto_07"
+    ],
+    "spawnNpc": [
+      "npc/1104201"
+    ],
+    "sql_Select": [
+      "BeiDouSpecial/装备制作/装备制作补偿"
+    ],
+    "startAriantBattle": [
+      "npc/2101017"
+    ],
+    "startDungeonInstance": [
+      "portal/MD_drakeroom",
+      "portal/MD_error",
+      "portal/MD_golem",
+      "portal/MD_high",
+      "portal/MD_longkiss_1",
+      "portal/MD_mushroom",
+      "portal/MD_pig",
+      "portal/MD_protect",
+      "portal/MD_rabbit",
+      "portal/MD_remember",
+      "portal/MD_roundTable",
+      "portal/MD_sand",
+      "portal/MD_treasure"
+    ],
+    "startMonsterVac": [
+      "npc/monster_vac_toggle"
+    ],
+    "start_PyramidSubway": [
+      "npc/1052115"
+    ],
+    "stopMonsterVac": [
+      "npc/monster_vac_toggle"
+    ],
+    "summonMobAtPosition": [
+      "npc/9000004"
+    ],
+    "talkGuide": [
+      "portal/rienTutor5",
+      "portal/tutorHelper"
+    ],
+    "unequipPet": [
+      "quest/8185"
+    ],
+    "unlockUI": [
+      "npc/1096003",
+      "portal/cannon_tuto_10"
+    ],
+    "updateAreaInfo": [
+      "npc/1202000",
+      "portal/DragonEggNotice",
+      "portal/aranTutorArrow0",
+      "portal/aranTutorArrow1",
+      "portal/aranTutorArrow2",
+      "portal/aranTutorArrow3",
+      "portal/aranTutorGuide0",
+      "portal/aranTutorGuide1",
+      "portal/aranTutorGuide2",
+      "portal/aranTutorLost",
+      "portal/aranTutorMono0",
+      "portal/aranTutorMono1",
+      "portal/aranTutorMono2",
+      "portal/aranTutorMono3",
+      "portal/evanRoom0",
+      "portal/evanRoom1",
+      "portal/evantalk00",
+      "portal/evantalk01",
+      "portal/evantalk02",
+      "portal/evantalk10",
+      "portal/evantalk11",
+      "portal/evantalk20",
+      "portal/evantalk21",
+      "portal/evantalk40",
+      "portal/evantalk41",
+      "portal/evantalk42",
+      "portal/evantalk50",
+      "portal/evantalk60",
+      "portal/mirtalk00",
+      "portal/mirtalk01"
+    ],
+    "updateEquip": [
+      "BeiDouSpecial/每日装备强化"
+    ],
+    "updateInfo": [
+      "npc/1096005",
+      "portal/cannon_tuto_07"
+    ],
+    "upgradeAlliance": [
+      "npc/2010009"
+    ],
+    "useItem": [
+      "npc/1101001",
+      "npc/2082003",
+      "portal/outTemple"
+    ],
+    "warpBack": [
+      "npc/1200003"
+    ],
+    "warpMembers": [
+      "npc/9000004"
+    ],
+    "weakenAreaBoss": [
+      "npc/1052107",
+      "npc/2096000",
+      "npc/2111025",
+      "npc/2111026"
+    ]
+  },
+  "limitations": [
+    "Java type strings and method names are static dependency candidates, including comments; no dynamic target inference.",
+    "An explicit binding can still be a stub or partial implementation. This report does not claim gameplay completeness.",
+    "Mock-based harness execution does not validate rewards, inventory, quests, event scheduling, persistence or all branches.",
+    "Syntax repairs authorized by the user are recorded in docs/source-script-exceptions.md; source synchronization remains exact."
+  ]
+}

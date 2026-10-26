@@ -22,10 +22,8 @@ public static class NpcApi
     static PlayerCtrl Pc => GameLoop.I != null ? GameLoop.I.player : null;
     static int MapId => Profile.LastMapId;
 
-    // 单机里没有对应实现的源端 API（组队/远征队/公会/仓库/宠物/拍卖/活动…）。
-    // 统一兜成"返回 null 的函数"：脚本拿到 null 后会走进源端「你没有队伍」「没有可复活宠物」
-    // 这类分支，而不是在第一步就抛 "xxx is not a function" 把整段对话打断。
-    // 每个名字只记一次日志，方便回查到底缺哪块系统。
+    // 未迁移 API 必须带完整名字报错，不能把返回 null 当成业务适配成功。
+    // 已实现系统显式绑定；没有队伍等合法空状态仍由具体 getter 返回 null。
     static readonly HashSet<string> missingApi = new HashSet<string>();
 
     static void Lenient(JsHostObject host, string owner)
@@ -33,8 +31,8 @@ public static class NpcApi
         host.Missing = name =>
         {
             if (missingApi.Add(owner + "." + name))
-                Debug.Log("[Script] " + owner + "." + name + " 未实现（单机无对应系统），按 null 处理");
-            return JsFunction.FromNative(name, c => JsNull.Value);
+                Debug.LogError("[Script] 未迁移服务端接口：" + owner + "." + name);
+            return JsFunction.FromNative(name, c => throw new JsRuntimeException("Unmigrated server API: " + owner + "." + name));
         };
     }
 
@@ -91,18 +89,41 @@ public static class NpcApi
         cm.Set("sendDimensionalMirror", Fn(c => { }));
         cm.Set("dispose", Fn(c => session.DisposeFromScript()));
 
+        // —— 北斗 nextLevel 回调，路由完全沿用 NPCScriptManager.nextLevel ——
+        cm.Set("sendNextLevel", Fn(c => { session.SetDialog(NpcDialogMode.Next, Str(c, 1)); session.Route.Set(NativeScriptRouteType.Next, after: Str(c, 0)); }));
+        cm.Set("sendLastLevel", Fn(c => { session.SetDialog(NpcDialogMode.Prev, Str(c, 1)); session.Route.Set(NativeScriptRouteType.Previous, before: Str(c, 0)); }));
+        cm.Set("sendLastNextLevel", Fn(c => { session.SetDialog(NpcDialogMode.NextPrev, Str(c, 2)); session.Route.Set(NativeScriptRouteType.PreviousNext, Str(c, 0), Str(c, 1)); }));
+        cm.Set("sendOkLevel", Fn(c => { session.SetDialog(NpcDialogMode.Ok, Str(c, 1)); session.Route.Set(NativeScriptRouteType.Ok, after: Str(c, 0)); }));
+        cm.Set("sendSelectLevel", Fn(c => {
+            bool prefix = c.ArgCount > 1 && c.Arg(1) is JsString;
+            session.SetDialog(NpcDialogMode.Simple, Str(c, prefix ? 1 : 0));
+            session.Route.Set(NativeScriptRouteType.Select, selectionPrefix: prefix ? Str(c, 0) : "");
+        }));
+        cm.Set("sendNextSelectLevel", Fn(c => { session.SetDialog(NpcDialogMode.Simple, Str(c, 1)); session.Route.Set(NativeScriptRouteType.NextSelect, after: Str(c, 0)); }));
+        cm.Set("getInputTextLevel", Fn(c => { session.SetDialog(NpcDialogMode.GetText, Str(c, 1)); session.Dialog.Input = ""; session.Route.Set(NativeScriptRouteType.Text, after: Str(c, 0)); }));
+        cm.Set("getInputNumberLevel", Fn(c => {
+            session.SetDialog(NpcDialogMode.GetNumber, Str(c, 1));
+            session.Dialog.NumberDef = Int(c, 2); session.Dialog.NumberMin = Int(c, 3); session.Dialog.NumberMax = Int(c, 4);
+            session.Dialog.Input = session.Dialog.NumberDef.ToString(); session.Route.Set(NativeScriptRouteType.Number, after: Str(c, 0));
+        }));
+        cm.Set("sendAcceptDeclineLevel", Fn(c => { session.SetDialog(NpcDialogMode.AcceptDecline, Str(c, 2)); session.Route.Set(NativeScriptRouteType.AcceptDecline, Str(c, 0), Str(c, 1)); }));
+        cm.Set("sendYesNoLevel", Fn(c => { session.SetDialog(NpcDialogMode.YesNo, Str(c, 2)); session.Route.Set(NativeScriptRouteType.YesNo, Str(c, 0), Str(c, 1)); }));
+
         // —— 文本输入 ——
         cm.Set("getText", Ret(_ => S(session.Dialog.Input)));
         cm.Set("setGetText", Fn(c => session.Dialog.Input = Str(c, 0)));
 
         // —— 金币 / 经验 / 等级 ——
         cm.Set("getMeso", Ret(_ => N(Profile.gold)));
+        cm.Set("getNameplateSeries", Ret(_ => N(Math.Max(0, Math.Min(8, ReadCharacterInteger("nameplate_title_series"))))));
+        cm.Set("getPqPoints", Ret(_ => N(ReadCharacterInteger("副本积分"))));
+        cm.Set("getPqTotalPoints", Ret(_ => N(ReadCharacterInteger("副本总积分"))));
         cm.Set("gainMeso", Fn(c => Profile.AddGold(Int(c, 0))));
         cm.Set("gainExp", Fn(c => Profile.GrantExperience(Int(c, 0))));
         cm.Set("getLevel", Ret(_ => N(Profile.level)));
         cm.Set("getJobId", Ret(_ => N(QuestLogic.PlayerJob)));
         cm.Set("getJob", Ret(_ => BuildJob(QuestLogic.PlayerJob)));
-        cm.Set("getGender", Ret(_ => N(0)));
+        cm.Set("getGender", Ret(_ => N(GameSession.Character?.record.gender ?? 0)));
         cm.Set("getName", Ret(_ => S(Profile.playerName)));
         cm.Set("getFame", Ret(_ => N(0)));
         cm.Set("gainFame", Fn(c => { }));
@@ -130,6 +151,15 @@ public static class NpcApi
         cm.Set("warp", Fn(c => session.RequestWarp(Int(c, 0))));
         cm.Set("warpParty", Fn(c => session.RequestWarp(Int(c, 0))));
         cm.Set("getWarpMap", Ret(_ => N(0)));
+        BindSavedLocations(cm);
+
+        // —— ExtendUtil：源端中文任务、签到、制作、领取记录的统一持久化 ——
+        cm.Set("getCharacterExtendValue", Ret(c => ExtendValue(c, false, false)));
+        cm.Set("getAccountExtendValue", Ret(c => ExtendValue(c, true, false)));
+        cm.Set("saveOrUpdateCharacterExtendValue", Fn(c => ExtendValue(c, false, true)));
+        cm.Set("saveOrUpdateAccountExtendValue", Fn(c => ExtendValue(c, true, true)));
+        cm.Set("getCurrentTime", Ret(_ => N(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())));
+        cm.Set("getScriptName", Ret(_ => S(session.ScriptName)));
 
         // —— 任务状态 ——
         cm.Set("isQuestStarted", Ret(c => B(Profile.IsQuestStarted(Int(c, 0)))));
@@ -182,8 +212,9 @@ public static class NpcApi
         cm.Set("openNpc", Fn(c => session.RequestOpenNpc(Int(c, 0), c.ArgCount > 1 ? Str(c, 1, null) : null)));
         cm.Set("openShopNPC", Fn(c => BottomBar.Toast("商店系统尚未接入")));
         cm.Set("getPlayerCount", Ret(_ => N(1)));
-        cm.Set("isLeader", Ret(_ => B(true)));
-        cm.Set("isEventLeader", Ret(_ => B(true)));
+        cm.Set("isLeader", Ret(_ => B(HasParty())));
+        cm.Set("isPartyLeader", Ret(_ => B(HasParty())));
+        cm.Set("isEventLeader", Ret(_ => B(false)));
         cm.Set("isUsingOldPqNpcStyle", Ret(_ => B(false)));
         cm.Set("getHourOfDay", Ret(_ => N(DateTime.Now.Hour)));
         cm.Set("canSpawnPlayerNpc", Ret(_ => B(false)));
@@ -196,7 +227,7 @@ public static class NpcApi
         // 单机没有的系统：返回 null，脚本里的 `if (x != null)` 分支会自然跳过。
         cm.Set("getEventManager", Ret(_ => JsNull.Value));
         cm.Set("getEventInstance", Ret(_ => JsNull.Value));
-        cm.Set("getParty", Ret(_ => JsNull.Value));
+        cm.Set("getParty", Ret(_ => BuildParty(session)));
         cm.Set("getExpedition", Ret(_ => JsNull.Value));
         cm.Set("getFamilyEntry", Ret(_ => JsNull.Value));
         cm.Set("getEvent", Ret(_ => JsNull.Value));
@@ -215,6 +246,54 @@ public static class NpcApi
             cm.Set("isStart", Ret(_ => B(!session.QuestEnd)));
         }
         return cm;
+    }
+
+    static int ReadCharacterInteger(string key)
+    {
+        if (!GameSession.InGame) throw new JsRuntimeException("Script values require an active character");
+        string value = GameSession.Net.ScriptValue(new ScriptValueRequest {
+            characterId = GameSession.CharacterId, name = key }).value;
+        return int.TryParse(value, System.Globalization.NumberStyles.AllowLeadingSign,
+            System.Globalization.CultureInfo.InvariantCulture, out int number) ? number : 0;
+    }
+
+    static JsValue ExtendValue(JsCall call, bool account, bool write)
+    {
+        if (!GameSession.InGame) throw new JsRuntimeException("Script values require an active character");
+        int index = write ? 2 : 1;
+        int period = call.ArgCount > index ? (JsConvert.ToBoolean(call.Arg(index)) ? 1 : 2) : 0;
+        var response = GameSession.Net.ScriptValue(new ScriptValueRequest { characterId = GameSession.CharacterId,
+            account = account, write = write, period = period, name = Str(call, 0), value = write ? Str(call, 1) : null });
+        return response.value == null ? (JsValue)JsNull.Value : S(response.value);
+    }
+
+    static void BindSavedLocations(JsHostObject host)
+    {
+        host.Set("peekSavedLocation", Ret(c => Location(ScriptOperation.PeekLocation, Str(c, 0))));
+        host.Set("getSavedLocation", Ret(c => Location(ScriptOperation.GetLocation, Str(c, 0))));
+        host.Set("clearSavedLocation", Fn(c => Location(ScriptOperation.ClearLocation, Str(c, 0))));
+    }
+    static JsValue Location(ScriptOperation operation, string type)
+    {
+        if (!GameSession.InGame) throw new JsRuntimeException("Saved locations require an active character");
+        return GameSession.Net.Script(new ScriptRequest { operation = operation,
+            characterId = GameSession.CharacterId, location = type, mapId = MapId, portalId = 0 }).value;
+    }
+
+    static bool HasParty() => GameSession.InGame && GameSession.Net.Social(new SocialRequest
+        { characterId = GameSession.CharacterId, operation = SocialOperation.Read }).party;
+
+    static JsValue BuildParty(NpcSession session)
+    {
+        if (!HasParty()) return JsNull.Value;
+        var party = new JsHostObject(null);
+        var self = BuildPlayer(session);
+        party.Set("getId", Ret(_ => N(GameSession.CharacterId)));
+        party.Set("getLeaderId", Ret(_ => N(GameSession.CharacterId)));
+        party.Set("getLeader", Ret(_ => self));
+        party.Set("getMembers", Ret(_ => new JsArray(new JsValue[] { self })));
+        party.Set("getMemberById", Ret(c => Int(c, 0) == GameSession.CharacterId ? (JsValue)self : JsNull.Value));
+        return party;
     }
 
     static JsHostObject BuildCashShop()
@@ -279,9 +358,13 @@ public static class NpcApi
         p.Set("getLevel", Ret(_ => N(Profile.level)));
         p.Set("getJobId", Ret(_ => N(QuestLogic.PlayerJob)));
         p.Set("getJob", Ret(_ => BuildJob(QuestLogic.PlayerJob)));
-        p.Set("getGender", Ret(_ => N(0)));
+        p.Set("getGender", Ret(_ => N(GameSession.Character?.record.gender ?? 0)));
         p.Set("getName", Ret(_ => S(Profile.playerName)));
-        p.Set("getId", Ret(_ => N(1)));
+        p.Set("isGM", Ret(_ => B((GameSession.Character?.record.gm ?? 0) > 1)));
+        p.Set("getDamageCap", Ret(_ => N(GameSession.Character?.record.damageCap ?? 19999999)));
+        BindSavedLocations(p);
+        p.Set("getParty", Ret(_ => BuildParty(session)));
+        p.Set("getId", Ret(_ => N(GameSession.InGame ? GameSession.CharacterId : 1)));
         p.Set("getMeso", Ret(_ => N(Profile.gold)));
         p.Set("getMapId", Ret(_ => N(MapId)));
         p.Set("getMap", Ret(_ => BuildMap()));
@@ -390,6 +473,39 @@ public static class NpcApi
                 point.Set("getX",Ret(_ => point.Get("x"))); point.Set("getY",Ret(_ => point.Get("y")));
                 return point;
             });
+            // 原菜单在顶层导入通知工具，即使当前分支不调用也必须能取得类引用。
+            // 尚未迁移的方法保留明确错误；不能将类引用解析等同于方法已实现。
+            if (name == "org.gms.server.ItemInformationProvider")
+            {
+                var provider = new JsHostObject(null);
+                Lenient(provider, "ItemInformationProvider");
+                provider.Set("getInstance", Ret(_ => provider));
+                provider.Set("getName", Ret(args => S(WzNames.Item(Int(args, 0)))));
+                return provider;
+            }
+            if (name == "org.gms.util.I18nUtil" || name == "org.gms.net.server.Server" || name == "org.gms.util.PacketCreator")
+            {
+                var type = new JsHostObject(null);
+                Lenient(type, name);
+                if (name == "org.gms.net.server.Server") type.Set("getInstance", Ret(_ => type));
+                return type;
+            }
+            if (name == "org.gms.client.SkillFactory")
+            {
+                var factory = new JsHostObject(null);
+                Lenient(factory, "SkillFactory");
+                factory.Set("getSkill", Ret(args => {
+                    var data = SkillBook.Get(Int(args, 0));
+                    if (data == null) return JsNull.Value;
+                    var skill = new JsHostObject(data);
+                    Lenient(skill, "skill");
+                    skill.Set("getId", Ret(_ => N(data.id)));
+                    skill.Set("getMaxLevel", Ret(_ => N(data.maxLevel)));
+                    skill.Set("getName", Ret(_ => S(data.name)));
+                    return skill;
+                }));
+                return factory;
+            }
             if (name == "org.gms.server.life.LifeFactory")
             {
                 var factory = new JsHostObject(null);
@@ -432,8 +548,8 @@ public static class NpcApi
         var c = new JsHostObject(player);
         Lenient(c, "client");
         c.Set("getPlayer", Ret(_ => player));
-        c.Set("getChannel", Ret(_ => N(0)));
-        c.Set("getWorld", Ret(_ => N(0)));
+        c.Set("getChannel", Ret(_ => N(GameSession.Channel)));
+        c.Set("getWorld", Ret(_ => N(GameSession.World)));
         return c;
     }
 

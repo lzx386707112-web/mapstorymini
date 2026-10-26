@@ -10,6 +10,7 @@ namespace MapleDash.Js
         Number,
         String,
         Template,
+        Regex,
         Identifier,
         Keyword,
         Punct,
@@ -20,14 +21,14 @@ namespace MapleDash.Js
         public JsTokenKind Kind;
         public string Text;
         public double Number;
+        public string Flags;
         public int Line;
         public int Column;
 
         public override string ToString() => Kind + " '" + Text + "' @" + Line + ":" + Column;
     }
 
-    // ES5 词法器。源端脚本只用单/双引号字符串、十进制/十六进制数字、C 风格注释。
-    // 不使用正则字面量：整个 scripts 目录里没有，遇到 / 一律按除号处理。
+    // 原脚本词法器：包含模板、正则字面量及数字分隔符。
     public sealed class JsLexer
     {
         static readonly HashSet<string> Keywords = new HashSet<string>(StringComparer.Ordinal)
@@ -65,11 +66,46 @@ namespace MapleDash.Js
             var list = new List<JsToken>();
             while (true)
             {
-                var t = Next();
+                SkipTrivia();
+                bool expressionStart = list.Count == 0 || ExpectsExpression(list[list.Count - 1]);
+                var t = Cur == '/' && Peek(1) != '=' && expressionStart ? ReadRegex() : Next();
                 list.Add(t);
                 if (t.Kind == JsTokenKind.Eof) break;
             }
             return list;
+        }
+
+        static bool ExpectsExpression(JsToken token)
+        {
+            if (token.Kind == JsTokenKind.Keyword)
+                return token.Text == "return" || token.Text == "throw" || token.Text == "case" || token.Text == "typeof" || token.Text == "void" || token.Text == "delete" || token.Text == "in";
+            return token.Kind == JsTokenKind.Punct && token.Text != ")" && token.Text != "]" && token.Text != "}" && token.Text != "." && token.Text != "++" && token.Text != "--";
+        }
+
+        JsToken ReadRegex()
+        {
+            int l = line, c = column;
+            Advance();
+            var pattern = new StringBuilder();
+            bool inClass = false, closed = false;
+            while (pos < src.Length && Cur != '\n' && Cur != '\r')
+            {
+                char ch = Cur; Advance();
+                if (ch == '\\')
+                {
+                    pattern.Append(ch);
+                    if (pos < src.Length) { pattern.Append(Cur); Advance(); }
+                    continue;
+                }
+                if (ch == '[') inClass = true;
+                else if (ch == ']') inClass = false;
+                else if (ch == '/' && !inClass) { closed = true; break; }
+                pattern.Append(ch);
+            }
+            if (!closed) throw new JsRuntimeException("SyntaxError: unterminated regular expression (line " + l + ")");
+            var flags = new StringBuilder();
+            while (char.IsLetter(Cur)) { flags.Append(Cur); Advance(); }
+            return new JsToken { Kind = JsTokenKind.Regex, Text = pattern.ToString(), Flags = flags.ToString(), Line = l, Column = c };
         }
 
         bool SkipTrivia()
@@ -140,13 +176,13 @@ namespace MapleDash.Js
             }
             else
             {
-                while (pos < src.Length && char.IsDigit(Cur)) { sb.Append(Cur); Advance(); }
-                if (Cur == '.') { sb.Append('.'); Advance(); while (pos < src.Length && char.IsDigit(Cur)) { sb.Append(Cur); Advance(); } }
+                while (pos < src.Length && (char.IsDigit(Cur) || Cur == '_')) { if (Cur != '_') sb.Append(Cur); Advance(); }
+                if (Cur == '.') { sb.Append('.'); Advance(); while (pos < src.Length && (char.IsDigit(Cur) || Cur == '_')) { if (Cur != '_') sb.Append(Cur); Advance(); } }
                 if (Cur == 'e' || Cur == 'E')
                 {
                     sb.Append('e'); Advance();
                     if (Cur == '+' || Cur == '-') { sb.Append(Cur); Advance(); }
-                    while (pos < src.Length && char.IsDigit(Cur)) { sb.Append(Cur); Advance(); }
+                    while (pos < src.Length && (char.IsDigit(Cur) || Cur == '_')) { if (Cur != '_') sb.Append(Cur); Advance(); }
                 }
             }
             string text = sb.ToString();
@@ -265,11 +301,11 @@ namespace MapleDash.Js
             return 0;
         }
 
-        static readonly string[] Puncts3 = { "===", "!==", ">>>", "<<=", ">>=" };
+        static readonly string[] Puncts3 = { "...", "===", "!==", ">>>", "<<=", ">>=" };
         static readonly string[] Puncts2 =
         {
             "==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "%=",
-            "&=", "|=", "^=", "<<", ">>",
+            "&=", "|=", "^=", "<<", ">>", "=>", "??", "?.",
         };
 
         JsToken ReadPunct(int l, int c0)

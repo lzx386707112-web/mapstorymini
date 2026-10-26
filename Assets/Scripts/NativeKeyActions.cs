@@ -68,7 +68,13 @@ public static class NativeKeyActions
             case GameAction.Skill: SkillWindow.Toggle(); return;
             case GameAction.KeySet: KeyConfigWindow.Toggle(); return;
             case GameAction.QuickSlot: BottomBar.QuickCollapsed = !BottomBar.QuickCollapsed; return;
-            case GameAction.Menu: GameMenuWindow.Toggle(); return;
+            // Esc：面板优先关闭（后开的先关），没有面板才开/关系统菜单
+            case GameAction.Menu:
+                if (GameWindows.CloseTop()) return;
+                // 登录/读图阶段还没有角色，别把系统菜单叠在登录界面上
+                if (player == null) return;
+                GameMenuWindow.Toggle();
+                return;
             case GameAction.Shop: ShopWindow.Toggle(); return;
             case GameAction.Shortcut: ShortcutWindow.Toggle(); return;
             case GameAction.Help: HelpWindow.Toggle(); return;

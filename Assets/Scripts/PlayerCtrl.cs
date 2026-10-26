@@ -38,7 +38,17 @@ public class PlayerCtrl : MonoBehaviour
     // 关卡模式下由 GameLoop.ApplyTheme 按 manifest 的 footholds 填充（世界坐标 x1,y1,x2,y2）；
     // 空 = 无地形数据（大厅/无限模式），退回恒平 GroundY。
     public static System.Collections.Generic.List<Vector4> Terrain;
-    public static void SetTerrain(System.Collections.Generic.List<Vector4> t) => Terrain = t;
+    // 与 Terrain 一一对应：true 表示这条 foothold 在原端带 forbidFallDown，
+    // 站在上面按 ↓+跳跃不许穿下去（0x94C4F8 查的支持段 +0x30）。
+    public static System.Collections.Generic.List<bool> TerrainNoFallThrough;
+    // 长度对不上就当没有这个数据：宁可允许下跳，也不要按错段号误禁。
+    public static void SetTerrain(System.Collections.Generic.List<Vector4> t,
+                                  System.Collections.Generic.List<bool> forbidFallDown = null)
+    {
+        Terrain = t;
+        TerrainNoFallThrough = t != null && forbidFallDown != null && forbidFallDown.Count == t.Count
+            ? forbidFallDown : null;
+    }
 
     public static System.Collections.Generic.List<Art.ClimbLine> Climbs;
     Art.ClimbLine climb;
@@ -164,6 +174,18 @@ public class PlayerCtrl : MonoBehaviour
     // 所以怪物速度也要用它换算，不能各写一个魔数（见 FieldDirector.ApplyStats）。
     public const float BaseWalkPx = 125f;
 
+    // ————————————— 下跳（↓ + 跳跃穿平台）—————————————
+    // 源端 0x94C4F8 成功后 0x9B1C51 在脱离支持时把横向速度清 0、
+    // 竖直速度设为 Physics.jumpSpeed × (−0.35355339)，并把刚离开的那条 foothold
+    // 记成「忽略」，下落途中不能被它重新接住（0x9B3B63 比较候选段与忽略指针）。
+    // 常量 0xB3E3A0 的 double 已核实为 −0.35355339。
+    public const float DownJumpRatio = 0.35355339f;
+    // 源端读取的地图 info/fieldLimit：CANNOTJUMPDOWN = 0x20000（FieldLimit.java）
+    public const int FieldLimitCannotJumpDown = 0x20000;
+    // 正在穿透的 foothold 序号（-1 = 没有）。落地/换图/抓绳都要清掉。
+    int dropSegment = -1;
+    public bool IsDroppingThrough => dropSegment >= 0;
+
     // 普攻是矩形判定：近战框上沿大约在脚底上方 48px，够不到上层平台。
     // 之前只比 |dx|，站在下层能把上层平台的怪打下来（用户实测截图）。
     public const float MeleeVertical = 1.2f;
@@ -201,6 +223,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         CancelRush();
         climb = null;
+        dropSegment = -1;
         grabCooldown = 0f;
         terrainY = GroundAt(worldX, GroundY);
         jumpY = 0f;
@@ -370,6 +393,10 @@ public class PlayerCtrl : MonoBehaviour
     }
 
     public bool Sitting { get; private set; }
+    public bool Crouching { get; private set; }
+    string swingAction = "atk";
+    bool NativeBasicAttackActive => Terrain != null && vis != null && vis.IsOneShot &&
+        (vis.Current == "atk" || vis.Current == "proneStab");
     public void ToggleSit()
     {
         if (!grounded || IsClimbing || hp <= 0f) return;
@@ -444,9 +471,22 @@ public class PlayerCtrl : MonoBehaviour
         // 键盘优先（编辑器调试），没按键时读摇杆。两者共用同一个 h，后面的逻辑完全一致
         float h = TouchInput.MoveH;
         bool jumpReq = TouchInput.TakeJump();
+        // BeiDou.exe 0094C383: FIELD_LIMIT_JUMP (bit 0) rejects normal jumps.
+        var map = GameLoop.I != null && GameLoop.I.field != null ? GameLoop.I.field.Map : null;
+        if (map != null && (map.fieldLimit & 1) != 0) jumpReq = false;
         climbInput = TouchInput.MoveV;
         var diseases = GetComponent<NativeMobDebuffs>();
         diseases?.Input(ref h, ref jumpReq, ref climbInput);
+        // 0094C3AD checks the active action before submitting a normal jump.
+        // Grounded attack -> jump is rejected; jump -> attack remains possible.
+        // Do not treat alert/hit reaction animation as an attack action.
+        if (NativeBasicAttackActive) {
+            jumpReq = false;
+            // CMovePath local input 009CBFA2–009CBFF6 clears horizontal input
+            // during an action; proneStab keeps the down input set.
+            if (grounded) h = 0;
+            climbInput = vis.Current == "proneStab" ? -1 : 0;
+        }
         if (jumpReq || Mathf.Abs(h) > 0.15f || Mathf.Abs(climbInput) > 0.15f || !grounded) Sitting = false;
         int steps = Mathf.Max(1, Mathf.CeilToInt(dt / 0.008f));
         for (int i = 0; i < steps; i++) StepMovement(h, jumpReq && i == 0, dt / steps);
@@ -469,13 +509,15 @@ public class PlayerCtrl : MonoBehaviour
         // 指数插值：快但不生硬。瞬间跳层会像"走格子"，破坏 2.5D 错觉
         laneVis = Mathf.Lerp(laneVis, lane, 1f - Mathf.Exp(-14f * dt));
 
+        Crouching = Terrain != null && grounded && !IsClimbing && !moving && climbInput < -0.15f;
         if (vis != null)
         {
             string action = IsClimbing ? (climb.ladder ? "ladder" : "rope") :
-                !grounded ? "jump" : moving ? "walk" : Sitting ? "sit" : "stand";
+                !grounded ? "jump" : moving ? "walk" : Crouching ? "prone" : Sitting ? "sit" : "stand";
             vis.SetBase(action);
             if (IsClimbing) vis.Play(action, false); // 抓绳打断攻击/受击残留
-            vis.speed = IsClimbing ? Mathf.Abs(climbInput) : 1f;
+            if (IsClimbing) vis.speed = Mathf.Abs(climbInput);
+            else if (!vis.IsOneShot) vis.speed = 1f;
         }
 
         // —— 自动普攻 ——
@@ -487,7 +529,7 @@ public class PlayerCtrl : MonoBehaviour
             if (b != null)
             {
                 atkTimer = attackInterval;
-                facing = b.transform.position.x >= worldX ? 1 : -1;
+                if (Terrain == null) facing = b.transform.position.x >= worldX ? 1 : -1;
                 StrikeBoss(b);
             }
             else
@@ -496,7 +538,7 @@ public class PlayerCtrl : MonoBehaviour
                 if (t != null)
                 {
                     atkTimer = attackInterval;
-                    facing = t.transform.position.x >= worldX ? 1 : -1;
+                    if (Terrain == null) facing = t.transform.position.x >= worldX ? 1 : -1;
                     Strike(t);
                 }
                 else
@@ -520,7 +562,7 @@ public class PlayerCtrl : MonoBehaviour
         GroundItem.TryAutoPickup(FeetPos);
     }
 
-    // 起一次挥砍：播动画、按攻击间隔换算播放速度、挂残影帧表，返回前摇秒数。
+    // 起一次挥砍：按原武器攻速逐帧换算 delay、挂残影帧表，返回前摇秒数。
     // 没有素材时返回 0，调用方立即结算。
     float BeginSwing()
     {
@@ -531,22 +573,24 @@ public class PlayerCtrl : MonoBehaviour
         trailPose = null;
         trailCursor = 0;
         if (vis == null) return 0f;
-        var clip = Art.GetClip(vis.kind, vis.key, "atk");
+        // BeiDou.exe 00950E21–00950E4E: basic attack in prone movement
+        // state selects action 32 (proneStab), not the standing weapon swing.
+        swingAction = Crouching ? "proneStab" : "atk";
+        var clip = Art.GetClip(vis.kind, vis.key, swingAction);
         if (clip == null || clip.delays.Length == 0) return 0f;
-        // 挥砍播放速度：整套动作在攻击间隔的 90% 内播完。
-        // 原版挥砍速度由武器攻速决定（本地无该表，用间隔反推，快武器=快挥砍）。
-        swingPlayback = Mathf.Clamp(clip.Duration / Mathf.Max(0.12f, attackInterval * 0.9f), 0.8f, 2.2f);
-        vis.PlayOnce("atk", swingPlayback);
+        int weaponSpeed = WzCharacter.WeaponAttackSpeed(vis.key);
+        swingPlayback = 16f / (Mathf.Clamp(weaponSpeed, 2, 10) + 10);
+        vis.PlayNativeAttack(swingAction, weaponSpeed);
 
         // 残影帧表：按当前武器 + 实际普攻姿势取（swingO1/stabT1/shoot1…）
         trailName = WzCharacter.Afterimage(vis.key);
         if (trailName != null)
         {
-            trailPose = WzCharacter.AttackPoseName(vis.key);
+            trailPose = swingAction == "proneStab" ? "proneStab" : WzCharacter.AttackPoseName(vis.key);
             var frames = trailPose != null ? AfterimageFx.Frames(trailName, trailPose) : null;
             if (frames != null && frames.Length > 0) trailFrames = frames;
         }
-        return clip.delays[0] / swingPlayback;   // 第 0 帧（起手）播完 = 刀挥到
+        return WzCharacter.AttackFrameDelay(clip.delays[0], weaponSpeed);
     }
 
     // 空挥：没有目标也要有完整动作和速度
@@ -594,7 +638,7 @@ public class PlayerCtrl : MonoBehaviour
     // 受击反应（alert）会抢走一次性动作，那时不再出刀光。
     void TickTrail()
     {
-        if (trailFrames == null || vis == null || !vis.IsOneShot || vis.Current != "atk") return;
+        if (trailFrames == null || vis == null || !vis.IsOneShot || vis.Current != swingAction) return;
         while (trailCursor < trailFrames.Length && trailFrames[trailCursor].index < vis.FrameIndex) trailCursor++;
         if (trailCursor >= trailFrames.Length) return;
         if (trailFrames[trailCursor].index != vis.FrameIndex) return;
@@ -625,6 +669,8 @@ public class PlayerCtrl : MonoBehaviour
         if (StepClimb(h, jumpReq, dt)) return;
         if (jumpReq && grounded)
         {
+            // ↓ + 跳跃 = 穿平台下跳；条件不满足才退回普通跳跃
+            if (climbInput < -0.15f && BeginDownJump()) return;
             vy = jumpSpeed;
             grounded = false;
             AudioManager.Play("Game/Jump", 0.7f, false);
@@ -632,24 +678,35 @@ public class PlayerCtrl : MonoBehaviour
         float previousY = terrainY + jumpY;
         float nextX = ClampX(worldX + h * moveSpeed * dt);
         moving = Mathf.Abs(h) > 0.15f;
-        if (moving) facing = h > 0f ? 1 : -1;
+        if (moving && !NativeBasicAttackActive) facing = h > 0f ? 1 : -1;
 
-        // 原 WZ 的竖直 foothold 是墙；独立悬空平台只在下降时承接角色。
+        // 连续支持段优先：上层平台的竖直侧边可能穿过下层可走地面。
+        // 只有脚下不能连续通过（真实台阶/边缘）或处于空中时，才检查竖直墙。
+        float supportY = previousY;
+        bool followsGround = grounded && FollowGround(worldX, previousY, nextX, out supportY);
         if (Terrain != null)
             foreach (var wall in Terrain)
             {
                 if (Mathf.Abs(wall.z - wall.x) >= 0.01f) continue;
                 if ((worldX < wall.x && nextX >= wall.x) || (worldX > wall.x && nextX <= wall.x))
+                {
+                    // 目标恰在墙线上时，也必须确认墙另一侧有接续地面。
+                    float beyondY;
+                    if (followsGround && FollowGround(worldX, previousY,
+                        wall.x + Mathf.Sign(nextX - worldX) * 0.001f, out beyondY)) continue;
                     if (previousY < Mathf.Max(wall.y, wall.w) - 0.01f &&
                         previousY >= Mathf.Min(wall.y, wall.w) - 0.01f)
+                    {
                         nextX = worldX;
+                        followsGround = false;
+                    }
+                }
             }
         if (grounded)
         {
             // Only follow the supporting segment and geometrically connected slopes.
             // An unrelated platform at the same x must not keep us suspended.
-            float supportY;
-            if (FollowGround(worldX, previousY, nextX, out supportY))
+            if (followsGround || FollowGround(worldX, previousY, nextX, out supportY))
             {
                 terrainY = supportY;
                 jumpY = 0f;
@@ -667,12 +724,13 @@ public class PlayerCtrl : MonoBehaviour
         float nextY = previousY + vy * dt + 0.5f * gravity * dt * dt;
         vy = Mathf.Max(vy + gravity * dt, -fallSpeed);
         float landing;
-        if (vy <= 0f && FindLanding(worldX, previousY, nextY, out landing))
+        if (vy <= 0f && FindLanding(worldX, previousY, nextY, dropSegment, out landing))
         {
             terrainY = landing;
             jumpY = 0f;
             vy = 0f;
             grounded = true;
+            dropSegment = -1;      // 落到别的段上：忽略指针作废（0x9B4963）
         }
         else jumpY = nextY - terrainY;
 
@@ -691,6 +749,7 @@ public class PlayerCtrl : MonoBehaviour
         vy = 0f;
         grounded = true;
         climb = null;
+        dropSegment = -1;
         grabCooldown = 0.3f;
         Debug.Log("[Player] 掉出地图，复位到 x=" + atX.ToString("F2") + " y=" + y.ToString("F2"));
     }
@@ -722,6 +781,7 @@ public class PlayerCtrl : MonoBehaviour
                 worldX = climb.x;
                 grounded = false;
                 vy = 0f;
+                dropSegment = -1;      // 抓住绳梯 = 离开原来那条平台，忽略指针作废
                 // 吸附到绳身上：从地面够到悬空的绳底时，脚底先贴到 y2 再往上爬
                 float cy = terrainY + jumpY;
                 if (cy < climb.bottom) jumpY = climb.bottom - terrainY;
@@ -778,7 +838,7 @@ public class PlayerCtrl : MonoBehaviour
         return false;
     }
 
-    static bool FindLanding(float x, float previousY, float nextY, out float landing)
+    static bool FindLanding(float x, float previousY, float nextY, int skip, out float landing)
     {
         landing = float.NegativeInfinity;
         if (Terrain == null || Terrain.Count == 0)
@@ -786,14 +846,70 @@ public class PlayerCtrl : MonoBehaviour
             landing = GroundY;
             return previousY >= GroundY && nextY <= GroundY;
         }
-        foreach (var f in Terrain)
+        for (int i = 0; i < Terrain.Count; i++)
         {
+            // 下跳正在穿过的那条段不算落脚点，否则一松手就被自己踩的台子接回去
+            if (i == skip) continue;
+            var f = Terrain[i];
             if (x < Mathf.Min(f.x, f.z) || x > Mathf.Max(f.x, f.z) || Mathf.Abs(f.z - f.x) < 0.01f) continue;
             float height = Mathf.Lerp(f.y, f.w, (x - f.x) / (f.z - f.x));
             if (previousY >= height - 0.01f && nextY <= height && height > landing)
                 landing = height;
         }
         return !float.IsNegativeInfinity(landing);
+    }
+
+    // 当前脚下踩的是哪条 foothold（序号）；没有可走段返回 -1。
+    // 选段规则与 FollowGround 一致（覆盖 x 且高度最接近 refY，容差 1.5px）。
+    static int SupportSegment(float x, float y)
+    {
+        if (Terrain == null || Terrain.Count == 0) return -1;
+        int best = -1;
+        float bestD = 1.5f / Art.PPU;
+        for (int i = 0; i < Terrain.Count; i++)
+        {
+            var f = Terrain[i];
+            if (Mathf.Abs(f.z - f.x) < 0.01f) continue;
+            if (x < Mathf.Min(f.x, f.z) || x > Mathf.Max(f.x, f.z)) continue;
+            float d = Mathf.Abs(Mathf.Lerp(f.y, f.w, (x - f.x) / (f.z - f.x)) - y);
+            if (d <= bestD) { bestD = d; best = i; }
+        }
+        return best;
+    }
+
+    // 当前段正下方（严格更低）还有没有接得住的落脚点。
+    // 源端 0x94C4F8 也是先看下方落点再置下跳请求，悬空边不该把人送进虚空。
+    static bool HasLandingBelow(float x, float y, int skip)
+    {
+        if (Terrain == null || Terrain.Count == 0) return y > GroundY + 0.01f;
+        for (int i = 0; i < Terrain.Count; i++)
+        {
+            if (i == skip) continue;
+            var f = Terrain[i];
+            if (Mathf.Abs(f.z - f.x) < 0.01f) continue;
+            if (x < Mathf.Min(f.x, f.z) || x > Mathf.Max(f.x, f.z)) continue;
+            if (Mathf.Lerp(f.y, f.w, (x - f.x) / (f.z - f.x)) < y - 0.01f) return true;
+        }
+        return false;
+    }
+
+    // ↓ + 跳跃：穿过脚下这条 foothold 往下掉。
+    // 门控沿用源端：地图 fieldLimit 的 CANNOTJUMPDOWN、支持段的 forbidFallDown、
+    // 必须站在可走段上、且下方要有落脚点。
+    bool BeginDownJump()
+    {
+        var map = GameLoop.I != null && GameLoop.I.field != null ? GameLoop.I.field.Map : null;
+        if (map != null && (map.fieldLimit & FieldLimitCannotJumpDown) != 0) return false;
+        float y = terrainY + jumpY;
+        int segment = SupportSegment(worldX, y);
+        if (segment < 0 || !HasLandingBelow(worldX, y, segment)) return false;
+        if (TerrainNoFallThrough != null && TerrainNoFallThrough[segment]) return false;
+        dropSegment = segment;
+        grounded = false;
+        vy = -jumpSpeed * DownJumpRatio;   // 脱离支持时横向速度清 0：本帧不再推进 worldX
+        jumpY = 0f;
+        AudioManager.Play("Game/Jump", 0.7f, false);
+        return true;
     }
 
     BossUnit FindBossTarget()
@@ -803,6 +919,7 @@ public class PlayerCtrl : MonoBehaviour
             if (b == null || b.dead) continue;
             if (Mathf.Abs(b.Lane - lane) > 2) continue;      // Boss 占 3 层
             float dx = b.transform.position.x - worldX;
+            if (Terrain != null && dx * facing < 0) continue;
             // Boss 本体宽，判定给一点宽限，否则贴脸时反而打不到
             if (dx < -(reach + 1.3f) || dx > reach + 1.3f) continue;
             return b;
@@ -832,10 +949,8 @@ public class PlayerCtrl : MonoBehaviour
             if (e == null || e.dead) continue;
             if (Mathf.Abs(e.Lane - lane) > 1) continue;           // 层差 > 1 够不着
 
-            // 双向查找，不按 facing 过滤：这个游戏的操作只有「移动 + 点技能」，
-            // 普攻全自动。若只打正面，站着不动时背后的怪永远打不着，
-            // 而「清完怪才推进」会让关卡彻底卡死（自动化测试实测卡了 50 秒）。
             float dx = e.transform.position.x - worldX;
+            if (Terrain != null && dx * facing < 0) continue;
             if (!InMeleeBand(FeetPos, e.transform.position, reach)) continue;
 
             float d = Mathf.Abs(dx);
@@ -937,6 +1052,7 @@ public class PlayerCtrl : MonoBehaviour
         GetComponent<NativeMobDebuffs>()?.Clear();
         CancelRush();
         climb = null;
+        dropSegment = -1;
         grabCooldown = 0f;
         hp = Mathf.Clamp(hpValue, 1, hpMax);
         mp = Mathf.Clamp(mpValue, 0, mpMax);
@@ -1001,6 +1117,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         CancelRush();
         climb = null;
+        dropSegment = -1;
         grabCooldown = 0f;
         worldX = ClampX(x);
         terrainY = groundY;

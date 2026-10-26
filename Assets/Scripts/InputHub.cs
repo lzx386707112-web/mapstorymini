@@ -207,6 +207,55 @@ public static class KeyMap
 
 public static class InputHub
 {
+    static readonly NativeKeyRepeat repeat = new NativeKeyRepeat();
+    static readonly SortedDictionary<int, KeyCode> repeatKeys = BuildRepeatKeys();
+    static int repeatedKey;
+    static SortedDictionary<int, KeyCode> BuildRepeatKeys()
+    {
+        var result = new SortedDictionary<int, KeyCode>();
+        foreach (var key in NativeKeyLayout.PhysicalKeys)
+        {
+            int vk = NativeKeyLayout.VirtualKey(key);
+            if (vk != 0) result[vk] = NativeKeyLayout.FunctionKey(key);
+        }
+        return result;
+    }
+    static bool KeyHeld(KeyCode key)
+    {
+        var other = NativeKeyLayout.OtherModifier(key);
+        return Input.GetKey(key) || other != KeyCode.None && Input.GetKey(other) || virtualHeld.Contains(key);
+    }
+    static bool KeyPressed(KeyCode key)
+    {
+        var other = NativeKeyLayout.OtherModifier(key);
+        return Input.GetKeyDown(key) || other != KeyCode.None && Input.GetKeyDown(other) || virtualPressed.Contains(key);
+    }
+    static int RepeatId(GameAction action)
+    {
+        var key = KeyMap.Of(action);
+        return key == KeyCode.None ? 256 + (int)action : NativeKeyLayout.VirtualKey(key);
+    }
+    public static void TickRepeat(float now, bool active)
+    {
+        repeatedKey = 0;
+        if (!active || !Enabled) { repeat.Reset(); previousAxisKeys = 0; return; }
+        int pressed = 0;
+        foreach (var pair in repeatKeys)
+            if (KeyPressed(pair.Value)) pressed = pair.Key;
+        int axisKeys = (virtualAxis.x < -.15f ? 1 : 0) | (virtualAxis.y > .15f ? 2 : 0) |
+            (virtualAxis.x > .15f ? 4 : 0) | (virtualAxis.y < -.15f ? 8 : 0);
+        for (int i = 0; i < 4; i++)
+            if ((axisKeys & ~previousAxisKeys & (1 << i)) != 0) pressed = Mathf.Max(pressed, 37 + i);
+        previousAxisKeys = axisKeys;
+        // Direct action buttons also feed the native clock, including unbound buttons.
+        foreach (var action in virtualActionsPressed) pressed = Mathf.Max(pressed, RepeatId(action));
+        if (pressed != 0) repeat.Press(pressed, now);
+        bool held = repeatKeys.TryGetValue(repeat.Key, out var key) && KeyHeld(key);
+        if (repeat.Key >= 37 && repeat.Key <= 40 && (axisKeys & (1 << (repeat.Key - 37))) != 0) held = true;
+        foreach (var action in virtualActionsHeld) if (RepeatId(action) == repeat.Key) held = true;
+        if (repeat.Poll(held, now)) repeatedKey = repeat.Key;
+    }
+    public static bool Repeated(GameAction action) => Enabled && repeatedKey != 0 && repeatedKey == RepeatId(action);
     static readonly HashSet<KeyCode> virtualHeld = new HashSet<KeyCode>();
     static readonly HashSet<KeyCode> virtualPressed = new HashSet<KeyCode>();
     static readonly HashSet<KeyCode> virtualReleaseNext = new HashSet<KeyCode>();
@@ -220,6 +269,7 @@ public static class InputHub
 
     static Vector2 virtualAxis;
     static bool virtualAxisActive;
+    static int previousAxisKeys;
 
     // 屏上虚拟摇杆给模拟量（VirtualControls 每帧调用）；
     // 有模拟量时 AxisX/Y 直接采用，盖过数字方向键——
@@ -322,6 +372,7 @@ public static class InputHub
 
     public static void ReleaseAllVirtual()
     {
+        repeat.Reset(); repeatedKey = 0; previousAxisKeys = 0;
         virtualHeld.Clear();
         virtualPressed.Clear();
         virtualReleaseNext.Clear();
@@ -575,12 +626,14 @@ public class InputBridge : MonoBehaviour
         // 屏上虚拟按键（摇杆/十字/按钮）：先把触摸翻译成注入，
         // 后面读 AxisX/Pressed 时已经包含虚拟键的量。
         VirtualControls.Tick(playing && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible);
+        InputHub.TickRepeat(Time.unscaledTime, playing && Application.isFocused && Time.timeScale > 0 &&
+            !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible);
 
         if (playing)
         {
             TouchInput.MoveH = InputHub.AxisX;
             TouchInput.MoveV = InputHub.AxisY;
-            if (InputHub.Pressed(GameAction.Jump)) TouchInput.PushJump();
+            if (InputHub.Pressed(GameAction.Jump) || InputHub.Repeated(GameAction.Jump)) TouchInput.PushJump();
         }
         else
         {
@@ -595,9 +648,18 @@ public class InputBridge : MonoBehaviour
                 if (entry.action == GameAction.Jump || entry.action == GameAction.Attack || entry.action == GameAction.Pickup) continue;
                 if (InputHub.Pressed(entry.action)) NativeKeyActions.Execute(entry.action);
             }
-            foreach (var action in new[] { GameAction.Menu, GameAction.Help, GameAction.QuickSlot })
+            foreach (var action in new[] { GameAction.Help, GameAction.QuickSlot })
                 if (InputHub.Pressed(action)) NativeKeyActions.Execute(action);
         }
+
+        // Esc（系统菜单动作）不能被「角色此刻能不能动」卡住：面板开着、角色倒地、
+        // 正在读图之后都得能关窗口，否则玩家会被自己的面板锁在游戏里。
+        // 已经各自处理 Esc 的层（键位窗、虚拟键编辑器、侧滑菜单、聊天输入、频道下拉、
+        // NPC 对话）在这里让出去，避免一次按键关掉两层。
+        bool escapeOwnedElsewhere = KeyConfigWindow.Visible || VirtualControlsEditor.Visible ||
+            GameSideMenu.Blocking || BottomBar.ChatFocused || BottomBar.ChannelListOpen || NpcSession.Blocking;
+        if (!escapeOwnedElsewhere && InputHub.Pressed(GameAction.Menu))
+            NativeKeyActions.Execute(GameAction.Menu);
         if (KeyConfigWindow.Visible || VirtualControlsEditor.Visible || NpcSession.Blocking)
         {
             TouchInput.MoveH = TouchInput.MoveV = 0f;
@@ -611,14 +673,17 @@ public class InputBridge : MonoBehaviour
                 if (QuickSlots.Id(i) > 0 && InputHub.Pressed(QuickSlots.Action(i)))
                     QuickSlots.Cast(i);
 
-        // Ctrl 的技能绑定优先；未绑技能时按住请求普攻，攻击间隔仍由角色控制。
+        // BeiDou 0094F5EA is the sole call to the basic-attack handler 0094E256:
+        // dispatch on key-down/repeat, rather than polling a held key every frame.
+        // A later direction key replaces the keyboard repeat owner as in DirectInput.
         bool skillOwnsAttack = false;
         for (int i = 0; i < QuickSlots.Count; i++)
             if (QuickSlots.Id(i) > 0 && KeyMap.Of(QuickSlots.Action(i)) == KeyMap.Of(GameAction.Attack))
                 skillOwnsAttack = true;
-        if (playing && !skillOwnsAttack && InputHub.Held(GameAction.Attack)) game.player.RequestAttack();
+        if (playing && !skillOwnsAttack &&
+            (InputHub.Pressed(GameAction.Attack) || InputHub.Repeated(GameAction.Attack))) game.player.RequestAttack();
 
-        if (playing && InputHub.Pressed(GameAction.Pickup))
+        if (playing && (InputHub.Pressed(GameAction.Pickup) || InputHub.Repeated(GameAction.Pickup)))
         {
             GroundItem.TryPickupNearest();
         }
@@ -634,8 +699,17 @@ public class InputBridge : MonoBehaviour
     void OnGUI()
     {
         if (GameLoop.I == null) return;
-        GUI.depth = -200;
+        // 同一个 depth 内按调用顺序叠：后画的在上面。
+        GUI.depth = -300;
         UiKit.Begin();
+
+        // 屏上虚拟按键垫最底，侧边栏（含整屏压暗蒙版）盖在它上面。
+        // 悬浮球与按键层不会同时出现（球在面板收起时才画），所以球仍然在最上层。
+        if (!GameHUD.InterfaceHidden)
+        {
+            VirtualControls.Draw();
+            VirtualControls.DrawDropTargets();
+        }
         GameSideMenu.Draw();
         VirtualControlsEditor.Draw();
     }

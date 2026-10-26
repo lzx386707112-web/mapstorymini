@@ -66,18 +66,41 @@ public static class GameSideMenu
     sealed class MenuEntry
     {
         public string glyph;
+        public string glyphOff;      // 开关项关闭时的图标
         public string title;
-        public string desc;
+        public string desc;          // 普通项的描述
         public bool gameplayOnly;
         public Action run;
+
+        // —— 开关项：state 不为 null 就是「点一下改状态」的条目 ——
+        // 这类条目不执行 run 里的"打开窗口"，而是取反后原地刷新，面板保持打开，
+        // 用户能立刻看到右侧滑块与描述文字变了。
+        public Func<bool> state;
+        public string descOn;
+        public string descOff;
+
+        public bool IsSwitch => state != null;
+        public string DescNow => IsSwitch ? (state() ? descOn : descOff) : desc;
+        public string GlyphNow => IsSwitch && !state() && !string.IsNullOrEmpty(glyphOff) ? glyphOff : glyph;
     }
 
     static readonly MenuEntry[] items =
     {
         new MenuEntry
         {
-            glyph = "键",
+            glyph = "显",
+            glyphOff = "隐",
             title = "虚拟按键",
+            descOn = "显示中 · 点击隐藏",
+            descOff = "已隐藏 · 点击显示",
+            gameplayOnly = false,
+            state = () => VirtualControls.OverlayVisible,
+            run = ToggleVirtualControls,
+        },
+        new MenuEntry
+        {
+            glyph = "键",
+            title = "按键布局",
             desc = "调整位置、大小与样式",
             gameplayOnly = false,
             run = OpenVirtualEditor,
@@ -280,6 +303,14 @@ public static class GameSideMenu
         Close(true);
         if (KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
         if (!VirtualControlsEditor.Visible) VirtualControlsEditor.Toggle();
+    }
+
+    // 显示/隐藏整层虚拟按键：只切 OverlayVisible，游戏逻辑、键位映射、布局存档都不动。
+    // 悬浮球属于本层，隐藏后仍在，随时能从同一个入口调回来。
+    static void ToggleVirtualControls()
+    {
+        VirtualControls.OverlayVisible = !VirtualControls.OverlayVisible;
+        BottomBar.Toast(VirtualControls.OverlayVisible ? "虚拟按键已显示" : "虚拟按键已隐藏");
     }
 
     static bool RawPointerDown()
@@ -599,6 +630,15 @@ public static class GameSideMenu
             int hit = EntryAt(pressStart);
             if (hit >= 0 && hit == EntryAt(pressPos) && EntryEnabled(hit))
             {
+                // 开关项：原地切换，面板留着 —— 关掉面板就看不到状态怎么变的
+                if (items[hit].IsSwitch)
+                {
+                    var toggle = items[hit].run;
+                    ResetPress();
+                    toggle?.Invoke();
+                    return;
+                }
+
                 var run = items[hit].run;
                 Close(true);
                 run?.Invoke();
@@ -680,6 +720,20 @@ public static class GameSideMenu
         GUI.color = old;
     }
 
+    // 胶囊：两端圆 + 中间矩形。SoftTex 的圆角是按边长比例算的，压成细长条后会变形，
+    // 开关底座必须是标准的半圆头，所以这里直接拼几何。
+    static void Pill(Rect r, Color c)
+    {
+        float rad = r.height * 0.5f;
+        var old = GUI.color;
+        GUI.color = c;
+        GUI.DrawTexture(new Rect(r.x + rad, r.y, Mathf.Max(0f, r.width - rad * 2f), r.height),
+            Texture2D.whiteTexture);
+        GUI.color = old;
+        Disc(new Vector2(r.x + rad, r.center.y), rad, c);
+        Disc(new Vector2(r.xMax - rad, r.center.y), rad, c);
+    }
+
     // —————————— 绘制（GameHUD.OnGUI，UiKit.Begin 之后） ——————————
     public static void Draw()
     {
@@ -747,6 +801,8 @@ public static class GameSideMenu
         for (int i = 0; i < items.Length; i++)
         {
             bool enabled = EntryEnabled(i);
+            bool isSwitch = items[i].IsSwitch;
+            bool on = isSwitch && items[i].state();
             var card = EntryRect(i);
             bool down = enabled && pressing && !pressOutside && !pressDragged && hotEntry == i;
             bool hover = enabled && !Application.isMobilePlatform && !pressing && card.Contains(MouseGui());
@@ -755,24 +811,41 @@ public static class GameSideMenu
                 UiKit.Fill(new Rect(card.x, card.y + 12f, 3f, card.height - 24f), Accent);
 
             var icon = new Rect(card.x + 14f, card.y + (card.height - 52f) * 0.5f, 52f, 52f);
-            Round(icon, enabled ? IconBg : new Color(0.10f, 0.12f, 0.15f, 0.9f));
-            VirtualControls.Label(icon, items[i].glyph, 24,
-                enabled ? new Color(0.88f, 0.96f, 1f) : new Color(0.58f, 0.62f, 0.68f),
+            Round(icon, !enabled ? new Color(0.10f, 0.12f, 0.15f, 0.9f)
+                                 : isSwitch && !on ? new Color(0.115f, 0.135f, 0.17f, 0.95f) : IconBg);
+            VirtualControls.Label(icon, items[i].GlyphNow, 24,
+                enabled ? (isSwitch && !on ? new Color(0.66f, 0.72f, 0.80f) : new Color(0.88f, 0.96f, 1f))
+                        : new Color(0.58f, 0.62f, 0.68f),
                 TextAnchor.MiddleCenter, 1);
 
             float tx = icon.xMax + 14f;
-            float tw = card.xMax - tx - 42f;
+            float tw = card.xMax - tx - (isSwitch ? 70f : 42f);
             VirtualControls.Label(new Rect(tx, card.y + 18f, tw, 26f),
                 items[i].title, 19, enabled ? TxtMain : TxtDim, TextAnchor.MiddleLeft, 1);
             VirtualControls.Label(new Rect(tx, card.y + 46f, tw, 20f),
-                enabled ? items[i].desc : "进入游戏后可编辑", 12,
+                enabled ? items[i].DescNow : "进入游戏后可编辑", 12,
                 enabled ? TxtDim : new Color(0.48f, 0.51f, 0.57f),
                 TextAnchor.MiddleLeft, 0);
 
-            float cx = card.xMax - 24f, cy = card.center.y;
-            var chevron = new Color(1f, 1f, 1f, enabled ? 0.36f : 0.12f);
-            VirtualControls.DrawLine(new Vector2(cx - 4f, cy - 7f), new Vector2(cx + 3f, cy), chevron, 2f);
-            VirtualControls.DrawLine(new Vector2(cx + 3f, cy), new Vector2(cx - 4f, cy + 7f), chevron, 2f);
+            if (isSwitch)
+            {
+                // 开关项右侧画滑块，代替普通项的箭头：一眼看出现在是开还是关
+                var sw = new Rect(card.xMax - 60f, card.center.y - 13f, 46f, 26f);
+                Pill(sw, !enabled ? new Color(0.14f, 0.15f, 0.18f, 1f)
+                        : on ? new Color(0.20f, 0.60f, 1f, 1f)
+                             : new Color(0.17f, 0.19f, 0.24f, 1f));
+                float kr = sw.height * 0.5f - 3f;
+                float kx = on ? sw.xMax - sw.height * 0.5f : sw.x + sw.height * 0.5f;
+                Disc(new Vector2(kx, sw.center.y + 1.4f), kr + 1f, new Color(0f, 0f, 0f, 0.22f));
+                Disc(new Vector2(kx, sw.center.y), kr, enabled ? Color.white : new Color(0.44f, 0.47f, 0.52f));
+            }
+            else
+            {
+                float cx = card.xMax - 24f, cy = card.center.y;
+                var chevron = new Color(1f, 1f, 1f, enabled ? 0.36f : 0.12f);
+                VirtualControls.DrawLine(new Vector2(cx - 4f, cy - 7f), new Vector2(cx + 3f, cy), chevron, 2f);
+                VirtualControls.DrawLine(new Vector2(cx + 3f, cy), new Vector2(cx - 4f, cy + 7f), chevron, 2f);
+            }
         }
 
         var close = CloseRect();

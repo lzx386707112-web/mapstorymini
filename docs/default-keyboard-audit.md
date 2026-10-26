@@ -82,3 +82,48 @@
 - Unity真实资源检查15项通过，键盘检查209项通过；原商城目录9074条（原文件存在两个同名9063节点，商品SN不同，均保留）。最新全量C#重编译0错误、0警告。
 - 已运行项目要求的全量NPC脚本与打包检查：存在既有失败（NPC：7语法失败、27运行失败、70 Java互操作；打包1183条中13条语法失败），不能报告全绿。单独原 `medalQuest.js --trace` 通过。
 - 无APK构建或真机触屏/视觉验收。
+
+## 本轮按键完整性复核（2026-10-26）
+
+上一张表只核到「按键能进到哪个入口」。这一轮按用户要求逐键核对**行为是否真的对**，发现两处确定的错，其余 38 项逐条走了一遍调用链未发现新的断点。
+
+### 修掉的 1：Esc 不会关面板
+
+- 原实现：`GameAction.Menu`（Esc）只做 `GameMenuWindow.Toggle()`，且整段动作派发被 `playing` 卡住（角色倒地、对话中、读图后都不响应）。面板开着时按 Esc 会在面板上再叠一个系统菜单。
+- 现在：`GameWindows.TrackPanels()` 在绘制阶段观测各窗口的可见性变化，维护「打开顺序」；`GameWindows.CloseTop()` 关掉最后打开的那一个。`NativeKeyActions` 的 `Menu` 分支先尝试 `CloseTop()`，没有面板才开系统菜单（且要求已有角色，登录/读图阶段不弹）。
+- Esc 的让路规则：键位窗、虚拟键编辑器、侧滑菜单、聊天输入、频道下拉、NPC 对话各自消费 Esc，`InputBridge` 在这些层不重复派发，避免一次按键关两层。
+- 顺带把 `Menu` 从 `playing` 门控里提出来：面板开着 / 角色倒地时也必须能关窗。登录阶段由「没有角色」这一条挡住。
+- 这是用户明确要求的产品行为；原端 Esc 只对应系统菜单，关窗靠各窗口的 X。已记入 `beidou-client-reverse/references/input-and-physics.md`，不当作原端逻辑。
+
+### 修掉的 2：↓ + 跳跃不下跳
+
+- 原实现：跳跃分派只看 `jumpReq`，按住 ↓ 时仍然是普通向上跳。
+- 现在：`PlayerCtrl.BeginDownJump` 按源端 `0x94C4F8` 做门控——地图 `fieldLimit` 的 `CANNOTJUMPDOWN(0x20000)`、支持段的 `forbidFallDown`、必须站在可走段上、且该点下方还有严格更低的落脚点；通过后竖直速度取 `-jumpSpeed*0.35355339`（常量 `0xB3E3A0`），本帧清横向位移，并把该段记成 `dropSegment`，`FindLanding` 跳过它，落到别的段后清空（对应 `0x9B4963`）。
+- 数据链补全：`FieldFoothold.forbidFallDown` ← `NativeMapView.LoadMap` 读 WZ `foothold/*/*/*/forbidFallDown`，`Art.Stage.ForbidFallDown` 与 `Footholds` 同序，经 `PlayerCtrl.SetTerrain(t, forbidFallDown)` 交给角色。全量统计：6337 张图 394859 条 foothold，225 张图共 2734 条段带该属性（另有 `cantGo` 2317、`cantThrough` 1711 尚未建模）。
+- 注意：地图 IMG 的属性名是 XOR 加密的，`strings`/grep 查不到，必须用 WZ 解析器读（第一版误判为「数据里没有」就是踩了这条）。
+
+### 逐键复核结论（未改动的 38 项）
+
+| 键 | 功能 | 结论 |
+| --- | --- | --- |
+| F1～F7 | 7 个表情 | 通：`NativeKeyActions → PlayerCtrl.Express → SpriteAnim.Express → WzCharacter.ExpressionFrame` 真的把当前帧换成原 WZ `Face/<表情>`，1.5 秒节流生效（本轮新增回归直接比对贴图对象，不是只看返回值） |
+| Alt | 跳跃 | 通；新增 ↓+Alt 下跳 |
+| Ctrl | 攻击 | 通；无目标也挥砍，快捷格占用同键时让位给技能 |
+| Z / X / Space | 拾取 / 坐下 / NPC 对话 | 通（Space 与 ↑ 都能对话，对话里 Space/Enter 翻页、Esc 取消） |
+| 方向键 | 移动 / 爬绳 / 传送门 | 通（↑ 进门与对话，↑↓ 爬绳，Terrain 存在时不做深度层切换） |
+| E I S K | 装备 / 道具 / 能力值 / 技能 | 通；本轮起 Esc 可关 |
+| \ | 键盘设定 | 通；窗口自己吃 Esc（含快捷格子窗与确认框） |
+| Q W M | 任务 / 大地图 / 小地图 | 通；大地图本轮起 Esc 可关 |
+| R P L O F G ; | 好友 / 组队 / 讯息 / 找组 / 学院 / 家族 / 勋章 | 通；社交与家族类窗口本轮起 Esc 可关 |
+| B ` | 怪物手册 / 商城 | 通；商城关窗走 `NativeCashWindow.Reset()` 才会把 `timeScale` 还回去 |
+| [ ] | 界面 / 快捷键 | 通（界面是整层 HUD 隐藏，快捷键是底部快捷菜单） |
+| 1～6 H C ' | 各频道聊天 / 聊天 / 对话板 | 通 |
+
+### 本轮验证
+
+- 全量 C# 重编译 0 error / 0 warning（`tools/unity-compile-check`）。
+- `NativeKeyboardChecks.Run` 222 项通过、0 失败（新增 Esc 分层关闭 5 项、`forbidFallDown` 读取 1 项）。
+- `NativeCombinationChecks.Run` 通过：重复时钟、虚拟释放、↓+攻击、攻击后禁跳、跳后攻击、表情合成、下跳四态（穿下去/落到下层/无落点不下跳/forbidFallDown 不穿）。
+- `MovementChecks.Run` 通过：原图绳梯与上层出口、全部 foothold 落地、30/60/120Hz 步长、悬崖与触摸归属。
+- `FieldChecks.Run` 1684 通过 / 19 失败，失败项全部落在本轮未改动区域（底栏平铺与大按钮间距、转职页签、快捷格显示键、AP 分配、4 处 foothold 端点跟随）。最后一项属 `FollowGround` 判定，本轮只给 `FindLanding` 加了默认 `-1` 的跳过索引（等价原逻辑），未改 `FollowGround`。
+- 无 APK 构建，无真机触屏/视觉验收：下跳与 Esc 都还需要在手机上看一眼实际手感与端序。

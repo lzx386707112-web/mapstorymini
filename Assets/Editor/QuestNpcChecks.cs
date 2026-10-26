@@ -41,6 +41,44 @@ public static class QuestNpcChecks
         if (fail > 0 && Application.isBatchMode) EditorApplication.Exit(1);
     }
 
+    // 独立进程、临时数据库；验证真实 NpcApi，而非宽松 mock。
+    public static void RunAuction()
+    {
+        pass = fail = 0;
+        string path = Path.Combine(Path.GetTempPath(), "mapledash-auction-" + Guid.NewGuid() + ".json");
+        try
+        {
+            var db = DbStore.Create(path);
+            var character = new CharRecord { accountid = 1, name = "AuctionTest", level = 30,
+                damageCap = 25000000, gm = 0 };
+            int id = (int)CharactersDao.Insert(db, character);
+            character.id = id;
+            var server = GameServer.StartWith(db);
+            var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public;
+            foreach (var pair in new Dictionary<string, object> {
+                ["Net"] = server.Transport, ["CharacterId"] = id, ["InGame"] = true,
+                ["Character"] = new FullCharacter { record = character } })
+                typeof(GameSession).GetProperty(pair.Key, flags).GetSetMethod(true).Invoke(null, new[] { pair.Value });
+            Profile.Data.level = 30;
+            server.ScriptValues.Handle(new ScriptValueRequest { characterId = id, name = "副本积分", value = "1234", write = true });
+            server.ScriptValues.Handle(new ScriptValueRequest { characterId = id, name = "nameplate_title_series", value = "3", write = true });
+            ScriptSource.ClearCache();
+            var session = NpcSession.Talk(9900001);
+            Check(session != null && session.LastError == null && session.Dialog.Mode == NpcDialogMode.Simple,
+                "拍卖主菜单须使用真实服务端接口成功打开：" + session?.LastError);
+            Check(session != null && session.Dialog.RawText.Contains("火影") && session.Dialog.RawText.Contains("1234"),
+                "拍卖信息栏须读取真实称号系列和副本积分");
+            session?.Reply(1, 22);
+            Check(session != null && session.LastError == null && session.Dialog.RawText.Contains("50级"),
+                "低于50级选择拍卖行须显示源脚本等级限制");
+            session?.Close();
+        }
+        catch (Exception e) { Check(false, e.ToString()); }
+        finally { GameServer.Stop(); if (File.Exists(path)) File.Delete(path); }
+        Debug.Log("[AuctionCheck] passed=" + pass + " failed=" + fail);
+        if (Application.isBatchMode) EditorApplication.Exit(fail == 0 ? 0 : 1);
+    }
+
     static NpcSession ScriptSession(string source)
     {
         var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
@@ -231,7 +269,9 @@ public static class QuestNpcChecks
         {
             string body = kv.Value as string;
             if (string.IsNullOrEmpty(body)) { broken++; if (brokenKeys.Count < 5) brokenKeys.Add(kv.Key + "(空)"); continue; }
-            if (kv.Key.StartsWith("npc/", StringComparison.Ordinal)) npc++; else quest++;
+            if (kv.Key.StartsWith("npc/", StringComparison.Ordinal)) npc++;
+            else if (kv.Key.StartsWith("quest/", StringComparison.Ordinal)) quest++;
+            else continue;
             try { new JsEngine(body, kv.Key); }
             catch (Exception e)
             {
@@ -241,10 +281,8 @@ public static class QuestNpcChecks
         }
 
         Debug.Log("[QuestNpcCheck] 脚本包 npc=" + npc + " quest=" + quest + " 解析失败=" + broken);
-        // 源端本身有几条用 Java 互操作 / 正则字面量 / ES6 解构写的脚本，引擎跑不了；
-        // 允许少量失败，但一旦超阈值说明是同步或打包通道坏了，不是脚本特例。
         Check(npc + quest > 1100, "脚本条数偏少：npc=" + npc + " quest=" + quest);
-        Check(broken <= 20, "无法解析的脚本过多：" + broken + " 条，例如 " + string.Join(" | ", brokenKeys));
+        Check(broken == 0, "无法解析的脚本过多：" + broken + " 条，例如 " + string.Join(" | ", brokenKeys));
     }
 
     // ————— Quest.wz —————
@@ -282,14 +320,32 @@ public static class QuestNpcChecks
     static void CheckDialogText()
     {
         var c = DialogText.Parse("#b你好#k\r\n#L0#选项一#l\r\n#L1#选项二#l");
-        Check(c != null && c.Selections.Count == 2, "选项解析数量不是 2");
-        Check(c != null && c.Body.Contains("你好"), "正文丢了");
-        Check(c != null && !c.Body.Contains("#L"), "#L 标记没有被吃掉");
-        Check(c != null && c.Body.Contains("<color="), "#b 没有转成富文本颜色");
-        Check(DialogText.Parse("#b蓝#k普通").Body == "<color=#4A76C8>蓝</color>普通", "颜色标签必须配对，不能以孤立结束标签开头");
-        Check(DialogText.Parse("#k普通#b#e蓝#k黑#n").Body == "普通<color=#4A76C8><b>蓝</b></color><b>黑</b>", "相邻颜色/粗体标记不得吞掉正文或交叉标签");
+        var links = c.Runs.FindAll(r => r.Kind == DialogRunKind.Link);
+        Check(links.Count == 2 && links[0].Link == 0 && links[1].Link == 1, "行内选项号解析不对");
+        Check(c.Body.Contains("你好"), "正文丢了");
+        Check(!c.Body.Contains("#L"), "#L 标记没有被吃掉");
+        // 选项必须留在原位置（原端是行内链接），不能被抽出来堆到正文末尾
+        Check(c.Body.IndexOf("选项一", System.StringComparison.Ordinal) >
+              c.Body.IndexOf("你好", System.StringComparison.Ordinal), "选项没有按原位置留在正文流里");
+        Check(c.Body.IndexOf("选项一", System.StringComparison.Ordinal) <
+              c.Body.IndexOf("选项二", System.StringComparison.Ordinal), "选项顺序乱了");
+
+        var blue = DialogText.Parse("#b蓝#k普通");
+        Check(blue.Runs.Count == 2 && blue.Runs[0].Text == "蓝" && blue.Runs[0].Color == DialogText.Blue,
+            "#b 颜色状态没有生效");
+        Check(blue.Runs.Count == 2 && blue.Runs[1].Text == "普通" && blue.Runs[1].Color == DialogText.Ink,
+            "#k 没有回到默认色");
+
+        var bold = DialogText.Parse("#e粗#n常");
+        Check(bold.Runs.Count == 2 && bold.Runs[0].Bold && !bold.Runs[1].Bold, "#e/#n 粗体开关不对");
+
         Check(DialogText.Parse("#h #").Body == Profile.playerName, "角色名标记未解析");
         Check(DialogText.Parse("#c4000000#").Body == Profile.ItemCount(4000000).ToString(), "道具数量标记应为数量而非颜色");
+
+        // #i/#v 是道具图标，不是文字；取不到图才退回名字
+        var icon = DialogText.Parse("#i04000000#");
+        Check(icon.Runs.Count == 1 && icon.Runs[0].Kind == DialogRunKind.Icon, "#i 应该产生图标节点");
+        Check(!string.IsNullOrEmpty(icon.Runs[0].Art), "#i 的道具图标路径没有解析出来");
     }
 
     // ————— 任务规则 —————

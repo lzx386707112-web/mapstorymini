@@ -187,6 +187,7 @@ public static class CharactersDao
         db.Table("buddies").Delete(r => DbStore.Int(r, "characterid") == characterId || DbStore.Int(r, "buddyid") == characterId);
         db.Table("monsterbook").Delete(DbStore.Eq("charid", (long)characterId));
         db.Table("savedlocations").Delete(DbStore.Eq("characterid", (long)characterId));
+        db.Table("extend_value").Delete(r => DbStore.Str(r, "extend_id") == characterId.ToString(System.Globalization.CultureInfo.InvariantCulture) && DbStore.Int(r, "extend_type") >= 21 && DbStore.Int(r, "extend_type") <= 23);
     }
 
     // 源端 Character.canCreateChar：4~13 位英文数字（服务端另有敏感词过滤，本地从简）

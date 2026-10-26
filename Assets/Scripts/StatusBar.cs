@@ -102,6 +102,8 @@ public static class StatusBar
         float mpMax = p != null ? Mathf.Max(1f, p.mpMax) : Profile.Attributes.maxMp;
         float[] ratio = { Mathf.Clamp01(hp / hpMax), Mathf.Clamp01(mp / mpMax), Profile.ExpRatio };
 
+        TrackGauges(ratio);
+
         float x = GaugeX;
         for (int i = 0; i < 3; i++)
         {
@@ -121,6 +123,11 @@ public static class StatusBar
             if (frames[i] != null)
                 GUI.DrawTexture(At(x, barY, gw, BarH), frames[i], ScaleMode.StretchToFill);
 
+            // 原版受击反馈：hpFlash / mpFlash 是 5 帧（0/1 交替，109×18），叠在槽体上
+            if (i < 2) DrawFlash(i, x, barY);
+            // EXP：刚吃到的那一段用 gauge/tempExp 的浅色条标出来，半秒后消失
+            if (i == 2) DrawExpGain(x, gw, barY);
+
             // 数值：紧跟在 HP/MP/EXP 字样后面。原版就是这个排法（截图里是 HP[384/435]），
             // 不是右对齐到槽尾——槽尾那一段是留给填充余量的。
             string value = i == 0 ? Number(hp, hpMax)
@@ -130,6 +137,47 @@ public static class StatusBar
 
             x += gw;
         }
+    }
+
+    // ————— 原版受击闪烁 / 经验增量 —————
+    // 掉血掉蓝：客户端里 hpFlash、mpFlash 各 5 帧（引用 0/1 两张图交替），
+    // 每帧 100ms，走完 0.5 秒收工。只在数值下降时触发，升级/回血不闪。
+    const float FlashFrame = 0.1f;
+    const int FlashFrames = 5;
+    const float ExpGainHold = 0.5f;
+    static float hpFlashAt = -99f, mpFlashAt = -99f, expGainAt = -99f;
+    static float lastHp = 1f, lastMp = 1f, lastExp;
+    static float expGainFrom, expGainTo;
+    static bool gaugeInit;
+
+    static void TrackGauges(float[] ratio)
+    {
+        float now = Time.unscaledTime;
+        if (!gaugeInit) { gaugeInit = true; lastHp = ratio[0]; lastMp = ratio[1]; lastExp = ratio[2]; return; }
+        if (ratio[0] < lastHp - 0.0005f) hpFlashAt = now;
+        if (ratio[1] < lastMp - 0.0005f) mpFlashAt = now;
+        if (ratio[2] > lastExp + 0.0005f) { expGainFrom = lastExp; expGainTo = ratio[2]; expGainAt = now; }
+        lastHp = ratio[0]; lastMp = ratio[1]; lastExp = ratio[2];
+    }
+
+    static void DrawFlash(int index, float x, float barY)
+    {
+        float since = Time.unscaledTime - (index == 0 ? hpFlashAt : mpFlashAt);
+        if (since < 0f || since >= FlashFrame * FlashFrames) return;
+        int frame = Mathf.Clamp(Mathf.FloorToInt(since / FlashFrame), 0, FlashFrames - 1) % 2;
+        var tex = Art.Tex("ui/statusbar/" + (index == 0 ? "hp" : "mp") + "flash_" + frame + ".bytes");
+        if (tex == null) return;
+        GUI.DrawTexture(At(x, barY, tex.width, tex.height), tex, ScaleMode.StretchToFill);
+    }
+
+    static void DrawExpGain(float x, int gw, float barY)
+    {
+        if (expGainTo <= expGainFrom) return;
+        if (Time.unscaledTime - expGainAt >= ExpGainHold) return;
+        var tex = Art.Tex("ui/statusbar/gauge_tempExp.bytes");
+        if (tex == null) return;
+        GUI.DrawTexture(At(x + gw * expGainFrom, barY + 1f, gw * (expGainTo - expGainFrom), BarH - 2f),
+            tex, ScaleMode.StretchToFill);
     }
 
     static string Number(float current, float max)

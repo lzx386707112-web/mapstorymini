@@ -8,6 +8,8 @@ namespace MapleDash.Js
     {
         readonly List<JsToken> tokens;
         int i;
+        bool noIn;
+        JsNode[] parsedParameters;
 
         public JsParser(string source)
         {
@@ -51,7 +53,13 @@ namespace MapleDash.Js
             int line = Cur.Line, col = Cur.Column;
             JsNode node;
 
-            if (Is("{")) node = ParseBlock();
+            if (IsIdentifier && Peek(1).Text == ":")
+            {
+                string label = Take().Text; Expect(":");
+                var statement = ParseStatement(); statement.Label = label;
+                node = new JsLabel { Body = statement, Label = label };
+            }
+            else if (Is("{")) node = ParseBlock();
             else if (IsKeyword("var") || IsVarLike()) node = ParseVarStatement();
             else if (IsKeyword("function")) node = ParseFunctionDecl();
             else if (IsKeyword("if")) node = ParseIf();
@@ -66,8 +74,8 @@ namespace MapleDash.Js
                 MatchSemicolon();
                 node = new JsReturn { Value = v };
             }
-            else if (IsKeyword("break")) { Take(); MatchSemicolon(); node = new JsBreak(); }
-            else if (IsKeyword("continue")) { Take(); MatchSemicolon(); node = new JsContinue(); }
+            else if (IsKeyword("break")) { Take(); string label = IsIdentifier && Cur.Line == line ? Take().Text : null; MatchSemicolon(); node = new JsBreak { Label = label }; }
+            else if (IsKeyword("continue")) { Take(); string label = IsIdentifier && Cur.Line == line ? Take().Text : null; MatchSemicolon(); node = new JsContinue { Label = label }; }
             else if (IsKeyword("throw")) { Take(); node = new JsThrow { Value = ParseExpression() }; MatchSemicolon(); }
             else if (IsKeyword("switch")) node = ParseSwitch();
             else if (IsKeyword("try")) node = ParseTry();
@@ -85,7 +93,7 @@ namespace MapleDash.Js
         }
 
         // let/const 当作 var：源端 12 个脚本用到，语义差异对本项目无影响。
-        bool IsVarLike() => IsIdentifier && (Cur.Text == "let" || Cur.Text == "const") && Peek(1).Kind == JsTokenKind.Identifier;
+        bool IsVarLike() => IsIdentifier && (Cur.Text == "let" || Cur.Text == "const") && (Peek(1).Kind == JsTokenKind.Identifier || Peek(1).Text == "{" || Peek(1).Text == "[");
 
         void MatchSemicolon()
         {
@@ -118,11 +126,11 @@ namespace MapleDash.Js
             if (consumeKeyword) Take();           // var / let / const
             do
             {
-                var nameToken = Take();
-                if (nameToken.Kind != JsTokenKind.Identifier) throw Error("invalid variable name '" + nameToken.Text + "'");
+                JsNode pattern = ParsePrimary();
+                if (!(pattern is JsIdentifier) && !(pattern is JsArrayLiteral) && !(pattern is JsObjectLiteral)) throw Error("invalid variable binding");
                 JsNode init = null;
                 if (Is("=")) { Take(); init = ParseAssignment(); }
-                decl.Decls.Add(new JsVarDeclarator { Name = nameToken.Text, Init = init });
+                decl.Decls.Add(new JsVarDeclarator { Name = (pattern as JsIdentifier)?.Name, Pattern = pattern is JsIdentifier ? null : pattern, Init = init });
             }
             while (Is(",") && (Take().Text == ","));
             return decl;
@@ -136,23 +144,24 @@ namespace MapleDash.Js
             if (name.Kind != JsTokenKind.Identifier) throw Error("function name expected");
             node.Name = name.Text;
             node.Parameters = ParseParameters();
+            node.Patterns = parsedParameters;
             node.Body = ParseBlock();
             return node;
         }
 
         string[] ParseParameters()
         {
-            var list = new List<string>();
+            var patterns = new List<JsNode>();
             Expect("(");
             while (!AtEnd && !Is(")"))
             {
-                var t = Take();
-                if (t.Kind != JsTokenKind.Identifier) throw Error("parameter name expected");
-                list.Add(t.Text);
-                if (Is(",")) Take();
+                patterns.Add(ParseAssignment());
+                if (!Is(",")) break;
+                Take();
             }
             Expect(")");
-            return list.ToArray();
+            parsedParameters = patterns.ToArray();
+            return Array.Empty<string>();
         }
 
         JsNode ParseIf()
@@ -173,19 +182,22 @@ namespace MapleDash.Js
             Expect("(");
 
             JsNode init = null;
+            bool previousNoIn = noIn;
+            noIn = true;
             if (IsKeyword("var") || IsVarLike())
             {
                 var decl = ParseVarDecl(true);
-                if (IsKeyword("in"))
+                if (IsKeyword("in") || Cur.Text == "of")
                 {
-                    Take();
+                    bool values = Take().Text == "of";
+                    noIn = previousNoIn;
                     var obj = ParseExpression();
                     Expect(")");
                     var body = ParseStatement();
                     return new JsForIn
                     {
-                        VarName = decl.Decls.Count > 0 ? decl.Decls[0].Name : "i",
-                        ObjectExpr = obj, Body = body,
+                        VarName = decl.Decls[0].Name, Pattern = decl.Decls[0].Pattern,
+                        Values = values, ObjectExpr = obj, Body = body,
                     };
                 }
                 init = decl;
@@ -193,17 +205,19 @@ namespace MapleDash.Js
             else if (!Is(";"))
             {
                 var e = ParseExpression();
-                if (IsKeyword("in"))
+                if (IsKeyword("in") || Cur.Text == "of")
                 {
-                    Take();
+                    bool values = Take().Text == "of";
+                    noIn = previousNoIn;
                     var obj = ParseExpression();
                     Expect(")");
                     var body = ParseStatement();
-                    return new JsForIn { Target = e, ObjectExpr = obj, Body = body };
+                    return new JsForIn { Target = e, ObjectExpr = obj, Body = body, Values = values };
                 }
                 init = new JsExprStmt { Expr = e };
             }
 
+            noIn = previousNoIn;
             Expect(";");
             JsNode test = Is(";") ? null : ParseExpression();
             Expect(";");
@@ -301,6 +315,8 @@ namespace MapleDash.Js
 
         JsNode ParseAssignment()
         {
+            if (Is("...")) { Take(); return new JsSpread { Value = ParseAssignment() }; }
+            if (IsArrow()) return ParseArrow();
             var left = ParseConditional();
             string op = Cur.Text;
             if (Cur.Kind == JsTokenKind.Punct &&
@@ -329,7 +345,7 @@ namespace MapleDash.Js
         {
             switch (op)
             {
-                case "||": return 1;
+                case "??": case "||": return 1;
                 case "&&": return 2;
                 case "|": return 3;
                 case "^": return 4;
@@ -351,10 +367,10 @@ namespace MapleDash.Js
                 string op = Cur.Text;
                 bool isOp = Cur.Kind == JsTokenKind.Punct || (Cur.Kind == JsTokenKind.Keyword && (op == "instanceof" || op == "in"));
                 int prec = isOp ? Precedence(op) : -1;
-                if (prec < minPrecedence || prec < 0) return left;
+                if (prec < minPrecedence || prec < 0 || (noIn && op == "in")) return left;
                 Take();
                 var right = ParseBinary(prec + 1);
-                left = (op == "&&" || op == "||")
+                left = (op == "&&" || op == "||" || op == "??")
                     ? (JsNode)new JsLogical { Op = op, Left = left, Right = right }
                     : new JsBinary { Op = op, Left = left, Right = right };
             }
@@ -422,11 +438,11 @@ namespace MapleDash.Js
         {
             while (!AtEnd)
             {
-                if (Is("."))
+                if (Is(".") || Is("?."))
                 {
-                    Take();
+                    bool optional = Take().Text == "?.";
                     var name = Take();
-                    expr = new JsMember { Object = expr, Name = name.Text };
+                    expr = new JsMember { Object = expr, Name = name.Text, Optional = optional };
                 }
                 else if (Is("["))
                 {
@@ -459,6 +475,11 @@ namespace MapleDash.Js
             {
                 Take();
                 return new JsLiteral { Value = new JsNumber(t.Number) };
+            }
+            if (t.Kind == JsTokenKind.Regex)
+            {
+                Take();
+                return new JsRegexLiteral { Pattern = t.Text, Flags = t.Flags };
             }
             if (t.Kind == JsTokenKind.String)
             {
@@ -513,14 +534,55 @@ namespace MapleDash.Js
             throw Error("unexpected token '" + t.Text + "'");
         }
 
+        bool IsArrow()
+        {
+            if (IsIdentifier && Peek(1).Text == "=>") return true;
+            if (!Is("(")) return false;
+            int depth = 0;
+            for (int n = i; n < tokens.Count; n++)
+            {
+                if (tokens[n].Kind != JsTokenKind.Punct) continue;
+                if (tokens[n].Text == "(") depth++;
+                if (tokens[n].Text == ")" && --depth == 0) return n + 1 < tokens.Count && tokens[n + 1].Text == "=>";
+            }
+            return false;
+        }
+
+        JsNode ParseArrow()
+        {
+            var patterns = new List<JsNode>();
+            if (IsIdentifier) patterns.Add(new JsIdentifier { Name = Take().Text });
+            else
+            {
+                Expect("(");
+                while (!AtEnd && !Is(")"))
+                {
+                    patterns.Add(ParseAssignment());
+                    if (!Is(",")) break;
+                    Take();
+                }
+                Expect(")");
+            }
+            Expect("=>");
+            JsBlock body;
+            if (Is("{")) body = ParseBlock();
+            else
+            {
+                body = new JsBlock();
+                body.Body.Add(new JsReturn { Value = ParseAssignment() });
+            }
+            return new JsFunctionExpr { Patterns = patterns.ToArray(), Arrow = true, Body = body };
+        }
+
         JsNode ParseFunctionExpr()
         {
             Expect("function");
             string name = null;
             if (Cur.Kind == JsTokenKind.Identifier) name = Take().Text;
             var parameters = ParseParameters();
+            var patterns = parsedParameters;
             var body = ParseBlock();
-            return new JsFunctionExpr { Name = name, Parameters = parameters, Body = body };
+            return new JsFunctionExpr { Name = name, Parameters = parameters, Patterns = patterns, Body = body };
         }
 
         // 模板字符串 → 字符串拼接（与原端 Nashorn 的取值顺序一致）
@@ -589,6 +651,12 @@ namespace MapleDash.Js
             while (!AtEnd && !Is("}"))
             {
                 if (Is(",")) { Take(); continue; }
+                if (Is("..."))
+                {
+                    Take(); obj.Props.Add(new KeyValuePair<string, JsNode>(null, new JsSpread { Value = ParseAssignment() }));
+                    if (Is(",")) Take();
+                    continue;
+                }
                 var key = Take();
                 string name;
                 if (key.Kind == JsTokenKind.String || key.Kind == JsTokenKind.Number) name = key.Text;

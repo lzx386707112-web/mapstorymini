@@ -21,6 +21,37 @@ public static class NativeKeyLayout
         return KeyCode.None;
     }
 
+    // Windows VK order matters when several keys go down in the same poll.
+    public static int VirtualKey(KeyCode key)
+    {
+        key = FunctionKey(key);
+        if (key >= KeyCode.A && key <= KeyCode.Z) return (int)key - (int)KeyCode.A + 65;
+        if (key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9) return (int)key;
+        if (key >= KeyCode.F1 && key <= KeyCode.F12) return (int)key - (int)KeyCode.F1 + 112;
+        switch (key)
+        {
+            case KeyCode.Backspace: return 8; case KeyCode.Tab: return 9;
+            case KeyCode.Return: return 13; case KeyCode.LeftShift: return 16;
+            case KeyCode.LeftControl: return 17; case KeyCode.LeftAlt: return 18;
+            case KeyCode.Pause: return 19; case KeyCode.CapsLock: return 20;
+            case KeyCode.Escape: return 27; case KeyCode.Space: return 32;
+            case KeyCode.PageUp: return 33; case KeyCode.PageDown: return 34;
+            case KeyCode.End: return 35; case KeyCode.Home: return 36;
+            case KeyCode.LeftArrow: return 37; case KeyCode.UpArrow: return 38;
+            case KeyCode.RightArrow: return 39; case KeyCode.DownArrow: return 40;
+            case KeyCode.Insert: return 45; case KeyCode.Delete: return 46;
+            case KeyCode.Semicolon: return 186; case KeyCode.Equals: return 187;
+            case KeyCode.Comma: return 188; case KeyCode.Minus: return 189;
+            case KeyCode.Period: return 190; case KeyCode.Slash: return 191;
+            case KeyCode.BackQuote: return 192; case KeyCode.LeftBracket: return 219;
+            case KeyCode.Backslash: return 220; case KeyCode.RightBracket: return 221;
+            case KeyCode.Quote: return 222;
+        }
+        return 0;
+    }
+
+    public static IEnumerable<KeyCode> PhysicalKeys => scanCodes.Values;
+
     // 0x00836C82 maps tray indices 28..32 to function IDs 50..54.
     public static Vector2 TrayPosition(GameAction action)
     {
@@ -129,6 +160,27 @@ public static class NativeKeyLayout
         foreach (var pair in scanCodes)
             if (pair.Value == key) return pair.Key;
         return -1;
+    }
+
+    // 原版键名字形：UIWindow.img/KeyConfig/key/<扫描码>，11~13 像素高的点阵小图。
+    // 26 格快捷栏的键名就是这套字形，不再用字体画（字体那条路会糊、还会被格子裁掉）。
+    // 表里没有的键返回 null —— 不拿自绘文字顶替。
+    public static string NamePath(KeyCode key)
+    {
+        int scan = ToScanCode(key);
+        return scan < 0 ? null : "wz://UI/UIWindow.img/KeyConfig/key/" + scan;
+    }
+
+    static readonly Dictionary<KeyCode, Texture2D> nameTex = new Dictionary<KeyCode, Texture2D>();
+
+    public static Texture2D NameTexture(KeyCode key)
+    {
+        if (key == KeyCode.None) return null;
+        if (nameTex.TryGetValue(key, out var tex)) return tex;
+        var path = NamePath(key);
+        tex = path == null ? null : Art.Tex(path);
+        nameTex[key] = tex;
+        return tex;
     }
 
     public static readonly Dictionary<KeyCode, Vector2> Positions = new Dictionary<KeyCode, Vector2>
