@@ -47,8 +47,8 @@ public sealed class NativeWeatherField : MonoBehaviour
     static long LocalNow=>(long)(Time.realtimeSinceStartupAsDouble*1000);
     static NativeWeatherService Service()
     {
-        if(GameSession.Server?.Weather!=null)return GameSession.Server.Weather;
-        if(GameSession.Server==null && detached!=null)return detached;
+        if(GameSession.Server?.Weather!=null){NativeWeatherHost.Shared=GameSession.Server.Weather;return GameSession.Server.Weather;}
+        if(GameSession.Server==null && detached!=null){NativeWeatherHost.Shared=detached;return detached;}
         var rows=(List<object>)Data["regions"];
         var regions=new NativeWeatherRegion[rows.Count];
         for(int i=0;i<rows.Count;i++)
@@ -60,6 +60,9 @@ public sealed class NativeWeatherField : MonoBehaviour
         var rng=new System.Random();
         var service=new NativeWeatherService(regions,Now,rng.NextDouble);
         if(GameSession.Server!=null)GameSession.Server.Weather=service;else detached=service;
+        // 后台（AdminWeather）与游戏共用同一实例：后台改天气/时段，游戏下一帧 Sync 就能看到
+        NativeWeatherHost.Shared=service;
+        if(NativeWeatherHost.FromGame==null)NativeWeatherHost.FromGame=()=>GameSession.Server?.Weather;
         return service;
     }
     public static bool SkyForMap(int id,ImgNode map)

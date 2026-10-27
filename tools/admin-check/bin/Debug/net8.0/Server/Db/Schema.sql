@@ -447,3 +447,100 @@ CREATE TABLE extend_value (
     update_time BIGINT DEFAULT 0,
     PRIMARY KEY (extend_id, extend_type, extend_name)
 );
+
+-- V1.0.28__create_nx.sql: SoloMapling点券兑换码（本地schema语法，原字段不变）
+CREATE TABLE nxcode (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    retriever TEXT,
+    expiration INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE nxcode_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codeid INTEGER NOT NULL,
+    type INTEGER NOT NULL DEFAULT 5,
+    item INTEGER NOT NULL DEFAULT 4000000,
+    quantity INTEGER NOT NULL DEFAULT 1
+);
+
+-- 后台管理（gms-ui）数据表：结构照抄源端 db/migration，字段名保持 MySQL 原样。
+-- V1.0.8__create_drop_data.sql：怪物掉落。游戏内 FieldLoot 经 DropStore 直读该表，
+-- 后台改掉落即时生效（写操作后 DropStore.Invalidate()）。
+CREATE TABLE drop_data (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    dropperid        INTEGER NOT NULL DEFAULT 0,
+    itemid           INTEGER NOT NULL DEFAULT 0,
+    minimum_quantity INTEGER NOT NULL DEFAULT 1,
+    maximum_quantity INTEGER NOT NULL DEFAULT 1,
+    questid          INTEGER NOT NULL DEFAULT 0,
+    chance           INTEGER NOT NULL DEFAULT 0,
+    comments         TEXT
+);
+CREATE TABLE drop_data_global (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    continent        INTEGER NOT NULL DEFAULT -1,
+    itemid           INTEGER NOT NULL DEFAULT 0,
+    minimum_quantity INTEGER NOT NULL DEFAULT 1,
+    maximum_quantity INTEGER NOT NULL DEFAULT 1,
+    questid          INTEGER NOT NULL DEFAULT 0,
+    chance           INTEGER NOT NULL DEFAULT 0,
+    comments         TEXT
+);
+
+-- V1.0.41/1.0.42：NPC 商店与商品（游戏内 NPC 商店界面尚未接入，后台先可维护数据）
+CREATE TABLE shops (
+    shopid INTEGER PRIMARY KEY,
+    npcid  INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE shopitems (
+    shopitemid INTEGER PRIMARY KEY AUTOINCREMENT,
+    shopid     INTEGER NOT NULL,
+    itemid     INTEGER NOT NULL,
+    price      INTEGER NOT NULL,
+    pitch      INTEGER NOT NULL DEFAULT 0,
+    position   INTEGER NOT NULL DEFAULT 0
+);
+
+-- V1.4.0/V1.4.1：扭蛋机奖池与奖品
+CREATE TABLE gachapon_reward_pool (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    gachapon_id  INTEGER NOT NULL DEFAULT 0,
+    weight       INTEGER NOT NULL DEFAULT 0,
+    is_public    INTEGER NOT NULL DEFAULT 0,
+    prob         INTEGER NOT NULL DEFAULT 0,
+    start_time   TEXT,
+    end_time     TEXT,
+    notification INTEGER NOT NULL DEFAULT 0,
+    comment      TEXT
+);
+CREATE TABLE gachapon_reward (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    pool_id    INTEGER NOT NULL,
+    item_id    INTEGER NOT NULL,
+    quantity   INTEGER NOT NULL DEFAULT 1,
+    create_time TEXT,
+    comment    TEXT
+);
+
+-- V2.0.7：自动封禁配置（枚举默认值 + 表覆盖，points/expire_time 为 NULL 表示用默认）
+CREATE TABLE autoban_config (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    type        TEXT NOT NULL,
+    disabled    INTEGER NOT NULL DEFAULT 0,
+    points      INTEGER,
+    expire_time INTEGER,
+    description TEXT,
+    create_time TEXT,
+    update_time TEXT
+);
+
+-- V1.5.1：GM 命令库（level 可改、default_level/clazz/syntax 不可改）
+CREATE TABLE command_info (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    syntax       TEXT NOT NULL,
+    level        INTEGER NOT NULL DEFAULT 0,
+    enabled      INTEGER NOT NULL DEFAULT 1,
+    clazz        TEXT NOT NULL,
+    default_level INTEGER NOT NULL DEFAULT 0
+);

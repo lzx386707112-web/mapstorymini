@@ -37,6 +37,9 @@ namespace Server.Bot
             BotTypeManager.PartyGrind = partyGrind;
             observers = new BotObserverTracker(() => players.Values, GetMap, BotWorldGraph.Load());
             townSpawner = new BotTownSpawner(new BotTownPresenceConfig(BotResources.Load()), GetMap);
+            // EnvironmentManager（市场环境启动编排）的地图加载/城镇游荡钩子
+            BotEnvironment.GetMap = GetMap;
+            BotEnvironment.TownWanderers = () => townSpawner.Spawn();
             mapEntryResponder = new BotMapEntryResponder(BotTypeManager.Events);
             mapEntryResponder.Register();
             dispatcher = new Social.BotDispatcher(BotTypeManager.Messages, BotTypeManager.Output, CharactersOnMap,
@@ -50,6 +53,10 @@ namespace Server.Bot
             BotMovementPlayback.Broadcast = PublishMovement;
             BotTypeManager.RealPlayersOnMap = observers.HasRealPlayerNow;
             BotLogic.OnlinePlayers = () => players.Values;
+            MapItemService.PartyOf = id => parties.For(id)?.id ?? -1;
+            MapItemService.IsPartyMember = (ownerId, characterId) => parties.For(ownerId)?.members.Contains(characterId) ?? false;
+            // 地面掉落与假人调度共用同一毫秒时钟（源端 TimerManager / System.currentTimeMillis 同源）
+            MapItemService.Clock = () => BotScheduler.Clock;
             observers.Start();
         }
         void PublishMovement(BotCharacter actor, byte[] packet) => Movement?.Invoke(actor, packet);
@@ -145,6 +152,9 @@ namespace Server.Bot
             BotMovementService.Shutdown(); BotTypeManager.Market.Stop(); BotTasks.Stop(); BotScheduler.Stop();
             BotTypeManager.RealPlayersOnMap = null;
             BotLogic.OnlinePlayers = null;
+            MapItemService.PartyOf = null; MapItemService.IsPartyMember = null;
+            MapItemService.Clock = () => 0;
+            MapItemService.ClearAll();
             BotMovementService.EnterPortal = null; BotMovementService.ResolveProfile = null;
             BotMovementService.IsObserved = null; BotMovementService.Broadcast = null; BotMovementPlayback.Broadcast = null;
             BotTypeManager.Output.Clear(); players.Clear();
@@ -153,6 +163,7 @@ namespace Server.Bot
             BotTypeManager.Messenger.Clear();
             foreach (int id in registeredMaps) MapService.Unregister(id);
             registeredMaps.Clear(); Movement = null;
+            BotEnvironment.GetMap = null; BotEnvironment.TownWanderers = null;
         }
     }
 }

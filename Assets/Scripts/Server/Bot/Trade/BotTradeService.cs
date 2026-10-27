@@ -8,6 +8,8 @@ namespace Server.Bot.Trade
     {
         readonly DbStore db;
         readonly TradeItemRules rules;
+        /// <summary>地面拾取入库复用同一套堆叠/占格规则（TradeItemRules.Receive）。</summary>
+        public TradeItemRules Rules => rules;
         readonly HashSet<Session> invitations = new HashSet<Session>();
         public Action<BotActor, string> ChatOutput;
         public Action<BotActor, TradeResult> ResultOutput;
@@ -58,7 +60,8 @@ namespace Server.Bot.Trade
         { if (actor is BotCharacter bot) bot.meso = value; else actor.character.record.meso = value; }
         static List<InventoryEntry> Clone(List<InventoryEntry> source)
         { var copy = new List<InventoryEntry>(); foreach (var item in source) copy.Add(item.Copy()); return copy; }
-        void Persist(BotActor actor)
+        // 背包/金币落库：交易结算与地面拾取（BotActorLooter）共用同一条持久化路径，避免两处口径漂移。
+        public void Persist(BotActor actor)
         {
             if (actor.IsBot()) return;
             int cid = actor.id;

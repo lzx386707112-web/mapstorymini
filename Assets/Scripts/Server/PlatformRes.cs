@@ -10,7 +10,7 @@ public static class PlatformRes
     {
         var viaUnity = TryLoadTextAsset(resPath);
         if (viaUnity != null) return viaUnity;
-        foreach (var root in new[] { AppContext.BaseDirectory, ".", "Assets/Resources", "../Assets/Resources", "Assets/Scripts/Server/Db", "../Assets/Scripts/Server/Db" })
+        foreach (var root in new[] { AppContext.BaseDirectory, ".", "Assets/Resources", "../Assets/Resources", "../../Assets/Resources", "Assets/Scripts/Server/Db", "../Assets/Scripts/Server/Db" })
         {
             foreach (var suffix in new[] { "", ".json", ".sql" })
             {

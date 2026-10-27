@@ -161,6 +161,39 @@ namespace AdminCheck
             var onlineState = await Get("/server/v1/online");
             Check("服务器在线状态", onlineState.Code == 20000 && onlineState.Raw.Contains("true"), onlineState.Raw);
 
+            // —— 新接入的 DB 类模块（掉落/商店/扭蛋/封禁/命令）——
+            var drops = await Post("/drop/v1/getDropList", new { pageNo = 1, pageSize = 10 });
+            Check("掉落列表", drops.Code == 20000 && drops.Raw.Contains("\"records\""), drops.Raw);
+
+            var shop = await Post("/shop/v1/getShopList", new { pageNo = 1, pageSize = 10 });
+            Check("商店列表", shop.Code == 20000 && shop.Raw.Contains("\"records\""), shop.Raw);
+
+            var pools = await Post("/gachapon/v1/getPools", new { pageNo = 1, pageSize = 10 });
+            Check("扭蛋奖池列表", pools.Code == 20000, pools.Raw);
+
+            var autoban = await Get("/autoban/v1/getConfigList");
+            Check("自动封禁配置", autoban.Code == 20000 && autoban.Raw.Contains("points"), autoban.Raw);
+
+            var cmds = await Post("/command/v1/getCommandListFromDB", new { pageNo = 1, pageSize = 20 });
+            Check("GM 命令库", cmds.Code == 20000 && cmds.Raw.Contains("syntax"), cmds.Raw);
+
+            // —— 天气（NativeWeather.json 直读，纯 C#）——
+            var weather = await Get("/weather/v1/state");
+            Check("天气状态", weather.Code == 20000 && weather.Raw.Contains("minuteOfDay"), weather.Raw);
+
+            var weatherCfg = await Get("/weather/v1/config");
+            Check("天气配置", weatherCfg.Code == 20000 && weatherCfg.Raw.Contains("dayLengthMs"), weatherCfg.Raw);
+
+            var weatherRegions = await Get("/weather/v1/regions");
+            Check("天气区域列表", weatherRegions.Code == 20000 && weatherRegions.Raw.Contains("currentProfile"), weatherRegions.Raw);
+
+            // —— 假人控制（solo_mapling_* 配置）——
+            var botCfg = await Get("/bot-control/v1/config");
+            Check("假人配置分组", botCfg.Code == 20000 && botCfg.Raw.Contains("solo_mapling_market_bot_max"), botCfg.Raw);
+
+            var botState = await Get("/bot-control/v1/state");
+            Check("假人状态", botState.Code == 20000 && botState.Raw.Contains("activeBots"), botState.Raw);
+
             var stub = await Post("/drop/v1/getDropList", new { pageNo = 1, pageSize = 10 });
             Check("未接入模块返回空数据而不是报错", stub.Code == 20000, stub.Raw);
 

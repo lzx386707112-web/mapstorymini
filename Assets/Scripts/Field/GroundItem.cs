@@ -19,6 +19,12 @@ public sealed class GroundItem : MonoBehaviour
     public int amount;
     double expires;
 
+    // 权威地面物品绑定：非 null 时拾取走 MapItemPickup（归属/400ms/背包空间规则），
+    // 本组件只负责原IMG显示与拾取动画；null 时是本地玩法掉落（BattleRewards/FieldDirector 旧路径）。
+    public Server.Field.MapItem bound;
+    /// <summary>由 GroundItemBridge 注入：返回 false 表示这次拾取被源端规则拒绝，物品留在地上。</summary>
+    public static System.Func<Server.Field.MapItem, bool> AuthoritativePickup;
+
     // —— 掉落物理 ——
     float vx, vy;
     int bounces;
@@ -58,7 +64,7 @@ public sealed class GroundItem : MonoBehaviour
         }
     }
 
-    public static GroundItem Spawn(int itemId, int amount, Vector3 position)
+    public static GroundItem Spawn(int itemId, int amount, Vector3 position, Server.Field.MapItem bound = null)
     {
         if (amount <= 0) return null;
         var go = new GameObject(itemId == 0 ? "MesoDrop" : "ItemDrop_" + itemId);
@@ -67,7 +73,9 @@ public sealed class GroundItem : MonoBehaviour
         var drop = go.AddComponent<GroundItem>();
         drop.itemId = itemId;
         drop.amount = amount;
-        drop.expires = Time.realtimeSinceStartupAsDouble + 180;   // 原版 3 分钟
+        drop.bound = bound;
+        // 权威掉落的生命周期由 MapItemService 管（NoExpire 可能长期在地），本地旧掉落才用 3 分钟。
+        drop.expires = bound != null ? double.MaxValue : Time.realtimeSinceStartupAsDouble + 180;   // 原版 3 分钟
         drop.sr = s;
         if (itemId == 0)
         {
@@ -266,7 +274,12 @@ public sealed class GroundItem : MonoBehaviour
 
     void Pickup()
     {
-        if (itemId == 0)
+        if (bound != null)
+        {
+            // 权威路径：归属/400ms/背包空间由 MapItemPickup 判定，失败就留在地上（源端 enableActions 后返回）。
+            if (AuthoritativePickup == null || !AuthoritativePickup(bound)) return;
+        }
+        else if (itemId == 0)
         {
             if ((long)Profile.gold + amount > int.MaxValue) return;
             Profile.AddGold(amount);
@@ -284,7 +297,7 @@ public sealed class GroundItem : MonoBehaviour
             else Profile.AddItem(itemId, amount);
             lastPickup = name + " x" + amount;
         }
-        lastPickupAt = Time.realtimeSinceStartupAsDouble;
+        if (bound == null) lastPickupAt = Time.realtimeSinceStartupAsDouble;
 
         // 拾取反馈：原地白点 + 缩放消失（0.12s）
         All.Remove(this);

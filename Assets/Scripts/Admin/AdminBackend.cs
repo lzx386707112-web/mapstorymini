@@ -93,7 +93,9 @@ public static class AdminBackend
 
     public static bool Ready => Db != null;
 
-    static DbStore Db
+    // 运行期取库：离线自检（tools/admin-check）注入 DbOverride，否则走 GameServer.Local。
+    // 各后台模块（掉落/商店/商城/天气…）统一经这里拿 DbStore。
+    public static DbStore Db
     {
         get
         {
@@ -872,7 +874,7 @@ public static class AdminBackend
         });
     }
 
-    static DbStore RequireDb()
+    public static DbStore RequireDb()
     {
         var db = Db;
         if (db == null) throw new AdminApiException("服务端未启动（请先进入游戏）");
@@ -892,14 +894,16 @@ public static class AdminBackend
     }
 
     static void LiveWarp(long characterId) => Live(() => AdminLive.WarpToHenesys(characterId));
+    public static void LiveWarpTo(long characterId, long mapId) => Live(() => AdminLive.WarpTo(characterId, mapId));
     static void LiveRename(long characterId, string newName) => Live(() => AdminLive.Rename(characterId, newName));
-    static void LiveInventory(DbStore db, long characterId, long itemRowId, bool deleted)
+    public static void LiveInventory(DbStore db, long characterId, long itemRowId, bool deleted)
         => Live(() => AdminLive.SyncInventory(db, characterId, itemRowId, deleted));
     static void LiveKick(long accountId, string reason) => Live(() => AdminLive.KickAccount(accountId, reason));
 #else
     static void LiveWarp(long characterId) { }
+    public static void LiveWarpTo(long characterId, long mapId) { }
     static void LiveRename(long characterId, string newName) { }
-    static void LiveInventory(DbStore db, long characterId, long itemRowId, bool deleted) { }
+    public static void LiveInventory(DbStore db, long characterId, long itemRowId, bool deleted) { }
     static void LiveKick(long accountId, string reason) { }
 #endif
 

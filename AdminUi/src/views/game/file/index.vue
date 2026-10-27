@@ -196,6 +196,12 @@
     background-color: #2c2c2c !important;
     width: 360px;
   }
+  /* 手机上侧栏占一半屏即可，树用虚拟列表自适应高度 */
+  @media (max-width: 992px) {
+    :deep(.arco-layout-sider) {
+      width: 46vw;
+    }
+  }
   :deep(.arco-virtual-list) {
     height: calc(100vh - 270px) !important;
   }

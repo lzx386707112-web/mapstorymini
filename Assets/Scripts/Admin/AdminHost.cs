@@ -61,6 +61,19 @@ public sealed class AdminHost : MonoBehaviour
         };
         AdminBackend.CurrentCharacterId = () => GameSession.CharacterId;
 
+        // 后台列表的名字解析（掉落/商店/扭蛋 DTO 里的 itemName/dropperName/questName）：
+        // AdminNames 是函数槽（admin-check 离线时退「ID: xxx」兜底），这里接上 WZ 真实现。
+        AdminNames.Mob = WzNames.Mob;
+        AdminNames.Npc = WzNames.Npc;
+        AdminNames.Item = WzNames.Item;
+        AdminNames.Map = WzNames.Map;
+        AdminNames.ItemDesc = ItemCatalog.Desc;
+        AdminNames.Quest = id =>
+        {
+            var n = WzAssets.FileRoot("Quest/QuestInfo.img").Get(id.ToString())?.Text("name");
+            return string.IsNullOrEmpty(n) ? null : n;
+        };
+
         // 浏览器在前台时游戏要继续跑，否则 HTTP 请求等不到主线程
         Application.runInBackground = true;
     }
@@ -136,8 +149,16 @@ public sealed class AdminHost : MonoBehaviour
             }
 
             AdminRoutes.Register(api);
+            AdminRoutes.RegisterUnityOnly(api);   // WZ 依赖模块（图鉴/任务/商城/文件树/套装）
+            // 假人计数钩子：AdminBots 不直接引用 Server.Bot，离线自检才编得过
+            AdminBots.ActiveBots = () => Server.Bot.BotRegistry.Count();
+            AdminBots.MarketStartupComplete = () => Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete;
+            AdminBots.MarketStartupRunning = () => Server.Bot.Environment.BotEnvironment.IsMarketStartupRunning;
+            AdminBots.RequestMarketStartup = Server.Bot.Environment.BotEnvironment.RequestMarketStartup;
 
             server = AdminHttpServer.StartOn(DefaultPort, api.Handle, msg => Debug.Log("[Admin] " + msg));
+            // 图鉴懒加载缓存的后台预热：装备 3.2 万 IMG 首建要数秒，别让后台页面首开卡住
+            AdminCatalogData.Prewarm();
             Debug.Log("[Admin] 后台管理已就绪: " + BaseUrl + "（仅本机可访问）");
             startError = null;
         }

@@ -354,6 +354,8 @@ public sealed class FieldDirector : MonoBehaviour
         bots.SynchronizePlayer(GameSession.Character, Map.id, player.transform.position.x * Art.PPU, -player.transform.position.y * Art.PPU, GameSession.Channel);
         var combat=GetComponent<BotCombatField>() ?? gameObject.AddComponent<BotCombatField>();
         combat.Bind(this,bots);
+        var groundLoot = GetComponent<GroundItemBridge>() ?? gameObject.AddComponent<GroundItemBridge>();
+        groundLoot.Bind(this,bots);
         bots.Drive((long)(Time.realtimeSinceStartup * 1000));
         var botField = GetComponent<BotField>() ?? gameObject.AddComponent<BotField>();
         botField.Synchronize(Map.id, GameSession.World, GameSession.Channel);
@@ -563,7 +565,14 @@ public sealed class FieldDirector : MonoBehaviour
             if (GameLoop.I?.player!=null && GameLoop.I.player.hp>0 && award.eligible)
                 Profile.GrantExperience((int)System.Math.Min(int.MaxValue,(long)award.personal+award.party));
         }
-        else if (exp > 0) Profile.GrantExperience((int)(exp * rates.expRate));
+        else if (exp > 0)
+        {
+            // ≡ Monster.java:734 personalExp × attacker.getExpRate()：
+            // getExpRate = 个人倍率(×世界,×家族Buff) × (100+套装ExpRate)/100。
+            // 源端另有 getMobExpRate（level_exp_rate/quick_level 等级练级倍率），本工程无对应配置键。
+            var set = EquipLoadout.CurrentSetBonus();
+            Profile.GrantExperience((int)(exp * AdminSetItem.ApplyRate(set, "ExpRate", rates.expRate)));
+        }
 
         for (int rep=0; GameSession.InGame && rep<reputationCalls; rep++)
             GameSession.Net.Community(new CommunityRequest { characterId=GameSession.CharacterId, operation=CommunityOperation.RecordKill,
@@ -590,12 +599,23 @@ public sealed class FieldDirector : MonoBehaviour
     {
         var pos = e.transform.position;
         int n = 0, mesos = 0;
-        double dropRate = GameSession.InGame ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId }).dropRate : 1;
+        // ≡ MapleMap.dropFromMonster：非 boss chRate = chr.getDropRate()（世界×家族×套装），
+        // boss 走 getBossDropRate()（家族×world.boss_drop_rate，世界 drop_rate 除回去）。
+        var rsp = GameSession.InGame ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId, operation = CommunityOperation.Read }) : new CommunityResponse();
+        double dropRate = rsp.dropRate, mesoRate = rsp.mesoRate;
         if (e.IsBoss && GameSession.InGame)
-            dropRate *= GameSession.Net.Boss(new BossRequest { characterId = GameSession.CharacterId }).dropRate;
+            dropRate = rsp.familyDropRate * GameSession.Net.Boss(new BossRequest { characterId = GameSession.CharacterId }).dropRate;
+        var set = EquipLoadout.CurrentSetBonus();
+        dropRate = AdminSetItem.ApplyRate(set, "DropRate", dropRate);
+        // ≡ MapleMap.java:757 mesos × chr.getMesoRate()（世界 meso_rate × 套装 MesoRate%）
+        mesoRate = AdminSetItem.ApplyRate(set, "MesoRate", mesoRate);
         FieldLoot.Roll(mob.id, (itemId, qty, d) =>
         {
-            if (itemId == 0) mesos += qty;
+            if (itemId == 0)
+            {
+                qty = System.Math.Max(1, (int)System.Math.Round(qty * mesoRate));   // 源端 floatToInt(mesos × rate)
+                mesos += qty;
+            }
             n++;
             GroundItem.Spawn(itemId, qty, pos + Offset(d));
         }, rng, dropRate);

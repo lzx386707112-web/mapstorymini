@@ -26,14 +26,16 @@ public static class FieldLoot
         if (sink == null || rng == null) return;
         int d = 1;
 
-        List<FieldDropEntry> rows;
-        if (FieldCatalog.Drops.TryGetValue(mobId, out rows))
+        // 掉落表以 DB（drop_data）为准，后台改完 DropStore.Invalidate() 即生效；
+        // 无库时 DropStore 回退 FieldDrops.json 快照，判定规则不变。
+        List<DropEntry> rows = DropStore.ForMob(mobId);
+        if (rows.Count > 0)
         {
-            var list = new List<FieldDropEntry>(rows);
+            var list = new List<DropEntry>(rows);
             Shuffle(list, rng);
             foreach (var row in list)
             {
-                if (rng.Next(0, FieldCatalog.ChanceDenominator) >= row.chance * dropRate) continue;
+                if (rng.Next(0, DropStore.ChanceDenominator) >= row.chance * dropRate) continue;
                 if (row.item == 0)
                 {
                     // nextInt(Max - Min) + Min；Max == Min 时 nextInt(0) 在原服返回 0
@@ -49,12 +51,12 @@ public static class FieldLoot
             }
         }
 
-        var glob = new List<FieldDropEntry>(FieldCatalog.GlobalDrops);
+        var glob = new List<DropEntry>(DropStore.Global());
         if (glob.Count == 0) return;
         Shuffle(glob, rng);
         foreach (var row in glob)
         {
-            if (rng.Next(0, FieldCatalog.ChanceDenominator) >= row.chance * dropRate) continue;
+            if (rng.Next(0, DropStore.ChanceDenominator) >= row.chance * dropRate) continue;
             if (row.item == 0) continue;                     // 全局掉落不生成金币
             int min = Math.Max(1, row.min);
             int max = Math.Max(min, row.max);

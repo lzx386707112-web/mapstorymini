@@ -246,3 +246,39 @@
 - 源`org/gms/server/Trade.java` SHA256 `edf758a4b7b97b0fcbee152a8905d7a6deabb2a883e86ec5b96f16bc8c72eb44`，inviteTrade:519..527建立双边会话但不设fullTrade，visitTrade:537..559仅接收方有效邀请可设双边fullTrade；过期访问取消双边。InviteCoordinator第七轮移除邀请，不主动清Trade会话。
 - BotTradeProtocol新增末尾枚举Accept，保留既有操作编号；Read暴露incomingInvitation，Accept校验当前邀请方ID与接收身份，拒绝发起方自行接受，避免旧窗口接受另一假人交易。BotTradeService追踪incoming/pending及原30秒计数，同现有party/messenger运行时钟。重复Accept对已打开会话不重复消费邀请；过期Accept取消双边，取消/成交移除邀请记录。**这是实际transport业务入口补齐，原邀请窗口/交易窗口UI仍未迁完**。
 - 真实runtime/transport回归新增7项，覆盖主动邀请读取、错误对象不消费、真人接受、发起方拒绝、第6/7轮边界、过期visit取消。最新后端478通过/0失败；继续保持整体incomplete。
+
+### 地面掉落权威服务（E03）源端依据（2026-10-27 续）
+
+源身份（gms-server，均以本次核对时字节为准）：
+
+| 源文件 | SHA256 |
+| --- | --- |
+| `org/gms/server/maps/MapItem.java` | `eccf0e4072f3500fbf6f0c27106255a2099126c1c0b47395a078d135a59dafbc` |
+| `org/gms/server/maps/MapleMap.java` | `435c938a6e387e9c060339631c9fd0e7d8dd8d71547b3d21ca9f0e90ffccabe4` |
+| `soloMapling/ArtificialPlayer/BotCommandsPack/DropCommands.java` | `aa83c0b927837700ca2ef0f9e9c980bdf23a6a0c8a93b157ea4b30376fbe1642` |
+| `org/gms/client/Character.java` | `b72a138f09a8dadbb88faad54c2f14c1668d74608f1a59b1c394af55b0bce62a` |
+| `org/gms/client/inventory/manipulator/InventoryManipulator.java` | `defa04b22c7989773d73b65be6a506de899c6dc9afc5a1ee27b3b1fe534dbc21` |
+| `org/gms/constants/id/MapId.java` | `b759524c980df8f76075c3da320ccb53baaacc35ac48c4611bc7172d2399e680` |
+| `org/gms/constants/id/ItemId.java` | `c684f078f266ffbc11d990a7797c60928ce3e143897a43b1688782b64624fdf3` |
+
+确定逻辑（已在 `Server/Field/MapItem.cs`、`MapItemService.cs`、`MapItemPickup.cs`、`Server/Bot/DropCommands.cs`、`BotActorLooter.cs` 落地）：
+
+- **`setPermanentOwner(true)` 不产生拾取限制**：`MapItem.canBePickedBy:135..157` 第一行 `if (character_ownerid <= 0 || isFFADrop()) return true;`，而 `isFFADrop:127..129` = `type == 2 || type == 3 || hasExpiredOwnershipTime()`；`hasExpiredOwnershipTime:131..133` = `now - dropTime >= 15_000`。归属窗口一过期即被第一行短路，末行 `return !permanentOwner && hasExpiredOwnershipTime();` 在该结构下不可达（`hasExpiredOwnershipTime()` 为 false 时恒 false）。全仓只有三处写、一处读，无其它消费者。**结论：字段与三处 `setPermanentOwner` 调用点照搬保留，不改成「永久只给归属者」**；DropCommands 的 `botThrowItemNoExpireOwnerOnly`/`botDropItemQtyOwnerOnly`/`botThrowItemToOwner` 的实际限制来自 `dropType 0`（15 秒归属窗口），不是 permanentOwner。
+- `canBePickedBy` 的「同队收养」写回：`party_ownerid == -1` 且 `chr.isPartyMember(owner)` 时把 `party_ownerid` 改成 `chr.getPartyId()`；`party_ownerid != -1` 且 `chr.getId() == owner` 时同样改写。是**有副作用**的谓词，不能当纯函数实现。
+- `MapItem.getItemId()`:92..97 —— `meso > 0` 时返回**金额**（packet 语义），道具才返回 `item.getItemId()`。过滤/押注字符串都用它，金币掉落不会被按 itemId 过滤命中。
+- `MapleMap.pickItemDrop:1187..1202` 只广播 + `removeMapObject` + `setPickedUp(true)`，**不入背包**；入背包在 `Character.pickupItem:2281..2408`。DropCommands 的 `botLoot*` 全走 `pickItemDrop`（假人「捡」= 让地面物品消失，Gacha 回收/Dice 赌注清理/Blackjack 牌面回收都依赖它），与真人拾取是两条路径，不可互相替代。
+- `Character.pickupItem` 的拒绝分支：`now - dropTime < 400 || !canBePickedBy(this)` 只 `enableActions(); return;`，**不发** `showItemUnavailable`；发 `showItemUnavailable` 的只有「`isPickedUp()` 竞争」「`isSelfLootableOnly` 地图上的他人 playerDrop」「`!needQuestItem`」三处。
+- `getMapObjectsInRange(Point from, double rangeSq, types)` 的第二参数是**距离平方**（`from.distanceSq(pos) <= rangeSq`）。DropCommands 调用点传 1000/3000/9000/10000，`Documents/Dev Commands Cheat Sheet.md:70..71` 佐证 `botLoot(fakechar, 1000)` = 脚边、`9000` ≈ 2.5 角色宽。**不要换算成半径**。
+- 落点：`calcPointBelow:553..567` 的三角插值 `s5 = cos(atan(s2/s1)) * (|dx| / cos(atan(s1/s2)))` 化简为 `|dy| * |dx| / |dx_total|`，即线性插值，与 `MapRuntime.PointBelow` 等价。`calcDropPos:620..635` 先夹到 `xLimits`（`generateMapDropRangeCache` 用 `bsearchDropPos` 从 mapArea 左右边界二分，内收 14px），再 `calcPointBelow(x, y-85)`，失败走 `bsearchDropPos`，落点跑出 `mapArea` 则回退 fallback。`calcItemDropPos:655..659` 仅在 `playerDrop && mapid == MapId.FM_ENTRANCE(910000000)` 时改用 `calcPlayerDropPos`（`y-6` 采样）。
+- `instantiateItemDrop:1046..1070`：`getDroppedItemCount() >= GameConfig item_limit_on_map`（migration 默认 **200**）时从 `registeredDrops`（弱引用 FIFO）逐出最早的；`spawnItemDropNoExpire:2567..2596` **不调用** `instantiateItemDrop`，因此不会被逐出，过期完全由调用方安排（`DropCommands.botDropItemWithExpiry` 排两个 `TimerManager` 任务：`expiryMs` 后广播移除、`+PICKUP_GRACE_PERIOD_MS(3000)` 后 `makeDisappearItemFromMap`）。
+- `InventoryManipulator.addFromDropInternal:184..270`：`isPickupRestricted`（`info/only==1`）且非怪物卡只允许一件；非装备先按 `slotMax` 填满既有同 itemId 且同 flag/owner 的堆（`listById` 按槽位序），再开新格；可充能（`itemId/10000 == 207` 星 / `233` 弹）与 petId != -1 整份进单格；装备 `quantity` 必须为 1，否则发 inventoryFull + showItemUnavailable。`getSlotMax:371..403`：无 `info/slotMax` 时装备 1、USE/ETC 且 `item_slot_max > 0` 取配置、否则 100；有 `info/slotMax` 时值为 1 直接取 1，否则 USE/ETC 且 `item_slot_max > 0` 取配置、否则取 WZ 值。`item_slot_max` migration 默认 **0**。
+- `MapId.isSelfLootableOnly:165..168` = Happyville 树 `209000001..209000015` 或 GPQ 泉 `990000500..990000502`；这些地图 `!playerDrop || dropper == player` 才能捡，否则 `showItemUnavailable`。
+- `ItemId.NX_CARD_100 = 4031865` / `NX_CARD_250 = 4031866`；`isNxCard` 即这两个。拾取 NX 走 `gainCash(NX_CREDIT, (id==4031865?100:250) * quantity)`，不入背包。
+
+平台适配（已记录，非源端语义）：
+
+- `lootItemListOnFloor:225..232` 的 `BotHelpers.sleepAmountSeconds(100)`（= `Thread.sleep(100)`）改为 `BotTasks` 可取消时序链，保留「按列表顺序、每件间隔 100ms、可取消」。
+- `MapItemService` 按 `mapId` 分桶（与 `MapService`/`BotRegistry` 现状一致），当前单频道；多频道需按 (world, channel, mapId) 分桶。
+- 效果系统分支（`applyConsumeOnPickup`、`ScriptedItem.runOnPickup`、`needQuestItem` 深层、`CashShop.gainCash`、`updateAriantScore`）不自行发明数值，经 `BotLootHooks` 委托给上层，未接线即退化为直接入包。
+
+验证：`tools/server-check` 509 通过 / 0 失败（其中地面掉落回归 31 项：落点、归属窗口、队伍收养、400ms 延迟、拾取入库、满包回退、botLoot 不入包、permanentOwner 原端短路语义、限时掉落宽限、item_limit 逐出、一字排开）；`tools/unity-compile-check` 0 警告 0 错误。**未做实机显示/听音验收**，整体仍 incomplete。

@@ -189,6 +189,14 @@ public static class EquipLoadout
         if (slot != EquipSlot.Weapon) Profile.SetEquipSlot(slot, 0);   // 武器总得拿着
     }
 
+    /// <summary>当前角色套装差量（源端 Character.setItemBonus 的取用入口，FieldDirector 消费倍率类）。</summary>
+    public static System.Collections.Generic.Dictionary<string, int> CurrentSetBonus()
+    {
+        var wornIds = new List<int>();
+        foreach (var kv in WornSlots()) wornIds.Add(kv.Value);
+        return AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
+    }
+
     static IEnumerable<KeyValuePair<int, int>> WornSlots()
     {
         foreach (int slot in EquipSlot.Worn)
@@ -198,7 +206,7 @@ public static class EquipLoadout
         }
     }
 
-    /// <summary>基础属性 + 武器 + 全部防具的最终面板（出战与能力值窗共用同一条路）。</summary>
+    /// <summary>基础属性 + 武器 + 全部防具 + 套装加成的最终面板（出战与能力值窗共用同一条路）。</summary>
     public static CharacterAttributes Apply(CharacterAttributes baseAttrs, WeaponDef weapon, int attackBuff, out int watk, out int matk)
     {
         int w = 0, m = 0;
@@ -217,8 +225,36 @@ public static class EquipLoadout
             if (kv.Key == EquipSlot.Weapon) continue;         // 武器已单独叠加
             EquipCatalog.Apply(kv.Value, result, ref w, ref m);
         }
+
+        // —— 套装加成（≡ Character.reapplyLocalStats 的 setItemBonus 段）——
+        // 源端 equipped 含武器（position<0 且 >-100），所以套装计数也把武器算上。
+        var wornIds = new List<int>();
+        foreach (var kv in WornSlots()) wornIds.Add(kv.Value);
+        var set = AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
+
+        // HP/MP/STR/DEX/LUK：apply(key, base) = (base+flat) + (base+flat)×pct%
+        result.maxHp = AdminSetItem.ApplyStat(set, "HP", result.maxHp);
+        result.maxMp = AdminSetItem.ApplyStat(set, "MP", result.maxMp);
+        result.str = AdminSetItem.ApplyStat(set, "STR", result.str);
+        result.dex = AdminSetItem.ApplyStat(set, "DEX", result.dex);
+        result.luk = AdminSetItem.ApplyStat(set, "LUK", result.luk);
+        // 源端 INT 特殊：先 apply INT，魔法值吃「INT 差量」再整体 apply MAD。
+        // 这里 matk = intelligence + m，等价表达为：MAD 先乘到 (intelligence+m) 上——顺序一致。
+        result.intelligence = AdminSetItem.ApplyStat(set, "INT", result.intelligence);
+        // 源端 PDD/MDD/ACC/EVA 走 SetItemNativeStats.mergedValue：总值 = apply(key, 装备+技能)，
+        // 本工程无对应技能 buff 通道，装备值即基线，apply 语义等价。
+        result.weaponDefense = AdminSetItem.ApplyStat(set, "PDD", result.weaponDefense);
+        result.magicDefense = AdminSetItem.ApplyStat(set, "MDD", result.magicDefense);
+        result.accuracy = AdminSetItem.ApplyStat(set, "ACC", result.accuracy);
+        result.avoidability = AdminSetItem.ApplyStat(set, "EVA", result.avoidability);
+        w = AdminSetItem.ApplyStat(set, "PAD", w);
+        m = AdminSetItem.ApplyStat(set, "MAD", result.intelligence + m) - result.intelligence;
+        // SPD/JMP：CharacterAttributes 无对应字段（移动走 Physics.img 的 walkSpeed），
+        // 套装 SPD/JMP 暂无落点，接入移动系统时消费 set["SPD"]/set["JMP"]。
+
         result.maxHp = Mathf.Max(50, result.maxHp);
         result.maxMp = Mathf.Max(5, result.maxMp);
+        result.setItemBonus = set;    // CombatRules.Attack 的 Damage% 消费（源端 Character.setItemBonus）
         watk = w;
         matk = System.Math.Min(2000, result.intelligence + m);
         return result;

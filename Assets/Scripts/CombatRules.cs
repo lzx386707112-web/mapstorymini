@@ -54,7 +54,12 @@ public static class CombatRules
         bool critical = !magic && critRoll < Math.Max(0,Math.Min(1,a.criticalChance));
         if (!magic) damage *= (skill == null ? 100 : skill.DamagePercent) / 100.0 + (critical ? a.criticalBonus : 0);
         double element = ElementModifier(target,skill == null ? "" : skill.Element);
-        return Resolve(element == 0 ? 0 : Math.Max(1,damage * element),critical);
+        damage = element == 0 ? 0 : Math.Max(1,damage * element);
+        // ≡ MapleMap 收到攻击后 SetItemManager.applyDamage：套装 Damage%/Boss|NormalDamage%/FinalDamage%
+        if (damage > 0 && a.setItemBonus != null)
+            damage = AdminSetItem.ApplyDamage(a.setItemBonus, NativeCombatData.Int(target,"boss",0) != 0,
+                (int)Math.Min(int.MaxValue, Math.Ceiling(damage)));
+        return Resolve(damage,critical);
     }
 
     public static double ElementModifier(System.Collections.Generic.Dictionary<string,object> target, string element)

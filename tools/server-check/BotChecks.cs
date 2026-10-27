@@ -173,6 +173,7 @@ static class BotChecks
         CheckMarketDirector(check);
         CheckEquipment(check);
         CheckRealTrade(check);
+        CheckGroundItems(check);
         CheckOriginalGeometryAndGroundPhysics(check);
         CheckWorldObservationAndGround(check);
         CheckRuntimeSession(check);
@@ -732,6 +733,181 @@ static class BotChecks
             "真实成交与取消后的物品金币可跨数据库重开恢复");
         System.IO.File.Delete(db.FilePath);
         BotStore.RemoveActiveBot(seller.id);
+    }
+
+    // E03 权威地面掉落：归属/过期/落点/拾取入库/回收语义（对齐 MapItem、MapleMap、Character.pickupItem、DropCommands）
+    static void CheckGroundItems(Action<bool, string> check)
+    {
+        Console.WriteLine("== 地面掉落权威服务 ==");
+        MapItemService.ClearAll();
+        MapItemService.ItemLimitOnMap = 200;
+        // 与 BotTasks/BotScheduler 共用同一毫秒时钟（源端 TimerManager 与 System.currentTimeMillis 同源）
+        BotScheduler.Stop();
+        BotScheduler.Clock = 1_000_000;
+        MapItemService.Clock = () => BotScheduler.Clock;
+        void At(long ms) { BotScheduler.Clock = ms; BotScheduler.Drive(); }
+
+        // 测试图：一条水平平台 y=300，x ∈ [-200, 200]；y 向下为正（源端 MapleMap 坐标系）
+        var map = new MapRuntime { mapId = 700000000, left = -400, right = 400, top = -400, bottom = 400 };
+        map.AddFoothold(-200, 300, 200, 300);
+        MapService.Register(map);
+
+        var db = DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mapledash_ground_item_test.json"));
+        long playerId = db.Table("characters").Insert(new DbRow { ["name"] = "Looter", ["level"] = 50,
+            ["meso"] = 0L, ["equipslots"] = 24L, ["useslots"] = 24L, ["setupslots"] = 24L, ["etcslots"] = 24L });
+        var player = new BotActor { id = (int)playerId, name = "Looter", level = 50, mapId = 700000000, x = 0, y = 250, character = CharService.Load(db, (int)playerId) };
+        var dropper = new BotCharacter { id = 20998, name = "Dropper", mapId = 700000000, x = 0, y = 250 };
+
+        var parties = new BotPartyService(db);
+        var trades = new BotTradeService(db, BotItemCatalog.Shared);
+        MapItemService.PartyOf = id => parties.For(id)?.id ?? -1;
+        MapItemService.IsPartyMember = (ownerId, characterId) => parties.For(ownerId)?.members.Contains(characterId) ?? false;
+
+        int unavailable = 0, full = 0;
+        var looter = new BotActorLooter(player, trades, parties, new BotLootHooks
+        {
+            ShowItemUnavailable = () => unavailable++,
+            ShowInventoryFull = () => full++,
+        });
+
+        // —— 落点算法（源端 calcDropPos/calcPointBelow）——
+        MapItemService.CalcDropPos(700000000, 50, 200, 50, 200, out float dropX, out float dropY);
+        check(dropX == 50 && dropY == 300, "掉落物吸附到下方平台（calcPointBelow 线性插值等价源端三角公式）");
+        MapItemService.CalcDropPos(700000000, -500, 200, -500, 200, out dropX, out dropY);
+        check(dropX >= -186 && dropX <= 186 && dropY == 300, "掉落物夹在可掉落范围内（generateMapDropRangeCache 的 xLimits 内收 14px）");
+
+        // —— 归属窗口（源端 MapItem）——
+        var ffa = MapItemService.SpawnItemDrop(700000000, dropper.id, dropper.id, -1,
+            BotLogic.GenerateCleanItem(4000001), 0, 250, true, true);
+        check(ffa.type == 2 && ffa.IsFFADrop(BotScheduler.Clock), "ffaDrop=true 生成 dropType 2，立即自由拾取");
+        check(ffa.CanBePickedBy(BotScheduler.Clock, player.id, -1, _ => false), "FFA 掉落任何归属者都能捡");
+
+        var owned = MapItemService.SpawnItemDropNoExpire(700000000, dropper.id, dropper.id, -1,
+            BotLogic.GenerateCleanItem(4000001), 0, 250, false, true);
+        check(owned.type == 0 && !owned.IsFFADrop(BotScheduler.Clock) && !owned.HasExpiredOwnershipTime(BotScheduler.Clock),
+            "dropType 0 在 15 秒归属窗口内不是 FFA");
+        check(!owned.CanBePickedBy(BotScheduler.Clock, player.id, -1, _ => false), "归属窗口内他人不能捡");
+        check(owned.CanBePickedBy(BotScheduler.Clock + MapItemService.OwnershipWindowMs, player.id, -1, _ => false),
+            "15 秒归属窗口过期后他人可捡");
+        check(unavailable == 0, "归属拒绝只走 CanBePickedBy 判定，不发背包提示");
+
+        // 源端 MapItem.canBePickedBy 第一行 isFFADrop() 已含 hasExpiredOwnershipTime()，
+        // 因此 setPermanentOwner(true) 在归属窗口过期后被短路，不产生额外限制；
+        // 末行 `!permanentOwner && hasExpiredOwnershipTime()` 是源端不可达分支。保留字段与结构，不改写语义。
+        var permanent = MapItemService.SpawnItemDropNoExpire(700000000, dropper.id, dropper.id, -1,
+            BotLogic.GenerateCleanItem(4000001), 0, 250, false, false);
+        permanent.permanentOwner = true;
+        check(!permanent.CanBePickedBy(BotScheduler.Clock, player.id, -1, _ => false),
+            "permanentOwner 在归属窗口内仍限制为归属者（botThrowItemNoExpireOwnerOnly 的 dropType 0）");
+        check(permanent.CanBePickedBy(BotScheduler.Clock + MapItemService.OwnershipWindowMs, player.id, -1, _ => false),
+            "源端 isFFADrop() 含归属过期，permanentOwner 过期后被短路（保留原端语义，不自行加强）");
+
+        var adopted = MapItemService.SpawnItemDropNoExpire(700000000, dropper.id, dropper.id, -1,
+            BotLogic.GenerateCleanItem(4000001), 0, 250, false, true);
+        check(adopted.CanBePickedBy(BotScheduler.Clock, player.id, 7, _ => true) && adopted.partyOwnerId == 7,
+            "同队拾取者被源端收养为队伍归属（canBePickedBy 写回 partyOwnerId）");
+
+        // —— 地面查询与过滤（源端 BotLogic.checkForItemsOnFloor / readPlayersBetsStamps）——
+        var stamp = MapItemService.SpawnItemDrop(700000000, player.id, player.id, -1,
+            BotLogic.GenerateCleanItemWithQty(4002000, 3), 10, 250, true, true);
+        var others = MapItemService.SpawnItemDrop(700000000, dropper.id, dropper.id, -1,
+            BotLogic.GenerateCleanItem(4002001), 10, 250, true, true);
+        var found = BotLogic.CheckForItemsOnFloor(700000000, 10, 300, 10000, new[] { 4002000 });
+        check(found.Count == 1 && found[0].objectId == stamp.objectId,
+            "checkForItemsOnFloor 按 itemId 过滤地面物品（rangeSq 为距离平方）");
+        var bets = BotLogic.ReadPlayersBetsStamps(player, 10, 300, 10000);
+        check(bets.Count == 1 && bets[0].objectId == stamp.objectId,
+            "readPlayersBetsStamps 只认本人扔的押注图章，排除他人同名图章");
+        string betLine = BotLogic.AnnounceBetString(player, bets);
+        check(betLine.StartsWith("Looter's Bet: 3x "), "announceBetString 输出「名字's Bet: 数量x 物品」并去掉 Stamp 后缀 | 实际=" + betLine);
+
+        // —— 400ms 拾取延迟（源端 Character.pickupItem）——
+        MapItemService.PickItemDrop(700000000, stamp, 0);
+        MapItemService.PickItemDrop(700000000, others, 0);
+        var fresh = MapItemService.SpawnItemDrop(700000000, dropper.id, player.id, -1,
+            BotLogic.GenerateCleanItem(4000001), 0, 250, true, true);
+        check(!MapItemPickup.PickupItem(fresh, looter, BotScheduler.Clock + 399), "掉落 400ms 内不允许拾取");
+        check(!fresh.pickedUp, "拾取延迟拒绝后地面物品仍在");
+
+        // —— 拾取入库（源端 Character.pickupItem → addFromDrop）——
+        check(MapItemPickup.PickupItem(fresh, looter, BotScheduler.Clock + 400) && fresh.pickedUp, "掉落满 400ms 且归属允许后拾取成功");
+        check(player.character.inventory.Count == 1 && player.character.inventory[0].itemId == 4000001,
+            "拾取走 addFromDrop 真实入背包，不复制不丢失");
+        check(CharService.Load(db, player.id).inventory.Count == 1 && CharService.Load(db, player.id).inventory[0].itemId == 4000001,
+            "拾取入库复用交易同一条持久化路径（Persist 重写背包两表）");
+
+        var mesoDrop = MapItemService.SpawnMesoDrop(700000000, 1234, 0, 250, dropper.id, player.id, -1, true, 2);
+        check(MapItemPickup.PickupItem(mesoDrop, looter, BotScheduler.Clock + 400) && player.character.record.meso == 1234,
+            "金币拾取进角色金币（源端 gainMeso）");
+
+        var notMine = MapItemService.SpawnItemDropNoExpire(700000000, dropper.id, dropper.id, -1,
+            BotLogic.GenerateCleanItem(4000002), 0, 250, false, true);
+        bool rejected = !MapItemPickup.PickupItem(notMine, looter, BotScheduler.Clock + 400);
+        check(rejected && !notMine.pickedUp && unavailable == 0,
+            "归属窗口内捡他人掉落被拒；源端 pickupItem 此分支只 enableActions 复位，不发 showItemUnavailable | rejected=" + rejected + " unavailable=" + unavailable);
+        check(MapItemPickup.PickupItem(notMine, looter, BotScheduler.Clock + MapItemService.OwnershipWindowMs),
+            "归属窗口过期后可捡他人掉落并入库");
+
+        // —— 满包：不摘地面物品、不复制 ——
+        player.character.record.etcslots = 1;
+        player.character.inventory[0].quantity = trades.Rules.SlotMax(4000001, player);   // 堆满该格
+        var overflow = MapItemService.SpawnItemDrop(700000000, dropper.id, player.id, -1,
+            BotLogic.GenerateCleanItemWithQty(4000001, 1), 0, 250, true, true);
+        bool overflowRejected = !MapItemPickup.PickupItem(overflow, looter, BotScheduler.Clock + 400);
+        check(overflowRejected && !overflow.pickedUp && full == 1,
+            "背包不足时发 getInventoryFull，地面物品保持原样（无半边结算）| rejected=" + overflowRejected + " full=" + full);
+        player.character.record.etcslots = 24;
+
+        // —— botLoot 只摘除不入背包（源端 DropCommands.pickItemDrop 语义）——
+        MapItemService.ClearMap(700000000);
+        int before = player.character.inventory.Count, mesoBefore = player.character.record.meso;
+        var botDropped = DropCommands.BotThrowItemNoExpire(dropper, 4000003, 0, 250);
+        DropCommands.BotLoot(dropper, 0, 300, 10000);
+        check(botDropped.pickedUp && MapItemService.DroppedItemCount(700000000) == 0
+            && player.character.inventory.Count == before && player.character.record.meso == mesoBefore,
+            "假人 botLoot 按源端只移除地面物品，不进任何背包/金币");
+
+        // —— permanentOwner 由 DropCommands 打标 ——
+        var ownerOnly = DropCommands.BotThrowItemNoExpireOwnerOnly(dropper, 4000004, 0, 250);
+        check(ownerOnly.permanentOwner && ownerOnly.type == 0, "botThrowItemNoExpireOwnerOnly 打 permanentOwner 且 dropType 0");
+        var qtyOwnerOnly = DropCommands.BotDropItemQtyOwnerOnly(dropper, 4000005, 2);
+        check(qtyOwnerOnly.permanentOwner && qtyOwnerOnly.item.quantity == 2, "botDropItemQtyOwnerOnly 数量与长期归属同时生效");
+
+        // —— 限时掉落（源端 botDropItemWithExpiry 的两个定时器）——
+        MapItemService.ClearMap(700000000);
+        long start = BotScheduler.Clock;
+        var expiring = DropCommands.BotDropItemWithExpiry(dropper, 4000006, false, 5000);
+        check(expiring != null && !expiring.pickedUp, "限时掉落生成后未立即消失");
+        At(start + 5000);
+        check(!expiring.pickedUp, "到期只广播移除，宽限期内仍可捡（源端 PICKUP_GRACE_PERIOD_MS=3000）");
+        At(start + 5000 + DropCommands.PickupGracePeriodMs);
+        check(expiring.pickedUp, "宽限期结束后 makeDisappearItemFromMap 真正摘除");
+
+        // —— item_limit_on_map 逐出最早的（源端 instantiateItemDrop）——
+        MapItemService.ClearMap(700000000);
+        MapItemService.ItemLimitOnMap = 2;
+        var first = DropCommands.BotDropItem(dropper, 4000007);
+        var second = DropCommands.BotDropItem(dropper, 4000008);
+        var third = DropCommands.BotDropItem(dropper, 4000009);
+        check(MapItemService.DroppedItemCount(700000000) == 2 && first.pickedUp
+            && !second.pickedUp && !third.pickedUp,
+            "地图掉落超过 item_limit_on_map 时逐出最早注册的一个");
+        MapItemService.ItemLimitOnMap = 200;
+
+        // —— 一字排开展示（源端 botThrowEquipsInARow）——
+        MapItemService.ClearMap(700000000);
+        DropCommands.BotThrowEquipsInARow(dropper, new[] { 1302000, 1302001, 1302002 }, 0, 250, 30);
+        var row = MapItemService.DroppedItems(700000000);
+        check(row.Count == 3 && row[0].x == -30 && row[1].x == 0 && row[2].x == 30,
+            "botThrowEquipsInARow 以中心按 spacing 一字排开");
+
+        MapItemService.ClearAll();
+        MapItemService.Clock = () => 0;
+        MapItemService.PartyOf = null;
+        MapItemService.IsPartyMember = null;
+        MapService.Unregister(700000000);
+        db.Save();
+        System.IO.File.Delete(db.FilePath);
     }
 
     static void CheckEquipment(Action<bool, string> check)

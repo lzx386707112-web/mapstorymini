@@ -20,12 +20,24 @@
     <Compile Include="../../Assets/Scripts/Admin/AdminApi.cs" />
     <Compile Include="../../Assets/Scripts/Admin/AdminBackend.cs" />
     <Compile Include="../../Assets/Scripts/Admin/AdminRoutes.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminDbUtil.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminNames.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminDrops.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminShop.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminGachapon.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminAutoban.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminCommands.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminGive.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminWeather.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminBots.cs" />
     <Compile Include="../../Assets/Scripts/Server/Db/DbStore.cs" />
     <Compile Include="../../Assets/Scripts/Server/Db/MiniJsonDb.cs" />
     <Compile Include="../../Assets/Scripts/Server/Db/Dao.cs" />
     <Compile Include="../../Assets/Scripts/Server/PlatformRes.cs" />
     <Compile Include="../../Assets/Scripts/Server/Char/CharNameRules.cs" />
     <Compile Include="../../Assets/Scripts/Server/Login/LoginService.cs" />
+    <Compile Include="../../Assets/Scripts/Server/Field/DropStore.cs" />
+    <Compile Include="../../Assets/Scripts/Server/Field/NativeWeatherState.cs" />
   </ItemGroup>
 
   <ItemGroup>

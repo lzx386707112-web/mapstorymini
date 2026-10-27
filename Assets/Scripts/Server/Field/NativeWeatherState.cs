@@ -101,6 +101,25 @@ public sealed class NativeWeatherService
         if(overrideSky>=0) for(int r=0;r<regions.Length;r++) Transition(r,overrideSky,Automatic(r),now);
         overrideSky=overrideMinute=-1; overrideUntil=0; nextRoll=0;
     }
+
+    // —————— 后台（AdminWeather）读写口 —————— ——————
+    public long NextRollAt => nextRoll;
+    public long OverrideUntil => overrideUntil;
+    public int OverrideSky => overrideSky;
+    public int OverrideMinute => overrideMinute;
+    public int RegionCount => regions.Length;
+    public NativeWeatherRegion Region(int i) => regions[i];
+    public int SkyOf(int r) => skies[r];
+    /// <summary>当前游戏时刻（分钟 0-1439）：时间被冻结时返回覆盖值。</summary>
+    public int MinuteOfDay(long now)
+        => overrideMinute >= 0 ? overrideMinute
+         : (int)(((((now % DayLength) + DayLength) % DayLength) * 1440) / Math.Max(1, DayLength));
+    /// <summary>昼夜系数（与客户端 NativeWeatherState.Night 同公式）。</summary>
+    public float NightLevel(long now) => NativeWeatherState.Night(MinuteOfDay(now));
+    /// <summary>源端 rerollWind：只重掷阵风方向（token），不改天气类型。</summary>
+    public void RerollWind() { for (int r = 0; r < regions.Length; r++) tokens[r] = NewToken(); }
+    /// <summary>改 forced（强制天气）后调用，让该区域立即落到新值。</summary>
+    public void ApplyForced(int r, int previousEffective, long now) => Transition(r, previousEffective, Effective(r), now);
     void Expire(long now) { if(overrideUntil>0 && overrideUntil<=now) ClearOverride(now); }
     public void Override(int? sky,int? minute,long duration,long now)
     {
@@ -155,5 +174,55 @@ public sealed class NativeWeatherService
         else if(month<=5) {w[7]*=1.8;w[1]*=1.2;w[2]*=.5;w[5]*=.4;}
         else if(month<=8) {w[1]*=1.4;w[4]*=1.3;w[2]*=.3;w[5]*=.2;w[6]*=.6;}
         else {w[6]*=1.8;w[3]*=1.2;w[7]*=.4;w[2]*=.7;}
+    }
+}
+
+// 天气服务的唯一入口：游戏（NativeWeatherField）与后台（AdminWeather）共用一个实例，
+// 否则后台改了天气、游戏里看不到（两个 NativeWeatherService 各滚各的天空）。
+// 配置来自 Resources/NativeWeather.json（regions 的 name/forced/weights/tint 与源端
+// WeatherRegion 枚举同序）。纯 C#，可被 tools/admin-check 直接编译。
+public static class NativeWeatherHost
+{
+    public static NativeWeatherService Shared;
+
+    /// <summary>Unity 侧注入：返回已挂在 GameServer 上的服务（没有就 null）。</summary>
+    public static Func<NativeWeatherService> FromGame;
+
+    public static long NowMs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+    public static NativeWeatherService Service
+    {
+        get
+        {
+            var live = FromGame != null ? FromGame() : null;
+            if (live != null) { Shared = live; return live; }
+            if (Shared == null) Shared = Create(PlatformRes.LoadText("NativeWeather"), NowMs());
+            return Shared;
+        }
+    }
+
+    public static NativeWeatherService Create(string json, long now)
+    {
+        var root = MiniJsonDb.Parse(json) as Dictionary<string, object>;
+        if (root == null || !root.TryGetValue("regions", out var raw) || !(raw is List<object> rows))
+            throw new InvalidOperationException("NativeWeather.json 缺少 regions");
+        var regions = new NativeWeatherRegion[rows.Count];
+        for (int i = 0; i < rows.Count; i++)
+        {
+            var row = (Dictionary<string, object>)rows[i];
+            var weights = (List<object>)row["weights"];
+            var w = new double[weights.Count];
+            for (int j = 0; j < w.Length; j++) w[j] = Convert.ToDouble(weights[j]);
+            regions[i] = new NativeWeatherRegion
+            {
+                Name = (string)row["name"],
+                Forced = Convert.ToInt32(row["forced"]),
+                Tint = Convert.ToInt32(row["tint"]),
+                Palette = i,
+                Weights = w,
+            };
+        }
+        var rng = new Random();
+        return new NativeWeatherService(regions, now, rng.NextDouble);
     }
 }

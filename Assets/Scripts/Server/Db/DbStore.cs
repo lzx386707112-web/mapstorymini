@@ -265,7 +265,9 @@ public sealed class DbStore
 
     void ParseInsert(string stmt)
     {
-        // INSERT INTO t (c1, c2, ...) VALUES (v1, v2, ...);   只支持单行种子数据
+        // INSERT INTO t (c1, c2, ...) VALUES (v1, v2, ...), (v1, v2, ...), ...;
+        // 支持单行与多行 VALUES（多行是 game_config 等种子数据的写法；此前只取第一组、
+        // 且会把跨组的逗号当成列分隔，导致后面几组种子丢失、末列串进下一组——已修）。
         int p = stmt.IndexOf('(');
         string head = stmt.Substring(0, p);
         string name = head.Substring(head.IndexOf("INTO", StringComparison.OrdinalIgnoreCase) + 4).Trim();
@@ -275,19 +277,41 @@ public sealed class DbStore
 
         int vp = stmt.IndexOf("VALUES", StringComparison.OrdinalIgnoreCase);
         string valsPart = stmt.Substring(vp + 6).Trim();
-        vp = valsPart.IndexOf('(');
-        string body = valsPart.Substring(vp + 1, valsPart.LastIndexOf(')') - vp - 1);
-        var vals = SplitTop(body);
-
-        var table = Table(name);
-        var row = new DbRow();
-        for (int i = 0; i < cols.Count && i < vals.Count; i++)
+        foreach (var tuple in SplitTuples(valsPart))
         {
-            var c = table.Col(cols[i]);
-            if (c == null) continue;
-            row[c.name] = DbTable.Coerce(c, Unquote(vals[i].Trim()));
+            var vals = SplitTop(tuple);
+            var table = Table(name);
+            var row = new DbRow();
+            for (int i = 0; i < cols.Count && i < vals.Count; i++)
+            {
+                var c = table.Col(cols[i]);
+                if (c == null) continue;
+                row[c.name] = DbTable.Coerce(c, Unquote(vals[i].Trim()));
+            }
+            table.Insert(row);
         }
-        table.Insert(row);
+    }
+
+    // 把 "a,b),(c,d),..." 按顶层括号切成每组的内层文本（不含最外层括号）
+    static List<string> SplitTuples(string valsPart)
+    {
+        var outp = new List<string>();
+        int depth = 0, start = -1;
+        bool inStr = false;
+        for (int i = 0; i < valsPart.Length; i++)
+        {
+            char ch = valsPart[i];
+            if (inStr) { if (ch == '\'') inStr = false; continue; }
+            if (ch == '\'') { inStr = true; continue; }
+            if (ch == '(') { if (depth == 0) start = i + 1; depth++; continue; }
+            if (ch == ')')
+            {
+                depth--;
+                if (depth == 0 && start >= 0) { outp.Add(valsPart.Substring(start, i - start)); start = -1; }
+                if (depth < 0) depth = 0;
+            }
+        }
+        return outp;
     }
 
     static string Unquote(string v)

@@ -29,7 +29,10 @@ public sealed class CommunityResponse {
     public string[] titles = new string[5];
     public List<CommunityMember> guild = new List<CommunityMember>(), family = new List<CommunityMember>();
     public List<int> used = new List<int>();
-    public double expRate = 1, dropRate = 1;
+    public double expRate = 1, dropRate = 1, mesoRate = 1;
+    // 家族 Buff 的掉落倍率（源端 getBossDropRate = getDropRate()/world × world.bossDropRate，
+    // boss 走这条不含世界 drop_rate 的分量）
+    public double familyDropRate = 1;
     public long buffExpires;
 }
 public sealed class NativeCommunityService {
@@ -282,7 +285,13 @@ public sealed class NativeCommunityService {
     public Func<int, int, bool> CanFamilyTravel;
     public CommunityResponse Rates(int cid) {
         var result = new CommunityResponse(); var row = db.Table("family_buff").Find(x => DbStore.Int(x, "charid") == cid && DbStore.Long(x, "expires") > Now);
-        if (row != null) { result.expRate = DbStore.Dbl(row, "expRate", 1); result.dropRate = DbStore.Dbl(row, "dropRate", 1); result.buffExpires = DbStore.Long(row, "expires"); } return result;
+        if (row != null) { result.expRate = DbStore.Dbl(row, "expRate", 1); result.dropRate = DbStore.Dbl(row, "dropRate", 1); result.familyDropRate = result.dropRate; result.buffExpires = DbStore.Long(row, "expires"); }
+        // ≡ Character.setWorldRates：世界倍率折进角色倍率（源端登录/world 改倍率时乘入）。
+        // 家族 Buff 再乘在上面；meso 没有家族 Buff 通道，只有世界倍率。
+        result.expRate *= GameConfigDao.GetFloat(db, "exp_rate", 1);
+        result.dropRate *= GameConfigDao.GetFloat(db, "drop_rate", 1);
+        result.mesoRate = GameConfigDao.GetFloat(db, "meso_rate", 1);
+        return result;
     }
     CommunityResponse Read(CharRecord c) {
         var result = Rates((int)c.id); result.meso = c.meso; result.map = c.map; result.guildId = c.guildid;

@@ -232,6 +232,27 @@ public static class FieldCatalog
 
         FieldPortalArt.Ensure();
 
+        // 掉落表以 DB（drop_data）为准；这里把 JSON 快照交给 DropStore 当「首启种子 + 无库兜底」。
+        DropStore.JsonDrops = () =>
+        {
+            var copy = new Dictionary<int, List<DropEntry>>();
+            foreach (var kv in Drops)
+            {
+                var list = new List<DropEntry>();
+                foreach (var e in kv.Value)
+                    list.Add(new DropEntry { item = e.item, min = e.min, max = e.max, quest = e.quest, chance = e.chance });
+                copy[kv.Key] = list;
+            }
+            return copy;
+        };
+        DropStore.JsonGlobalDrops = () =>
+        {
+            var list = new List<DropEntry>();
+            foreach (var e in GlobalDrops)
+                list.Add(new DropEntry { item = e.item, min = e.min, max = e.max, quest = e.quest, chance = e.chance });
+            return list;
+        };
+
         Ready = Maps.Count > 0;
         Debug.Log("[Field] 原版地图 " + Maps.Count + " 张，怪物 " + Mobs.Count + " 种，掉落表 " +
                   Drops.Count + " 份，物品 " + Items.Count + " 件");

@@ -160,13 +160,34 @@
 
 Henesys/JQ/教程等依赖原录制和导航，不能用任意随机移动、瞬移或通用AI替换后称已按源迁移。主线程适配允许将原阻塞等待改为可取消时序，但必须保留先后与取消语义。
 
-### E03 地面物品服务【明确缺口】
+### E03 地面物品服务【后端已迁移 + 前端已接桥；效果系统仍留边界】
 
-`BotLogic.CheckForItemsOnFloor`仍返回空列表。`DropCommands`原掉落、投掷、所有者、永久所有者、数量、到期、宽限回收及按对象拾取未完整迁移。当前 `GroundItem`并非这套完整服务，仍含既有本地效果/图标回退，不能未经核实直接当作原版假人掉落实现。
+已迁移（对齐源端，逐条核对调用链）：
 
-影响：Dice赌注、教程武器归还、GameZone饮料、DropGame、Gacha轮盘回收均不能形成业务闭环。
+- `Server/Field/MapItem.cs` ≡ `org.gms.server.maps.MapItem`：objectId/item/meso/dropperId/ownerCharacterId/partyOwnerId/questId/dropType/pickedUp/playerDrop/partyDrop/permanentOwner/dropTime，以及 `getItemId()`（金币返回金额）、`getClientsideOwnerId()`、`hasClientsideOwnership()`、`isFFADrop()`、`hasExpiredOwnershipTime()`（15 秒）、`canBePickedBy()`（含源端「同队收养」写回 partyOwnerId）。
+- `Server/Field/MapItemService.cs` ≡ `MapleMap` 掉落面：`spawnItemDrop`（ffaDrop→dropType 2）、`spawnItemDropNoExpire`（不进 registeredDrops，不会被 item_limit 逐出）、`spawnMesoDrop`、`disappearingItemDrop`/`disappearingMesoDrop`（`FieldLimit.DROP_LIMIT=0x400000` 地图只播消失动画）、`makeDisappearItemFromMap`、`pickItemDrop`（**只广播移除 + 标记已拾取，不入背包**）、`getMapObjectsInRange`（参数是**距离平方**）、`getMapObjectsInRect`、`instantiateItemDrop`（`item_limit_on_map` 默认 200，逐出最早注册的一个）。落点算法完整移植 `calcPointBelow`/`bsearchDropPos`/`calcDropPos`/`calcPlayerDropPos`/`calcItemDropPos`/`generateMapDropRangeCache`（FM 入口 910000000 的玩家掉落走 -6 采样）。`Clock` 毫秒时钟与 `BotScheduler.Clock` 同源注入。
+- `Server/Field/MapItemPickup.cs` ≡ `Character.pickupItem(ob, petIndex)`：400ms 拾取延迟、`canBePickedBy`、锁定/已拾取检查、背包空间（`checkSpace` 用克隆背包试装）、`isSelfLootableOnly`（Happyville 树 209000001..209000015、GPQ 泉 990000500..990000502）、`needQuestItem`、金币队伍均分（`getPartyMembersOnSameMap` + `isLoggedInWorld` 过滤）、243 脚本道具、NX 卡（4031865=100 / 4031866=250，按数量相乘）、`applyConsumeOnPickup`、`addFromDrop`、`pickItemDrop`。
+- `Server/Bot/BotActorLooter.cs`：`IMapItemLooter` 的 BotActor 实现，入包复用 `TradeItemRules.Receive`（= `InventoryManipulator.addFromDrop` 的堆叠/占格语义：only 单件、可充能单格、堆叠填满再开新格、装备数量必须为 1），落库复用 `BotTradeService.Persist`（与交易结算同一条路径），成功后 `tradeRevision++` 并发 `Committed` 供前端重灌镜像。
+- `Server/Bot/DropCommands.cs` ≡ `soloMapling/ArtificialPlayer/BotCommandsPack/DropCommands.java` 全命令面：`botDropMeso/Equip/Item/ItemQty/ItemWithExpiry`、`botThrowMeso/Equip/Item/ItemNoExpire/ItemNoExpireOwnerOnly/ItemQty/EquipsInARow`、`botThrowToOwner*`、`botLoot/botLootLocation/botLootOwnerItems/botLootTargetCharactersItems`、`lootItemListOnFloor`、`botLootSelectedItems`。
+- `Server/Bot/BotLogic.cs` 补齐源端地面物品与押注查询：`checkForItemsOnFloor`（默认 5000 / 显式 rangeSq）、`checkForItemOnFloor`、`readItemOnFloor`、`filterDroppedItems`、`filterPlayersDroppedItems`、`checkIfItemsOnFloorStill`、`cleanUpBetsString`、`announceBetString`、`readPlayersBetsStamps`（4002000..4002003、4031558..4031561）。原空占位 `CheckForItemsOnFloor => new List<int>()` 已删除。
+- 前端 `Field/GroundItemBridge.cs`：`MapItemService.Spawned/Removed` → `GroundItem` 生成/销毁（图标沿用原 IMG，不新增自绘占位）；拾取请求转 `MapItemPickup.PickupItem`。`GroundItem` 增加 `bound` 绑定，权威掉落的生命周期由后端管（NoExpire 不受本地 3 分钟过期影响），本地旧玩法掉落（BattleRewards/FieldDirector）保持原路径不变。
 
-关闭条件：存在权威地图物品ID与实际库存来源，保留装备完整属性、所有权/拾取/过期规则，真实拾取和回收无复制/丢失；前端用原IMG显示，不新增自绘占位。
+源端行为确认（不自行加强，照原样保留）：
+
+- **`setPermanentOwner(true)` 在 `canBePickedBy` 里实际不产生额外限制**：源端第一行 `if (character_ownerid <= 0 || isFFADrop()) return true;`，而 `isFFADrop()` 已含 `hasExpiredOwnershipTime()`，归属窗口一过期即被短路；末行 `return !permanentOwner && hasExpiredOwnershipTime();` 在该结构下不可达。字段与三个 `setPermanentOwner` 调用点照搬保留，不改成"永久只给归属者"。见逆向记录。
+- 归属/延迟被拒时源端只 `enableActions()` 复位，**不发** `showItemUnavailable`；只有「已拾取竞争」「selfLootableOnly 地图他人掉落」「needQuestItem 不满足」才发。
+- `lootItemListOnFloor` 源端每件 `Thread.sleep(100)`。主线程不能阻塞，改成 `BotTasks` 可取消时序，保留「按列表顺序、每件间隔 100ms、可取消」语义。
+
+仍缺 / 边界（不属掉落服务本身，但走拾取分支时会碰到）：
+
+- `applyConsumeOnPickup` 的**效果系统**（`StatEffect.applyTo`、队伍共享道具、全体治疗）未移植——本文件只做分支路由，效果数值不自行发明，经 `BotLootHooks.ApplyConsumeOnPickup` 委托给上层。
+- 243xxx **脚本道具** `runOnPickup`（`ItemScriptManager`）未移植，经 `BotLootHooks.TryRunItemScript` 委托；不做会退化成直接入包。
+- `needQuestItem` 只实现了 questid 0/-1 放行，其余走 `BotLootHooks.NeedQuestItem` 委托（任务系统侧）。
+- NX 卡入账（`CashShop.gainCash(NX_CREDIT)`）只留 `BotLootHooks.GainNxCredit` 委托，未接 `NativeCashService`。
+- `updateAriantScore`（ARPQ_SPIRIT_JEWEL）留空委托，Ariant PQ 不在当前客户端范围。
+- 装备掉落图标仍走 `GroundItem.Fallback()` 中性方块（Character.wz 装备 icon 未导出），数量与物品 ID 是真实值；这是既有显示缺口，不是本次引入。
+- `getExtraSlotMaxFromPlayer`（技能/装备加的最大堆叠）只实现了 `TradeItemRules.SlotMax` 里已有的飞侠/枪手星弹技能加成，其余未核实的加成未补。
+- 多频道/多世界分桶：`MapItemService` 按 `mapId` 分桶（与 `MapService`/`BotRegistry` 现状一致），当前单频道可用；真要多频道需按 (world, channel, mapId) 分桶。
 
 ### E04 反应堆、奖池、活动和支撑服务【未完成或待复核】
 
@@ -211,7 +232,7 @@ Henesys/JQ/教程等依赖原录制和导航，不能用任意随机移动、瞬
 
 | 顺序 | 工作包 | 先决条件 | 能关闭该工作包的证据 |
 | --- | --- | --- | --- |
-| 1 | 权威地面物品、角色属性/受击、移动锁 | 逐条读源服务与调用链 | 实体/库存/生命值真实变化，取消与过期无悬挂 |
+| 1 | 权威地面物品（**已完成，见 E03**）、角色属性/受击（C02）、移动锁（E02） | 逐条读源服务与调用链 | 实体/库存/生命值真实变化，取消与过期无悬挂 |
 | 2 | 交易/信使/队伍原UI与地图交互 | 完整原布局依据、现有协议 | 玩家在游戏内完成买卖/接受邀请/交付/退出 |
 | 3 | 姓名/气泡/椅子/坐骑/技能显示 | 原IMG节点与EXE锚点/时序 | 原资源真实显示，无自绘回退、无残留 |
 | 4 | 九类Generic具体业务 | 对应掉落/导航/赌场/队伍服务 | 每类完整FSM接生产入口，正常/失败/超时/退出可复现 |
@@ -225,9 +246,10 @@ Henesys/JQ/教程等依赖原录制和导航，不能用任意随机移动、瞬
 
 | 检查 | 结果 | 能证明什么 / 不能证明什么 |
 | --- | --- | --- |
-| tools/server-check | 478通过，0失败 | 已编码路径回归；不是全部源业务或实机通过 |
+| tools/server-check | 509通过，0失败 | 已编码路径回归（含 E03 地面掉落 31 项）；不是全部源业务或实机通过 |
 | tools/unity-compile-check | 0警告、0错误 | 全脚本编译；不是运行行为全部正确 |
 | Unity BotPresentationChecks | PASS | 原纸娃娃/移动/朝向/表情/挥击/现金武器/频道清理，技能/卷轴effect及过期，原怪物HP扣除与贡献、跨频道旧攻击拦截 |
+| server-check 地面掉落回归 | 31项全过 | 落点/归属窗口/队伍收养/400ms延迟/拾取入库/满包回退/botLoot不入包/permanentOwner原端短路语义/限时掉落宽限/item_limit逐出/一字排开；不是实机显示与听音 |
 | 原卷轴音频 | 已定向导出、原负载逐字节一致 | 不等于播放设备实际有声或首次加载不丢声 |
 | NPC脚本harness | 仍有48宿主运行失败 | 不能声称全部NPC/任务/假人脚本运行通过 |
 | Unity Play完整业务 | 未完成 | 尚无系统级正常/异常路径验收 |
@@ -250,7 +272,7 @@ APK构建与安装并非本文已执行动作；后续需单独按项目构建�
 
 ## 10. 完整交付验收矩阵
 
-以下全部未勾选；已有局部回归不自动代替系统验收：
+以下全部未勾选；已有局部回归不自动代替系统验收。E03 的权威地面物品服务已落地（含拾取入库与前端桥接），因此第 5/9 条涉及掉落的业务已解除前置阻塞，但九类 Generic 具体业务本身仍未做，不能据此勾选。
 
 - [ ] 17种枚举均有源端对应的实际业务，无Generic站桩替代。
 - [ ] 每类正常、拒绝/失败、超时、重复请求、停止/离图/退服清理可复现。

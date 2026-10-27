@@ -1,0 +1,40 @@
+// ———— 移动端适配 ————
+// 后台管理页通常是在手机浏览器里打开的（游戏进程内嵌 HTTP 服务，同机或局域网访问）。
+// 框架层（Arco Pro default-layout）已把侧栏切成抽屉 + 汉堡按钮（useResponsive，<992px），
+// 这里兜底内容层：弹窗不超屏、表格横向滑动、边距收紧。断点与 useResponsive 保持一致。
+@mobile-width: 992px;
+
+@media (max-width: @mobile-width) {
+  // 弹窗：drop/gachapon/inventory 等页的 modal 有 600~1000px 固定宽，窄屏压到 94vw
+  .arco-modal {
+    max-width: 94vw !important;
+  }
+  // 抽屉（任务详情/右侧编辑器面板等）同样不超屏
+  .arco-drawer {
+    max-width: 94vw;
+  }
+
+  // 表格：大多数页面没设 :scroll，窄屏会把列挤成竖排文字。
+  // 容器强制横滑、内表按内容取自然宽度（列宽 :width 也生效），手指左右滑浏览。
+  .arco-table-container {
+    overflow-x: auto;
+  }
+  .arco-table-container .arco-table-element {
+    min-width: max-content;
+  }
+
+  // 卡片/搜索栏内边距收紧，多给内容留宽度
+  .container {
+    padding: 0 10px 12px 10px;
+  }
+  .arco-card-body {
+    padding: 12px;
+  }
+
+  // 搜索条件里的输入框别被压成一条缝：给个可用最小宽，放不下就换行
+  .arco-card-body .arco-input-wrapper,
+  .arco-card-body .arco-select-view-single,
+  .arco-card-body .arco-input-number {
+    min-width: 120px;
+  }
+}

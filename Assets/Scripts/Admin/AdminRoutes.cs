@@ -1,15 +1,27 @@
 // 后台管理接口表：URL 与源端 Spring Boot 控制器一一对应，前端一行代码都不用改。
 //
-// 已接入（数据落在当前单机服务端的表里）：
+// 已接入（数据落在当前单机服务端的表里 / 本地 WZ）：
 //   /auth/v1/*          登录 / 登出 / 续期
 //   /account/v1/*       账号列表、资料、封停、重置在线、角色所在图
 //   /character/v1/*     角色列表（含在线）、改名、传送到射手村
 //   /inventory/v1/*     背包类型、角色选择、道具增删改
 //   /config/v1/*        game_config 服务端参数
 //   /server/v1/*        在线状态、版本、游戏内广播
+//   /drop/v1/*          掉落（drop_data / drop_data_global，游戏内即时生效）
+//   /shop/v1/*          NPC 商店（shops / shopitems）
+//   /gachapon/v1/*      扭蛋奖池与奖励
+//   /autoban/v1/*       自动封禁配置
+//   /command/v1/*       GM 命令库
+//   /give/v1/*          发放资源（道具/装备/金币/经验）
+//   /weather/v1/*       天气（与游戏共用 NativeWeatherService 实例）
+//   /bot-control/v1/*   假人控制（solo_mapling_* 配置；market/start 未实现）
+//   /cashShop/v1/*      商城（Commodity.img + modified_cash_item 覆盖层）※Unity 注册
+//   /file/v1/*          脚本文件树在线读写（Data/scripts）※Unity 注册
+//   /setItem/v1/*       物品/装备/怪物/技能图鉴 + 图标 PNG + 套装配置 ※Unity 注册
+//   /mob/v1/* /skill/v1/* /quest/v1/*                        ※Unity 注册
 //
-// 未接入的模块（掉落/商店/图鉴/任务/地图检测/天气/BOT/扭蛋…）由 AdminApi 的兜底返回空数据，
-// 页面能打开但不显示内容，清单见 docs/admin-console.md。
+// ※Unity 注册的模块依赖 WZ 直读，由 AdminHost 调 RegisterUnityOnly 注册；
+//   离线自检 tools/admin-check 只编 DB/JSON 契约部分。
 using System;
 using System.Collections.Generic;
 
@@ -23,6 +35,28 @@ public static class AdminRoutes
         RegisterInventory(api);
         RegisterConfig(api);
         RegisterServer(api);
+        AdminDrops.Register(api);          // 掉落（drop_data / drop_data_global）
+        AdminShop.Register(api);           // NPC 商店（shops / shopitems）
+        AdminGachapon.Register(api);       // 扭蛋（gachapon_reward_pool / gachapon_reward）
+        AdminAutoban.Register(api);        // 自动封禁配置（autoban_config）
+        AdminCommands.Register(api);       // GM 命令库（command_info）
+        AdminGive.Register(api);           // 发放资源（give/v1/resource）
+        AdminWeather.Register(api);        // 天气（NativeWeatherService 共享实例，纯 C#）
+        AdminBots.Register(api);           // 假人控制（solo_mapling_* 配置）
+    }
+
+    // 依赖 WZ 直读的模块（图鉴/任务浏览/商城/文件树/套装）。只在游戏进程里注册
+    // （AdminHost 调用），离线自检 tools/admin-check 不编它们——WZ 链（ImgFile/WzAssets）
+    // 会拖进整条 Unity 依赖，自检只覆盖 DB/JSON 契约。
+    public static void RegisterUnityOnly(AdminApi api)
+    {
+#if UNITY_EDITOR || UNITY_5_3_OR_NEWER
+        AdminCashShop.Register(api);       // 商城（Commodity.img + modified_cash_item）
+        AdminFileTree.Register(api);       // 脚本文件树（Data/scripts 在线读写）
+        AdminCatalog.Register(api);        // 图鉴（item/equipment/mob/skill）+ 图标 PNG + 怪物掉落
+        AdminQuestBrowse.Register(api);    // 任务浏览（townTree / list / detail）
+        AdminSetItem.Register(api);        // 套装（内置 catalog + game_config 覆盖层）
+#endif
     }
 
     // —————————— 认证 ——————————

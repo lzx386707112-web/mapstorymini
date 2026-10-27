@@ -20,7 +20,9 @@ public static class AdminLive
 
     // —————————— 传送 ——————————
     // 返回 null = 不需要实时处理（不是当前角色）；否则返回给前端的提示文案。
-    public static string WarpToHenesys(long characterId)
+    public static string WarpToHenesys(long characterId) => WarpTo(characterId, AdminBackend.HenesysMap);
+
+    public static string WarpTo(long characterId, long mapId)
     {
         if (!IsCurrentCharacter(characterId)) return null;
 
@@ -29,12 +31,12 @@ public static class AdminLive
             return "已写入数据库；当前不在原版地图场景，重新进入地图后生效";
 
         // 和传送门同一条路径（黑场过渡），不走瞬间切图
-        loop.field.WarpTo(AdminBackend.HenesysMap);
+        loop.field.WarpTo((int)mapId);
         // WarpTo 是异步的，先改本地记录，避免这期间存档把地图写回去
-        Profile.LastMapId = AdminBackend.HenesysMap;
+        Profile.LastMapId = (int)mapId;
         if (GameSession.Character != null && GameSession.Character.record != null)
-            GameSession.Character.record.map = AdminBackend.HenesysMap;
-        return "当前角色已传送到射手村";
+            GameSession.Character.record.map = (int)mapId;
+        return "当前角色已传送到地图 " + mapId;
     }
 
     // —————————— 改名 ——————————
