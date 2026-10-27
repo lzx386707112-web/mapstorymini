@@ -572,6 +572,7 @@ public static class WzCharacter
 
     static Sprite Compose(string uri, Dictionary<string, object> recipe, string pose, int frame)
     {
+        using var perf = Server.Bot.BotPerf.Timer("WzCharacter.Compose");
         var parts = Placements(recipe, ref pose, ref frame);
         int left = 0, top = 0, right = 1, bottom = 1;
         foreach (var part in parts)
@@ -599,5 +600,23 @@ public static class WzCharacter
         var texture = WzAssets.Upload(pixels, width, height, uri);
         var sprite = UnityEngine.Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(-left / (float)width, 1f + top / (float)height), Art.PPU, 0, SpriteMeshType.FullRect);
         sprite.name = uri; cache.Add(uri, sprite); return sprite;
+    }
+
+    // —— 预合成 ——
+    // 假人首次播某个动作时，每一帧都要走 Compose（CPU 逐像素混合 + 纹理上传，3~10ms）。
+    // 外观收敛到模板池之后帧集合是固定的，就能借登录界面的空闲帧提前铺好，进图只剩查表。
+    public static int PrecomposeFrameCount(string key, string anim)
+    {
+        var clip = Clip(key, anim);
+        return clip == null ? 0 : clip.frames.Length;
+    }
+
+    // 合成该动作的第 frame 帧；越界/动作不存在返回 false。
+    public static bool PrecomposeFrame(string key, string anim, int frame)
+    {
+        var clip = Clip(key, anim);
+        if (clip == null || frame < 0 || frame >= clip.frames.Length) return false;
+        WzAssets.Frame(clip.frames[frame]);
+        return true;
     }
 }

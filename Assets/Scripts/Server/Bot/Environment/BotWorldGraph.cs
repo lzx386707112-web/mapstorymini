@@ -11,6 +11,12 @@ namespace Server.Bot.Environment
         public BotWorldGraph(string mapIndex)
         {
             var root = MiniJsonDb.Parse(mapIndex) as Dictionary<string, object>;
+            Build(root);
+        }
+        // 复用 BotWarmup 已解析的 Maps.json 根节点（和导航加载器同一份，不重复解析）。
+        public BotWorldGraph(Dictionary<string, object> root) => Build(root);
+        void Build(Dictionary<string, object> root)
+        {
             var neighbors = root?["neighbors"] as Dictionary<string, object> ?? throw new ArgumentException("Original world graph is missing");
             foreach (var pair in neighbors)
             {
@@ -19,7 +25,7 @@ namespace Server.Bot.Environment
                 edges[int.Parse(pair.Key)] = array;
             }
         }
-        public static BotWorldGraph Load() => new BotWorldGraph(PlatformRes.LoadText("Bot/Maps"));
+        public static BotWorldGraph Load() => new BotWorldGraph(BotWarmup.Root("Bot/Maps"));
         public int MapCount => edges.Count;
         public IReadOnlyList<int> PortalNeighbors(int id) => edges.TryGetValue(id, out var neighbors) ? neighbors : Array.Empty<int>();
         public static int TaxiNpc(int from, int to)

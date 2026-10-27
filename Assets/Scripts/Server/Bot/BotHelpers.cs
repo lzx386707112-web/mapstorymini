@@ -22,13 +22,17 @@ namespace Server.Bot
         public static bool IsBot(BotActor c) => c != null && IsBot(c.id);
         public static bool IsBot(int id) => id > 20000 || id == 999;
 
-        public static string GetRandomChineseBotName()
+        public static string GetRandomChineseBotName() => GetRandomChineseBotName(rng);
+
+        // 带种子的版本：假人档案要「同一份档案永远同一个名字」，
+        // 所以生成档案时用固定种子走这条，运行期随机仍走上面那个。
+        public static string GetRandomChineseBotName(Random random)
         {
-            string p = ChineseNamePrefixes[rng.Next(ChineseNamePrefixes.Length)];
-            string s = ChineseNameSuffixes[rng.Next(ChineseNameSuffixes.Length)];
-            if (rng.Next(100) < 35)
+            string p = ChineseNamePrefixes[random.Next(ChineseNamePrefixes.Length)];
+            string s = ChineseNameSuffixes[random.Next(ChineseNameSuffixes.Length)];
+            if (random.Next(100) < 35)
             {
-                string s2 = ChineseNameSuffixes[rng.Next(ChineseNameSuffixes.Length)];
+                string s2 = ChineseNameSuffixes[random.Next(ChineseNameSuffixes.Length)];
                 return p + s + s2;
             }
             return p + s;

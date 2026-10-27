@@ -28,11 +28,22 @@ HTTP 服务，同时供出前端静态资源和 REST 接口；游戏内从侧边
    → 「后台系统」。
 2. 首次启动会自动创建一个后台管理员：**admin / admin**（只在本机、只在库里没有任何
    `webadmin` 账号时创建；密码可用账号页改）。控制台会打印 `[Admin] 已创建后台管理员账号`。
-3. 浏览器地址：`http://127.0.0.1:8686/`（8686 被占用时自动顺延到 8687…8695）。
-   侧边栏入口现在默认用**应用内 WebView** 打开（`AdminWebView`，Android 全屏 Dialog，
+3. 首次启动会自动创建一个后台管理员：**admin / admin**（只在本机、只在 `game_config`
+   里还没有 `webadmin_seed` 标记时做一次）。如果库里早就有同名游戏账号而密码不是 `admin`，
+   这一刻会被重置成 `admin`（控制台会打印 `[Admin] 内置账号 admin 已存在，密码重置为 admin`）；
+   之后在账号页改的密码不会再被覆盖。注意后台账号和游戏账号是同一行数据。
+4. 浏览器地址：`http://127.0.0.1:8686/`（8686 被占用时自动顺延到 8687…8695）。
+   侧边栏入口现在默认用**应用内 WebView** 打开（`AdminWebView`，Android Dialog，
    系统返回键关闭；游戏不切后台，主线程不会停摆）。桌面/编辑器仍走系统浏览器；
    外部浏览器访问 `http://<手机IP>:8686/` 依然可用。
-4. **明文 HTTP 放行**：Android 9+ 默认禁 cleartext，系统 WebView 会直接报
+   - Dialog 用 `Theme_Black_NoTitleBar` + show() 之后 `setSystemUiVisibility(0x1706)`
+     隐藏状态栏/导航栏（`_Fullscreen` 主题会让系统忽略 `SOFT_INPUT_ADJUST_RESIZE`，
+     横屏弹键盘会盖住表单，所以不用它）。
+   - WebView 必须 `setLoadWithOverviewMode(false)`：OVERVIEW 会把整页（含高度）
+     缩到一屏，登录页这种高页面会被缩到 0.65，字和提示条看着「被挤压」。
+   - 不要给 WebView 设 `WebViewClient`：它是抽象类，`AndroidJavaProxy` 只能代理接口，
+     设了会抛 `is not an interface` 把整个打开流程拱去系统浏览器。
+5. **明文 HTTP 放行**：Android 9+ 默认禁 cleartext，系统 WebView 会直接报
    `net::ERR_CLEARTEXT_NOT_PERMITTED`（表现为一片黑底 + 错误页）。构建钩子
    `Assets/Editor/AndroidNativeDataBuild.cs`（`IPostGenerateGradleAndroidProject`）
    会往生成的 manifest 注入 `android:networkSecurityConfig`，并写一份

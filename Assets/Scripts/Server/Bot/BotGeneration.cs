@@ -55,11 +55,16 @@ namespace Server.Bot
             if (botId < 0) return -1;
 
             BotCharacter bot = LoadBotTemplate();
-            SetBotStats(bot, botId);
+            // 档案优先：联机里每个账号唯一，所以同一个人永远是同一张脸、同一个名字。
+            // 领不到（档案被占满或关掉了）才回退到现随机，行为与改造前一致。
+            BotDirectory.Ensure(Db);
+            var profile = BotDirectory.Take(mapId, rng);
+            bot.profileId = profile?.id ?? 0;
+            SetBotStats(bot, botId, profile);
             if (BotConfig.NormalEquipsEnabled(Db)) { bot.equips.Clear(); bot.equipment.Clear(); }
             AddBotToServer(bot);
             PlaceBotOnMap(bot, x, y, mapId);
-            SetBotVariables(bot);                       // 装饰钩子 阶段E
+            SetBotVariables(bot, profile);              // 装饰钩子 阶段E
             if (playArrival) PlaySpawnChoreography(bot);
             return botId;
         }
@@ -121,11 +126,12 @@ namespace Server.Bot
             return bot;
         }
 
-        static void SetBotStats(BotCharacter bot, int botId)
+        static void SetBotStats(BotCharacter bot, int botId, BotProfile profile)
         {
-            bot.name = BotConfig.RandomChineseNameEnabled(Db)
-                ? BotHelpers.GetRandomChineseBotName()
-                : GetRandomCharacterIGN();
+            // 有档案就用档案里的名字（固定不变）；否则沿用源端的现随机。
+            bot.name = profile != null && !string.IsNullOrEmpty(profile.name)
+                ? profile.name
+                : (BotConfig.RandomChineseNameEnabled(Db) ? BotHelpers.GetRandomChineseBotName() : GetRandomCharacterIGN());
             bot.id = botId;
             bot.fame = botId;
         }
@@ -143,8 +149,19 @@ namespace Server.Bot
         static void AddBotToServer(BotCharacter bot) => BotRegistry.Add(bot);
 
         // 外观链已迁移；源端recalcLocalStats/套装/恢复HPMP仍需接完整角色属性服务。
-        static void SetBotVariables(BotCharacter bot)
+        static void SetBotVariables(BotCharacter bot, BotProfile profile = null)
         {
+            // 档案指定了外观模板就照模板来：同一个假人每次上线都是同一套衣服、同一张脸
+            // （联机客户端能共享纹理，靠的就是「外观来自数据库、不来自运行时随机」）。
+            BotAppearanceTemplates.Ensure(Db);
+            var all = BotAppearanceTemplates.All;
+            if (profile != null && all.Count > 0)
+            {
+                all[((profile.template % all.Count) + all.Count) % all.Count].ApplyTo(bot);
+                return;
+            }
+            var template = BotAppearanceTemplates.Take(rng);
+            if (template != null) { template.ApplyTo(bot); return; }
             decorator ??= new Decorator.BotDecorate(BotResources.Load(), BotItemCatalog.Shared, BotTypeManager.Output);
             decorator.ApplyAppearance(bot, Db);
         }
@@ -152,6 +169,8 @@ namespace Server.Bot
         public static void RemoveBotFromServer(BotCharacter bot)
         {
             if (bot == null) return;
+            // 档案归还：联机的「下线」——下次这个账号可以被重新分配，但身份不变。
+            if (bot.profileId != 0) { BotDirectory.Release(bot.profileId); bot.profileId = 0; }
             BotStore.RemoveActiveBot(bot.id);
             BotWander.Stop(bot);
             BotRegistry.Remove(bot.id);

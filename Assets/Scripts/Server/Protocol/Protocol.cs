@@ -20,6 +20,8 @@ public sealed class LoginResponse
     public int accountId;
     public string accountName;
     public bool justRegistered;
+    /// <summary>封停到期时间（源端 getTempBan 把时间一起发下来）；空表示永久封停。</summary>
+    public string banUntil;
 }
 
 public sealed class ServerListRequest { public int accountId; }
@@ -159,7 +161,8 @@ public sealed class InProcessTransport : ITransport
     public LoginResponse Login(LoginRequest r)
     {
         var res = LoginService.Login(server.Db, r.name, r.password);
-        return new LoginResponse { code = res.code, accountId = res.accountId, accountName = res.accountName, justRegistered = res.justRegistered };
+        return new LoginResponse { code = res.code, accountId = res.accountId, accountName = res.accountName,
+            justRegistered = res.justRegistered, banUntil = res.banUntil };
     }
     public ServerListResponse ServerList(ServerListRequest r) => new ServerListResponse { worlds = WorldService.Worlds(server.Db) };
     public CharListResponse CharList(CharListRequest r) => new CharListResponse

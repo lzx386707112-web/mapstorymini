@@ -45,6 +45,16 @@ public static class Program
         Check(login.code == LoginResultCode.Ok && login.justRegistered, "首次登录自动注册");
         var again = LoginService.Login(db, "tester", "wrongpw");
         Check(again.code == LoginResultCode.WrongPassword, "错误密码拒绝");
+        // 编号必须与源端 Client.login / LoginPasswordHandler 发出的 LOGIN_STATUS reason 对齐，
+        // 客户端就是按这个字节挑 UI/Login.img/Notice/text/<n> 提示图的（密码错误 = 4，不是 6）。
+        Check((int)LoginResultCode.Ok == 0, "登录码 Ok=0");
+        Check((int)LoginResultCode.Banned == 2, "登录码 Banned=2（getPermBan/getTempBan）");
+        Check((int)LoginResultCode.Blocked == 3, "登录码 Blocked=3（IP/MAC 封禁）");
+        Check((int)LoginResultCode.WrongPassword == 4, "登录码 WrongPassword=4");
+        Check((int)LoginResultCode.NotRegistered == 5, "登录码 NotRegistered=5");
+        Check((int)LoginResultCode.Error == 6, "登录码 Error=6");
+        Check((int)LoginResultCode.AlreadyLoggedIn == 7, "登录码 AlreadyLoggedIn=7");
+        Check((int)LoginResultCode.Invalid == 14, "登录码 Invalid=14");
         var relogin = LoginService.Login(db, "tester", "pw123456");
         Check(relogin.code == LoginResultCode.Ok && !relogin.justRegistered, "再次登录成功");
         int accId = relogin.accountId;

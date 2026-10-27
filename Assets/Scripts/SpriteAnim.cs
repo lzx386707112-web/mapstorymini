@@ -152,6 +152,11 @@ public class SpriteAnim : MonoBehaviour
         if (sr.sprite.texture.filterMode != mode) sr.sprite.texture.filterMode = mode;
     }
 
+    // 假人专用节流：换帧时要现合成纸娃娃（部件混合 + 贴图上传，单个 1~3ms），
+    // 几十个假人同时换帧就会把一帧撑长。打开后由 BotWorkPump 的帧预算决定这一帧要不要合成，
+    // 预算不够就沿用旧贴图（时间轴照走，动画不会变慢）。
+    public bool throttleWhenBusy;
+
     void Update()
     {
         if (cur == null || sr == null) return;
@@ -179,6 +184,7 @@ public class SpriteAnim : MonoBehaviour
                 }
                 idx = 0;
             }
+            if (throttleWhenBusy && !Server.Bot.BotWorkPump.Has(0.4f)) continue;   // 本帧预算用完：先不合成
             Apply(idx);
         }
     }

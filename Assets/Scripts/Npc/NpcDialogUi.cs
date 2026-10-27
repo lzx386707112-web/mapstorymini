@@ -21,9 +21,11 @@ public static class NpcDialogUi
         if (session != null && session.Dialog.Visible) DrawDialog(session);
     }
 
-    // NPC 头顶名字牌（原客户端默认开启「显示 NPC 名字」）：黄字黑描边，位置贴 NPC 站姿
-    // 首帧的顶端（脚点往上是 origin.y 像素），任务图标（!/?）画在名字再上方。
-    // 不能用固定 82px：大号 NPC（图高 100+）的名字会被压在头上，小 NPC 又会飘在空中。
+    // NPC 名字牌（原客户端默认开启「显示 NPC 名字」）：黄字黑描边。
+    // 锚点固定为 NPC 的脚点（life/y），与 NPC 图高无关——所有 NPC 名字都在脚下同一条线上。
+    // 以前按 stand 首帧 origin.y 贴头顶，结果巨型雕像/矮 NPC 名字高低全不一样，是错的。
+    // 任务图标（!/?）仍挂在头顶，和名字分开。
+    const float NameGapPx = 3f;     // 脚点往下 3px 起排，名字整体压在脚下不盖住身体
     static GUIStyle nameStyle;
 
     static void DrawNpcNames()
@@ -37,7 +39,7 @@ public static class NpcDialogUi
             {
                 font = UiKit.Font,
                 fontSize = Mathf.Max(12, Mathf.RoundToInt(13f * Screen.height / 768f)),
-                alignment = TextAnchor.LowerCenter,
+                alignment = TextAnchor.UpperCenter,
             };
         }
         for (int i = 0; i < map.npcs.Count; i++)
@@ -47,14 +49,14 @@ public static class NpcDialogUi
             string name = WzNames.Npc(npc.id);
             if (string.IsNullOrEmpty(name) || npc.id <= 0) continue;
             float wx = map.WorldX(npc.x);
-            float wy = map.WorldY(npc.y) + (npc.head + 2f) / Art.PPU;
+            float wy = map.WorldY(npc.y);                                  // 脚点，不做任何高度补偿
             var sp = cam.WorldToScreenPoint(new Vector3(wx, wy, 0f));
             if (sp.z < 0f) continue;
             var gui = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);
-            if (gui.x < -60f || gui.x > UiKit.W + 60f || gui.y < -30f || gui.y > UiKit.H + 30f) continue;
+            if (gui.x < -60f || gui.x > UiKit.W + 60f || gui.y < -30f || gui.y > UiKit.H + 60f) continue;
 
             var size = nameStyle.CalcSize(new GUIContent(name));
-            var rect = new Rect(gui.x - size.x * .5f, gui.y - size.y, size.x, size.y);
+            var rect = new Rect(gui.x - size.x * .5f, gui.y + NameGapPx, size.x, size.y);
             var prev = nameStyle.normal.textColor;
             // 黑描边：四向偏移各画一次
             nameStyle.normal.textColor = new Color(0f, 0f, 0f, 0.9f);

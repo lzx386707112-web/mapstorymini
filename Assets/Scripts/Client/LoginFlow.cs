@@ -42,11 +42,18 @@ public class LoginFlow : MonoBehaviour
     int slotToDelete = -1;
     bool scrollOpen;
     bool noticeOpen, genderOpen;
+    // 登录失败提示框：源端收到 LOGIN_STATUS(reason != 0) 就弹 UI/Login.img/Notice，
+    // 不能只写一行小字（浅色小字压在草地上基本看不见，玩家会以为「点了没反应」）。
+    bool alertOpen;
+    string alertText = "";
+    string alertImage;   // Notice/text/<n>；null 表示这个原因没有原图，退回文字
+    string alertExtra;   // 追加一行（临时封停的解除时间）
     float noticeScroll;
     int newGender;
     bool focusAccount;
     string focusedControl = "";
     TouchScreenKeyboard loginKeyboard;
+    float keyboardOpenedAt;
     bool keyboardPassword;
     bool keyboardCharName;
     GUIStyle loginField, charNameField;
@@ -80,6 +87,7 @@ public class LoginFlow : MonoBehaviour
     bool modal;
     GUIStyle _label, _small, _tiny, _brown, _brownC, _error, _field, _linkShadow, _version, _hint, _row;
     GUIStyle _noticeTitle, _noticeText, _noticeUrl;
+    GUIStyle _alert, _alertSmall;
     GUIStyle _genderValue;
     sealed class UiAnimation
     {
@@ -166,9 +174,21 @@ public class LoginFlow : MonoBehaviour
             if (keyboardCharName) charName = loginKeyboard.text;
             else if (keyboardPassword) password = loginKeyboard.text;
             else account = loginKeyboard.text;
-            if ((keyboardCharName ? stage != LoginStage.CharCreate || createStep != 0 : stage != LoginStage.Login)
-                || loginKeyboard.status != TouchScreenKeyboard.Status.Visible)
+
+            bool leftField = keyboardCharName
+                ? (stage != LoginStage.CharCreate || createStep != 0)
+                : (stage != LoginStage.Login);
+            // 只在「玩家明确收键盘」时销毁它（Done / Canceled）。
+            // 以前按「status != Visible 就关」处理，但 Android 上键盘刚弹出的头几帧
+            // status 还不是 Visible（切前后台也会短暂 LostFocus），等于刚弹出来就被自己收走，
+            // 表现就是「双击输入框不起键盘」。
+            var st = loginKeyboard.status;
+            bool closedByUser = st == TouchScreenKeyboard.Status.Done ||
+                                st == TouchScreenKeyboard.Status.Canceled;
+            if (leftField || closedByUser)
             {
+                Debug.Log("[Login] 收起键盘 leftField=" + leftField + " status=" + st +
+                          " held=" + (Time.unscaledTime - keyboardOpenedAt).ToString("0.0") + "s");
                 loginKeyboard.active = false;
                 loginKeyboard = null;
             }
@@ -195,6 +215,11 @@ public class LoginFlow : MonoBehaviour
         if (genderOpen)
         {
             if (Input.GetKeyDown(KeyCode.Escape)) genderOpen = false;
+            return;
+        }
+        if (alertOpen)
+        {
+            if (Input.GetKeyDown(KeyCode.Escape)) alertOpen = false;
             return;
         }
         if (!Input.GetKeyDown(KeyCode.Escape)) return;
@@ -232,7 +257,8 @@ public class LoginFlow : MonoBehaviour
         UiKit.Begin();
         Metrics();
         EnsureStyles();
-        modal = noticeOpen || genderOpen || slotToDelete >= 0;
+        modal = noticeOpen || genderOpen || alertOpen || slotToDelete >= 0;
+        LogReleaseOnce();
         if (animationStage != stage)
         {
             animationStage = stage;
@@ -261,8 +287,24 @@ public class LoginFlow : MonoBehaviour
         DrawVersion();
         if (slotToDelete >= 0) DrawDeleteDialog();
         if (genderOpen) DrawGenderDialog();
+        if (alertOpen) DrawAlertDialog();
         if (noticeOpen) DrawNoticeDialog();
         DrawLetterbox();
+    }
+
+    // 真机排查用：每次按下/释放记一行，能直接看出光标落在哪、有没有被 modal 挡住。
+    // 一帧最多一条，正常游戏不受影响。
+    static int releaseLogFrame = -1;
+    void LogReleaseOnce()
+    {
+        if (Event.current.type != EventType.Repaint || releaseLogFrame == Time.frameCount) return;
+        releaseLogFrame = Time.frameCount;
+        if (Pointer.Released || Pointer.Pressed)
+            Debug.Log("[Login] " + (Pointer.Released ? "release" : "press") +
+                      " pos=" + Pointer.Pos.ToString("0") +
+                      " press=" + Pointer.PressPosition.ToString("0") +
+                      " modal=" + modal + " virtual=" + Pointer.UsesVirtualCursor +
+                      " dragged=" + Pointer.Dragging);
     }
 
     void DrawLetterbox()
@@ -340,6 +382,9 @@ public class LoginFlow : MonoBehaviour
         _noticeText = Style(11, TextAnchor.UpperLeft, new Color(0.33f, 0.20f, 0.14f));
         _noticeText.wordWrap = true;
         _noticeUrl = Style(12, TextAnchor.UpperLeft, new Color(0.33f, 0.20f, 0.14f));
+        _alert = Style(13, TextAnchor.MiddleCenter, new Color(0.30f, 0.15f, 0.06f));
+        _alert.wordWrap = true;
+        _alertSmall = Style(12, TextAnchor.MiddleLeft, new Color(0.30f, 0.15f, 0.06f));
         _genderValue = Style(12, TextAnchor.MiddleLeft, new Color(0.10f, 0.09f, 0.08f));
 
         _field = new GUIStyle(GUI.skin.textField)
@@ -604,6 +649,9 @@ public class LoginFlow : MonoBehaviour
         return Clicked(rect, enabled, popup);
     }
 
+    // 登录页从头到尾都是「鼠标」口径：虚拟光标指到哪儿就是哪儿，不用手指落点。
+    // 曾经把判定点换成触摸落点（TapPos），结果玩家把光标拖到按钮上再点，
+    // 判定点落在手指那边 → 所有按钮和输入框全部点不动，登录失败也弹不出提示。
     bool Clicked(Rect rect, bool enabled = true, bool popup = false)
     {
         if (!enabled) return false;
@@ -735,7 +783,9 @@ public class LoginFlow : MonoBehaviour
     {
         string control = secure ? "login_password" : "login_account";
         string value = secure ? password : account;
-        // 手机端不创建原生 TextField：仅由相对鼠标双击显式打开键盘。
+        // 手机端不创建原生 TextField：光标点到输入框就起键盘。
+        // 判定走的是鼠标口径（Pointer 光标，见 Clicked），单击即可 —— 源端也是单击聚焦、
+        // 双击只是「选中一个词」；原来要求 Pointer.DoubleClicked，等于非要双击才给键盘。
         if (Application.isMobilePlatform)
             GUI.Label(rect, secure ? new string('*', value.Length) : value, loginField);
         else
@@ -747,16 +797,32 @@ public class LoginFlow : MonoBehaviour
             else account = GUI.TextField(rect, account, 13, loginField);
             GUI.enabled = oldEnabled;
         }
-        if (!Clicked(rect) || !Pointer.DoubleClicked) return;
+        if (!Clicked(rect)) return;
         if (Application.isMobilePlatform)
         {
-            if (loginKeyboard != null) loginKeyboard.active = false;
-            keyboardCharName = false;
-            keyboardPassword = secure;
-            loginKeyboard = TouchScreenKeyboard.Open(value, TouchScreenKeyboardType.Default,
-                false, false, secure, false, "", secure ? 20 : 13);
+            Debug.Log("[Login] 点击输入框 secure=" + secure);
+            OpenKeyboard(value, secure ? 20 : 13, secure, false);
         }
-        else GUI.FocusControl(control);
+        else if (Pointer.DoubleClicked) GUI.FocusControl(control);
+    }
+
+    // 起系统键盘。maxLength 跟源端输入框一致：账号 13、密码 20、角色名 13。
+    void OpenKeyboard(string value, int maxLength, bool secure, bool forCharName)
+    {
+        int target = forCharName ? 2 : secure ? 1 : 0;   // 0 账号 / 1 密码 / 2 角色名
+        int current = keyboardCharName ? 2 : keyboardPassword ? 1 : 0;
+        // 键盘已经为目标输入框开着：什么都别动。
+        // 关掉再重开在 Android 上是真会失败的（open 返回非空但键盘不弹），
+        // 所以「再点一下输入框」不能走 active=false + 重开。
+        if (loginKeyboard != null && loginKeyboard.active && current == target) return;
+        if (loginKeyboard != null) loginKeyboard.active = false;
+        keyboardCharName = forCharName;
+        keyboardPassword = !forCharName && secure;
+        loginKeyboard = TouchScreenKeyboard.Open(value, TouchScreenKeyboardType.Default,
+            false, false, secure, false, "", maxLength);
+        keyboardOpenedAt = Time.unscaledTime;
+        Debug.Log("[Login] 起键盘 char=" + forCharName + " secure=" + secure +
+                  " keyboard=" + (loginKeyboard != null ? "ok" : "null"));
     }
 
     void HandleLoginKeys()
@@ -795,15 +861,22 @@ public class LoginFlow : MonoBehaviour
     void DoLogin()
     {
         if (string.IsNullOrEmpty(account) || string.IsNullOrEmpty(password))
-        { status = "请输入账号和密码"; return; }
+        {
+            SetAlert("账号不能为空。请输入正确的账号和密码。", AlertEmptyImage);
+            return;
+        }
+        if (account.Trim().Length > 13)
+        {
+            // 源端客户端输入框本身限 13 字符，服务端不做长度校验（LoginPasswordHandler 直接 readString）。
+            SetAlert("账号不能超过 13 个字符，请确认后再输入。", null);
+            return;
+        }
 
         var res = GameSession.Login(account.Trim(), password);
+        Debug.Log("[Login] account=" + account.Trim() + " code=" + res.code);
         if (res.code != LoginResultCode.Ok)
         {
-            status = res.code == LoginResultCode.WrongPassword ? "密码错误"
-                   : res.code == LoginResultCode.Banned ? "账号被封禁"
-                   : res.code == LoginResultCode.TempBanned ? "账号被临时封禁"
-                   : "登录失败（" + res.code + "）";
+            ShowAlert(res);
             return;
         }
 
@@ -822,6 +895,71 @@ public class LoginFlow : MonoBehaviour
         scrollOpen = false;
         worldIndex = -1;
         stage = LoginStage.WorldSelect;
+    }
+
+    // —————————————————— 登录失败提示（源端 UI/Login.img/Notice） ——————————————————
+
+    // 文案/图取自客户端 UI/Login.img/Notice/text/<n> 的原图（tools/imgpng.py 导出对着抄），
+    // 编号就是源端 LOGIN_STATUS 里那个 reason 字节所对应的提示条目。
+    // 有原图的直接用原图（字体就是客户端那套点阵字），没有的才退化成文字。
+    const string AlertEmptyImage = "4";   // 账号不能为空。请输入正确的账号和密码。
+
+    void ShowAlert(LoginResponse res)
+    {
+        switch (res.code)
+        {
+            case LoginResultCode.WrongPassword:   // 源端 loginok = 4
+                SetAlert("密码错误！请确认！", "3");
+                break;
+            case LoginResultCode.NotRegistered:   // 源端 loginok = 5
+                SetAlert("账号不正确。请确认后再输入。", "2");
+                break;
+            case LoginResultCode.Banned:
+                // 源端 getTempBan 会把到期时间一起发下来，永久封停没有时间。
+                if (string.IsNullOrEmpty(res.banUntil)) SetAlert("您的账号已被封停。", "16");
+                else SetAlert("您的账号已被封停。", "16", "解除时间：" + res.banUntil);
+                break;
+            case LoginResultCode.Blocked:
+                SetAlert("该 IP 已被封停，无法连接。\n请联系管理员。", null);
+                break;
+            case LoginResultCode.AlreadyLoggedIn: // 源端 loginok = 7（本地是单机，正常走不到）
+                SetAlert("该账号已登陆！请输入其它账号。", "5");
+                break;
+            case LoginResultCode.RegisterLimit:
+                SetAlert("该 IP 注册的账号数已达上限。\n请稍后再试。", null);
+                break;
+            case LoginResultCode.Error:           // 源端 loginok = 6
+                SetAlert("系统错误，无法连接！请稍后再试。", "15");
+                break;
+            default:                              // 源端 loginok = 14 等
+                SetAlert("无法连接游戏服务器。请稍等后再试。", "22");
+                break;
+        }
+    }
+
+    void SetAlert(string text, string image, string extra = null)
+    {
+        alertText = text;
+        alertImage = image;
+        alertExtra = extra;
+        alertOpen = true;
+        status = "";   // 弹窗已经说明原因，不再在草地上叠一行小字
+    }
+
+    // 源端登录页的提示框：Notice/backgrnd/0（362×219 纸面）+ Notice/text/<n>（图文）+ BtYes「确定」。
+    // 图文块的原始贴图偏移是 (119,21)：蘑菇挂件左侧占位，正文从它右边开始。
+    void DrawAlertDialog()
+    {
+        UiKit.Fill(new Rect(0, 0, UiKit.W, UiKit.H), new Color(0f, 0f, 0f, 0.35f));
+        float x = DW / 2 - 181, y = DH / 2 - 109;
+        DrawAt(UI + "Notice/backgrnd/0", x, y);
+        if (!string.IsNullOrEmpty(alertImage) && Has(UI + "Notice/text/" + alertImage))
+            DrawAt(UI + "Notice/text/" + alertImage, x + 119, y + 21);
+        else
+            Label(R(x + 121, y + 48, 219, 78), alertText, _alert);
+        if (!string.IsNullOrEmpty(alertExtra))
+            Label(R(x + 121, y + 96, 219, 22), alertExtra, _alertSmall);
+        if (Button(UI + "Notice/BtYes", R(x + 143, y + 168, 75, 32), true, true)) alertOpen = false;
     }
 
     // —————————————————— 选区 ——————————————————
@@ -1282,17 +1420,10 @@ public class LoginFlow : MonoBehaviour
                 GUI.SetNextControlName("char_name");
                 charName = GUI.TextField(nameRect, charName, 13, charNameField);
             }
-            if (Clicked(nameRect) && Pointer.DoubleClicked)
+            if (Clicked(nameRect))
             {
-                if (Application.isMobilePlatform)
-                {
-                    if (loginKeyboard != null) loginKeyboard.active = false;
-                    keyboardCharName = true;
-                    keyboardPassword = false;
-                    loginKeyboard = TouchScreenKeyboard.Open(charName, TouchScreenKeyboardType.Default,
-                        false, false, false, false, "", 13);
-                }
-                else GUI.FocusControl("char_name");
+                if (Application.isMobilePlatform) OpenKeyboard(charName, 13, false, true);
+                else if (Pointer.DoubleClicked) GUI.FocusControl("char_name");
             }
 
             if (Button(UI + "NewChar/BtYes", R(747, 333, 81, 41))) ConfirmCharName();

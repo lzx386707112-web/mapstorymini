@@ -27,9 +27,11 @@ public static class AdminWebView
         {
             try
             {
-                // Theme_Black_NoTitleBar_Fullscreen：全屏黑底，无标题栏
+                // Theme_Black_NoTitleBar（不是 _Fullscreen）：全屏主题下系统会忽略
+                // SOFT_INPUT_ADJUST_RESIZE，横屏弹键盘会直接盖住登录框。
+                // 状态栏/导航栏改成 show() 之后用 systemUiVisibility 沉浸式隐藏（见下）。
                 dialog = new AndroidJavaObject("android.app.Dialog", activity,
-                    new AndroidJavaClass("android.R$style").GetStatic<int>("Theme_Black_NoTitleBar_Fullscreen"));
+                    new AndroidJavaClass("android.R$style").GetStatic<int>("Theme_Black_NoTitleBar"));
                 var web = new AndroidJavaObject("android.webkit.WebView", activity);
                 var settings = web.Call<AndroidJavaObject>("getSettings");
                 settings.Call("setJavaScriptEnabled", true);
@@ -38,16 +40,29 @@ public static class AdminWebView
                 // 后台 UI 打包在 adminui.bytes 里，重装后哈希变了；WebView 按 URL 缓存会继续喂旧页面，
                 // 所以每次打开都不要缓存（本地回环，代价只有几毫秒）。
                 settings.Call("setCacheMode", 2);                    // WebSettings.LOAD_NO_CACHE
-                settings.Call("setUseWideViewPort", true);           // 让页面按设备宽度排版（mobile.less 的断点才生效）
-                settings.Call("setLoadWithOverviewMode", true);
+                settings.Call("setUseWideViewPort", true);           // 认 <meta viewport> 里的 device-width
+                // 关键：OVERVIEW 模式会把整页「缩小到一屏可见」，页面一旦有横向溢出
+                // （登录页/表格都比视口宽一点）整页就会被缩到 0.65 左右，字和提示条全被压扁。
+                // 关掉它，按 viewport meta 的 initial-scale=1 渲染，宽了就横向滚动。
+                settings.Call("setLoadWithOverviewMode", false);
                 settings.Call("setSupportZoom", false);              // 横屏手指误触缩放会把布局搞乱
                 settings.Call("setBuiltInZoomControls", false);
+                settings.Call("setTextZoom", 100);                   // 别被系统「字体大小」设置二次缩放
                 web.Call("setBackgroundColor", unchecked((int)0xFF101418));   // 先铺底色，避免加载前白闪
-                web.Call("setWebViewClient", new ErrorClient());
+                // 不设 WebViewClient：它是抽象类不是接口，AndroidJavaProxy 代理不了
+                // （会抛 "android.webkit.WebViewClient is not an interface" 并让整个打开流程回退）。
+                // 不设 client 时 WebView 自己接管导航，加载失败也会显示系统自带的错误页。
                 // 关闭 Dialog 时同步销毁 WebView，防泄漏
                 dialog.Call("setOnDismissListener", new DismissCallback(web));
                 dialog.Call("setContentView", web);
                 dialog.Call("show");
+
+                // show() 之后再设：Dialog 显示时会被主题的 windowSoftInputMode 覆盖一次。
+                var win = dialog.Call<AndroidJavaObject>("getWindow");
+                win.Call("setLayout", -1, -1);                 // MATCH_PARENT × MATCH_PARENT
+                win.Call("setSoftInputMode", 0x10);            // SOFT_INPUT_ADJUST_RESIZE：键盘顶起页面而不是盖住
+                HideSystemBars(win);
+
                 web.Call("loadUrl", url);
             }
             catch (Exception e)
@@ -57,6 +72,31 @@ public static class AdminWebView
                 Application.OpenURL(url);
             }
         }));
+    }
+
+    // 沉浸式全屏：把状态栏/导航栏藏掉，内容铺满整屏。
+    // 游戏主窗口本来就是全屏，但 Dialog 是独立窗口，得自己藏一遍。
+    // 这里只用 systemUiVisibility / InsetsController，不设 FLAG_FULLSCREEN，
+    // 所以上面设的 SOFT_INPUT_ADJUST_RESIZE 仍然生效（弹键盘时页面会被顶起）。
+    static void HideSystemBars(AndroidJavaObject win)
+    {
+        // LAYOUT_STABLE | LAYOUT_HIDE_NAVIGATION | LAYOUT_FULLSCREEN
+        // | HIDE_NAVIGATION | FULLSCREEN | IMMERSIVE_STICKY
+        const int flags = 0x100 | 0x200 | 0x400 | 0x2 | 0x4 | 0x1000;
+        try { win.Call<AndroidJavaObject>("getDecorView").Call("setSystemUiVisibility", flags); }
+        catch (Exception) { }
+
+        try
+        {
+            // Android 11+：隐藏 状态栏(1)|导航栏(2)，BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE = 2
+            var controller = win.Call<AndroidJavaObject>("getInsetsController");
+            if (controller != null)
+            {
+                controller.Call("hide", 3);
+                controller.Call("setSystemBarsBehavior", 2);
+            }
+        }
+        catch (Exception) { }   // API < 30 没有 getInsetsController，忽略
     }
 
     public static void Close()
@@ -80,56 +120,10 @@ public static class AdminWebView
         }
     }
 
-    // 加载失败时换成一张能读懂的错误页（默认错误页是纯黑背景，看着像「黑屏没反应」）。
-    // 只实现 API 23+ 的主框架回调：AndroidJavaProxy 按方法名派发，同名重载会二义，不能两个都写。
-    sealed class ErrorClient : AndroidJavaProxy
-    {
-        public ErrorClient() : base("android.webkit.WebViewClient") { }
-
-        void onReceivedError(AndroidJavaObject view, AndroidJavaObject request, AndroidJavaObject error)
-        {
-            try
-            {
-                if (request == null || view == null) return;
-                if (!request.Call<bool>("isForMainFrame")) return;      // 子资源失败不动整页
-                int code = error != null ? error.Call<int>("getErrorCode") : 0;
-                string desc = error != null ? error.Call<string>("getDescription") : "";
-                string url = request.Call<AndroidJavaObject>("getUrl").Call<string>("toString");
-                Debug.LogError("[Admin] WebView 加载失败 code=" + code + " " + desc + " url=" + url);
-                // 用 loadData 而不是 loadDataWithBaseURL：后者要传 Java null，Unity 的 JNI 参数
-                // 推导对 null 不友好；错误页是纯内联样式，不需要 baseUrl。
-                view.Call("loadData", ErrorHtml(url, code, desc), "text/html", "utf-8");
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning("[Admin] 错误页渲染失败: " + e.Message);
-            }
-        }
-
-        static string ErrorHtml(string url, int code, string desc)
-        {
-            string hint = code == -1 && desc != null && desc.ToLowerInvariant().Contains("cleartext")
-                ? "当前安装包没有放行本地明文 HTTP（Android 9+ 默认禁止），需要用最新构建重新出包。"
-                : "本地后台服务可能还没起来，返回后再点一次「后台管理」即可重试。";
-            return "<!DOCTYPE html><html><head><meta charset=\"utf-8\">" +
-                   "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
-                   "<style>body{margin:0;padding:24px;background:#101418;color:#e6ebf2;" +
-                   "font:15px/1.7 -apple-system,'PingFang SC','Microsoft YaHei',sans-serif}" +
-                   "h1{font-size:17px;margin:0 0 14px;color:#ffb454}code{color:#7fd1ff;word-break:break-all}" +
-                   "p{margin:0 0 10px;color:#9fb0c3}</style></head><body>" +
-                   "<h1>后台页面加载失败</h1>" +
-                   "<p>地址：<code>" + Html(url) + "</code></p>" +
-                   "<p>原因：<code>" + Html(desc) + "</code>（code " + code + "）</p>" +
-                   "<p>" + Html(hint) + "</p>" +
-                   "<p>返回键关闭本页。</p></body></html>";
-        }
-
-        static string Html(string s)
-        {
-            if (string.IsNullOrEmpty(s)) return "";
-            return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
-        }
-    }
+    // 注：这里没有 WebViewClient。它是抽象类，AndroidJavaProxy 只能代理接口，
+    // 设了会抛 "android.webkit.WebViewClient is not an interface"，把整个打开流程拱去系统浏览器。
+    // 想自绘错误页就得写 Java 插件（Assets/Plugins/Android/*.java 里的子类），暂不值得。
+    // 不设 client 时 WebView 自己处理导航，失败也会显示系统错误页（内容可读，够定位问题）。
 #else
     public static bool Supported => false;
 

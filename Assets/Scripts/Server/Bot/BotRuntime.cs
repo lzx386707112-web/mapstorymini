@@ -24,6 +24,7 @@ namespace Server.Bot
         readonly BotTasks.Handle invitationWatch;
         public BotRuntime(DbStore db, Social.BotMessenger messenger = null, BotPartyService parties = null)
         {
+            var perf = BotPerf.Timer("BotRuntime.Ctor");
             BotClient.Init(db);
             BotTypeManager.Messenger = messenger ?? new Social.BotMessenger();
             this.parties = parties ?? new BotPartyService(db);
@@ -36,9 +37,10 @@ namespace Server.Bot
             partyGrind = new BotPartyGrindService(this.parties,GetMap);
             BotTypeManager.PartyGrind = partyGrind;
             observers = new BotObserverTracker(() => players.Values, GetMap, BotWorldGraph.Load());
-            townSpawner = new BotTownSpawner(new BotTownPresenceConfig(BotResources.Load()), GetMap);
+            townSpawner = new BotTownSpawner(new BotTownPresenceConfig(BotResources.Load()), TryGetMap);
             // EnvironmentManager（市场环境启动编排）的地图加载/城镇游荡钩子
             BotEnvironment.GetMap = GetMap;
+            BotEnvironment.TryGetMap = TryGetMap;
             BotEnvironment.TownWanderers = () => townSpawner.Spawn();
             mapEntryResponder = new BotMapEntryResponder(BotTypeManager.Events);
             mapEntryResponder.Register();
@@ -63,6 +65,7 @@ namespace Server.Bot
             //   状态机幂等（already/running/started），失败可重试。进游戏即拉起三波环境，
             //   玩家走到自由市场时假人已在场。
             if (BotConfig.MarketAutoStartEnabled(db)) BotEnvironment.RequestMarketStartup();
+            perf.Dispose();
         }
         void PublishMovement(BotCharacter actor, byte[] packet) => Movement?.Invoke(actor, packet);
         IEnumerable<BotActor> CharactersOnMap(Social.ChatMessage message)
@@ -88,6 +91,24 @@ namespace Server.Bot
             var map = MapService.Get(id);
             if (map != null) return map;
             map = maps.Geometry(id); MapService.Register(map); registeredMaps.Add(id); return map;
+        }
+        // 非阻塞版（分帧加载用）：分片已在后台解析好就登记并返回 Ready；
+        // 还在解析返回 Pending，调用方下一帧再问，主线程一帧都不堵；包里没这张图返回 Missing。
+        public BotMapState TryGetMap(int id, out MapRuntime map, bool allowBlocking = false)
+        {
+            map = MapService.Get(id);
+            if (map != null) return BotMapState.Ready;
+            if (allowBlocking)
+            {
+                try { map = GetMap(id); } catch (ArgumentException) { map = null; }
+                return map != null ? BotMapState.Ready : BotMapState.Missing;
+            }
+            bool ready;
+            try { ready = maps.TryGeometry(id, out map); }
+            catch (ArgumentException) { map = null; return BotMapState.Missing; }
+            if (!ready || map == null) { map = null; return BotMapState.Pending; }
+            MapService.Register(map); registeredMaps.Add(id);
+            return BotMapState.Ready;
         }
         // GCPortals.enter按目标门名查找，找不到回退portal0；不自行执行额外脚本传送。
         public bool EnterPortal(BotCharacter actor, MapPortal portal)
@@ -168,7 +189,9 @@ namespace Server.Bot
             BotTypeManager.Messenger.Clear();
             foreach (int id in registeredMaps) MapService.Unregister(id);
             registeredMaps.Clear(); Movement = null;
-            BotEnvironment.GetMap = null; BotEnvironment.TownWanderers = null;
+            // 档案册的运行期占用状态跟着会话走；档案本身（bot_profile 表）留在库里不动。
+            BotDirectory.Reset();
+            BotEnvironment.GetMap = null; BotEnvironment.TryGetMap = null; BotEnvironment.TownWanderers = null;
             BotEnvironment.Reset();
         }
     }

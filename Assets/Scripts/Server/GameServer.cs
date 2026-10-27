@@ -54,6 +54,7 @@ public sealed class GameServer
         // 就不用把 8.6MB+3.3MB 的 JSON 卡在当前帧。
         Server.Bot.BotWarmup.Start("Bot/Items");
         Server.Bot.BotWarmup.Start("Bot/SoloMapling");
+        Server.Bot.BotWarmup.Start("Bot/Maps");     // 导航/世界图共用这一份
         Local = srv;
         return srv;
     }

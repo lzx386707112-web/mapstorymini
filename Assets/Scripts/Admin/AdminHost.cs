@@ -123,10 +123,10 @@ public sealed class AdminHost : MonoBehaviour
 
         if (!adminChecked && GameServer.Local != null)
         {
-            adminChecked = true;
             try
             {
                 string created = AdminBackend.EnsureWebAdmin();
+                adminChecked = true;            // 只在真正跑通后置位：库没就绪时下一帧继续重试
                 if (!string.IsNullOrEmpty(created)) Debug.Log("[Admin] " + created);
             }
             catch (Exception e)

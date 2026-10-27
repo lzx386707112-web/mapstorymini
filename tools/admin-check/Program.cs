@@ -36,6 +36,15 @@ namespace AdminCheck
             string created = AdminBackend.EnsureWebAdmin();
             Console.WriteLine("初始化后台账号: " + (created ?? "已存在 webadmin 账号"));
 
+            // 后台账号和游戏账号是 accounts 表同一行：admin/admin 必须能当游戏账号登进去，
+            // 否则「重置密码为 admin」只是改了后台口令，进游戏仍旧报密码错误。
+            var adminLogin = LoginService.Login(db, AdminBackend.DefaultAdminName, AdminBackend.DefaultAdminPassword);
+            Check("admin/admin 可作为游戏账号登录", adminLogin.code == LoginResultCode.Ok, adminLogin.code.ToString());
+
+            var adminWrong = LoginService.Login(db, AdminBackend.DefaultAdminName, "not-the-password");
+            Check("admin 错误密码返回 4（源端 loginok=4）", adminWrong.code == LoginResultCode.WrongPassword,
+                ((int)adminWrong.code).ToString());
+
             // 造一个账号 + 角色 + 背包道具，覆盖列表类接口
             int accId = AccountsDao.AutoRegister(db, "tester", "tester123");
             db.Table("characters").Insert(new DbRow

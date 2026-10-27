@@ -16,6 +16,8 @@ namespace Server.Bot
         const long LagLoMs = 300;
         const double FactorMax = 4.0;
         const double FactorStep = 1.5;
+        // 一轮至少放行几个 tick：太少会让假人动作整体变慢；剩下的按帧预算顺延到下一帧。
+        const int MinTicksPerRound = 4;
 
         sealed class Entry
         {
@@ -111,6 +113,7 @@ namespace Server.Bot
 
         public static void Drive()
         {
+            using var perf = BotPerf.Timer("BotScheduler.Drive");
             long now = Now();
             deltaSeconds = hasFrame ? Math.Max(0, now - previousFrameMs) / 1000f : 0;
             previousFrameMs = now;
@@ -122,6 +125,7 @@ namespace Server.Bot
             nextDriverMs = now + DriverPeriodMs;
             long lagSum = 0;
             int dispatched = 0;
+            bool backlog = false;
             // 主线程回调可注册、停用或转换类型；不遍历可变字典。
             var snapshot = new List<KeyValuePair<int, Entry>>(entries);
             foreach (var pair in snapshot)
@@ -129,6 +133,9 @@ namespace Server.Bot
                 if (!entries.TryGetValue(pair.Key, out var e) || !ReferenceEquals(e, pair.Value)) continue;
                 if (now >= e.nextDueMs && !e.ticking)
                 {
+                    // 进游戏那几帧会有几十个假人同时到点，一次全跑就把帧撑爆了：
+                    // 放行够 MinTicksPerRound 个之后看本帧预算，超了就顺延（nextDueMs 不动，下一帧还due）。
+                    if (dispatched >= MinTicksPerRound && !BotWorkPump.Has(0.5f)) { backlog = true; break; }
                     e.ticking = true;
                     long lag = now - e.nextDueMs;
                     e.nextDueMs = long.MaxValue;
@@ -138,6 +145,8 @@ namespace Server.Bot
                     RunTick(e, now);
                 }
             }
+            // 还有到点没跑完的：下一帧接着发，别等下一个 250ms 轮（否则动作会明显发迟）。
+            if (backlog) nextDriverMs = now;
             GovernorTick(now, lagSum, dispatched);
         }
 

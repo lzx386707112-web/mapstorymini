@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "H0EvX/h2DmM6DB4m1RnEzPoPj54CjjIA1i+18Wg8l9Zl4sE8EWf1w/k+KVFrXKAqgtRP85wIU/rqrNtKSO3Kwg==",
+  "dgSpecHash": "YV6WuUjgaXREcJ+IGi4qRBEw6spYszRYTwP+FmYwaxafw+5TQNGG4BKkTBT25C94VP9HZ0SJcNMPhW2BQQDu9g==",
   "success": true,
-  "projectFilePath": "/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/Check.csproj",
+  "projectFilePath": "/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/AndroidCheck.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

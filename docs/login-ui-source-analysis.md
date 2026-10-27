@@ -32,6 +32,46 @@
 
 本项目的 `GameSession` / `InProcessTransport` 已按同一语义实现；本次不改服务端，只修 UI。
 
+### 1.1 登录失败编号与客户端提示（2026-10-27 核对）
+
+源端把失败原因作为 `LOGIN_STATUS` 的 reason 字节发给客户端，客户端据此弹 `UI/Login.img/Notice` 提示框。
+编号不是自拟的，`LoginResultCode` 必须与之逐一对齐：
+
+| reason | 源端出处 | 含义 | `Notice/text/<n>` 原图文案 |
+|---|---|---|---|
+| 0 | `Client.login` 返回 0 | 成功 | — |
+| 2 | `PacketCreator.getPermBan` / `getTempBan` | 封停 / 临时封停（带原因字节与到期时间） | `16`「您的账号已被封停。」 |
+| 3 | `loginok = 3`（banned 先于密码校验，`Client.java:708`）| IP/MAC 或账号封禁 | 无原图，自拟 |
+| **4** | `loginok = 4`（`Client.java:724`）| **密码错误** | `3`「密码错误！请确认！」 |
+| 5 | `loginok = 5`（`Client.java:676`）| 账号不存在且未开自动注册 | `2`「账号不正确。请确认后再输入。」 |
+| 6 | `loginok = 6`（尝试次数超限 / 数据库异常）| 系统错误 | `15`「系统错误，无法连接！请稍后再试。」 |
+| 7 | `loginok = 7`（已登录，源端顶号放行）| 该账号已登陆 | `5`「该账号已登陆！请输入其它账号。」 |
+| 10 | `LoginPasswordHandler:82` | 同 IP/MAC 注册数达上限 | 无原图，自拟 |
+| 14 | `LoginPasswordHandler:58` | 拿不到 remoteHost | `22`「无法连接游戏服务器。」 |
+
+注意 **密码错误是 4、不是 6**：6 在源端表示「尝试次数过多 / 数据库异常」。
+`Notice/text/*` 共 67 张（0–58、81–83、91–95），每张 221×109，是**已烘焙好文字+纸面**的图，
+原客户端把它贴在 `Notice/backgrnd/0`（362×219）的 (119, 21) 处（蘑菇挂件占左侧，正文从它右边开始），
+再用 `Notice/BtYes`（75×32，贴在约 (143,168)）做「确定」。
+本项目按同一坐标绘制：有原图的直接画 `Notice/text/<n>`，没有的退回 `GUI.Label`（正文起点 121,48，宽 219）。
+
+### 1.2 输入框与点击口径（2026-10-27 修）
+
+**登录页从头到尾是鼠标口径，不是触屏落点**（用户明确要求）：虚拟光标拖到按钮上，手指在屏幕任意位置点一下即触发。
+判定只看 `Pointer.Pos` / `Pointer.PressPosition`，**不要改用 `Pointer.TapPos` 之类的手指落点**。
+2026-10-27 曾把判定改成「手指落点」，结果光标在按钮上、手指在别处 → 所有按钮和输入框全部失效，
+表现是「点连接没反应、登录失败不弹提示、双击输入框不起键盘」，一次点击都进不到 `DoLogin`（日志里没有任何 `[Login]`）。
+
+源端是 PC 客户端：**单击输入框就聚焦并进入输入状态**，双击只是「选中一个词」，没有「双击才起键盘」的设定。
+
+本项目手机端没有原生 TextField（会抢焦点、挡住虚拟光标），所以自己实现了「点输入框 → `TouchScreenKeyboard.Open`」：
+
+- 手机端**单击**（光标落在输入框上）就 `OpenKeyboard`，与源端一致；角色名输入框同样处理。桌面端仍是原生 `GUI.TextField`。
+- `OpenKeyboard` 对同一目标输入框不重复 open（Android 上 `active=false` 后立刻重开会出现「返回非空但键盘不弹」）。
+- `Update` 里的键盘回收只在 `Status.Done/Canceled` 或离开当前页时执行。**不要再按 `status != Visible` 回收**：
+  Android 键盘弹出的头几帧 status 还不是 `Visible`，等于刚弹出来就被自己收走。
+- 排查用日志：`[Login] press/release pos=… press=… modal=…` 每次点击一条，能直接看出光标落点与是否被弹窗挡住。
+
 ## 2. 客户端布局机制（源端）
 
 `clien/config.ini`：

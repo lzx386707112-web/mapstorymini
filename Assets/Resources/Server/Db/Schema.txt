@@ -544,3 +544,19 @@ CREATE TABLE command_info (
     clazz        TEXT NOT NULL,
     default_level INTEGER NOT NULL DEFAULT 0
 );
+
+-- 假人档案：对齐联机的「账号表」。
+-- 联机里每个玩家账号唯一，所以别人看到他永远是同一张脸、同一个名字；假人现在照这个来：
+-- 几百条档案一次性预置好，之后只读不改，同一个 id 永远同一套外观 + 同一个名字。
+-- template 指向 BotAppearanceTemplates 的模板下标 —— 外观模板被同模板假人共享，
+-- 纸娃娃纹理才能一份多用（这才是联机客户端同屏几十人也不爆显存的原因）。
+-- map_id 是「档案归属地图」：0 表示自由分配，>0 表示这只只会出现在该图。
+CREATE TABLE bot_profile (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    template     INTEGER NOT NULL DEFAULT 0,
+    map_id       INTEGER NOT NULL DEFAULT 0,
+    channel      INTEGER NOT NULL DEFAULT 1,
+    bound        INTEGER NOT NULL DEFAULT 0,
+    enabled      INTEGER NOT NULL DEFAULT 1
+);

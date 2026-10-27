@@ -185,10 +185,86 @@ static class BotChecks
         CheckMerchantRuntime(check);
         CheckPartyGrindRuntime(check);
         CheckTradeSnapshotLifecycle(check);
+        CheckAppearanceTemplates(check);
+        CheckBotDirectory(check);
     }
 
-    static void CheckTradeSnapshotLifecycle(Action<bool,string> check)
+    // 外观模板池回归：纸娃娃是 CPU 逐像素合成成单张纹理，缓存 key 由外观 id 拼成
+    //（WzCharacter.Compose → appearance://<key>/<pose>/<frame>）。外观唯一 ⇒ 命中率 0
+    // ⇒ 每个假人每个动作帧都要重合成一次，这正是「进图卡一段」的大头。
+    // 这条守着「假人外观必须收敛到有限集合」，防止以后改回全随机把卡顿带回来。
+    static void CheckAppearanceTemplates(Action<bool, string> check)
     {
+        BotTasks.Stop(); BotScheduler.Clock = 0;
+        BotAppearanceTemplates.Reset();
+        var map = new MapRuntime { mapId = -120 }; map.AddFoothold(-500, 0, 500, 0);
+        MapService.Register(map);
+        const int sample = 40;                       // 远大于模板数，必然出现重复外观
+        var created = new List<BotCharacter>();
+        var looks = new HashSet<string>();
+        for (int i = 0; i < sample; i++)
+        {
+            var bot = BotGeneration.CreateBotPollReadiness(i * 10, 0, map.mapId, true, false);
+            if (bot == null) break;
+            created.Add(bot);
+            looks.Add(string.Join(",", BotAppearance.CharacterIds(bot)));
+        }
+        check(created.Count == sample, "外观模板用例生成 " + sample + " 个假人");
+        check(BotAppearanceTemplates.Enabled && BotAppearanceTemplates.All.Count <= BotAppearanceTemplates.DefaultCount,
+            "假人外观收敛到模板池（模板 " + BotAppearanceTemplates.All.Count + " 套）");
+        check(looks.Count < created.Count,
+            "同屏假人共享外观：" + created.Count + " 个体只出现 " + looks.Count + " 种外观");
+        foreach (var bot in created) BotGeneration.RemoveBotFromServer(bot);
+        MapService.Unregister(map.mapId);
+        BotAppearanceTemplates.Reset();
+        BotTasks.Stop(); BotTypeManager.Output.Clear();
+    }
+
+    // 假人档案回归：对齐联机的「账号表」。
+    // 联机客户端不卡、画面稳定，靠的是「每个账号在库里唯一」——别人看到他永远同一张脸、
+    // 同一个名字。假人照做：几百条固定档案落库，运行期只领用/归还，不改写。
+    // 这条守着两件事：① 档案真的落库了（不是内存随机）；② 重读后名字和外观不变。
+    // 一旦退化成「每次现随机」，纸娃娃缓存 key 会全部变掉，进图又要重新 CPU 合成。
+    static void CheckBotDirectory(Action<bool, string> check)
+    {
+        BotTasks.Stop(); BotScheduler.Clock = 0;
+        var db = BotClient.GetBotClient()?.db;
+        if (db == null) { check(false, "假人档案用例需要已初始化的 BotClient"); return; }
+        BotAppearanceTemplates.Reset(); BotDirectory.Reset();
+        BotDirectory.Ensure(db);
+        int wanted = BotConfig.DirectorySize(db);
+        check(BotDirectory.Count == wanted, "假人档案按配置预置 " + BotDirectory.Count + " 条");
+        check(BotDirectory.All.Count > 0 && BotDirectory.All[0].name.Length > 0, "档案带固定名字：" + BotDirectory.All[0].name);
+
+        var first = BotDirectory.All[0];
+        string name0 = first.name; int template0 = first.template, id0 = first.id;
+
+        // 重新从库里读一遍：内存全清空，档案内容必须一模一样。
+        BotDirectory.Reset();
+        BotDirectory.Ensure(db);
+        var again = BotDirectory.Find(id0);
+        check(BotDirectory.Count == wanted, "重复 Ensure 不重复造档案（仍是 " + BotDirectory.Count + " 条）");
+        check(again != null && again.name == name0 && again.template == template0,
+            "同一份档案重读后设定不变（" + (again?.name ?? "?") + " / 模板 " + (again?.template ?? -1) + "）");
+
+        // 生成假人要真的领用档案，下线要归还。
+        var map = new MapRuntime { mapId = -121 }; map.AddFoothold(-500, 0, 500, 0);
+        MapService.Register(map);
+        int inUseBefore = BotDirectory.InUseCount;
+        var bot = BotGeneration.CreateBotPollReadiness(0, 0, map.mapId, true, false);
+        check(bot != null && bot.profileId != 0, "生成假人会领用档案（账号化）");
+        var profile = bot != null ? BotDirectory.Find(bot.profileId) : null;
+        check(profile != null && profile.name == bot.name, "假人名字取自档案：" + (bot?.name ?? "?"));
+        check(BotDirectory.InUseCount == inUseBefore + 1, "领用后档案标记为占用");
+        if (bot != null) BotGeneration.RemoveBotFromServer(bot);
+        check(BotDirectory.InUseCount == inUseBefore, "下线后档案归还");
+
+        MapService.Unregister(map.mapId);
+        BotDirectory.Reset(); BotAppearanceTemplates.Reset();
+        BotTasks.Stop(); BotTypeManager.Output.Clear();
+    }
+
+    static void CheckTradeSnapshotLifecycle(Action<bool,string> check)    {
         var db=DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(),"mapledash_trade_snapshot.json"));
         int account=(int)db.Table("accounts").Insert(new DbRow { ["name"]="SnapshotAccount" });
         int id=(int)db.Table("characters").Insert(new DbRow { ["accountid"]=(long)account,["name"]="SnapshotTrader",["level"]=120L,["meso"]=1000L });
@@ -1502,9 +1578,15 @@ static class BotChecks
         {
             // BotTasks.Schedule(MarketEnvironmentStartup, 0) 到期执行；三波按帧分步生成
             // （进图单帧连开十几个假人会卡主线程），所以这里推进多帧直到启动完成。
+            // 地图分片在后台线程解析、主线程只按帧让位：测试里没有真实帧间隔，
+            // 所以每帧补 1ms 真实等待，否则后台解析永远来不及完成。
             long clock = 1100;
-            for (int frame = 0; frame < 20 && !Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete; frame++)
-            { runtime.Drive(clock); clock += 100; }
+            for (int frame = 0; frame < 4000 && !Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete; frame++)
+            {
+                runtime.Drive(clock);
+                clock += 5;
+                System.Threading.Thread.Sleep(1);
+            }
             var fmBots = BotRegistry.OnMap(910000000);
             check(fmBots.Count > 0 && Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete,
                 "进游戏默认自动拉起三波环境，自由市场入口已有假人（FM=" + fmBots.Count + "）");
@@ -1681,7 +1763,13 @@ static class BotChecks
         MapService.Register(spawnMap); bool complete = false;
         BotGeneration.EnableEnvironmentBotLimit();
         using (var spawner = new BotTownSpawner(config, id => id == 103000000 ? spawnMap : null, sampler))
+        {
             spawner.Spawn(() => complete = true);
+            // 城镇游荡改成「一城一步、一人一步」走 BotEnvironment 的分帧泵，推几帧才走完；
+            // spawner 必须活到走完（真机上由 BotRuntime 持有，直到退服才释放）。
+            for (int frame = 0; frame < 200 && !complete; frame++)
+            { BotScheduler.Clock += 10; BotTasks.Drive(BotScheduler.Clock); }
+        }
         var created = BotRegistry.OnMap(103000000);
         check(complete && created.Count == 2 && created.TrueForAll(b => BotStore.GetBotById(b.id) is TownWandererBot),
             "城镇生成按原端每城最多两人并映射具体游荡类型，缺portal地图跳过");

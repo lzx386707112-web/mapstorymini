@@ -13,6 +13,24 @@ public static class BotConfig
     public static int MarketBotMax(DbStore db) => GetInt(db, "solo_mapling_market_bot_max", 10);
     public static int MarketShopMax(DbStore db) => GetInt(db, "solo_mapling_market_shop_max", 10);
 
+    // —— 外观 ——
+    // 假人外观模板数。>0 时把「每次运行全空间随机」收敛到固定模板池：同屏假人共享外观，
+    // 纸娃娃缓存才能命中（否则每个假人每个动作帧都要 CPU 合成一次）。0 = 关闭，回退全随机。
+    public static int AppearanceTemplateCount(DbStore db)
+        => GetInt(db, "solo_mapling_appearance_templates", Server.Bot.BotAppearanceTemplates.DefaultCount);
+
+    // —— 假人档案册（对齐联机账号表）——
+    // 预置多少条固定档案（名字 + 外观模板都固定，见 BotDirectory）。
+    // 这是「库里有多少个假人账号」，不是「同时在场多少人」；在场人数仍由
+    // market_bot_max / environment_bot_max / 城镇配置决定。
+    // 0 = 关闭档案（回退到每次现随机，仅供排查用）；这里单独读，因为 0 是有效值。
+    public static int DirectorySize(DbStore db)
+    {
+        string value = db == null ? "" : GameConfigDao.Get(db, "solo_mapling_directory_size");
+        if (int.TryParse(value, out int size)) return Math.Max(0, size);
+        return Server.Bot.BotDirectory.DefaultSize;
+    }
+
     // —— 自动地图 bot（氛围路人）——
     public static bool AutoMapBotsEnabled(DbStore db) => GetBool(db, "solo_mapling_auto_map_bots_enabled", true);
     public static int AutoMapBotsMin(DbStore db) => GetInt(db, "solo_mapling_auto_map_bots_min", 2);

@@ -107,6 +107,25 @@ public static class GameSideMenu
         },
         new MenuEntry
         {
+            glyph = "记",
+            glyphOff = "停",
+            title = "日志记录",
+            descOn = "写入日志文件 · 点击关闭",
+            descOff = "已关闭 · 点击开启",
+            gameplayOnly = false,
+            state = () => FileLog.Enabled,
+            run = ToggleFileLog,
+        },
+        new MenuEntry
+        {
+            glyph = "享",
+            title = "分享日志",
+            desc = "导出日志，转发给开发者分析",
+            gameplayOnly = false,
+            run = LogShare.Share,
+        },
+        new MenuEntry
+        {
             glyph = "后",
             title = "后台系统",
             desc = "浏览器打开服务器管理后台",
@@ -334,6 +353,13 @@ public static class GameSideMenu
     {
         VirtualControls.OverlayVisible = !VirtualControls.OverlayVisible;
         BottomBar.Toast(VirtualControls.OverlayVisible ? "虚拟按键已显示" : "虚拟按键已隐藏");
+    }
+
+    // 日志落盘开关：默认开。关掉后连会话头都不写，一点 IO 都不做。
+    static void ToggleFileLog()
+    {
+        bool on = FileLog.Toggle();
+        BottomBar.Toast(on ? "日志记录已开启 · 写入 " + FileLog.Dir : "日志记录已关闭");
     }
 
     static bool RawPointerDown()

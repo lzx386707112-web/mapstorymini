@@ -36,6 +36,16 @@ public sealed class FieldDirector : MonoBehaviour
     float saveTimer;
     bool logKills;
 
+    // 假人系统的前端组件：只取一次（原来每帧 GetComponent，白花时间）
+    BotCombatField botCombat;
+    GroundItemBridge groundLoot;
+    BotField botField;
+    // debug_frame_log：每 2 秒打一次掉帧统计，验证「进游戏还卡不卡」
+    bool logFrames;
+    bool logPerf;
+    float logClock;
+    int hitchFrames;
+
     const float RespawnInterval = 10f;      // GameConfig respawn_interval（后端 MapSpawner 用同源公式）
     const int   AggroRangePx = 320;         // 客户端视野内的主动攻击距离（本地适配）
 
@@ -73,6 +83,13 @@ public sealed class FieldDirector : MonoBehaviour
         if (view == null) view = gameObject.AddComponent<FieldView>();
         logKills = PlayerPrefs.GetInt("debug_field_log", 0) != 0;
         if (logKills) PlayerPrefs.DeleteKey("debug_field_log");   // 只在本次运行生效
+        logFrames = PlayerPrefs.GetInt("debug_frame_log", 0) != 0;
+        if (logFrames) PlayerPrefs.DeleteKey("debug_frame_log");
+        // 假人耗时明细：debug_bot_perf=1（一次有效）→ logcat 每 2 秒打一组 [Bot/Perf]。
+        // 真正的开关在 TickFrameLog 里同步：日志记录打开时也一并采集，
+        // 这样用户从侧边栏分享出去的日志自带掉帧/耗时数据，不用再教他敲 adb。
+        logPerf = PlayerPrefs.GetInt("debug_bot_perf", 0) != 0;
+        if (logPerf) PlayerPrefs.DeleteKey("debug_bot_perf");
         // 章节模式的兜底背景（纯色条）会盖住原版地图，进入原版模式时直接关掉
         var backdrop = FindObjectOfType<Backdrop>();
         if (backdrop != null) backdrop.gameObject.SetActive(false);
@@ -93,6 +110,8 @@ public sealed class FieldDirector : MonoBehaviour
         // Resolve artwork before discarding the current scene; full Data can contain dangling links.
         try { view.Show(map); }
         catch (System.Exception e) { Debug.LogError("[Field] 无法进入地图 " + mapId + ": " + e.Message); return; }
+        // 换图打一条分隔线：看分享出来的日志时，能立刻知道掉帧发生在哪张图
+        FileLog.Note("进入地图 " + mapId);
         ClearMobs();
         // 章节/大厅遗留的 EnemyUnit 也会进 EnemyUnit.All：玩家会自动去打它们，
         // 它们也会照常攻击玩家（彩虹村这种 town 图本不该有怪）。原版模式下只留本图刷的怪。
@@ -331,7 +350,11 @@ public sealed class FieldDirector : MonoBehaviour
 
     void Update()
     {
+        // 假人系统的分帧预算以这一句为起点：之后（TickBots / BotField.Update）花在假人上的
+        // 时间都算进同一份预算，超了就把剩下的活留到下一帧。
+        Server.Bot.BotWorkPump.BeginFrame();
         TickBots();
+        TickFrameLog();
         // 渐变优先于一切：死亡时 GameLoop 可能已经 gameOver，但黑幕仍要走完
         if (Warping) { TickWarpFade(); return; }
 
@@ -357,16 +380,49 @@ public sealed class FieldDirector : MonoBehaviour
     void TickBots()
     {
         if (Map == null || GameServer.Local == null || !GameSession.InGame || GameLoop.I == null || GameLoop.I.player == null) return;
+        // 假人资源（Items 8.6MB / SoloMapling 3.3MB）在后台线程解析，没解析完之前不碰假人系统：
+        // 一旦在这里 new BotRuntime，BotItemCatalog/BotResources 会 Join 后台线程，
+        // 把整段解析时间堵在进图那一帧（就是「进游戏后卡一会儿才能动」）。
+        if (!Server.Bot.BotWarmup.Ready("Bot/Items") || !Server.Bot.BotWarmup.Ready("Bot/SoloMapling") ||
+            !Server.Bot.BotWarmup.Ready("Bot/Maps")) return;
         var player = GameLoop.I.player;
         var bots = GameServer.Local.Bots;
         bots.SynchronizePlayer(GameSession.Character, Map.id, player.transform.position.x * Art.PPU, -player.transform.position.y * Art.PPU, GameSession.Channel);
-        var combat=GetComponent<BotCombatField>() ?? gameObject.AddComponent<BotCombatField>();
-        combat.Bind(this,bots);
-        var groundLoot = GetComponent<GroundItemBridge>() ?? gameObject.AddComponent<GroundItemBridge>();
-        groundLoot.Bind(this,bots);
+        // 组件只取一次：以前每帧 4 次 GetComponent（含 AddComponent 兜底），纯浪费。
+        if (botCombat == null) botCombat = GetComponent<BotCombatField>() ?? gameObject.AddComponent<BotCombatField>();
+        botCombat.Bind(this, bots);
+        if (groundLoot == null) groundLoot = GetComponent<GroundItemBridge>() ?? gameObject.AddComponent<GroundItemBridge>();
+        groundLoot.Bind(this, bots);
+        // Drive 内部：BotTasks 的分帧泵 + 受预算约束的状态机分发，不会一次跑完全部假人。
         bots.Drive((long)(Time.realtimeSinceStartup * 1000));
-        var botField = GetComponent<BotField>() ?? gameObject.AddComponent<BotField>();
+        if (botField == null) botField = GetComponent<BotField>() ?? gameObject.AddComponent<BotField>();
+        // 假人视图的增删本身也降到 10Hz（BotField 内部节流），纸娃娃合成改在 BotField.Update 里按预算出队。
         botField.Synchronize(Map.id, GameSession.World, GameSession.Channel);
+    }
+
+    // debug_frame_log=1（一次有效）时，每 2 秒把掉帧情况打到 logcat：
+    // `adb logcat -s Unity | grep Bot/Frame` 就能确认还有没有长帧。
+    // 日志记录开关打开时自动带上（否则用户分享出去的日志里没有现场数据）。
+    void TickFrameLog()
+    {
+        bool wantPerf = logPerf || FileLog.Enabled;
+        if (Server.Bot.BotPerf.Enabled != wantPerf)
+        {
+            Server.Bot.BotPerf.Enabled = wantPerf;
+            Server.Bot.BotPerf.Sink = wantPerf ? (System.Action<string>)Debug.Log : null;
+        }
+
+        bool frameLog = logFrames || FileLog.Enabled;
+        if (!frameLog && !wantPerf) return;
+        float dt = Time.unscaledDeltaTime;
+        if (dt > 0.05f) hitchFrames++;
+        logClock += dt;
+        if (logClock < 2f) return;
+        if (frameLog)
+            Debug.Log("[Bot/Frame] 2 秒内 " + hitchFrames + " 帧超 50ms，假人 " + Server.Bot.BotRegistry.Count() +
+                      " 个，本帧 " + (dt * 1000f).ToString("F1") + "ms");
+        if (wantPerf) Server.Bot.BotPerf.Flush();
+        logClock = 0f; hitchFrames = 0;
     }
 
     // 靠近 NPC 按 ↑ 对话。传送门优先（同位置时按原端行为进图）。
@@ -690,7 +746,8 @@ public sealed class FieldDirector : MonoBehaviour
         ClearMobs();
         GroundItem.Clear();
         NpcField.Clear();
-        GetComponent<BotField>()?.Clear();
+        if (botField == null) botField = GetComponent<BotField>();
+        botField?.Clear();
         NpcSession.CloseActive();
         if (view != null) view.Clear();
         Map = null;

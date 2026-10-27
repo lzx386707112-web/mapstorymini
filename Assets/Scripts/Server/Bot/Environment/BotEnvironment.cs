@@ -20,6 +20,10 @@ namespace Server.Bot.Environment
     //   · 椅子/技能/换装周期刷新：源端是外挂定时循环，本端口已由 MarketBotAmbient 在各
     //     状态机内建周期行为，不再重复挂调度；
     //   · 多线程 latch/CompletableFuture → 主线程时钟续接（BotTasks），波次顺序执行。
+    //
+    // 分帧（本端口新增，不改源端语义）：源端整段跑在后台线程里，主线程不卡；
+    // 本端口在主线程跑，所以把每一波再拆成「算座位 → 一个一个生成假人」的步骤队列，
+    // 由 BotWorkPump 的每帧毫秒预算驱动。波次顺序、限额、重试全部保持原样。
     public static class BotEnvironment
     {
         const int FMEntrance = 910000000;
@@ -27,13 +31,18 @@ namespace Server.Bot.Environment
         const int HenesysMarket = 100000100;
         const int HenesysPark = 100000200;
 
+        // 等地图分片后台解析最多让出多少帧（≈3 秒）；超时说明分片确实不在包里，退回同步加载。
+        public const int MapWaitFrames = 180;
+
         static readonly object gate = new object();
-        static bool startupStarted, startupComplete;
+        static bool startupStarted, startupComplete, limitDisableScheduled;
         static int marketEntranceBotCount;
         static PlatformParser platforms;
 
         // BotRuntime 注入（按需加载地图几何）；城镇游荡走 BotTownSpawner（BotRuntime 实例资产）
         public static Func<int, MapRuntime> GetMap;
+        // 非阻塞版地图加载：分片已在后台解析好就立刻可用，否则报告「还在解析」。
+        public static BotMapLoad TryGetMap;
         public static Action TownWanderers;
 
         static DbStore Db => BotClient.GetBotClient()?.db;
@@ -45,14 +54,81 @@ namespace Server.Bot.Environment
             path => Res.ReadText(path),
             dir => Res.ListFileStems(dir, ".csv"));
 
-        // 落点前确保地图几何已在 MapService（源端直接 getMapleMapById）
-        static void EnsureMap(int mapId)
-        {
-            if (!MapService.Has(mapId)) GetMap?.Invoke(mapId);
-        }
-
         public static bool IsMarketStartupComplete => startupComplete;
         public static bool IsMarketStartupRunning => startupStarted && !startupComplete;
+
+        // ——————————— 分帧泵 ———————————
+        //
+        // 每一次 Post = 一件小事（生成 1 个假人 / 算一张座位表 / 等一个地图分片）。
+        // PumpStep 每帧跑一次，边跑边看 BotWorkPump 的剩余预算，超了就留到下一帧。
+        static readonly Queue<Action> steps = new Queue<Action>();
+        static BotTasks.Handle pumpTask;
+        static bool yieldRequested;
+
+        // 追加一小步到假人分帧泵（供城镇游荡等下游模块续接自己的流程）。
+        public static void Post(Action step)
+        {
+            if (step == null) return;
+            lock (steps) steps.Enqueue(step);
+            EnsurePump();
+        }
+
+        // 等待类步骤用这个：排到队尾，并且本帧别再回头取它。
+        // 否则「等地图分片」的步骤会被「出队 → 重新入队 → 立刻又出队」空转，白烧一整帧预算。
+        public static void PostNextFrame(Action step)
+        {
+            if (step == null) return;
+            lock (steps) steps.Enqueue(step);
+            yieldRequested = true;
+            EnsurePump();
+        }
+
+        // 用 Handle 判断泵还在不在跑：BotTasks.Stop() 会取消所有任务，
+        // 只用一个 bool 标记的话会永远以为「泵已排期」，整个假人生成卡死。
+        static void EnsurePump()
+        {
+            if (pumpTask != null && !pumpTask.Cancelled && !pumpTask.Completed) return;
+            pumpTask = BotTasks.Schedule(PumpStep, 0);
+        }
+
+        static void PumpStep()
+        {
+            pumpTask = null;
+            yieldRequested = false;
+            int executed = 0;
+            while (true)
+            {
+                Action step;
+                lock (steps) step = steps.Count > 0 ? steps.Dequeue() : null;
+                if (step == null) { FinishStartup(); return; }
+                try { using (Server.Bot.BotPerf.Timer("BotEnvironment.Step")) step(); }
+                catch (Exception)
+                {
+                    // ≡ catch (RuntimeException)：回滚状态，允许再次请求（allowMarketStartupRetry）
+                    AbortStartup();
+                    return;
+                }
+                if (yieldRequested) { yieldRequested = false; EnsurePump(); return; }
+                // 预算用完就让位给渲染：剩下的步骤下一帧继续，绝不把主线程一次吃干。
+                // 兜底的 executed 上限防的是「步骤互相续接」时的意外死循环。
+                if (!BotWorkPump.Has(0.75f) || ++executed > 512) { EnsurePump(); return; }
+            }
+        }
+
+        static void FinishStartup()
+        {
+            if (!startupStarted || startupComplete) return;
+            startupComplete = true;
+            if (limitDisableScheduled) return;
+            limitDisableScheduled = true;
+            BotTasks.Schedule(BotGeneration.DisableEnvironmentBotLimit, 120_000);
+        }
+
+        static void AbortStartup()
+        {
+            lock (gate) { startupStarted = false; startupComplete = false; }
+            lock (steps) steps.Clear();
+        }
 
         // 会话复位：BotRuntime.Dispose 会移除全部假人并停调度时钟，
         // 不复位启动状态机的话，下次进游戏 RequestMarketStartup 会因
@@ -63,10 +139,13 @@ namespace Server.Bot.Environment
             {
                 startupStarted = false;
                 startupComplete = false;
+                limitDisableScheduled = false;
                 marketEntranceBotCount = 0;
             }
             // 分步生成还没走完就退服时，残留的步骤必须在下次进游戏前清掉。
-            lock (startupSteps) startupSteps.Clear();
+            lock (steps) steps.Clear();
+            pumpTask = null;
+            yieldRequested = false;
         }
 
         // ≡ requestMarketStartup：丢给调度时钟执行，状态机保证幂等
@@ -77,10 +156,7 @@ namespace Server.Bot.Environment
         }
 
         // ≡ marketEnvironmentStartup（EnvironmentManager.java:113）
-        // 源端在后台线程跑完三波；本端口把每一波拆成一个调度步骤，每帧只做一步，
-        // 否则进图那一帧要连续生成十几个假人（含纸娃娃/装备/导航），主线程会明显卡住。
-        static readonly Queue<Action> startupSteps = new Queue<Action>();
-
+        // 三波按顺序串起来：前一波的座位/假人步骤排完，才把下一波的计划步骤排到队尾。
         public static void MarketEnvironmentStartup()
         {
             lock (gate)
@@ -89,50 +165,27 @@ namespace Server.Bot.Environment
                 startupStarted = true;
             }
             BotGeneration.EnableEnvironmentBotLimit();
-            lock (startupSteps)
-            {
-                startupSteps.Clear();
-                startupSteps.Enqueue(SpawnScaledFMEntranceBots);   // Wave 1 Free Market core
-                startupSteps.Enqueue(SpawnScaledMerchantBots);
-                startupSteps.Enqueue(SpawnMarketSocialBots);
-                startupSteps.Enqueue(SpawnGachaBotsHenesys);       // Wave 2 specialty
-                startupSteps.Enqueue(SpawnTownWanderers);          // Wave 3 Town wanderers
-            }
-            BotTasks.Schedule(StartupStep, 0);
+            lock (steps) steps.Clear();
+            Post(PlanWave1);
         }
 
-        static void StartupStep()
+        // ——————————— Wave 1：FM 入口 + 商人 + 社交 ———————————
+        static void PlanWave1() => EnsureMapThen(FMEntrance, () =>
         {
-            Action task = null;
-            lock (startupSteps) { if (startupSteps.Count > 0) task = startupSteps.Dequeue(); }
-            if (task == null)
-            {
-                startupComplete = true;
-                BotTasks.Schedule(BotGeneration.DisableEnvironmentBotLimit, 120_000);
-                return;
-            }
-            try
-            {
-                task();
-            }
-            catch (Exception)
-            {
-                // ≡ catch (RuntimeException)：回滚状态，允许再次请求（allowMarketStartupRetry）
-                lock (gate) { startupStarted = false; startupComplete = false; }
-                lock (startupSteps) startupSteps.Clear();
-                return;
-            }
-            BotTasks.Schedule(StartupStep, 0);   // 下一帧做下一步
-        }
-
-        // ——————————— Wave 1：FM 入口 ———————————
+            PlanScaledFMEntranceSeats();
+            PlanMerchantSeats();
+            PlanSocialSeats();
+            Post(PlanWave2);            // 排在本波所有座位步骤之后
+        });
 
         // ≡ spawnScaledFMEntranceBots + distributeMarketEntranceWanderers：2/3 预算平分三平台
-        static void SpawnScaledFMEntranceBots()
+        static void PlanScaledFMEntranceSeats()
         {
             if (!BotConfig.FmBotsEnabled(Db)) return;
             var parts = DistributeMarketEntranceWanderers(BotConfig.MarketBotMax(Db));
-            SpawnFMEntranceBotsBatch(parts[0], parts[1], parts[2]);
+            PlanPlatformSeats(FMEntrance, "m1", parts[0], BotType.FM_BOT);
+            PlanPlatformSeats(FMEntrance, "m2", parts[1], BotType.FM_BOT);
+            PlanPlatformSeats(FMEntrance, "m5", parts[2], BotType.FM_BOT);
         }
 
         public static int[] DistributeMarketEntranceWanderers(int cap)
@@ -144,80 +197,89 @@ namespace Server.Bot.Environment
             return new[] { m1, m2, m5 };
         }
 
-        static void SpawnFMEntranceBotsBatch(int m1Count, int m2Count, int m5Count)
-        {
-            if (m1Count > 0) BotTypeManager.SetAndStartBots(SpawnBotsOnMapOnPlatform(m1Count, FMEntrance, "m1"), BotType.FM_BOT);
-            if (m2Count > 0) BotTypeManager.SetAndStartBots(SpawnBotsOnMapOnPlatform(m2Count, FMEntrance, "m2"), BotType.FM_BOT);
-            if (m5Count > 0) BotTypeManager.SetAndStartBots(SpawnBotsOnMapOnPlatform(m5Count, FMEntrance, "m5"), BotType.FM_BOT);
-        }
-
         // ≡ spawnScaledMerchantBots + spawnMerchBotsBatch：selling=cap/6、buying=cap/8、nx=cap/15
-        static void SpawnScaledMerchantBots()
+        static void PlanMerchantSeats()
         {
             if (!BotConfig.FmMerchantsEnabled(Db)) return;
             int cap = BotConfig.MarketBotMax(Db);
             int selling = Math.Max(2, cap / 6), buying = Math.Max(1, cap / 8), nx = Math.Max(1, cap / 15);
-            SpawnMerchBotsBatch("m1", Math.Max(1, selling / 2), Math.Max(1, buying / 2), 0);
-            SpawnMerchBotsBatch("m2", selling - selling / 2, buying - buying / 2, 0);
-            SpawnMerchBotsBatch("m5", 0, 0, nx);
+            PlanMerchantBatch("m1", Math.Max(1, selling / 2), Math.Max(1, buying / 2), 0);
+            PlanMerchantBatch("m2", selling - selling / 2, buying - buying / 2, 0);
+            PlanMerchantBatch("m5", 0, 0, nx);
         }
 
-        static void SpawnMerchBotsBatch(string platform, int selling, int buying, int nx)
+        static void PlanMerchantBatch(string platform, int selling, int buying, int nx)
         {
-            if (selling > 0) BotTypeManager.SetAndStartBots(SpawnBotsOnMapOnPlatform(selling, FMEntrance, platform), BotType.SELLING_MERCHANT_BOT);
-            if (buying > 0) BotTypeManager.SetAndStartBots(SpawnBotsOnMapOnPlatform(buying, FMEntrance, platform), BotType.BUYING_MERCHANT_BOT);
-            if (nx > 0) BotTypeManager.SetAndStartBots(SpawnBotsOnMapOnPlatform(nx, FMEntrance, platform), BotType.NX_MERCHANT_BOT);
+            PlanPlatformSeats(FMEntrance, platform, selling, BotType.SELLING_MERCHANT_BOT);
+            PlanPlatformSeats(FMEntrance, platform, buying, BotType.BUYING_MERCHANT_BOT);
+            PlanPlatformSeats(FMEntrance, platform, nx, BotType.NX_MERCHANT_BOT);
         }
 
         // ≡ spawnMarketSocialBots：FM 入口 (-260,34)~(330,34) 三只 SOCIAL_BOT
-        static void SpawnMarketSocialBots()
+        static void PlanSocialSeats()
+            => EnqueueBotSpawns(FillerSeats(3, FMEntrance, new BotPoint(-260, 34), new BotPoint(330, 34)), FMEntrance, BotType.SOCIAL_BOT);
+
+        // ——————————— Wave 2：扭蛋 ———————————
+        static void PlanWave2() => EnsureMapThen(FMEntrance, () =>
         {
-            var ids = SpawnFillerBots(3, FMEntrance, new BotPoint(-260, 34), new BotPoint(330, 34));
-            BotTypeManager.SetAndStartBots(ids, BotType.SOCIAL_BOT);
+            // ≡ spawnGachaBotsHenesys：FM m5 平台 (40,34) 半径 250 内 2 只 GACHA_BOT
+            if (BotConfig.GachaBotsEnabled(Db))
+                EnqueueBotSpawns(RadiusSeats(2, FMEntrance, "m5", new BotPoint(40, 34), 250), FMEntrance, BotType.GACHA_BOT);
+            Post(PlanWave3);
+        });
+
+        // ——————————— Wave 3：城镇游荡 ———————————
+        // ≡ spawnTownWanderers：城镇配置驱动，具体实现已在 BotTownSpawner（BotRuntime 持有，
+        // 内部同样按「一个城镇一步 / 一个假人一步」续接）。
+        static void PlanWave3() => TownWanderers?.Invoke();
+
+        // ——————————— 座位 → 逐人生成 ———————————
+
+        // 算座位表本身只是纯数学（毫秒级），并且要求地图几何已登记；
+        // 真正常开销的是后面的 CreateBot（随机外观/装备池/注册状态机），所以拆成两步。
+        static void PlanPlatformSeats(int mapId, string platformId, int count, BotType type)
+        {
+            if (count <= 0) return;
+            Post(() => EnqueueBotSpawns(PlatformSeats(mapId, platformId, count), mapId, type));
         }
 
-        // ——————————— Wave 2 ———————————
-
-        // ≡ spawnGachaBotsHenesys：FM m5 平台 (40,34) 半径 250 内 2 只 GACHA_BOT
-        static void SpawnGachaBotsHenesys()
+        // 一次只生成一个假人，剩下的排到队尾；全部生成完才启动这一批的状态机。
+        // 第一条也排队（不在这里直接跑），这样「算座位」全部走完才开始逐个生成，波次顺序不乱。
+        static void EnqueueBotSpawns(List<BotPoint> seats, int mapId, BotType type)
         {
-            if (!BotConfig.GachaBotsEnabled(Db)) return;
-            var ids = SpawnBotsOnMapOnPlatformInRadius(2, FMEntrance, "m5", new BotPoint(40, 34), 250);
-            BotTypeManager.SetAndStartBots(ids, BotType.GACHA_BOT);
+            var ids = new List<int>();
+            int index = 0;
+            void NextBot()
+            {
+                if (index >= seats.Count) { BotTypeManager.SetAndStartBots(ids, type); return; }
+                var bot = CreateBotWithRetry(seats[index++], mapId, 5);
+                if (bot != null) ids.Add(bot.id);
+                Post(NextBot);
+            }
+            Post(NextBot);
         }
 
-        // ——————————— Wave 3 ———————————
-
-        // ≡ spawnTownWanderers：城镇配置驱动，具体实现已在 BotTownSpawner（BotRuntime 持有）
-        static void SpawnTownWanderers() => TownWanderers?.Invoke();
-
-        // ——————————— 生成原语 ———————————
-
-        // ≡ spawnBotsOnMapOnPlatform（EnvironmentManager.java:937）
-        public static List<int> SpawnBotsOnMapOnPlatform(int numBots, int mapId, string platformId)
+        static List<BotPoint> PlatformSeats(int mapId, string platformId, int count)
         {
-            EnsureMap(mapId);
             var platform = Platforms.ParsePlatform(mapId, platformId);
             var occupied = new List<BotPoint>();
-            var ids = new List<int>();
+            var seats = new List<BotPoint>();
             var spawner = new PlatformSpawner();
-            for (int i = 0; i < numBots; i++)
+            for (int i = 0; i < count; i++)
             {
                 var spawn = PlatformSpawner.SnapToGround(mapId, spawner.FindUnoccupiedPoint(platform, occupied));
                 occupied.Add(spawn);
-                var bot = CreateBotWithRetry(spawn, mapId, 5);
-                if (bot != null) ids.Add(bot.id);
+                seats.Add(spawn);
             }
-            return ids;
+            return seats;
         }
 
-        // ≡ spawnBotsOnMapOnPlatformInRadius（EnvironmentManager.java:996）
-        public static List<int> SpawnBotsOnMapOnPlatformInRadius(int numBots, int mapId, string platformId, BotPoint center, int radius)
+        // ≡ findUnoccupiedPointInRadius（EnvironmentManager.java:1191）：100 次采样限制在半径内
+        static List<BotPoint> RadiusSeats(int numBots, int mapId, string platformId, BotPoint center, int radius)
         {
-            EnsureMap(mapId);
             var platform = Platforms.ParsePlatform(mapId, platformId);
             var occupied = new List<BotPoint>();
-            var ids = new List<int>();
+            var seats = new List<BotPoint>();
             var spawner = new PlatformSpawner();
             for (int i = 0; i < numBots; i++)
             {
@@ -225,41 +287,43 @@ namespace Server.Bot.Environment
                 if (spawn == null) continue;
                 var grounded = PlatformSpawner.SnapToGround(mapId, spawn.Value);
                 occupied.Add(grounded);
-                var bot = CreateBotWithRetry(grounded, mapId, 5);
-                if (bot != null) ids.Add(bot.id);
+                seats.Add(grounded);
             }
-            return ids;
+            return seats;
         }
 
         // ≡ spawnFillerBots（EnvironmentManager.java:1058）：临时平线平台 + 找空位
-        public static List<int> SpawnFillerBots(int numBots, int mapId, BotPoint p1, BotPoint p2)
+        static List<BotPoint> FillerSeats(int numBots, int mapId, BotPoint p1, BotPoint p2)
         {
-            EnsureMap(mapId);
             int minX = Math.Min(p1.x, p2.x), maxX = Math.Max(p1.x, p2.x);
             var platform = new Platform(minX, maxX, p1.y, new List<BotPoint> { p1, p2 }, Platform.Type.FLAT);
             var occupied = new List<BotPoint>();
-            var ids = new List<int>();
+            var seats = new List<BotPoint>();
             var spawner = new PlatformSpawner();
             foreach (var raw in spawner.FindUnoccupiedPoints(platform, occupied, numBots))
             {
                 var spawn = PlatformSpawner.SnapToGround(mapId, raw);
                 occupied.Add(spawn);
-                var bot = CreateBotWithRetry(spawn, mapId, 5);
-                if (bot != null) ids.Add(bot.id);
+                seats.Add(spawn);
             }
-            return ids;
+            return seats;
         }
 
-        // ≡ findUnoccupiedPointInRadius（EnvironmentManager.java:1191）：100 次采样限制在半径内
-        static BotPoint? FindUnoccupiedPointInRadius(PlatformSpawner spawner, Platform platform, List<BotPoint> occupied, BotPoint center, int radius)
+        // 等一帧地图几何就绪：分片没解完就把这一步重新排队（主线程不碰 JSON），
+        // 地图确实不在包里就立刻放弃（原端同样跳过），等够 MapWaitFrames 才退回同步加载兜底。
+        static void EnsureMapThen(int mapId, Action next, int attempt = 0)
         {
-            for (int i = 0; i < 100; i++)
+            if (MapService.Has(mapId)) { next(); return; }
+            var state = TryGetMap != null ? TryGetMap(mapId, out _, false) : BotMapState.Missing;
+            if (state == BotMapState.Ready) { next(); return; }
+            if (state == BotMapState.Missing) { next(); return; }
+            if (attempt >= MapWaitFrames)
             {
-                var candidate = spawner.FindUnoccupiedPoint(platform, occupied);
-                if (Math.Abs(candidate.x - center.x) <= radius && Math.Abs(candidate.y - center.y) <= radius)
-                    return candidate;
+                try { GetMap?.Invoke(mapId); } catch (ArgumentException) { /* 地图不在包里：后续步骤自然跳过 */ }
+                next();
+                return;
             }
-            return null;
+            PostNextFrame(() => EnsureMapThen(mapId, next, attempt + 1));
         }
 
         // ≡ createBotWithRetry（EnvironmentManager.java:1229）：环境限额 + FM 入口槽位 + 重试。
@@ -304,5 +368,72 @@ namespace Server.Bot.Environment
             if (mapId == FMEntrance && reserved)
                 Math.Max(0, System.Threading.Interlocked.Decrement(ref marketEntranceBotCount));
         }
+
+        // ——————————— 同步版生成原语（保留给后台/自检直接调用）———————————
+
+        // ≡ spawnBotsOnMapOnPlatform（EnvironmentManager.java:937）
+        public static List<int> SpawnBotsOnMapOnPlatform(int numBots, int mapId, string platformId)
+        {
+            EnsureMap(mapId);
+            var ids = new List<int>();
+            foreach (var seat in PlatformSeats(mapId, platformId, numBots))
+            {
+                var bot = CreateBotWithRetry(seat, mapId, 5);
+                if (bot != null) ids.Add(bot.id);
+            }
+            return ids;
+        }
+
+        // ≡ spawnBotsOnMapOnPlatformInRadius（EnvironmentManager.java:996）
+        public static List<int> SpawnBotsOnMapOnPlatformInRadius(int numBots, int mapId, string platformId, BotPoint center, int radius)
+        {
+            EnsureMap(mapId);
+            var ids = new List<int>();
+            foreach (var seat in RadiusSeats(numBots, mapId, platformId, center, radius))
+            {
+                var bot = CreateBotWithRetry(seat, mapId, 5);
+                if (bot != null) ids.Add(bot.id);
+            }
+            return ids;
+        }
+
+        // ≡ spawnFillerBots（EnvironmentManager.java:1058）
+        public static List<int> SpawnFillerBots(int numBots, int mapId, BotPoint p1, BotPoint p2)
+        {
+            EnsureMap(mapId);
+            var ids = new List<int>();
+            foreach (var seat in FillerSeats(numBots, mapId, p1, p2))
+            {
+                var bot = CreateBotWithRetry(seat, mapId, 5);
+                if (bot != null) ids.Add(bot.id);
+            }
+            return ids;
+        }
+
+        // 落点前确保地图几何已在 MapService（源端直接 getMapleMapById）——同步版用。
+        static void EnsureMap(int mapId)
+        {
+            if (!MapService.Has(mapId)) GetMap?.Invoke(mapId);
+        }
+
+        // ≡ findUnoccupiedPointInRadius：100 次采样限制在半径内
+        static BotPoint? FindUnoccupiedPointInRadius(PlatformSpawner spawner, Platform platform, List<BotPoint> occupied, BotPoint center, int radius)
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                var candidate = spawner.FindUnoccupiedPoint(platform, occupied);
+                if (Math.Abs(candidate.x - center.x) <= radius && Math.Abs(candidate.y - center.y) <= radius)
+                    return candidate;
+            }
+            return null;
+        }
     }
+
+    // 非阻塞地图加载委托：
+    //   Ready   —— 几何已登记（分片后台解析好或本来就有），可以立刻用；
+    //   Pending —— 分片正在后台解析，调用方下一帧再问，主线程一帧都不等；
+    //   Missing —— 包里根本没有这张图，当作无法生成（原端同样跳过）。
+    public delegate BotMapState BotMapLoad(int mapId, out MapRuntime map, bool allowBlocking);
+
+    public enum BotMapState { Ready, Pending, Missing }
 }

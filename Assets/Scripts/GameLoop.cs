@@ -65,6 +65,8 @@ public class GameLoop : MonoBehaviour
         go.AddComponent<HitFeelRunner>();
         go.AddComponent<GameLoop>();
         go.AddComponent<InputBridge>();  // 键盘/虚拟键 → 游戏意图（原版是纯键盘操作）
+        go.AddComponent<BotPreload>();   // 登录界面期间把假人运行时先建好，别拖到进图第一帧
+        go.AddComponent<BotAppearancePrebake>();   // 同上：把模板纸娃娃的动作帧提前合成，进图不再现场合成
     }
 
     void Awake()

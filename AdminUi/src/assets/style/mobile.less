@@ -61,4 +61,20 @@
   .arco-card-body .arco-input-number {
     min-width: 120px;
   }
+
+  // 顶部消息条（登录失败/接口报错）：默认 line-height:1 + inline-flex，长文案在窄屏会被
+  // 挤成一条细缝。这里允许换行、放宽行高，宽度最多到屏宽。
+  .arco-message-list {
+    padding: 0 12px;
+  }
+  .arco-message {
+    max-width: 100%;
+    padding: 8px 14px;
+  }
+  .arco-message-content {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 20px;
+    text-align: left;
+  }
 }

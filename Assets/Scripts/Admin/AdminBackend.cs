@@ -164,28 +164,70 @@ public static class AdminBackend
     }
 
     // —————————— 后台账号 ——————————
-    // 第一次起服务时，如果库里没有任何 webadmin 账号，就建一个 admin/admin，
-    // 让「点侧边栏 → 浏览器登录」这条链路可用（只监听 127.0.0.1，不对外）。
+    // 内置后台账号只在「库里没有种子标记」时初始化一次：保证 admin / admin 能登录。
+    // 之后用户在账号页改过密码就尊重改动，不再覆盖。
+    //
+    // 旧实现是「只要库里没有任何 webadmin 账号，就把名为 admin 的账号提为后台账号」，
+    // 一旦库里已经有别的 webadmin 行（或 admin 这个游戏账号早就存在），就静默 return null，
+    // 结果 admin/admin 永远登不进去（用户报障）。这里改成用 game_config 的
+    // webadmin_seed 做一次性初始化，并且把结果（含跳过原因）返回给调用方打日志。
+    public const string AdminSeedCode = "webadmin_seed";
+
     public static string EnsureWebAdmin()
     {
         return AdminMainThread.Run(() =>
         {
             var db = Db;
-            if (db == null) return null;
-            var accounts = db.Table("accounts");
-            foreach (var r in accounts.rows)
-                if (DbStore.Int(r, "webadmin") != 0) return null;
+            if (db == null) return "后台账号未初始化：数据库还没就绪";
 
+            var config = db.Table("game_config");
+            var seed = config.Find(r => DbStore.Str(r, "config_code") == AdminSeedCode);
+            if (seed != null && DbStore.Str(seed, "config_value") == "1") return null;   // 已经初始化过
+
+            var accounts = db.Table("accounts");
             var row = AccountsDao.FindByName(db, DefaultAdminName);
+            string message;
+
             if (row == null)
             {
                 AccountsDao.AutoRegister(db, DefaultAdminName, DefaultAdminPassword);
                 row = AccountsDao.FindByName(db, DefaultAdminName);
+                message = "已创建后台管理员账号 " + DefaultAdminName + " / " + DefaultAdminPassword;
             }
-            if (row == null) return null;
-            accounts.Update(DbStore.Eq("id", Convert.ToInt64(row["id"])), new DbRow { ["webadmin"] = 1L });
+            else if (!AccountsDao.VerifyPassword(DefaultAdminPassword, DbStore.Str(row, "password")))
+            {
+                // 同名账号早就当游戏账号注册过（密码不是 admin）：首次初始化时按内置口令重置，
+                // 否则「默认 GM 账号」这个预期永远不成立。
+                accounts.Update(DbStore.Eq("id", Convert.ToInt64(row["id"])),
+                    new DbRow { ["password"] = AccountsDao.HashPassword(DefaultAdminPassword) });
+                message = "内置账号 " + DefaultAdminName + " 已存在，密码重置为 " + DefaultAdminPassword + "（首次初始化后台）";
+            }
+            else
+            {
+                message = "内置后台账号已就绪：" + DefaultAdminName + " / " + DefaultAdminPassword;
+            }
+
+            if (row != null)
+            {
+                accounts.Update(DbStore.Eq("id", Convert.ToInt64(row["id"])),
+                    new DbRow { ["webadmin"] = 1L, ["banned"] = 0L });
+            }
+
+            if (seed != null)
+                config.Update(r => ReferenceEquals(r, seed), new DbRow { ["config_value"] = "1" });
+            else
+                config.Insert(new DbRow
+                {
+                    ["config_type"] = "webadmin",
+                    ["config_sub_type"] = "0",
+                    ["config_clazz"] = "java.lang.String",
+                    ["config_code"] = AdminSeedCode,
+                    ["config_value"] = "1",
+                    ["config_desc"] = "内置后台账号是否已初始化（1=是，改过密码后不再覆盖）",
+                });
+
             db.Save();
-            return "已创建后台管理员账号 " + DefaultAdminName + " / " + DefaultAdminPassword;
+            return message;
         });
     }
 

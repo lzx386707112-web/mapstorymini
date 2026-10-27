@@ -10,6 +10,8 @@ namespace Server.Bot
         public BotTier tier = BotTiers.Default;
         public BotWander wander;
         internal BotTasks.Handle arrivalTask;
+        // 档案 id（BotDirectory）：对齐联机的账号 id —— 下线要归还，身份保持不变。
+        public int profileId;
         public bool moving;
         public int facing = -1;
         public int stance = 5;         // 源端 IDLE_LEFT=5，IDLE_RIGHT=4

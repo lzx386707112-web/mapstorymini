@@ -35,6 +35,7 @@ namespace Server.Bot
         public static int PendingCount => tasks.FindAll(t => !t.Cancelled && !t.Completed).Count;
         public static void Drive(long now)
         {
+            using var perf = BotPerf.Timer("BotTasks.Drive");
             var ready = tasks.FindAll(t => !t.Cancelled && !t.Completed && now >= t.due);
             ready.Sort((a, b) => { int c = a.due.CompareTo(b.due); return c != 0 ? c : a.sequence.CompareTo(b.sequence); });
             foreach (var h in ready)
