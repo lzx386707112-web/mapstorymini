@@ -32,6 +32,13 @@ HTTP 服务，同时供出前端静态资源和 REST 接口；游戏内从侧边
    侧边栏入口现在默认用**应用内 WebView** 打开（`AdminWebView`，Android 全屏 Dialog，
    系统返回键关闭；游戏不切后台，主线程不会停摆）。桌面/编辑器仍走系统浏览器；
    外部浏览器访问 `http://<手机IP>:8686/` 依然可用。
+4. **明文 HTTP 放行**：Android 9+ 默认禁 cleartext，系统 WebView 会直接报
+   `net::ERR_CLEARTEXT_NOT_PERMITTED`（表现为一片黑底 + 错误页）。构建钩子
+   `Assets/Editor/AndroidNativeDataBuild.cs`（`IPostGenerateGradleAndroidProject`）
+   会往生成的 manifest 注入 `android:networkSecurityConfig`，并写一份
+   `res/xml/network_security_config.xml`：**只放行 `127.0.0.1`/`localhost`**，
+   base-config 仍是禁止明文。所以这项改动必须**重新出包**才生效
+   （`MapleDash/构建 APK（IL2CPP 发布）`）；旧包点「后台系统」必定黑屏。
 
 ## 3. 为什么是「游戏进程内起服务」
 

@@ -68,7 +68,8 @@ public sealed class NativeMapView : MonoBehaviour
                 mobTime = life.Int("mobTime"), fh = life.Int("fh"), team = life.Int("team", -1), dir = life.Int("f"),
                 x = life.Int("x"), y = life.Int("y"), cy = life.Int("cy"), rx0 = life.Int("rx0"), rx1 = life.Int("rx1") });
             else if (life.Text("type") == "n") m.npcs.Add(new FieldNpc { id = int.Parse(life.Text("id")),
-                hide = life.Int("hide"), x = life.Int("x"), y = NpcGroundY(n, life) });
+                hide = life.Int("hide"), x = life.Int("x"), y = NpcGroundY(n, life),
+                head = NpcHeadHeight(int.Parse(life.Text("id"))) });
         }
         // Use source VR when present; maps without VR use a provisional foothold-based camera envelope.
         int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
@@ -197,6 +198,20 @@ public sealed class NativeMapView : MonoBehaviour
             file = "Npc/" + Convert.ToInt32(link.Value).ToString("D7") + ".img";
         }
         return null;
+    }
+    // NPC 名字/任务图标的锚点：站姿首帧 origin.y 就是脚底到画面顶端的像素高度。
+    // 原来固定 82px 会让高 NPC 的名字压在头上、矮 NPC 的名字悬空。
+    static float NpcHeadHeight(int npcId)
+    {
+        try
+        {
+            var root = NpcRoot(npcId.ToString("D7"));
+            var frames = root == null ? null : WzAssets.Frames(root.Get("stand"));
+            if (frames == null || frames.Count == 0) return 80f;
+            float originY = WzAssets.Origin(frames[0]).y;
+            return originY > 4f ? originY : WzAssets.Canvas(frames[0]).Height;
+        }
+        catch (Exception) { return 80f; }
     }
     public void Show(int id)
     {

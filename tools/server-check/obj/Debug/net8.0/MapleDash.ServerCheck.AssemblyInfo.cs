@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MapleDash.ServerCheck")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eaf68bd6c448aa83428a7859780baf9653540cad")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0ab62e213b8a8d10a8d0a6aee94a115693009254")]
 [assembly: System.Reflection.AssemblyProductAttribute("MapleDash.ServerCheck")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MapleDash.ServerCheck")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

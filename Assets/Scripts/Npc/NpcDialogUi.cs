@@ -21,8 +21,9 @@ public static class NpcDialogUi
         if (session != null && session.Dialog.Visible) DrawDialog(session);
     }
 
-    // NPC 头顶名字牌（原客户端默认开启「显示 NPC 名字」）：黄字黑描边，位置在脚点上方 82px，
-    // 任务图标（!/?）画在名字再上方。
+    // NPC 头顶名字牌（原客户端默认开启「显示 NPC 名字」）：黄字黑描边，位置贴 NPC 站姿
+    // 首帧的顶端（脚点往上是 origin.y 像素），任务图标（!/?）画在名字再上方。
+    // 不能用固定 82px：大号 NPC（图高 100+）的名字会被压在头上，小 NPC 又会飘在空中。
     static GUIStyle nameStyle;
 
     static void DrawNpcNames()
@@ -46,7 +47,7 @@ public static class NpcDialogUi
             string name = WzNames.Npc(npc.id);
             if (string.IsNullOrEmpty(name) || npc.id <= 0) continue;
             float wx = map.WorldX(npc.x);
-            float wy = map.WorldY(npc.y) + 82f / Art.PPU;
+            float wy = map.WorldY(npc.y) + (npc.head + 2f) / Art.PPU;
             var sp = cam.WorldToScreenPoint(new Vector3(wx, wy, 0f));
             if (sp.z < 0f) continue;
             var gui = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);
@@ -82,7 +83,7 @@ public static class NpcDialogUi
             if (!marker.start && !marker.complete) continue;
 
             float wx = map.WorldX(npc.x);
-            float wy = map.WorldY(npc.y) + 108f / Art.PPU;     // 名字牌（82px）上方，避免图标压在名字上
+            float wy = map.WorldY(npc.y) + (npc.head + 26f) / Art.PPU;   // 名字行（约 14px）上方，避免图标压在名字上
             var sp = cam.WorldToScreenPoint(new Vector3(wx, wy, 0f));
             if (sp.z < 0f) continue;
             var gui = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);

@@ -218,7 +218,8 @@
 | `org/gms/net/server/coordinator/world/InviteCoordinator.java` | `ce9332f9403e0f344a2fd7127544be7a8e1bede2ed8b551682da52635cf0e3d3` |
 | `org/gms/server/ItemInformationProvider.java` | `86b777480f979d7c15c469dc43e745fd10e7ecc551ba79216f54be9c2ef81ee8` |
 
-原SocialCommands.BotFullChat(mode0)与BotChatbubble(mode1)有明确区别；BotField现将Chat输出接入现有BottomBar聊天记录，Bubble仍不写聊天记录。没有据此自行实现尚未核实的头顶气泡几何。
+原SocialCommands.BotFullChat(mode0)与BotChatbubble(mode1)有明确区别；BotField现将Chat输出接入现有BottomBar聊天记录，Bubble仍不写聊天记录。
+2026-10-27 续：Chat 与 Bubble 现在都冒原版 `UI/ChatBalloon.img/0` 头顶气泡（5秒、末0.5秒淡出），Chat 另外进聊天记录。九宫格尺寸、资源节点分派（type 1000/1001 默认、1002 pet、1003 adboard、1004 mob、dead）与 5000ms 显示期已核实，**角色锚点仍是待核实项**（当前按脚点上 84px），详见 [传送门/名牌/气泡](field-portal-nametag-bubble.md)。
 
 ### 气泡调用链续查（同一EXE身份）
 

@@ -27,6 +27,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 相机 VR、分辨率补丁、背景滚动；技能窗已定位函数 | [地图与技能窗入口](references/map-and-skill-window.md) |
 | 鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义 | [UI 拖动语义](references/ui-drag-and-drop.md) |
 | NPC 对话窗口素材、纸面几何、共享滚动条、`#L` 行内选项 | [NPC 对话窗口](references/npc-dialog.md) |
+| 传送门 pt 触发方式、NPC 头顶名字锚点、聊天气泡九宫格与时长 | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |
 | 背包/装备窗物品悬浮详情：ToolTip 图集、名称/描述来源、属性/需求字段、配色与帧绘制 | [背包与悬浮详情](references/inventory-and-tooltip.md) |
 
 地图坐标/脚底/平台/绳梯的运行时约定另见 [mapledash-map-port](../mapledash-map-port/SKILL.md)。服务端和脚本语义仍以源端服务端/脚本为依据，不能用 EXE 的显示行为替代服务端规则。

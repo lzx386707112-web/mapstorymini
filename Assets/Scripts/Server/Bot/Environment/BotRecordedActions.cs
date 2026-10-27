@@ -68,7 +68,9 @@ namespace Server.Bot.Environment
             if (walk.remaining-- <= 0 || Math.Abs(actor.x - walk.targetX) <= 20) { Complete(walk, true); return; }
             int x = (int)actor.x + (walk.targetX >= actor.x ? 10 : -10);
             int y = (int)MapService.SnapToGround(actor.mapId, x, actor.y);
-            Send(actor, Normal(x, y, walk.left ? -100 : 100, 0, Floor(actor, x, y), walk.left ? 1 : 0, 160));
+            // MovementPacketConstructor.createWalkStepPacket：stance 取 MOVING_LEFT(3)/MOVING_RIGHT(2)，
+            // 不是 IDLE_LEFT/RIGHT(0/1)——传站立姿势会让假人走路时停在原地踏步。
+            Send(actor, Normal(x, y, walk.left ? -100 : 100, 0, Floor(actor, x, y), walk.left ? 3 : 2, 160));
             walk.task = BotTasks.Schedule(() => Step(walk), 160);
         }
         static void Complete(Walk walk, bool stop)

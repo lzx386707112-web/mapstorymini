@@ -1500,7 +1500,11 @@ static class BotChecks
         var db = DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mapledash_bot_market_auto.json"));
         using (var runtime = new BotRuntime(db))
         {
-            runtime.Drive(1100);   // BotTasks.Schedule(MarketEnvironmentStartup, 0) 到期执行三波
+            // BotTasks.Schedule(MarketEnvironmentStartup, 0) 到期执行；三波按帧分步生成
+            // （进图单帧连开十几个假人会卡主线程），所以这里推进多帧直到启动完成。
+            long clock = 1100;
+            for (int frame = 0; frame < 20 && !Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete; frame++)
+            { runtime.Drive(clock); clock += 100; }
             var fmBots = BotRegistry.OnMap(910000000);
             check(fmBots.Count > 0 && Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete,
                 "进游戏默认自动拉起三波环境，自由市场入口已有假人（FM=" + fmBots.Count + "）");
@@ -1703,6 +1707,9 @@ static class BotChecks
         BotScheduler.Clock = 1600; fm.UpdateState(); BotTasks.Drive(1600);
         check(BotRecordedActions.IsMoving(actor) && actor.x == 10,
             "市场散步按原端10px步行封包启动，不用临时速度替代");
+        // createWalkStepPacket 用 MOVING_LEFT(3)/MOVING_RIGHT(2)；传 0/1 会让假人走路时停在站立帧。
+        check(actor.stance == 2 || actor.stance == 3,
+            "封包步行使用 MOVING_LEFT/MOVING_RIGHT 姿势，不是站立姿势（stance=" + actor.stance + "）");
         for (int i = 1; i <= 18; i++) { BotScheduler.Clock = 1600 + i * 160; BotTasks.Drive(BotScheduler.Now()); }
         check(!BotRecordedActions.IsMoving(actor) && actor.x == 100 && actor.stance == 4,
             "市场散步每160毫秒一步，距终点20px结束并注入双停止命令");

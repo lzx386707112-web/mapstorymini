@@ -394,9 +394,8 @@ public sealed class FieldDirector : MonoBehaviour
         }
     }
 
-    // 原端 pt=2/10 的传送门是「站在门上按上方向键」才进，走上去不会自动触发。
-    // pt=1（隐形传送门：FM 彩色传送带、上下层箭头）和 pt=7（触碰脚本门：FM 出口）
-    // 是「站上去就触发」，原客户端不需要按键。
+    // 原端只有 pt=1（隐形传送门，如 FM 入口 in01..in22）和 pt=6（碰撞门）是踩上去即传；
+    // pt=2/3/7/10（含自由市场出口 out00、选择之岔路）都要站在门上按上方向键才进。
     void CheckPortals(PlayerCtrl player, float dt)
     {
         if (Warping)                 // 渐变中：不再接受任何新的门

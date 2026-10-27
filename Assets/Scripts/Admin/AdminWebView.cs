@@ -34,11 +34,20 @@ public static class AdminWebView
                 var settings = web.Call<AndroidJavaObject>("getSettings");
                 settings.Call("setJavaScriptEnabled", true);
                 settings.Call("setDomStorageEnabled", true);
+                settings.Call("setDatabaseEnabled", true);
+                // 后台 UI 打包在 adminui.bytes 里，重装后哈希变了；WebView 按 URL 缓存会继续喂旧页面，
+                // 所以每次打开都不要缓存（本地回环，代价只有几毫秒）。
+                settings.Call("setCacheMode", 2);                    // WebSettings.LOAD_NO_CACHE
+                settings.Call("setUseWideViewPort", true);           // 让页面按设备宽度排版（mobile.less 的断点才生效）
+                settings.Call("setLoadWithOverviewMode", true);
+                settings.Call("setSupportZoom", false);              // 横屏手指误触缩放会把布局搞乱
+                settings.Call("setBuiltInZoomControls", false);
+                web.Call("setBackgroundColor", unchecked((int)0xFF101418));   // 先铺底色，避免加载前白闪
+                web.Call("setWebViewClient", new ErrorClient());
                 // 关闭 Dialog 时同步销毁 WebView，防泄漏
                 dialog.Call("setOnDismissListener", new DismissCallback(web));
                 dialog.Call("setContentView", web);
                 dialog.Call("show");
-                web.Call("setBackgroundColor", unchecked((int)0xFF101418));
                 web.Call("loadUrl", url);
             }
             catch (Exception e)
@@ -68,6 +77,57 @@ public static class AdminWebView
             try { web.Call("destroy"); } catch (Exception) { }
             if (dialog != null) dialog.Dispose();
             dialog = null;
+        }
+    }
+
+    // 加载失败时换成一张能读懂的错误页（默认错误页是纯黑背景，看着像「黑屏没反应」）。
+    // 只实现 API 23+ 的主框架回调：AndroidJavaProxy 按方法名派发，同名重载会二义，不能两个都写。
+    sealed class ErrorClient : AndroidJavaProxy
+    {
+        public ErrorClient() : base("android.webkit.WebViewClient") { }
+
+        void onReceivedError(AndroidJavaObject view, AndroidJavaObject request, AndroidJavaObject error)
+        {
+            try
+            {
+                if (request == null || view == null) return;
+                if (!request.Call<bool>("isForMainFrame")) return;      // 子资源失败不动整页
+                int code = error != null ? error.Call<int>("getErrorCode") : 0;
+                string desc = error != null ? error.Call<string>("getDescription") : "";
+                string url = request.Call<AndroidJavaObject>("getUrl").Call<string>("toString");
+                Debug.LogError("[Admin] WebView 加载失败 code=" + code + " " + desc + " url=" + url);
+                // 用 loadData 而不是 loadDataWithBaseURL：后者要传 Java null，Unity 的 JNI 参数
+                // 推导对 null 不友好；错误页是纯内联样式，不需要 baseUrl。
+                view.Call("loadData", ErrorHtml(url, code, desc), "text/html", "utf-8");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Admin] 错误页渲染失败: " + e.Message);
+            }
+        }
+
+        static string ErrorHtml(string url, int code, string desc)
+        {
+            string hint = code == -1 && desc != null && desc.ToLowerInvariant().Contains("cleartext")
+                ? "当前安装包没有放行本地明文 HTTP（Android 9+ 默认禁止），需要用最新构建重新出包。"
+                : "本地后台服务可能还没起来，返回后再点一次「后台管理」即可重试。";
+            return "<!DOCTYPE html><html><head><meta charset=\"utf-8\">" +
+                   "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
+                   "<style>body{margin:0;padding:24px;background:#101418;color:#e6ebf2;" +
+                   "font:15px/1.7 -apple-system,'PingFang SC','Microsoft YaHei',sans-serif}" +
+                   "h1{font-size:17px;margin:0 0 14px;color:#ffb454}code{color:#7fd1ff;word-break:break-all}" +
+                   "p{margin:0 0 10px;color:#9fb0c3}</style></head><body>" +
+                   "<h1>后台页面加载失败</h1>" +
+                   "<p>地址：<code>" + Html(url) + "</code></p>" +
+                   "<p>原因：<code>" + Html(desc) + "</code>（code " + code + "）</p>" +
+                   "<p>" + Html(hint) + "</p>" +
+                   "<p>返回键关闭本页。</p></body></html>";
+        }
+
+        static string Html(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
         }
     }
 #else

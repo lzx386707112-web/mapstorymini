@@ -48,9 +48,12 @@ public sealed class GameServer
         srv.Social = new NativeSocialService(srv.Db);
         srv.Social.ChatAccepted = srv.RouteBotChat;
         srv.Community = new NativeCommunityService(srv.Db);
-        srv.Cash = new NativeCashService(srv.Db);
-        srv.Bosses = new NativeBossService(srv.Db);
+        srv.Cash = new NativeCashService(srv.Db);        srv.Bosses = new NativeBossService(srv.Db);
         srv.Transport = new InProcessTransport(srv);
+        // 假人资源包在后台线程预解析：等真正进图拉起假人时（World/Bots 首次访问）
+        // 就不用把 8.6MB+3.3MB 的 JSON 卡在当前帧。
+        Server.Bot.BotWarmup.Start("Bot/Items");
+        Server.Bot.BotWarmup.Start("Bot/SoloMapling");
         Local = srv;
         return srv;
     }

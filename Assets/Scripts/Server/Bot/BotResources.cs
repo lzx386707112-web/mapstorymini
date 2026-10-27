@@ -7,13 +7,13 @@ namespace Server.Bot
     public sealed class BotResources
     {
         readonly Dictionary<string, object> resources;
-        public BotResources(string json)
+        public BotResources(string json) : this(json == null ? null : MiniJsonDb.Parse(json) as Dictionary<string, object>) { }
+        public BotResources(Dictionary<string, object> root)
         {
-            var root = json == null ? null : MiniJsonDb.Parse(json) as Dictionary<string, object>;
             resources = root != null && root.TryGetValue("resources", out var value) ? value as Dictionary<string, object> : null;
             if (resources == null) throw new ArgumentException("SoloMapling resource pack is missing or invalid");
         }
-        public static BotResources Load() => new BotResources(PlatformRes.LoadText("Bot/SoloMapling"));
+        public static BotResources Load() => new BotResources(BotWarmup.Root("Bot/SoloMapling"));
         // 原始文件可直接取回；解析失败不影响原字节的保存与读取。
         public byte[] ReadBytes(string path)
         {

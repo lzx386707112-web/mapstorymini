@@ -8,11 +8,12 @@ namespace Server.Bot
     public sealed class BotItemCatalog
     {
         static BotItemCatalog shared;
-        public static BotItemCatalog Shared => shared ??= new BotItemCatalog(PlatformRes.LoadText("Bot/Items"));
+        // 8.6MB 的商品表走 BotWarmup 的后台解析，别在进图那一帧同步解析。
+        public static BotItemCatalog Shared => shared ??= new BotItemCatalog(BotWarmup.Root("Bot/Items"));
         readonly Dictionary<string, object> names, items;
-        public BotItemCatalog(string json)
+        public BotItemCatalog(string json) : this(json == null ? null : MiniJsonDb.Parse(json) as Dictionary<string, object>) { }
+        public BotItemCatalog(Dictionary<string, object> root)
         {
-            var root = json == null ? null : MiniJsonDb.Parse(json) as Dictionary<string, object>;
             if (root == null) throw new InvalidOperationException("Original bot item catalog is missing");
             names = (Dictionary<string, object>)root["names"];
             items = (Dictionary<string, object>)root["items"];

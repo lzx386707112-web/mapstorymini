@@ -28,16 +28,22 @@ public sealed class FieldPortal
     public bool Warps => tm > 0 && tm < 999999999;
     public bool HasScript => !string.IsNullOrEmpty(script);
 
-    // 原客户端触发方式（Portal.java 的类型常量 + 客户端 CVecCmd/Portal 处理）：
-    //   pt=1  TELEPORT_PORTAL  触碰即传（隐形传送门 / FM 彩色传送带 / 上下层箭头）
-    //   pt=2  MAP_PORTAL       可见门，按 ↑ 进
-    //   pt=3  隐形门，按 ↑ 进
-    //   pt=5  脚本门，按 ↑ 触发 enter(pi)
-    //   pt=6  隐形脚本门，按 ↑ 触发
-    //   pt=7  触碰脚本门，站上去就触发（FM 出口 out00 → market00）
-    //   pt=10 INNER_PORTAL     可见门，按 ↑ 进
-    public bool TouchTrigger => type == 1 || type == 7;
-    public bool PressUpTrigger => type == 2 || type == 3 || type == 5 || type == 6 || type == 10;
+    // 原客户端触发方式（Portal.java 的类型常量 + 客户端 Portal 处理）：
+    //   pt=1  PORTAL              隐形传送门，踩上去即传（FM 入口 in01..in22、彩色传送带）
+    //   pt=2  TELEPORT            可见门，按 ↑ 进
+    //   pt=3  TOWNPORTAL          城镇传送点，按 ↑
+    //   pt=4  SCRIPT              可见脚本门，按 ↑ 触发 enter(pi)
+    //   pt=5  SCRIPT_INVISIBLE    隐形脚本门，按 ↑
+    //   pt=6  COLLISION           碰撞门，踩上去即传
+    //   pt=7  CHANGABLE           可切换门（FM 出口 out00 / 选择之岔路），按 ↑
+    //   pt=8  CHANGABLE_INVISIBLE 隐形可切换门，按 ↑
+    //   pt=9  TOWnPORTAL_POINT    城镇传送点，按 ↑
+    //   pt=10 SCRIPT_HIDDEN       隐藏脚本门，按 ↑
+    // 除 pt=1/6 这类隐形踩踏门，其余全部要按 ↑ 才触发：pt=7 的自由市场出口
+    // out00 走上去自动传出市场是错的（源端要按上），不能按「带脚本就当踩踏门」推断。
+    public bool TouchTrigger => type == 1 || type == 6;
+    public bool PressUpTrigger => type == 2 || type == 3 || type == 4 || type == 5 ||
+                                  type == 7 || type == 8 || type == 9 || type == 10;
     public bool Usable => (Warps || HasScript) && (TouchTrigger || PressUpTrigger);
 }
 
@@ -52,6 +58,7 @@ public sealed class FieldNpc
     public int id;
     public int hide;                          // life/hide=1：原客户端不绘制
     public float x, y;
+    public float head = 80f;                  // 脚点到 stand 首帧顶端的像素高度（名字标签锚点）
     public Dictionary<string, object> art;   // { file, origin }
 }
 

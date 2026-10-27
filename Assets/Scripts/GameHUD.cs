@@ -240,8 +240,8 @@ public class GameHUD : MonoBehaviour
                 GUI.Label(new Rect(18f, 92f, 300f, 20), "拾取 " + GroundItem.LastPickup, toast);
             }
 
-            // 传送门必须按上才进（原端 pt=2/10 的语义），这里给个明确提示
-            if (field.NearPortal != null)
+            // 只有按↑触发的门（pt=2/3/7/10 等）才提示按键；pt=1 的隐形门踩上去就进，提示反而误导。
+            if (field.NearPortal != null && field.NearPortal.PressUpTrigger)
             {
                 var tip = new GUIStyle(_small);
                 tip.normal.textColor = new Color(0.7f, 1f, 0.8f);

@@ -65,6 +65,8 @@ namespace Server.Bot.Environment
                 startupComplete = false;
                 marketEntranceBotCount = 0;
             }
+            // 分步生成还没走完就退服时，残留的步骤必须在下次进游戏前清掉。
+            lock (startupSteps) startupSteps.Clear();
         }
 
         // ≡ requestMarketStartup：丢给调度时钟执行，状态机保证幂等
@@ -75,6 +77,10 @@ namespace Server.Bot.Environment
         }
 
         // ≡ marketEnvironmentStartup（EnvironmentManager.java:113）
+        // 源端在后台线程跑完三波；本端口把每一波拆成一个调度步骤，每帧只做一步，
+        // 否则进图那一帧要连续生成十几个假人（含纸娃娃/装备/导航），主线程会明显卡住。
+        static readonly Queue<Action> startupSteps = new Queue<Action>();
+
         public static void MarketEnvironmentStartup()
         {
             lock (gate)
@@ -83,32 +89,40 @@ namespace Server.Bot.Environment
                 startupStarted = true;
             }
             BotGeneration.EnableEnvironmentBotLimit();
-            try
+            lock (startupSteps)
             {
-                Wave(1, "Free Market core",
-                    SpawnScaledFMEntranceBots,
-                    SpawnScaledMerchantBots,
-                    SpawnMarketSocialBots);
+                startupSteps.Clear();
+                startupSteps.Enqueue(SpawnScaledFMEntranceBots);   // Wave 1 Free Market core
+                startupSteps.Enqueue(SpawnScaledMerchantBots);
+                startupSteps.Enqueue(SpawnMarketSocialBots);
+                startupSteps.Enqueue(SpawnGachaBotsHenesys);       // Wave 2 specialty
+                startupSteps.Enqueue(SpawnTownWanderers);          // Wave 3 Town wanderers
+            }
+            BotTasks.Schedule(StartupStep, 0);
+        }
 
-                Wave(2, "Free Market specialty",
-                    SpawnGachaBotsHenesys);          // 21点桌/OPQ 待行为类搬入（见文件头差异说明）
-
-                Wave(3, "Town wanderers", SpawnTownWanderers);
-
+        static void StartupStep()
+        {
+            Action task = null;
+            lock (startupSteps) { if (startupSteps.Count > 0) task = startupSteps.Dequeue(); }
+            if (task == null)
+            {
                 startupComplete = true;
                 BotTasks.Schedule(BotGeneration.DisableEnvironmentBotLimit, 120_000);
+                return;
+            }
+            try
+            {
+                task();
             }
             catch (Exception)
             {
                 // ≡ catch (RuntimeException)：回滚状态，允许再次请求（allowMarketStartupRetry）
                 lock (gate) { startupStarted = false; startupComplete = false; }
-                throw;
+                lock (startupSteps) startupSteps.Clear();
+                return;
             }
-        }
-
-        static void Wave(int number, string name, params Action[] tasks)
-        {
-            foreach (var task in tasks) task();   // 源端并行 join；本端口主线程顺序执行，异常上抛整体失败
+            BotTasks.Schedule(StartupStep, 0);   // 下一帧做下一步
         }
 
         // ——————————— Wave 1：FM 入口 ———————————

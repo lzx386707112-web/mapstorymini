@@ -42,15 +42,15 @@ public class VCElem
     public float rotation = 0f;                  // 旋转角度（度）
     public float aspect = 1f;                    // 纵横比例（宽/高）
 
-    // —— 外观样式（默认即扁平皮肤：深底 + 极淡描边 + 无光环，参考扁平按键设计稿） ——
+    // —— 外观样式（默认即透明扁平皮肤：极淡磨砂亮块 + 隐约描边 + 无光环，不抢视线） ——
     // shape: 0 圆形 · 1 矩形 · 2 多边形 · 3 LT · 4 LB · 5 RT · 6 RB · 7 无
     public int shape;
-    public float borderW = 1.4f;                 // 描边宽度（dp）
+    public float borderW = 1.2f;                 // 描边宽度（dp）
     public float halo = 0f;                      // 光环宽度（相对半径），扁平风默认关
-    public Color bg = new Color(0.086f, 0.086f, 0.10f, 0.72f);   // 深色圆角底
-    public Color line = new Color(1f, 1f, 1f, 0.14f);            // 极淡描边，只勾个轮廓
-    public Color bgDown = new Color(1f, 1f, 1f, 0.16f);          // 按下 = 整体提亮
-    public Color lineDown = new Color(1f, 1f, 1f, 0.45f);
+    public Color bg = new Color(1f, 1f, 1f, 0.09f);              // 极淡白色磨砂，背景透出来
+    public Color line = new Color(1f, 1f, 1f, 0.10f);            // 隐约勾个轮廓
+    public Color bgDown = new Color(1f, 1f, 1f, 0.22f);          // 按下 = 磨砂变亮
+    public Color lineDown = new Color(1f, 1f, 1f, 0.50f);
 
     // —— 摇杆 / 十字方向键的输入模式 ——
     // 标准输入：摇杆直接输出模拟轴（游戏的上下左右），不碰键盘
@@ -156,6 +156,13 @@ public static class VirtualControls
         }
     }
 
+    // —————————— 浮窗让位 ——————————
+    // 商城是整屏浮窗：GameHUD 打开商城时只画商城（其余 HUD 全部 return），
+    // 而虚拟按键这一层的 GUI.depth 更小、会画在商城之上——不隐藏就盖住界面并抢走点击。
+    // 这里只在「此刻被浮窗占用」时临时让位，不写 PlayerPrefs：
+    // 关掉商城立即复原，用户在侧边栏里的开关状态也不受影响。
+    public static bool Shown => OverlayVisible && !ShopWindow.Visible;
+
     // —————————— 系统输入法避让 ——————————
     // 聊天框/宏名字输入时，安卓会弹出输入法，屏幕下半被整体盖住：
     // 虚拟按键照常画，但用户看不见也按不到（"显示键盘时按键都没了"）。
@@ -208,31 +215,32 @@ public static class VirtualControls
     static string ProfilePath(string name) => Path.Combine(Dir, name + ".json");
 
     // —————————— 载入 ——————————
-    // 摇杆的默认皮肤：与按钮同一套扁平风（深色半透底盘 + 淡描边 + 无光环）。
-    // 旧的"亮蓝环"在扁平风里太抢视线，整层要退到游戏画面后面。
+    // 摇杆的默认皮肤：与按钮同一套透明扁平风（极淡磨砂 + 隐约描边 + 无光环）。
+    // 摇杆面积大，磨砂 alpha 比按钮再压低一档，避免整块糊住画面。
     public static void ApplyStickSkin(VCElem e)
     {
         e.borderW = 2.0f;
         e.halo = 0f;
-        e.bg = new Color(0.07f, 0.08f, 0.10f, 0.60f);
-        e.line = new Color(1f, 1f, 1f, 0.20f);
-        e.bgDown = new Color(0.10f, 0.11f, 0.14f, 0.68f);
-        e.lineDown = new Color(1f, 1f, 1f, 0.42f);
+        e.bg = new Color(1f, 1f, 1f, 0.06f);
+        e.line = new Color(1f, 1f, 1f, 0.12f);
+        e.bgDown = new Color(1f, 1f, 1f, 0.18f);
+        e.lineDown = new Color(1f, 1f, 1f, 0.45f);
         e.shape = 0;
     }
 
-    // 扁平皮肤（参考设计稿：深色圆角方 + 极淡描边 + 无光环 + 按下提亮）。
-    // 所有默认布局与样式版本迁移统一走这里；用户之后仍可在样式页自定义覆盖。
+    // 透明扁平皮肤（参考截图：几乎全透明、只留极淡磨砂亮块 + 隐约轮廓，
+    // 键位字符负责可读性，整层不抢视线）。所有默认布局与样式版本迁移统一走这里；
+    // 用户之后仍可在样式页自定义覆盖。
     public static void ApplyFlatSkin(VCElem e)
     {
         if (e.type == VCElemType.Stick) { ApplyStickSkin(e); return; }
-        e.borderW = 1.4f;
+        e.borderW = 1.2f;
         e.halo = 0f;
-        e.bg = new Color(0.086f, 0.086f, 0.10f, 0.72f);
-        e.line = new Color(1f, 1f, 1f, 0.14f);
-        e.bgDown = new Color(1f, 1f, 1f, 0.16f);
-        e.lineDown = new Color(1f, 1f, 1f, 0.45f);
-        if (e.type == VCElemType.Button) e.shape = 1;   // 圆角方，对齐设计稿
+        e.bg = new Color(1f, 1f, 1f, 0.09f);
+        e.line = new Color(1f, 1f, 1f, 0.10f);
+        e.bgDown = new Color(1f, 1f, 1f, 0.22f);
+        e.lineDown = new Color(1f, 1f, 1f, 0.50f);
+        if (e.type == VCElemType.Button) e.shape = 1;   // 圆角方
     }
 
     public static void Ensure()
@@ -251,7 +259,7 @@ public static class VirtualControls
     // 只在从磁盘载入时执行；编辑器的撤回快照（FromJson）不走这里，
     // 所以不会把用户刚在样式页改好的自定义颜色又刷回去。
     const string PrefStyleVer = "mxd.vc.stylever";
-    const int StyleVer = 2;   // 2 = 扁平化改版
+    const int StyleVer = 3;   // 3 = 透明磨砂改版（2 是中间版深底，一并刷掉）
 
     static void MigrateStyle()
     {
@@ -576,8 +584,8 @@ public static class VirtualControls
         Ensure();
         UpdateLift();
 
-        // 门控关闭（大厅/暂停/编辑器/键位窗口/整层隐藏）：全部松开，别把状态带进下一局
-        if (!feed || !OverlayVisible || !Application.isFocused)
+        // 门控关闭（大厅/暂停/编辑器/键位窗口/商城浮窗/整层隐藏）：全部松开，别把状态带进下一局
+        if (!feed || !Shown || !Application.isFocused)
         {
             ReleaseAll();
             return;
@@ -667,14 +675,14 @@ public static class VirtualControls
     public static bool BlockingPointer { get; private set; }
     static bool wasOnControl;
 
-    // 虚拟层此刻是否真的接管输入（游戏中、没开编辑器/键位窗口、没隐藏）
+    // 虚拟层此刻是否真的接管输入（游戏中、没开编辑器/键位窗口、没隐藏、没被商城浮窗占用）
     public static bool Capturing
     {
         get
         {
             var g = GameLoop.I;
             return g != null && g.state == GameLoop.GameState.Playing
-                   && OverlayVisible && !VirtualControlsEditor.Visible && !KeyConfigWindow.Visible
+                   && Shown && !VirtualControlsEditor.Visible && !KeyConfigWindow.Visible
                    && !GameSideMenu.Blocking;
         }
     }
@@ -936,7 +944,8 @@ public static class VirtualControls
         Ensure();
         var g = GameLoop.I;
         bool inGame = g != null && g.state == GameLoop.GameState.Playing;
-        if (!inGame || VirtualControlsEditor.Visible || !OverlayVisible) return;
+        // 商城（整屏浮窗）打开时让位：它自己画满屏，按键层压在上面只会挡住界面
+        if (!inGame || VirtualControlsEditor.Visible || !Shown) return;
 
         // 键盘设定窗口打开时不再整层消失：降到半透明照常画出来，
         // 这样用户在"显示键盘"的同时仍能看见自己的屏上按键（也才能把技能拖上去）。
