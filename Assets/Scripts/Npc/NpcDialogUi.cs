@@ -13,11 +13,57 @@ public static class NpcDialogUi
     {
         NpcSession.Tick();
         OnlineTime.Tick();
+        DrawNpcNames();
         DrawMarkers();
         DrawPlayerQuestAlert();
         HandleNpcClick();
         var session = NpcSession.Active;
         if (session != null && session.Dialog.Visible) DrawDialog(session);
+    }
+
+    // NPC 头顶名字牌（原客户端默认开启「显示 NPC 名字」）：黄字黑描边，位置在脚点上方 82px，
+    // 任务图标（!/?）画在名字再上方。
+    static GUIStyle nameStyle;
+
+    static void DrawNpcNames()
+    {
+        var map = NpcField.Map;
+        var cam = Camera.main;
+        if (map == null || cam == null) return;
+        if (nameStyle == null)
+        {
+            nameStyle = new GUIStyle(GUI.skin.label)
+            {
+                font = UiKit.Font,
+                fontSize = Mathf.Max(12, Mathf.RoundToInt(13f * Screen.height / 768f)),
+                alignment = TextAnchor.LowerCenter,
+            };
+        }
+        for (int i = 0; i < map.npcs.Count; i++)
+        {
+            var npc = map.npcs[i];
+            if (npc.hide != 0) continue;
+            string name = WzNames.Npc(npc.id);
+            if (string.IsNullOrEmpty(name) || npc.id <= 0) continue;
+            float wx = map.WorldX(npc.x);
+            float wy = map.WorldY(npc.y) + 82f / Art.PPU;
+            var sp = cam.WorldToScreenPoint(new Vector3(wx, wy, 0f));
+            if (sp.z < 0f) continue;
+            var gui = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);
+            if (gui.x < -60f || gui.x > UiKit.W + 60f || gui.y < -30f || gui.y > UiKit.H + 30f) continue;
+
+            var size = nameStyle.CalcSize(new GUIContent(name));
+            var rect = new Rect(gui.x - size.x * .5f, gui.y - size.y, size.x, size.y);
+            var prev = nameStyle.normal.textColor;
+            // 黑描边：四向偏移各画一次
+            nameStyle.normal.textColor = new Color(0f, 0f, 0f, 0.9f);
+            foreach (var d in new[] { new Vector2(1, 0), new Vector2(-1, 0), new Vector2(0, 1), new Vector2(0, -1) })
+                GUI.Label(new Rect(rect.x + d.x, rect.y + d.y, rect.width, rect.height), name, nameStyle);
+            // 原版 NPC 名字黄
+            nameStyle.normal.textColor = new Color(1f, 0.87f, 0.35f);
+            GUI.Label(rect, name, nameStyle);
+            nameStyle.normal.textColor = prev;
+        }
     }
 
     // ——————————————— NPC 头顶任务图标 ———————————————
@@ -36,7 +82,7 @@ public static class NpcDialogUi
             if (!marker.start && !marker.complete) continue;
 
             float wx = map.WorldX(npc.x);
-            float wy = map.WorldY(npc.y) + 80f / Art.PPU;      // 原生像素高度，避免标记压在 NPC 身体内
+            float wy = map.WorldY(npc.y) + 108f / Art.PPU;     // 名字牌（82px）上方，避免图标压在名字上
             var sp = cam.WorldToScreenPoint(new Vector3(wx, wy, 0f));
             if (sp.z < 0f) continue;
             var gui = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);

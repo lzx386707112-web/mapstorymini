@@ -26,6 +26,19 @@ public sealed class FieldPortal
     public float x, y;
     public bool IsSpawn => type == 0;
     public bool Warps => tm > 0 && tm < 999999999;
+    public bool HasScript => !string.IsNullOrEmpty(script);
+
+    // 原客户端触发方式（Portal.java 的类型常量 + 客户端 CVecCmd/Portal 处理）：
+    //   pt=1  TELEPORT_PORTAL  触碰即传（隐形传送门 / FM 彩色传送带 / 上下层箭头）
+    //   pt=2  MAP_PORTAL       可见门，按 ↑ 进
+    //   pt=3  隐形门，按 ↑ 进
+    //   pt=5  脚本门，按 ↑ 触发 enter(pi)
+    //   pt=6  隐形脚本门，按 ↑ 触发
+    //   pt=7  触碰脚本门，站上去就触发（FM 出口 out00 → market00）
+    //   pt=10 INNER_PORTAL     可见门，按 ↑ 进
+    public bool TouchTrigger => type == 1 || type == 7;
+    public bool PressUpTrigger => type == 2 || type == 3 || type == 5 || type == 6 || type == 10;
+    public bool Usable => (Warps || HasScript) && (TouchTrigger || PressUpTrigger);
 }
 
 public sealed class FieldSpawn

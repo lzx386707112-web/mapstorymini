@@ -29,6 +29,9 @@ HTTP 服务，同时供出前端静态资源和 REST 接口；游戏内从侧边
 2. 首次启动会自动创建一个后台管理员：**admin / admin**（只在本机、只在库里没有任何
    `webadmin` 账号时创建；密码可用账号页改）。控制台会打印 `[Admin] 已创建后台管理员账号`。
 3. 浏览器地址：`http://127.0.0.1:8686/`（8686 被占用时自动顺延到 8687…8695）。
+   侧边栏入口现在默认用**应用内 WebView** 打开（`AdminWebView`，Android 全屏 Dialog，
+   系统返回键关闭；游戏不切后台，主线程不会停摆）。桌面/编辑器仍走系统浏览器；
+   外部浏览器访问 `http://<手机IP>:8686/` 依然可用。
 
 ## 3. 为什么是「游戏进程内起服务」
 
@@ -46,6 +49,11 @@ HTTP 服务，同时供出前端静态资源和 REST 接口；游戏内从侧边
 `DbStore` 不是线程安全的。所有 HTTP 处理都在 ThreadPool 线程上跑，**只有**通过
 `AdminMainThread.Run(...)` 才碰数据：请求线程入队 → `AdminHost.Update` 每帧 `Pump()` →
 主线程执行 → 回传结果。主线程 8 秒没响应会返回「游戏主线程繁忙，请求超时」。
+
+Android 上 `runInBackground` 不生效：切到浏览器后 Activity onPause，Unity 主线程整体暂停，
+光靠 Update 泵必然超时。所以 `AdminHost` 另起一条 `AdminBackgroundPump` 线程，只在
+`OnApplicationPause` 之后（主线程已停，先让 300ms 停稳）接管队列；回前台时
+`AwaitIdle` 等它跑完手头一条再交还主线程，DB 始终单线程访问。
 
 ## 5. 哪些操作真的会影响游戏
 

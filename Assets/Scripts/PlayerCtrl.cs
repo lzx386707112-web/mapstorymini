@@ -63,6 +63,9 @@ public class PlayerCtrl : MonoBehaviour
     // 本地这段黑幕有 0.3s，如果不锁住，按住方向键会让角色在黑屏里继续走/掉下平台。
     // 位置仍然同步（SyncTransform 照常跑），否则新图出生点要等黑幕结束才生效。
     public static bool InputLocked;
+    // 脚本 lockUI/unlockUI（源端 PacketCreator.lockUI，教程/过场用）：计数锁，
+    // unlockUI 全清，避免脚本分支漏配对后玩家永久卡住。
+    public static int ScriptUiLock;
 
     // x 处的地面高度：取覆盖 x 的段里与 refY 最接近的一条（段内线性插值，支持斜坡）。
     // 若 x 不在任何段内，退回「水平距离最近的那条段」的端点高度——
@@ -481,7 +484,7 @@ public class PlayerCtrl : MonoBehaviour
     void Update()
     {
         if (GameLoop.I != null && (GameLoop.I.state != GameLoop.GameState.Playing || GameLoop.I.gameOver)) return;
-        if (InputLocked) { SyncTransform(); return; }   // 换图黑场中：不读输入、不跑物理
+        if (InputLocked || ScriptUiLock > 0) { SyncTransform(); return; }   // 换图黑场/脚本锁UI：不读输入、不跑物理
         float dt = Time.deltaTime;
         if (dt > 0f) Step(dt);   // 顿帧期间 dt==0，逻辑自动跳过
         TickRegen(Time.unscaledDeltaTime);

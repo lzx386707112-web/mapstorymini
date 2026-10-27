@@ -296,6 +296,21 @@ public static class WzCharacter
         clips.Add(cacheKey, clip); return clip;
     }
     static Vector2Int Vector(ImgNode node) => new Vector2Int(node?.X ?? 0, node?.Y ?? 0);
+    // wzpy character.py _cap_hidden_hair_canvases（560 行）：帽 vslot 里的 H 系 token
+    // 声明帽子遮住的 Hair 画布。H2=全盔遮全部；H1（可叠加 H3）按下表遮刘海/后发，
+    // 否则刘海(hairOverHead, zmap 140)永远画在帽子(cap≈137)之上——遮发帽的帽体
+    // 整个被头发盖住，商城预览"帽子画在人物下层"的根因。
+    static readonly HashSet<string> CapHideTop = new HashSet<string> { "hairOverHead", "backHair" };
+    static readonly HashSet<string> CapHidePartial = new HashSet<string> {
+        "hairOverHead", "backHair", "hairBelowBody", "backHairBelowCap" };
+    // wzpy _OVER_CAP_REMAP（453 行）带条件的目标槽与 vslot token；token=null 表示
+    // 只在"帽子不遮发"这一臂生效。
+    static readonly Dictionary<string, string[]> OverCapRemap = new Dictionary<string, string[]> {
+        { "accessoryEyeOverCap", new[] { "accessoryEye", "Ay" } },
+        { "accessoryFaceOverCap", new[] { "accessoryFace", "Af" } },
+        { "accessoryFaceUpperOverCap", new[] { "accessoryFace", "Af" } },
+        { "cap", new[] { "capBelowHairOverHead", null } },
+    };
     // 源端 wzpy/character.py _z_index + _heuristic_anchor（1062 行起）：
     // stock zmap 没有的槽位按名字推断层级，不能一刀切放中间——
     // capBelowHairOverHead（overCapRemap 的目标）/ capBelowBody 等帽类 Below 槽
@@ -349,7 +364,7 @@ public static class WzCharacter
         }
         return names.Count - 1;
     }
-    static int Z(Part part, string pose)
+    static int Z(Part part, string pose, bool capCoversHair, HashSet<string> capTokens)
     {
         string slot = part.Slot;
         if (pose == "stand1" && part.Category == "Weapon" && slot == "weaponOverArm") slot = "weapon";
@@ -362,8 +377,11 @@ public static class WzCharacter
             (slot == "arm" || slot == "armBelowHead" || slot == "armBelowHeadOverMailChest")) slot = "handOverHair";
         else if (pose == "swingT3" && part.Category == "Body" && (slot == "arm" || slot == "armBelowHeadOverMailChest")) slot = "handOverHair";
         else if (pose == "stand2" && part.Category == "Weapon" && slot == "weaponBelowArm") slot = "weaponOverArm";
-        var remap = (Dictionary<string, object>)WzAssets.Index["overCapRemap"];
-        if (slot != null && remap.TryGetValue(slot, out var target)) slot = (string)target;
+        // wzpy slot_z（2529 行）的条件版重映射：'cap' 槽只在帽子不遮发时下移到
+        // 刘海之下；配件槽仅在帽 vslot 声明对应 token（Ay/Af）时被帽子盖住。
+        if (slot != null && OverCapRemap.TryGetValue(slot, out var rule) &&
+            (!capCoversHair || (rule[1] != null && capTokens.Contains(rule[1]))))
+            slot = rule[0];
         if (pose == "ladder" || pose == "rope")
         {
             var absolute = (Dictionary<string, object>)WzAssets.Index["backAbsoluteZ"];
@@ -389,6 +407,22 @@ public static class WzCharacter
         var weapon = Equipment((string)ids[ids.Count - 1]);
         if (weapon.Get(pose) == null && pose.StartsWith("swingO", StringComparison.Ordinal) && weapon.Get(pose.Replace("swingO", "swingT")) != null)
             pose = pose.Replace("swingO", "swingT");
+        // wzpy _cap_hair_filter（1322 行）：已装备帽子的 vslot 决定哪些 Hair 画布被遮住。
+        string capId = null;
+        foreach (string id in ids) if (Category(id) == "Cap") { capId = id; break; }
+        var capTokens = new HashSet<string>();
+        bool capHidesAllHair = false;
+        var capHiddenHair = new HashSet<string>();
+        if (capId != null)
+        {
+            string vslot = Equipment(capId).Text("info/vslot");
+            for (int i = 0; i + 1 < vslot.Length; i += 2) capTokens.Add(vslot.Substring(i, 2));
+            if (capTokens.Contains("H2")) capHidesAllHair = true;
+            else if (capTokens.Contains("H1"))
+                foreach (string name in capTokens.Contains("H3") ? CapHidePartial : CapHideTop)
+                    capHiddenHair.Add(name);
+        }
+        bool capCoversHair = capHidesAllHair || capHiddenHair.Count > 0;
         var parts = new List<Part>();
         foreach (string id in ids)
         {
@@ -412,6 +446,8 @@ public static class WzCharacter
                 foreach (var child in node.Children)
                 {
                     if (category == "Head" && child.Name != "head" && child.Name != "humanEar") continue;
+                    // wzpy 955/2213 行：帽子遮发时跳过被帽遮的 Hair 画布（含全盔跳过整组）。
+                    if (category == "Hair" && (capHidesAllHair || capHiddenHair.Contains(child.Name))) continue;
                     // 悬空 UOL 是原端数据现状（如 01002470 的 defalutAc），按原端语义跳过这一层，
                     // 不能让一条坏链接抛异常把整个角色合成/商城预览打断。
                     var canvas = child.TryResolve(); if (canvas == null || canvas.Kind != "Canvas" || !seen.Add(canvas)) continue;
@@ -450,7 +486,7 @@ public static class WzCharacter
             }
             foreach (var anchor in part.Anchors) if (!world.ContainsKey(anchor.Key)) world.Add(anchor.Key, part.Top + part.Origin + anchor.Value);
         }
-        foreach (var part in parts) { part.Top += navel; part.Z = Z(part, pose); }
+        foreach (var part in parts) { part.Top += navel; part.Z = Z(part, pose, capCoversHair, capTokens); }
         parts.Sort((a, b) => { int z = a.Z.CompareTo(b.Z); return z != 0 ? z : a.Sequence.CompareTo(b.Sequence); });
         return parts;
     }

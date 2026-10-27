@@ -22,6 +22,9 @@ public static class NpcApi
     static PlayerCtrl Pc => GameLoop.I != null ? GameLoop.I.player : null;
     static int MapId => Profile.LastMapId;
 
+    // Character.useCS：setCS 的存值（见 BuildPlayer）
+    static bool useCS;
+
     // 未迁移 API 必须带完整名字报错，不能把返回 null 当成业务适配成功。
     // 已实现系统显式绑定；没有队伍等合法空状态仍由具体 getter 返回 null。
     static readonly HashSet<string> missingApi = new HashSet<string>();
@@ -170,9 +173,23 @@ public static class NpcApi
         cm.Set("removeAllByInventorySlot", Fn(c => throw new JsRuntimeException("单机没有背包格位概念：removeAllByInventorySlot")));
 
         // —— 传送 ——
-        cm.Set("warp", Fn(c => session.RequestWarp(Int(c, 0))));
-        cm.Set("warpParty", Fn(c => session.RequestWarp(Int(c, 0))));
+        // AbstractPlayerInteraction.warp(map[, portal])：第二参可以是门名（String）也可以是
+        // WZ portal 下标（int，= 源端 Portal.getId）。FM 脚本 market00 用后者。
+        // mapId 非法时抛错（源端 MapleMapFactory.getMap(-1) 返回 null → NPE → 脚本 try/catch 回退），
+        // market00.js 的「取不到 savedLocation 就回射手村」分支靠这个触发。
+        cm.Set("warp", Fn(c =>
+        {
+            int target = Int(c, 0);
+            if (target <= 0) throw new JsRuntimeException("warp: 无效的地图 id " + target);
+            session.RequestWarp(target, WarpName(c, 1), WarpIndex(c, 1));
+        }));
+        cm.Set("warpParty", Fn(c => session.RequestWarp(Int(c, 0), WarpName(c, 1), WarpIndex(c, 1))));
         cm.Set("getWarpMap", Ret(_ => N(0)));
+        // AbstractPlayerInteraction.getMarketPortalId(mapId)（AbstractPlayerInteraction.java:126）：
+        // 目标图里第一个 script 含 "market" 的门（MapleMap.findMarketPortal），没有就取随机出生门。
+        cm.Set("getMarketPortalId", Ret(c => N(MarketPortalId(Int(c, 0)))));
+        // 进门音效在 FieldDirector.StartWarp 里统一播（原端 playPortalSound 也是客户端表现层），这里只对齐 API 存在性。
+        cm.Set("playPortalSound", Fn(c => { }));
         BindSavedLocations(cm);
 
         // —— ExtendUtil：源端中文任务、签到、制作、领取记录的统一持久化 ——
@@ -248,6 +265,8 @@ public static class NpcApi
         // 否则 1022000.js 会显示「你至少得10级，并且」这种断句。
         cm.Set("canGetFirstJob", Ret(c => B(JobSystem.CanGetFirstJob(Int(c, 0)))));
         cm.Set("getFirstJobStatRequirement", Ret(c => S(JobSystem.FirstJobStatRequirement(Int(c, 0)))));
+
+        BindCommonCm(cm, session);
 
         // 单机没有的系统：返回 null，脚本里的 `if (x != null)` 分支会自然跳过。
         cm.Set("getEventManager", Ret(_ => JsNull.Value));
@@ -346,7 +365,7 @@ public static class NpcApi
         return best;
     }
 
-    struct Totals { public int str, dex, intelligence, luk, watk, matk; }
+    struct Totals { public int str, dex, intelligence, luk, watk, matk, weaponDefense, magicDefense; }
 
     // Character.reapplyLocalStats 的等价：基础属性 + 武器 + 全部防具（与能力值窗同一条路）。
     static Totals PlayerTotals()
@@ -356,7 +375,7 @@ public static class NpcApi
         return new Totals
         {
             str = combat.str, dex = combat.dex, intelligence = combat.intelligence, luk = combat.luk,
-            watk = watk, matk = matk
+            watk = watk, matk = matk, weaponDefense = combat.weaponDefense, magicDefense = combat.magicDefense
         };
     }
 
@@ -381,11 +400,329 @@ public static class NpcApi
             characterId = GameSession.CharacterId, location = type, mapId = MapId, portalId = 0 }).value;
     }
 
+    // ————————————————————————————————————————————
+    // 静态脚本 API 扫描补齐（tools/api_scan_report.json）：cm/qm 宿主上还缺的绑定。
+    // 每组都回源端查过消费链；整套未迁移的系统（公会/远征/CPQ/婚礼/宠物/ dojo）按
+    // 源端返回类型给空态或显式提示，不再走 Lenient 抛「未迁移接口」中断对话。
+    // ————————————————————————————————————————————
+    static void BindCommonCm(JsHostObject cm, NpcSession session)
+    {
+        // —— 职业 / 成长（AbstractPlayerInteraction.changeJob → Character.changeJob）——
+        cm.Set("changeJob", Fn(c => ChangeJob(Int(c, 0))));
+
+        // —— 道具（Odin 风格的别名；单机没有格位，removeItem 只按 id+数量）——
+        cm.Set("getItemCount", Ret(c => N(Profile.ItemCount(Int(c, 0)))));
+        cm.Set("getSpace", Ret(_ => N(24)));   // InventoryType.getCapacity - used；单机恒有空格
+        cm.Set("useItem", Ret(c =>
+        {
+            int id = Int(c, 0);
+            if (Profile.ItemCount(id) < 1) return B(false);
+            Profile.RemoveItem(id, 1);
+            return B(true);
+        }));
+        cm.Set("removeItem", Ret(c => B(Profile.RemoveItem(Int(c, 0), Math.Max(1, Int(c, 1, 1))))));
+        // Odin gainNX(nx) → nxCredit（CashShop.java:72 NX_CREDIT=1）
+        cm.Set("gainNX", Fn(c => GameSession.Net.Cash(new CashRequest { characterId = GameSession.CharacterId,
+            operation = CashOperation.AdjustBalance, currency = 1, amount = Int(c, 0) })));
+        cm.Set("gainItemPeriod", Fn(c =>   // Odin gainItemPeriod(id, qty, period)：带时限发道具，单机按永久处理
+        {
+            int id = Int(c, 0), count = Int(c, 1, 1);
+            if (count > 0) Profile.AddItem(id, count); else if (count < 0) Profile.RemoveItem(id, -count);
+        }));
+
+        // —— 公告 / 提示（PacketCreator.serverNotice(type, text)，与 dropMessage 同一路）——
+        cm.Set("serverNotice", Fn(c => DropNotice(c)));
+
+        // —— 地图怪物业（MapleMap 语义）——
+        cm.Set("countMonster", Ret(c =>
+        {
+            int id = Int(c, 0), count = 0;
+            foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead && mob.fieldMobId == id) count++;
+            return N(count);
+        }));
+        cm.Set("mapMobCount", Ret(_ => N(CountFieldMonsters())));
+        cm.Set("resetMapObjects", Fn(c => GameLoop.I?.field?.ClearMobs()));   // MapleMap.resetMapObjects：重刷怪（反应堆未迁移）
+        cm.Set("spawnMonsterOnGroundBelowIfMissing", Fn(c =>
+        {
+            int id = Int(c, 0);
+            foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead && mob.fieldMobId == id) return;
+            SpawnScriptMob(id, Int(c, 1), Int(c, 2), true);
+        }));
+        cm.Set("scheduleMonsterOnGroundBelowIfMissing", Fn(c =>
+        {
+            int id = Int(c, 0);
+            foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead && mob.fieldMobId == id) return;
+            SpawnScriptMob(id, Int(c, 1), Int(c, 2), true);
+        }));
+        // 反应堆整系统未迁移：触发类 no-op、查询类空态（与 map.getReactor 返回 null 一致）
+        cm.Set("hitReactor", Fn(c => { }));
+        cm.Set("forceHitReactor", Fn(c => { }));
+        cm.Set("forceStartReactor", Fn(c => { }));
+        cm.Set("isAllReactorState", Ret(_ => B(false)));
+        cm.Set("getReactorByName", Ret(_ => JsNull.Value));
+
+        // —— 传送门屏蔽（Character.blockPortal(scriptName)，换图清空见 FieldDirector.Enter）——
+        cm.Set("blockPortal", Fn(c =>
+        {
+            string name = Str(c, 0);
+            if (!string.IsNullOrEmpty(name)) FieldDirector.BlockedPortalScripts.Add(name);
+        }));
+        cm.Set("unblockPortal", Fn(c => FieldDirector.BlockedPortalScripts.Remove(Str(c, 0))));
+
+        // —— 地区信息（Character.updateAreaInfo：按 area 存一段脚本串，任务用 contains 判步）——
+        cm.Set("updateAreaInfo", Fn(c => ScriptValueStore("areaInfo_" + Int(c, 0), Str(c, 1), write: true)));
+        cm.Set("containsAreaInfo", Ret(c =>
+        {
+            string stored = ScriptValueStore("areaInfo_" + Int(c, 0), null);
+            string needle = Str(c, 1);
+            return B(!string.IsNullOrEmpty(stored) && !string.IsNullOrEmpty(needle) && stored.Contains(needle));
+        }));
+
+        // —— 副本计数（NPCConversationManager.java:KEY_JIFEN + getPQEnteredName）——
+        cm.Set("addPqPoints", Fn(c =>
+        {
+            int num = c.ArgCount > 0 ? Int(c, 0) : 1;
+            SavePqExtend("副本积分", ReadPqExtend("副本积分") + num);
+            SavePqExtend("副本总积分", ReadPqExtend("副本总积分") + num);
+        }));
+        cm.Set("getPQEnteredCount", Ret(c => N(c.Arg(0) is JsString
+            ? ReadPqExtend(Str(c, 0))
+            : ReadPqExtend(PqEnteredName(Int(c, 0))))));
+        cm.Set("recordEntryPQ", Fn(c =>
+        {
+            string key = c.Arg(0) is JsString ? Str(c, 0) : PqEnteredName(Int(c, 0));
+            if (string.IsNullOrEmpty(key)) return;
+            SavePqExtend(key, ReadPqExtend(key) + 1);
+        }));
+        // NPCConversationManager.canEnterPQ：count >= max（true = 次数已用完），照搬语义
+        cm.Set("canEnterPQ", Ret(c => B((c.Arg(0) is JsString s0 ? ReadPqExtend(s0.Value) : ReadPqExtend(PqEnteredName(Int(c, 0))))
+            >= PqEnterMax())));
+        cm.Set("getPQEnterMaxCount", Ret(_ => N(PqEnterMax())));
+        cm.Set("gainPQExp", Fn(c =>   // NPCConversationManager.gainPQExp：按等级封顶的副本经验
+        {
+            long rewardExp = Int(c, 0) * 10000L;
+            int level = Profile.level, need = ExpTable.Needed(level);
+            if (need < rewardExp)
+            {
+                if (level > 50 && level <= 70) rewardExp = (long)(need * 0.8);
+                else if (level > 70 && level <= 100) rewardExp = (long)(need * 0.5);
+                else if (level > 100 && level <= 124) rewardExp = (long)(need * 0.3);
+                else rewardExp = need;
+            }
+            Profile.GrantExperience((int)Math.Min(int.MaxValue, rewardExp));
+        }));
+
+        // —— 扭蛋（GachaponService.doGachapon，抽取逻辑在 NativeScriptService.GachaDraw）——
+        cm.Set("doGachapon", Fn(c => GachaDraw(session, NpcId(session) /* npc 即 gachaponId */)));
+        cm.Set("doRemoteGachapon", Fn(c => GachaDraw(session, Int(c, 0))));
+        cm.Set("getTotalGachaponCount", Ret(_ => N(0)));   // player_gachapon_stats 统计表未迁移
+
+        // —— UI / 表现层（教程与过场用；无音频/无 WZ 演出系统，落点为提示或 no-op）——
+        cm.Set("showEffect", Fn(c => { }));
+        cm.Set("mapEffect", Fn(c => { }));
+        cm.Set("showWZEffect", Fn(c => { }));
+        cm.Set("showInstruction", Fn(c => ToastIfAny(Str(c, 0))));
+        cm.Set("showInfoText", Fn(c => ToastIfAny(Str(c, 0))));
+        cm.Set("openUI", Fn(c => { }));    // UIType 窗口枚举未迁移
+        cm.Set("changeMusic", Fn(c => { }));   // 无 BGM 系统
+        cm.Set("lockUI", Fn(c => PlayerCtrl.ScriptUiLock++));
+        cm.Set("lockUI2", Fn(c => PlayerCtrl.ScriptUiLock++));
+        cm.Set("unlockUI", Fn(c => PlayerCtrl.ScriptUiLock = 0));
+        cm.Set("setDirectionStatus", Fn(c => { }));   // 教程方向指示 UI
+        cm.Set("spawnGuide", Fn(c => { }));
+        cm.Set("removeGuide", Fn(c => { }));
+        cm.Set("talkGuide", Fn(c => { }));
+        cm.Set("updateInfo", Fn(c => { }));   // 源端无此 API（其他分支遗留），脚本只在过场里调用
+
+        // —— GM / 活动工具 ——
+        cm.Set("getDisconnected", Ret(_ => B(false)));
+        cm.Set("getConnection", Ret(_ => JsNull.Value));   // DatabaseConnection 管理脚本专用，单机不开放 DB
+        cm.Set("divideTeams", Fn(c => { }));
+        cm.Set("warpMembers", Fn(c => session.RequestWarp(Int(c, 0))));   // 单机=把自己传过去
+        cm.Set("givePartyExp", Fn(c => Profile.GrantExperience(Int(c, 0))));
+        cm.Set("givePartyItems", Fn(c => { int id = Int(c, 0), n = Int(c, 1, 1); if (n > 0) Profile.AddItem(id, n); else if (n < 0) Profile.RemoveItem(id, -n); }));
+        cm.Set("removePartyItems", Fn(c => Profile.RemoveItem(Int(c, 0), Math.Max(1, Int(c, 1, 1)))));
+        cm.Set("hasLevel30Character", Ret(_ => B(false)));
+        cm.Set("getPlayerNPCByScriptid", Ret(_ => JsNull.Value));   // PlayerNPC 名人堂未迁移
+        cm.Set("getHallOfFameMapid", Ret(_ => N(0)));
+        cm.Set("maxMastery", Fn(c => { }));
+        cm.Set("spawnPlayerNPC", Fn(c => { }));
+        cm.Set("getTest", Ret(_ => BuildJavaList(new JsArray())));   // 源端无此 API（GMS 测试员遗留），给空列表保住 iterator 链
+        cm.Set("weakenAreaBoss", Fn(c => { }));   // 封印/降回避 debuff 未迁移，只差广播文本
+        cm.Set("getJailTimeLeft", Ret(_ => N(0)));   // 监狱系统未接入 = 无刑期
+        cm.Set("getSkillBookInfo", Ret(_ => N(0)));
+        cm.Set("getNamesWhoDropsItem", Ret(_ => BuildJavaList(new JsArray())));   // drop_data 反查走后台模块
+        cm.Set("getAvailableMasteryBooks", Ret(_ => new JsArray()));
+        cm.Set("getAvailableSkillBooks", Ret(_ => new JsArray()));
+        cm.Set("getEquipInSlot", Ret(c =>
+        {
+            int id = Profile.EquipOfSlot(Int(c, 0));
+            return id > 0 ? BuildEquipItem(id) : JsNull.Value;
+        }));
+        cm.Set("eatEquip", Fn(c => { }));   // 源端无此 API（活动 NPC 自定义），无法还原语义
+        cm.Set("removeAllByInventorySlot", Fn(c => throw new JsRuntimeException("单机没有背包格位概念：removeAllByInventorySlot")));
+
+        // —— 未迁移整套系统：空态 / 显式提示，不再走 Lenient 中断对话 ——
+        cm.Set("getGuild", Ret(_ => JsNull.Value));          // 公会（NativeCommunityService 有 Guild 操作，但脚本面缺成员查询）
+        cm.Set("isGuildLeader", Ret(_ => B(false)));
+        cm.Set("displayGuildRanks", Fn(c => { }));
+        cm.Set("createAlliance", Ret(_ => NotAvailable("联盟")));
+        cm.Set("disbandAlliance", Ret(_ => NotAvailable("联盟")));
+        cm.Set("upgradeAlliance", Ret(_ => NotAvailable("联盟")));
+        cm.Set("getAllianceCapacity", Ret(_ => N(0)));
+        cm.Set("canBeUsedAllianceName", Ret(_ => B(false)));
+        cm.Set("createExpedition", Ret(_ => NotAvailable("远征队")));
+        cm.Set("endExpedition", Ret(_ => NotAvailable("远征队")));
+        cm.Set("isLeaderExpedition", Ret(_ => B(false)));
+        cm.Set("getExpeditionMemberNames", Ret(_ => BuildJavaList(new JsArray())));
+        cm.Set("fieldLobbied", Ret(_ => B(false)));
+        cm.Set("fieldLobbied2", Ret(_ => B(false)));
+        cm.Set("fieldTaken", Ret(_ => B(false)));
+        cm.Set("fieldTaken2", Ret(_ => B(false)));
+        cm.Set("cpqLobby", Ret(_ => JsNull.Value));
+        cm.Set("cpqLobby2", Ret(_ => JsNull.Value));
+        cm.Set("challengeParty", Ret(_ => NotAvailable("怪物嘉年华")));
+        cm.Set("challengeParty2", Ret(_ => NotAvailable("怪物嘉年华")));
+        cm.Set("sendCPQMapLists", Fn(c => { }));
+        cm.Set("sendCPQMapLists2", Fn(c => { }));
+        cm.Set("answerCPQChallenge", Fn(c => NotAvailable("怪物嘉年华")));
+        cm.Set("cancelCPQLobby", Fn(c => { }));
+        cm.Set("isCPQLoserMap", Ret(_ => B(false)));
+        cm.Set("isCPQWinnerMap", Ret(_ => B(false)));
+        cm.Set("getFestivalPoints", Ret(_ => N(0)));
+        cm.Set("partyMembersInMap", Ret(_ => N(HasParty() ? 1 : 0)));
+        cm.Set("getUnclaimedMarriageGifts", Ret(_ => N(0)));
+        cm.Set("createMarriageWishlist", Ret(_ => NotAvailable("婚礼")));
+        cm.Set("sendMarriageGifts", Ret(_ => NotAvailable("婚礼")));
+        cm.Set("sendMarriageWishlist", Ret(_ => NotAvailable("婚礼")));
+        cm.Set("getOngoingWedding", Ret(_ => JsNull.Value));
+        cm.Set("getWeddingReservationTimeLeft", Ret(_ => N(0)));
+        cm.Set("hasMerchant", Ret(_ => B(false)));
+        cm.Set("hasMerchantItems", Ret(_ => B(false)));
+        cm.Set("showFredrick", Fn(c => { }));
+        cm.Set("resetDojoEnergy", Fn(c => { }));
+        cm.Set("resetPartyDojoEnergy", Fn(c => { }));
+        cm.Set("goDojoUp", Fn(c => { }));    // 武陵道场爬塔未迁移
+        cm.Set("startAriantBattle", Ret(_ => NotAvailable("阿里安特竞技场")));
+        cm.Set("createPyramid", Ret(_ => NotAvailable("金字塔")));
+        cm.Set("gainTameness", Fn(c => { }));   // 宠物系统未迁移
+        cm.Set("getDriedPets", Ret(_ => BuildJavaList(new JsArray())));
+        cm.Set("getPet", Ret(_ => JsNull.Value));
+        cm.Set("evolvePet", Ret(_ => JsNull.Value));   // 源端无宠物时同样返回 null + message
+    }
+
+    static JsValue NotAvailable(string system)
+    {
+        BottomBar.Toast(system + "系统未接入");
+        return B(false);
+    }
+
+    // —— 副本计数存取：与源端同键（extend_value，isDaily=true → period 1 每日）——
+    static int ReadPqExtend(string key)
+        => int.TryParse(ScriptValueStore(key, null, period: 1), out int v) ? v : 0;
+
+    static void SavePqExtend(string key, int value)
+        => ScriptValueStore(key, value.ToString(System.Globalization.CultureInfo.InvariantCulture), write: true, period: 1);
+
+    // 源端 NPCConversationManager.getPQEnteredName 的 pqType 映射
+    static string PqEnteredName(int type) => type switch
+    {
+        1 => "废弃已完成次数",
+        2 => "玩具已完成次数",
+        3 => "水晶已完成次数",
+        _ => "",
+    };
+
+    // getPQEnterMaxCount：GameConfig.getServerInt(maxKey)，无配置默认 1；
+    // game_config 服务端配置读取未开放给脚本层，按默认值处理。
+    static int PqEnterMax() => 1;
+
+    // —— 扭蛋：服务端抽（GachaDraw），客户端发奖 + 公告 ——
+    static void GachaDraw(NpcSession session, int gachaponId)
+    {
+        if (!GameSession.InGame) throw new JsRuntimeException("Gachapon requires an active character");
+        var rsp = GameSession.Net.Script(new ScriptRequest { operation = ScriptOperation.GachaDraw,
+            characterId = GameSession.CharacterId, gachaponId = gachaponId });
+        if (!(rsp.value is JsArray arr) || arr.Items.Count < 2)
+        {
+            BottomBar.Toast("百宝箱为空，请联系管理员，百宝箱id: " + gachaponId);
+            return;
+        }
+        int itemId = JsConvert.ToInt32(arr.Items[0]), quantity = JsConvert.ToInt32(arr.Items[1]);
+        Profile.AddItem(itemId, Math.Max(1, quantity));
+        NativeSystemMessage.Drop(0, "你获得了 " + quantity + " 个 " + WzNames.Item(itemId));
+    }
+
+    static int NpcId(NpcSession session) => session?.NpcId ?? 0;
+
+    // —— ScriptValue 直存直取（NativeScriptValues：0 永久 / 1 每日 / 2 每周）——
+    static string ScriptValueStore(string name, string value, bool write = false, int period = 0)
+    {
+        if (!GameSession.InGame) throw new JsRuntimeException("Script values require an active character");
+        return GameSession.Net.ScriptValue(new ScriptValueRequest
+        {
+            characterId = GameSession.CharacterId, write = write, period = period,
+            name = name, value = value
+        }).value;
+    }
+
+    // Java List 形态的空/实列表：脚本用 .size()/.get(i)/.iterator() 消费（如 getPartyMembersOnSameMap）
+    static JsHostObject BuildJavaList(JsArray items)
+    {
+        var list = new JsHostObject(items);
+        Lenient(list, "list");
+        list.Set("size", Ret(_ => N(items.Items.Count)));
+        list.Set("get", Ret(c => (Int(c, 0) >= 0 && Int(c, 0) < items.Items.Count) ? items.Items[Int(c, 0)] : JsNull.Value));
+        list.Set("isEmpty", Ret(_ => B(items.Items.Count == 0)));
+        list.Set("contains", Ret(c => B(items.Items.Contains(c.Arg(0)))));
+        list.Set("iterator", Ret(_ =>
+        {
+            int cursor = 0;
+            var it = new JsHostObject(null);
+            it.Set("hasNext", Ret(_ => B(cursor < items.Items.Count)));
+            it.Set("next", Ret(_ => cursor < items.Items.Count ? items.Items[cursor++] : JsNull.Value));
+            return it;
+        }));
+        return list;
+    }
+
+    static JsHostObject BuildEquipItem(int itemId)
+    {
+        var item = new JsHostObject(itemId);
+        item.Set("getItemId", Ret(_ => N(itemId)));
+        item.Set("getQuantity", Ret(_ => N(1)));
+        return item;
+    }
+
     static bool IsPartyLeader()
     {
         if (!GameSession.InGame) return false;
         var party=GameSession.Net.Social(new SocialRequest { characterId=GameSession.CharacterId });
         return party.party && party.partyLeader==GameSession.CharacterId;
+    }
+
+    // warp 第二参的名字形态：cm.warp(910000000, "out00")
+    static string WarpName(JsCall c, int i)
+        => c.ArgCount > i && c.Arg(i) is JsString s && !string.IsNullOrEmpty(s.Value) ? s.Value : null;
+
+    // warp 第二参的下标形态：cm.warp(toMap, pi.getMarketPortalId(toMap))
+    static int WarpIndex(JsCall c, int i)
+    {
+        if (c.ArgCount <= i || c.Arg(i) is JsString) return -1;
+        int id = JsConvert.ToInt32(c.Arg(i));
+        return id >= 0 ? id : -1;
+    }
+
+    static int MarketPortalId(int mapId)
+    {
+        var map = FieldCatalog.GetMap(mapId);
+        if (map == null || map.portals.Count == 0) return 0;
+        for (int i = 0; i < map.portals.Count; i++)
+            if (!string.IsNullOrEmpty(map.portals[i].script) && map.portals[i].script.Contains("market")) return i;
+        // MapleMap.getRandomPlayerSpawnpoint：第一个 type=0 的门
+        for (int i = 0; i < map.portals.Count; i++)
+            if (map.portals[i].type == 0) return i;
+        return 0;
     }
     static bool HasParty() => GameSession.InGame && GameSession.Net.Social(new SocialRequest
         { characterId = GameSession.CharacterId, operation = SocialOperation.Read }).party;
@@ -507,6 +844,9 @@ public static class NpcApi
         p.Set("sendFullServerBroadcast", Fn(c => ToastIfAny(Str(c, 0))));
         p.Set("sendBroadcast", Fn(c => ToastIfAny(Int(c, 0) == 0 ? Str(c, 2) : Str(c, 1) + "：" + Str(c, 2))));
         BindSavedLocations(p);
+        // Character.useCS（Character.java:472「chaos scroll upon crafting item」）：制作时是否消耗
+        // 混乱卷轴的标记。时尚点装等脚本开场 setCS(true) 只是源端模板习惯；本机制作系统未迁移，先存值。
+        p.Set("setCS", Fn(c => useCS = JsConvert.ToBoolean(c.Arg(0))));
         // Character.saveLocation(type) / saveLocationOnWarp()：warp 前记住「从哪来」（Character.java:8120/8131）
         p.Set("saveLocation", Fn(c => SaveLocation(Str(c, 0))));
         p.Set("saveLocationOnWarp", Fn(_ => SaveLocationOnWarp()));
@@ -558,9 +898,216 @@ public static class NpcApi
         p.Set("setStance", Fn(c => { }));
         p.Set("startMapEffect", Fn(c => { }));
         p.Set("haveItemEquipped", Ret(_ => B(false)));
-        p.Set("getMarriageItemId", Ret(_ => N(0)));
+        p.Set("getMarriageItemId", Ret(_ =>
+        {
+            var stored = GameSession.InGame ? ScriptValueStore("marriageItemId", null) : null;
+            return N(int.TryParse(stored, out int v) ? v : 0);
+        }));
+        BindCommonPlayer(p, session);
         return p;
     }
+
+    // ————————————————————————————————————————————
+    // player 宿主补齐（AbstractCharacterObject/Character 语义）：
+    // 基础四维、HP/MP 池、AP/SP/等级/转职/转生、技能、蓝泉/仓库等脚本直调面。
+    // ————————————————————————————————————————————
+    static void BindCommonPlayer(JsHostObject p, NpcSession session)
+    {
+        // —— 基础四维（AbstractCharacterObject.attrStr 等：脚本 getStr 是裸基础值，不含装备）——
+        p.Set("getStr", Ret(_ => N(Profile.Data.attributes.str)));
+        p.Set("getDex", Ret(_ => N(Profile.Data.attributes.dex)));
+        p.Set("getInt", Ret(_ => N(Profile.Data.attributes.intelligence)));
+        p.Set("getLuk", Ret(_ => N(Profile.Data.attributes.luk)));
+        // 带武器的攻防（战力系统按这六个值算咖位）
+        p.Set("getWatk", Ret(_ => { var t = PlayerCombat(); return N(t.watk); }));
+        p.Set("getMatk", Ret(_ => { var t = PlayerCombat(); return N(t.matk); }));
+        p.Set("getWdef", Ret(_ => N(PlayerCombat().weaponDefense)));
+        p.Set("getMdef", Ret(_ => N(PlayerCombat().magicDefense)));
+        p.Set("setStr", Fn(c => SetBaseStat(str: Int(c, 0))));
+        p.Set("setDex", Fn(c => SetBaseStat(dex: Int(c, 0))));
+        p.Set("setInt", Fn(c => SetBaseStat(intl: Int(c, 0))));
+        p.Set("setLuk", Fn(c => SetBaseStat(luk: Int(c, 0))));
+
+        // —— HP/MP 池（getCurrentMaxHp=localMaxHp 含装备；baseMaxHp 即源端 clientMaxHp）——
+        p.Set("getCurrentMaxHp", Ret(_ => N(Pc != null ? Pc.hpMax : Profile.Data.baseMaxHp)));
+        p.Set("getCurrentMaxMp", Ret(_ => N(Pc != null ? Pc.mpMax : Profile.Data.baseMaxMp)));
+        p.Set("getClientMaxHp", Ret(_ => N(Profile.Data.baseMaxHp)));
+        p.Set("getClientMaxMp", Ret(_ => N(Profile.Data.baseMaxMp)));
+        p.Set("addMaxHP", Fn(c => AdjustMaxHpMp(Int(c, 0), 0)));
+        p.Set("addMaxMP", Fn(c => AdjustMaxHpMp(0, Int(c, 0))));
+        p.Set("updateHpMaxHp", Fn(c => { AdjustMaxHpMp(Int(c, 1) - BaseMaxHp(), 0); if (Pc != null) Pc.hp = Int(c, 0); }));
+        p.Set("updateMpMaxMp", Fn(c => { AdjustMaxHpMp(0, Int(c, 1) - BaseMaxMp()); if (Pc != null) Pc.mp = Int(c, 0); }));
+        p.Set("updateMaxHpMaxMp", Fn(c => AdjustMaxHpMp(Int(c, 0) - BaseMaxHp(), Int(c, 1) - BaseMaxMp())));
+
+        // —— AP / SP / 等级 / 转职 / 转生 ——
+        p.Set("setRemainingAp", Fn(c => Profile.AddAp(Int(c, 0) - Profile.ap)));
+        p.Set("gainSp", Fn(c => Profile.AddSp(Int(c, 0))));
+        p.Set("setLevel", Fn(c =>
+        {
+            int target = Int(c, 0);
+            if (target > 0 && target != Profile.level)
+            {
+                LevelSystem.SetLevel(Profile.Data, target);
+                Profile.Save();
+                Pc?.ApplyProgression();
+            }
+        }));
+        p.Set("levelUp", Fn(_ =>
+        {
+            LevelSystem.SetLevel(Profile.Data, Profile.level + 1);
+            Profile.Save();
+            Pc?.ApplyProgression();
+        }));
+        p.Set("changeJob", Fn(c => ChangeJob(Int(c, 0))));
+        // 转生次数存 extend_value("reborns")（源端存 characters.reborns 列）
+        p.Set("getReborns", Ret(_ => N(PqExtendInt("reborns"))));
+        p.Set("getRebornsCount", Ret(_ => N(PqExtendInt("reborns"))));
+        // Character.executeRebornAs：满级校验后 addReborns → changeJob → setLevel(0) → levelUp
+        p.Set("executeRebornAsId", Fn(c =>
+        {
+            int jobId = Int(c, 0);
+            SavePqExtend("reborns", PqExtendInt("reborns") + 1);
+            ChangeJob(jobId);
+            Profile.Data.level = 1;
+            Profile.Data.experience = 0;
+            LevelSystem.EnsureBaseline(Profile.Data);
+            Profile.Save();
+            Pc?.ApplyProgression();
+        }));
+
+        // —— 技能 ——
+        p.Set("getSkillLevel", Ret(c => N(SkillProgress.LevelOf(SkillIdOf(c, 0)))));
+        p.Set("getSkills", Ret(_ =>
+        {
+            var arr = new JsArray();
+            foreach (var kv in SkillProgress.AllLearned())
+            {
+                var skill = new JsHostObject(kv.Key);
+                skill.Set("id", N(kv.Key));
+                skill.Set("getId", Ret(_ => N(kv.Key)));
+                skill.Set("getLevel", Ret(_ => N(SkillProgress.LevelOf(kv.Key))));
+                arr.Items.Add(skill);
+            }
+            return arr;
+        }));
+        p.Set("changeSkillLevel", Fn(c =>
+        {
+            int id = SkillIdOf(c, 0);
+            if (id > 0) SkillProgress.SetLevel(id, Int(c, 1, 0));
+        }));
+        p.Set("removeBySkillId", Ret(c =>
+        {
+            int id = Int(c, 0);
+            if (SkillProgress.LevelOf(id) <= 0) return B(false);
+            SkillProgress.SetLevel(id, 0);
+            return B(true);
+        }));
+        p.Set("addSkillToKeyboard", Fn(c => { }));   // 键位在 PlayerPrefs，脚本批量配键场景未迁移
+
+        // —— 装备 / 背包同步 ——
+        p.Set("gainEquip", Fn(c => Profile.AddItem(Int(c, 0), Math.Max(1, Int(c, 1, 1)))));
+        p.Set("equipChanged", Fn(c => Pc?.ApplyProgression()));   // Character.equipChanged：重算 local stats
+        p.Set("forceUpdateItem", Fn(c => { }));   // 单机背包即改即存，无需补发包
+        p.Set("setMarriageItemId", Fn(c => ScriptValueStore("marriageItemId", Int(c, 0).ToString(System.Globalization.CultureInfo.InvariantCulture), write: true)));
+
+        // —— 放逐（Character.banishMap/banishSp/banishTime，怪物技能把玩家扔去别的图）——
+        p.Set("getLastBanishData", Ret(_ =>
+        {
+            var data = new JsHostObject(null);
+            int map = PqExtendInt("banishMap"), portal = PqExtendInt("banishSp");
+            data.Set("left", N(map)); data.Set("getLeft", Ret(_ => N(map)));
+            data.Set("right", N(portal)); data.Set("getRight", Ret(_ => N(portal)));
+            return data;
+        }));
+        p.Set("canRecoverLastBanish", Ret(_ => B(PqExtendInt("banishMap") >= 0)));
+        p.Set("clearBanishPlayerData", Fn(_ =>
+        {
+            SavePqExtend("banishMap", -1);
+            SavePqExtend("banishSp", -1);
+        }));
+
+        // —— 倍率（NativeCommunityService：expRate/dropRate 已含 world×family）——
+        p.Set("getExpRate", Ret(_ => N(Rates().expRate)));
+        p.Set("getDropRate", Ret(_ => N(Rates().dropRate)));
+        p.Set("getFamilyDrop", Ret(_ => N(Rates().familyDropRate)));
+
+        // —— World 引用（益智答题这类脚本只调 broadcastPacket；单机=自己收到）——
+        p.Set("getWorldServer", Ret(_ =>
+        {
+            var world = new JsHostObject(null);
+            Lenient(world, "worldServer");
+            world.Set("getExpRate", Ret(_ => N(Rates().expRate)));
+            world.Set("broadcastPacket", Fn(c =>
+            {
+                // PackageCreator.serverNotice(type, text) 的结果脚本拿不到，退而求其次：
+                // 把最后一个字符串参数按 type6（聊天窗浅蓝）投放。
+                for (int i = c.ArgCount - 1; i >= 0; i--)
+                    if (c.Arg(i) is JsString s && !string.IsNullOrEmpty(s.Value)) { NativeSystemMessage.Drop(6, s.Value); return; }
+            }));
+            return world;
+        }));
+
+        p.Set("hasLevel30Character", Ret(_ => B(false)));
+        p.Set("getSpace", Ret(_ => N(24)));
+        p.Set("getDisconnected", Ret(_ => B(false)));
+    }
+
+    // —— BindCommonPlayer 的小工具 ——
+    static Totals totalsCache;
+
+    static Totals PlayerCombat()
+    {
+        totalsCache = PlayerTotals();
+        return totalsCache;
+    }
+
+    static int BaseMaxHp() => Profile.Data.baseMaxHp;
+    static int BaseMaxMp() => Profile.Data.baseMaxMp;
+
+    static void SetBaseStat(int str = -1, int dex = -1, int intl = -1, int luk = -1)
+    {
+        var a = Profile.Data.attributes;
+        Profile.SetBaseStats(
+            str >= 0 ? str : a.str,
+            dex >= 0 ? dex : a.dex,
+            intl >= 0 ? intl : a.intelligence,
+            luk >= 0 ? luk : a.luk,
+            Profile.Data.ap, Profile.Data.sp);
+        Pc?.ApplyProgression();
+    }
+
+    // maxHp 加减走 baseMaxHp/baseMaxMp（源端 changeHpMpPool 语义：最终 local 值 = 请求值）
+    static void AdjustMaxHpMp(int deltaHp, int deltaMp)
+    {
+        if (deltaHp == 0 && deltaMp == 0) return;
+        Profile.Data.baseMaxHp = Math.Max(50, BaseMaxHp() + deltaHp);
+        Profile.Data.baseMaxMp = Math.Max(5, BaseMaxMp() + deltaMp);
+        Profile.Save();
+        Pc?.ApplyProgression();
+        if (Pc != null)
+        {
+            Pc.hp = Mathf.Clamp(Pc.hp, 0, Mathf.RoundToInt(Pc.hpMax));
+            Pc.mp = Mathf.Clamp(Pc.mp, 0, Mathf.RoundToInt(Pc.mpMax));
+        }
+    }
+
+    static int PqExtendInt(string key)
+        => int.TryParse(ScriptValueStore(key, null), out int v) ? v : 0;
+
+    static int SkillIdOf(JsCall c, int i)
+    {
+        if (c.Arg(i) is JsHostObject host)
+        {
+            var id = host.Get("id");
+            if (id is JsNumber) return JsConvert.ToInt32(id);
+        }
+        return Int(c, i);
+    }
+
+    static CommunityResponse Rates()
+        => GameSession.InGame
+            ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId, operation = CommunityOperation.Read })
+            : new CommunityResponse();
 
     static JsHostObject BuildMap()
     {

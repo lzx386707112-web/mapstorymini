@@ -1,0 +1,5364 @@
+[
+ {
+  "api": "getProperty",
+  "files": 104,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1012112.js",
+   "npc/1032008.js",
+   "npc/1052007.js",
+   "npc/1052013.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getIntProperty",
+  "files": 91,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1052013.js",
+   "npc/1061014.js",
+   "npc/2013001.js",
+   "npc/2030013.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "startInstance",
+  "files": 72,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1012112.js",
+   "npc/1052007.js",
+   "npc/1052013.js",
+   "npc/1052125.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setProperty",
+  "files": 53,
+  "sample": [
+   "npc/1012114.js",
+   "npc/1061014.js",
+   "npc/1104000.js",
+   "npc/1300013.js",
+   "npc/2013001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isCosmeticEquipped",
+  "files": 52,
+  "sample": [
+   "BeiDouSpecial/发色选择.js",
+   "BeiDouSpecial/皇家发型.js",
+   "npc/1012104.js",
+   "npc/1012117.js",
+   "npc/1052004.js"
+  ],
+  "owners": {
+   "cm": 64
+  }
+ },
+ {
+  "api": "getCosmeticItem",
+  "files": 51,
+  "sample": [
+   "BeiDouSpecial/皇家发型.js",
+   "npc/1012104.js",
+   "npc/1012117.js",
+   "npc/1052004.js",
+   "npc/1052100.js"
+  ],
+  "owners": {
+   "cm": 63
+  }
+ },
+ {
+  "api": "blockPortal",
+  "files": 42,
+  "sample": [
+   "portal/DragonEggNotice.js",
+   "portal/aranTutorArrow0.js",
+   "portal/aranTutorArrow1.js",
+   "portal/aranTutorArrow2.js",
+   "portal/aranTutorArrow3.js"
+  ],
+  "owners": {
+   "pi": 42
+  }
+ },
+ {
+  "api": "setIntProperty",
+  "files": 39,
+  "sample": [
+   "npc/2013001.js",
+   "npc/2112000.js",
+   "npc/2112005.js",
+   "npc/2112006.js",
+   "npc/2112007.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getReactorByName",
+  "files": 39,
+  "sample": [
+   "npc/2013001.js",
+   "npc/2112005.js",
+   "npc/2112006.js",
+   "npc/2112007.js",
+   "npc/2112013.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getState",
+  "files": 36,
+  "sample": [
+   "npc/2013001.js",
+   "npc/2112005.js",
+   "npc/2112006.js",
+   "npc/9040006.js",
+   "npc/9201045.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "broadcastMessage",
+  "files": 33,
+  "sample": [
+   "BeiDouSpecial/其他功能.js",
+   "BeiDouSpecial/在线奖励.js",
+   "BeiDouSpecial/快速转职.js",
+   "BeiDouSpecial/新人福利.js",
+   "BeiDouSpecial/每日签到.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getFace",
+  "files": 31,
+  "sample": [
+   "BeiDouSpecial/Salon.js",
+   "BeiDouSpecial/时装暖暖.js",
+   "npc/1052004.js",
+   "npc/2010002.js",
+   "npc/2012009.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "updateAreaInfo",
+  "files": 30,
+  "sample": [
+   "npc/1202000.js",
+   "portal/DragonEggNotice.js",
+   "portal/aranTutorArrow0.js",
+   "portal/aranTutorArrow1.js",
+   "portal/aranTutorArrow2.js"
+  ],
+  "owners": {
+   "cm": 1,
+   "pi": 29
+  }
+ },
+ {
+  "api": "containsAreaInfo",
+  "files": 30,
+  "sample": [
+   "npc/1202000.js",
+   "portal/DragonEggNotice.js",
+   "portal/aranTutorArrow0.js",
+   "portal/aranTutorArrow1.js",
+   "portal/aranTutorArrow2.js"
+  ],
+  "owners": {
+   "cm": 1,
+   "pi": 29
+  }
+ },
+ {
+  "api": "sendStorage",
+  "files": 29,
+  "sample": [
+   "BeiDouSpecial/随身仓库.js",
+   "npc/1002005.js",
+   "npc/1012009.js",
+   "npc/1022005.js",
+   "npc/1032006.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getHair",
+  "files": 29,
+  "sample": [
+   "BeiDouSpecial/Salon.js",
+   "BeiDouSpecial/发色选择.js",
+   "BeiDouSpecial/皇家发型.js",
+   "npc/1012104.js",
+   "npc/1012117.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "serverNotice",
+  "files": 28,
+  "sample": [
+   "BeiDouSpecial/其他功能.js",
+   "BeiDouSpecial/在线奖励.js",
+   "BeiDouSpecial/快速转职.js",
+   "BeiDouSpecial/新人福利.js",
+   "BeiDouSpecial/每日签到.js"
+  ],
+  "owners": {
+   "cm": 396
+  }
+ },
+ {
+  "api": "getEligibleParty",
+  "files": 27,
+  "sample": [
+   "npc/1012112.js",
+   "npc/1052013.js",
+   "npc/1061012.js",
+   "npc/2013000.js",
+   "npc/2020008.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "showClearEffect",
+  "files": 27,
+  "sample": [
+   "npc/1012114.js",
+   "npc/2013001.js",
+   "npc/2040036.js",
+   "npc/2040037.js",
+   "npc/2040038.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMapInstance",
+  "files": 25,
+  "sample": [
+   "BeiDouSpecial/巡逻.js",
+   "npc/1012114.js",
+   "npc/2112000.js",
+   "npc/2112010.js",
+   "npc/2144016.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getPlayers",
+  "files": 23,
+  "sample": [
+   "npc/2030013_old.js",
+   "npc/2040043.js",
+   "npc/2112000.js",
+   "npc/2112010.js",
+   "npc/9000004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isEventCleared",
+  "files": 20,
+  "sample": [
+   "npc/1052013.js",
+   "npc/1061018.js",
+   "npc/2030010.js",
+   "npc/2032002.js",
+   "npc/2112000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "toggleRecvPartySearchInvite",
+  "files": 18,
+  "sample": [
+   "npc/1012112.js",
+   "npc/1052013.js",
+   "npc/2013000.js",
+   "npc/2040034.js",
+   "npc/2041023.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "registerPlayer",
+  "files": 18,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2030013_old.js",
+   "npc/2083004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "countPlayers",
+  "files": 18,
+  "sample": [
+   "npc/1104200.js",
+   "npc/2091009.js",
+   "portal/enterDisguise1.js",
+   "portal/enterDisguise2.js",
+   "portal/enterDisguise3.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isRecvPartySearchInviteEnabled",
+  "files": 17,
+  "sample": [
+   "npc/1012112.js",
+   "npc/1052013.js",
+   "npc/2013000.js",
+   "npc/2040034.js",
+   "npc/2041023.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "contains",
+  "files": 17,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2040043.js",
+   "npc/2083004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getExpRate",
+  "files": 16,
+  "sample": [
+   "npc/1032109.js",
+   "npc/2010000.js",
+   "npc/2032003.js",
+   "npc/2101016.js",
+   "npc/2112007.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "changeJob",
+  "files": 16,
+  "sample": [
+   "BeiDouSpecial/更换职业.js",
+   "quest/20101.js",
+   "quest/20102.js",
+   "quest/20103.js",
+   "quest/20104.js"
+  ],
+  "owners": {
+   "qm": 5,
+   "player": 1
+  }
+ },
+ {
+  "api": "gotPartyQuestItem",
+  "files": 14,
+  "sample": [
+   "npc/1012100.js",
+   "npc/1022000.js",
+   "npc/1032001.js",
+   "npc/1032001_nextLevel.js",
+   "npc/1052001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "giveEventReward",
+  "files": 14,
+  "sample": [
+   "npc/1012112.js",
+   "npc/1052013.js",
+   "npc/2013002.js",
+   "npc/2112018.js",
+   "npc/2141002.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "warpEventTeam",
+  "files": 14,
+  "sample": [
+   "npc/1012113.js",
+   "npc/2013001.js",
+   "npc/2040045.js",
+   "npc/2083001.js",
+   "npc/2133001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "giveEventPlayersStageReward",
+  "files": 14,
+  "sample": [
+   "npc/1012114.js",
+   "npc/2112005.js",
+   "npc/2112006.js",
+   "npc/2112007.js",
+   "npc/2112013.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getRemainingSp",
+  "files": 14,
+  "sample": [
+   "npc/2020008.js",
+   "npc/2020009.js",
+   "npc/2020010.js",
+   "npc/2020011.js",
+   "npc/2020013.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getItem",
+  "files": 14,
+  "sample": [
+   "BeiDouSpecial/一键出售.js",
+   "BeiDouSpecial/一键删除道具.js",
+   "BeiDouSpecial/删除道具.js",
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getPartyMembersOnSameMap",
+  "files": 14,
+  "sample": [
+   "npc/9071000.js",
+   "npc/9120027.js",
+   "npc/9120031.js",
+   "npc/9120036.js",
+   "npc/9120039.js"
+  ],
+  "owners": {
+   "player": 19
+  }
+ },
+ {
+  "api": "clearPQ",
+  "files": 13,
+  "sample": [
+   "npc/1012114.js",
+   "npc/1052013.js",
+   "npc/2032002.js",
+   "npc/2040044.js",
+   "npc/2083001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getValue",
+  "files": 13,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2083004.js",
+   "npc/2101017.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "showEffect",
+  "files": 13,
+  "sample": [
+   "npc/2012027.js",
+   "npc/2012028.js",
+   "npc/2012029.js",
+   "npc/2012030.js",
+   "npc/2012031.js"
+  ],
+  "owners": {
+   "cm": 11
+  }
+ },
+ {
+  "api": "startDungeonInstance",
+  "files": 13,
+  "sample": [
+   "portal/MD_drakeroom.js",
+   "portal/MD_error.js",
+   "portal/MD_golem.js",
+   "portal/MD_high.js",
+   "portal/MD_longkiss_1.js"
+  ],
+  "owners": {
+   "pi": 26
+  }
+ },
+ {
+  "api": "ban",
+  "files": 12,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2083004.js",
+   "npc/2101017.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "createExpedition",
+  "files": 12,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2083004.js",
+   "npc/2101014.js"
+  ],
+  "owners": {
+   "cm": 12
+  }
+ },
+ {
+  "api": "endExpedition",
+  "files": 12,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2083004.js",
+   "npc/2101017.js"
+  ],
+  "owners": {
+   "cm": 12
+  }
+ },
+ {
+  "api": "getMemberList",
+  "files": 12,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2083004.js",
+   "npc/2101017.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMapFactory",
+  "files": 12,
+  "sample": [
+   "npc/1063017.js",
+   "npc/2091005.js",
+   "npc/2091005_old.js",
+   "npc/2101014.js",
+   "portal/enterDisguise1.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "showInstruction",
+  "files": 12,
+  "sample": [
+   "portal/advice00.js",
+   "portal/advice01.js",
+   "portal/advice02.js",
+   "portal/advice03.js",
+   "portal/advice04.js"
+  ],
+  "owners": {
+   "pi": 12
+  }
+ },
+ {
+  "api": "setPartyQuestItemObtained",
+  "files": 11,
+  "sample": [
+   "npc/1012100.js",
+   "npc/1022000.js",
+   "npc/1032001.js",
+   "npc/1032001_nextLevel.js",
+   "npc/1052001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "removePartyQuestItem",
+  "files": 11,
+  "sample": [
+   "npc/1012100.js",
+   "npc/1022000.js",
+   "npc/1032001.js",
+   "npc/1032001_nextLevel.js",
+   "npc/1052001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isInProgress",
+  "files": 11,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2083004.js",
+   "npc/2141001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMinLevel",
+  "files": 11,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2083004.js",
+   "npc/2141001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "addMember",
+  "files": 11,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2083004.js",
+   "npc/2141001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMinSize",
+  "files": 11,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2083004.js",
+   "npc/2141001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isRegistering",
+  "files": 11,
+  "sample": [
+   "BeiDouSpecial/露希妲远征.js",
+   "npc/1061014.js",
+   "npc/2030013.js",
+   "npc/2083004.js",
+   "npc/2141001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "countMonster",
+  "files": 11,
+  "sample": [
+   "npc/1104201.js",
+   "npc/2144016.js",
+   "npc/2144017.js",
+   "npc/2144020.js",
+   "npc/9120042.js"
+  ],
+  "owners": {
+   "cm": 6
+  }
+ },
+ {
+  "api": "getJobNiche",
+  "files": 10,
+  "sample": [
+   "npc/1061009.js",
+   "npc/9201107.js",
+   "npc/9201108.js",
+   "npc/9201109.js",
+   "npc/9201110.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "linkToNextStage",
+  "files": 10,
+  "sample": [
+   "npc/2040036.js",
+   "npc/2040037.js",
+   "npc/2040038.js",
+   "npc/2040039.js",
+   "npc/2040040.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gridInsert",
+  "files": 9,
+  "sample": [
+   "npc/2032002.js",
+   "npc/9020001.js",
+   "npc/9105004.js",
+   "npc/9201002.js",
+   "npc/9201011.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMonsters",
+  "files": 9,
+  "sample": [
+   "npc/2094002.js",
+   "npc/9000037.js",
+   "npc/9220004.js",
+   "portal/davy_next0.js",
+   "portal/davy_next2.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "spawnPlayerNPC",
+  "files": 8,
+  "sample": [
+   "npc/1012100.js",
+   "npc/1022000.js",
+   "npc/1032001.js",
+   "npc/1032001_nextLevel.js",
+   "npc/1052001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getHallOfFameMapid",
+  "files": 8,
+  "sample": [
+   "npc/1012100.js",
+   "npc/1022000.js",
+   "npc/1032001.js",
+   "npc/1032001_nextLevel.js",
+   "npc/1052001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getSkillLevel",
+  "files": 8,
+  "sample": [
+   "BeiDouSpecial/技能中心.js",
+   "npc/2081100.js",
+   "npc/2081200.js",
+   "npc/2081300.js",
+   "npc/2081400.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "resetMapObjects",
+  "files": 8,
+  "sample": [
+   "npc/2091005.js",
+   "portal/s4berserk.js",
+   "portal/s4firehawk.js",
+   "portal/s4hitman.js",
+   "portal/s4iceeagle.js"
+  ],
+  "owners": {
+   "pi": 7
+  }
+ },
+ {
+  "api": "getInt",
+  "files": 8,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_物品查询.js",
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "BeiDouSpecial/灵魂戒指升级.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getPartyMembers",
+  "files": 8,
+  "sample": [
+   "npc/9120027.js",
+   "npc/9120031.js",
+   "npc/9120036.js",
+   "npc/9120039.js",
+   "npc/9120042.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "error",
+  "files": 8,
+  "sample": [
+   "BeiDouSpecial/一键转生.js",
+   "BeiDouSpecial/其他功能.js",
+   "BeiDouSpecial/宠物.js",
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "recordEntryPQ",
+  "files": 7,
+  "sample": [
+   "npc/1012114.js",
+   "npc/2040035.js",
+   "npc/2094001.js",
+   "npc/2133001.js",
+   "npc/9020002.js"
+  ],
+  "owners": {
+   "cm": 7
+  }
+ },
+ {
+  "api": "getMapObject",
+  "files": 7,
+  "sample": [
+   "npc/1104100.js",
+   "npc/1104101.js",
+   "npc/1104102.js",
+   "npc/1104103.js",
+   "npc/1104104.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gridCheck",
+  "files": 7,
+  "sample": [
+   "npc/2032002.js",
+   "npc/9020001.js",
+   "npc/9105004.js",
+   "npc/9201002.js",
+   "npc/9201011.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getBuffSource",
+  "files": 7,
+  "sample": [
+   "npc/2081005.js",
+   "npc/2103000.js",
+   "npc/2111015.js",
+   "portal/ariant_queens.js",
+   "quest/3314.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "changeMusic",
+  "files": 7,
+  "sample": [
+   "npc/2101010.js",
+   "portal/EBoat1.js",
+   "portal/EBoat2.js",
+   "portal/OBoat1.js",
+   "portal/OBoat2.js"
+  ],
+  "owners": {
+   "cm": 1,
+   "pi": 6
+  }
+ },
+ {
+  "api": "isEmpty",
+  "files": 7,
+  "sample": [
+   "npc/2101014.js",
+   "npc/9000037.js",
+   "npc/9201005.js",
+   "npc/9201008.js",
+   "npc/9201014.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "showInfoText",
+  "files": 7,
+  "sample": [
+   "npc/2103013.js",
+   "portal/rienTutor7.js",
+   "portal/rienTutor8.js",
+   "quest/29900.js",
+   "quest/29901.js"
+  ],
+  "owners": {
+   "cm": 2,
+   "qm": 4,
+   "pi": 4
+  }
+ },
+ {
+  "api": "getWorldServer",
+  "files": 7,
+  "sample": [
+   "BeiDouSpecial/益智答题.js",
+   "BeiDouSpecial/装备洗练.js",
+   "npc/9030000.js",
+   "npc/9201002.js",
+   "npc/9201005.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "resetFully",
+  "files": 7,
+  "sample": [
+   "npc/9120027.js",
+   "npc/9120031.js",
+   "npc/9120036.js",
+   "npc/9120039.js",
+   "npc/9120047.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "addPqPoints",
+  "files": 6,
+  "sample": [
+   "npc/1012114.js",
+   "npc/2040035.js",
+   "npc/2094001.js",
+   "npc/2133001.js",
+   "npc/9020002.js"
+  ],
+  "owners": {
+   "cm": 6
+  }
+ },
+ {
+  "api": "getPQEnteredCount",
+  "files": 6,
+  "sample": [
+   "BeiDouSpecial/每日装备强化.js",
+   "npc/1012114.js",
+   "npc/2040035.js",
+   "npc/2094001.js",
+   "npc/2133001.js"
+  ],
+  "owners": {
+   "cm": 10
+  }
+ },
+ {
+  "api": "destroyNPC",
+  "files": 6,
+  "sample": [
+   "npc/1104002.js",
+   "npc/1104100.js",
+   "npc/1104101.js",
+   "npc/1104102.js",
+   "npc/1104103.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getGuild",
+  "files": 6,
+  "sample": [
+   "npc/2010007.js",
+   "npc/2010009.js",
+   "npc/9040003.js",
+   "npc/9040006.js",
+   "npc/9040009.js"
+  ],
+  "owners": {
+   "cm": 4
+  }
+ },
+ {
+  "api": "showWrongEffect",
+  "files": 6,
+  "sample": [
+   "npc/2013001.js",
+   "npc/2040043.js",
+   "npc/9020001.js",
+   "npc/9040006.js",
+   "npc/9040009.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "stopEventTimer",
+  "files": 6,
+  "sample": [
+   "npc/9071005.js",
+   "npc/mPark_retire.js",
+   "portal/exit_puppeteer.js",
+   "portal/mPark_final.js",
+   "portal/outMagiclib.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setInt",
+  "files": 6,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_物品查询.js",
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/更换职业.js",
+   "BeiDouSpecial/每日装备强化.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "getJobStyle",
+  "files": 6,
+  "sample": [
+   "npc/scroll_generator.js",
+   "quest/2001.js",
+   "quest/2034.js",
+   "quest/3414.js",
+   "quest/3414_free10rate.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "scheduleMonsterOnGroundBelowIfMissing",
+  "files": 6,
+  "sample": [
+   "portal/karingDoolToGoongiPortal.js",
+   "portal/karingDoolToHondonPortal.js",
+   "portal/karingGoongiToDoolPortal.js",
+   "portal/karingGoongiToHondonPortal.js",
+   "portal/karingHondonToDoolPortal.js"
+  ],
+  "owners": {
+   "pi": 6
+  }
+ },
+ {
+  "api": "getDex",
+  "files": 6,
+  "sample": [
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getWatk",
+  "files": 6,
+  "sample": [
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMatk",
+  "files": 6,
+  "sample": [
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMdef",
+  "files": 6,
+  "sample": [
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getStr",
+  "files": 6,
+  "sample": [
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getWdef",
+  "files": 6,
+  "sample": [
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getLuk",
+  "files": 6,
+  "sample": [
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "lockUI",
+  "files": 5,
+  "sample": [
+   "npc/10200.js",
+   "npc/10201.js",
+   "npc/10202.js",
+   "npc/10203.js",
+   "npc/10204.js"
+  ],
+  "owners": {
+   "cm": 5
+  }
+ },
+ {
+  "api": "isCygnus",
+  "files": 5,
+  "sample": [
+   "npc/1101001.js",
+   "npc/9000040.js",
+   "npc/9000040_1.js",
+   "npc/9209000.js",
+   "npc/9900008.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getGuildId",
+  "files": 5,
+  "sample": [
+   "npc/2010007.js",
+   "npc/2010008.js",
+   "npc/2010009.js",
+   "npc/9040000.js",
+   "quest/29508.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "forceHitReactor",
+  "files": 5,
+  "sample": [
+   "npc/2013001.js",
+   "npc/9040003.js",
+   "npc/9040006.js",
+   "npc/9040009.js",
+   "portal/glpqPortalDummy.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getItemCount",
+  "files": 5,
+  "sample": [
+   "npc/3003151.js",
+   "npc/3003152.js",
+   "npc/3003153.js",
+   "npc/3003154.js",
+   "npc/3003155.js"
+  ],
+  "owners": {
+   "cm": 17
+  }
+ },
+ {
+  "api": "getInstances",
+  "files": 5,
+  "sample": [
+   "npc/9040000.js",
+   "npc/9201002.js",
+   "npc/9201005.js",
+   "npc/9201008.js",
+   "npc/9201012.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "saveOrUpdateExtendValue",
+  "files": 5,
+  "sample": [
+   "npc/9071000.js",
+   "npc/mPark_in00.js",
+   "npc/mPark_in01.js",
+   "npc/mPark_in02.js",
+   "npc/mPark_welcome.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getType",
+  "files": 5,
+  "sample": [
+   "npc/9071000.js",
+   "npc/mPark_in00.js",
+   "npc/mPark_in01.js",
+   "npc/mPark_in02.js",
+   "npc/mPark_welcome.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getExtendValue",
+  "files": 5,
+  "sample": [
+   "npc/9071000.js",
+   "npc/mPark_in00.js",
+   "npc/mPark_in01.js",
+   "npc/mPark_in02.js",
+   "npc/mPark_welcome.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "equals",
+  "files": 5,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201005.js",
+   "npc/9201008.js",
+   "npc/9201012.js",
+   "npc/9310056.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAllMonsters",
+  "files": 5,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_当前地图.js",
+   "BeiDouSpecial/爆率一览.js",
+   "npc/out272000410.js",
+   "npc/out272000410b.js",
+   "npc/outAkayrum.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gainEquip",
+  "files": 5,
+  "sample": [
+   "BeiDouSpecial/其他功能.js",
+   "BeiDouSpecial/动漫皮肤.js",
+   "BeiDouSpecial/新人福利.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "gainPQExp",
+  "files": 4,
+  "sample": [
+   "npc/1012114.js",
+   "npc/2040035.js",
+   "npc/2094001.js",
+   "npc/2133001.js"
+  ],
+  "owners": {
+   "cm": 4
+  }
+ },
+ {
+  "api": "getPet",
+  "files": 4,
+  "sample": [
+   "npc/1032102.js",
+   "quest/4659.js",
+   "quest/8185.js",
+   "quest/8189.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "removeFromSlot",
+  "files": 4,
+  "sample": [
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js",
+   "BeiDouSpecial/装备分解.js",
+   "npc/1032102.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "evolvePet",
+  "files": 4,
+  "sample": [
+   "npc/1032102.js",
+   "quest/4659.js",
+   "quest/8185.js",
+   "quest/8189.js"
+  ],
+  "owners": {
+   "cm": 1,
+   "qm": 3
+  }
+ },
+ {
+  "api": "weakenAreaBoss",
+  "files": 4,
+  "sample": [
+   "npc/1052107.js",
+   "npc/2096000.js",
+   "npc/2111025.js",
+   "npc/2111026.js"
+  ],
+  "owners": {
+   "cm": 4
+  }
+ },
+ {
+  "api": "giveEventPlayersExp",
+  "files": 4,
+  "sample": [
+   "npc/2013001.js",
+   "npc/2032002.js",
+   "npc/2040044.js",
+   "npc/9103000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "sendAllWordPQNotice",
+  "files": 4,
+  "sample": [
+   "npc/2040035.js",
+   "npc/2094001.js",
+   "npc/2133001.js",
+   "npc/9020002.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getArea",
+  "files": 4,
+  "sample": [
+   "npc/2040043.js",
+   "npc/9040006.js",
+   "npc/9201044.js",
+   "npc/9201045.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isCPQLoserMap",
+  "files": 4,
+  "sample": [
+   "npc/2042000.js",
+   "npc/2042001.js",
+   "npc/2042002.js",
+   "npc/2042007.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getFestivalPoints",
+  "files": 4,
+  "sample": [
+   "npc/2042000.js",
+   "npc/2042001.js",
+   "npc/2042002.js",
+   "npc/2042007.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isCPQWinnerMap",
+  "files": 4,
+  "sample": [
+   "npc/2042000.js",
+   "npc/2042001.js",
+   "npc/2042002.js",
+   "npc/2042007.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "partyMembersInMap",
+  "files": 4,
+  "sample": [
+   "npc/2042000.js",
+   "npc/2042001.js",
+   "npc/2042002.js",
+   "npc/2042005.js"
+  ],
+  "owners": {
+   "cm": 4
+  }
+ },
+ {
+  "api": "cancelCPQLobby",
+  "files": 4,
+  "sample": [
+   "npc/2042003.js",
+   "npc/2042004.js",
+   "npc/2042008.js",
+   "npc/2042009.js"
+  ],
+  "owners": {
+   "cm": 4
+  }
+ },
+ {
+  "api": "hitReactor",
+  "files": 4,
+  "sample": [
+   "npc/2112005.js",
+   "npc/2112006.js",
+   "npc/2112007.js",
+   "npc/2112013.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gainGP",
+  "files": 4,
+  "sample": [
+   "npc/9040003.js",
+   "npc/9040006.js",
+   "npc/9040009.js",
+   "npc/9040010.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getOngoingWedding",
+  "files": 4,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201005.js",
+   "npc/9201008.js",
+   "npc/9201012.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getWeddingReservationTimeLeft",
+  "files": 4,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201005.js",
+   "npc/9201008.js",
+   "npc/9201012.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isWeddingReserved",
+  "files": 4,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201005.js",
+   "npc/9201008.js",
+   "npc/9201012.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getRelationshipId",
+  "files": 4,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201005.js",
+   "npc/9201008.js",
+   "npc/9201012.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "changeSkillLevel",
+  "files": 4,
+  "sample": [
+   "BeiDouSpecial/技能中心.js",
+   "BeiDouSpecial/更换职业.js",
+   "npc/9900001.js",
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 3
+  }
+ },
+ {
+  "api": "setDex",
+  "files": 4,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/更换职业.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "setLuk",
+  "files": 4,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/更换职业.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "setStr",
+  "files": 4,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/更换职业.js",
+   "BeiDouSpecial/每日装备强化.js",
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "getEventSM",
+  "files": 4,
+  "sample": [
+   "portal/EBoat1.js",
+   "portal/EBoat2.js",
+   "portal/OBoat1.js",
+   "portal/OBoat2.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "giveCharacterExp",
+  "files": 4,
+  "sample": [
+   "portal/TD_MC_enterboss2.js",
+   "portal/go_6ChaLuKou.js",
+   "portal/go_futuredoor.js",
+   "portal/go_secretroom.js"
+  ],
+  "owners": {
+   "pi": 4
+  }
+ },
+ {
+  "api": "getAcc",
+  "files": 4,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js",
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getSpeed",
+  "files": 4,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js",
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getJump",
+  "files": 4,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js",
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAvoid",
+  "files": 4,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js",
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getCapacity",
+  "files": 3,
+  "sample": [
+   "npc/1002003.js",
+   "npc/2010007.js",
+   "npc/2040046.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getCustomData",
+  "files": 3,
+  "sample": [
+   "npc/1052115.js",
+   "npc/9000011.js",
+   "npc/9001000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setCustomData",
+  "files": 3,
+  "sample": [
+   "npc/1052115.js",
+   "npc/9000011.js",
+   "npc/9001000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getQuestRecord",
+  "files": 3,
+  "sample": [
+   "npc/1052115.js",
+   "npc/9000011.js",
+   "npc/9001000.js"
+  ],
+  "owners": {
+   "cm": 28
+  }
+ },
+ {
+  "api": "println",
+  "files": 3,
+  "sample": [
+   "npc/1063011.js",
+   "npc/9209002.js",
+   "quest/29400.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "useItem",
+  "files": 3,
+  "sample": [
+   "npc/1101001.js",
+   "npc/2082003.js",
+   "portal/outTemple.js"
+  ],
+  "owners": {
+   "cm": 2,
+   "pi": 1
+  }
+ },
+ {
+  "api": "getJobBranch",
+  "files": 3,
+  "sample": [
+   "npc/1101001.js",
+   "npc/scroll_generator.js",
+   "quest/2260.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getGuildRank",
+  "files": 3,
+  "sample": [
+   "npc/2010007.js",
+   "npc/2010008.js",
+   "npc/2010009.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gmLevel",
+  "files": 3,
+  "sample": [
+   "npc/2040043.js",
+   "npc/9900000.js",
+   "npc/commands.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "fieldLobbied",
+  "files": 3,
+  "sample": [
+   "npc/2042000.js",
+   "npc/2042001.js",
+   "npc/2042002.js"
+  ],
+  "owners": {
+   "cm": 3
+  }
+ },
+ {
+  "api": "fieldTaken",
+  "files": 3,
+  "sample": [
+   "npc/2042000.js",
+   "npc/2042001.js",
+   "npc/2042002.js"
+  ],
+  "owners": {
+   "cm": 3
+  }
+ },
+ {
+  "api": "cpqLobby",
+  "files": 3,
+  "sample": [
+   "npc/2042000.js",
+   "npc/2042001.js",
+   "npc/2042002.js"
+  ],
+  "owners": {
+   "cm": 3
+  }
+ },
+ {
+  "api": "challengeParty",
+  "files": 3,
+  "sample": [
+   "npc/2042000.js",
+   "npc/2042001.js",
+   "npc/2042002.js"
+  ],
+  "owners": {
+   "cm": 3
+  }
+ },
+ {
+  "api": "sendCPQMapLists",
+  "files": 3,
+  "sample": [
+   "npc/2042000.js",
+   "npc/2042001.js",
+   "npc/2042002.js"
+  ],
+  "owners": {
+   "cm": 3
+  }
+ },
+ {
+  "api": "setVanquisherKills",
+  "files": 3,
+  "sample": [
+   "npc/2091005.js",
+   "npc/2091005_old.js",
+   "portal/dojang_up.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getDojoPoints",
+  "files": 3,
+  "sample": [
+   "npc/2091005.js",
+   "npc/2091005_old.js",
+   "portal/dojang_next.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getVanquisherKills",
+  "files": 3,
+  "sample": [
+   "npc/2091005.js",
+   "npc/2091005_old.js",
+   "portal/dojang_up.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getVanquisherStage",
+  "files": 3,
+  "sample": [
+   "npc/2091005.js",
+   "npc/2091005_old.js",
+   "portal/dojang_up.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "executeQuery",
+  "files": 3,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_物品查询.js",
+   "BeiDouSpecial/战力系统.js",
+   "npc/9000018.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "prepareStatement",
+  "files": 3,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_物品查询.js",
+   "BeiDouSpecial/战力系统.js",
+   "npc/9000018.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getConnection",
+  "files": 3,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_物品查询.js",
+   "BeiDouSpecial/战力系统.js",
+   "npc/9000018.js"
+  ],
+  "owners": {
+   "cm": 2
+  }
+ },
+ {
+  "api": "isEventTeamTogether",
+  "files": 3,
+  "sample": [
+   "npc/9000037.js",
+   "npc/9103000.js",
+   "npc/9201045.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isBoss",
+  "files": 3,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_当前地图.js",
+   "npc/9000055.js",
+   "npc/9900002.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "exitPlayer",
+  "files": 3,
+  "sample": [
+   "npc/9071005.js",
+   "npc/mPark_retire.js",
+   "portal/mPark_final.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setEventCleared",
+  "files": 3,
+  "sample": [
+   "npc/9071005.js",
+   "npc/mPark_retire.js",
+   "portal/mPark_final.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isMale",
+  "files": 3,
+  "sample": [
+   "npc/9200101.js",
+   "npc/9310057.js",
+   "npc/9900000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getUnclaimedMarriageGifts",
+  "files": 3,
+  "sample": [
+   "npc/9201005.js",
+   "npc/9201008.js",
+   "npc/9201014.js"
+  ],
+  "owners": {
+   "cm": 3
+  }
+ },
+ {
+  "api": "doGachapon",
+  "files": 3,
+  "sample": [
+   "npc/9270043.js",
+   "npc/gachapon.js",
+   "npc/gachaponold.js"
+  ],
+  "owners": {
+   "cm": 4
+  }
+ },
+ {
+  "api": "getRight",
+  "files": 3,
+  "sample": [
+   "BeiDouSpecial/常用指令.js",
+   "npc/commands.js",
+   "portal/back_cygnus.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getLeft",
+  "files": 3,
+  "sample": [
+   "BeiDouSpecial/常用指令.js",
+   "npc/commands.js",
+   "portal/back_cygnus.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getReborns",
+  "files": 3,
+  "sample": [
+   "BeiDouSpecial/一键转生.js",
+   "BeiDouSpecial/更换职业.js",
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "forceUpdateItem",
+  "files": 3,
+  "sample": [
+   "BeiDouSpecial/每日装备强化.js",
+   "BeiDouSpecial/魔方洗练.js",
+   "npc/waterOfLife.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "resetPQ",
+  "files": 3,
+  "sample": [
+   "portal/enterFirstDH.js",
+   "portal/enterNepenthes.js",
+   "quest/21746.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "activatedAllReactorsOnMap",
+  "files": 3,
+  "sample": [
+   "portal/davy_next0.js",
+   "portal/davy_next2.js",
+   "portal/davy_next3.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "equipChanged",
+  "files": 3,
+  "sample": [
+   "BeiDouSpecial/一键转生.js",
+   "BeiDouSpecial/更换职业.js",
+   "BeiDouSpecial/每日装备强化.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "addSkillToKeyboard",
+  "files": 3,
+  "sample": [
+   "BeiDouSpecial/快捷技能.js",
+   "BeiDouSpecial/技能偷学.js",
+   "BeiDouSpecial/龙神技能面板.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "setBuddyCapacity",
+  "files": 2,
+  "sample": [
+   "npc/1002003.js",
+   "npc/2040046.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getBuddylist",
+  "files": 2,
+  "sample": [
+   "npc/1002003.js",
+   "npc/2040046.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getNoPets",
+  "files": 2,
+  "sample": [
+   "npc/1012007.js",
+   "npc/2040033.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gainTameness",
+  "files": 2,
+  "sample": [
+   "npc/1012007.js",
+   "npc/2040033.js"
+  ],
+  "owners": {
+   "cm": 2
+  }
+ },
+ {
+  "api": "isFull",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/快速转职.js",
+   "npc/1022101_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "disconnect",
+  "files": 2,
+  "sample": [
+   "npc/1052006.js",
+   "npc/changeName.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getKey",
+  "files": 2,
+  "sample": [
+   "npc/1061014.js",
+   "npc/scroll_generator.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "unlockUI",
+  "files": 2,
+  "sample": [
+   "npc/1096003.js",
+   "portal/cannon_tuto_10.js"
+  ],
+  "owners": {
+   "cm": 1,
+   "pi": 1
+  }
+ },
+ {
+  "api": "updateInfo",
+  "files": 2,
+  "sample": [
+   "npc/1096005.js",
+   "portal/cannon_tuto_07.js"
+  ],
+  "owners": {
+   "cm": 1,
+   "pi": 1
+  }
+ },
+ {
+  "api": "getShop",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/一键出售.js",
+   "npc/11000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "Point",
+  "files": 2,
+  "sample": [
+   "npc/1104201.js",
+   "npc/9201115.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "spawnGuide",
+  "files": 2,
+  "sample": [
+   "npc/1202000.js",
+   "portal/tutorHelper.js"
+  ],
+  "owners": {
+   "cm": 1,
+   "pi": 1
+  }
+ },
+ {
+  "api": "getMonsterBook",
+  "files": 2,
+  "sample": [
+   "npc/2006.js",
+   "npc/scroll_generator.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "genericGuildMessage",
+  "files": 2,
+  "sample": [
+   "npc/2010007.js",
+   "npc/2010008.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "warpEventTeamToMapSpawnPoint",
+  "files": 2,
+  "sample": [
+   "npc/2013001.js",
+   "npc/9201045.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "removePlayer",
+  "files": 2,
+  "sample": [
+   "npc/2040003.js",
+   "npc/2040047_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAreas",
+  "files": 2,
+  "sample": [
+   "npc/2040043.js",
+   "npc/9201044.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setDojoStage",
+  "files": 2,
+  "sample": [
+   "npc/2091005.js",
+   "npc/2091005_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "hasEntered",
+  "files": 2,
+  "sample": [
+   "npc/2091005.js",
+   "npc/2091005_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setDojoPoints",
+  "files": 2,
+  "sample": [
+   "npc/2091005.js",
+   "npc/2091005_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getDojoStage",
+  "files": 2,
+  "sample": [
+   "npc/2091005.js",
+   "npc/2091005_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setVanquisherStage",
+  "files": 2,
+  "sample": [
+   "npc/2091005.js",
+   "npc/2091005_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isPartyDojo",
+  "files": 2,
+  "sample": [
+   "npc/2091005.js",
+   "portal/dojang_up.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isFinishedDojoTutorial",
+  "files": 2,
+  "sample": [
+   "npc/2091005.js",
+   "npc/2091005_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "finishDojoTutorial",
+  "files": 2,
+  "sample": [
+   "npc/2091005_old.js",
+   "portal/dojang_tuto.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setReactorState",
+  "files": 2,
+  "sample": [
+   "npc/2094002.js",
+   "portal/dojang_up.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getExpeditionMemberNames",
+  "files": 2,
+  "sample": [
+   "npc/2101014.js",
+   "npc/2101017.js"
+  ],
+  "owners": {
+   "cm": 5
+  }
+ },
+ {
+  "api": "gainAriantPoints",
+  "files": 2,
+  "sample": [
+   "npc/2101015.js",
+   "npc/2101016.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAriantColiseum",
+  "files": 2,
+  "sample": [
+   "npc/2101015.js",
+   "npc/2101016.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAriantRewardTier",
+  "files": 2,
+  "sample": [
+   "npc/2101015.js",
+   "npc/2101016.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMesoRate",
+  "files": 2,
+  "sample": [
+   "npc/2112007.js",
+   "npc/2112013.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getNextFreeSlot",
+  "files": 2,
+  "sample": [
+   "npc/9000011.js",
+   "npc/9201014.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "restartEventTimer",
+  "files": 2,
+  "sample": [
+   "npc/9000037.js",
+   "npc/9201045.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "mergeAllItemsFromName",
+  "files": 2,
+  "sample": [
+   "npc/9000040.js",
+   "npc/9000040_1.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMakerSkillLevel",
+  "files": 2,
+  "sample": [
+   "npc/9000040.js",
+   "npc/9000040_1.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "handleChatTrigger",
+  "files": 2,
+  "sample": [
+   "npc/9000055.js",
+   "npc/9900002.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "countBosses",
+  "files": 2,
+  "sample": [
+   "npc/9000055.js",
+   "npc/9900002.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getBossSummonList",
+  "files": 2,
+  "sample": [
+   "npc/9000055.js",
+   "npc/9900002.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getRemoteAddress",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/巡逻.js",
+   "npc/9020000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "displayGuildRanks",
+  "files": 2,
+  "sample": [
+   "npc/9040004.js",
+   "npc/9040008.js"
+  ],
+  "owners": {
+   "cm": 2
+  }
+ },
+ {
+  "api": "killMonster",
+  "files": 2,
+  "sample": [
+   "npc/9120052.js",
+   "npc/9900002.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setMarriageItemId",
+  "files": 2,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201011.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "acceptOngoingWedding",
+  "files": 2,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201012.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "showSpecialEffect",
+  "files": 2,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201011.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getOngoingWeddingType",
+  "files": 2,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201012.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getPlayerById",
+  "files": 2,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201011.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "showForeignEffect",
+  "files": 2,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201011.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "schedule",
+  "files": 2,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201011.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gridSize",
+  "files": 2,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201011.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "giveMarriageRings",
+  "files": 2,
+  "sample": [
+   "npc/9201002.js",
+   "npc/9201011.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isMarried",
+  "files": 2,
+  "sample": [
+   "npc/9201004.js",
+   "npc/9201014.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "pushWeddingReservation",
+  "files": 2,
+  "sample": [
+   "npc/9201005.js",
+   "npc/9201008.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getRelativeWeddingTicketExpireTime",
+  "files": 2,
+  "sample": [
+   "npc/9201005.js",
+   "npc/9201008.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getWeddingReservationStatus",
+  "files": 2,
+  "sample": [
+   "npc/9201005.js",
+   "npc/9201008.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isOngoingWeddingGuest",
+  "files": 2,
+  "sample": [
+   "npc/9201005.js",
+   "npc/9201008.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "createMarriageWishlist",
+  "files": 2,
+  "sample": [
+   "npc/9201006.js",
+   "npc/9201010.js"
+  ],
+  "owners": {
+   "cm": 2
+  }
+ },
+ {
+  "api": "npcTalk",
+  "files": 2,
+  "sample": [
+   "npc/9201007.js",
+   "npc/9201009.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "countItem",
+  "files": 2,
+  "sample": [
+   "npc/9201044.js",
+   "portal/tamepig_out2.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMapName",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/巡逻.js",
+   "npc/9270043.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "canEnterPQ",
+  "files": 2,
+  "sample": [
+   "npc/9310006.js",
+   "npc/9310039.js"
+  ],
+  "owners": {
+   "cm": 2
+  }
+ },
+ {
+  "api": "getPQEnterMaxCount",
+  "files": 2,
+  "sample": [
+   "npc/9310006.js",
+   "npc/9310039.js"
+  ],
+  "owners": {
+   "cm": 2
+  }
+ },
+ {
+  "api": "getCommandsNameDesc",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/常用指令.js",
+   "npc/commands.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "answerCPQChallenge",
+  "files": 2,
+  "sample": [
+   "npc/cpqchallenge.js",
+   "npc/cpqchallenge2.js"
+  ],
+  "owners": {
+   "cm": 10
+  }
+ },
+ {
+  "api": "setChallenged",
+  "files": 2,
+  "sample": [
+   "npc/cpqchallenge.js",
+   "npc/cpqchallenge2.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "updateHpMaxHp",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/更换职业.js",
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "getSkills",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/更换职业.js",
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "updateMpMaxMp",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/更换职业.js",
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "setRemainingAp",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/更换职业.js",
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "gainSp",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/更换职业.js",
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "getTameness",
+  "files": 2,
+  "sample": [
+   "npc/waterOfLife.js",
+   "quest/4659.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getReputation",
+  "files": 2,
+  "sample": [
+   "quest/2233.js",
+   "quest/2234.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getTeam",
+  "files": 2,
+  "sample": [
+   "portal/MCrevive3.js",
+   "portal/MCrevive4.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "lockUI2",
+  "files": 2,
+  "sample": [
+   "portal/cannon_tuto_06.js",
+   "portal/cannon_tuto_07.js"
+  ],
+  "owners": {
+   "pi": 2
+  }
+ },
+ {
+  "api": "setDirectionStatus",
+  "files": 2,
+  "sample": [
+   "portal/cannon_tuto_06.js",
+   "portal/cannon_tuto_07.js"
+  ],
+  "owners": {
+   "pi": 2
+  }
+ },
+ {
+  "api": "spawnAllMonstersFromMapSpawnList",
+  "files": 2,
+  "sample": [
+   "portal/davy2_hd1.js",
+   "portal/davy3_hd1.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "mapEffect",
+  "files": 2,
+  "sample": [
+   "portal/mirtalk00.js",
+   "portal/mirtalk01.js"
+  ],
+  "owners": {
+   "pi": 2
+  }
+ },
+ {
+  "api": "talkGuide",
+  "files": 2,
+  "sample": [
+   "portal/rienTutor5.js",
+   "portal/tutorHelper.js"
+  ],
+  "owners": {
+   "pi": 2
+  }
+ },
+ {
+  "api": "cancelItem",
+  "files": 2,
+  "sample": [
+   "portal/templeenter.js",
+   "portal/undodraco.js"
+  ],
+  "owners": {
+   "pi": 2
+  }
+ },
+ {
+  "api": "isCashItem",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/一键出售.js",
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isFile",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/万能传送.js",
+   "BeiDouSpecial/新高级boss传送.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAbsolutePath",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/万能传送.js",
+   "BeiDouSpecial/新高级boss传送.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "retrieveDrop",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_当前地图.js",
+   "BeiDouSpecial/爆率一览.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getDropRate",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_物品查询.js",
+   "BeiDouSpecial/爆率一览.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "getFamilyDrop",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_物品查询.js",
+   "BeiDouSpecial/爆率一览.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "getById",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/战力系统.js",
+   "BeiDouSpecial/更换职业.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setHp",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setMp",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setWatk",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setWdef",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setMdef",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setMatk",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js",
+   "BeiDouSpecial/每日装备强化.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getCurrentMaxMp",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/洗血系统.js",
+   "BeiDouSpecial/设置血蓝.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "getCurrentMaxHp",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/洗血系统.js",
+   "BeiDouSpecial/设置血蓝.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "getSlotLimit",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/灵魂戒指升级.js",
+   "BeiDouSpecial/苍穹霸主戒.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "broadcastPacket",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/益智答题.js",
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getUpgradeResetCount",
+  "files": 2,
+  "sample": [
+   "BeiDouSpecial/装备分解.js",
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "startEventTimer",
+  "files": 1,
+  "sample": [
+   "npc/1012113.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "killAllMonstersNotFriendly",
+  "files": 1,
+  "sample": [
+   "npc/1012114.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "useVotePoints",
+  "files": 1,
+  "sample": [
+   "npc/1022101_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "earnTitleMessage",
+  "files": 1,
+  "sample": [
+   "npc/1022101_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "logLeaf",
+  "files": 1,
+  "sample": [
+   "npc/1022101_old.js"
+  ],
+  "owners": {
+   "cm": 5
+  }
+ },
+ {
+  "api": "getCSPoints",
+  "files": 1,
+  "sample": [
+   "npc/1052005.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gainNX",
+  "files": 1,
+  "sample": [
+   "npc/1052005.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "yellowMessage",
+  "files": 1,
+  "sample": [
+   "npc/1063018.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "removeNPC",
+  "files": 1,
+  "sample": [
+   "npc/1096005.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "sendShop",
+  "files": 1,
+  "sample": [
+   "npc/11000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getNPCById",
+  "files": 1,
+  "sample": [
+   "npc/1104201.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "spawnNpc",
+  "files": 1,
+  "sample": [
+   "npc/1104201.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getTotalCards",
+  "files": 1,
+  "sample": [
+   "npc/2006.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getIncreaseGuildCost",
+  "files": 1,
+  "sample": [
+   "npc/2010007.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "increaseGuildCapacity",
+  "files": 1,
+  "sample": [
+   "npc/2010007.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "disbandGuild",
+  "files": 1,
+  "sample": [
+   "npc/2010007.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAllianceId",
+  "files": 1,
+  "sample": [
+   "npc/2010009.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMGC",
+  "files": 1,
+  "sample": [
+   "npc/2010009.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "disbandAlliance",
+  "files": 1,
+  "sample": [
+   "npc/2010009.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getAllianceRank",
+  "files": 1,
+  "sample": [
+   "npc/2010009.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAllianceCapacity",
+  "files": 1,
+  "sample": [
+   "npc/2010009.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "upgradeAlliance",
+  "files": 1,
+  "sample": [
+   "npc/2010009.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "canBeUsedAllianceName",
+  "files": 1,
+  "sample": [
+   "npc/2010009.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "createAlliance",
+  "files": 1,
+  "sample": [
+   "npc/2010009.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getNumPlayersInArea",
+  "files": 1,
+  "sample": [
+   "npc/2013001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "countItems",
+  "files": 1,
+  "sample": [
+   "npc/2013001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getClearStageBonus",
+  "files": 1,
+  "sample": [
+   "npc/2040044.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "giveEventPlayersMeso",
+  "files": 1,
+  "sample": [
+   "npc/2040044.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "fieldTaken2",
+  "files": 1,
+  "sample": [
+   "npc/2042005.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "sendCPQMapLists2",
+  "files": 1,
+  "sample": [
+   "npc/2042005.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "fieldLobbied2",
+  "files": 1,
+  "sample": [
+   "npc/2042005.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "cpqLobby2",
+  "files": 1,
+  "sample": [
+   "npc/2042005.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "challengeParty2",
+  "files": 1,
+  "sample": [
+   "npc/2042005.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "ingressDojo",
+  "files": 1,
+  "sample": [
+   "npc/2091005.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "resetDojoMap",
+  "files": 1,
+  "sample": [
+   "npc/2091005.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "resetDojoEnergy",
+  "files": 1,
+  "sample": [
+   "npc/2091005.js"
+  ],
+  "owners": {
+   "cm": 2
+  }
+ },
+ {
+  "api": "lookupPartyDojo",
+  "files": 1,
+  "sample": [
+   "npc/2091005.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "freeDojoSectionIfEmpty",
+  "files": 1,
+  "sample": [
+   "npc/2091005.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "resetPartyDojoEnergy",
+  "files": 1,
+  "sample": [
+   "npc/2091005.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "resetReactors",
+  "files": 1,
+  "sample": [
+   "npc/2091005_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isDojoPartyArea",
+  "files": 1,
+  "sample": [
+   "npc/2091005_old.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "addMemberInt",
+  "files": 1,
+  "sample": [
+   "npc/2101014.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAriantPoints",
+  "files": 1,
+  "sample": [
+   "npc/2101015.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "clearAriantScore",
+  "files": 1,
+  "sample": [
+   "npc/2101016.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "clearAriantRewardTier",
+  "files": 1,
+  "sample": [
+   "npc/2101016.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAriantScore",
+  "files": 1,
+  "sample": [
+   "npc/2101016.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "startAriantBattle",
+  "files": 1,
+  "sample": [
+   "npc/2101017.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "warpExpeditionTeam",
+  "files": 1,
+  "sample": [
+   "npc/2101017.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isAriantColiseumArena",
+  "files": 1,
+  "sample": [
+   "npc/2101017.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isLeaderExpedition",
+  "files": 1,
+  "sample": [
+   "npc/2101017.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "openUI",
+  "files": 1,
+  "sample": [
+   "npc/2103013.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "setPartyQuest",
+  "files": 1,
+  "sample": [
+   "npc/2103013.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "createPyramid",
+  "files": 1,
+  "sample": [
+   "npc/2103013.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "forceStartReactor",
+  "files": 1,
+  "sample": [
+   "npc/2141000.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "removeNpc",
+  "files": 1,
+  "sample": [
+   "npc/2141000.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "divideTeams",
+  "files": 1,
+  "sample": [
+   "npc/9000001.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getLimit",
+  "files": 1,
+  "sample": [
+   "npc/9000001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "minusLimit",
+  "files": 1,
+  "sample": [
+   "npc/9000001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "warpMembers",
+  "files": 1,
+  "sample": [
+   "npc/9000004.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "givePartyExp",
+  "files": 1,
+  "sample": [
+   "npc/9000004.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "mapMobCount",
+  "files": 1,
+  "sample": [
+   "npc/9000004.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "setChalkboard",
+  "files": 1,
+  "sample": [
+   "npc/9000011.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "addLimit",
+  "files": 1,
+  "sample": [
+   "npc/9000012.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getSpace",
+  "files": 1,
+  "sample": [
+   "npc/9000018.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "openRPSNPC",
+  "files": 1,
+  "sample": [
+   "npc/9000019.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isArray",
+  "files": 1,
+  "sample": [
+   "npc/9000020.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "maxMastery",
+  "files": 1,
+  "sample": [
+   "npc/9000021_old.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getStoredVar",
+  "files": 1,
+  "sample": [
+   "npc/9000049.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setStoredVar",
+  "files": 1,
+  "sample": [
+   "npc/9000049.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "joinNearestTable",
+  "files": 1,
+  "sample": [
+   "npc/9000055.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gainItemPeriod",
+  "files": 1,
+  "sample": [
+   "npc/9001000.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getDisconnected",
+  "files": 1,
+  "sample": [
+   "npc/9001000.js"
+  ],
+  "owners": {
+   "cm": 8
+  }
+ },
+ {
+  "api": "giveSkill",
+  "files": 1,
+  "sample": [
+   "npc/9001105.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getCompleted",
+  "files": 1,
+  "sample": [
+   "npc/9001105.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getPartyMembersOnline",
+  "files": 1,
+  "sample": [
+   "npc/9020000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gridClear",
+  "files": 1,
+  "sample": [
+   "npc/9020001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "showFredrick",
+  "files": 1,
+  "sample": [
+   "npc/9030000.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "hasMerchantItems",
+  "files": 1,
+  "sample": [
+   "npc/9030000.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getHiredMerchant",
+  "files": 1,
+  "sample": [
+   "npc/9030000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "hasMerchant",
+  "files": 1,
+  "sample": [
+   "npc/9030000.js"
+  ],
+  "owners": {
+   "cm": 2
+  }
+ },
+ {
+  "api": "isQueueFull",
+  "files": 1,
+  "sample": [
+   "npc/9040000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getQueueSize",
+  "files": 1,
+  "sample": [
+   "npc/9040000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isGuildLeader",
+  "files": 1,
+  "sample": [
+   "npc/9040000.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "registerParty",
+  "files": 1,
+  "sample": [
+   "npc/9040000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "addGuildToQueue",
+  "files": 1,
+  "sample": [
+   "npc/9040000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "makeDisappearItemFromMap",
+  "files": 1,
+  "sample": [
+   "npc/9040006.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getItems",
+  "files": 1,
+  "sample": [
+   "npc/9040006.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getReactorByOid",
+  "files": 1,
+  "sample": [
+   "npc/9040009.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getReactors",
+  "files": 1,
+  "sample": [
+   "npc/9040009.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "delayedHitReactor",
+  "files": 1,
+  "sample": [
+   "npc/9040009.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getEquipInSlot",
+  "files": 1,
+  "sample": [
+   "npc/9100001.js"
+  ],
+  "owners": {
+   "cm": 2
+  }
+ },
+ {
+  "api": "removeItem",
+  "files": 1,
+  "sample": [
+   "npc/9100001.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "eatEquip",
+  "files": 1,
+  "sample": [
+   "npc/9100001.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "allowSummonState",
+  "files": 1,
+  "sample": [
+   "npc/9105004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "invokeFunction",
+  "files": 1,
+  "sample": [
+   "npc/9105004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "broadcastStringMessage",
+  "files": 1,
+  "sample": [
+   "npc/9105004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getIv",
+  "files": 1,
+  "sample": [
+   "npc/9105004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getInstanceMap",
+  "files": 1,
+  "sample": [
+   "npc/9105004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getEm",
+  "files": 1,
+  "sample": [
+   "npc/9105004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "complete",
+  "files": 1,
+  "sample": [
+   "npc/9130000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "canComplete",
+  "files": 1,
+  "sample": [
+   "npc/9130000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "canStart",
+  "files": 1,
+  "sample": [
+   "npc/9130000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "start",
+  "files": 1,
+  "sample": [
+   "npc/9130000.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "breakMarriageRing",
+  "files": 1,
+  "sample": [
+   "npc/9201004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMarriageRing",
+  "files": 1,
+  "sample": [
+   "npc/9201004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "equipped",
+  "files": 1,
+  "sample": [
+   "npc/9201004.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "sendMarriageGifts",
+  "files": 1,
+  "sample": [
+   "npc/9201014.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "sendMarriageWishlist",
+  "files": 1,
+  "sample": [
+   "npc/9201014.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getMarriageInstance",
+  "files": 1,
+  "sample": [
+   "npc/9201014.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "linkPortalToScript",
+  "files": 1,
+  "sample": [
+   "npc/9201044.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setPortalState",
+  "files": 1,
+  "sample": [
+   "npc/9201044.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getTimeLeft",
+  "files": 1,
+  "sample": [
+   "npc/9201045.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "toggleDrops",
+  "files": 1,
+  "sample": [
+   "npc/9201047.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isAllReactorState",
+  "files": 1,
+  "sample": [
+   "npc/9201110.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getSkillBookInfo",
+  "files": 1,
+  "sample": [
+   "npc/9209000.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getNamesWhoDropsItem",
+  "files": 1,
+  "sample": [
+   "npc/9209000.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getAvailableMasteryBooks",
+  "files": 1,
+  "sample": [
+   "npc/9209000.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getAvailableSkillBooks",
+  "files": 1,
+  "sample": [
+   "npc/9209000.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "reset",
+  "files": 1,
+  "sample": [
+   "npc/9310005.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "givePartyItems",
+  "files": 1,
+  "sample": [
+   "npc/9310056.js"
+  ],
+  "owners": {
+   "cm": 4
+  }
+ },
+ {
+  "api": "removePartyItems",
+  "files": 1,
+  "sample": [
+   "npc/9310056.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getItemsByType",
+  "files": 1,
+  "sample": [
+   "npc/9330045.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getFishLevel",
+  "files": 1,
+  "sample": [
+   "npc/9330045.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isChair",
+  "files": 1,
+  "sample": [
+   "npc/9330045.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMessage",
+  "files": 1,
+  "sample": [
+   "npc/9900001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "enterMTS",
+  "files": 1,
+  "sample": [
+   "npc/9900001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "parseInt",
+  "files": 1,
+  "sample": [
+   "npc/9900001.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getTest",
+  "files": 1,
+  "sample": [
+   "npc/9900001.js"
+  ],
+  "owners": {
+   "cm": 2
+  }
+ },
+ {
+  "api": "isFacingLeft",
+  "files": 1,
+  "sample": [
+   "npc/9900002.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "musicChange",
+  "files": 1,
+  "sample": [
+   "npc/9977777.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "canCreateChar",
+  "files": 1,
+  "sample": [
+   "npc/changeName.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setName",
+  "files": 1,
+  "sample": [
+   "npc/changeName.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getBean",
+  "files": 1,
+  "sample": [
+   "npc/gachaponInfo.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getApplicationContext",
+  "files": 1,
+  "sample": [
+   "npc/gachaponInfo.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getRewardsByNpcId",
+  "files": 1,
+  "sample": [
+   "npc/gachaponInfo.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getLootIds",
+  "files": 1,
+  "sample": [
+   "npc/gachaponInfo.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getLootNames",
+  "files": 1,
+  "sample": [
+   "npc/gachaponInfo.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "doRemoteGachapon",
+  "files": 1,
+  "sample": [
+   "npc/gachaponRemote.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "stopMonsterVac",
+  "files": 1,
+  "sample": [
+   "npc/monster_vac_toggle.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "isMonsterVacActive",
+  "files": 1,
+  "sample": [
+   "npc/monster_vac_toggle.js"
+  ],
+  "owners": {
+   "cm": 3
+  }
+ },
+ {
+  "api": "startMonsterVac",
+  "files": 1,
+  "sample": [
+   "npc/monster_vac_toggle.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getWorldJobRank",
+  "files": 1,
+  "sample": [
+   "npc/rank_user.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getOverallJobRank",
+  "files": 1,
+  "sample": [
+   "npc/rank_user.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "ordinal",
+  "files": 1,
+  "sample": [
+   "npc/rank_user.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getOverallRank",
+  "files": 1,
+  "sample": [
+   "npc/rank_user.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getWorldRank",
+  "files": 1,
+  "sample": [
+   "npc/rank_user.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getPlayerNPCByScriptid",
+  "files": 1,
+  "sample": [
+   "npc/rank_user.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "executeRebornAsId",
+  "files": 1,
+  "sample": [
+   "npc/rebirth.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "getCardTierSize",
+  "files": 1,
+  "sample": [
+   "npc/scroll_generator.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getEquipStats",
+  "files": 1,
+  "sample": [
+   "npc/scroll_generator.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getCardSet",
+  "files": 1,
+  "sample": [
+   "npc/scroll_generator.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMonsterLevel",
+  "files": 1,
+  "sample": [
+   "npc/scroll_generator.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getScrollReqs",
+  "files": 1,
+  "sample": [
+   "npc/scroll_generator.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getCardMobId",
+  "files": 1,
+  "sample": [
+   "npc/scroll_generator.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getBookLevel",
+  "files": 1,
+  "sample": [
+   "npc/scroll_generator.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isAran",
+  "files": 1,
+  "sample": [
+   "npc/scroll_generator.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getDriedPets",
+  "files": 1,
+  "sample": [
+   "npc/waterOfLife.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "setExpiration",
+  "files": 1,
+  "sample": [
+   "npc/waterOfLife.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getQuestConsumablesInfo",
+  "files": 1,
+  "sample": [
+   "quest/20514.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getExp",
+  "files": 1,
+  "sample": [
+   "quest/20514.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMapleMount",
+  "files": 1,
+  "sample": [
+   "quest/20527.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "removeEquipFromSlot",
+  "files": 1,
+  "sample": [
+   "quest/21001.js"
+  ],
+  "owners": {
+   "qm": 1
+  }
+ },
+ {
+  "api": "getRemainingAp",
+  "files": 1,
+  "sample": [
+   "quest/21700.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getJuniorCount",
+  "files": 1,
+  "sample": [
+   "quest/2232.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getTotalReputation",
+  "files": 1,
+  "sample": [
+   "quest/2234.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "showHint",
+  "files": 1,
+  "sample": [
+   "quest/2332.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getJunior1",
+  "files": 1,
+  "sample": [
+   "quest/29508.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getFullness",
+  "files": 1,
+  "sample": [
+   "quest/4659.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getPlayerStat",
+  "files": 1,
+  "sample": [
+   "quest/8724.js"
+  ],
+  "owners": {
+   "qm": 8
+  }
+ },
+ {
+  "api": "getLastBanishData",
+  "files": 1,
+  "sample": [
+   "portal/back_cygnus.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "canRecoverLastBanish",
+  "files": 1,
+  "sample": [
+   "portal/back_cygnus.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "clearBanishPlayerData",
+  "files": 1,
+  "sample": [
+   "portal/back_cygnus.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "setNPCValue",
+  "files": 1,
+  "sample": [
+   "portal/cannon_tuto_07.js"
+  ],
+  "owners": {
+   "pi": 1
+  }
+ },
+ {
+  "api": "spawnNPC",
+  "files": 1,
+  "sample": [
+   "portal/cannon_tuto_07.js"
+  ],
+  "owners": {
+   "pi": 1
+  }
+ },
+ {
+  "api": "changeDifficulty",
+  "files": 1,
+  "sample": [
+   "portal/davy_next4.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getAllPlayers",
+  "files": 1,
+  "sample": [
+   "portal/dojang_next.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getNpcCooldown",
+  "files": 1,
+  "sample": [
+   "portal/dojang_next.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "addDojoPointsByMap",
+  "files": 1,
+  "sample": [
+   "portal/dojang_next.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setNpcCooldown",
+  "files": 1,
+  "sample": [
+   "portal/dojang_next.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "enteredScript",
+  "files": 1,
+  "sample": [
+   "portal/dojang_tuto.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "dismissDojoSchedule",
+  "files": 1,
+  "sample": [
+   "portal/dojang_tuto.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "resetDojo",
+  "files": 1,
+  "sample": [
+   "portal/dojang_tuto.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "goDojoUp",
+  "files": 1,
+  "sample": [
+   "portal/dojang_up.js"
+  ],
+  "owners": {
+   "pi": 1
+  }
+ },
+ {
+  "api": "runMapScript",
+  "files": 1,
+  "sample": [
+   "portal/highposition.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getJailTimeLeft",
+  "files": 1,
+  "sample": [
+   "portal/jail_out.js"
+  ],
+  "owners": {
+   "pi": 1
+  }
+ },
+ {
+  "api": "showWZEffect",
+  "files": 1,
+  "sample": [
+   "portal/metro_Chat00.js"
+  ],
+  "owners": {
+   "pi": 1
+  }
+ },
+ {
+  "api": "canEnterDeveloperRoom",
+  "files": 1,
+  "sample": [
+   "portal/rankDeveloperRoom.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "removeGuide",
+  "files": 1,
+  "sample": [
+   "portal/rienTutor6.js"
+  ],
+  "owners": {
+   "pi": 1
+  }
+ },
+ {
+  "api": "shuffleReactors",
+  "files": 1,
+  "sample": [
+   "portal/s4berserk.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "hasLevel30Character",
+  "files": 1,
+  "sample": [
+   "portal/tutoChatNPC.js"
+  ],
+  "owners": {
+   "pi": 1
+  }
+ },
+ {
+  "api": "getMonsterCardCount",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/Boss成长系统.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMonsterCardBonusPercent",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/Boss成长系统.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getBonusPercent",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/Boss成长系统.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getQuestBonusPercent",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/Boss成长系统.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getQuestCount",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/Boss成长系统.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getBossBonusPercent",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/Boss成长系统.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isInteger",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/一键出售.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "sell",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/一键出售.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getPrice",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/一键出售.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "rebirth",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/一键转生.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMaxClassLevel",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/一键转生.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setCy",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/万能传送.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setFh",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/万能传送.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setPosition",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/万能传送.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setRx0",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/万能传送.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setRx1",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/万能传送.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isNewHair",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/发色选择.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "addById",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/宠物.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "createPet",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/宠物.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "info",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isChangingMaps",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "changeChannel",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "put",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isLoggedIn",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "keySet",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "findClosestPortal",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getWorlds",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isBanned",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "containsKey",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "forceChangeMap",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getTrade",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/巡逻.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getPADamage",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_当前地图.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getImgheight",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_当前地图.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMADamage",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_当前地图.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getImgwidth",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_当前地图.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMovetype",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_当前地图.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getStats",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_当前地图.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getMobNameFromId",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/当前地图掉落_物品查询.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getString",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/战力系统.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "removeBySkillId",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/技能偷学.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "getInventoryType",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/技能全满.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getTotalGachaponCount",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/抽奖保底.js"
+  ],
+  "owners": {
+   "cm": 3
+  }
+ },
+ {
+  "api": "doGuaranteedGachapon",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/抽奖保底.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "spawnMonsterOnGroundBelowIfMissing",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/新高级boss传送.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "freeze",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setHands",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setJump",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getHands",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setSpeed",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setAvoid",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "unmodifiableList",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isSamePart",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "modifyInventory",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getExpiration",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setAcc",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "unlockInventory",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "lockInventory",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/时装属性转移.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getRebornsCount",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/更换职业.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "setLevel",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/更换职业.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "levelUp",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/更换职业.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "WhatDropsFrom",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/查询掉落.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "warn",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/查询掉落.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "whoDrops",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/查询掉落.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "addMaxMP",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/洗血系统.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "addMaxHP",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/洗血系统.js"
+  ],
+  "owners": {
+   "player": 1
+  }
+ },
+ {
+  "api": "getMobName",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/爆率一览.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "from",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/爆率一览.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "storeExtraItem",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/物品仓库系统.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "takeOutExtraItem",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/物品仓库系统.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "getExtraStorage",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/物品仓库系统.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "list",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/称号系列选择.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "toArray",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/称号系列选择.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "isNameTagRing",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/称号系列选择.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setNameplateSeries",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/称号系列选择.js"
+  ],
+  "owners": {
+   "cm": 1
+  }
+ },
+ {
+  "api": "getUpgradeReturn",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/装备分解.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getUpgradeHistoryDes",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setFlag",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "setUpgradeResetCount",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "replaceUpgradeHistory",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getNewStats",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "gainStatsDes",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/装备洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getClientMaxHp",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/设置血蓝.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "getClientMaxMp",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/设置血蓝.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "updateMaxHpMaxMp",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/设置血蓝.js"
+  ],
+  "owners": {
+   "player": 2
+  }
+ },
+ {
+  "api": "isCube",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/魔方洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "description",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/魔方洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "canUseCube",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/魔方洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "cubeSummary",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/魔方洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "getCashId",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/魔方洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "describe",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/魔方洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "canRoll",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/魔方洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "canKeepOld",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/魔方洗练.js"
+  ],
+  "owners": {}
+ },
+ {
+  "api": "roll",
+  "files": 1,
+  "sample": [
+   "BeiDouSpecial/魔方洗练.js"
+  ],
+  "owners": {}
+ }
+]

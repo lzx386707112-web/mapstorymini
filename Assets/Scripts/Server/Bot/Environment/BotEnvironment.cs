@@ -54,6 +54,19 @@ namespace Server.Bot.Environment
         public static bool IsMarketStartupComplete => startupComplete;
         public static bool IsMarketStartupRunning => startupStarted && !startupComplete;
 
+        // 会话复位：BotRuntime.Dispose 会移除全部假人并停调度时钟，
+        // 不复位启动状态机的话，下次进游戏 RequestMarketStartup 会因
+        // startupStarted=true 直接 no-op，自由市场永远不会再有假人。
+        public static void Reset()
+        {
+            lock (gate)
+            {
+                startupStarted = false;
+                startupComplete = false;
+                marketEntranceBotCount = 0;
+            }
+        }
+
         // ≡ requestMarketStartup：丢给调度时钟执行，状态机保证幂等
         public static void RequestMarketStartup()
         {

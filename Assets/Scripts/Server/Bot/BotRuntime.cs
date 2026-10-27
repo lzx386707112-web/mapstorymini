@@ -58,6 +58,11 @@ namespace Server.Bot
             // 地面掉落与假人调度共用同一毫秒时钟（源端 TimerManager / System.currentTimeMillis 同源）
             MapItemService.Clock = () => BotScheduler.Clock;
             observers.Start();
+            // ≡ 源端经 BotControlController→BotControlService.requestMarketStartup 后台触发；
+            //   本端口增加游戏内自动启动（solo_mapling_market_auto_start，默认 true），
+            //   状态机幂等（already/running/started），失败可重试。进游戏即拉起三波环境，
+            //   玩家走到自由市场时假人已在场。
+            if (BotConfig.MarketAutoStartEnabled(db)) BotEnvironment.RequestMarketStartup();
         }
         void PublishMovement(BotCharacter actor, byte[] packet) => Movement?.Invoke(actor, packet);
         IEnumerable<BotActor> CharactersOnMap(Social.ChatMessage message)
@@ -164,6 +169,7 @@ namespace Server.Bot
             foreach (int id in registeredMaps) MapService.Unregister(id);
             registeredMaps.Clear(); Movement = null;
             BotEnvironment.GetMap = null; BotEnvironment.TownWanderers = null;
+            BotEnvironment.Reset();
         }
     }
 }

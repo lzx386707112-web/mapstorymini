@@ -47,6 +47,8 @@ public sealed class NpcSession
     public readonly NativeScriptRoute Route = new NativeScriptRoute();
     JsHostObject cm;
     int pendingWarp = -1;
+    string pendingWarpPortal;
+    int pendingWarpPortalId = -1;
     int pendingNpc = -1;
     string pendingNpcScript;
     Action<int, int> localResponse;
@@ -108,6 +110,22 @@ public sealed class NpcSession
         session.Begin(source, scriptKey);
         session.FinishInvocation();
         return session;
+    }
+
+    // PortalScriptManager.executePortalScript：跑 portal/<script>.js 的 enter(pi)。
+    // 脚本不存在或没有 enter 函数时返回 false，FieldDirector 回退到 WZ 的 tm/tn 直传
+    // （对应源端 GenericPortal.enterPortal 的 else 分支）。
+    public static bool RunPortal(FieldPortal portal)
+    {
+        if (portal == null || string.IsNullOrEmpty(portal.script)) return false;
+        string source = ScriptSource.Load("portal", portal.script);
+        if (string.IsNullOrEmpty(source) || !source.Contains("function enter")) return false;
+        CloseActive();
+        var session = new NpcSession(0, 0, false, false);
+        Active = session;
+        session.Begin(source, "portal/" + portal.script, "enter");
+        session.FinishInvocation();
+        return true;
     }
 
     public static NpcSession TalkQuest(QuestDef quest, int npcId, bool end)
@@ -180,7 +198,10 @@ public sealed class NpcSession
         show();
     }
 
-    void Begin(string source, string name)
+    void Begin(string source, string name) => Begin(source, name, "start");
+
+    // entry：NPC/任务脚本是 start()，portal 脚本是 enter(pi)（pi 传 cm 本体，与全局 pi 绑定同一个对象）
+    void Begin(string source, string name, string entry)
     {
         try
         {
@@ -205,6 +226,10 @@ public sealed class NpcSession
                     CallScript(QuestEnd ? "end" : "start", new JsNumber(1), new JsNumber(0), new JsNumber(0));
                 else
                     Disposed = true;
+            }
+            else if (entry != "start")
+            {
+                CallScript(entry, cm);
             }
             else
             {
@@ -282,9 +307,13 @@ public sealed class NpcSession
 
     public void DisposeFromScript() => Disposed = true;
 
-    public void RequestWarp(int mapId)
+    // cm.warp(mapId) / warp(mapId, 名字) / warp(mapId, portalId)：portalId 是 WZ portal 列表下标
+    //（= 源端 Portal.getId），进图后由 FieldDirector 解析成落点。
+    public void RequestWarp(int mapId, string portalName = null, int portalId = -1)
     {
         pendingWarp = mapId;
+        pendingWarpPortal = portalName;
+        pendingWarpPortalId = portalId;
         CloseImmediate();
     }
 
@@ -316,13 +345,15 @@ public sealed class NpcSession
     void ApplyPending()
     {
         int warp = pendingWarp; pendingWarp = -1;
+        string warpPortal = pendingWarpPortal; pendingWarpPortal = null;
+        int warpPortalId = pendingWarpPortalId; pendingWarpPortalId = -1;
         int npc = pendingNpc; pendingNpc = -1;
         string npcScript = pendingNpcScript; pendingNpcScript = null;
 
         if (warp >= 0)
         {
             var field = GameLoop.I != null ? GameLoop.I.field : null;
-            if (field != null) field.WarpTo(warp);
+            if (field != null) field.WarpTo(warp, warpPortal, warpPortalId);
             else Profile.LastMapId = warp;
         }
         if (npc > 0) Talk(npc, npcScript);

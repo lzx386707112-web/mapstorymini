@@ -15,14 +15,22 @@ using System.Threading;
 // 主线程调度：HTTP 请求在 ThreadPool 线程上跑，DbStore 只能在 Unity 主线程碰。
 // AdminHost 每帧调 Pump() 排空队列；离线单测（tools/admin-check）里 Pumping=false，
 // Run() 直接就地执行。
+//
+// Android 上 Application.runInBackground 不生效：切到浏览器后 Activity onPause，Unity 主线程
+// 整个暂停，Update 里的 Pump 不会跑，所有请求都超时（「游戏主线程繁忙」）。所以 AdminHost
+// 另起一条后台泵线程，只在 Foreground=false（主线程已停，没有并发 DB 访问）时接管队列；
+// 回前台时先等它把手头一条跑完（AwaitIdle），再交还主线程，保证 DB 始终单线程访问。
 public static class AdminMainThread
 {
     static readonly object gate = new object();
     static readonly Queue<Action> queue = new Queue<Action>();
 
     public static volatile bool Pumping;
+    public static volatile bool Foreground = true;
     public static int MainThreadId;
     public static Action<Exception> OnError;
+
+    static int inflight;      // 后台泵正在执行的条目数（主线程泵不需要等自己）
 
     public static void Post(Action action)
     {
@@ -41,11 +49,21 @@ public static class AdminMainThread
                 if (queue.Count == 0) break;
                 a = queue.Dequeue();
             }
+            System.Threading.Interlocked.Increment(ref inflight);
             try { a(); }
             catch (Exception e) { OnError?.Invoke(e); }
+            finally { System.Threading.Interlocked.Decrement(ref inflight); }
             n++;
         }
         return n;
+    }
+
+    // 回前台时主线程调用：等后台泵跑完手头那条再恢复游戏侧 DB 访问（毫秒级，给 500ms 兜底）。
+    public static void AwaitIdle(int timeoutMs)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (System.Threading.Volatile.Read(ref inflight) > 0 && sw.ElapsedMilliseconds < timeoutMs)
+            System.Threading.Thread.Sleep(5);
     }
 
     public static bool OnMainThread => Thread.CurrentThread.ManagedThreadId == MainThreadId;

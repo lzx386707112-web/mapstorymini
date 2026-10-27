@@ -47,8 +47,13 @@ public sealed class FieldDirector : MonoBehaviour
     WarpState warpState;
     float warpClock;             // 当前阶段已用时（真实秒）
     FieldPortal warpTarget;      // null = 死亡复活
+
+    // Character.blockPortal(scriptName)：脚本把本图某扇脚本门拉黑（活动门重复进入保护等）。
+    // 源端 changeMap 时 resetPortals，所以进新图一律清空。
+    public static readonly HashSet<string> BlockedPortalScripts = new HashSet<string>();
     int pendingWarpMap = -1;     // 脚本 cm.warp / 任务传送到指定地图
     string pendingWarpPortal;
+    int pendingWarpPortalIndex = -1;   // cm.warp(map, portalId)：目标图 portal 下标（= 源端 Portal.getId）
 
     bool Warping => warpState != WarpState.None;
 
@@ -74,9 +79,10 @@ public sealed class FieldDirector : MonoBehaviour
         Enter(startMapId, null);
     }
 
-    public void Enter(int mapId, string spawnPortalName)
+    public void Enter(int mapId, string spawnPortalName, int spawnPortalIndex = -1)
     {
         FieldCatalog.Ensure();
+        BlockedPortalScripts.Clear();   // 源端 changeMap → resetPortals
         FieldMap map;
         if ((map = FieldCatalog.GetMap(mapId)) == null)
         {
@@ -105,7 +111,7 @@ public sealed class FieldDirector : MonoBehaviour
         Map = map;
         NpcField.Bind(map);
         ApplyGeometry(map);
-        PlacePlayer(map, spawnPortalName);
+        PlacePlayer(map, spawnPortalName, spawnPortalIndex);
 
         // 原版每张图自带 bgm（FieldMaps.json 的 info/bgm，如 Bgm00/FloralLife）；
         // Sound/Weapon/Mob/Skill 等音效由各系统按需播放，这里只管地图音乐。
@@ -159,13 +165,15 @@ public sealed class FieldDirector : MonoBehaviour
         if (rig != null) rig.SetBounds(map.ViewMinX, map.ViewMaxX, map.ViewMinY, map.ViewMaxY);
     }
 
-    void PlacePlayer(FieldMap map, string portalName)
+    void PlacePlayer(FieldMap map, string portalName, int portalIndex = -1)
     {
         var player = GameLoop.I != null ? GameLoop.I.player : null;
         if (player == null) return;
 
-        // Character.changeMap：目标点名解析不到时回退到 to.getPortal(0)（portal 列表首条）
-        var portal = map.Portal(portalName) ?? map.FirstPortal ?? map.SpawnPortal;
+        // Character.changeMap：目标点名解析不到时回退 to.getPortal(portalId)，再回退 getPortal(0)
+        var portal = map.Portal(portalName)
+            ?? (portalIndex >= 0 && portalIndex < map.portals.Count ? map.portals[portalIndex] : null)
+            ?? map.FirstPortal ?? map.SpawnPortal;
         float x = portal != null ? map.WorldX(portal.x) : 0f;
         float y = portal != null ? map.WorldY(portal.y) : 0f;
         float ground = PlayerCtrl.GroundAt(Mathf.Clamp(x, PlayerCtrl.XMin, PlayerCtrl.XMax), y);
@@ -387,7 +395,8 @@ public sealed class FieldDirector : MonoBehaviour
     }
 
     // 原端 pt=2/10 的传送门是「站在门上按上方向键」才进，走上去不会自动触发。
-    // 原来用「停留 0.3s 自动进」是为了照顾没有方向键的手机，但那等于改变了原玩法。
+    // pt=1（隐形传送门：FM 彩色传送带、上下层箭头）和 pt=7（触碰脚本门：FM 出口）
+    // 是「站上去就触发」，原客户端不需要按键。
     void CheckPortals(PlayerCtrl player, float dt)
     {
         if (Warping)                 // 渐变中：不再接受任何新的门
@@ -413,7 +422,8 @@ public sealed class FieldDirector : MonoBehaviour
             return;
         }
         if (portalLock > 0f || !portalArmed) return;
-        if (!PressUp()) return;
+        // 触碰门不需要按键；按 ↑ 的门必须等按键（portalArmed 防止按住不放连续触发）
+        if (!hit.TouchTrigger && !PressUp()) return;
 
         portalArmed = false;
         UsePortal(hit);
@@ -426,8 +436,11 @@ public sealed class FieldDirector : MonoBehaviour
         float bestDx = float.MaxValue;
         foreach (var p in Map.portals)
         {
-            if (!p.Warps) continue;
-            if (p.type != 2 && p.type != 10) continue;
+            if (!p.Usable) continue;
+            if (!p.TouchTrigger && !p.PressUpTrigger) continue;
+            // Character.blockPortal（源端）：脚本把当前图指定 script 的门拉黑，
+            // 换图时清空（Character.changeMap → resetPortals）。
+            if (p.HasScript && BlockedPortalScripts.Contains(p.script)) continue;
             float px = Map.WorldX(p.x), py = Map.WorldY(p.y);
             float dx = Mathf.Abs(feet.x - px);
             if (dx > 30f / Art.PPU) continue;
@@ -450,6 +463,9 @@ public sealed class FieldDirector : MonoBehaviour
     void UsePortal(FieldPortal portal)
     {
         if (Warping) return;
+        // GenericPortal.enterPortal（源端）：portal 带脚本属性就先跑 portal/<script>.js 的 enter(pi)，
+        // 由脚本决定 warp 到哪（FM 出口 market00、活动门等）；没跑成脚本才回退到 WZ 的 tm/tn。
+        if (portal.HasScript && NpcSession.RunPortal(portal)) return;
         StartWarp(portal);
     }
 
@@ -492,8 +508,10 @@ public sealed class FieldDirector : MonoBehaviour
                     pendingWarpMap = -1;
                     string portalName = pendingWarpPortal;
                     pendingWarpPortal = null;
+                    int portalIndex = pendingWarpPortalIndex;
+                    pendingWarpPortalIndex = -1;
                     if (target <= 0) target = Map != null ? Map.returnMap : 1000000;
-                    Enter(target, portalName);
+                    Enter(target, portalName, portalIndex);
                 }
                 else if (warpTarget.tm == Map.id) WarpInsideMap(warpTarget);
                 else Enter(warpTarget.tm, string.IsNullOrEmpty(warpTarget.targetName) ? null : warpTarget.targetName);
@@ -644,13 +662,14 @@ public sealed class FieldDirector : MonoBehaviour
         AliveCount = 0;
     }
 
-    // 脚本 cm.warp(mapId)：和传送门一样走黑场过渡，而不是瞬间切图。
-    public void WarpTo(int mapId, string portalName = null)
+    // 脚本 cm.warp(mapId[, 名字|下标])：和传送门一样走黑场过渡，而不是瞬间切图。
+    public void WarpTo(int mapId, string portalName = null, int portalIndex = -1)
     {
         if (Warping || mapId <= 0) return;
-        if (Map != null && Map.id == mapId && string.IsNullOrEmpty(portalName)) return;
+        if (Map != null && Map.id == mapId && string.IsNullOrEmpty(portalName) && portalIndex < 0) return;
         pendingWarpMap = mapId;
         pendingWarpPortal = portalName;
+        pendingWarpPortalIndex = portalIndex;
         StartWarp(null);
     }
 

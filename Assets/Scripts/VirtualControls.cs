@@ -42,15 +42,15 @@ public class VCElem
     public float rotation = 0f;                  // 旋转角度（度）
     public float aspect = 1f;                    // 纵横比例（宽/高）
 
-    // —— 外观样式 ——
+    // —— 外观样式（默认即扁平皮肤：深底 + 极淡描边 + 无光环，参考扁平按键设计稿） ——
     // shape: 0 圆形 · 1 矩形 · 2 多边形 · 3 LT · 4 LB · 5 RT · 6 RB · 7 无
     public int shape;
-    public float borderW = 2.2f;                 // 描边宽度（dp）
-    public float halo = 0.12f;                   // 光环宽度（相对半径）
-    public Color bg = new Color(0f, 0f, 0f, 0.20f);         // #33000000
-    public Color line = new Color(1f, 1f, 1f, 0.50f);       // #80FFFFFF
-    public Color bgDown = new Color(1f, 1f, 1f, 0.26f);     // #42FFFFFF
-    public Color lineDown = new Color(1f, 1f, 1f, 0.95f);   // #F2FFFFFF
+    public float borderW = 1.4f;                 // 描边宽度（dp）
+    public float halo = 0f;                      // 光环宽度（相对半径），扁平风默认关
+    public Color bg = new Color(0.086f, 0.086f, 0.10f, 0.72f);   // 深色圆角底
+    public Color line = new Color(1f, 1f, 1f, 0.14f);            // 极淡描边，只勾个轮廓
+    public Color bgDown = new Color(1f, 1f, 1f, 0.16f);          // 按下 = 整体提亮
+    public Color lineDown = new Color(1f, 1f, 1f, 0.45f);
 
     // —— 摇杆 / 十字方向键的输入模式 ——
     // 标准输入：摇杆直接输出模拟轴（游戏的上下左右），不碰键盘
@@ -208,17 +208,31 @@ public static class VirtualControls
     static string ProfilePath(string name) => Path.Combine(Dir, name + ".json");
 
     // —————————— 载入 ——————————
-    // 摇杆的默认皮肤：深蓝黑底盘 + 亮蓝环。按钮那套白色描边放在摇杆上会"散"掉，
-    // 手游摇杆本身也多是冷色半透明，所以单独给一组（用户仍可在样式页改）。
+    // 摇杆的默认皮肤：与按钮同一套扁平风（深色半透底盘 + 淡描边 + 无光环）。
+    // 旧的"亮蓝环"在扁平风里太抢视线，整层要退到游戏画面后面。
     public static void ApplyStickSkin(VCElem e)
     {
-        e.borderW = 3.4f;
-        e.halo = 0.10f;
-        e.bg = new Color(0.055f, 0.085f, 0.125f, 0.82f);
-        e.line = new Color(0.29f, 0.62f, 1f, 0.95f);
-        e.bgDown = new Color(0.075f, 0.115f, 0.165f, 0.88f);
-        e.lineDown = new Color(0.50f, 0.80f, 1f, 1f);
+        e.borderW = 2.0f;
+        e.halo = 0f;
+        e.bg = new Color(0.07f, 0.08f, 0.10f, 0.60f);
+        e.line = new Color(1f, 1f, 1f, 0.20f);
+        e.bgDown = new Color(0.10f, 0.11f, 0.14f, 0.68f);
+        e.lineDown = new Color(1f, 1f, 1f, 0.42f);
         e.shape = 0;
+    }
+
+    // 扁平皮肤（参考设计稿：深色圆角方 + 极淡描边 + 无光环 + 按下提亮）。
+    // 所有默认布局与样式版本迁移统一走这里；用户之后仍可在样式页自定义覆盖。
+    public static void ApplyFlatSkin(VCElem e)
+    {
+        if (e.type == VCElemType.Stick) { ApplyStickSkin(e); return; }
+        e.borderW = 1.4f;
+        e.halo = 0f;
+        e.bg = new Color(0.086f, 0.086f, 0.10f, 0.72f);
+        e.line = new Color(1f, 1f, 1f, 0.14f);
+        e.bgDown = new Color(1f, 1f, 1f, 0.16f);
+        e.lineDown = new Color(1f, 1f, 1f, 0.45f);
+        if (e.type == VCElemType.Button) e.shape = 1;   // 圆角方，对齐设计稿
     }
 
     public static void Ensure()
@@ -229,6 +243,23 @@ public static class VirtualControls
         if (profileNames.Count == 0) profileNames.Add("默认");
         if (!profileNames.Contains(activeName)) activeName = profileNames[0];
         if (!LoadFromFile(activeName)) { elems.Clear(); BuildDefaultLayout(); SaveActive(); }
+        MigrateStyle();
+    }
+
+    // —— 样式版本迁移 ——
+    // StyleVer 提升时把磁盘载入的旧配色一次性刷成当前默认皮肤（扁平风）。
+    // 只在从磁盘载入时执行；编辑器的撤回快照（FromJson）不走这里，
+    // 所以不会把用户刚在样式页改好的自定义颜色又刷回去。
+    const string PrefStyleVer = "mxd.vc.stylever";
+    const int StyleVer = 2;   // 2 = 扁平化改版
+
+    static void MigrateStyle()
+    {
+        if (PlayerPrefs.GetInt(PrefStyleVer, 0) >= StyleVer) return;
+        foreach (var e in elems) ApplyFlatSkin(e);
+        SaveActive();
+        PlayerPrefs.SetInt(PrefStyleVer, StyleVer);
+        PlayerPrefs.Save();
     }
 
     static void ReadManifest()
@@ -354,11 +385,8 @@ public static class VirtualControls
                 if (d.TryGetValue("dln", out var dln)) e.lineDown = ParseHex(dln as string, e.lineDown);
                 if (!d.ContainsKey("sbg"))
                 {
-                    // 旧存档没有样式字段：套一组和旧渲染接近的高对比默认值，避免升级后按键"看不见"
-                    e.bg = new Color(0f, 0f, 0f, 0.45f);
-                    e.line = new Color(1f, 1f, 1f, 0.82f);
-                    e.bgDown = new Color(1f, 1f, 1f, 0.26f);
-                    e.lineDown = new Color(1f, 1f, 1f, 0.95f);
+                    // 旧存档没有样式字段：直接套当前默认（扁平）皮肤
+                    ApplyFlatSkin(e);
                 }
                 if (d.TryGetValue("label", out var lb)) e.label = lb as string ?? "";
                 if (d.TryGetValue("sk", out var skId)) e.skillId = Mathf.Max(0, Mathf.RoundToInt(ToF(skId, 0f)));
@@ -445,6 +473,8 @@ public static class VirtualControls
         elems.Add(new VCElem { type = VCElemType.Button, action = GameAction.Jump, cx = 0.545f, cy = 0.60f, size = 0.17f, opacity = 0.75f });
         // 拾取（Z）
         elems.Add(new VCElem { type = VCElemType.Button, action = GameAction.Pickup, cx = 0.42f, cy = 0.72f, size = 0.15f, opacity = 0.65f });
+        // 统一套扁平皮肤：深色圆角方 + 极淡描边 + 无光环，整体退到画面后面
+        foreach (var e in elems) ApplyFlatSkin(e);
     }
 
     // —————————— 绑定目录（编辑器给按钮选动作用） ——————————

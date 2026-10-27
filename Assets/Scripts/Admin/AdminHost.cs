@@ -1,5 +1,6 @@
 // 后台管理系统宿主：在游戏进程里起一个只监听 127.0.0.1 的 HTTP 服务，
-// 把后台前端（gms-ui 的构建产物）和 REST 接口一起供出去；侧边栏按钮用系统浏览器打开它。
+// 把后台前端（gms-ui 的构建产物）和 REST 接口一起供出去；侧边栏按钮用应用内 WebView 打开
+// （AdminWebView，Android 全屏 Dialog；桌面回退系统浏览器）。
 //
 // 生命周期：
 //   · RuntimeInitializeOnLoadMethod 建一个常驻 GameObject（不进场景、不随场景销毁）
@@ -24,6 +25,8 @@ public sealed class AdminHost : MonoBehaviour
     AdminApi api;
     string startError;
     bool adminChecked;
+    Thread pumpThread;
+    volatile bool running = true;
 
     public static bool Running => instance != null && instance.server != null && instance.server.Running;
     public static int Port => instance != null && instance.server != null ? instance.server.Port : DefaultPort;
@@ -74,8 +77,44 @@ public sealed class AdminHost : MonoBehaviour
             return string.IsNullOrEmpty(n) ? null : n;
         };
 
-        // 浏览器在前台时游戏要继续跑，否则 HTTP 请求等不到主线程
+        // 浏览器在前台时游戏要继续跑；Android 上 runInBackground 不生效（Activity onPause 后
+        // 主线程暂停），所以下面用失焦泵线程兜底，这里仍然先声明意图。
         Application.runInBackground = true;
+
+        // 失焦泵线程：只在游戏切到后台（主线程已暂停）时接管 AdminMainThread 队列。
+        // 回前台后 Foreground 置回 true，泵线程自动让位，DB 访问恢复「主线程独占」。
+#if !UNITY_WEBGL
+        pumpThread = new Thread(BackgroundPump) { IsBackground = true, Name = "AdminBackgroundPump" };
+        pumpThread.Start();
+#endif
+    }
+
+    void BackgroundPump()
+    {
+        bool grace = false;
+        while (running)
+        {
+            if (AdminMainThread.Foreground) { grace = false; Thread.Sleep(100); continue; }
+            // 失焦 → 引擎暂停之间主线程还会跑几帧，先等它完全停稳再接管，保证 DB 单线程访问
+            if (!grace) { grace = true; Thread.Sleep(300); continue; }
+            if (AdminMainThread.Pump() == 0) Thread.Sleep(25);
+        }
+    }
+
+    // Android 生命周期：切到浏览器/桌面 → onPause + 失焦；回来 → 反向。
+    // 失焦时主线程即将暂停，后台泵开始接管；回前台时先等泵线程跑完手头一条再放行主线程。
+    void OnApplicationFocus(bool hasFocus) => SwitchForeground(hasFocus);
+    void OnApplicationPause(bool paused) => SwitchForeground(!paused);
+
+    void SwitchForeground(bool has)
+    {
+        if (!has)
+        {
+            AdminMainThread.Foreground = false;
+            return;
+        }
+        AdminMainThread.Foreground = true;
+        AdminMainThread.AwaitIdle(500);
     }
 
     void Update()
@@ -100,11 +139,14 @@ public sealed class AdminHost : MonoBehaviour
     void OnDestroy()
     {
         if (instance == this) instance = null;
+        running = false;
+        pumpThread = null;
         StopServer();
     }
 
     void OnApplicationQuit()
     {
+        AdminWebView.Close();
         StopServer();
     }
 
@@ -122,11 +164,12 @@ public sealed class AdminHost : MonoBehaviour
         return BaseUrl;
     }
 
-    // 侧边栏入口：启动服务并用系统默认浏览器打开。返回给用户看的提示文本。
+    // 侧边栏入口：启动服务并在应用内浏览器打开（Android WebView Dialog，返回键关闭；
+    // 桌面/编辑器回退系统浏览器）。返回给用户看的提示文本。
     public static string OpenInBrowser()
     {
         string url = EnsureStarted();
-        Application.OpenURL(url);
+        AdminWebView.Open(url);
         return url;
     }
 

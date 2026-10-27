@@ -27,3 +27,4 @@
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Debug/net8.0/MapleDash.ScriptHarness.pdb
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Debug/net8.0/MapleDash.ScriptHarness.genruntimeconfig.cache
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/obj/Debug/net8.0/ref/MapleDash.ScriptHarness.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/script-harness/bin/Debug/net8.0/Server/Db/Schema.sql

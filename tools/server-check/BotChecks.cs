@@ -174,6 +174,7 @@ static class BotChecks
         CheckEquipment(check);
         CheckRealTrade(check);
         CheckGroundItems(check);
+        CheckMarketAutoStart(check);
         CheckOriginalGeometryAndGroundPhysics(check);
         CheckWorldObservationAndGround(check);
         CheckRuntimeSession(check);
@@ -1490,6 +1491,34 @@ static class BotChecks
         BotMovementService.Shutdown(); BotTasks.Stop(); BotMovementService.IsObserved = null; BotMovementService.ResolveProfile = null;
         MapService.Unregister(77);
 
+    }
+
+    static void CheckMarketAutoStart(Action<bool, string> check)
+    {
+        Server.Bot.Environment.BotEnvironment.Reset();
+        BotTasks.Stop(); BotScheduler.Stop(); BotScheduler.Clock = 1000;
+        var db = DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mapledash_bot_market_auto.json"));
+        using (var runtime = new BotRuntime(db))
+        {
+            runtime.Drive(1100);   // BotTasks.Schedule(MarketEnvironmentStartup, 0) 到期执行三波
+            var fmBots = BotRegistry.OnMap(910000000);
+            check(fmBots.Count > 0 && Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete,
+                "进游戏默认自动拉起三波环境，自由市场入口已有假人（FM=" + fmBots.Count + "）");
+        }   // Dispose 内 BotEnvironment.Reset()
+        check(!Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete &&
+              !Server.Bot.Environment.BotEnvironment.IsMarketStartupRunning &&
+              BotRegistry.OnMap(910000000).Count == 0,
+            "退服清理假人并复位启动状态机，重进游戏可再次拉起");
+        db.Table("game_config").Insert(new DbRow { ["config_code"] = "solo_mapling_market_auto_start", ["config_value"] = "false" });
+        using (var runtime = new BotRuntime(db))
+        {
+            runtime.Drive(2100);
+            check(BotRegistry.OnMap(910000000).Count == 0 && !Server.Bot.Environment.BotEnvironment.IsMarketStartupRunning &&
+                  !Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete,
+                "关闭 solo_mapling_market_auto_start 时不自动拉起环境（仍可后台手动触发）");
+        }
+        BotTasks.Stop(); BotScheduler.Stop();
+        Server.Bot.Environment.BotEnvironment.Reset();
     }
 
     static void CheckRuntimeSession(Action<bool, string> check)

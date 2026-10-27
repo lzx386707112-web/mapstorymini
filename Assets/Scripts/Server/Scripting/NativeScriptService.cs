@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using MapleDash.Js;
 
-public enum ScriptOperation { Open, Call, Close, SaveLocation, PeekLocation, GetLocation, ClearLocation }
+public enum ScriptOperation { Open, Call, Close, SaveLocation, PeekLocation, GetLocation, ClearLocation, GachaDraw }
 
 // 本地传输专用宿主桥：JS 对象显式绑定，禁止反射调用任意 C#/Java 方法。
 // 脚本状态/解释执行属于 Server；对话与地图效果由 Client 注入的适配器消费。
@@ -15,6 +15,7 @@ public sealed class ScriptRequest
     public JsValue[] arguments;
     public string location;
     public int mapId, portalId;
+    public int gachaponId;   // GachaDraw：gachapon_reward_pool.gachapon_id（NPC 编号或远程扭蛋 id）
 }
 public sealed class ScriptResponse
 {
@@ -39,6 +40,12 @@ public sealed class NativeScriptService
 
     public ScriptResponse Handle(ScriptRequest request)
     {
+        if (request.operation == ScriptOperation.GachaDraw)
+        {
+            if (db == null || CharactersDao.FindById(db, request.characterId) == null)
+                throw new JsRuntimeException("Script character does not exist");
+            return new ScriptResponse { value = GachaDraw(request.gachaponId) };
+        }
         if (request.operation >= ScriptOperation.SaveLocation)
         {
             if (db == null || CharactersDao.FindById(db, request.characterId) == null)
@@ -92,6 +99,54 @@ public sealed class NativeScriptService
             throw;
         }
     }
+
+    // GachaponService.doGachapon（GachaponService.java:210）：先在 1,000,000 点积分里按
+    // 「公共池 prob*100 / 私有池 weight 占比」切分选池，再在池内奖品中均匀抽取。
+    // 返回 [itemId, quantity]；奖池为空返回空数组（客户端给「百宝箱为空」提示）。
+    static readonly Random gachaRandom = new Random();
+
+    JsValue GachaDraw(int gachaponId)
+    {
+        var now = DateTime.Now;
+        var pools = new List<DbRow>();
+        if (db.HasTable("gachapon_reward_pool"))
+            foreach (var pool in db.Table("gachapon_reward_pool").rows)
+            {
+                if (DbStore.Int(pool, "gachapon_id") != gachaponId) continue;
+                string start = DbStore.Str(pool, "start_time"), end = DbStore.Str(pool, "end_time");
+                if (!string.IsNullOrEmpty(start) && DateTime.TryParse(start, out var s) && now < s) continue;
+                if (!string.IsNullOrEmpty(end) && DateTime.TryParse(end, out var e) && now > e) continue;
+                pools.Add(pool);
+            }
+        if (pools.Count == 0) return new JsArray();
+
+        int probTotal = 0, totalWeight = 0;
+        foreach (var p in pools) { probTotal += DbStore.Int(p, "prob"); totalWeight += DbStore.Int(p, "weight"); }
+        int weightPoint = 1000000 - probTotal * 100;
+        int random = gachaRandom.Next(1000000);
+        DbRow target = null;
+        int pointTotal = 0;
+        foreach (var p in pools)
+        {
+            int point = DbStore.Int(p, "is_public") != 0
+                ? DbStore.Int(p, "prob") * 100
+                : (totalWeight > 0 ? MathfRound(weightPoint * DbStore.Int(p, "weight") / (float)totalWeight) : 0);
+            pointTotal += point;
+            if (pointTotal > random) { target = p; break; }
+        }
+        target ??= pools[0];
+
+        var rewards = new List<DbRow>();
+        if (db.HasTable("gachapon_reward"))
+            foreach (var r in db.Table("gachapon_reward").rows)
+                if (DbStore.Int(r, "pool_id") == DbStore.Int(target, "id")) rewards.Add(r);
+        if (rewards.Count == 0) return new JsArray();
+        var pick = rewards[gachaRandom.Next(rewards.Count)];
+        return new JsArray(new JsValue[] {
+            new JsNumber(DbStore.Int(pick, "item_id")), new JsNumber(DbStore.Int(pick, "quantity", 1)) });
+    }
+
+    static int MathfRound(float v) => (int)MathF.Round(v, MidpointRounding.AwayFromZero);
 
     JsValue ConfigClass()
     {
