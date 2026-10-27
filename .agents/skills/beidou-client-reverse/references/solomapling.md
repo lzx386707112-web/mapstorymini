@@ -1,5 +1,11 @@
 # SoloMapling 假人：源端依据与迁移边界
 
+## 当前接续入口（2026-10-27）
+
+当前未完成说明见 [详细缺口与验收清单](../../../../docs/solomapling-unfinished.md)。17枚举中8种具体、9种Generic占位，整体incomplete；最近后端478通过/0失败，全Unity编译0警告/0错误，原IMG Editor检查PASS，未完成Play全流程及Android验收。下文按时间保留早期333/368等记录及其当时缺口，不能将早期状态当作最新状态。本文后半已包含EXE调查，开头“没有新增EXE结论”仅指最初服务端调查。
+
+本次仅整理说明和校正明确的源文件映射，没有新增业务代码或重新运行构建。BotLogic、BotHelpers、PartyGrindService及三项交易组件的旧not_ported标签改为partial；其他旧映射仍须逐项复核，禁止按文件数计算完成率。
+
 ## 身份与复现
 
 2026-10-27 核实服务端 Java 源码，根目录 `../BeiDou-Server/gms-server/src/main/java/`（相对 mxd-android）。本记录没有新增 EXE/DLL 逆向结论，不适用二进制 VA、IMG/UI 布局。
@@ -199,7 +205,7 @@
 - ScrollingBot源listIndex从未递增：始终处理生成列表第0件；预先强化的level作为成功次数、原干净装备tuc作为槽数，Fisher-Yates随机排列显示结果，**不会在播放时再强化装备**。失败调用VFXCommands.botScrollFail实际发送CURSE，非FAIL；20%原对白，随后10..15秒等待，10%物品喇叭，原装备估价/价格修正，5..8分钟后下一批。C#等待主线程续接；原无货while改为下一轮重试避免卡住Unity。Scroll/ItemMegaphone保留结构输出，原UI消费者尚未迁完。
 - InviteCoordinator.runTimeoutSchedule先检查计数>5再递增，Server:789每30秒首轮及周期。因此第6轮后仍存在，第7轮移除，不用固定180秒近似。队伍/信使共用运行时30秒轮并测试边界；普通信使邀请复用已有房间，NX完整邀请仍新建房，真实最多3人。NativeSocialWindow只更换已有布局中的人数/队长/成员状态与250ms刷新，没有新增猜测布局。
 - BotTradeService提交事务后发布真实库存和金币delta；GameSession只同步这部分镜像，保留经验任务。FullCharacter.tradeRevision是**本地会话适配字段**，不新增原数据库列；SaveCharacter及真人帧同步拦截旧交易快照，防止托管金额补回或取消返还被旧金币覆盖。原CharService.Save本就不覆写inventory表，不能错误宣称新增背包全快照落库。真实交易UI、完整交互与客户端运行验收仍待处理。
-- 验证检查点：后端463通过/0失败（含成交后旧快照保存保护），Unity全脚本编译0警告/0错误。真实UnityEditor BotPresentationChecks通过原IMG技能effect及过期检查，以及原Mob IMG创建的NativeMobController真实扣血、伤害归属和旧频道攻击拦截；不是实机或Play验收。NPC源目录实际在项目外层MapleDashResources；889脚本parseFail0，768执行、48宿主接口运行失败、73Java互操作；2777打包脚本parseFail0，不能称全脚本业务通过。
+- 验证检查点：后端464通过/0失败（含成交后旧快照保存保护与权威背包同步），Unity全脚本编译0警告/0错误。真实UnityEditor BotPresentationChecks通过原IMG技能effect及过期检查，以及原Mob IMG创建的NativeMobController真实扣血、伤害归属和旧频道攻击拦截；不是实机或Play验收。NPC源目录实际在项目外层MapleDashResources；889脚本parseFail0，768执行、48宿主接口运行失败、73Java互操作；2777打包脚本parseFail0，不能称全脚本业务通过。
 
 源身份（SHA256）：
 
@@ -213,3 +219,30 @@
 | `org/gms/server/ItemInformationProvider.java` | `86b777480f979d7c15c469dc43e745fd10e7ecc551ba79216f54be9c2ef81ee8` |
 
 原SocialCommands.BotFullChat(mode0)与BotChatbubble(mode1)有明确区别；BotField现将Chat输出接入现有BottomBar聊天记录，Bubble仍不写聊天记录。没有据此自行实现尚未核实的头顶气泡几何。
+
+### 气泡调用链续查（同一EXE身份）
+
+新增只读复现入口`tools/inspect_beidou_client.py <exe> --callers 0x48a935`；结果是相对CALL候选，须反汇编核对边界。已在原汇编确认0x93746C..0x9374D0调用链：向0x48A935传入文本对象、角色+0x1150和+0x1140对象、立即数0x1388(5000)、type0x3E8(1000)、0x9375F2返回值及0。另0x978B2C..0x978B97有相同5000/type1000路径。**目前只确认这些实际传参值；未完成参数用途、角色锚点及持续时间字段的对应证明，不能把5000直接当所有聊天气泡寿命**。0x48B133/0x48B121分别传递其参数+0x20/+0x18，0x48B154调用九宫格函数0x4890C4。后续从0x48B2A7..0x48B4E8及0x4890C4的返回字段继续核对，不能采用错误EH反编译局部变量偏移。
+
+
+### 玩家范围查询与卷轴效果消费者（2026-10-27 续）
+
+- 移除`BotLogic.WaitForPlayerInRange/GetRealPlayersInRange/IsNpcPresent`恒空/恒false占位，接BotRuntime真实在线角色及MapRuntime.npcs。源`BotLogic.java:37..63,119..126,193..207`：等待接口只排除自己，**可以返回另一假人**；真人接口另排除bot。限定当前地图/世界/频道，按地图入场顺序返回。`BotHelpers.createRectangle:137..155`采用整数halfWidth/halfHeight、`int(height*.2)`，top=`centerY-2*halfHeight+offset`；java.awt.Rectangle含左上、不含右下。C#使用地图像素整数坐标；没有将宽高当半径，也没有擅自把脚底设成矩形中心。掉落查询仍为占位，未因此宣称BotLogic完整。
+- 源身份：BotLogic SHA256 `d42a0cd656da92ddd2ae53e871c8180e96b1fd8cdbbb1c0f202bdac90ad874bd`；BotHelpers SHA256 `47e0b851104cd62d0a1a6cafd0bbbb1c97326e393504c4a00f1d3272cb84556e`。
+- 卷轴源VFXCommands发送`getScrollEffect`；PacketCreator:2507将SUCCESS编码为第一bool、CURSE为第二bool，非把枚举整数直接当成功bool。原EXE（本节沿用SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`、base0x400000）`0x933573..0x9335A8`依次读四个byte；`0x933917..0x93395E`以第一个byte及legendarySpirit传`0x43B736`，取角色+0x11A4运动向量（`0x4AD42B`）和+0x1150层对象。CURSE不单独选第三种动画。
+- `0x43B75A..0x43B7A8`：success非零读字符串3439=`Effect/BasicEff.img/Enchant/Success`，否则3440=`Effect/BasicEff.img/Enchant/Failure`。`0x43B93D..0x43B979`向通用层加载`0x43E86F`传不翻转、alpha255、z3、原层与运动向量、x/y偏移均0；不添加自定义头顶偏移，位置由IMG origin决定。`0x933896/0x9338B4`选字符串1246/1247=`EnchantSuccess/EnchantFailure`，`0x9338D2`音量100。迁移以现有纸娃娃运动根作父对象、现有前景特效排序360适配Unity排序；不是原EXE z值与Unity sortingOrder的直接同值映射。
+- 原`Effect/BasicEff.img` SHA256 `91501003f961bdcbe368abf2c3ed104754c676da0c4af58e3b6427cfa70bd57b`：Success21帧，Failure16帧；首帧均30×26、origin(16,130)，故无需另抬130px。所有帧原delay50，Success13与Failure14未写delay，沿既有原IMG播放器默认100。BotField消费Scroll事件，成功/普通失败/诅咒分别选原节点，一次播放后销毁；换图/频道清理父对象同时清理效果。ItemMegaphone仍缺原UI消费者。
+- `tools/export_sound.py`加入原Game/EnchantSuccess、Game/EnchantFailure；已定向导出源Sound/Game.img的MP3有效负载并逐字节比对，更新SoundIndex。预加载并固定pitch1播放，无随机音高。batch烟测不等于音频设备听音验收。
+- 只读复现：`tools/inspect_beidou_client.py <exe> --callers 0x43b736`（实际0x93395E、0x7F69DC），再`--start 0x933560 --end 0x9339c0`、`--start 0x43b736 --end 0x43b990`。原IMG可使用源tool/wz-python解析`Enchant/Success|Failure`，不可用像素截图猜origin。
+
+### 气泡持续时间字段确认（同一EXE身份）
+
+补充上节未确认项：`0x48B3F1`取`0x987257`时钟并存this+0x40，`0x48B3FC`将参数+0x14存this+0x44；`0x987257`读取全局[0xBE7B38]+0x18。`0x48E6D4`更新在层this+4存在且this+0x54为0时计算elapsed=`now-this[0x44]-this[0x40]`。elapsed<=0保留层（除非更新参数非零要求移除）；超过显示期后，this+0x64为0或剩余淡出时间<=0则清层，否则alpha=`remaining*255/fadeDuration`整数除法。`0x48E846`将负淡出时长钳为0。因而已核对普通聊天调用的5000是显示毫秒数，但构造默认淡出时间及完整文字几何/头顶锚点仍待核实，不能把这些字段扩展为所有气泡类型统一规则。
+
+本次续迁移验证：后端471通过/0失败（新增范围及NPC真实会话回归7项），全Unity脚本编译0警告/0错误，真实Unity batch BotPresentationChecks PASS，新增成功/失败/CURSE的原IMG消费者、首帧sprite pivot(16,-104)、运动根锚点、不翻转及过期清理断言。音效仅比对原字节并接播放入口，没有声卡听音验证。具体类型仍8/17；本次没有以新的接口冒充已完成业务类型，整体不作完整交付。
+
+### 假人主动交易邀请接受接线（2026-10-27 续）
+
+- 源`org/gms/server/Trade.java` SHA256 `edf758a4b7b97b0fcbee152a8905d7a6deabb2a883e86ec5b96f16bc8c72eb44`，inviteTrade:519..527建立双边会话但不设fullTrade，visitTrade:537..559仅接收方有效邀请可设双边fullTrade；过期访问取消双边。InviteCoordinator第七轮移除邀请，不主动清Trade会话。
+- BotTradeProtocol新增末尾枚举Accept，保留既有操作编号；Read暴露incomingInvitation，Accept校验当前邀请方ID与接收身份，拒绝发起方自行接受，避免旧窗口接受另一假人交易。BotTradeService追踪incoming/pending及原30秒计数，同现有party/messenger运行时钟。重复Accept对已打开会话不重复消费邀请；过期Accept取消双边，取消/成交移除邀请记录。**这是实际transport业务入口补齐，原邀请窗口/交易窗口UI仍未迁完**。
+- 真实runtime/transport回归新增7项，覆盖主动邀请读取、错误对象不消费、真人接受、发起方拒绝、第6/7轮边界、过期visit取消。最新后端478通过/0失败；继续保持整体incomplete。

@@ -8,6 +8,7 @@ namespace Server.Bot.Trade
     {
         readonly DbStore db;
         readonly TradeItemRules rules;
+        readonly HashSet<Session> invitations = new HashSet<Session>();
         public Action<BotActor, string> ChatOutput;
         public Action<BotActor, TradeResult> ResultOutput;
         public Action<Exception> OnError;
@@ -31,9 +32,20 @@ namespace Server.Bot.Trade
             if ((gmFrom > 0 && gmTo == 0 && gmFrom < minimum) || (gmFrom == 0 && gmTo > 0 && gmTo < minimum))
             { local.Cancel(TradeResult.NO_RESPONSE); return false; }
             var remote = Start(to); local.other = remote; remote.other = local;
+            remote.IsIncoming = true; remote.InvitationPending = true; invitations.Add(remote);
             var bot = BotStore.GetBotById(to.id);
             if (to.IsBot() && bot != null && ReferenceEquals(bot.chr, to)) bot.tradeLogic.queue.Add(to, from);
             Invited?.Invoke(from, to); return true;
+        }
+        public void TickInvitationTimeouts()
+        {
+            foreach (var session in new List<Session>(invitations))
+                if (session.invitationTicks > 5)
+                {
+                    session.InvitationPending = false; invitations.Remove(session);
+                    // InviteCoordinator expires the invite only. A subsequent visitTrade cancels it.
+                }
+                else session.invitationTicks++;
         }
         public static int Fee(long amount) => amount >= 100000000 ? (int)(amount * 6 / 100)
             : amount >= 25000000 ? (int)(amount * 5 / 100) : amount >= 10000000 ? (int)(amount * 4 / 100)
@@ -113,6 +125,9 @@ namespace Server.Bot.Trade
             public int meso { get; private set; }
             public bool locked { get; private set; }
             public bool FullTrade { get; private set; }
+            public bool IsIncoming { get; internal set; }
+            public bool InvitationPending { get; internal set; }
+            internal int invitationTicks;
             public IList<InventoryEntry> Items => new List<InventoryEntry>(items);
             public Action<TradeResult> ResultCallback { get; set; }
             internal Session(BotTradeService service, BotActor actor) { this.service = service; this.actor = actor; }
@@ -159,6 +174,9 @@ namespace Server.Bot.Trade
             public void Accept()
             {
                 if (ended || other == null || actor.trade != this || other.actor.trade != other) return;
+                if (FullTrade || !IsIncoming) return;
+                if (!InvitationPending) { Cancel(TradeResult.NO_RESPONSE); return; }
+                InvitationPending = false; service.invitations.Remove(this);
                 FullTrade = true; other.FullTrade = true;
             }
             public void Confirm()
@@ -188,6 +206,8 @@ namespace Server.Bot.Trade
                 catch (Exception e) { service.OnError?.Invoke(e); Cancel(TradeResult.UNSUCCESSFUL); return; }
                 if (limited != null) limited.actor.mesosTraded += received;
                 meso = 0; other.meso = 0; items.Clear(); other.items.Clear();
+                InvitationPending = other.InvitationPending = false;
+                service.invitations.Remove(this); service.invitations.Remove(other);
                 ended = other.ended = true;
                 Notify(this, TradeResult.SUCCESSFUL); Notify(other, TradeResult.SUCCESSFUL);
                 actor.trade = null; other.actor.trade = null;
@@ -233,6 +253,8 @@ namespace Server.Bot.Trade
                         if (!service.rules.Receive(other.actor, right, item)) throw new InvalidOperationException("Cannot return partner escrowed trade items");
                 }
                 service.CommitInventories(this, left, checked(Balance(actor) + meso), other, right, other == null ? 0 : checked(Balance(other.actor) + other.meso));
+                InvitationPending = false; service.invitations.Remove(this);
+                if (other != null) { other.InvitationPending = false; service.invitations.Remove(other); }
                 meso = 0; items.Clear(); ended = true; actor.trade = null;
                 Notify(this, result == TradeResult.PARTNER_CANCEL ? TradeResult.NO_RESPONSE : result);
                 if (other != null)

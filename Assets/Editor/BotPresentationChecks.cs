@@ -87,6 +87,19 @@ public static class BotPresentationChecks
             Require(effects.Length==1 && effects[0].Image.sprite!=null,"original Slash Blast effect reaches bot renderer");
             effects[0].Tick(Time.realtimeSinceStartupAsDouble+60);
             Require(root.GetComponentsInChildren<NativeImgAnimation>().Length==0,"one-shot skill IMG expires without orphan objects");
+            foreach (int result in new[] {1,2,0})
+            {
+                BotTypeManager.Output.Send(Server.Bot.Social.BotOutput.Kind.Scroll,actor,value:result);
+                effects=root.GetComponentsInChildren<NativeImgAnimation>();
+                Require(effects.Length==1 && effects[0].Image.sprite!=null &&
+                    effects[0].name.EndsWith(result==1 ? "/Success" : "/Failure",StringComparison.Ordinal),
+                    "published scroll result reaches original success/failure IMG including curse " + result);
+                Require(effects[0].transform.position==animation.transform.position && !effects[0].Image.flipX &&
+                    effects[0].Image.sprite.pivot==new Vector2(16,-104),
+                    "enchant follows movement anchor, retaining original 30x26 origin(16,130) without extra offset or facing flip");
+                effects[0].Tick(Time.realtimeSinceStartupAsDouble+60);
+                Require(root.GetComponentsInChildren<NativeImgAnimation>().Length==0,"enchant effect expires after original frames");
+            }
             actor.equips[-111] = 1702000;
             field.Synchronize(actor.mapId, 0, 1);
             Require(animation.key.EndsWith("01702000", StringComparison.Ordinal), "cash weapon replaces visible recipe");

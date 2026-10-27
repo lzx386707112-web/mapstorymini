@@ -271,6 +271,7 @@ public sealed class InProcessTransport : ITransport
                 if (actor?.character!=null && (actor.trade!=null || r.character.tradeRevision<actor.character.tradeRevision))
                 {
                     incoming.meso=stored.meso;
+                    r.character.inventory=CharService.Load(server.Db,r.characterId).inventory;
                     r.character.tradeRevision=actor.character.tradeRevision;
                 }
                 if (incoming.level > stored.level) server.Community.GiveReputation(r.characterId,

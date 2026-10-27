@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--start", type=lambda x: int(x, 0))
     parser.add_argument("--end", type=lambda x: int(x, 0))
     parser.add_argument("--xref", type=lambda x: int(x, 0))
+    parser.add_argument("--callers", type=lambda x: int(x, 0), help="list relative CALL candidates; verify surrounding instruction boundaries")
     parser.add_argument("--strings", type=Path, help="write decoded string pool JSON")
     args = parser.parse_args()
     raw = args.exe.read_bytes()
@@ -47,6 +48,12 @@ def main():
         while (found := data.find(needle, start, end)) >= 0:
             print(f"DWORD reference operand: {base+found:#x} (verify instruction boundary)")
             start = found+4
+    if args.callers is not None:
+        first = text.VirtualAddress
+        last = first + text.Misc_VirtualSize - 4
+        for offset in range(first, last):
+            if data[offset] == 0xE8 and base + offset + 5 + struct.unpack_from("<i", data, offset + 1)[0] == args.callers:
+                print(f"Relative CALL candidate: {base+offset:#x} -> {args.callers:#x} (verify instruction boundary)")
     if args.start is not None:
         if args.end is None or args.end <= args.start:
             parser.error("--start requires a greater --end")

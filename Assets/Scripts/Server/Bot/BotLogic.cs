@@ -48,10 +48,35 @@ namespace Server.Bot
         public static bool IsInsideFM(int map) => IsInsideFMRooms(map) || IsAtFMEntrance(map);
 
         // —— 依赖地图运行时的部分（阶段C+ 实现，阶段A 占位）——
-        public static BotCharacter WaitForPlayerInRange(BotCharacter fake, int w, int h) => null;
-        public static List<BotCharacter> GetRealPlayersInRange(BotCharacter fake, int w, int h) => new List<BotCharacter>();
+        internal static Func<IEnumerable<BotActor>> OnlinePlayers;
+        static List<BotActor> PlayersInRange(BotCharacter fake, int w, int h, bool realOnly)
+        {
+            var found = new List<BotActor>();
+            if (fake == null || w <= 0 || h <= 0) return found;
+            // BotHelpers.createRectangle uses integer half sizes and a 20% downward offset.
+            // java.awt.Rectangle.contains includes left/top and excludes right/bottom.
+            int left = (int)fake.x - w / 2;
+            int top = (int)fake.y - h / 2 + (int)(h * .2) - h / 2;
+            void Add(BotActor actor)
+            {
+                if (actor.id != fake.id && actor.online && actor.mapId == fake.mapId &&
+                    actor.world == fake.world && actor.channel == fake.channel &&
+                    (int)actor.x >= left && (int)actor.x < left + w &&
+                    (int)actor.y >= top && (int)actor.y < top + h) found.Add(actor);
+            }
+            if (OnlinePlayers != null) foreach (var actor in OnlinePlayers()) Add(actor);
+            if (!realOnly) foreach (var actor in BotRegistry.OnMap(fake.mapId)) Add(actor);
+            found.Sort((a,b) => a.mapEntryOrder.CompareTo(b.mapEntryOrder));
+            return found;
+        }
+        // The source's waitForPlayerInRange can return another bot; only the second API excludes bots.
+        public static BotActor WaitForPlayerInRange(BotCharacter fake, int w, int h)
+        { var actors = PlayersInRange(fake,w,h,false); return actors.Count == 0 ? null : actors[0]; }
+        public static List<BotActor> GetRealPlayersInRange(BotCharacter fake, int w, int h)
+            => PlayersInRange(fake,w,h,true);
         public static List<int> CheckForItemsOnFloor(int mapId, int x, int y, int[] itemIds) => new List<int>();
-        public static bool IsNpcPresent(int mapId, int npcId) => false;
+        public static bool IsNpcPresent(int mapId, int npcId)
+            => Field.MapService.Get(mapId)?.npcs.Exists(npc => npc.id == npcId) ?? false;
         public static InventoryEntry GenerateCleanItemEquip(int id) => BotItemCatalog.Shared.CleanItem(id);
         public static InventoryEntry GenerateCleanItemWithQty(int id, int quantity)
             => new InventoryEntry { itemId = id, inventoryType = id / 1000000, quantity = unchecked((short)quantity) };

@@ -187,7 +187,8 @@ def main():
     # ---- 游戏动作音效 ----
     print("== Game ==")
     for g in ["PickUpItem", "Jump", "LevelUp", "DropItem", "GameIn",
-              "Portal", "Portal2", "QuestClear", "JobChanged", "Buff"]:
+              "Portal", "Portal2", "QuestClear", "JobChanged", "Buff",
+              "EnchantSuccess", "EnchantFailure"]:
         e = export(f"Game/{g}", f"Game/{g}", f"Game/{g}.mp3")
         if e:
             index[f"Game/{g}"] = e

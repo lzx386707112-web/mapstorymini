@@ -23,6 +23,7 @@ public sealed class BotField : MonoBehaviour
     {
         output = BotTypeManager.Output;
         output.Published += OnOutput;
+        AudioManager.Preload("Game/EnchantSuccess", "Game/EnchantFailure");
     }
     void OnOutput(Server.Bot.Social.BotOutput.Message message)
     {
@@ -32,6 +33,14 @@ public sealed class BotField : MonoBehaviour
         if (message.kind == Server.Bot.Social.BotOutput.Kind.Chat && !string.IsNullOrEmpty(message.text))
             BottomBar.AddChat(actor.name + " : " + message.text,BottomBar.ChatWhite);
         if (message.kind == Server.Bot.Social.BotOutput.Kind.Emote) Express(message.actorId, message.value);
+        if (message.kind == Server.Bot.Social.BotOutput.Kind.Scroll && views.TryGetValue(message.actorId,out var scrolling))
+        {
+            // SHOW_SCROLL_EFFECT: success is its first bool; CURSE uses the same Failure IMG.
+            string result = message.value == 1 ? "Success" : "Failure";
+            NativeImgAnimation.Spawn("Effect/BasicEff.img/Enchant/" + result,
+                scrolling.root.transform, scrolling.root.transform.position, 360);
+            AudioManager.Play("Game/Enchant" + result, pitchVary:false);
+        }
         if (message.kind == Server.Bot.Social.BotOutput.Kind.Attack && views.TryGetValue(message.actorId,out var view))
             view.animation.PlayNativeAttack(message.text,message.value);
     }

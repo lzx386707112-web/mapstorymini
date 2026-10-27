@@ -112,8 +112,12 @@
       "source": "ArtificialPlayer/BotCommandsPack/VFXCommands.java",
       "sha256": "12a5379df7e15f90e609168b2633634ffa1f63c940af9e9aa935354cd98292d7",
       "lines": 23,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/ScrollingBot.cs",
+        "Assets/Scripts/Field/BotField.cs"
+      ],
+      "integration": "Scroll success/curse output consumed with original Enchant Success/Failure IMG and original Sound/Game payloads; Editor verified. Full source callers and device acceptance pending."
     },
     {
       "source": "ArtificialPlayer/BotCommandsPack/WarpCommands.java",
@@ -338,8 +342,11 @@
       "source": "ArtificialPlayer/BotHelpers.java",
       "sha256": "47e0b851104cd62d0a1a6cafd0bbbb1c97326e393504c4a00f1d3272cb84556e",
       "lines": 201,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotHelpers.cs"
+      ],
+      "integration": "Existing helper subset only; complete source API audit and callers remain pending."
     },
     {
       "source": "ArtificialPlayer/BotInteractorsHandler.java",
@@ -355,8 +362,11 @@
       "source": "ArtificialPlayer/BotLogic.java",
       "sha256": "d42a0cd656da92ddd2ae53e871c8180e96b1fd8cdbbb1c0f202bdac90ad874bd",
       "lines": 355,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotLogic.cs"
+      ],
+      "integration": "Online actor rectangle and map NPC queries wired; floor item query remains a stub and full source API is incomplete."
     },
     {
       "source": "ArtificialPlayer/BotMapEntryResponder.java",
@@ -637,8 +647,11 @@
       "source": "ArtificialPlayer/BotPartySystem/PartyGrindService.java",
       "sha256": "881e0634bd3a397cf925abb704fcf9108b65dad45187aa7399cf619ce98f82f4",
       "lines": 327,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotPartyGrindService.cs"
+      ],
+      "integration": "Five companions, real party, 30-minute lifecycle, map follow/channel teardown and native mob adapter wired; full stats/combat/reward presentation remains incomplete."
     },
     {
       "source": "ArtificialPlayer/BotSM.java",
@@ -748,15 +761,22 @@
       "source": "ArtificialPlayer/BotTradeSystem/BotTradeInventory.java",
       "sha256": "1e24e34c9e9aea4076aeb5d36008f7dab948153ffd2c6e9b48fa81e3888b1fab",
       "lines": 47,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Trade/BotTradeWants.cs"
+      ],
+      "integration": "BotTradeInventory exists in the combined C# file; full source API and gameplay acceptance pending."
     },
     {
       "source": "ArtificialPlayer/BotTradeSystem/BotTradeLogic.java",
       "sha256": "0fb6163558f39edac49b5a08e11d93866697a6439752a23ca00606c5b1e4d850",
       "lines": 38,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Trade/BotTradeCommands.cs",
+        "Assets/Scripts/Server/Bot/Trade/BotTradeQueue.cs"
+      ],
+      "integration": "Trade queue/logic subset implemented; complete source business and UI acceptance pending."
     },
     {
       "source": "ArtificialPlayer/BotTradeSystem/BotTradeQueue.java",
@@ -772,8 +792,11 @@
       "source": "ArtificialPlayer/BotTradeSystem/BotTradeSM.java",
       "sha256": "ccba921118a6db94de6731c37a5cc80c58111cf85f96f9c55c349a31a684bb31",
       "lines": 393,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Trade/BotTradeStateMachine.cs"
+      ],
+      "integration": "Concrete trade FSM and service/protocol wired; original frontend and full gameplay acceptance pending."
     },
     {
       "source": "ArtificialPlayer/BotTradeSystem/BotTradeWants.java",
@@ -2001,9 +2024,9 @@
   ],
   "systemStatus": "incomplete",
   "validation": {
-    "serverChecks": 463,
+    "serverChecks": 478,
     "failed": 0,
-    "scope": "Backend463 passed,0 failed. Full Unity compile0 warnings/errors before final combat adapter smoke; real Unity Editor original IMG smoke passed including skill effect expiry, native monster HP damage/contribution and other-channel rejection. NPC harness889 parsed/768 executed/48 run failures/73 Java interop; packed2777 parseFail0. No Play/Android acceptance."
+    "scope": "Backend478 passed,0 failed. Full Unity compile0 warnings/errors; real Unity Editor original IMG smoke passed including skill and enchant effect expiry, original scroll origin/curse routing, native monster HP damage/contribution and other-channel rejection. Original enchant sound payloads exported and byte-verified; audible playback not accepted. NPC harness889 parsed/768 executed/48 run failures/73 Java interop; packed2777 parseFail0. No Play/Android acceptance."
   },
   "remainingIntegration": [
     "9 bot types still use GenericBot; CompanionGrind and Scrolling now concrete (8 of 17)",
@@ -2011,8 +2034,10 @@
     "Full three-wave environment population and startup",
     "Character statistics/set bonuses/HPMP recovery",
     "Party/combat/market/casino behaviors",
-    "Original trade frontend and gameplay acceptance; escrow/settlement/cancel revision guard and committed inventory/meso mirror wired, session-local adapter requires client acceptance",
+    "Original trade frontend and gameplay acceptance; escrow/settlement/cancel revision guard and committed inventory/meso mirror wired, session-local adapter requires client acceptance; bot-originated incoming invitation acceptance now wired through transport with source timeout boundaries",
     "Frontend name tags, speech balloons, accessories, chairs, mounts, skill effects and interactions; basic paper-doll and known movement/emote output wired",
     "Original TownWandererDialogue bytes preserved; source catches parser failure and skips speech"
-  ]
+  ],
+  "statusReport": "docs/solomapling-unfinished.md",
+  "auditNote": "Source file inventory is a conservative historical mapping, not a completion percentage. Entries without current mapping require individual call-chain review; not_ported is not proof that no equivalent C# exists. See statusReport."
 }

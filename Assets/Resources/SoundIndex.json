@@ -31,6 +31,14 @@
   "ms": 367,
   "path": "Sound/Game/DropItem.mp3"
  },
+ "Game/EnchantFailure": {
+  "ms": 2153,
+  "path": "Sound/Game/EnchantFailure.mp3"
+ },
+ "Game/EnchantSuccess": {
+  "ms": 1862,
+  "path": "Sound/Game/EnchantSuccess.mp3"
+ },
  "Game/GameIn": {
   "ms": 1689,
   "path": "Sound/Game/GameIn.mp3"

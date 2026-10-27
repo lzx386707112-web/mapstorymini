@@ -27,7 +27,7 @@ namespace Server.Bot
             BotClient.Init(db);
             BotTypeManager.Messenger = messenger ?? new Social.BotMessenger();
             this.parties = parties ?? new BotPartyService(db);
-            invitationWatch=BotTasks.ScheduleFixedRate(()=> { this.parties.TickInvitationTimeouts(); BotTypeManager.Messenger.TickInvitationTimeouts(); },30000,30000);
+            invitationWatch=BotTasks.ScheduleFixedRate(()=> { this.parties.TickInvitationTimeouts(); BotTypeManager.Messenger.TickInvitationTimeouts(); trades?.TickInvitationTimeouts(); },30000,30000);
             trades = new Trade.BotTradeService(db,BotItemCatalog.Shared);
             tradeProtocol = new Trade.BotTradeProtocol(trades, id => players.TryGetValue(id,out var player) ? player : null);
             trades.ChatOutput = (actor,text) => BotTypeManager.Output.Send(Social.BotOutput.Kind.TradeChat,actor,text,
@@ -49,6 +49,7 @@ namespace Server.Bot
                 (map.fieldLimit & 2) != 0,this.parties.Members(actor.id),BotMovementService.HasSnowShoes(actor));
             BotMovementPlayback.Broadcast = PublishMovement;
             BotTypeManager.RealPlayersOnMap = observers.HasRealPlayerNow;
+            BotLogic.OnlinePlayers = () => players.Values;
             observers.Start();
         }
         void PublishMovement(BotCharacter actor, byte[] packet) => Movement?.Invoke(actor, packet);
@@ -143,6 +144,7 @@ namespace Server.Bot
             foreach (var bot in new List<BotCharacter>(BotRegistry.All().Values)) BotGeneration.RemoveBotFromServer(bot);
             BotMovementService.Shutdown(); BotTypeManager.Market.Stop(); BotTasks.Stop(); BotScheduler.Stop();
             BotTypeManager.RealPlayersOnMap = null;
+            BotLogic.OnlinePlayers = null;
             BotMovementService.EnterPortal = null; BotMovementService.ResolveProfile = null;
             BotMovementService.IsObserved = null; BotMovementService.Broadcast = null; BotMovementPlayback.Broadcast = null;
             BotTypeManager.Output.Clear(); players.Clear();

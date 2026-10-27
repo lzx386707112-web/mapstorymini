@@ -222,6 +222,9 @@ static class BotChecks
             server.Transport.SaveCharacter(new SaveCharacterRequest { characterId=id,character=preSale });
             check(player.trade==null && CharactersDao.FindById(db,id).meso==900 && InventoryDao.CountOf(db,id,2000000)==1 && mirroredDelta==-100,
                 "成交后旧快照不补回货款、不抹掉到账商品且金币镜像净扣一次");
+            runtime.SynchronizePlayer(preSale,910000000,0,0);
+            check(player.character.inventory.Exists(item=>item.itemId==2000000 && item.quantity==1),
+                "旧快照获新修订号时同时刷新权威背包，避免后续新交易覆盖到账商品");
         }
         finally { GameServer.Stop(); }
     }
@@ -510,6 +513,31 @@ static class BotChecks
             player.character.inventory.Exists(i => i.itemId == purchasedId && i.quantity >= 1) &&
             CharService.Load(db,id).inventory.Exists(i => i.itemId == purchasedId),
             "商人真实报价经transport双边确认交付原商品并持久化金币库存");
+        check(runtime.trades.Invite(seller,player) &&
+            protocol.Handle(new BotTradeRequest { characterId=id,operation=BotTradeOperation.Read }).incomingInvitation,
+            "假人主动交易在实际协议响应暴露待接受邀请");
+        var staleAccept = protocol.Handle(new BotTradeRequest { characterId=id,botId=buyer.id,operation=BotTradeOperation.Accept });
+        check(!staleAccept.ok && !staleAccept.accepted && staleAccept.incomingInvitation,
+            "旧交易对象的接受请求不能误接受当前邀请");
+        var acceptedInvite = protocol.Handle(new BotTradeRequest { characterId=id,botId=seller.id,operation=BotTradeOperation.Accept });
+        check(acceptedInvite.ok && acceptedInvite.accepted && !acceptedInvite.incomingInvitation && seller.trade!=null,
+            "真人经transport实际接受假人主动邀请并打开双边交易");
+        protocol.Handle(new BotTradeRequest { characterId=id,operation=BotTradeOperation.Cancel });
+        protocol.Handle(new BotTradeRequest { characterId=id,botId=seller.id,operation=BotTradeOperation.Invite });
+        check(!protocol.Handle(new BotTradeRequest { characterId=id,botId=seller.id,operation=BotTradeOperation.Accept }).ok &&
+            !((BotTradeService.Session)player.trade).FullTrade,
+            "交易发起方不能自我接受并绕过商人请求队列");
+        protocol.Handle(new BotTradeRequest { characterId=id,operation=BotTradeOperation.Cancel });
+        runtime.trades.Invite(seller,player);
+        for (int tick=0;tick<6;tick++) runtime.trades.TickInvitationTimeouts();
+        check(protocol.Handle(new BotTradeRequest { characterId=id,operation=BotTradeOperation.Read }).incomingInvitation,
+            "交易邀请保留原端前六轮超时边界");
+        runtime.trades.TickInvitationTimeouts();
+        check(player.trade!=null && !protocol.Handle(new BotTradeRequest { characterId=id,operation=BotTradeOperation.Read }).incomingInvitation,
+            "第七轮只移除交易邀请，按原端保留会话直到visit或取消");
+        var expiredVisit=protocol.Handle(new BotTradeRequest { characterId=id,botId=seller.id,operation=BotTradeOperation.Accept });
+        check(!expiredVisit.ok && !expiredVisit.active && seller.trade==null,
+            "接受过期交易邀请按visitTrade失败路径取消双边会话");
         BotTasks.OnError = previousErrorHandler;
         BotTasks.Stop();
     }
@@ -1314,6 +1342,35 @@ static class BotChecks
             "假人传送门按源端回退portal0并重建目标地图移动执行器");
         var chatBot = new BotCharacter { id = 20886, name = "RuntimeChatBot" };
         BotRegistry.Add(chatBot); BotRegistry.EnterMap(chatBot, 101000000);
+        chatBot.x = 100; chatBot.y = 100;
+        check(ReferenceEquals(BotLogic.WaitForPlayerInRange(chatBot,500,150),actor) &&
+            BotLogic.GetRealPlayersInRange(chatBot,500,150).Count == 1,
+            "原范围查询接真实会话角色，不再恒返回空；保持地图入场顺序");
+        actor.x = 350;
+        check(BotLogic.GetRealPlayersInRange(chatBot,500,150).Count == 0,
+            "Java矩形右边界不包含，不能把半宽解释成全宽");
+        actor.x = -150; actor.y = -20;
+        check(BotLogic.GetRealPlayersInRange(chatBot,500,150).Count == 1,
+            "原矩形包含左上边界，纵向采用20%偏移而非人物脚底中心");
+        actor.y = 130;
+        check(BotLogic.GetRealPlayersInRange(chatBot,500,150).Count == 0,
+            "原矩形下边界不包含");
+        actor.x = 100; actor.y = 100;
+        chatBot.channel = 2;
+        check(BotLogic.WaitForPlayerInRange(chatBot,500,150) == null,
+            "同图不同频道真人不参与假人范围交互");
+        chatBot.channel = 1;
+        var otherBot = new BotCharacter { id = 20885, x = 100, y = 100 };
+        BotRegistry.Add(otherBot); BotRegistry.EnterMap(otherBot,101000000);
+        actor.online = false;
+        check(ReferenceEquals(BotLogic.WaitForPlayerInRange(chatBot,500,150),otherBot) &&
+            BotLogic.GetRealPlayersInRange(chatBot,500,150).Count == 0,
+            "等待范围源逻辑可返回假人，真人专用查询排除假人及离线角色");
+        actor.online = true;
+        map.npcs.Add(new MapNpcPosition { id = -12345 });
+        check(BotLogic.IsNpcPresent(map.mapId,-12345) && !BotLogic.IsNpcPresent(map.mapId,-12346),
+            "NPC存在检查读取真实已注册地图实体");
+        map.npcs.RemoveAt(map.npcs.Count-1);
         var social = BotTypeManager.CreateAndSetBot(chatBot, BotType.SOCIAL_BOT);
         check(runtime.ReceiveChat(actor.id, "RuntimeChatBot 你好") && !runtime.ReceiveChat(actor.id, "/ignored"),
             "实际会话聊天入口接primary队列并排除斜线命令");

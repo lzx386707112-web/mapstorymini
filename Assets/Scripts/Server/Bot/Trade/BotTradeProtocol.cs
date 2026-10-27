@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Server.Bot.Trade
 {
-    public enum BotTradeOperation { Read, Invite, OfferItem, OfferMeso, Confirm, Cancel, Chat }
+    public enum BotTradeOperation { Read, Invite, OfferItem, OfferMeso, Confirm, Cancel, Chat, Accept }
     public sealed class BotTradeRequest
     {
         public int characterId, botId, inventoryType, inventoryPosition, quantity, slot, meso;
@@ -12,7 +12,7 @@ namespace Server.Bot.Trade
     }
     public sealed class BotTradeResponse
     {
-        public bool ok = true, active, accepted, locked, partnerLocked;
+        public bool ok = true, active, accepted, locked, partnerLocked, incomingInvitation;
         public string error, partnerName;
         public int partnerId, meso, partnerMeso;
         public FullCharacter character;
@@ -39,6 +39,15 @@ namespace Server.Bot.Trade
                 var session = player.trade as BotTradeService.Session;
                 if (session == null) error = "交易已结束";
                 else if (request.operation == BotTradeOperation.Cancel) session.Decline();
+                else if (request.operation == BotTradeOperation.Accept)
+                {
+                    if (!session.IsIncoming || session.partner?.actor.id != request.botId) error = "交易邀请已变更";
+                    else
+                    {
+                        session.Accept();
+                        if (!session.FullTrade) error = "交易邀请已过期";
+                    }
+                }
                 else if (!session.FullTrade) error = "对方尚未接受交易";
                 else switch (request.operation)
                 {
@@ -63,6 +72,7 @@ namespace Server.Bot.Trade
             if (current != null)
             {
                 result.accepted = current.FullTrade; result.locked = current.locked;
+                result.incomingInvitation = current.IsIncoming && current.InvitationPending;
                 result.meso = current.meso; result.items.AddRange(current.Items);
                 if (current.partner != null)
                 {

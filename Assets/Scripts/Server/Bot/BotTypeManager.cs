@@ -44,12 +44,11 @@ namespace Server.Bot
         static BotDialogue dialogue;
         static MarketItemPool items;
         static MarketEconomy economy;
-        static MarketEquipmentPool equipment;
         static ScrollingBot CreateScrollingBot(BotCharacter actor)
         {
             var catalog=BotItemCatalog.Shared;
             var pool=items ??= new MarketItemPool(BotResources.Load());
-            equipment ??= new MarketEquipmentPool(pool,catalog,new EquipMetadataCache(catalog,EquipMetadataCache.LoadPools()),BotClient.GetBotClient().db);
+            var equipment = new MarketEquipmentPool(pool,catalog,new EquipMetadataCache(catalog,EquipMetadataCache.LoadPools()),BotClient.GetBotClient().db);
             return new ScrollingBot(actor,()=>equipment.ForJob("A",0),new MarketScrollPricing(pool,catalog),
                 economy ??= new MarketEconomy(),dialogue ??= new BotDialogue(BotResources.Load()));
         }
