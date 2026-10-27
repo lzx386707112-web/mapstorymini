@@ -105,6 +105,14 @@ public static class GameSideMenu
             gameplayOnly = false,
             run = OpenVirtualEditor,
         },
+        new MenuEntry
+        {
+            glyph = "后",
+            title = "后台系统",
+            desc = "浏览器打开服务器管理后台",
+            gameplayOnly = false,
+            run = OpenAdminConsole,
+        },
     };
 
     // —————————— 面板状态 ——————————
@@ -303,6 +311,21 @@ public static class GameSideMenu
         Close(true);
         if (KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
         if (!VirtualControlsEditor.Visible) VirtualControlsEditor.Toggle();
+    }
+
+    // 后台系统：在游戏进程里起本地 HTTP 服务（只监听 127.0.0.1），再用系统默认浏览器打开。
+    // 服务起不来（端口全占）时只提示，不影响游戏。
+    static void OpenAdminConsole()
+    {
+        try
+        {
+            string url = AdminHost.OpenInBrowser();
+            BottomBar.Toast("已打开后台系统 " + url);
+        }
+        catch (Exception e)
+        {
+            BottomBar.Toast("后台系统启动失败：" + e.Message);
+        }
     }
 
     // 显示/隐藏整层虚拟按键：只切 OverlayVisible，游戏逻辑、键位映射、布局存档都不动。

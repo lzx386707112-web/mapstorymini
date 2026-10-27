@@ -163,16 +163,6 @@ const GAME: AppRouteRecordRaw = {
       },
     },
     {
-      path: 'mapDetect',
-      name: 'MapDetect',
-      component: () => import('@/views/game/mapDetect/index.vue'),
-      meta: {
-        locale: 'menu.game.mapDetect',
-        requiresAuth: true,
-        roles: ['admin'],
-      },
-    },
-    {
       path: 'questBrowse',
       name: 'QuestBrowse',
       component: () => import('@/views/game/questBrowse/index.vue'),

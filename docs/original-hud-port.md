@@ -299,9 +299,12 @@ Q 开任务窗，C 打开本地聊天输入，界面显示可切换。尚无对�
 - 素材候选：星 = `UI/Basic.img/BtHide2` 或 `BtHide3`（12×12，青蓝底 (88,196,245) +
   白色四角星）；箭头 = `UI/Basic.img/VScr/disabled/prev` + `/next`（12×12，灰底
   (188,188,188) + 白色箭头，源端这两个确实是灰的）。
-- `BeiDou.exe` 里查不到 `BtHide*` / `VScr` / `BtUP` 任何字面量（连 `backgrnd2`、
-  `iconMemo`、`BtClaim`、`quickSlot` 都查不到，客户端用哈希/索引解析节点名），
-  静态分析无法坐实 → 等用户确认后再实现。
+- `BeiDou.exe` 明文里查不到 `BtHide*` / `VScr` / `BtUP`，但**它们都在加密字符串池里**
+  （`BtHide` 2561 / `BtHide2` 2562 / `BtHide3` 2563 / `BtUP` 2598 / `BtDown` 2599）。
+  之前"查不到"是因为只搜了明文，结论作废。
+- 但"池里有"≠"底栏用了"：`BtHide` 的 10 个 `push 0xa01` 引用点逐个看过，全是别的窗口
+  各自的隐藏按钮；`BtHide2`/`BtHide3` 一次 `push` 都没有。所以青色四方星与竖排 ▲▼
+  **仍无法坐实是哪两个节点**，按"不猜"原则继续不画，等用户确认后再实现。
 
 ## 2026-10-27 补：系统消息按 type 落点
 
@@ -343,8 +346,15 @@ Q 开任务窗，C 打开本地聊天输入，界面显示可切换。尚无对�
 - **`[系统]` 前缀不是客户端加的**。`BeiDou.exe` 里 `[系统]` / `系统` / `[组队]` / `所有人`
   在 UTF-16LE / GBK / UTF-8 下全部 0 命中；前缀来自服务端 i18n
   `Message_zh_CN.properties` 第 1107 行。要复现这句话，前缀必须在下发处带。
+- **但 type 0 的 `[Notice] ` 前缀是客户端加的**。`0xA22785` 是消息入口（`type = pkt[0]`），
+  `0xA229B0` 按 type 跳 14 项表（表在 `0xA236D3`）；case 0 在 `0xA229C0` 处
+  `GetString(0x37A)` = `[Notice]` → 拼字面量 `" "`（VA `0xAF1E78`）→ 拼正文。
+  已按此实现。
 - **`%s : %s` 是"空格冒号空格"**，在 exe 文件偏移 `0x6f1618`（VA `0xAF1618`），
   唯一引用点 `0x45B756`。不是 `%s: %s` 也不是 `%s:%s`。
+- 三个聊天落点最终都调 `0x4906B5(文本, 类型号)`：type 0 → 10、type 5 → **12**、type 6 → 10。
+  类型号再进 `0x8DB070`（底栏聊天日志）。**10 与 12 就是"浅蓝 / 粉"的区分点**，
+  但颜色常量本身还没在绘制函数里定位到。
 
 **验证**：`dotnet build tools/unity-compile-check` 0 error；
 `Unity -batchmode -executeMethod BottomBarReview.Run` 新增第 5 张 `bar_5_sysmsg.png`
@@ -353,9 +363,16 @@ Q 开任务窗，C 打开本地聊天输入，界面显示可切换。尚无对�
 
 **还没做的**（按「不猜」原则，需用户拍板）：
 
-- **type 1 居中弹窗**现在退回 Toast。素材有 `UI/Basic.img/Notice`（264×132 单张，自带 OK 框）
-  与 `Notice2`（258×40/20/47 九宫格）两种候选，exe 里查不到字面量，版面参数坐实不了。
+- **type 1 居中弹窗**现在退回 Toast。素材候选：`UI/Basic.img/Notice/backgrnd`（264×132 单张，
+  自带 OK 框）、`Notice2`（258×40/20/47）、`Notice3`（266×21/20/55）、
+  `Notice5`（286×22/1/79，origin 在正中 (133,40)，最像"居中弹窗"）。
+  池里还有 `DlgNotice`(1232)、`BtOK`(1255/2263)、`BtCancel2`(1258)、`Notice3/t,c,s`(2685-2687)；
+  `Notice3` 三段的 `push` 站点 0x515EE2 / 0x515FC5 / 0x5160A8 在同一函数内，
+  尾部 0x516337 是 `CreateButton(id, x=205, y=H−30)` + `BtCancel2`，0x516478 又引 `DlgNotice`
+  → 那个函数是 `CDlgNotice` 的创建逻辑。但 `Notice/backgrnd`(1914) 找不到干净的 `push 0x77a`
+  （唯一命中是 `call` 的地址操作数，假阳性）。**到底复用哪套皮肤、文字区/按钮坐标，仍需用户确认。**
 - **type 0/6 的浅蓝**当前取 `#AAD7FF`，只是按类型名 `Lightblue` 推的，没有截图证据。
+  扫过 `.text`/`.rdata` 找"按 type 索引的颜色数组"，噪声太大，没定位到。
 
 
 

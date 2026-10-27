@@ -160,6 +160,8 @@ namespace Server.Bot
 
         // —— 源端钩子 ——
         public virtual bool IsAvailableForAmbientActions() => false;
+        public virtual void DisplayCommands(BotActor player)
+            => output.Send(BotOutput.Kind.GuideTalk, player, "1. " + chr.name + "\r\n", targetId: player.id);
 
         public virtual void CheckPrioritySpeed()
         {

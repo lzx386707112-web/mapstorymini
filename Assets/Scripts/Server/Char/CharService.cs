@@ -77,35 +77,7 @@ public static class CharService
             });
 
         foreach (var r in InventoryDao.ItemsByCharacter(db, characterId))
-        {
-            var e = new InventoryEntry
-            {
-                itemRowId = Convert(r, "inventoryitemid"),
-                expiration = Convert(r, "expiration"),
-                itemId = (int)Convert(r, "itemid"),
-                inventoryType = (int)Convert(r, "inventorytype"),
-                position = (int)Convert(r, "position"),
-                quantity = (int)Convert(r, "quantity"),
-                flag = (int)Convert(r, "flag"),
-                owner = DbStore.Str(r, "owner"), giftFrom = DbStore.Str(r, "giftFrom"),
-                petId = DbStore.Int(r, "petid", -1), itemData = new Dictionary<string, object>(r),
-            };
-            var eq = InventoryDao.EquipmentOf(db, e.itemRowId);
-            if (eq != null)
-            {
-                e.isEquip = true;
-                e.equipmentData = new Dictionary<string, object>(eq);
-                e.str = (int)Convert(eq, "str"); e.dex = (int)Convert(eq, "dex");
-                e.int_ = (int)Convert(eq, "int"); e.luk = (int)Convert(eq, "luk");
-                e.hp = (int)Convert(eq, "hp"); e.mp = (int)Convert(eq, "mp");
-                e.watk = (int)Convert(eq, "watk"); e.matk = (int)Convert(eq, "matk");
-                e.wdef = (int)Convert(eq, "wdef"); e.mdef = (int)Convert(eq, "mdef");
-                e.acc = (int)Convert(eq, "acc"); e.avoid = (int)Convert(eq, "avoid");
-                e.hands = (int)Convert(eq, "hands"); e.speed = (int)Convert(eq, "speed");
-                e.jump = (int)Convert(eq, "jump"); e.upgradeslots = (int)Convert(eq, "upgradeslots");
-            }
-            full.inventory.Add(e);
-        }
+            full.inventory.Add(ToInventoryEntry(db, r));
 
         foreach (var r in KeymapDao.ByCharacter(db, characterId))
             full.keymap.Add(new KeymapEntry { key = (int)Convert(r, "key"), type = (int)Convert(r, "type"), action = (int)Convert(r, "action") });
@@ -122,6 +94,40 @@ public static class CharService
 
         full.quickslotKeymap = QuickslotDao.Load(db, rec.accountid);
         return full;
+    }
+
+    // inventoryitems 行 → 内存背包条目（含装备扩展列）。
+    // 抽出来给后台实时同步用：后台改了某个道具，内存里那一行要按同样的规则重建，
+    // 否则退出游戏时 SaveToDb 会用旧值把后台改动覆盖掉。
+    public static InventoryEntry ToInventoryEntry(DbStore db, DbRow r)
+    {
+        var e = new InventoryEntry
+        {
+            itemRowId = Convert(r, "inventoryitemid"),
+            expiration = Convert(r, "expiration"),
+            itemId = (int)Convert(r, "itemid"),
+            inventoryType = (int)Convert(r, "inventorytype"),
+            position = (int)Convert(r, "position"),
+            quantity = (int)Convert(r, "quantity"),
+            flag = (int)Convert(r, "flag"),
+            owner = DbStore.Str(r, "owner"), giftFrom = DbStore.Str(r, "giftFrom"),
+            petId = DbStore.Int(r, "petid", -1), itemData = new Dictionary<string, object>(r),
+        };
+        var eq = InventoryDao.EquipmentOf(db, e.itemRowId);
+        if (eq != null)
+        {
+            e.isEquip = true;
+            e.equipmentData = new Dictionary<string, object>(eq);
+            e.str = (int)Convert(eq, "str"); e.dex = (int)Convert(eq, "dex");
+            e.int_ = (int)Convert(eq, "int"); e.luk = (int)Convert(eq, "luk");
+            e.hp = (int)Convert(eq, "hp"); e.mp = (int)Convert(eq, "mp");
+            e.watk = (int)Convert(eq, "watk"); e.matk = (int)Convert(eq, "matk");
+            e.wdef = (int)Convert(eq, "wdef"); e.mdef = (int)Convert(eq, "mdef");
+            e.acc = (int)Convert(eq, "acc"); e.avoid = (int)Convert(eq, "avoid");
+            e.hands = (int)Convert(eq, "hands"); e.speed = (int)Convert(eq, "speed");
+            e.jump = (int)Convert(eq, "jump"); e.upgradeslots = (int)Convert(eq, "upgradeslots");
+        }
+        return e;
     }
 
     public static void Save(DbStore db, FullCharacter full)

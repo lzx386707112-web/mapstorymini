@@ -12,7 +12,6 @@ import inventory from '@/views/game/inventory/locale/zh-CN';
 import autoban from '@/views/game/autoban/locale/zh-CN';
 import setItem from '@/views/game/setItem/locale/zh-CN';
 import equipmentCatalog from '@/views/game/equipmentCatalog/locale/zh-CN';
-import mapDetect from '@/views/game/mapDetect/locale/zh-CN';
 import questBrowse from '@/views/game/questBrowse/locale/zh-CN';
 import weather from '@/views/game/weather/locale/zh-CN';
 import botControl from '@/views/game/botControl/locale/zh-CN';
@@ -80,7 +79,6 @@ export default {
   ...setItem,
   ...equipmentCatalog,
   ...itemCatalog,
-  ...mapDetect,
   ...questBrowse,
   ...weather,
   ...botControl,

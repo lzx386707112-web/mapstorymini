@@ -25,7 +25,7 @@
 - `Assets/Scripts/Server/Bot` 是后端骨架。已修复ID、CAS、调度回调内重新定时/增删条目、移除与替换状态机清理、换图索引；生成已接 `Server/Field/MapService` 落点。
 - 角色浮点坐标、wander/moving/facing及帧delta接口补齐，解除现有游荡代码编译缺口；帧推进与250ms决策轮分开。
 - `BotWander`已移除110px/s临时位移，接实际地面/空中/绳梯/游泳执行器、导航路径执行、可达ledge选点、观察者门控与400ms决策轮；阶段C仍缺完整移动技能业务、接触/坠落伤害及跟随。
-- SOCIAL_BOT与TOWN_WANDERER_BOT已映射具体类型，其余15种类型仍映射GenericBot。环境填充、装饰、社交、战斗/组队、交易、赌场及前端BotView未完整实现。`FieldDirector.TickBots`已接真人位置与游戏时钟，尚未接前端显示与自动填充；不能声称游戏内可见或Android已验收。不得为填补缺口自行绘制UI或虚构AI行为。
+- SOCIAL_BOT与TOWN_WANDERER_BOT已映射具体类型，其余14种类型仍映射GenericBot。环境填充、装饰、社交、战斗/组队、交易、赌场及前端BotView未完整实现。`FieldDirector.TickBots`已接真人位置与游戏时钟，尚未接前端显示与自动填充；不能声称游戏内可见或Android已验收。不得为填补缺口自行绘制UI或虚构AI行为。
 - 验证入口：项目目录运行 `rtk dotnet run --project tools/server-check --no-restore`；`BotChecks.cs` 覆盖调度、落点、清理、消息分派/过期、事件过滤/退订、移动属性、平台解析、BIN/CSV录制读取和社交时序。当前实际结果：333项通过、0失败，未运行APK构建或Android实机验证。
 
 总体阶段计划仍见外层 `docs/solomapling-analysis.md`；该文档描述的设计不等于已迁移状态。
@@ -96,4 +96,67 @@
 - `TownWandererBot`已具体实现游荡、表情及升级祝贺；源`BotChatter`三个方法为空/false，`discoverTownFamily`只有home，因此不添加聊天AI或跨城行为。源Town与LevelUpCongrats均捕获对话解析异常并跳过台词；保留原YAML字节并跳过发言与当前可用源码一致，不能声称已恢复文件中的对话。
 - `BotFlavor`保留0.12概率、15..40秒冷却、5/3/3权重。动作输出仍待前端消费。
 - `AmbientMapBot`迁移可达行为（85/5/5/5权重、24次选点、180px距离、原录制转身、配置调度与停止清理）。**全源树未发现构造调用者**，因此没有擅自加入自动地图生成；未调用的walkToward/walkSmallSteps不作为运行时逻辑迁入。该类不计入17类枚举已接入数量。
-- 最新后端回归357通过/0失败（含环境行为观察门控与移除清理），不是游戏内或Android验收。上一轮Unity检查0错误，新增环境类之后仍需更新编译检查。游戏可见渲染、自动环境填充、15类具体行为、完整属性/战斗/组队、商城赌场、交易前端及存档生命周期仍未完成。
+- 最新后端回归357通过/0失败（含环境行为观察门控与移除清理），不是游戏内或Android验收。上一轮Unity检查0错误，新增环境类之后仍需更新编译检查。游戏可见渲染、自动环境填充、14类具体行为、完整属性/战斗/组队、商城赌场、交易前端及存档生命周期仍未完成。
+
+## 城镇生成与市场环境动作续迁移
+
+- TownPresenceConfig按原YAML主地图顺序读取等级范围、wanderers、maps/count、dialogue及ban/boost/pins；TownPinsStore在当前Java源码中所有方法为空/空集合，不虚构磁盘sidecar。TownPresenceSampler保留NPC强度1、portal强度0.45、高斯分母135200/33800、宽度与320px高度衰减、0.15底重、9%均匀尾部、每点7候选、30px拥挤扣分；固定pin先落地，无法落地保留原坐标。禁区是加权与候选过滤，原端在全禁时仍可能回退边界，未擅自改成硬禁生成。
+- 6336份地图几何新增原life/type=n坐标。MapFactory.loadLifeFromWz/loadLife使用x/y作为NPC位置，cy是独立字段，选点不误用cy；隐藏NPC同样属于源端采集范围。地图源SHA256随原导出保留。
+- BotTownSpawner迁移EnvironmentManager.spawnTownWanderers：每城min(2,wanderers)，主图portal0锚点，逐个生成忽略环境配额，最多5次重试、200*attempt毫秒间隔，整城结束才SetAndStartBots。已挂到BotRuntime生命周期，**完整三波环境启动尚未接通**，没有只启动第三波并声称全环境完成。
+- BotMapEntryResponder按MAP_ENTERED通知同world/channel/map假人，150..700ms抖动调用原NudgeSoon（1500ms限频、交易/停止状态不唤醒）；会话持有订阅并退出释放。真人换图已发事件；假人抵达观察图的原直接调用点仍待完整接线。
+- FMBot原updateState只执行MarketBotAmbient，RESET设置房间后进入AMBIENT，所有旧购物状态也直接跳回AMBIENT；旧浏览购买调用链不重新启用。FM_BOT已映射具体FMBot；17枚举当前3类具体、14类Generic。保留公开shouldPurchaseItem估价辅助函数。
+- MarketBotAmbient实现REST/WALK/SIT/CLIMB生命周期、72/坐姿偏置/86/93/97分支、市场共享路径预算、坐着聊天和附近220x80px假人聊天、原录制微转身、12..28秒坐姿、120..280px散步与换层导航、8种坐骑及1004骑乘技能状态。**KeepsShopChair仍待实际商店服务生产者；骑乘/坐姿/发言输出仍待前端消费**，不可称游戏可见完成。
+- MovementCommands.walkAlongX迁移为BotRecordedActions：单bot占用、落地修正、10px/160ms封包、距终点<=20px或18步停止、双命令停止、交易提前退出，换图/移除取消旧回调。该逻辑与GCMovement物理导航是源端并存的两套入口；尚未完整迁移所有MovementCommands锁调用者。MarketBotDirector已使用封包步行占用门控。
+- 最新实际后端结果368通过/0失败；新增FM、封包步行、离图清理、估价、城镇配置/选点/生成测试。测试FirstChoiceRandom补齐双参数Next覆盖，避免散步长度/房间号依赖系统随机；生成衣物断言按源HasClothing接受-5或-6。市场改动后Unity编译曾通过0警告/0错误；最终聊天改动后检查见末尾。NativeDamageLines的total局部变量与参数重名导致既有全脚本编译失败，仅重命名局部变量为totalAmount解除阻塞。
+
+## 本地聊天入口接线
+
+- BotRuntime持有Dispatcher与QueueCleaner，在会话退出取消并清空消息；地图角色使用共同入图序号排序，避免先遍历真人或先遍历假人改变原名字子串匹配的消费结果。GameServer将NativeSocialService已通过校验的All频道发言送入primary并发布CHAT_GENERAL；私聊/组队等频道不进入地图分派，斜线内容跳过。这是本地transport集成适配：当前GeneralChatHandler.java未发现原PRIMARY入队调用点，不能把新增适配描述成已找到了该源端hook。
+- BotStateMachine.DisplayCommands保留原GuideTalk的单名字提示；FMBot覆盖为聊天选项。前端GuideTalk/Hint/Chat消息的显示消费尚未接线。
+- 新增实际会话回归：聊天入队、斜线排除、每两秒分派、真人相同对象成为社交Respondant；此前370通过/0失败。补核TownPresenceSampler的pin调用实际是findGroundPoint（包含上探26px）而非仅Below，已修正并新增边界回归，最新后端371通过/0失败。最终Unity检查首轮被同时变动的BossUnit.TakeReplayDot缺失阻塞，随后该接口已出现；重检又被AdminRoutes.cs:68的AdminCtx.QueryLong缺失与:80的object.ContainsKey阻塞。故最终全脚本检查未通过，不能沿用前一轮0错误结果。未修改这些后台接口。
+
+## 假人地图纸娃娃接线（2026-10-27续）
+
+- `BotAppearance.CharacterIds`按源`org/gms/util/PacketCreator.java:addCharEquips`两阶段投影普通/现金槽；现金`-111`武器独立覆盖且置配方末尾。仅将当前WzCharacter支持的身体、头、脸、头发、帽/衣裤/鞋/手套/盾/披风/武器交给原IMG合成器；饰品和完整vslot遮盖尚待迁移，不声称完整纸娃娃。肤色Body=2000+skin、Head=12000+skin。
+- Java身份：PacketCreator SHA256 `2da68878b0c5127ca4e1a9afd7630925ebee91f5fc621981a066b6ca0df9b474`；`constants/game/CharacterStance.java` SHA256 `46c061db6fd6f88295a4aaba4e479119c8e0fadefd800f4a255eb7a05a2a9530`。stance 2/3 walk、4/5 stand、6/7 jump、14/15 ladder、16/17 rope；偶数右奇数左。未核实的编号不猜动作。
+- `FieldDirector.TickBots`同步当前玩家真实频道，并接`BotField.Synchronize`；按地图/world/channel维护独立GameObject和原SpriteAnim，坐标x/PPU、-y/PPU，脚底/部件连接点/z与帧delay复用WzCharacter。外观recipe不受本机Profile装备覆盖；外观更新显式强制重播防止SpriteAnim同动作短路。静止绳梯暂停、离图/不同频道/组件释放清理。排序300沿用现有人物默认层，完整原地图page遮挡仍未迁移。
+- BotOutput新增Published事件（Poll队列保留），地图显示订阅原表情编号；挥击、技能和其他输出仍待消费者。原BotAttack.basicSwing采用BotAttackData的随机bodyAction及固定速度4，不能用本机玩家普通攻击配方冒充。当前actor末位置直接同步，不声称完成原客户端移动封包插值。坐姿仅复用sit动作，尚无椅子/坐骑原图显示。
+- 后端新增现金覆盖、肤色、普通武器恢复回归，373通过/0失败；首次全脚本编译0警告/0错误。`BotPresentationChecks.Run`经真实Unity batch执行通过：原IMG合成、脚底/PPU、八种动作无站立回退、朝向、绳梯停帧、表情入口、现金武器换配方、跨频道实体清理。它是Editor实体/资源烟测，不是Play画面或Android验收。最终后端374通过/0失败（新增同图换频道身份回归）。未构建APK。
+
+### 显示逆向入口（已确认资源，布局仍待核实）
+
+- EXE身份仍为`1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`、ImageBase0x400000，使用`tools/inspect_beidou_client.py --strings`和`--start/--end`复现。字符串1388=`UI/ChatBalloon.img/`，真push调用点0x48A963/0x48B530，调用GetString 0x79E805。0x4890C4为九宫格资源处理函数入口（mov eax,0xA8024D; call 0xA60B98），0x4890ED开始取nw（字符串1394），后续c=1399、arrow=1403；0x48AE18读取clr=1409。0x48A935为气泡资源选择/构造入口之一。**尚未确认完整文字区、角色偏移、超时与调用者合同，不能据此自绘。**
+- `UI/ChatBalloon.img/0`原IMG：nw/ne/sw/se均6x6，origin依次(6,6)/(0,6)/(6,0)/(0,0)；n/s为12x6，origin(0,6)/(0,0)；w/e为6x14，origin(6,0)/(0,0)；c为12x14，origin(0,0)；arrow13x13 origin(1,0)；clr=-16777216。复现`rtk proxy python3 tools/imgdump.py UI/ChatBalloon.img 0 --depth 3`。
+- 姓名皮肤字符串1303=`UI/NameTag/%d`，真正push位于0x5F04FE，0x5F0504调用GetString，0x5F051E进行格式化；该分支检查参数type=1000。普通姓名无皮肤分支/文字绘制/角色锚点尚未确认。其他DWORD xref存在大量call操作数字节假阳性，不能把所有xref都当字符串使用点。
+
+## 市场商品、装备备货和卷轴成本续迁移（2026-10-27）
+- 纠正导出语义：源YamlBeans 1.17无类型`YamlReader.read()`返回字符串标量，`01002026`保留原拼写，后续`Integer.parseInt`按十进制得1002026。PyYAML safe_load误作八进制263190。现统一BaseLoader，保留929份原base64/SHA；`export_solomapling.py --verify-only`同时核对YAML结构和字符串标量，已验证929份。源Town二进制仍仅保留原字节，未虚构解析结果。
+- MarketItemPool按原六个池的顺序建索引，后项覆盖；版本取不超过当前版本的最大键，默认55。卷轴四抽、药水/ETC/技能书三抽、椅子一抽保留循环tier变更与首ID去重；飞镖两抽每次从传入tier独立分配且不去重，v39前不生成诅咒卷轴。数量取原itemQuantities闭区间，缺失回退5。
+- MarketEconomy保留12个两小时指数、星期/随机/房间/门口溢价及每步Java整数截断；clean number原源码是整数除法，不擅改四舍五入。市场波动和价格风格已按源代码迁移，尚未接实际市场店铺服务。
+- MarketScrollPricing迁移ScrollInfoManager原支持映射与版本门控。最高差值同值时保留ComparisonResult以差值为Map key后写覆盖（watt、matt、str、dex、int、luk，最后者胜出）；不添加原端没有支持的武器。强化成本表按(cost+卷轴价)/成功率推导，跨成功次数取最低、修正异常后非首档乘0.6；不存在属性档回退1，超过int上限饱和。
+- ScrollPatternGenerator在游戏版本40切换分布；第一组不按槽数裁剪。源ScrollGivenItem调用scrollEquipWithId(...isGM=true)，原迁移SQL默认use_perfect_gm_scroll=true，故必成功且不扣次数，最后统一清零槽。关闭时保留scroll_chance_rolls及失败消耗配置；源循环忽略诅咒返回null，不擅自销毁其仍持有对象。增益取原IMG并按short上限处理，强化次数写equipmentData.level。
+- MarketEquipmentPool迁移YAML类别无放回抽索引后恢复源顺序、按模式重复、不去重装备；热房S模式2/2/1/1。缓存商品最多15次尝试取4件，过滤现金/不可交易/任务/职业/性别后取等级窗口和最低WZ价；显式LoadDesirable保留原启动加载时机，不提前调用。低于等于50的原WZ价按源getWzPrice替换5000000，再按职业估价。缓存上品随机化只改变源指定非零属性；ForJob合并原五职业YAML与缓存商品。
+- 验证：后端399通过/0失败；新增链路覆盖实际原IMG强化和估价、YAML备货、缓存筛选；929资源原字节/哈希/YAML语义核对通过。纯Server/Bot无UnityEngine。商人/NX/卷轴交易状态机、三波环境、真实店铺和显示交互仍未接完整，不计入已完成bot类型数。没有新增UI布局或EXE逆向结论，没有APK/Android验收。
+
+本次依据身份（相对soloMapling/）：
+
+| 源文件 | SHA256 |
+| --- | --- |
+| `FreeMarket/FMEconomyManager.java` | `8bb45d02674b8d429d0926b5da27e4b80d96488b53794701e15c279cfc32f429` |
+| `FreeMarket/ArtificialShopGenerator.java` | `dd772d749fb15fd9accbf8c58aef0497e23a1a6178c187eb00fa9d7e6bd69ea9` |
+| `FreeMarket/EquipListGenerator.java` | `c779f7745141b98e8d50b92a36b89f7aa591fbfe6c3a97debe032e9c8378ca02` |
+| `FreeMarket/FMItem.java` | `c89b327b78c301d29c9f51b91ccba0c178f88c920bcca217197f13ca7b20dcde` |
+| `FreeMarket/FMEquip.java` | `11b7bdbc52c3b2d7be42e8e8f266e1f98db7dea395f0d9dcb7d99d4152173d1f` |
+| `itemPool/ItemDatabase.java` | `418fff5e94d20acb76880233150295d2ff3cbae207b0412e3a4c0b7bcb816eb7` |
+| `itemPool/ItemSelector.java` | `914b41a76cc2f9e8b4a61b09b2eecbcdd41fd5452fed88743796db7cc94c4a16` |
+| `itemPool/QuantitySelector.java` | `dc4bb52eec175ca565643ca67f187681a92976b11b4dc4c0096a1fd0a07fa512` |
+| `itemPool/ScrollInfoManager.java` | `96dd8103e2a7c45af5ac50dce3a1a472121e96e484c56c98490e76b49f67dd03` |
+| `itemPool/ScrollPatternGenerator.java` | `a69886f3e1629214ce9660208798259acaa720740e52dd3d3fd8220d3176c854` |
+| `itemPool/ScrolledItemComparator.java` | `34f19ea90670ea9f1ccb8a0e08edc11a2b98f244c89971a5097da97823317778` |
+| `itemPool/ComparisonResult.java` | `596450d4f9d53dafe9711b6e301a469de7c45f01f0853734010ef28d1fe556b0` |
+| `itemPool/UniqueStatBonusList.java` | `3af5f887f0e8f492db7f868d4cbdb31127a2033eb518d8ad6a4fe0e53659f016` |
+| `itemPool/UpgradeSimulator.java` | `3c64f153992d9a34bbeb5d74e30aaf48a302ab460f37f55f4643a214fb3a2084` |
+| `itemPool/ItemUtilities.java` | `15f0c8722647d0c906dcc26cf7febafc2c7200b44a20a5ff813ff4cd2a6b5a34` |
+| `itemPool/DesirableEquipList.java` | `e3c68aaa443ec4de1bea4956d55f06c42d3f95089729642fa5300c7dbdb95755` |
+
+最终复检：新增ForJob及低WZ价回退之后，后端399通过/0失败，全Unity脚本编译0警告/0错误；仍非完整系统交付。

@@ -129,6 +129,16 @@ public partial class SkillSystem
     void Impact(SkillDef s,NativeSkillDefinition definition,Component target,int direction,bool successful)
     {
         if(!successful)return;
+        if(definition.Id!=s.native.Id || string.IsNullOrEmpty(s.art))
+        {
+            string path="Skill/"+(definition.Id/10000).ToString("D3")+".img/skill/"+definition.Id+"/hit/0";
+            var node=WzAssets.Node(path);
+            if(node!=null)
+            {
+                var effect=NativeImgAnimation.Spawn(path,target.transform,TargetAnchor(target,node.Int("pos")),360,direction>0);
+                if(effect!=null){nativeReplayEffects.RemoveAll(x=>x==null);nativeReplayEffects.Add(effect);return;}
+            }
+        }
         string key=definition.Id==1121021 ? "illusion_slash" : definition.Id==1121022 ? "illusion_explosion" : s.art;
         var hits=NativeSkillVfx.Parts(key,"hit");
         if(hits.Count>0)

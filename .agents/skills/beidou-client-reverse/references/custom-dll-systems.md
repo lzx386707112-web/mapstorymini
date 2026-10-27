@@ -137,7 +137,7 @@ rtk proxy /Applications/Unity/Unity.app/Contents/MacOS/Unity -batchmode -nograph
 
 ### 回放数据与当前接入
 
-- `tools/export_skill_replays.py` 读取原 `gms-server/src/main/java/org/gms/net/server/channel/handlers/{CloseRangeDamageHandler,MagicDamageHandler,RangedAttackHandler}.java`，执行原 `ExplorerOtherSkillCompat.java` 的范围/拼接函数，不按视频长度猜时点。源文件及技能常量 SHA256 留在 `docs/skill-replay-source.json`。当前 `NativeSkillReplays.json` 为71个施放入口、116阶段、1925时点，覆盖39个MCV入口；单次原攻击的3个视频入口也明确保留。
+- `tools/export_skill_replays.py` 读取原 `gms-server/src/main/java/org/gms/net/server/channel/handlers/{CloseRangeDamageHandler,MagicDamageHandler,RangedAttackHandler}.java`，执行原 `ExplorerOtherSkillCompat.java` 的范围/拼接函数，不按视频长度猜时点。源文件及技能常量 SHA256 留在 `docs/skill-replay-source.json`。当前 `NativeSkillReplays.json` 为73个施放入口（新增追踪风与箭雨状态入口），116阶段、1925时点，覆盖39个MCV入口；单次原攻击的3个视频入口也明确保留。
 - `NativeSkillReplay` 在成功施放/扣MP/冷却后捕获原攻击模板；阶段按技能等级上限读取真实WZ，循环复用模板、Java非负四舍五入、保留逐段暴击、19999999上限。目标死亡、换图、施法者失效停止；HP在阶段触发时一次结算，数字可延迟。
 - 固定原点集合依据原 `usesFixedThunderBreakerOrigin`，包含五个冒险家战士视频技能、奔雷/迅灭/雷枪；不是仅雷枪。PhoenixDriveVI实时朝向，剑影最多8目标，海龙拳终结矩形±1000px、上450/下200；风魔手里剑在420..780ms沿朝向移动600px、280px方形。具体分支及数值保存在导出器与运行时。
 - fallback从原Java规则迁移物理/魔法最大伤害、烈焰增幅、战士最低伤害与精通；**首击仍经过项目现有RollAttack，并未完成EXE随机、防御、动作分类的完整逆向**。
@@ -167,7 +167,7 @@ rtk proxy /Applications/Unity/Unity.app/Contents/MacOS/Unity -batchmode -nograph
 - `NativeWeatherField` 使用原21张背景层、57天空key与264排除地图：sky2/dust2/night3/rainbow1/cloud3/rain4/fog4/snow2；沿用NativeMapView背景铺图、原BACKENTRY字段、调色/profile、黎明黄昏、30ms淡入。水下230仅染色无降水。普通云雾漂移为引擎−5×rx，不另加推测风偏移。
 - 纠正旧注释：当前weatherfx的blizzard不使用snow背景层，而是4雾层加280个原生粒子；普通snow只有2背景层。**当前仅迁移背景层，blizzard缺280粒子，不得报完整暴雪**。
 - `NativeWeatherLightning.cs` 由原闪电方程机械导出：scene release .697、sky release .578、storm且rainlevel≥.7；`verify_lightning.py` 对原样C++公式729756组向量比较，误差≤1e−6。
-- Unity天气层−1100+index/前景700+index，天空−1200，山−800；这是接入映射。未移植原生落叶/樱花/沙暴/暴雪粒子、环境声音、溅水/水洼/积雪、灯与植物摆动、完整场景重新照明及外部配置替换。不得以泛用Unity粒子代替。
+- Unity天气层−1100+index/前景700+index，天空−1200，山−800；这是接入映射。此段历史剩余项中的原生粒子、环境声音、地面天气已由下节接入；灯与植物摆动、完整场景重新照明及外部配置替换仍未移植。不得以泛用Unity粒子代替。
 
 ### 续作验证与边界
 
@@ -185,4 +185,79 @@ rtk proxy /Applications/Unity/Unity.app/Contents/MacOS/Unity -batchmode -nograph
 - 60秒窗口，从首次按键计时；有效按键间隔≥180ms；第12按设finishing，终结期间拒绝推进。换图/死亡/角色失效走原combat lifecycle取消；到期只清未finishing状态。
 - 每次按键原捕获攻击先结算；再依原捕获顺序向最多3个仍活目标追加一次雷击（不是向同一目标连打3次），使用首个伤害模板依原/雷击技能百分比调整，找不到源模板才生成近战fallback。主段和雷击额外本地数字使用总数分支。
 - 第12按从该次捕获生成终结模板；510ms终结，840/1170/1500ms大雷，目标/原点实时跟随角色，使用各子技能WZ范围与目标数；最后一次结束清状态。
-- `NativeLightningSpearState` 为无Unity状态机，`NativeSkillReplay`接上述伤害段，CancelActions重置；纯状态回归覆盖179/180ms、12按、finishing锁、60秒到期、生命周期清除。**combo visual的原动作/特效尚未接通；现有角色通用动作锁仍可能把可按间隔限制为320ms，不能称原端完整按键手感已验收**。没有新增推测绘制。
+- `NativeLightningSpearState` 为无Unity状态机，`NativeSkillReplay`接上述伤害段，CancelActions重置；纯状态回归覆盖179/180ms、12按、finishing锁、60秒到期、生命周期清除。**此处为历史边界，已由下节 numeric action/原 effect 接入更新；180ms 是原服务器节流与当前移植输入门，不等于已逆向 EXE 完整动作锁。**
+
+
+## 2026-10-27 续作：追击、雷枪动作、落地天气与环境声
+
+### 服务端追击合同与当前运行时
+
+`tools/export_skill_replays.py` 同时导出 `NativeSkillFollowups.json`，数组与常量来自当前原 Java；源文件 SHA 随 `docs/skill-replay-source.json` 保存。当前73入口/116标准阶段/1925标准时点；动态索敌波次不计入1925。
+
+- `CloseRangeDamageHandler.triggerDualBladeFollowUps`：SHADOWER 家族且原攻击 numAttacked>0，每个原攻击计数一次（不是每个伤害行计数）。BladeFuryVI 4221020 触发 HauntedEdge 共享12s门：Asura4221014在0ms，Projectile4221015在120..720ms间隔120。PhantomBlowVI4221018触发Rakshasa4221016在 **30/120/210/300/390ms**。累计15次触发4221017，390/420/450/480ms，1s门，最多储存60次。未自行添加“必须学过隐藏技能”条件。
+- 四季雨4121023：有捕获目标才存下一次狂乱；下一次使用原4121024阶段且消耗该状态，不重新存狂乱，放行这一次冷却。
+- 箭雨3121010激活70s；有原攻击目标时每5s最多一场3121033，固定施放原点，0..2400ms/240ms，等级取3121010。普通弓/弩攻击也从实际已 roll 的伤害模板接入，不重新随机。
+- MercilessWinds13121003：10个索敌任务在0..900ms/100ms启动，8s截止；固定施放框，空目标100ms后重试。Boss优先，Boss maxHP降序，然后距离、对象ID；Unity最后一项使用实例ID（不是原OID）。命中过的目标只乘一次85%，并非逐次指数衰减。13121018原WZ伤害与段数；1100%单段DOT，每秒一次共9次，同目标用generation刷新而取消旧DOT。DOT直接扣血，保留死亡处理，不重新过滤命中、不打断怪物动作、不播Damage音。
+- Mistral13121013：4080ms后、每2100ms一波，20s内10波，13121015/16/17轮换，数量13/5/3，寿命3000/4000/2400ms，启用延迟270/120/120ms，总截止施放后25s。索敌100ms重试，无WZ框才使用原Java ±1200x±800范围。数字indexed120ms。各隐藏技能现直接读取 `Skill/<job>.img/skill/<id>/hit/0`，保留帧delay、origin，不借主技能hit代替。
+- `NativeSkillFollowups.cs` 接以上状态与伤害；地图身份改变、角色死亡/失效、退出Playing会终止任务；`CancelActions`清任务、DOT与自有动画。箭雨/狂乱状态本身与Java弱角色映射一样不因换图自动重置。
+
+**边界**：这些是服务端规则及已接代码，不是完整职业战斗验收。泛用多飞弹/突进路径仍需核对每个原攻击包的追击计数，而非按每次局部HitAt计数。当前隐藏技能命中特效已接，**Merciless/Mistral召唤飞弹的起点、轨迹、朝向和发射层尚未完整迁移**，不能把即时伤害等同于完整召唤表现。
+
+### 雷枪 numeric action 与原 effect
+
+- `Skill/1512.img/skill/15121022..15121033/action/0` 全为 `alert5`，主技能及15121009/10/11也为该动作。`Character/00002000.img/alert5` 3帧重定向alert0/1/2，delay为−300/+300/+300，时长按绝对值900ms。combo effect 的fix=1。没有自画雷枪。
+- `WzCharacter.Pose`支持 `skill_<数字ID>` 查真实action；每次有效按键 `PlayerCtrl.PlayNativeSkill(15121022+count-1)`；`NativeSkillReplay.PlayNativeReplayEffect`直接加载原effect，fix决定固定地图/跟随人物，z<0置于人物后层，原朝向翻转，保留原origin和delay。15121009追加、15121010/11终结阶段也接原effect。
+- 当前施放门改为180ms，来源是服务器的最小按键间隔；**尚未证明 EXE 的动作取消窗口与这个门完全相同**。未验收12按整套手机手感。
+
+### 当前 EXE 的原生粒子与 Shape2D 证据
+
+EXE身份沿用本记录首表；新增依赖 `clien/Shape2D.dll` SHA256 `5e9b27d392b4a373fcb21d8b188c8b6864c1fd60fc33563ae24c782b26d97e43`，ImageBase `0x51400000`。
+
+- `CField::BlowWeather 0x534A35` → `0x534F2D..534F48` push speed、direction、type、path → `0x63FE57`。builder +8=path,+C=type,+10=direction,+14=speed；天气物品direction缺省0。不要把direction分支误认为type。
+- `0x640448..64048C`：幅度15+(rand()%4)*(rand()%4)，初角rand()%360，初始渐变3000..5999ms。非ani资源随机一个原Canvas变体。random=1时数量为 floor(count*(rand()%25+30)/100)，count缺省100；不是固定count。
+- direction0 `0x6406BD..640700`：起点在原screen box；endY=startY+screenHeight/2；`0x64041C`得到50000−speed*8000，主位移周期为该值/幅度，整数除法；`0x64189B..641916`以VM_FOREVER重复位移。
+- `weatherwind.cpp`：独立xorshift32初值0x9E3779B9，token混入sky再按Mix哈希。沙尘风量±1200..1800、粒子散布±260；暴雪 prevailing±150..300，但实际雪漂移固定向右，|wind|夹在fall的45%..75%再加±90；叶/花prevailing−300..300，加±150。生成后不随帧重新滚风向。
+- `0x640D98..640F7F`：独立原点旋转初角后Rotate(0,2000)，其子点坐标幅度/2,0；`0x6411EF..6411FF` ratio连接参数100/100/100/5，扣除captured起始点。Shape2D `0x51406FA2..51407045` 将父旋转应用到局部坐标，正负值分别加/减0.5后转整数，不能截断代替四舍五入；ratio的5%纵差本身仍整数截断。COM vtable从`0x5140C0FC`开始，+90=`0x5140828F` RelMove，+98=`0x5140847D` ratio，+9C=`0x514086B3` wrap，+A0=`0x51408A50` Rotate。`0x51408B08`角度0意味着持续360度/period（常量`0x5140D8C0`=360.0），并非“不动”。ratio实现`0x514085B3`按整数差×numerator/denominator累加。wrap helper `0x514088A9`为正余数。
+- `0x641026..64106B` wrap左上−halfWidth−幅度/−halfHeight−幅度，宽高screenSize+幅度；最后两个是宽高，不是右下坐标。`weatherfx.cpp`只在native item ID改变时重吹；同种天气换token不使旧粒子突然改轨迹。
+- `NativeWeatherParticles`按以上原Canvas、数量、速度、风、主位移和ratio摆动接入；Android将resolution.cpp固定screen box换为当前正交视口，图像保持原PPU，sorting710是Unity管线映射。原MSVCRT rand序列用本地同算法状态，不可能还原整个EXE共享rand的运行历史。
+- 原生粒子white颜色与background/scenery tint分开。**Gr2D alpha vector的完整合成/取整尚未逐像素oracle核实**；当前初始渐变是移植实现，不能称整个粒子渲染已逐帧与EXE一致。分辨率动态改动会重建Android粒子箱，是移动接入行为。
+
+原资源：`Item/Cash/0512.img/05120996..05120999/info/path`分别指sandGrit/blizzardSnow/leafMix/blossomMix，type2，speed6/4/2/2。砂14种4..6px、雪7种3..6px、叶7种11..19px、花6种12..24px；原origin直接由Sprite保留。砂count1260，雪280，叶/花缺省100。普通雪sky2用远近双背景层；05120995/snowFall虽存在但原profile未引用，不额外生成。
+
+### 积雪、脚印、水洼、溅水与声音
+
+`NativeWeatherGround`依据原 `weatheraccum.cpp/weatherpuddle.cpp/weathersplash.cpp`，沿真实 `FieldMap.footholds` 查找视口内地面（y向下像素）；竖直墙不作为承接面。原端物理空间插值/分层查找尚无EXE逐点oracle，不据此称整个碰撞完全一致。
+
+- snow/leaf/petal最多70，90s累积、25s融化，14次/s，26px槽位，最多3层、抬高2px，surfaceDrop5，边缘±14px探测容差10，单次最多6次尝试，视口margin80，旧天气类型完全融化后再长新类型；按服务器sky整秒年龄播种，单帧最多25补种，未用补种退回。3倍半视口外剔除；减少目标时每帧删最远一份。
+- 脚印仅雪：落地或22px步幅，必须站在实际雪sprite半宽覆盖区、脚下−6..+8px地面容差8，11s寿命、末3.5s淡出、最多20。原源码注释称脚印会清雪，但实际StepFootprints未清deposit，移植遵循实码。
+- 水洼最多26，75s积水、40s干燥，3次/s、最多12次尝试，平坦±12px容差3；tier半宽15/24/35（30/48/70原图），扩宽边缘half+2容差10，按最老可容纳tier提升，放置失败仍可扩宽旧水洼。surfaceDrop6，同层dy24，间隔由两者可容纳最大半宽之和+56决定。按年龄补种，单帧最多10。
+- 踩水dy14px，进水6份溅射，每26px步幅2份，横散布±11；雨落地溅射22.4/s×rainlevel，最多40，520ms寿命，surfaceDrop4、margin64，1/3尝试已有水洼。原IMG三类雨溅射、九套水洼及原脚印/沉积Canvas，不画替代粒子。
+- 沉积/水洼/脚印取scenery tint，雨滴溅射取rain tint；地面sorting−399、脚印/溅射−398，是现有map SortingGroup−400上方的Unity映射，不等于原EXE的所有地形遮挡。Clear/OnDisable移除自有层。
+- `NativeWeatherSound`迁移weathersound：原Sound/Weather.img rain/wind两个60s loop，音量SFX×0.7，雨开启0.35、关闭0.10，雨退到关闭阈值前不切风；切换旧voice1500ms释放。clip异步读到后才启动voice；缺索引/解码失败按weather失败集合抑制重试。Unity直接更新音量，不需要原CSoundMan静音后重启的修复。
+- 原weathersound的CSoundMan PlaySE=0x43FB25、StopSE=0x773156、singleton=0xBEBF94。**原踩水脚步声已移除，Sound/Weather.img/splash存在不代表被使用，当前保留静默。**
+- `tools/export_weather_effects.py`可重放原始MP3提取并更新SoundIndex；`docs/weather-effects-source.json`保存原六个IMG与两个MP3 SHA。`docs/weather-source.json`新增以上四个cpp哈希。
+
+### 新检查与尚未验收
+
+Unity batch：`NativeWeatherEffectsChecks.Run`，日志标记：
+
+```
+NATIVE_REPLAY_PASS casts=73 stages=116 ticks=1925 WZ Miss marker template
+WEATHER_IMG_PASS maps=3 original_sheets=21 sky_classification
+WEATHER_EFFECTS_PASS snow_seed_melt snow_footprint_idle_gate puddle_seed_promote_dry particle_profiles=4 native_count frame_position cleanup audio_index followup_hits spear_actions=12
+```
+
+检查实际原IMG与地面运行时代码：老雪补种/25s融化、实际雪层落地脚印/原地不重复生成、雨后水洼/扩宽/40s干燥、四种原粒子数量区间/图像/坐标、clear切换/清理函数、两条音频索引、追击hit节点、12个雷枪action。没有登录、存档或DB写入。批处理Edit模式不触发普通组件OnDisable，因此清理断言直接调用同一Clear函数，不能据此宣称Play模式生命周期已全验收。
+
+`NativeReplayChecks`先预热原数字glyph再断言120ms pending状态，避免首个IMG/皮肤目录加载耗时把时钟推进到所有行已到期。这不是修改运行时伤害时序。
+
+仍待完整验收：追击冷却/空目标重试/地图取消的真实战斗，连续步行脚印与踩水的玩家移动回归，环境声音实际解码和交叉淡出听测，召唤飞弹完整表现，Gr2D粒子alpha合成。树木/灯与其他未列天气子模块并未因此完成。AndroidPlayer模块仍缺；未构建APK、未做本次手机游戏内验收。
+
+### 继续逆向的准确入口：当前核心 native projectile hook
+
+新增已核实入口，避免下次重复定位：
+
+- 当前核心 `0x6728429D..6728432D`安装 EXE `0x954596` 9字节补丁，目标`0x6728121C`；hook恢复原mov后保存flags/寄存器，依次传`&[ebp−0x28]`、`&[ebp−0x24]`、`&[ebp−0x2C]`给`0x67285F0A`，随后按原flags返回95459F/9546AC。
+- `0x67285F0A..67286026`检查native window `0x6728DB80`和target window `0x6728DB8C`均未过期、targetCount `0x6728DB94`>0；原子递增`0x6728DB88`按targetCount取余，读取`0x6728DBA0+index*8` x/y写入目标，travel参数若>0x294则夹为 **660ms**。与旧cpp的AssignNativeRangedProjectileTarget合同一致，已核当前二进制。
+- 原EXE `0x95445F..954511`按起终点欧氏距离×常量`0xAFE808` **1.5ms/px** 计算普通弹道时长（个别原技能另分支）；`0x954683..95469B`将start/end及时间传给magicBulletManager`0x435DF3`。`0x953D9D..953DAA`起始Y取角色位置−28px；`0x953DCD..953DDE`起始X还含调用参数的有向偏移，**该调用参数的所有施放/远程回放消费者仍待追踪**，不能自行假定永远0。
+- 原CUser local射击过程与服务器回放RANGED_ATTACK(0xBB)的远程处理不能混为一谈；当前Java replayTargetedAttack确实向自身sendPacket再向地图广播，未延迟服务器HP结算到飞弹落点。故飞弹呈现迁移不可改变已确定的服务器伤害时间点。

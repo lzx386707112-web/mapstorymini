@@ -28,6 +28,10 @@ public static class NativeReplayChecks
         var enemyObject=new GameObject("ReplayHpCheck");
         try
         {
+            // First IMG/catalog decode can exceed the 120ms interval in batch mode.
+            // Warm the real glyphs before asserting the pending scheduler state.
+            for(int glyph=2;glyph<=5;glyph++)NativeDamageNumber.Show(Vector3.zero,glyph,"red",1);
+            foreach(var number in UnityEngine.Object.FindObjectsOfType<NativeDamageNumber>())UnityEngine.Object.DestroyImmediate(number.gameObject);
             var enemy=enemyObject.AddComponent<EnemyUnit>();enemy.hp=100;
             enemy.TakeReplayHit(new[]{new DamageResult(2,false),new DamageResult(3,false),new DamageResult(4,false)},1,false,true,120);
             Require(enemy.hp==91,"all replay lines settle HP immediately");

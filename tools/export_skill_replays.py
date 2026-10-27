@@ -106,6 +106,18 @@ def export():
              originalFirst=False,originalBounds=False,warrior=False,indexed=False,interval=120)
         for name,array in [('LIGHTNING_SPEAR_FINISH','LIGHTNING_SPEAR_FINISH_TIMES_MS'),
                            ('LIGHTNING_SPEAR_GIANT_THUNDER','LIGHTNING_SPEAR_GIANT_THUNDER_TIMES_MS')]]
+    result[str(sid('Bowmaster.ARROW_RAIN'))] = [] # activates reactive field, no original hit
+    result[str(sid('WindArcher.MERCILESS_WINDS'))] = [] # target-seeking state machine
+    followups={name:arrays[name] for name in [
+        'HAUNTED_EDGE_ASURA_TIMES_MS','HAUNTED_EDGE_PROJECTILE_TIMES_MS',
+        'HAUNTED_EDGE_RAKSHASA_TIMES_MS','SUDDEN_RAID_FINISHER_TIMES_MS',
+        'ARROW_RAIN_FIELD_TIMES_MS','MERCILESS_WINDS_TIMES_MS',
+        'MISTRAL_SPIRIT_COUNTS','MISTRAL_SPIRIT_LIFETIMES_MS','MISTRAL_SPIRIT_ENABLE_DELAYS_MS']}
+    for handler in texts.values():
+        for name,value in re.findall(r'private static final int (\w+) = (\d+);',handler):
+            if name.startswith(('MERCILESS_WINDS_','MISTRAL_SPIRIT_','ARROW_RAIN_','SUDDEN_RAID_')):
+                followups[name]=int(value)
+    (ROOT/'Assets/Resources/NativeSkillFollowups.json').write_text(json.dumps(followups,separators=(',',':'))+'\n')
     out=ROOT/'Assets/Resources/NativeSkillReplays.json'
     out.write_text(json.dumps(result,ensure_ascii=False,separators=(',',':'))+'\n')
     (ROOT/'docs/skill-replay-source.json').write_text(json.dumps({str(p.relative_to(SOURCE)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(paths + list((SOURCE/'constants/skills').glob('*.java'))))},indent=2)+'\n')

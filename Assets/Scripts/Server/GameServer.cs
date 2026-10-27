@@ -33,6 +33,7 @@ public sealed class GameServer
         srv.ScriptValues = new NativeScriptValues(srv.Db);
         srv.Scripts = new NativeScriptService(srv.Db);
         srv.Social = new NativeSocialService(srv.Db);
+        srv.Social.ChatAccepted = srv.RouteBotChat;
         srv.Community = new NativeCommunityService(srv.Db);
         srv.Cash = new NativeCashService(srv.Db);
         srv.Bosses = new NativeBossService(srv.Db);
@@ -48,6 +49,7 @@ public sealed class GameServer
         srv.ScriptValues = new NativeScriptValues(srv.Db);
         srv.Scripts = new NativeScriptService(srv.Db);
         srv.Social = new NativeSocialService(db);
+        srv.Social.ChatAccepted = srv.RouteBotChat;
         srv.Community = new NativeCommunityService(db);
         srv.Cash = new NativeCashService(db);
         srv.Bosses = new NativeBossService(db);
@@ -67,4 +69,8 @@ public sealed class GameServer
     }
 
     public void Save() => Db.Save();
+    void RouteBotChat(SocialRequest request)
+    {
+        if (request.channel == NativeChatChannel.All) bots?.ReceiveChat(request.characterId, request.text);
+    }
 }

@@ -195,13 +195,152 @@ call 0x445b4b        ; 格式化
 
 ---
 
-## 八、待核实项（按项目规则「不猜」，先记录不实现）
+## 八、弹窗素材：字符串池里有什么（2026-10-27 补查）
 
-1. **type 1 的居中弹窗版面**
-   - 素材候选一：`UI/Basic.img/Notice`（264×132 单张，图上自带 OK 按钮框）
-   - 素材候选二：`UI/Basic.img/Notice2`（`t` 258×40 / `c` 258×20 / `s` 258×47 九宫格），
-     `NativeUi.Panel` 已在用这套
-   - `BeiDou.exe` 里**查不到** `UI/Basic.img/Notice` 字面量（客户端用哈希/索引解析节点名），
-     静态分析坐实不了 → 需要用户拍板用哪套 + 文字区坐标 + OK 按钮坐标
-2. **type 0 / 6 浅蓝的具体色值** —— 只有类型名 `Lightblue`，无截图
-3. **`FontMemo/0..9` 未读计数的绘制位置** —— 反汇编里定位不到
+之前写"`BeiDou.exe` 里查不到 `UI/Basic.img/Notice` 字面量"——**那个结论是错的**，
+原因是只搜了明文。节点名全部走**加密字符串池**，用
+`tools/inspect_beidou_client.py <exe> --strings out.json` 解出来就能看到：
+
+| 池 id | 串 | 池 id | 串 |
+| --- | --- | --- | --- |
+| 1914 | `UI/Basic.img/Notice/backgrnd` | 1232 | `DlgNotice` |
+| 1255 | `UI/Basic.img/BtOK` | 1256 | `UI/Basic.img/BtCancel` |
+| 1257 | `UI/Basic.img/BtOK2` | 1258 | `UI/Basic.img/BtCancel2` |
+| 2685 | `UI/Basic.img/Notice3/t` | 2686 / 2687 | `Notice3/c`、`Notice3/s` |
+| 2688 | `UI/Basic.img/Notice4/s` | 2689 | `Notice4/s_line` |
+| 2690 | `UI/Basic.img/Notice5/s_` | 2691 | `Notice5/s_DelGroup` |
+| 2692–2694 | `UI/Basic.img/YesNo3/t,c,s` | 2263 | `BtOK` |
+| 890 | `[Notice]` | 2828–2833 | `UI/UIWindow.img/Notice/0..4`、`/btOK` |
+
+WZ 实测尺寸（`tools/imgdump.py UI/Basic.img <node>`，origin 都是 (0,0)，Notice5 除外）：
+
+| 节点 | t | c | s |
+| --- | --- | --- | --- |
+| `Notice` | — | — | `backgrnd` 264×132 单张 |
+| `Notice2` | 258×40 | 258×20 | 258×47 |
+| `Notice3` | 266×21 | 266×20 | 266×55 |
+| `Notice4` | 266×21 | 266×20 | 266×78（另有 `s_line` 266×84） |
+| `Notice5` | 286×22 | 286×1 | `s_` 266×79 origin(133,40)、`s_DelGroup` 266×79 origin(133,39) |
+
+`Notice5` 的 origin 在正中（133,40）→ 它是**以中心点定位**的弹窗皮肤，与"居中弹窗"最吻合。
+
+代码侧已定位的线索（2026-10-27 深挖，比上面那版准）：
+
+**1. 消息入口：type = 包体首字节**
+
+`0xA22785` 处的函数：
+
+```asm
+mov  edi, [ebp+8]        ; arg1 = 包体指针
+mov  ecx, edi
+call 0x4065F3            ; 取一个字节
+movzx esi, al
+mov  [ebp-0x1C], esi     ; type = pkt[0]
+...
+00A229B0  cmp  esi, 0xD            ; 14 个分支
+00A229B3  ja   0xA23687            ; 越界 → 默认
+00A229B9  jmp  dword ptr [esi*4 + 0xA236D3]
+```
+
+**这直接证实了"首字节是 type"**，跳转表在 `0xA236D3`（14 项）。
+
+**2. type 0 → 客户端加 `[Notice] ` 前缀**
+
+case 0 在 `0xA229C0`：
+
+```asm
+push 0x37A           ; 池 890 = "[Notice]"
+call 0x79E805        ; GetString
+push 0xAF1E78        ; 字面量 " "（单个空格）
+call 0x47C957        ; "[Notice]" + " "
+call 0x47375C        ; 再拼上正文
+```
+
+即显示文本 = **`"[Notice] " + 正文`**。type 12/13 复用同一段代码（`0xA22AA4`）。
+**这是客户端自己加的**，服务端下发的正文里没有这个前缀。
+
+**3. type 1 → 弹窗，皮肤是 `Notice3`，默认标题 `DlgNotice`**
+
+case 1 在 `0xA22B85`，把 5 个参数转给 `0x9929DD`：
+
+```asm
+00A229EF  push 0xD8              ; 对象大小 0xD8
+00A229FC  call 0x403065          ; new
+00A22A03  call 0x8D51D4          ; 构造函数
+00A22A95  call 0x992EDA          ; 初始化（6 个参数，ret 0x18）
+```
+
+`0x992EDA` 里能读出两个硬参数：
+
+```asm
+00A92EF2  mov eax, [ebp+8]
+00A92EFC  mov [edi+0x94], eax
+00A92F02  mov eax, [ebp+0x18]
+00A92F11  mov [edi+0xD4], eax
+; 宽度：arg5 != 0 → 0xEA(234)，否则 0xC8(200)
+00A92EEF  mov  esi, [ebp+0x1C]
+00A92EF5  neg  esi
+00A92EF7  sbb  esi, esi
+00A92EF9  and  esi, 0x22
+00A92F05  add  esi, 0xC8
+```
+
+```asm
+00A92F77  push 0x4D0             ; 池 1232 = "DlgNotice"
+```
+
+`[ebp+0x10]`（标题）为空时用 `GetString(0x4D0)` = **`DlgNotice`** 作默认标题。
+
+**4. 皮肤三段是 `Notice3/t,c,s`**
+
+`0x9924A6` / `0x99258F` / `0x992678` 连续三次 `GetString(0xA7D/0xA7E/0xA7F)`
+= `Notice3/t`、`Notice3/c`、`Notice3/s`，分别取画布存进 `[ebp-0x4C]/[ebp-0x54]/[ebp-0x5C]`。
+这是弹窗的 OnCreate 加载三段的代码。
+
+**仍缺**：居中/定位的 x、y，文字区矩形，OK 按钮坐标 —— 在绘制函数里，本轮没跟到。
+`Notice/backgrnd`(1914) 在 `.text` 里找不到干净的 `push 0x77A`（唯一命中 `0x41C5FE`
+的上一字节是 `E8`，属于某条 `call` 的地址操作数，是假阳性），所以 264×132 那套到底谁在用仍未知。
+
+## 九、仍未坐实的项
+
+1. **type 0 / 6 浅蓝的具体色值** —— 只有类型名 `Lightblue`，没有截图。
+   本工程暂取 `#AAD7FF`（170,215,255）。尝试过在 `.text`/`.rdata` 里扫颜色常量表，
+   噪声太大（大量指针与指令字节被误判），没有定位到"按 type 索引的颜色数组"。
+2. **`FontMemo/0..9` 未读计数的绘制位置** —— 反汇编里定位不到。
+3. **聊天行最多显示几行、行距多少** —— 目前按"最后 5 行、行高 14"实现，来自截图目测，
+   没有代码证据。
+
+## 附：查节点名请先解字符串池
+
+`BeiDou.exe` 的节点名、UI 文案**全部**在加密字符串池里（指针表 `0xBDC9D4`，条数 `0x161A`，
+128 位密钥 `0xB001EC`），明文搜索必然 0 命中。本文档早期"查不到 `Notice` 字面量"的结论
+就是踩了这个坑。取串的代码形态是：
+
+```asm
+lea  eax, [ebp - 0x18]
+push 0x77a            ; 池 id
+push eax
+call 0x79e805         ; GetString
+```
+
+所以要找"某个节点在哪被用"，正确做法是**解池拿到 id，再扫 `push <id>` 的立即数**
+（`0x68` 后跟 4 字节小端），不是搜字符串。
+
+## 十、聊天落点：`0x4906B5(文本, 类型号)` → `0x8DB070`
+
+三个"进聊天窗"的 type 最终都调同一个函数，第二参是个 WORD 类型号：
+
+| type | 调用 | 类型号 | 前缀 |
+| --- | --- | --- | --- |
+| 0 | `0x4906B5("[Notice] " + msg, 10)` | 10 | `[Notice] ` |
+| 5 | `0x4906B5(msg, 12)` | **12** | 无 |
+| 6 | `0x4906B5(msg, 10)` | 10 | 无 |
+
+`0x4906B5` 里 `movzx eax, word ptr [ebp+0xC]` 取的就是这个号，随后转手给
+`0x8DB070`（底栏聊天日志的入口，`ecx` = 日志对象）。
+
+**10 与 12 就是"浅蓝 / 粉"的区分点** —— 但颜色常量本身在绘制函数里，本轮没跟到。
+所以 `#AAD7FF` 仍然是推定值。
+
+顺带：`0x8DB070` 里对类型号做了 `cmp esi,0xE / 0xF / 0x12 / 0x13` 的判断（14/15/18/19 号
+不缩进），说明聊天日志的类型号范围比 0..6 宽得多，**包里的 type 只是它的一个子集**。

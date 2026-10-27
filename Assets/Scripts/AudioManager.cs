@@ -41,6 +41,7 @@ public sealed class AudioManager : MonoBehaviour
 
     readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
     readonly HashSet<string> loading = new HashSet<string>();
+    readonly HashSet<string> failedLoads = new HashSet<string>();
     AudioSource bgmA, bgmB;                  // 交叉淡入淡出用
     AudioSource[] pool;
     int poolCursor;
@@ -108,6 +109,11 @@ public sealed class AudioManager : MonoBehaviour
     }
 
     public static bool Has(string key) => Index.ContainsKey(key);
+
+    // Ambient effects own their looping voice; the original SFX cache still owns clips.
+    public static AudioClip EffectClip(string key)
+        => I != null && Index.TryGetValue(key, out var entry) ? I.LoadOrFetch(key, entry) : null;
+    public static bool EffectFailed(string key) => I != null && I.failedLoads.Contains(key);
 
     // ------------------------------------------------------------ BGM
 
@@ -248,11 +254,13 @@ public sealed class AudioManager : MonoBehaviour
             bool err = req.result != UnityWebRequest.Result.Success;
             if (err)
             {
+                failedLoads.Add(key);
                 Debug.LogWarning($"[Audio] 加载失败 {key}: {req.error} ({url})");
             }
             else
             {
                 clips[key] = DownloadHandlerAudioClip.GetContent(req);
+                if(clips[key]==null)failedLoads.Add(key);else failedLoads.Remove(key);
             }
         }
         loading.Remove(key);

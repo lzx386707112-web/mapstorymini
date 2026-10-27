@@ -40,7 +40,16 @@ def main():
             entry = resources[name]
             if base64.b64decode(entry["base64"], validate=True) != raw or hashlib.sha256(raw).hexdigest() != entry["sha256"]:
                 raise ValueError("Original byte/hash mismatch: " + name)
-        print(f"Verified {len(resources)} original resources byte-for-byte and SHA256")
+            if path.suffix == ".yaml":
+                try:
+                    decoded = raw.decode("utf-8-sig")
+                except UnicodeDecodeError:
+                    if "data" in entry:
+                        raise ValueError("Binary YAML must not contain invented parsed data: " + name)
+                else:
+                    if entry.get("data") != yaml.load(decoded, Loader=yaml.BaseLoader):
+                        raise ValueError("YamlBeans scalar/structure mismatch: " + name)
+        print(f"Verified {len(resources)} original resources byte-for-byte, SHA256 and YAML scalar semantics")
         return
     resources = {}
     for path in sorted(args.source.rglob("*")):
@@ -63,7 +72,10 @@ def main():
         else:
             entry["text"] = text
             if path.suffix == ".yaml":
-                entry["data"] = yaml.safe_load(text)
+                # YamlReader.read() without a declared type returns scalar Strings.
+                # SafeLoader's YAML 1.1 integers corrupt zero-prefixed Maple IDs
+                # (01002026 becomes octal 263190); consumers parse decimal explicitly.
+                entry["data"] = yaml.load(text, Loader=yaml.BaseLoader)
         resources["soloMapling/" + rel] = entry
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps({"version": 1, "resources": resources}, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")

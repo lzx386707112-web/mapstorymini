@@ -244,6 +244,8 @@ public class PlayerCtrl : MonoBehaviour
         vis.PlayOnce(action,playbackSpeed);
     }
 
+    public void PlayNativeSkill(int id) => PlaySkill(id.ToString());
+
     public float GetSkillActionDuration(string skill)
     {
         if(vis==null)return attackInterval;
@@ -1011,6 +1013,8 @@ public class PlayerCtrl : MonoBehaviour
     // 没有额外的弧光贴片；伤害/顿帧/飘字都在这一下出去。
     void HitEnemy(EnemyUnit e, DamageResult hit, int dir)
     {
+        if(e!=null&&!e.dead&&(weapon.kind==WeaponKind.bow||weapon.kind==WeaponKind.crossbow))
+            GetComponent<SkillSystem>()?.NativeBasicRangedHit(e,hit,dir);
         if (e == null || e.dead || hit.Amount <= 0) return;
         e.TakeHit(hit, dir);
         HitFeel.Punch(1f);
@@ -1018,6 +1022,8 @@ public class PlayerCtrl : MonoBehaviour
 
     void HitBoss(BossUnit b, DamageResult hit)
     {
+        if(b!=null&&!b.dead&&(weapon.kind==WeaponKind.bow||weapon.kind==WeaponKind.crossbow))
+            GetComponent<SkillSystem>()?.NativeBasicRangedHit(b,hit,facing);
         if (b == null || b.dead || hit.Amount <= 0) return;
         b.TakeHit(hit, facing);
         HitFeel.Punch(1f);

@@ -85,12 +85,13 @@ public class BottomBarReviewProbe : MonoBehaviour
         Shot("bar_4_quickslot_collapsed.png");
         yield return new WaitForSecondsRealtime(0.6f);
 
-        // 5) 聊天窗多类型混排：白=玩家、粉=type5、浅蓝=type6，核对行距与上色
+        // 5) 聊天窗多类型混排：白=玩家、浅蓝=type6、粉=type5、type0 带 [Notice] 前缀
+        //    颜色/前缀的二进制依据见 NativeSystemMessage 顶部注释
         BottomBar.ResetChat();
         BottomBar.QuickCollapsed = false;
+        NativeSystemMessage.Drop(0, "服务器将在 10 分钟后维护。");
         BottomBar.AddChat("[所有人] " + Profile.playerName + " : 有人在射手村练级吗", BottomBar.ChatWhite);
         NativeSystemMessage.Drop(6, "需要传送卡才能启动这个传送门。");
-        BottomBar.AddChat("[组队] " + Profile.playerName + " : 等我一下", BottomBar.ChatWhite);
         NativeSystemMessage.Drop(5, "你不能再往前了。");
         NativeSystemMessage.Drop(5, "[系统] 客户端上次闪退可能是地图【小蘑菇】不存在或异常，现已将你转移到【小蘑菇】。");
         yield return new WaitForSecondsRealtime(0.5f);

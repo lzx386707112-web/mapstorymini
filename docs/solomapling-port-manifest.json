@@ -352,8 +352,11 @@
       "source": "ArtificialPlayer/BotMapEntryResponder.java",
       "sha256": "791e1d3f2fc4135c43bfbbfc69381f011c25b1ee67d84001b1baaea03a87ca4c",
       "lines": 75,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotMapEntryResponder.cs"
+      ],
+      "integration": "Reachable subset and outstanding gameplay integration recorded in reverse reference; full system not accepted."
     },
     {
       "source": "ArtificialPlayer/BotMessagingSystem/CharacterStorage.java",
@@ -381,9 +384,10 @@
       "lines": 182,
       "status": "partial",
       "targets": [
+        "Assets/Scripts/Server/Bot/BotRuntime.cs",
         "Assets/Scripts/Server/Bot/Social/BotDispatcher.cs"
       ],
-      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+      "integration": "Local accepted All-chat transport and runtime dispatcher wired; frontend output and all concrete business handlers remain incomplete."
     },
     {
       "source": "ArtificialPlayer/BotMessagingSystem/MessageQueue.java",
@@ -391,9 +395,10 @@
       "lines": 165,
       "status": "partial",
       "targets": [
+        "Assets/Scripts/Server/Bot/BotRuntime.cs",
         "Assets/Scripts/Server/Bot/Social/BotMessages.cs"
       ],
-      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+      "integration": "Local accepted All-chat transport and runtime dispatcher wired; frontend output and all concrete business handlers remain incomplete."
     },
     {
       "source": "ArtificialPlayer/BotMessagingSystem/QueueCleaner.java",
@@ -401,9 +406,10 @@
       "lines": 57,
       "status": "partial",
       "targets": [
+        "Assets/Scripts/Server/Bot/BotRuntime.cs",
         "Assets/Scripts/Server/Bot/Social/BotDispatcher.cs"
       ],
-      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+      "integration": "Local accepted All-chat transport and runtime dispatcher wired; frontend output and all concrete business handlers remain incomplete."
     },
     {
       "source": "ArtificialPlayer/BotMessagingSystem/QueueMonitor.java",
@@ -428,9 +434,11 @@
       "lines": 825,
       "status": "partial",
       "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotMovementPacket.cs",
         "Assets/Scripts/Server/Bot/Environment/BotMovementPlayback.cs",
-        "Assets/Scripts/Server/Bot/Environment/BotMovementPacket.cs"
-      ]
+        "Assets/Scripts/Server/Bot/Environment/BotRecordedActions.cs"
+      ],
+      "integration": "Reachable subset and outstanding gameplay integration recorded in reverse reference; full system not accepted."
     },
     {
       "source": "ArtificialPlayer/BotMovementSystem/MovementPacketConstructor.java",
@@ -657,29 +665,41 @@
       "source": "ArtificialPlayer/BotTownSystem/TownOverrides.java",
       "sha256": "8750f39a071bc9cb5b88dbc4f3d0b2798bf37eefa1cd2b01ef8f68343bb84940",
       "lines": 98,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotTownPresence.cs"
+      ],
+      "integration": "Reachable subset and outstanding gameplay integration recorded in reverse reference; full system not accepted."
     },
     {
       "source": "ArtificialPlayer/BotTownSystem/TownPinsStore.java",
       "sha256": "4d073732f0613b7a5ee659c033bddc84438238bc71229bac2e046f3de09b47ad",
       "lines": 22,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotTownPresenceConfig.cs"
+      ],
+      "integration": "Reachable subset and outstanding gameplay integration recorded in reverse reference; full system not accepted."
     },
     {
       "source": "ArtificialPlayer/BotTownSystem/TownPresenceConfig.java",
       "sha256": "56ac2058225f37dc2fcadbd2331ed19d6c1ff48616fd97376ee240a2054cc836",
       "lines": 280,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotTownPresenceConfig.cs"
+      ],
+      "integration": "Reachable subset and outstanding gameplay integration recorded in reverse reference; full system not accepted."
     },
     {
       "source": "ArtificialPlayer/BotTownSystem/TownPresenceSampler.java",
       "sha256": "b53391313c6c17dc4d0565a79b44e5d5f28ed3b98e580ace0cf5391102b5ea77",
       "lines": 285,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotTownPresence.cs"
+      ],
+      "integration": "Reachable subset and outstanding gameplay integration recorded in reverse reference; full system not accepted."
     },
     {
       "source": "ArtificialPlayer/BotTownSystem/TownStation.java",
@@ -899,8 +919,11 @@
       "source": "ArtificialPlayer/BotTypes/FMBot.java",
       "sha256": "bd0647b1663a7ed6f8332ca26c3631491bfae973e87ce851f9607767c3ab7a27",
       "lines": 448,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/FMBot.cs"
+      ],
+      "integration": "Reachable subset and outstanding gameplay integration recorded in reverse reference; full system not accepted."
     },
     {
       "source": "ArtificialPlayer/BotTypes/GachaBot.java",
@@ -1338,8 +1361,11 @@
       "source": "Environment/EnvironmentManager.java",
       "sha256": "bb6751915414c58d680747e86426f6ca12da31256d5ce344c1edb675388ce726",
       "lines": 1505,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotTownSpawner.cs"
+      ],
+      "integration": "Reachable subset and outstanding gameplay integration recorded in reverse reference; full system not accepted."
     },
     {
       "source": "Environment/Platform.java",
@@ -1382,36 +1408,52 @@
       "source": "FreeMarket/ArtificialShopGenerator.java",
       "sha256": "dd772d749fb15fd9accbf8c58aef0497e23a1a6178c187eb00fa9d7e6bd69ea9",
       "lines": 423,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketEquipmentPool.cs",
+        "Assets/Scripts/Server/Bot/MarketItemPool.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "FreeMarket/EquipListGenerator.java",
       "sha256": "c779f7745141b98e8d50b92a36b89f7aa591fbfe6c3a97debe032e9c8378ca02",
       "lines": 276,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketEquipmentPool.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "FreeMarket/FMEconomyManager.java",
       "sha256": "8bb45d02674b8d429d0926b5da27e4b80d96488b53794701e15c279cfc32f429",
       "lines": 440,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketEconomy.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "FreeMarket/FMEquip.java",
       "sha256": "11b7bdbc52c3b2d7be42e8e8f266e1f98db7dea395f0d9dcb7d99d4152173d1f",
       "lines": 39,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketEquipmentPool.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "FreeMarket/FMItem.java",
       "sha256": "c89b327b78c301d29c9f51b91ccba0c178f88c920bcca217197f13ca7b20dcde",
       "lines": 42,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketItemPool.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "FreeMarket/FMShopDescGen.java",
@@ -1462,8 +1504,11 @@
       "source": "FreeMarket/MarketBotAmbient.java",
       "sha256": "29954f19aaca686579c72a50af840f81faed1a404552feb73a81bd9e0bed92a9",
       "lines": 352,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/MarketBotAmbient.cs"
+      ],
+      "integration": "Reachable subset and outstanding gameplay integration recorded in reverse reference; full system not accepted."
     },
     {
       "source": "FreeMarket/MarketBotFlavor.java",
@@ -1570,15 +1615,21 @@
       "source": "itemPool/ComparisonResult.java",
       "sha256": "596450d4f9d53dafe9711b6e301a469de7c45f01f0853734010ef28d1fe556b0",
       "lines": 63,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketScrollPricing.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "itemPool/DesirableEquipList.java",
       "sha256": "e3c68aaa443ec4de1bea4956d55f06c42d3f95089729642fa5300c7dbdb95755",
       "lines": 51,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketEquipmentPool.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "itemPool/EquipMetadataCache.java",
@@ -1608,8 +1659,11 @@
       "source": "itemPool/ItemDatabase.java",
       "sha256": "418fff5e94d20acb76880233150295d2ff3cbae207b0412e3a4c0b7bcb816eb7",
       "lines": 240,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketItemPool.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "itemPool/ItemInformationProviderUtilities.java",
@@ -1639,29 +1693,41 @@
       "source": "itemPool/ItemSelector.java",
       "sha256": "914b41a76cc2f9e8b4a61b09b2eecbcdd41fd5452fed88743796db7cc94c4a16",
       "lines": 227,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketItemPool.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "itemPool/ItemUtilities.java",
       "sha256": "15f0c8722647d0c906dcc26cf7febafc2c7200b44a20a5ff813ff4cd2a6b5a34",
       "lines": 69,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketScrollPricing.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "itemPool/QuantitySelector.java",
       "sha256": "dc4bb52eec175ca565643ca67f187681a92976b11b4dc4c0096a1fd0a07fa512",
       "lines": 77,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketItemPool.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "itemPool/ScrollInfoManager.java",
       "sha256": "96dd8103e2a7c45af5ac50dce3a1a472121e96e484c56c98490e76b49f67dd03",
       "lines": 258,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketScrollPricing.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "itemPool/ScrollNode.java",
@@ -1674,29 +1740,41 @@
       "source": "itemPool/ScrollPatternGenerator.java",
       "sha256": "a69886f3e1629214ce9660208798259acaa720740e52dd3d3fd8220d3176c854",
       "lines": 116,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketScrollPricing.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "itemPool/ScrolledItemComparator.java",
       "sha256": "34f19ea90670ea9f1ccb8a0e08edc11a2b98f244c89971a5097da97823317778",
       "lines": 73,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketScrollPricing.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "itemPool/UniqueStatBonusList.java",
       "sha256": "3af5f887f0e8f492db7f868d4cbdb31127a2033eb518d8ad6a4fe0e53659f016",
       "lines": 71,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketScrollPricing.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "itemPool/UpgradeSimulator.java",
       "sha256": "3c64f153992d9a34bbeb5d74e30aaf48a302ab460f37f55f4643a214fb3a2084",
       "lines": 269,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketScrollPricing.cs"
+      ],
+      "integration": "Source-backed market selection/economy/equipment/scroll helpers tested; merchant state machines, shop service, startup and gameplay acceptance remain incomplete. See solomapling reverse reference."
     },
     {
       "source": "server/BotPerfStats.java",
@@ -1887,18 +1965,18 @@
   ],
   "systemStatus": "incomplete",
   "validation": {
-    "serverChecks": 309,
+    "serverChecks": 399,
     "failed": 0,
-    "scope": "Backend regression including real trade settlement/invitation, original map geometry shards, ground and air motion, closed-loop classification, walk regions and observer boundaries. No full navigation, Unity runtime or Android acceptance."
+    "scope": "Backend regression: 399 passed, 0 failed, including original YAML scalar semantics, market economy, scroll cost simulation and real IMG equipment stock generation. Final full Unity script compile: 0 warnings, 0 errors. Prior Editor presentation smoke only; no full Play or Android acceptance."
   },
   "remainingIntegration": [
-    "16 bot types still use GenericBot",
-    "Full navigation edges, route manager and movement execution replacing simplified wander",
-    "Environment population, startup and observer producers",
-    "Character statistics/set bonuses/HPMP recovery and spawn choreography",
+    "14 bot types still use GenericBot",
+    "Movement locks, follow, damage/skill business and original client packet interpolation",
+    "Full three-wave environment population and startup",
+    "Character statistics/set bonuses/HPMP recovery",
     "Party/combat/market/casino behaviors",
-    "Real-player chat/map events and trade transport/save lifecycle",
-    "Frontend original character rendering and interaction consumers",
-    "TownWandererDialogue source runtime format remains unresolved"
+    "Trade transport/save/logout lifecycle",
+    "Frontend name tags, speech balloons, accessories, chairs, mounts, skill effects and interactions; basic paper-doll and known movement/emote output wired",
+    "Original TownWandererDialogue bytes preserved; source catches parser failure and skips speech"
   ]
 }

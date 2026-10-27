@@ -40,8 +40,7 @@ namespace Server.Bot.Environment
             foreach (var pin in ov.pins)
             {
                 if (result.Count >= count) return result;
-                var below = ground.Below(pin.x, pin.y);
-                result.Add(below == null ? pin : new Point(pin.x, BotGroundIndex.YAt(below, pin.x)));
+                result.Add(ground.GroundPoint(pin.x, pin.y) ?? pin);
             }
             var graph = BotMovementService.Graphs.Get(map);
             var all = graph.regions.FindAll(r => !r.isRopeRegion && !r.isLadder);

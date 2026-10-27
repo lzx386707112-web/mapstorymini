@@ -144,8 +144,9 @@ public static class WzCharacter
             string key = action.Substring(6); bool prepare = key.EndsWith("_prepare", StringComparison.Ordinal);
             if (prepare) key = key.Substring(0, key.Length - 8);
             var skills = (Dictionary<string, object>)WzAssets.Index["skills"];
-            if (!skills.TryGetValue(key, out var sid)) return null;
-            int id = Convert.ToInt32(sid);
+            int id;
+            if (skills.TryGetValue(key, out var sid)) id=Convert.ToInt32(sid);
+            else if(!int.TryParse(key,out id)) return null;
             var skill = WzAssets.Node("Skill/" + (id / 10000).ToString("D3") + ".img/skill/" + id);
             if (prepare) return skill.Get("prepare/action")?.Value as string;
             var actions = skill.Get("action");

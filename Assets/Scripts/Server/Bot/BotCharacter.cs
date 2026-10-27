@@ -14,6 +14,8 @@ namespace Server.Bot
         public int facing = -1;
         public int stance = 5;         // 源端 IDLE_LEFT=5，IDLE_RIGHT=4
         public int chair;              // 椅子 id，>0 表示坐着
+        public int mountItemId, mountSkillId;
+        public bool mountActive;
         public int accId;
         public int gmLevel;
         public int str = 12, dex = 5, intelligence = 4, luk = 4;

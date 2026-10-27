@@ -9,6 +9,9 @@ namespace Server.Bot
         public int level = 1, job, gender, face, hair, skinColor, fame;
         public int mapId, world, channel = 1;
         public float x, y;
+        internal long mapEntryOrder;
+        static long nextMapEntryOrder;
+        internal void MarkMapEntry() => mapEntryOrder = ++nextMapEntryOrder;
         public bool online = true;
         public FullCharacter character;
         public Trade.IBotTradeSession trade;

@@ -324,7 +324,10 @@ public class EnemyUnit : MonoBehaviour
         ApplyHit(new DamageResult((int)System.Math.Min(int.MaxValue, sum), critical), direction, true, false);
     }
 
-    void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber)
+    // Server-owned periodic damage is already resolved; do not re-roll mob filtering.
+    public void TakeReplayDot(int amount) => ApplyHit(new DamageResult(amount,false),0,true,true,false);
+
+    void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber, bool react = true)
     {
         if (dead) return;
         if (hit.Amount <= 0) { if (showNumber && hit.Amount == 0) DamageText.Miss(HeadPos); return; }
@@ -333,26 +336,30 @@ public class EnemyUnit : MonoBehaviour
         if (NativeController != null) NativeController.ApplyDamage(hit.Amount);
         else hp = Mathf.Max(0f, hp - real);
 
-        // 击退按原端 info/pushed 缩放：蜗牛 pushed=1 全额滑动，蘑菇王 pushed=1000 几乎不动。
-        // 距离基准仍是面板上的 HitFeel.Knockback（0.9 单位 ≈ 36px 行程，衰减 26/s）。
-        // （原版普攻本身不推怪，这里保留一小段滑动是本地手感选择。）
-        int pushed = NativeCombatData.Int(CombatStats, "pushed", 1);
-        knockV = fromDir * HitFeel.Knockback * 6.1f * Mathf.Clamp01(1f / Mathf.Max(1f, pushed));
-        Fx.Flash(body, Color.white);
-        // hit1 是单帧长延迟（600ms）的「挨打定格」；原版只闪一下，所以按 0.3s 目标压着播
-        if (vis != null)
+        if (react)
         {
-            var clip = Art.GetClip("mobs", artKey, Art.Resolve("mobs", artKey, "hit", "hit1"));
-            float dur = clip != null ? clip.Duration : 0.6f;
-            vis.PlayOnce("hit", Mathf.Clamp(dur / 0.3f, 1f, 3f));
-        }
-        if (!nativeHit)
-            Fx.Burst(transform.position + Vector3.up * 0.7f, crit ? 0.6f : 0.45f,
-                     new Color(1f, 0.9f, 0.5f, 0.9f));
+            // 击退按原端 info/pushed 缩放：蜗牛 pushed=1 全额滑动，蘑菇王 pushed=1000 几乎不动。
+            // 距离基准仍是面板上的 HitFeel.Knockback（0.9 单位 ≈ 36px 行程，衰减 26/s）。
+            // （原版普攻本身不推怪，这里保留一小段滑动是本地手感选择。）
+            int pushed = NativeCombatData.Int(CombatStats, "pushed", 1);
+            knockV = fromDir * HitFeel.Knockback * 6.1f * Mathf.Clamp01(1f / Mathf.Max(1f, pushed));
+            Fx.Flash(body, Color.white);
+            // hit1 是单帧长延迟（600ms）的「挨打定格」；原版只闪一下，所以按 0.3s 目标压着播
+            if (vis != null)
+            {
+                var clip = Art.GetClip("mobs", artKey, Art.Resolve("mobs", artKey, "hit", "hit1"));
+                float dur = clip != null ? clip.Duration : 0.6f;
+                vis.PlayOnce("hit", Mathf.Clamp(dur / 0.3f, 1f, 3f));
+            }
+            if (!nativeHit)
+                Fx.Burst(transform.position + Vector3.up * 0.7f, crit ? 0.6f : 0.45f,
+                         new Color(1f, 0.9f, 0.5f, 0.9f));
 
-        // 受击音效按世界位置衰减（Mob/<id>/Damage，源端 Sound/Mob.img）
-        string mid = MobSoundId;
-        if (mid != null) AudioManager.PlayAt("Mob/" + mid + "/Damage", transform.position, 0.9f, 9f);
+            // 受击音效按世界位置衰减（Mob/<id>/Damage，源端 Sound/Mob.img）
+            string mid = MobSoundId;
+            if (mid != null) AudioManager.PlayAt("Mob/" + mid + "/Damage", transform.position, 0.9f, 9f);
+
+        }
 
         if (showNumber) DamageText.Show(HeadPos, real, crit ? "cri" : "red", crit ? 1.08f : 1f);
         if (crit) HitFeel.Punch(1.35f);

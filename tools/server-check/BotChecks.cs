@@ -23,6 +23,7 @@ static class BotChecks
     {
         public override double NextDouble() => .1;
         public override int Next(int maxValue) => 0;
+        public override int Next(int minValue, int maxValue) => minValue;
     }
     sealed class LifecycleBot : BotStateMachine
     {
@@ -68,6 +69,21 @@ static class BotChecks
     public static void Run(Action<bool, string> check)
     {
         Console.WriteLine("== SoloMapling 核心回归 ==");
+        CheckMarketData(check);
+        var appearanceActor = new BotCharacter { skinColor = 2, face = 20000, hair = 30000 };
+        appearanceActor.equips[-105] = 1050000;
+        appearanceActor.equips[-5] = 1040000;
+        appearanceActor.equips[-11] = 1302000;
+        appearanceActor.equips[-111] = 1702000;
+        appearanceActor.equips[-12] = 1112000;
+        var appearanceIds = BotAppearance.CharacterIds(appearanceActor);
+        check(appearanceIds[0] == "00002002" && appearanceIds[1] == "00012002" &&
+            Array.IndexOf(appearanceIds, "01050000") >= 0 && Array.IndexOf(appearanceIds, "01040000") < 0 &&
+            appearanceIds[appearanceIds.Length - 1] == "01702000" && Array.IndexOf(appearanceIds, "01112000") < 0,
+            "假人纸娃娃保留肤色，现金服装遮盖普通槽，现金武器置末且排除属性戒指");
+        appearanceActor.equips.Remove(-111);
+        appearanceIds = BotAppearance.CharacterIds(appearanceActor);
+        check(appearanceIds[appearanceIds.Length - 1] == "01302000", "取消现金武器恢复普通武器外观");
         CheckRecordedPlayback(check);
         CheckMovementRuntime(check);
         BotScheduler.Stop();
@@ -163,6 +179,107 @@ static class BotChecks
         CheckTownWanderer(check);
         CheckAmbientMap(check);
         CheckTownPresence(check);
+        CheckMarketAmbient(check);
+    }
+
+    static void CheckMarketData(Action<bool, string> check)
+    {
+        var resources = BotResources.Load(); var pool = new MarketItemPool(resources, new FirstChoiceRandom());
+        var hat = pool.Pick("common.yaml", "Hat", "A");
+        check(pool.Variant(hat) == 1002026 && pool.Price(1002026) == 1000 && pool.Item(263190) == null,
+            "原YAMLBeans保留零前缀字符串，商品ID按十进制读取而非PyYAML八进制");
+        pool.Version = 38;
+        check(pool.Price(2040301) == 2500000 && pool.Scrolls("A", true).Count == 0,
+            "市场估价按版本区间读取，v39前不生成诅咒卷轴");
+        pool.Version = 39;
+        check(pool.Price(2040301) == 1700000 && pool.Scrolls("A", true).Count > 0,
+            "v39边界切换市场价格和诅咒卷轴商品池");
+        var stock = pool.Scrolls("A");
+        check(stock.Count == 1 && stock[0].itemId == 2040301 && stock[0].quantity == 1,
+            "原卷轴四次抽样后保留首个重复ID，数量取实际YAML范围");
+        check(pool.Quantity("Potion", "S") == 5 && pool.Quantity("unknown", "S") == 5,
+            "商品数量读取原itemQuantities且缺失类型回退5");
+        check(MarketEconomy.CleanNumber(1999999) == 1900000 && MarketEconomy.CleanNumber(99999) == 99999,
+            "原clean number保留Java整数除法截断，不误改为四舍五入");
+        check(MarketEconomy.TrailingDigit(1200000) == 1222222 && MarketEconomy.Shorthand(1050) == "1.1k" &&
+            MarketEconomy.Shorthand(1500000) == "1.5m" && MarketEconomy.Shorthand(1000000) == "1m",
+            "市场尾数风格与中文叫卖使用的k/m缩写保留半数向上和去零语义");
+        check(MarketEconomy.DayPrice(1000, DayOfWeek.Monday) == 950 && MarketEconomy.DayPrice(1000, DayOfWeek.Friday) == 1100,
+            "市场星期涨跌按原周一二-5%、周五六日+10%");
+        check(MarketEconomy.DoorPremium(910000001, 300, -80, 1000) == 1200 &&
+            MarketEconomy.DoorPremium(910000001, 299, -80, 1000) == 1000 &&
+            MarketEconomy.Quantity(1, 910000001, 300, 34) == 1 && MarketEconomy.Quantity(10, 910000001, 300, 34) == 14,
+            "市场房间和门口溢价逐步截断，门口闭区间，单份商品数量不涨");
+        var economy = new MarketEconomy(new FirstChoiceRandom(), () => new DateTime(2026, 10, 28, 0, 0, 0));
+        check(economy.MarketIndices.Count == 12 && economy.MarketIndices[3] == 1.13 && economy.MarketIndices[9] == .85,
+            "市场指数为原12个两小时正弦噪声槽并钳制.85到1.15");
+        check(economy.Price(1000000) == 880000 && economy.TierForRoom(910000001) == "S" &&
+            MarketEconomy.JavaInt(1e20) == int.MaxValue && MarketEconomy.WzPriceByJob(1000, 400) == 2250,
+            "市场价格按指数、日、随机、风格顺序执行并保留Java饱和转换");
+        pool.Version = 55;
+        var pricing = new MarketScrollPricing(pool, BotItemCatalog.Shared, new FirstChoiceRandom());
+        check(pricing.Find(1472026, "watt").First == 2044702 && pricing.Find(1302000, "watt") == null,
+            "卷轴映射仅迁移原端支持的装备，不替未支持的武器编造卷轴");
+        pool.Version = 38;
+        check(pricing.Find(1002026, "int") == null && pricing.Find(1032000, "int") != null,
+            "卷轴类型按原物品池最早版本门控，普通卷轴不被诅咒卷轴版本阻塞");
+        pool.Version = 55;
+        var firstPattern = MarketScrollPricing.Pattern(1, 55, new FirstChoiceRandom());
+        var oldPattern = MarketScrollPricing.Pattern(7, 39, new FirstChoiceRandom());
+        check(firstPattern[0] == 4 && firstPattern[1] == 0 && oldPattern[0] == 3 && oldPattern[1] == 4,
+            "卷轴模式保留v40概率切换及第一组不按槽数裁剪的源端行为");
+        var clean = BotItemCatalog.Shared.CleanEquip(1032000);
+        var changed = clean.Copy(); changed.watk += 3; changed.luk += 3;
+        check(MarketScrollPricing.HighestStat(changed, clean, out int bonus) == "luk" && bonus == 3,
+            "最高强化属性同值时保留Java按差值建Map的后写覆盖顺序");
+        var options = new List<MarketScrollPricing.Scroll> { new MarketScrollPricing.Scroll(50, 50, 1) };
+        var costs = MarketScrollPricing.MinimumCosts(options, 100, 2, 2, 1);
+        var prices = MarketScrollPricing.CleanCosts(costs);
+        check(costs[0,0] == 100 && costs[1,1] == 300 && costs[2,2] == 700 &&
+            double.IsPositiveInfinity(costs[1,0]) && prices[0] == 100 && prices[1] == 180 && prices[2] == 420,
+            "强化估价按每步材料总价除成功率，去重最低成本后只扣非首档60%");
+        var anomalies = new double[,] { {100, 900, 200, 300} };
+        var corrected = MarketScrollPricing.CleanCosts(anomalies);
+        check(corrected[1] == 96 && corrected[2] == 120 && corrected[3] == 180,
+            "强化价格异常先用相邻档60%修正，再统一卖出折扣");
+        check(pricing.IsClean(clean) && pricing.ItemValue(clean) == pool.Price(clean.itemId),
+            "干净装备估价直接读原市场池，缺失价格保留null");
+        changed = clean.Copy(); changed.upgradeslots = 0; changed.luk += 123;
+        check(pricing.EquipValue(changed) == (pool.Price(changed.itemId) ?? 100),
+            "强化主属性没有对应卷轴时回退原基础价格");
+        var db = DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mapledash_bot_market_test.json"));
+        var claw = BotItemCatalog.Shared.CleanEquip(1472026); int originalAttack = claw.watk;
+        int[] pattern = MarketScrollPricing.Pattern(claw.upgradeslots, 55, new FirstChoiceRandom());
+        int attackGain = pattern[0] * BotItemCatalog.Int(BotItemCatalog.Shared.Info(2044702), "incPAD")
+            + pattern[1] * BotItemCatalog.Int(BotItemCatalog.Shared.Info(2044701), "incPAD");
+        pricing.ScrollEquip(claw, db);
+        check(claw.watk == originalAttack + attackGain && claw.upgradeslots == 0 &&
+            BotItemCatalog.Int(claw.equipmentData, "level") == pattern[0] + pattern[1],
+            "市场装备按源默认GM必成功叠加原IMG属性，最后清零槽数并记录强化次数");
+        check(pricing.EquipValue(claw) > 0 && pricing.ItemValue(claw) == pricing.EquipValue(claw),
+            "真实原IMG强化装备进入成本估价而非使用干净装备价格");
+        var cache = new EquipMetadataCache(BotItemCatalog.Shared, EquipMetadataCache.LoadPools());
+        var equipment = new MarketEquipmentPool(pool, BotItemCatalog.Shared, cache, db, new FirstChoiceRandom());
+        var hotPattern = MarketEquipmentPool.Pattern("s", true);
+        check(hotPattern.Length == 4 && hotPattern[0] == 2 && hotPattern[1] == 2 &&
+            MarketEquipmentPool.Pattern("a").Length == 2 && equipment.Level("S") == 80 && equipment.Level("s") == 0,
+            "市场装备模式忽略大小写而等级区间按源端区分大小写");
+        var selected = equipment.Categories(new[] {"Weapon","Hat","Top","Pants","Shield"}, new[] {2,2});
+        check(selected.Count == 4 && selected[0] == selected[1] && selected[2] == selected[3] && selected[0] != selected[2],
+            "市场类别先无放回抽索引再恢复原顺序，每类按模式重复且不去重装备");
+        var yamlEquips = equipment.FromYaml("thief.yaml",new[] {"Weapon","Hat","Top","Pants","Shield"},"S",true);
+        check(yamlEquips.Count > 0 && yamlEquips.TrueForAll(e => e.Item.isEquip && e.Price >= 0),
+            "原市场YAML装备生成接入干净IMG、卷轴模拟和最终估价");
+        var cachedEquips = equipment.FromCache("S",400);
+        bool validCached = cachedEquips.Count > 0 && cachedEquips.Count <= 4;
+        foreach (var e in cachedEquips)
+        {
+            var info = BotItemCatalog.Shared.Info(e.Item.itemId);
+            int req = BotItemCatalog.Int(info,"reqJob"), level = BotItemCatalog.Int(info,"reqLevel");
+            validCached &= (req == 0 || req == 8) && level >= 48 && level <= 80 &&
+                BotItemCatalog.Int(info,"cash") == 0 && BotItemCatalog.Int(info,"tradeBlock") == 0 && e.Price >= 0;
+        }
+        check(validCached,"市场缓存备货遵循职业/可交易/等级窗口，15次尝试最多四件");
     }
 
     static void CheckOriginalGeometryAndGroundPhysics(Action<bool, string> check)
@@ -314,7 +431,7 @@ static class BotChecks
             "假人等级按原端含端点区间分四段，保留整数截断");
         var generated = BotGeneration.CreateBotPollReadiness(0, 0, -999, true, false);
         check(generated.level >= 120 && generated.level <= 200 && generated.job % 10 == 2
-            && generated.equips.ContainsKey(-111) && generated.equips.ContainsKey(-5),
+            && generated.equips.ContainsKey(-111) && (generated.equips.ContainsKey(-5) || generated.equips.ContainsKey(-6)),
             "真实生成入口接通原端等级职业、现金武器与普通服装保障");
         BotGeneration.RemoveBotFromServer(generated);
     }
@@ -863,6 +980,17 @@ static class BotChecks
         runtime.Drive(3100); runtime.Drive(3150);
         check(entered && bot.mapId == -889 && BotRegistry.OnMap(-889).Contains(bot) && BotMovementService.Get(bot)?.map.mapId == -889,
             "假人传送门按源端回退portal0并重建目标地图移动执行器");
+        var chatBot = new BotCharacter { id = 20886, name = "RuntimeChatBot" };
+        BotRegistry.Add(chatBot); BotRegistry.EnterMap(chatBot, 101000000);
+        var social = BotTypeManager.CreateAndSetBot(chatBot, BotType.SOCIAL_BOT);
+        check(runtime.ReceiveChat(actor.id, "RuntimeChatBot 你好") && !runtime.ReceiveChat(actor.id, "/ignored"),
+            "实际会话聊天入口接primary队列并排除斜线命令");
+        runtime.Drive(5001);
+        check(social.running && ReferenceEquals(social.interactors.Respondant, actor),
+            "实际会话每两秒分派地图名字匹配消息，真人身份进入社交假人交互");
+        runtime.SynchronizePlayer(character, 101000000, 100, 100, 2);
+        check(actor.channel == 2 && ReferenceEquals(actor, new List<BotActor>(runtime.Players)[0]),
+            "同图换频道在发布入图事件前更新真人身份，避免跨频道分派和显示");
         runtime.RemovePlayer(actor.id);
         check(!runtime.observers.HasRealPlayerNow(101000000), "真人离开假人会话后不再充当地图观察者");
         runtime.Dispose(); MapService.Unregister(-889);
@@ -944,6 +1072,9 @@ static class BotChecks
         var pins = sampler.Sample(map, new BotNavigationGraph.Point(0, 100), 2, null, ov);
         check(pins.Count == 2 && pins[0].x == 25 && pins[0].y == 100 && pins[1].x == 200 && pins[1].y == 0,
             "城镇固定点优先且落地下方平台，找不到地面保留原坐标");
+        var slightlyBelow = new BotTownOverrides(); slightlyBelow.pins.Add(new BotNavigationGraph.Point(25, 110));
+        check(sampler.Sample(map, new BotNavigationGraph.Point(0, 100), 1, null, slightlyBelow)[0].y == 100,
+            "城镇固定点复用原findGroundPoint上探26px选择更近平台");
         var sampled = sampler.Sample(map, new BotNavigationGraph.Point(0, 100), 3, new[] { new BotNavigationGraph.Point(0, 100) });
         check(sampled.Count == 3 && sampled.TrueForAll(p => p.x >= -100 && p.x <= 100 && p.y == 100),
             "城镇加权选点从可达地面采样并保留原数量");
@@ -960,6 +1091,36 @@ static class BotChecks
         BotGeneration.DisableEnvironmentBotLimit(); MapService.Unregister(103000000);
         BotTasks.Stop(); BotTypeManager.Output.Clear();
 
+    }
+
+    static void CheckMarketAmbient(Action<bool, string> check)
+    {
+        BotTasks.Stop(); BotScheduler.Clock = 0;
+        var map = new MapRuntime { mapId = 910000000 }; map.AddFoothold(-500, 34, 1500, 34); map.footholds[0].id = 1;
+        MapService.Register(map);
+        var actor = new BotCharacter { id = 20885, mapId = 910000000, x = 0, y = 33 };
+        BotRegistry.Add(actor); BotRegistry.EnterMap(actor, map.mapId);
+        var ambient = new MarketBotAmbient(BotResources.Load(), () => null, new FirstChoiceRandom());
+        var fm = new FMBot(actor, ambient, new FirstChoiceRandom()) { running = true, HasPlayersOnMap = () => true, output = new BotOutput() };
+        BotStore.AddActiveBot(actor.id, fm);
+        fm.UpdateState();
+        check(fm.UsesSharedMarketTick && fm.marketState == FMBot.MarketState.Ambient && fm.Room == 1,
+            "自由市场具体类型按原端进入共享环境循环，不启用旧购物分支");
+        BotScheduler.Clock = 1600; fm.UpdateState(); BotTasks.Drive(1600);
+        check(BotRecordedActions.IsMoving(actor) && actor.x == 10,
+            "市场散步按原端10px步行封包启动，不用临时速度替代");
+        for (int i = 1; i <= 18; i++) { BotScheduler.Clock = 1600 + i * 160; BotTasks.Drive(BotScheduler.Now()); }
+        check(!BotRecordedActions.IsMoving(actor) && actor.x == 100 && actor.stance == 4,
+            "市场散步每160毫秒一步，距终点20px结束并注入双停止命令");
+        BotRecordedActions.WalkAlongX(actor, -200, 18, null); float before = actor.x;
+        BotRegistry.LeaveMap(actor); BotScheduler.Clock += 160; BotTasks.Drive(BotScheduler.Now());
+        check(!BotRecordedActions.IsMoving(actor) && actor.x == before, "假人离图取消封包步行且不运行旧回调");
+        check(!FMBot.ShouldPurchaseItem(121, 100, new FirstChoiceRandom()) && FMBot.ShouldPurchaseItem(70, 100, new FirstChoiceRandom()),
+            "保留原市场估价辅助函数的1.2拒买边界和0.7必买档");
+        BotGeneration.RemoveBotFromServer(actor); BotTasks.Stop(); MapService.Unregister(map.mapId);
+        var mappedActor = new BotCharacter { id = 20884 };
+        check(BotTypeManager.CreateAndSetBot(mappedActor, BotType.FM_BOT) is FMBot, "FM_BOT已替换通用占位类型");
+        BotStore.RemoveActiveBot(mappedActor.id); BotTypeManager.Output.Clear();
     }
 
 }

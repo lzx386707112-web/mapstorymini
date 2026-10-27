@@ -351,8 +351,10 @@ public sealed class FieldDirector : MonoBehaviour
         if (Map == null || GameServer.Local == null || !GameSession.InGame || GameLoop.I == null || GameLoop.I.player == null) return;
         var player = GameLoop.I.player;
         var bots = GameServer.Local.Bots;
-        bots.SynchronizePlayer(GameSession.Character, Map.id, player.transform.position.x * Art.PPU, -player.transform.position.y * Art.PPU);
+        bots.SynchronizePlayer(GameSession.Character, Map.id, player.transform.position.x * Art.PPU, -player.transform.position.y * Art.PPU, GameSession.Channel);
         bots.Drive((long)(Time.realtimeSinceStartup * 1000));
+        var botField = GetComponent<BotField>() ?? gameObject.AddComponent<BotField>();
+        botField.Synchronize(Map.id, GameSession.World, GameSession.Channel);
     }
 
     // 靠近 NPC 按 ↑ 对话。传送门优先（同位置时按原端行为进图）。
@@ -632,6 +634,7 @@ public sealed class FieldDirector : MonoBehaviour
         ClearMobs();
         GroundItem.Clear();
         NpcField.Clear();
+        GetComponent<BotField>()?.Clear();
         NpcSession.CloseActive();
         if (view != null) view.Clear();
         Map = null;

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS0649;CS0414;CS0169;CS0219;CS0162;CS0067;CS8632</NoWarn>
+    <AssemblyName>AdminCheck</AssemblyName>
+    <RootNamespace>AdminCheck</RootNamespace>
+  </PropertyGroup>
+
+  <!-- 后台 HTTP/接口层是纯 C#，可脱离 Unity 直接编译运行 -->
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Stubs.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminJson.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminHttp.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminStaticBundle.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminApi.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminBackend.cs" />
+    <Compile Include="../../Assets/Scripts/Admin/AdminRoutes.cs" />
+    <Compile Include="../../Assets/Scripts/Server/Db/DbStore.cs" />
+    <Compile Include="../../Assets/Scripts/Server/Db/MiniJsonDb.cs" />
+    <Compile Include="../../Assets/Scripts/Server/Db/Dao.cs" />
+    <Compile Include="../../Assets/Scripts/Server/PlatformRes.cs" />
+    <Compile Include="../../Assets/Scripts/Server/Char/CharNameRules.cs" />
+    <Compile Include="../../Assets/Scripts/Server/Login/LoginService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../Assets/Scripts/Server/Db/Schema.sql" Link="Server/Db/Schema.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

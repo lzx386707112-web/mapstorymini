@@ -24,6 +24,10 @@ public sealed class NativeWeatherField : MonoBehaviour
     float night, boost;
     Vector3 tint=Vector3.one*255;
     bool primed;
+    NativeWeatherGround ground;
+    NativeWeatherSound sound;
+    NativeWeatherParticles particles;
+    Color groundTint=Color.white,rainTint=Color.white;
     sealed class Sheet { public SpriteRenderer Image; public string Group; }
     public static Dictionary<string,object> Data
     {
@@ -85,6 +89,10 @@ public sealed class NativeWeatherField : MonoBehaviour
                 if(image!=null)sheets.Add(new Sheet {Image=image,Group=(string)row["group"]});
             }
             view.PromoteWeatherBacks(map);
+            ground=gameObject.AddComponent<NativeWeatherGround>();
+            ground.Bind(NativeMapView.LoadMap(new FieldMap{id=id}));
+            sound=gameObject.AddComponent<NativeWeatherSound>();
+            particles=gameObject.AddComponent<NativeWeatherParticles>();
         }
         Tick();
     }
@@ -124,6 +132,7 @@ public sealed class NativeWeatherField : MonoBehaviour
         float lightning=HasSky && State.Sky==4 && levels["rain"]>=.70f && age>0 ? NativeWeatherLightning.Evaluate((uint)age,State.Token,State.Palette) : 0;
         float darkness=Mathf.Max(night,boost)*(1-.697f*lightning);
         Color sceneryColor=TintColor(1,darkness);
+        groundTint=sceneryColor;rainTint=TintColor(levels["rain"],darkness*.55f);
         foreach(var pair in scenery)if(pair.Key!=null)pair.Key.color=pair.Value*sceneryColor;
         view.SetWeatherSkyVisibility(State.BareSky);
         foreach(var sheet in sheets)
@@ -153,5 +162,14 @@ public sealed class NativeWeatherField : MonoBehaviour
         return new Color((255-(int)(darkness*(255-effective.x)))/255f,(255-(int)(darkness*(255-effective.y)))/255f,(255-(int)(darkness*(255-effective.z)))/255f,(int)(Mathf.Clamp01(alpha)*255)/255f);
     }
     static float Golden(double minute,int start,int end)=>minute<start||minute>=end?0:Mathf.Sin((float)(minute-start)/(end-start)*Mathf.PI);
+    void LateUpdate()
+    {
+        if(!ClientEnabled || !HasSky || !Active)return;
+        levels.TryGetValue("rain",out float rain);
+        ground?.Tick(State.Sky,State.Age(LocalNow),rain,LocalNow,groundTint,rainTint);
+        var profile=(Dictionary<string,object>)((List<object>)Data["profiles"])[State.Sky];
+        sound?.Tick(Int(((List<object>)profile["values"])[8]),rain);
+        particles?.Tick(Int(((List<object>)profile["values"])[2]),State.Sky,State.Token,Time.realtimeSinceStartupAsDouble,groundTint);
+    }
     void OnDisable(){if(current==this)current=null;}
 }

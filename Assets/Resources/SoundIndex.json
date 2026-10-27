@@ -318,5 +318,13 @@
  "Weapon/tGlove/Attack": {
   "ms": 217,
   "path": "Sound/Weapon/tGlove_Attack.mp3"
+ },
+ "Weather/rain": {
+  "ms": 60029,
+  "path": "Sound/Weather/rain.mp3"
+ },
+ "Weather/wind": {
+  "ms": 60029,
+  "path": "Sound/Weather/wind.mp3"
  }
 }

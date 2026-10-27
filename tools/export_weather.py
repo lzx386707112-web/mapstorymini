@@ -43,7 +43,7 @@ def export():
     data=dict(clientEnabled=enabled,palettes=palettes,profiles=profiles,regions=regions,skyBases=sky,excluded=excluded,layers=layers)
     assert len(regions)==27 and len(palettes)==27 and len(profiles)==9 and len(layers)==21
     (ROOT/'Assets/Resources/NativeWeather.json').write_text(json.dumps(data,separators=(',',':'))+'\n')
-    files=[SRC/x for x in ['weather.cpp','weatherfx.cpp','weatherwind.cpp','weather_profiles.inc','weather_palettes.inc','weather_skytable.inc','weather_nosky_maps.inc','skillback.cpp']]+list(SERVER.glob('Weather*.java'))
+    files=[SRC/x for x in ['weather.cpp','weatherfx.cpp','weatherwind.cpp','weatheraccum.cpp','weatherpuddle.cpp','weathersplash.cpp','weathersound.cpp','weather_profiles.inc','weather_palettes.inc','weather_skytable.inc','weather_nosky_maps.inc','skillback.cpp']]+list(SERVER.glob('Weather*.java'))
     (ROOT/'docs/weather-source.json').write_text(json.dumps({str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in files},indent=2)+'\n')
     print(f'weather: 9 profiles, 27 regions/palettes, {len(sky)} sky bases, {len(excluded)} exclusions, {len(layers)} sheets; default enabled={enabled}')
 if __name__=='__main__':export()

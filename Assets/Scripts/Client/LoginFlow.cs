@@ -802,6 +802,7 @@ public class LoginFlow : MonoBehaviour
         {
             status = res.code == LoginResultCode.WrongPassword ? "密码错误"
                    : res.code == LoginResultCode.Banned ? "账号被封禁"
+                   : res.code == LoginResultCode.TempBanned ? "账号被临时封禁"
                    : "登录失败（" + res.code + "）";
             return;
         }
@@ -1066,9 +1067,27 @@ public class LoginFlow : MonoBehaviour
         else status = "角色读取失败";
     }
 
-    public void BackToCharSelect()
+    /// <summary>
+    /// 被后台强制下线（封停）后回到登录页并显示原因。
+    /// 与 ExitToCharSelect 的区别：这里连账号登录态一起清掉，所以不能停在选角屏。
+    /// </summary>
+    public void ForceLogout(string message)
     {
+        account = "";
+        password = "";
+        charName = "";
+        charList = null;
+        worlds.Clear();
+        channels.Clear();
+        worldIndex = -1;
+        channelIndex = 0;
         slotToDelete = -1;
+        stage = LoginStage.Login;
+        status = string.IsNullOrEmpty(message) ? "" : message;
+    }
+
+    public void BackToCharSelect()
+    {        slotToDelete = -1;
         status = "";
         if (GameSession.AccountId > 0)
         {

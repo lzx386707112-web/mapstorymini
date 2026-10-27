@@ -6,7 +6,7 @@ namespace Server.Bot.Social
     // 源端PacketCreator广播的纯数据适配。前端只消费事件，不在AI层绘制UI。
     public sealed class BotOutput
     {
-        public enum Kind { Chat, Bubble, Emote, Hint, EnableActions, Chair, Skill, Chalkboard, Guide, GuideTalk, YellowMessage, Movement, Appearance, Attack }
+        public enum Kind { Chat, Bubble, Emote, Hint, EnableActions, Chair, Skill, Chalkboard, Guide, GuideTalk, YellowMessage, Movement, Appearance, Attack, Mount }
         public sealed class Message
         {
             public Kind kind;
@@ -15,9 +15,14 @@ namespace Server.Bot.Social
             public float x, y;
         }
         readonly Queue<Message> messages = new Queue<Message>();
+        public event System.Action<Message> Published;
         public void Send(Kind kind, BotActor actor, string text = null, int value = 0, int targetId = 0, int width = 0, int duration = 0)
-            => messages.Enqueue(new Message { kind = kind, actorId = actor.id, mapId = actor.mapId, text = text,
-                value = value, targetId = targetId, width = width, duration = duration, x = actor.x, y = actor.y });
+        {
+            var message = new Message { kind = kind, actorId = actor.id, mapId = actor.mapId, text = text,
+                value = value, targetId = targetId, width = width, duration = duration, x = actor.x, y = actor.y };
+            messages.Enqueue(message);
+            Published?.Invoke(message);
+        }
         public void IdleStanding(BotCharacter bot) => Send(Kind.Movement, bot, value: bot.stance % 2 == 0 ? 4 : 5, duration: 200);
         public Message Poll() => messages.Count == 0 ? null : messages.Dequeue();
         public int Count => messages.Count;

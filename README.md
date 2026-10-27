@@ -225,3 +225,9 @@ rtk proxy python3 tools/sync_android_data.py --zip
 
 
 当前 Android 资源目录统一为 `/sdcard/mapstory`：可放 `MapleDashResources.zip`，也可放已展开的 `Data/`。游戏启动自动显示进度条；首次自动解压并逐文件校验，已安装资源启动时校验后进入游戏，无需点击安装按钮。Android 11 及以上首次需要在系统设置允许“所有文件访问”，Android 10 及以下申请存储权限。资源缺失、损坏或权限未授予时停留加载页并提示，不进入游戏。ZIP 保留，成功后可自行删除。此共享目录方案用于当前测试，应用商店发布时需调整为符合渠道要求的资源目录/分发方式。
+
+## 后台管理系统
+
+源端 `gms-ui` 已原样接入：游戏进程内起一个只监听 `127.0.0.1` 的 HTTP 服务，侧边栏「后台系统」用系统浏览器打开 `http://127.0.0.1:8686/`（默认账号 admin / admin，首次启动自动创建）。前端源码在 `AdminUi/`，构建与打包用 `tools/build_admin_ui.sh`，接口清单与未接入模块见 [后台系统说明](docs/admin-console.md)。
+
+接口自检：`cd tools/admin-check && dotnet run`。

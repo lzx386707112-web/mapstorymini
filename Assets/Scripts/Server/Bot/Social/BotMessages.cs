@@ -37,6 +37,7 @@ namespace Server.Bot.Social
             Add(m, type); return false;
         }
         public int Count(QueueType type) => queues[type].Count;
+        public void Clear() { foreach (var queue in queues.Values) queue.Clear(); }
         public void Clean(long now, long expirationMs = 10000)
         {
             foreach (var queue in queues.Values)

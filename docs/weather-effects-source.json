@@ -1,0 +1,30 @@
+{
+  "Weather/rain": {
+    "path": "Sound/Weather/rain.mp3",
+    "ms": 60029,
+    "sha256": "02eeff9cd72d7c3eb4e58f086bf22b7ed34600f26a0f9b8ef0f12c79c4ad7d16"
+  },
+  "Weather/wind": {
+    "path": "Sound/Weather/wind.mp3",
+    "ms": 60029,
+    "sha256": "04a3b62e51b04519ce64feaeba435b8cb2424333c0b14d4e6065ad5e17eac446"
+  },
+  "Sound/Weather.img": {
+    "sha256": "1cb1badc398533dffd86f00a6839b233e07fc219880b8828d35682f137a0fafd"
+  },
+  "Effect/WeatherParticles.img": {
+    "sha256": "def3ae5eb79886de214d56048c0d24602c7a035947e0e229680d602df2473754"
+  },
+  "Effect/WeatherAccum.img": {
+    "sha256": "a3ca50fd6087b2c00c4a9179246fdaa1034062f219a0bab250100e2d450baeec"
+  },
+  "Effect/WeatherPuddle.img": {
+    "sha256": "e343f709314dd4797dd94c600ed488460229fe31a2ac60b3a60317c56491ae68"
+  },
+  "Effect/WeatherSplash.img": {
+    "sha256": "09d3a18e8e4abbad98541ec93b1e3dc576f6af46d6e8c42637c6d965ec388974"
+  },
+  "Item/Cash/0512.img": {
+    "sha256": "3e6792c5bdad9b019f639404b5122cf283bf3d292a8c41d2695225461444dd23"
+  }
+}

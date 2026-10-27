@@ -37,3 +37,10 @@ sysinfo.txt
 # Byte-identical original IMG package, recreated by tools/package_native_assets.py
 /Assets/StreamingAssets/Wz/Data/
 /Assets/StreamingAssets/Wz/Data.meta
+
+# 后台前端（gms-ui）依赖与构建中间产物；最终产物是 Assets/Resources/AdminUi/adminui.bytes
+/AdminUi/node_modules/
+/AdminUi/dist-embed/
+
+# 后台接口离线自检工程（纯 C#，可脱离 Unity 跑）
+!/tools/admin-check/AdminCheck.csproj

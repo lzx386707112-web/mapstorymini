@@ -335,7 +335,9 @@ public class BossUnit : MonoBehaviour
         ApplyHit(new DamageResult((int)System.Math.Min(int.MaxValue, sum), critical), direction, true, false);
     }
 
-    void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber)
+    public void TakeReplayDot(int amount) => ApplyHit(new DamageResult(amount,false),0,true,true,false);
+
+    void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber, bool react = true)
     {
         if (dead) return;
         if (hit.Amount <= 0) { if (showNumber && hit.Amount == 0) DamageText.Miss(DamageAnchor); return; }
@@ -343,24 +345,28 @@ public class BossUnit : MonoBehaviour
         float real = hit.Amount;
         hp = Mathf.Max(0f, hp - real);
 
-        if (body != null)
+        if (react)
         {
-            body.color = Color.white;
-            flashT = HitFeel.FlashDur;
-        }
-        // Boss 也有受击反应（hit1 单帧长延迟，压到 ~0.3s）；不会打断跳砸——
-        // Telegraph/Air 的 want 是 attack1，一次性动作播完自动回去。
-        if (vis != null)
-        {
-            var clip = Art.GetClip("mobs", bossArtKey, "hit1");
-            float dur = clip != null ? clip.Duration : 0.6f;
-            vis.PlayOnce("hit", Mathf.Clamp(dur / 0.3f, 1f, 3f));
-        }
-        if (!nativeHit)
-            Fx.Burst(transform.position + Vector3.up * 0.9f, crit ? 0.7f : 0.5f,
-                     new Color(1f, 0.85f, 0.4f, 0.9f));
+            if (body != null)
+            {
+                body.color = Color.white;
+                flashT = HitFeel.FlashDur;
+            }
+            // Boss 也有受击反应（hit1 单帧长延迟，压到 ~0.3s）；不会打断跳砸——
+            // Telegraph/Air 的 want 是 attack1，一次性动作播完自动回去。
+            if (vis != null)
+            {
+                var clip = Art.GetClip("mobs", bossArtKey, "hit1");
+                float dur = clip != null ? clip.Duration : 0.6f;
+                vis.PlayOnce("hit", Mathf.Clamp(dur / 0.3f, 1f, 3f));
+            }
+            if (!nativeHit)
+                Fx.Burst(transform.position + Vector3.up * 0.9f, crit ? 0.7f : 0.5f,
+                         new Color(1f, 0.85f, 0.4f, 0.9f));
 
-        AudioManager.PlayAt("Mob/" + BossSoundId + "/Damage", transform.position, 1f, 14f);
+            AudioManager.PlayAt("Mob/" + BossSoundId + "/Damage", transform.position, 1f, 14f);
+
+        }
 
         // Boss 体积大，数字要压到头顶，否则会被身体挡住
         float top = body != null && body.sprite != null

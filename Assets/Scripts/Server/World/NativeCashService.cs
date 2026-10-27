@@ -22,7 +22,7 @@ public interface INativeCashCatalog {
     int EquipSlot(int itemId);
     string CanEquip(int itemId, CharRecord character);
 }
-public enum CashOperation { Open, Close, Read, Buy, Gift, ClaimGifts, Withdraw, Deposit, WishList, ExpandInventory, ExpandCharacters, Equip, Unequip, AdjustBalance }
+public enum CashOperation { Open, Close, Read, Buy, Gift, ClaimGifts, Withdraw, Deposit, WishList, ExpandInventory, ExpandCharacters, Equip, Unequip, AdjustBalance, RedeemCode }
 public sealed class CashRequest {
     public int characterId, sn, currency = 1, birthday, inventoryType, amount;
     public long itemId;
@@ -147,6 +147,8 @@ public sealed class NativeCashService {
             acc[col] = total; return null;
         }
         if (!opened.Contains(cid)) return "请先进入商城";
+        if (r.operation == CashOperation.RedeemCode)
+            return new Server.Bot.BotNXCodes(db).Redeem(c, r.message, Now);
         if (Catalog == null) return "商城目录资源未加载";
         var account = AccountsDao.FindById(db, c.accountid); if (account == null) return "账号不存在";
         var item = Commodity(r.sn);

@@ -42,6 +42,8 @@ namespace Server.Bot
         public static readonly MarketBotFlavor MarketFlavor = new MarketBotFlavor();
         public static readonly MarketBotDirector Market = new MarketBotDirector(() => BotClient.GetBotClient()?.db);
         static BotDialogue dialogue;
+        static MarketBotAmbient ambient;
+        public static MarketBotAmbient Ambient => ambient ??= new MarketBotAmbient(BotResources.Load(), () => BotClient.GetBotClient()?.db);
         public static readonly Events.EventBus Events = new Events.EventBus();
         public static readonly BotFlavor Flavor = new BotFlavor();
 
@@ -50,12 +52,13 @@ namespace Server.Bot
         {
             BotStateMachine sm = t switch
             {
+                BotType.FM_BOT => new FMBot(c, Ambient),
                 BotType.SOCIAL_BOT => new SocialBot(c, dialogue ??= new BotDialogue(BotResources.Load()),
                     Output, Messages, () => BotFurniture.RandomChair(rng)),
                 BotType.TOWN_WANDERER_BOT => new TownWandererBot(c, dialogue ??= new BotDialogue(BotResources.Load()), Flavor, Events),
                 _ => new GenericBot(c),
             };
-            if (t != BotType.TOWN_WANDERER_BOT) sm.botType = t.ToString();
+            if (t != BotType.TOWN_WANDERER_BOT && t != BotType.FM_BOT) sm.botType = t.ToString();
             sm.IsMapObserved = () => Environment.BotMovementService.Observed(c.mapId);
             sm.HasPlayersOnMap = () => RealPlayersOnMap != null && RealPlayersOnMap(c.mapId);
             BotStore.AddActiveBot(c.id, sm);

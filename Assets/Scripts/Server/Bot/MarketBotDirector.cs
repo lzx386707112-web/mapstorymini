@@ -70,7 +70,7 @@ namespace Server.Bot
                 var chr = bot.chr;
                 if (chr == null || !bots.TryGetValue(chr.id, out var current) || !ReferenceEquals(bot, current)) continue;
                 if (due.TryGetValue(chr.id, out long next) && now < next) continue;
-                if (chr.trade == null && chr.moving) continue;
+                if (chr.trade == null && Environment.BotRecordedActions.IsMoving(chr)) continue;
                 bool players = !observed.TryGetValue(chr.mapId, out bool value) || value;
                 if (BotConfig.MarketIdleWhenEmpty(database()) && !players)
                 { due[chr.id] = now + 8000 + random.Next(4000); continue; }

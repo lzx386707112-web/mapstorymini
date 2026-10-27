@@ -127,9 +127,22 @@
 | 竖排 ▲▼ | `UI/Basic.img/VScr/disabled/prev`、`/next` | 12×12，灰底 (188,188,188) + 白色左右箭头；源端这两个确实是灰的（禁用态） |
 | 备选 | `UI/Basic.img/BtUP/disabled/0`、`BtDown/disabled/0` | 12×12 灰底 + 白色四角星，但源端是三角箭头，不太像 |
 
-`BeiDou.exe` 里查不到任何 `BtHide*` / `VScr` / `BtUP` 字面量（连 `backgrnd2`、`iconMemo`、
-`BtClaim`、`quickSlot` 都查不到，客户端显然用哈希或索引解析节点名），
-所以**静态分析无法坐实**，需要用户确认后再实现。
+`BeiDou.exe` 的**明文里**查不到任何 `BtHide*` / `VScr` / `BtUP` 字面量，但**它们都在加密字符串池里**
+（2026-10-27 用 `tools/inspect_beidou_client.py --strings` 解出来，池共 5658 条）：
+
+| 池 id | 串 | 池 id | 串 |
+| --- | --- | --- | --- |
+| 2561 | `UI/Basic.img/BtHide` | 2598 | `UI/Basic.img/BtUP` |
+| 2562 | `UI/Basic.img/BtHide2` | 2599 | `UI/Basic.img/BtDown` |
+| 2563 | `UI/Basic.img/BtHide3` | 2299 | `UI/Basic.img` |
+
+**教训**：以前"查不到字面量"的结论是因为只搜了明文。节点名全部走字符串池（`push id` + `call 0x79e805`），
+搜索明文必然 0 命中。后续凡是要确认某个节点是否被客户端使用，**先解字符串池再下结论**。
+
+不过"池里有"不等于"底栏用了"：`BtHide` 的 10 个 `push 0xa01` 引用点逐个看过，
+都是别的窗口（0x7CBF79 / 0x83D7FA / 0x8C26D9 / 0x8FD2CF / 0x8FDB5C …）各自的隐藏按钮，
+没有一个落在底栏的按钮创建序列里；`BtHide2`/`BtHide3` 则**一次 `push` 都没有**（池里有、代码没引用）。
+所以青色四方星与竖排 ▲▼**仍然无法坐实是哪两个节点**，按"不猜"原则继续不画。
 
 ## 通知槽：两张源端截图互相矛盾，按常驻实现
 

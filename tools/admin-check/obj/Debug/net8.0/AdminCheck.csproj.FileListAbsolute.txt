@@ -1,0 +1,16 @@
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/obj/Debug/net8.0/AdminCheck.GeneratedMSBuildEditorConfig.editorconfig
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/obj/Debug/net8.0/AdminCheck.AssemblyInfoInputs.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/obj/Debug/net8.0/AdminCheck.AssemblyInfo.cs
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/obj/Debug/net8.0/AdminCheck.csproj.CoreCompileInputs.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/obj/Debug/net8.0/AdminCheck.sourcelink.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/bin/Debug/net8.0/Server/Db/Schema.sql
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/bin/Debug/net8.0/AdminCheck
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/bin/Debug/net8.0/AdminCheck.deps.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/bin/Debug/net8.0/AdminCheck.runtimeconfig.json
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/bin/Debug/net8.0/AdminCheck.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/bin/Debug/net8.0/AdminCheck.pdb
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/obj/Debug/net8.0/AdminCheck.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/obj/Debug/net8.0/refint/AdminCheck.dll
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/obj/Debug/net8.0/AdminCheck.pdb
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/obj/Debug/net8.0/AdminCheck.genruntimeconfig.cache
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/admin-check/obj/Debug/net8.0/ref/AdminCheck.dll

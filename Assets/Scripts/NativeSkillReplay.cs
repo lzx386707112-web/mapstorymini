@@ -70,6 +70,8 @@ public partial class SkillSystem
     bool BeginReplay(SkillDef cast, Vector2 origin, int facing)
     {
         var stages = NativeSkillReplay.Get(cast.native.Id);
+        bool frenzy=cast.native.Id==4121023&&fourSeasonsFrenzy;
+        if(frenzy){stages=NativeSkillReplay.Get(4121024);fourSeasonsFrenzy=false;}
         if (stages == null) return false;
         var captured = new List<CapturedReplayHit>();
         foreach (var target in ReplayTargets(cast.native, origin, facing, Mathf.Clamp(cast.native.TargetCount, 1, 15), false, false))
@@ -82,9 +84,15 @@ public partial class SkillSystem
         DamageResult[] template = captured.Count > 0 ? captured[0].Hits : Array.Empty<DamageResult>();
         var field = FindObjectOfType<FieldDirector>();
         var map = field != null ? field.Map : null;
+        if(!frenzy)TriggerReactiveSkills(cast,captured,origin,facing);
+        StartSeekingSkills(cast,template,origin,facing,field,map);
         if (cast.native.Id == 15121002)
         {
             if (!spearCombo.TryPress((long)(Time.realtimeSinceStartupAsDouble * 1000))) return true;
+            int visual=15121022+spearCombo.PressCount-1;
+            p.PlayNativeSkill(visual);
+            PlayNativeReplayEffect(visual,origin,facing);
+            actionUntil=Time.unscaledTime+.180f;
             var numberMode = new NativeReplayStage { Total = true, Interval = 120 };
             foreach (var hit in captured)
                 ApplyReplayHit(cast,cast.native,hit.Target,hit.Hits,origin,facing,numberMode);
@@ -95,6 +103,7 @@ public partial class SkillSystem
             foreach (var hit in captured)
             {
                 if (hit.Target == null || (hit.Target is EnemyUnit e && e.dead) || (hit.Target is BossUnit b && b.dead)) continue;
+                PlayNativeReplayEffect(15121009,p.FeetPos,facing);
                 ApplyReplayHit(cast,thunder,hit.Target,thunderHits,origin,facing,numberMode);
                 if (++triggered == 3) break;
             }
@@ -176,6 +185,7 @@ public partial class SkillSystem
                 continue;
             }
             Vector2 current = stage.Fixed ? origin : p.FeetPos;
+            if(cast.native.Id==15121002)PlayNativeReplayEffect(replay.Id,current,facing);
             int direction = stage.LiveFacing ? p.facing : facing;
             if (replay.Id==4121011) current.x += facing*(600*Mathf.Clamp(stage.Times[index]-420,0,360)/360)/Art.PPU;
             var bounds = stage.OriginalBounds ? cast.native : replay;
@@ -206,5 +216,17 @@ public partial class SkillSystem
         bool landed = false;
         foreach (var hit in hits) landed |= hit.Amount > 0;
         Impact(cast,replay,target,direction,landed);
+    }
+
+    void PlayNativeReplayEffect(int id,Vector2 origin,int facing)
+    {
+        string path="Skill/"+(id/10000).ToString("D3")+".img/skill/"+id+"/effect";
+        var node=WzAssets.Node(path);
+        if(node==null)return;
+        bool fixedPosition=node.Int("fix")!=0;
+        nativeReplayEffects.RemoveAll(x=>x==null);
+        var effect=NativeImgAnimation.Spawn(path,fixedPosition?transform.parent:p.transform,origin,
+            p.SortingOrder+(node.Int("z")<0?-1:1),facing>0);
+        if(effect!=null)nativeReplayEffects.Add(effect);
     }
 }

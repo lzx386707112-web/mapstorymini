@@ -21,6 +21,7 @@ namespace Server.Bot
         {
             LeaveMap(c);
             c.mapId = mapId;
+            c.MarkMapEntry();
             if (!byMap.TryGetValue(mapId, out var list))
             {
                 list = new List<int>();

@@ -114,11 +114,12 @@ public partial class SkillSystem : MonoBehaviour
         if (Time.unscaledTime < actionUntil) return Reject("正在释放技能");
         if (s.native == null) return Reject("技能等级数据缺失");
         if (s.native.Kind == "Passive") return Reject("被动技能无需施放");
-        if (State(s.native.Id).Remaining(Time.realtimeSinceStartupAsDouble) > 0) return Reject("技能冷却中");
+        bool frenzy=s.native.Id==4121023&&fourSeasonsFrenzy;
+        if (!frenzy && State(s.native.Id).Remaining(Time.realtimeSinceStartupAsDouble) > 0) return Reject("技能冷却中");
         // 原端 TryUseSkill：MP 不够直接拒绝，扣蓝在施法成功之后。
         // mpCon 来自 Skill.wz 对应等级的 mpCon（见 NativeSkillDefinition.MpCost），不是本地估值。
         if (p.mp < s.native.MpCost) return Reject("魔力不足（需要 " + s.native.MpCost + "）");
-        if (!State(s.native.Id).TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
+        if (!frenzy && !State(s.native.Id).TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
         p.TrySpendMp(s.native.MpCost);
         NativeSkillVideo.PlaySkill(s.native.Id, p);
 
@@ -218,6 +219,7 @@ public partial class SkillSystem : MonoBehaviour
         int count = d.Kind == "Summon" ? NativeCombatData.Int((Dictionary<string,object>)((Dictionary<string,object>)NativeCombatData.Root["summon"])["info"],"count",1) : d.TargetCount;
         if (struck != null) count = Mathf.Max(0,count-struck.Count);
         int hits = Mathf.Min(count, targets.Count);
+        var captured=new List<CapturedReplayHit>();
         for (int i = 0; i < hits; i++)
         {
             var e = targets[i] as EnemyUnit;
@@ -239,15 +241,18 @@ public partial class SkillSystem : MonoBehaviour
                 continue;
             }
             bool landed = false;
+            var rawHits=new List<DamageResult>();
             for (int hit = 0; hit < d.HitCount; hit++)
             {
                 var result = p.RollAttack(e != null ? e.CombatStats : b.CombatStats, d);
+                rawHits.Add(result);
                 landed |= result.Amount > 0;
                 // 技能自带原版 hit 部件时，关掉占位的黄色柔光爆点
                 if (e != null) e.TakeHit(result, direction, true, d.Magic);
                 else if (b != null) b.TakeHit(result, direction, true);
             }
             Impact(s,d,targets[i],direction,landed);
+            captured.Add(new CapturedReplayHit{Target=targets[i],Hits=rawHits.ToArray()});
             if (e != null)
             {
                 if ((s.art == "roar" || s.art == "chain") && Random.value < d.Probability)
@@ -264,6 +269,7 @@ public partial class SkillSystem : MonoBehaviour
                 if (s.art == "dragon" || s.art == "dash") e.Push(direction, d);
             }
         }
+        if(d.Id==s.native.Id && d.Kind!="Summon")TriggerReactiveSkills(s,captured,origin,facing);
         return hits;
     }
 
@@ -272,6 +278,7 @@ public partial class SkillSystem : MonoBehaviour
     {
         StopAllCoroutines();
         spearCombo.Reset();
+        ClearNativeReplayEffects();
         NativeSkillVideo.Stop(NativeSkillVideo.Channel.PlayerSkill);
         ClearVisuals();
         if (summon != null) { summon.gameObject.SetActive(false); Destroy(summon.gameObject); }
