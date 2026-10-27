@@ -8,7 +8,7 @@ public sealed class NativeSkillDefinition
     public readonly float Cooldown, DamagePercent, MagicAttack, Duration, Probability, AttackBuff, SummonInterval;
     public readonly Vector2 Min, Max;
     public readonly string Kind, Element;
-    public readonly bool Magic;
+    public readonly bool Magic, HasBounds;
 
     public NativeSkillDefinition(Dictionary<string, object> skill, Dictionary<string, object> level)
     {
@@ -22,6 +22,7 @@ public sealed class NativeSkillDefinition
         DamagePercent = Art.Num(level, "damage"); MagicAttack = Art.Num(level, "mad");
         Duration = Art.Num(level, "time"); Probability = Art.Num(level, "prop", 100) / 100f;
         AttackBuff = Art.Num(level, "pad");
+        HasBounds = level.ContainsKey("lt") && level.ContainsKey("rb");
         Min = Point(level, "lt", new Vector2(-Art.Num(level, "range", 200), -100));
         Max = Point(level, "rb", new Vector2(0, 100));
     }

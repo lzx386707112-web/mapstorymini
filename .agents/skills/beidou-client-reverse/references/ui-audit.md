@@ -21,3 +21,23 @@
 - `tools/export_hud.py::identity_plate` 会生成自定义身份底板，需追踪当前引用并用原端节点替换。
 
 移动端虚拟操作层及编辑器属于移植适配；用户要求它高于游戏窗口。不能将这些适配界面误认为原端已有窗口。
+
+## 四个主面板版式（已核，2026-10-26）
+
+能力值 / 装备 / 背包 / 技能四窗的完整坐标表、IMG 节点与证据地址见
+[../../../../docs/ui-panel-restoration.md](../../../../docs/ui-panel-restoration.md)。要点：
+
+- 控件创建 `push` 顺序是 `(this, id, x, y, w, h)`；**带 origin 的图元 (x,y) 是中心点**
+  （`Item/BtGather|BtSort|BtFull|BtSmall` origin(6,6)、`Item/BtCashshop` origin(46,8)），
+  只有 origin(0,0) 的才是左上角。0x81CF0E 的 (495,266) 是中心 → 左上 (449,258)。
+- 窗口基类 0x92C2E8 只建 id 0x3E8 的边角手柄（中心在 `[esi+0x590],[esi+0x594]`）；
+  子类构造函数里没有关闭按钮，本项目统一自绘 (W-19,5)。
+- `CUIStat::Draw` 0x8C59FF 的成对 `push y; push 0x3D` 就是 8 行基础文本的 y；
+  BtDetail (124,324)（0x8C4E15），职业图 main/sub 在 (62,53)/(62,64)（0x8C5BCF）。
+  原端此窗没有音量控件。
+- 装备窗网格 (5,35) + 步长 33 + 格 32，小窗 5 列 / 展开 6 列，槽位名印在
+  `Equip/backgrnd`、`Equip/FullBackgrnd` 上；BtDetail (5,267)、BtPetEquipShow (102,280)。
+- 背包窗页签 (3,23,170=5×34)（0x81C978）、滚动条 (152,51,200)（0x81CCCF）、
+  格子 (8,50)+36×34（展开 4 组、组距 149、起 7）、BtCoin (7,266)。
+- 技能窗行顶 99/139/179/219 由 0x8AAD3C 循环的 `y=0x77` 与 `+0x28` 推出，与现实现一致。
+- 未定：`[esi+0x590]` 恒为图宽减 20 的语义；装备窗 BtDetail 的消息分派分支。

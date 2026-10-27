@@ -54,8 +54,8 @@ public static class StatusBar
 
         S = ComputeScale();
         float w = PanelW * S, h = PanelH * S;
-        // 原版贴在左下角，这里同样贴边，不留外边距
-        Panel = new Rect(0f, UiKit.H - h, w, h);
+        // 原端 backgrnd2 画在 (2,507)：底板左缘从 x=2 起，不再贴屏幕边
+        Panel = new Rect(BottomBar.PlateX * S, UiKit.H - h, w, h);
         GUI.DrawTexture(Panel, panel, ScaleMode.StretchToFill);
 
         DrawLevelTag();

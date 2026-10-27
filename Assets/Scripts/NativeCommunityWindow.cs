@@ -100,7 +100,7 @@ public static class NativeCommunityWindow {
     }
     static void Board() {
         GUILayout.Label("聊天记录");
-        foreach (var line in BottomBar.ChatHistory) GUILayout.Label(line);
+        foreach (var line in BottomBar.ChatHistory) GUILayout.Label(line.text);
         chatChannel = GUILayout.Toolbar(chatChannel, new[] { "所有人", "悄悄话", "组队", "好友", "家族", "联盟", "夫妻", "讯息" });
         name = GUILayout.TextField(name, 13);
         GUILayout.Label("消息内容 / 悄悄话对象填写在上方");

@@ -317,6 +317,7 @@ public static class Program
 
         Console.WriteLine();
         NativeSystemChecks.Run(Check);
+        BotChecks.Run(Check);
         Console.WriteLine("通过 " + passed + " / 失败 " + failed);
         File.Delete(dbPath);
         return failed == 0 ? 0 : 1;

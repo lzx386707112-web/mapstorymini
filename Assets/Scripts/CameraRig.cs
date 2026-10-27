@@ -82,7 +82,11 @@ public class CameraRig : MonoBehaviour
             y = Mathf.Lerp(y, ty, 1f - Mathf.Exp(-smooth * Time.unscaledDeltaTime));
             y = ClampY(y);
         }
-        else y = baseY;
+        else
+        {
+            x = ClampX(x);
+            y = ClampY(baseY);
+        }
 
         var off = HitFeel.CameraOffset;
         // 吸附到像素网格（1/PPU）：背景是 1:1 的地图像素，镜头停在半个像素上会抖
@@ -96,7 +100,8 @@ public class CameraRig : MonoBehaviour
         if (!useStage) return Mathf.Clamp(v, freeMinX, freeMaxX);
 
         // 半屏宽随窗口比例变，每帧算，改分辨率也不会错
-        float half = cam.orthographicSize * Mathf.Max(0.1f, cam.aspect);
+        // ijl15 0x10011DF5: integer logical width / 2, not a fractional pixel.
+        float half = Mathf.Floor(cam.orthographicSize * Mathf.Max(0.1f, cam.aspect) * Art.PPU) / Art.PPU;
         float lo = stageMinX + half;
         float hi = stageMaxX - half;
         if (lo >= hi) return (stageMinX + stageMaxX) * 0.5f;   // 切片比屏幕还窄：锁中间
@@ -105,6 +110,8 @@ public class CameraRig : MonoBehaviour
 
     public void SnapTo(float targetX)
     {
+        // A map switch can precede LateUpdate after a resolution/targetTexture change.
+        UpdateViewport();
         x = ClampX(targetX);
         y = ClampY(target != null ? target.position.y + 50f / Art.PPU : baseY);
         transform.position = new Vector3(x, y, -10f);
@@ -113,8 +120,10 @@ public class CameraRig : MonoBehaviour
     float ClampY(float value)
     {
         if (!useStage) return value;
-        float lo = stageMinY + cam.orthographicSize;
-        float hi = stageMaxY - cam.orthographicSize;
+        // ijl15 0x10011E2A..0x10011E8F: integer logical height / 2.
+        float half = Mathf.Floor(cam.orthographicSize * Art.PPU) / Art.PPU;
+        float lo = stageMinY + half;
+        float hi = stageMaxY - half;
         return lo >= hi ? (stageMinY + stageMaxY) * 0.5f : Mathf.Clamp(value, lo, hi);
     }
 }

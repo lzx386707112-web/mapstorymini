@@ -1112,6 +1112,42 @@ public class PlayerCtrl : MonoBehaviour
         return CombatRules.Attack(Attributes, weapon, weaponAttack, magicAttack, target, skill,
             Random.value, Random.value, Random.value);
     }
+    // Original handlers only synthesize a template when the initial attack captured
+    // no damage (ranged also falls back for all-zero captures). No target defense roll.
+    public DamageResult[] ReplayFallback(NativeSkillDefinition skill, int count, bool close)
+    {
+        RefreshAttributes();
+        long maximum;
+        if (skill.Magic)
+        {
+            long value = (long)(System.Math.Ceiling((magicAttack * System.Math.Ceiling(magicAttack / 1000.0) + magicAttack) / 30.0)
+                + System.Math.Ceiling(Attributes.intelligence / 200.0));
+            int amplification = SkillProgress.LevelOf(12110001);
+            var row = amplification > 0 ? SkillBook.Get(12110001)?.Level(amplification) : null;
+            if (row != null) value = value * (int)Art.Num(row,"y") / 100;
+            maximum = (long)(value * skill.MagicAttack);
+        }
+        else
+        {
+            int job = Profile.JobId;
+            bool dex = weapon.kind == WeaponKind.bow || weapon.kind == WeaponKind.crossbow || weapon.kind == WeaponKind.gun;
+            bool luk = weapon.kind == WeaponKind.claw || (weapon.kind == WeaponKind.dagger && job/100==4);
+            int main = luk ? Attributes.luk : dex ? Attributes.dex : Attributes.str;
+            int secondary = luk ? Attributes.dex+Attributes.str : dex ? Attributes.str : Attributes.dex;
+            int basis;
+            if (!string.IsNullOrEmpty(Profile.equipWeapon)) basis = CombatRules.MaxPhysicalDamage(main,secondary,Mathf.Max(14,weaponAttack),weapon.multiplier);
+            else if(job/100==5 || job/100==15)
+                basis = (int)System.Math.Ceiling((Attributes.str*(job%100==0?3:4.2)+Attributes.dex)*System.Math.Min(System.Math.Floor((2.0*Attributes.level+31)/3),31)/100);
+            else basis = 1;
+            maximum = (long)System.Math.Floor(basis * (double)skill.DamagePercent / 100 + .5);
+        }
+        maximum = System.Math.Max(1,System.Math.Min(int.MaxValue,maximum));
+        int mastery = Profile.JobId/100==11 ? System.Math.Min(10,(SkillProgress.LevelOf(11100000)+1)/2) : 0;
+        long minimum = System.Math.Max(1,(long)System.Math.Floor(maximum*(10+mastery*5)/100.0+.5));
+        var values = new DamageResult[count];
+        for(int i=0;i<count;i++) values[i]=new DamageResult((int)(close ? System.Math.Min(maximum,minimum+System.Math.Floor(Random.value*(maximum-minimum+1))) : maximum),false);
+        return values;
+    }
     public float EffectiveAtk
     {
         get

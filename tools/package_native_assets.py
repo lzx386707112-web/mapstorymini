@@ -122,7 +122,13 @@ def main():
     for key, skill in manifest["skills"].items(): image(f"Skill/{int(skill['id']) // 10000:03}.img")
     for icon in (ART / "skillicon").glob("*.bytes"):
         iid = int(icon.stem)
-        add(str(icon.relative_to(ART)), f"Skill/{iid // 10000:03}.img/skill/{iid}/icon")
+        rel = f"Skill/{iid // 10000:03}.img"
+        node = image(rel).get(f"skill/{iid}")
+        if node is None:
+            node = image(rel).get(f"skill/{iid:07d}")
+        if node is None:
+            raise ValueError(f"Missing skill node {iid} in {rel}")
+        add(str(icon.relative_to(ART)), f"{rel}/skill/{node.name}/icon")
     vfx = json.loads((ROOT / "Assets/Resources/GameplaySkillVfx.json").read_text())
     for skill in vfx["skills"]:
         for clip in skill["clips"].values():
@@ -200,6 +206,21 @@ def main():
         aliases.setdefault("ui/statusbar/" + _n, {"source": "UI/StatusBar.img/" + _s})
     for _s in ("normal", "mouseOver", "pressed", "disabled"):
         aliases.setdefault("ui/bar/combo_" + _s, {"source": "UI/Basic.img/ComboBox2/" + _s + "/0"})
+    # 底栏 (573,515) 两个白色通知槽里的便签图标与计数点阵（原端 base/iconMemo + FontMemo）。
+    aliases.setdefault("ui/bar/box_full", {"source": "UI/StatusBar.img/base/box"})
+    for _n in ("iconMemo", "iconRed", "iconBlue"):
+        aliases.setdefault("ui/statusbar/" + _n, {"source": "UI/StatusBar.img/base/" + _n})
+    for _i in range(10):
+        aliases.setdefault("ui/statusbar/fontmemo_" + str(_i), {"source": "UI/StatusBar.img/FontMemo/" + str(_i)})
+    # 小按钮的皮肤只有 normal/mouseOver/pressed/disabled 四态；ani/0、ani/1 是 500ms 两帧待机动画，
+    # 其中一帧与 normal/0 同像素、另一帧与 mouseOver/0 同像素，早期按像素摘要自动匹配把两者配混了：
+    # KeySet/QuickSlot 的待机与悬停互换，QuickSlotD 的悬停更被配成 key/7 的键名字形。
+    # 这里按节点结构强制改正，避免重跑脚本又回到错误映射。
+    for _n in ("EquipKey", "InvenKey", "StatKey", "SkillKey", "KeySet", "QuickSlot", "QuickSlotD"):
+        for _s in ("normal", "mouseOver", "pressed", "disabled"):
+            aliases["ui/bar/%s_%s" % (_n, _s)] = {"source": "UI/StatusBar.img/%s/%s/0" % (_n, _s)}
+    aliases["ui/bar/BtNPT_disabled"] = {"source": "UI/StatusBar.img/BtNPT/disabled/0"}
+    aliases["ui/bar/BtWhisper_normal"] = {"source": "UI/StatusBar.img/BtWhisper/normal/0"}
 
     unmatched = sorted(alias for group in targets.values() for alias in group if alias not in aliases and alias != "ui/statusbar/identity_plate")
     (ROOT / "Library/NativeAssets-unmatched.json").write_text(json.dumps(unmatched, indent=2))

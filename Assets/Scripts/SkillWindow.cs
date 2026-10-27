@@ -126,10 +126,13 @@ public static class SkillWindow
         if (!Visible) { CancelDrag(); return; }      // 任何关窗路径都要把手上的技能收回去
         if (GameLoop.I == null || GameLoop.I.player == null) return;
         if (pos.x < 0f) pos = new Vector2(18f, 70f);
+        ClampWindow();
 
         var win = new Rect(pos.x * S, pos.y * S, WinW * S, WinH * S);
 
         HandleWindowDrag(win);
+        // All input and both attached panels must use this frame's drag position.
+        win.position = pos * S;
 
         var tabs = Tabs;
         var list = TabSkills();
@@ -171,6 +174,13 @@ public static class SkillWindow
     static bool dragging;
     static Vector2 dragOffset;
 
+    static void ClampWindow()
+    {
+        // SkillMacro is attached at x=173, with its original 2px overlap.
+        float width = macroVisible ? WinW - 2 + 207 : WinW;
+        pos = NativeUi.ClampWindowPosition(pos, new Vector2(width, WinH), S);
+    }
+
     static void HandleWindowDrag(Rect win)
     {
         var title = At(win, 0f, 0f, WinW, 22f);
@@ -182,8 +192,7 @@ public static class SkillWindow
         if (dragging && Pointer.Down)
         {
             pos = Pointer.Pos / S - dragOffset;
-            pos.x = Mathf.Clamp(pos.x, -40f, UiKit.W / S - 60f);
-            pos.y = Mathf.Clamp(pos.y, 0f, UiKit.H / S - 80f);
+            ClampWindow();
         }
         if (!Pointer.Down) dragging = false;
     }

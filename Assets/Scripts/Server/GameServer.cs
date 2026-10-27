@@ -8,12 +8,16 @@ public sealed class GameServer
     public DbStore Db { get; private set; }
     public ITransport Transport { get; private set; }
     public IMapInfo MapInfo { get; set; }   // 客户端注入（FieldCatalog 数据）
+    Server.Bot.BotRuntime bots;
+    public Server.Bot.BotRuntime Bots => bots ??= new Server.Bot.BotRuntime(Db);
     public NativeScriptValues ScriptValues { get; private set; }
     public NativeScriptService Scripts { get; private set; }
     public NativeSocialService Social { get; private set; }
     public NativeCommunityService Community { get; private set; }
     public NativeCashService Cash { get; private set; }
     public NativeBossService Bosses { get; private set; }
+    public NativeWeatherService Weather { get; set; }
+    public NativeSkillBackdropService Backdrops { get; } = new NativeSkillBackdropService();
 
     // 单例（本地单机一个服务端实例）
     public static GameServer Local { get; private set; }
@@ -56,6 +60,7 @@ public sealed class GameServer
     {
         if (Local != null)
         {
+            Local.bots?.Dispose();
             Local.Db.Save();
             Local = null;
         }

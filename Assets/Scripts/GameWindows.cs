@@ -5,27 +5,11 @@ using UnityEngine;
 
 public static class WindowShell
 {
-    public static readonly Color Back = new Color(0.10f, 0.11f, 0.14f, 0.94f);
-    public static readonly Color Edge = new Color(0.55f, 0.62f, 0.72f, 0.9f);
     public static readonly Color Title = new Color(0.92f, 0.95f, 1f);
-
-    public static Rect Frame(string title, float x, float y, float w, float h, ref bool visible)
-    {
-        string folder = title == "能力值" ? "Stat" : title == "装备" ? "Equip" : "Item";
-        var bg = Art.Tex("wz://UI/UIWindow.img/" + folder + "/backgrnd");
-        var r = new Rect(x, y, bg.width * BottomBar.S, bg.height * BottomBar.S);
-        r.x = Mathf.Clamp(r.x, 0, Mathf.Max(0, UiKit.W - r.width));
-        r.y = Mathf.Clamp(r.y, 0, Mathf.Max(0, UiKit.H - BottomBar.Height - r.height));
-        GUI.DrawTexture(r, bg);
-        var close = new Rect(r.xMax - 19 * BottomBar.S, r.y + 5 * BottomBar.S, 12 * BottomBar.S, 12 * BottomBar.S);
-        if (NativeUi.Button(close, "UI/Basic.img/BtClose")) visible = false;
-        return r;
-    }
 
     public static bool Button(Rect r, string label, bool on = false)
     {
-        bool clicked = NativeUi.Button(r, "UI/Basic.img/BtOK");
-        return clicked;
+        return NativeUi.Button(r, "UI/Basic.img/BtOK");
     }
 
     public static void Label(Rect r, string text, int size = 12, Color? color = null)
@@ -36,46 +20,57 @@ public static class WindowShell
     }
 }
 
+// ——————————————— 能力值窗 ———————————————
+// 素材：UI/UIWindow.img/Stat/backgrnd 208×347、Stat/backgrnd2 218×203。
+// 坐标全部取自 CUIStat::Draw（BeiDou.exe 0x8C59FF 起）里的 push 常量对 (y, x=0x3D)：
+//   0x8C5A9C y=0x21(33) 名字   0x8C5B67 y=0x37(55) 职业   0x8C5C73 y=0x4F(79) 等级
+//   0x8C5D2D y=0x60(96) 家族   0x8C5E39 y=0x73(115) HP   0x8C5F25 y=0x85(133) MP
+//   0x8C603F y=0x97(151) 经验值 0x8C6121 y=0xA9(169) 人气度
+// 职业图标由 0x8C5BCF（push 0x35=53, push 0x3E=62）绘制：main 11 高、sub 10 高，正好落在 53..74。
+// 四属性数值 0x8C6564 (y=0xF4=244, x=61)，行距 18；AP 数字 (61,213)。
+// BtDetail 46×19 于 (124,324)（0x8C4E15 push 0x144 / 0x7C）。
+// 原端此窗没有任何音量控件，底部留白由 backgrnd 自带。
 public static class StatWindow
 {
     public static bool Visible;
     static Vector2 pos = new Vector2(220, 80);
     static bool detail = true, dragging;
-    // Reference client screenshot: all six AP arrows share the right-hand column.
+    const int WinW = 208, WinH = 347;
+    // 六个加点箭头共用右列 x=185（原端 11+ 版式）。
     const int ApArrowX = 185;
     static Vector2 grab;
     static float S => BottomBar.S;
     static Rect At(Rect r, float x, float y, float w, float h) => new Rect(r.x + x * S, r.y + y * S, w * S, h * S);
     static Texture2D Tex(string node) => Art.Tex("wz://UI/UIWindow.img/Stat/" + node);
-    static void Image(Rect r, string node, int x, int y)
+    static void Image(Rect r, string node, float x, float y)
     {
         var tex = Tex(node);
         if (tex != null) GUI.DrawTexture(At(r, x, y, tex.width, tex.height), tex);
     }
-    static void Text(Rect r, string text, int x, int y, int width = 135)
+    static void Text(Rect r, string text, float x, float y, int width = 135)
     {
         var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(11 * S), clipping = TextClipping.Clip };
         style.normal.textColor = Color.black;
-        GUI.Label(At(r, x, y, width, 17), text, style);
+        GUI.Label(At(r, x, y, width, 16), text, style);
     }
     public static void Toggle() { Visible = !Visible; SkillWindow.Visible = false; }
 
     public static void Draw()
     {
         if (!Visible || GameLoop.I == null || GameLoop.I.player == null) return;
-        var r = new Rect(pos.x * S, pos.y * S, 208 * S, 347 * S);
-        if (Event.current.type == EventType.Repaint && Pointer.Pressed && At(r, 0, 0, 184, 22).Contains(Pointer.Pos))
+        pos = NativeUi.ClampWindowPosition(pos, new Vector2(WinW, WinH), S);
+        var r = new Rect(pos.x * S, pos.y * S, WinW * S, WinH * S);
+        if (Event.current.type == EventType.Repaint && Pointer.Pressed && At(r, 0, 0, WinW - 24, 22).Contains(Pointer.Pos))
         { dragging = true; grab = Pointer.Pos / S - pos; }
         if (dragging && Pointer.Down)
         {
             pos = Pointer.Pos / S - grab;
-            pos.x = Mathf.Clamp(pos.x, 0, Mathf.Max(0, UiKit.W / S - 208));
-            pos.y = Mathf.Clamp(pos.y, 0, Mathf.Max(0, UiKit.H / S - 347));
+            pos = NativeUi.ClampWindowPosition(pos, new Vector2(WinW, WinH), S);
             r.position = pos * S;
         }
         if (!Pointer.Down) dragging = false;
         Image(r, "backgrnd", 0, 0);
-        if (NativeUi.Button(At(r, 190, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
+        if (NativeUi.Button(At(r, WinW - 19, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
         var p = GameLoop.I.player;
         var attrs = Profile.Attributes;
         string[] values = { Profile.playerName, "", Profile.level.ToString(), "-",
@@ -83,9 +78,10 @@ public static class StatWindow
             Profile.experience + " (" + (Profile.ExpRatio * 100).ToString("0.##") + "%)", "0" };
         int[] textY = { 33, 55, 79, 96, 115, 133, 151, 169 };
         for (int i = 0; i < values.Length; i++) Text(r, values[i], 61, textY[i]);
+        // 职业名拆成两张图：main 11 高画在 53，sub 10 高画在 64（两图共用 x=62）。
         int job = Profile.cls == "knight" ? 112 : Profile.cls == "warrior" ? 132 : Profile.cls == "mage" ? 212 : Profile.cls == "priest" ? 232 : Profile.cls == "archer" ? 312 : 0;
-        Image(r, "Job/main/" + job / 100, 61, 51);
-        Image(r, "Job/sub/" + job / 100 + "/" + job, 61, 64);
+        Image(r, "Job/main/" + job / 100, 62, 53);
+        Image(r, "Job/sub/" + job / 100 + "/" + job, 62, 64);
 
         if (Profile.AutomaticAp) Image(r, "basicStat", 8, 195);
         else
@@ -93,13 +89,13 @@ public static class StatWindow
             var apStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(11 * S), alignment = TextAnchor.MiddleRight };
             apStyle.normal.textColor = Color.black;
             GUI.Label(At(r, 61, 213, 26, 16), Profile.ap.ToString(), apStyle);
-            // Original 11+ layout: compact automatic-allocation control beside the AP count.
+            // 原端 11+ 版式：AP 数字右侧是自动分配控件（100×35 原图按 73×35 显示）
             var auto = Tex("BtAuto/disabled/0");
             if (auto != null) GUI.DrawTexture(At(r, 97, 197, 73, 35), auto);
             int[] stats = { attrs.str, attrs.dex, attrs.intelligence, attrs.luk };
             for (int i = 0; i < stats.Length; i++)
             {
-                // Unadvanced beginners use STR/DEX; INT/LUK labels are grey in the client.
+                // 未转职新手只开放 STR/DEX，INT/LUK 用原端 Disabled 素材压住标签
                 if (Profile.cls == "beginner" && i >= 2)
                     Image(r, "Disabled/" + (i == 2 ? "INT" : "LUK"), 8, 244 + i * 18);
                 Text(r, stats[i].ToString(), 61, 244 + i * 18);
@@ -107,24 +103,13 @@ public static class StatWindow
                 if (!Profile.CanAssignAp(i)) Image(r, "BtApUp/disabled/0", ApArrowX, 247 + i * 18);
                 else if (NativeUi.Button(up, "UI/UIWindow.img/Stat/BtApUp")) Profile.AssignAp(i);
             }
-            // HP/MP AP conversion is separate from the four base attributes.
+            // HP/MP 的 AP 转换按钮在原端常驻禁用（涉及职业被动与洗血计数）
             Image(r, "BtApUp/disabled/0", ApArrowX, 117);
             Image(r, "BtApUp/disabled/0", ApArrowX, 135);
         }
-        // 音量控制（音乐/音效分开，原端设置里也是两项）：
-        // 拖动即时生效并写 PlayerPrefs；BGM 音量变化同时作用到正在播的曲子。
-        var volStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(10 * S) };
-        volStyle.normal.textColor = Color.black;
-        GUI.Label(At(r, 8, 310, 34, 14), "音乐", volStyle);
-        float bgmVol = GUI.HorizontalSlider(At(r, 42, 314, 100, 12), AudioManager.BgmVolume, 0f, 1f);
-        if (!Mathf.Approximately(bgmVol, AudioManager.BgmVolume)) AudioManager.BgmVolume = bgmVol;
-        GUI.Label(At(r, 8, 328, 34, 14), "音效", volStyle);
-        float sfxVol = GUI.HorizontalSlider(At(r, 42, 332, 100, 12), AudioManager.SfxVolume, 0f, 1f);
-        if (!Mathf.Approximately(sfxVol, AudioManager.SfxVolume)) AudioManager.SfxVolume = sfxVol;
-
-        if (NativeUi.Button(At(r, 154, 324, 46, 19), "UI/UIWindow.img/Stat/BtDetail")) detail = !detail;
+        if (NativeUi.Button(At(r, 124, 324, 46, 19), "UI/UIWindow.img/Stat/BtDetail")) detail = !detail;
         if (!detail) return;
-        // Original detail window bottom-aligns with the main panel (347-203=144).
+        // 详情窗 218×203，与原端一致按主窗底部对齐：347-203=144。
         float dx = r.xMax - S;
         if (dx + 218 * S > UiKit.W) dx = Mathf.Max(0, r.x - 217 * S);
         var dr = new Rect(dx, r.y + 144 * S, 218 * S, 203 * S);
@@ -140,52 +125,112 @@ public static class StatWindow
         string[] lines = { min + " ~ " + max, combat.weaponDefense.ToString(), matk.ToString(), combat.magicDefense.ToString(),
             Mathf.FloorToInt(combat.accuracy + combat.dex * .8f + combat.luk * .5f).ToString(),
             Mathf.FloorToInt(combat.avoidability + combat.dex * .25f + combat.luk * .5f).ToString(),
-            (combat.dex + combat.intelligence + combat.luk).ToString(), "100%", "100%" };
-        for (int i = 0; i < lines.Length; i++) Text(dr, lines[i], 81, 7 + i * 18, 125);
+            (combat.dex + combat.intelligence + combat.luk).ToString(), "100", "100" };
+        // backgrnd2 的九行标签框实测 x=13..75、行高 18（8..170），数值框自 x=76 起。
+        for (int i = 0; i < lines.Length; i++) Text(dr, lines[i], 80, 9 + i * 18, 130);
     }
 }
 
+// ——————————————— 装备窗 ———————————————
+// 素材：Equip/backgrnd 175×304（槽位名已印在底图上）、Equip/FullBackgrnd 208×291。
+// 槽位网格实测（两张底图共用）：左上 (5,35)，格子 32×32，步长 33，小窗 5 列、展开态 6 列，
+// 各 7 行；5+4*33+32=169、5+5*33+32=202，与底图右边距 6 一致。
+// BtDetail 46×19 于 (5,267)（0x7FE222 push 0x10B / 5），点击在两种底图之间切换。
+// BtPetEquipShow 67×18 于 (102,280)（0x7FE0F3 push 0x118 / 0x66），宠物装备本项目未实现。
 public static class EquipWindow
 {
     public static bool Visible;
-    static Rect rect = new Rect(200, 100, 300, 220);
-    public static void Toggle() { Visible = !Visible; }
-
+    static Vector2 pos = new Vector2(200, 100);
+    static bool expanded, dragging;
+    static Vector2 grab;
     static float S => BottomBar.S;
+    const int SmallW = 175, SmallH = 304, FullW = 208, FullH = 291;
+    const int GridX = 5, GridY = 35, Step = 33, Cell = 32;
     static Rect At(Rect r, float x, float y, float w, float h) => new Rect(r.x + x * S, r.y + y * S, w * S, h * S);
+    static Texture2D Tex(string node) => Art.Tex("wz://UI/UIWindow.img/Equip/" + node);
+
+    // 每格对应的原端装备位；0 = 该项目没有实现（戒指/肩饰/腰带/副手/图腾/骑兽等）。
+    // 行 0..6 自上而下、列 0..4 自左而右，按 backgrnd 上的中文槽位名对齐：
+    //   帽子 / 勋章 额饰 戒指 戒指 / 眼饰 耳饰 肩饰 / 披风 上衣 项链 武器 盾牌 /
+    //   手套 裤裙 腰带 指环 指环 / 鞋子 副手 图腾 / 骑兽 鞍子 心脏 徽章 纹章
+    static readonly int[,] SmallCells =
+    {
+        { 0, EquipSlot.Hat, 0, 0, 0 },
+        { EquipSlot.Medal, EquipSlot.FaceAccessory, 0, 0, 0 },
+        { 0, 0, EquipSlot.EyeAccessory, EquipSlot.Earring, 0 },
+        { EquipSlot.Cape, EquipSlot.Top, 0, EquipSlot.Weapon, EquipSlot.Shield },
+        { EquipSlot.Glove, EquipSlot.Bottom, 0, 0, 0 },
+        { 0, 0, EquipSlot.Shoes, 0, 0 },
+        { 0, 0, 0, 0, 0 },
+    };
+
+    // 展开态 6 列，同样按 FullBackgrnd 的槽位名对齐：
+    //   帽子 / 勋章 脸饰 戒指 戒指 / 眼饰 耳环 / 披风 上衣 项链 项链 武器 盾牌 /
+    //   手套 裤裙 腰带 戒指 戒指 / 鞋子 宠物MP / 骑兽 鞍子 宠物装备 宠物装饰 宠物HP
+    static readonly int[,] FullCells =
+    {
+        { 0, EquipSlot.Hat, 0, 0, 0, 0 },
+        { EquipSlot.Medal, EquipSlot.FaceAccessory, 0, 0, 0, 0 },
+        { 0, 0, EquipSlot.EyeAccessory, 0, EquipSlot.Earring, 0 },
+        { EquipSlot.Cape, EquipSlot.Top, 0, 0, EquipSlot.Weapon, EquipSlot.Shield },
+        { EquipSlot.Glove, EquipSlot.Bottom, 0, 0, 0, 0 },
+        { 0, 0, EquipSlot.Shoes, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0 },
+    };
+
+    public static void Toggle() { Visible = !Visible; }
 
     public static void Draw()
     {
         if (!Visible) return;
-        var r = WindowShell.Frame("装备", rect.x, rect.y, rect.width, rect.height, ref Visible);
+        int w = expanded ? FullW : SmallW, h = expanded ? FullH : SmallH;
+        pos = NativeUi.ClampWindowPosition(pos, new Vector2(w, h), S);
+        var r = new Rect(pos.x * S, pos.y * S, w * S, h * S);
+        bool press = Event.current.type == EventType.Repaint && Pointer.Pressed;
         bool release = Event.current.type == EventType.Repaint && Pointer.Released;
-        // 8 个穿戴槽位（与 EquipSlot.Worn 顺序一致：帽/衣/裤/鞋/手套/披风/盾/武器）。
-        // 直接读 Profile 当前所穿，不再写死具体道具 id。
-        int[] slots = EquipSlot.Worn;
-        float[] colX = { 18, 95 };
-        float[] rowY = { 45, 85, 125, 165 };
-        var nameStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(11 * S) };
-        nameStyle.normal.textColor = Color.black;
-        for (int i = 0; i < slots.Length; i++)
+        if (press && At(r, 0, 0, w - 24, 22).Contains(Pointer.Pos)) { dragging = true; grab = Pointer.Pos / S - pos; }
+        if (dragging && Pointer.Down)
         {
-            int slot = slots[i];
-            float x = i == 8 ? 18 : colX[i / 4], y = i == 8 ? 205 : rowY[i % 4];
-            GUI.Label(At(r, x, y, 24, 16), EquipSlot.NameOf(slot), nameStyle);
-            int id = Profile.EquipOfSlot(slot);
-            var iconRect = At(r, x + 26, y - 2, 30, 30);
-            if (id > 0)
+            pos = NativeUi.ClampWindowPosition(Pointer.Pos / S - grab, new Vector2(w, h), S);
+            r.position = pos * S;
+        }
+        if (!Pointer.Down) dragging = false;
+        var bg = Tex(expanded ? "FullBackgrnd" : "backgrnd");
+        if (bg != null) GUI.DrawTexture(r, bg);
+        if (NativeUi.Button(At(r, w - 19, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
+
+        var cells = expanded ? FullCells : SmallCells;
+        int rows = cells.GetLength(0), cols = cells.GetLength(1);
+        for (int row = 0; row < rows; row++)
+            for (int col = 0; col < cols; col++)
             {
-                var icon = ArmorIcon(id);
-                if (icon != null) GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
-                // 点击脱下（武器必须一直持有，不允许在此卸下；换武器走背包）
-                if (release && iconRect.Contains(Pointer.Pos) && slot != EquipSlot.Weapon)
+                int slot = cells[row, col];
+                if (slot == 0) continue;
+                var cellRect = At(r, GridX + col * Step, GridY + row * Step, Cell, Cell);
+                int id = Profile.EquipOfSlot(slot);
+                if (id <= 0) continue;
+                var icon = IconOf(slot, id);
+                if (icon != null) GUI.DrawTexture(cellRect, icon, ScaleMode.ScaleToFit);
+                if (Event.current.type == EventType.Repaint && id > 0 && cellRect.Contains(Pointer.Pos)) ItemTooltip.SetHover(id);
+                // 点击脱下：武器必须一直持有，卸武器走背包换装
+                if (release && cellRect.Contains(Pointer.Pos) && slot != EquipSlot.Weapon)
                 {
                     if (slot == EquipSlot.Medal) NativeMedalWindow.Wear(id, true);
                     else Profile.SetEquipSlot(slot, 0);
                     BottomBar.Toast("已脱下" + EquipSlot.NameOf(slot));
                 }
             }
-        }
+
+        if (NativeUi.Button(At(r, 5, 267, 46, 19), "UI/UIWindow.img/Equip/BtDetail")) { expanded = !expanded; return; }
+        if (!expanded && NativeUi.Button(At(r, 102, 280, 67, 18), "UI/UIWindow.img/Equip/BtPetEquipShow"))
+            BottomBar.Toast("宠物装备暂未开放");
+    }
+
+    static Texture2D IconOf(int slot, int id)
+    {
+        if (slot == EquipSlot.Weapon)
+            return Art.Tex("wz://Character/Weapon/" + id.ToString("D8") + ".img/info/icon");
+        return ArmorIcon(id);
     }
 
     public static Texture2D ArmorIcon(int itemId)
@@ -196,11 +241,19 @@ public static class EquipWindow
     }
 }
 
+// ——————————————— 背包窗 ———————————————
+// 素材：Item/backgrnd 175×289、Item/FullBackgrnd 603×289。
+// 页签控件 (x=3, y=23, 宽 170 = 5×34) 见 0x81C978；图元 Item/Tab/{enabled,disabled}/i 27×16；
+//   底板用 Basic.img/Tab2 的 left/fill/right 切片（4×19 + 1×19 平铺 + 4×19）。
+// 滚动条 (x=152, y=51, 长 200) 见 0x81CCCF，素材 Basic.img/VScr4（base/prev/next 15×13、thumb 15×25）。
+// BtCoin 14×14 于 (7,266)（0x81CD74）；BtCashshop 93×18 原点(46,8) 中心 (495,266)
+//   → 左上 (449,258)（0x81CF0E）。
+// 格子实测：小窗起 (8,50)、步长 36×34、格 32、4 列×6 行；展开态 4 组，组距 149、起 x=7。
 public static class InvenWindow
 {
     public static bool Visible;
     static Vector2 pos = new Vector2(30, 90);
-    static bool expanded, dragging;
+    static bool expanded, dragging, sorted;
     static Vector2 grab;
     static int tab, scroll;
     static float S => BottomBar.S;
@@ -218,58 +271,75 @@ public static class InvenWindow
         GUI.Label(r, value, style);
     }
     public static void Toggle() { Visible = !Visible; }
+
+    // 页签底板：Tab2 左右各 4×19 + 1×19 平铺中段
+    static void TabPlate(Rect r, bool on)
+    {
+        string state = on ? "1" : "0";
+        var left = Art.Tex("wz://UI/Basic.img/Tab2/left" + state);
+        var fill = Art.Tex("wz://UI/Basic.img/Tab2/fill" + state);
+        var right = Art.Tex("wz://UI/Basic.img/Tab2/right" + state);
+        float edge = 4f * S;
+        if (fill != null) GUI.DrawTexture(new Rect(r.x + edge, r.y, r.width - edge * 2, r.height), fill);
+        if (left != null) GUI.DrawTexture(new Rect(r.x, r.y, edge, r.height), left);
+        if (right != null) GUI.DrawTexture(new Rect(r.xMax - edge, r.y, edge, r.height), right);
+    }
+
     public static void Draw()
     {
         if (!Visible) return;
-        float width = expanded ? 603 : 175;
-        pos.x = Mathf.Clamp(pos.x, 0, Mathf.Max(0, UiKit.W / S - width));
-        pos.y = Mathf.Clamp(pos.y, 0, Mathf.Max(0, UiKit.H / S - 289));
+        int width = expanded ? 603 : 175;
+        pos = NativeUi.ClampWindowPosition(pos, new Vector2(width, 289), S);
         var r = new Rect(pos.x * S, pos.y * S, width * S, 289 * S);
         bool press = Event.current.type == EventType.Repaint && Pointer.Pressed;
         bool release = Event.current.type == EventType.Repaint && Pointer.Released;
-        if (press && At(r, 0, 0, width - 55, 22).Contains(Pointer.Pos)) { dragging = true; grab = Pointer.Pos / S - pos; }
-        if (dragging && Pointer.Down) { pos = Pointer.Pos / S - grab; r.position = pos * S; }
+        if (press && At(r, 0, 0, width - 40, 22).Contains(Pointer.Pos)) { dragging = true; grab = Pointer.Pos / S - pos; }
+        if (dragging && Pointer.Down)
+        {
+            pos = NativeUi.ClampWindowPosition(Pointer.Pos / S - grab, new Vector2(width, 289), S);
+            r.position = pos * S;
+        }
         if (!Pointer.Down) dragging = false;
         Image(r, expanded ? "FullBackgrnd" : "backgrnd", 0, 0);
-        if (NativeUi.Button(At(r, width - 19, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
-        if (NativeUi.Button(At(r, width - 49, 5, 12, 12), "UI/UIWindow.img/Item/" + (expanded ? "BtSmall" : "BtFull"))) { expanded = !expanded; scroll = 0; return; }
-        if (NativeUi.Button(At(r, width - 34, 5, 12, 12), "UI/UIWindow.img/Item/" + (sorted ? "BtSort" : "BtGather"))) sorted = !sorted;
+
+        // 页签：控件 x=3、y=23、单页宽 34，图元 27×16 居中
         for (int i = 0; i < 5; i++)
         {
-            string state = i == tab ? "1" : "0";
-            GUI.DrawTexture(At(r, 8 + i * 29, 23, 21, 19), Art.Tex("wz://UI/Basic.img/Tab2/fill" + state));
-            GUI.DrawTexture(At(r, 4 + i * 29, 23, 4, 19), Art.Tex("wz://UI/Basic.img/Tab2/left" + state));
-            GUI.DrawTexture(At(r, 29 + i * 29, 23, 4, 19), Art.Tex("wz://UI/Basic.img/Tab2/right" + state));
-            Image(r, "Tab/" + (i == tab ? "enabled" : "disabled") + "/" + i, 5 + i * 29, i == tab ? 24 : 25);
-            if (release && At(r, 5 + i * 29, 23, 29, 18).Contains(Pointer.Pos)) { tab = i; scroll = 0; }
+            bool on = i == tab;
+            var plate = At(r, 3 + i * 34, 23, 34, 19);
+            TabPlate(plate, on);
+            Image(r, "Tab/" + (on ? "enabled" : "disabled") + "/" + i, 3 + i * 34 + (34 - 27) * 0.5f, on ? 24 : 25);
+            if (release && plate.Contains(Pointer.Pos)) { tab = i; scroll = 0; }
         }
+
         int capacity = Profile.InventoryCapacity(tab);
         int maxScroll = Mathf.Max(0, Mathf.CeilToInt(capacity / 4f) - 6);
         scroll = Mathf.Clamp(scroll, 0, maxScroll);
-        var entries = new System.Collections.Generic.List<int>();
+        var entries = new List<int>();
         if (tab == 0)
         {
             bool equipped = false;
             foreach (string id in Profile.OwnedWeapons)
             {
-                // Equipped item occupies the EQUIPPED inventory, not a bag slot.
+                // 已装备的武器占 EQUIPPED 位，不再占用背包格
                 if (!equipped && id == Profile.equipWeapon) { equipped = true; continue; }
                 if (int.TryParse(id, out int number)) entries.Add(number);
             }
         }
         entries.AddRange(Profile.InventoryItems(tab));
         if (sorted) entries.Sort();
-        if (!expanded && maxScroll > 0 && Event.current.type == EventType.Repaint && At(r, 7, 50, 160, 205).Contains(Pointer.Pos))
+        if (!expanded && maxScroll > 0 && Event.current.type == EventType.Repaint && At(r, 8, 50, 148, 202).Contains(Pointer.Pos))
         {
             float wheel = Input.mouseScrollDelta.y;
             if (Mathf.Abs(wheel) > .01f) scroll = Mathf.Clamp(scroll - (int)Mathf.Sign(wheel), 0, maxScroll);
         }
+
         for (int cell = 0; cell < (expanded ? 96 : 24); cell++)
         {
             int index = expanded ? cell : scroll * 4 + cell;
             int block = expanded ? cell / 24 : 0;
             int local = cell % 24;
-            float x = 7 + block * 148 + local % 4 * 36;
+            float x = (expanded ? 7 : 8) + block * (expanded ? 149 : 0) + local % 4 * 36;
             float y = 50 + local / 4 * 34;
             var slot = At(r, x, y, 32, 32);
             if (index >= capacity) { Image(r, "disabled", x, y); continue; }
@@ -281,6 +351,7 @@ public static class InvenWindow
             else if (tab == 0 && EquipCatalog.DirOf(id) != null) icon = Art.Tex("wz://Character/" + EquipCatalog.DirOf(id) + "/" + id.ToString("D8") + ".img/info/icon");
             if (icon != null) GUI.DrawTexture(slot, icon, ScaleMode.ScaleToFit);
             if (tab != 0) Text(At(r, x, y + 20, 31, 12), Profile.ItemCount(id).ToString(), true, 9);
+            if (Event.current.type == EventType.Repaint && id > 0 && slot.Contains(Pointer.Pos)) ItemTooltip.SetHover(id);
             if (release && slot.Contains(Pointer.Pos) && tab == 0)
             {
                 int eqSlot = EquipSlot.SlotOf(id);
@@ -292,26 +363,41 @@ public static class InvenWindow
                 }
             }
         }
+
         if (!expanded)
         {
+            // 滚动条：x=152、y=51、长 200（0x81CCCF）
             string root = "wz://UI/Basic.img/VScr4/" + (capacity > 24 ? "enabled/" : "disabled/");
             var track = Art.Tex(root + "base");
-            if (track != null) GUI.DrawTexture(At(r, 154, 65, 15, 174), track);
-            var prev = At(r, 154, 50, 15, 15); var next = At(r, 154, 239, 15, 15);
-            GUI.DrawTexture(prev, Art.Tex(root + (capacity > 24 ? "prev0" : "prev")));
-            GUI.DrawTexture(next, Art.Tex(root + (capacity > 24 ? "next0" : "next")));
+            const float sx = 152, sy = 51, sh = 200;
+            if (track != null)
+                for (float y = sy + 13; y < sy + sh - 13; y += 13)
+                    GUI.DrawTexture(At(r, sx, y, 15, Mathf.Min(13, sy + sh - 13 - y)), track);
+            var prev = At(r, sx, sy, 15, 13);
+            var next = At(r, sx, sy + sh - 13, 15, 13);
+            var prevTex = Art.Tex(root + (capacity > 24 ? "prev0" : "prev"));
+            var nextTex = Art.Tex(root + (capacity > 24 ? "next0" : "next"));
+            if (prevTex != null) GUI.DrawTexture(prev, prevTex);
+            if (nextTex != null) GUI.DrawTexture(next, nextTex);
             if (capacity > 24)
             {
-                GUI.DrawTexture(At(r, 154, 65 + scroll * 149f / Mathf.Max(1, maxScroll), 15, 25), Art.Tex(root + "thumb0"));
+                float span = sh - 13 - 13 - 25;
+                GUI.DrawTexture(At(r, sx, sy + 13 + scroll * span / Mathf.Max(1, maxScroll), 15, 25), Art.Tex(root + "thumb0"));
                 if (press && prev.Contains(Pointer.Pos)) scroll = Mathf.Max(0, scroll - 1);
                 if (press && next.Contains(Pointer.Pos)) scroll = Mathf.Min(maxScroll, scroll + 1);
             }
         }
-        Text(At(r, 27, 267, 113, 16), Profile.gold.ToString(), true);
-        if (expanded && NativeUi.Button(At(r, width - 106, 267, 93, 18), "UI/UIWindow.img/Item/BtCashshop"))
+
+        // 金币：BtCoin (7,266) 14×14，数字框 backgrnd 自带于 (25,267)-(142,280)
+        Image(r, "BtCoin/normal/0", 7, 266);
+        Text(At(r, 25, 267, 115, 14), Profile.gold.ToString(), true);
+
+        // 标题栏右侧按钮：展开/收起 (W-34,6)、整理/分类 (W-49,6)
+        if (NativeUi.Button(At(r, width - 34, 6, 12, 12), "UI/UIWindow.img/Item/" + (expanded ? "BtSmall" : "BtFull"))) { expanded = !expanded; scroll = 0; return; }
+        if (NativeUi.Button(At(r, width - 49, 6, 12, 12), "UI/UIWindow.img/Item/" + (sorted ? "BtSort" : "BtGather"))) sorted = !sorted;
+        if (expanded && NativeUi.Button(At(r, 449, 258, 93, 18), "UI/UIWindow.img/Item/BtCashshop"))
             BottomBar.Toast("容量扩充需在商城购买：2000点券增加4格，最多96格");
     }
-    static bool sorted;
 }
 
 public static class ShopWindow
@@ -497,6 +583,7 @@ public static class GameWindows
     public static void DrawAll()
     {
         TrackPanels();
+        ItemTooltip.Reset();
         NativeCashWindow.Tick();
         NativeMapWindows.DrawMini();
         StatWindow.Draw();
@@ -514,5 +601,6 @@ public static class GameWindows
         NativeCommunityWindow.DrawBoard();
         NativeCommunityWindow.Draw();
         NativeMedalWindow.Draw();
+        ItemTooltip.Flush();
     }
 }

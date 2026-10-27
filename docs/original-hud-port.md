@@ -216,12 +216,147 @@ Q 开任务窗，C 打开本地聊天输入，界面显示可切换。尚无对�
 
 `UI/StatusBar.img` 里以下 canvas 本端没有引用，原因是没有可信的原版坐标，宁可不画也不猜：
 
-- `base/box`（42×19，两枚白色圆角小方块）、`base/iconRed`/`iconBlue`（12×12）、`base/iconMemo`（14×11）、
-  `FontMemo/0..7`（6×7 数字）：是「新消息/便签」一类通知控件，只在有事件时出现，主 HUD 上不常驻。
 - `key/0..6`（Shift/Ins/Hm/Pup/Ctrl/Del/End 字形）、`key/7`（28×20 红色下箭头）：`key/7` 已作为
   `QuickSlotD` 的悬停态使用；`key/0..6` 是旧版键盘提示字形的残留，本端键名走 `KeyConfig/key/<扫描码>`。
-- `quickSlot32`（571×80，32 格）、`quickSlot08`（151×80，8 格）：本端按 26 格显示，用 `base/quickSlot`。
+- `quickSlot32`（571×80，32 格）、`quickSlot08`（151×80，8 格）：本端按 26 格显示，用 `base/quickSlot`
+  （它和 `quickSlot26` 逐像素相同，见 statusbar-layout.md）。
+- `FontMemo/0..9`（6×7 点阵）：通知槽的未读计数，反汇编里定位不到绘制位置，不排。
 
 `BtWhisper`（12×19 四态）属于聊天行的悄悄话按钮，但本端不知道它在原版聊天行里的确切 x 坐标
 （`chatTarget` 已占到 x2..83，输入行从 x86 起），所以没有插进去——插进去就得编坐标。
+
+## 2026-10-27 底栏对齐源端：坐标复核 + 两处回退
+
+用户指出底栏"有按钮缺失、聊天框样式不对"。按 `BeiDou.exe` 反汇编 + `UI/StatusBar.img`
+原始 canvas 重排了一遍，结论落进
+[statusbar-layout.md](../.agents/skills/beidou-client-reverse/references/statusbar-layout.md)，
+这里只记改了什么。
+
+**几何基线**：客户区 578（不是 600），底栏 817×71 贴底（y=507..578）。
+`base/backgrnd2` 画在 **x=2** 而不是 0，所以状态栏底板、白条、深色槽整体右移 2px，
+右缘落在 572，正好接上 (573,515) 的通知槽和 (573,543) 的商城按钮。
+
+| 改动 | 之前 | 现在 |
+| --- | --- | --- |
+| 底板左缘 | `x=0` | `PlateX = 2`（`StatusBar.Panel` 一起跟） |
+| 大按钮 | `y=H-62`、高 34 | `y=543`（底栏内 36）、54×34 |
+| 小按钮 | 起点 618、`y=H-62` | 起点 618、`y=515`（底栏内 8）、28×20 |
+| 聊天输入行 | 宽 448，右边提前 34px 收尾 | 宽 479（x86..565），排到白条右端 |
+| 通知槽 | 完全没画 | `base/box` + `base/iconMemo` + `BtClaim`，受 `MemoCount`/`ClaimAvailable` 门控 |
+| 空格快捷格 | 铺 `KeyConfigWindow.Icon()` 功能图标 | 只画键名（源端空格就是白底 + 红键名） |
+| 按钮四态别名 | `_normal`/`_mouseOver` 误配到 `ani/*` | 强制指向 `normal/0` / `mouseOver/0` |
+
+**两处"加多了"的回退**（本轮先加后删，记下来免得再犯）：
+
+1. `base/box` 一开始按"原端常驻"无条件铺在 (573,515)，结果商城按钮正上方多出两个白方块。
+   源端截图该 42×19 区域均值 RGB(215,221,226)、最大值 252，**没有任何 255 白块** ——
+   通知槽是有事件才出现的，必须门控。原文「不常驻」的结论是对的，不要推翻它。
+2. 通知槽里的未读数：`FontMemo` 点阵的绘制位置在反汇编里定位不到，
+   第一版按槽宽自己排了个数字，已删除，只画 `base/iconMemo`。
+
+**验证**：`BottomBar.cs` / `StatusBar.cs` 编译 0 error；用 WZ 原始 canvas 按坐标表离线合成
+`Library/SbPreview/native_bar.png`（1281×80，含底栏 + 快捷栏），与源端截图重采样后上下叠图
+（`native_vs_src.png`）逐元素对齐：白条右端、6 小按钮、4 大按钮、13×2 快捷格的位置一致，
+通知槽区域两侧都是纯底板。
+
+> 注：本轮未能跑 Unity 实机截图——`Assets/Scripts/Server/Bot/BotWander.cs`（未入库的新代码）
+> 有 15 个编译错误（`BotCharacter` 缺 `wander`/`moving`/`facing`，`BotScheduler` 缺 `Dt`），
+> 导致工程进不了 Play。与底栏无关，等该子系统补完再复跑 `BottomBarReview`。
+
+## 2026-10-27 补：聊天行两态 + 两个通知白槽
+
+用户拿第二张源端截图指出「聊天框收起时的样式不对，右边还缺 2 个按钮」。两张截图
+其实是聊天行的**两个不同状态**，之前只实现了输入态。
+
+**聊天行两态**（底色实测见 [statusbar-layout.md](../.agents/skills/beidou-client-reverse/references/statusbar-layout.md)）：
+
+| 状态 | 外观 | 实现 |
+| --- | --- | --- |
+| 输入态 | 白条 + `chatTarget` 频道按钮 + 输入文字 + `base/chat` 凹线 | `DrawChatInput()`（原逻辑） |
+| 收起态 | 深色条（白底压 55% 黑，实测 RGB≈124,117,116）+ 浅色字显示最后一条记录，**无频道按钮** | `DrawCollapsedChat()`（新增） |
+
+收起态的条可点击 → 进入输入态（`FocusChat()`），和原端「点聊天条开始打字」一致。
+频道下拉展开时 `ChatFocused` 会被置 false，所以按钮的显示条件写的是
+`ChatFocused || channelOpen`，否则列表一展开按钮就消失。
+
+**两个通知白槽**（`base/box` 42×19 @ (573,515)）：
+
+- 左槽 = `BtClaim`（20×19），素材是红圆顶 + 黄底座，与源端截图左槽逐像素吻合
+- 右槽 = `base/iconMemo`（14×11 @ (599,519)），橙色口袋 + 蓝宝石，同样吻合
+
+两张截图对"是否常驻"给了相反答案（10-26 那张没有白槽，10-27 那张两个都在）。
+**用户拍板按常驻实现**，所以 `DrawNotifyBox()` / `DrawClaim()` 不再加门控；
+之前那版 `MemoCount` / `ClaimAvailable` 字段已删除（游戏里没有任何系统写它们）。
+
+**还没做的**：收起态截图右侧、白槽左边还有一个青色四方星按钮和一组竖排 ▲▼ 小箭头。
+`UI/StatusBar.img` 里没有对应节点，`UI/Basic.img` 的 `VScr` 一族可能是那组滚动条，
+但没有代码引用能坐实，按"不猜"原则先不画，已在文档里记缺口。
+
+2026-10-27 补充（素材排查结果，仍待确认）：
+
+- 位置已反推：以两个白槽（原生 573..615）为基准，星按钮在**原生 x≈549..561**、
+  上下箭头在 **x≈561..573**，都在白条右端内部，且画在收起态深色条之上。
+- 素材候选：星 = `UI/Basic.img/BtHide2` 或 `BtHide3`（12×12，青蓝底 (88,196,245) +
+  白色四角星）；箭头 = `UI/Basic.img/VScr/disabled/prev` + `/next`（12×12，灰底
+  (188,188,188) + 白色箭头，源端这两个确实是灰的）。
+- `BeiDou.exe` 里查不到 `BtHide*` / `VScr` / `BtUP` 任何字面量（连 `backgrnd2`、
+  `iconMemo`、`BtClaim`、`quickSlot` 都查不到，客户端用哈希/索引解析节点名），
+  静态分析无法坐实 → 等用户确认后再实现。
+
+## 2026-10-27 补：系统消息按 type 落点
+
+用户要求「系统消息的发送和显示逻辑再细对一下」。查完发现之前最大的偏差是
+**把系统消息一律当白色 Toast**，而原端是按包里的 `type` 分三个落点、四种颜色。
+
+完整结论已沉淀到
+[chat-and-system-messages.md](../.agents/skills/beidou-client-reverse/references/chat-and-system-messages.md)，
+这里只记改动与影响面。
+
+**包结构**：源端只有一个 `SERVERMESSAGE`，首字节 `type`，其后正文。
+客户端没有"按 opcode 分流"这回事，必须"读 type 选落点"。
+
+**type 表与落点**（服务端调用数 / 脚本调用数）：
+
+| type | 名称 | 服务端 | 脚本 | 落点 | 语义 |
+| --- | --- | --- | --- | --- | --- |
+| 0 | `[Notice]` | 15 | 1 | 聊天窗（浅蓝） | 通用公告 |
+| 1 | `Popup` | 164 | 18 | **居中弹窗** | 严重错误：背包已满、未知错误 |
+| 2 | `Megaphone` | 2 | — | 喇叭 | 跨频道，不接 |
+| 3 | `SuperMegaphone` | 4 | — | 超级喇叭 | 跨频道，不接 |
+| 4 | `Scrolling` | 0 | 0 | 顶部滚动 | 服务端从未调用，不实现 |
+| 5 | `Pink` | 大量 | 143 | 聊天窗（**粉色**） | 阻止 / 失败 |
+| 6 | `Lightblue` | 大量 | 73 | 聊天窗（浅蓝） | 条件 / 说明 |
+
+**改动**：
+
+1. 新增 `Assets/Scripts/NativeSystemMessage.cs` —— 唯一分派入口 `Drop(type, text)`。
+2. `BottomBar` 的聊天历史从 `List<string>` 改成 `List<ChatLine>`（带 `Color`），
+   新增 `AddChat(text, color)` 与 `ChatWhite` / `ChatPink` / `ChatLightBlue`；
+   屏幕上画最后 5 行，收起态条里画最后 1 行，**都用该行自己的颜色**。
+3. `NpcApi`：`dropMessage` / `playerMessage` / `mapMessage` 三个 API 签名一致，
+   统一走 `DropNotice(c)` 按参数个数分流（两参 → 按 type，单参 → type 0）；
+   `message(msg)` 硬编码 `Drop(5, …)` —— 源端 `Character.message` 就是 `dropMessage(5, m)`。
+4. `NativeSocialWindow`：组队/好友失败改走 `Drop(5, …)`，不再是浮层 Toast。
+
+**两个容易踩错的点**：
+
+- **`[系统]` 前缀不是客户端加的**。`BeiDou.exe` 里 `[系统]` / `系统` / `[组队]` / `所有人`
+  在 UTF-16LE / GBK / UTF-8 下全部 0 命中；前缀来自服务端 i18n
+  `Message_zh_CN.properties` 第 1107 行。要复现这句话，前缀必须在下发处带。
+- **`%s : %s` 是"空格冒号空格"**，在 exe 文件偏移 `0x6f1618`（VA `0xAF1618`），
+  唯一引用点 `0x45B756`。不是 `%s: %s` 也不是 `%s:%s`。
+
+**验证**：`dotnet build tools/unity-compile-check` 0 error；
+`Unity -batchmode -executeMethod BottomBarReview.Run` 新增第 5 张 `bar_5_sysmsg.png`
+（白/粉/浅蓝三色混排），与源端 10-27 截图那句 `[系统] 客户端上次闪退…` 上下对照，
+同色、同前缀。粉色实测本端字形 RGB(234,192,193)、源端 (204,171,173)（源端是抗锯齿混合值，同族）。
+
+**还没做的**（按「不猜」原则，需用户拍板）：
+
+- **type 1 居中弹窗**现在退回 Toast。素材有 `UI/Basic.img/Notice`（264×132 单张，自带 OK 框）
+  与 `Notice2`（258×40/20/47 九宫格）两种候选，exe 里查不到字面量，版面参数坐实不了。
+- **type 0/6 的浅蓝**当前取 `#AAD7FF`，只是按类型名 `Lightblue` 推的，没有截图证据。
+
+
+
 

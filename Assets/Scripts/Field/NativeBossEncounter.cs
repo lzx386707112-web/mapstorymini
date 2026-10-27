@@ -20,7 +20,7 @@ public sealed class NativeBossEncounter : MonoBehaviour
         tasks.Tick(NativeMobController.Now);
         lucid?.Tick();
     }
-    public void Clear() { tasks.Clear(); lucid = null; }
+    public void Clear() { tasks.Clear(); lucid = null; NativeSkillVideo.Stop(NativeSkillVideo.Channel.BossScene); }
     public void OnSpawn(EnemyUnit mob)
     {
         if (NativeBossRules.IsLucid(mob.fieldMobId))
@@ -64,8 +64,7 @@ public sealed class NativeBossEncounter : MonoBehaviour
     public void Effect(string path)
     {
         if (string.IsNullOrEmpty(path)) return;
-        // Keep the original effect identifier visible to the native effect layer;
-        // video-backed modern layers need their own decoder, never fake artwork.
+        if (NativeBossVideoEffect.Handle(path)) return;
         Debug.Log("[BossEffect] " + path);
     }
     public void Damage(EnemyUnit source, int percent, Rect? absolute = null)

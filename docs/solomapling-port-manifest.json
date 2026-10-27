@@ -1,0 +1,1904 @@
+{
+  "sourceRoot": "BeiDou-Server/gms-server/src/main/java/soloMapling",
+  "completionRule": "All runtime behaviors ported and integrated; tests, source adapters and inactive tooling explicitly audited. No placeholder behavior counts as complete.",
+  "files": [
+    {
+      "source": "ArtificialPlayer/BotAttackSystem/BotAttackData.java",
+      "sha256": "7c711a90f52d554ac953236b304a80678010280c8cf7f906314a0134df9d759e",
+      "lines": 91,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotAutoSpawner.java",
+      "sha256": "6ea4f4b2a7af38c4d47549200ab76e3aab1fbdaf3961342bddf94743fae38fa0",
+      "lines": 40,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotRuntime.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/BotBlockList.java",
+      "sha256": "2d14065662f035e60a020b93a70d9706599357155cdc2f8f0811248201541690",
+      "lines": 228,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotBlockList.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotBossCombatManager.java",
+      "sha256": "e28126a5f494469f5ba8b36a0b8dca04924b05b129ba715ac191b6c18d9cef3a",
+      "lines": 315,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotChatterSystem/BotChatter.java",
+      "sha256": "91d927be49c676fcb6751d4a238585610733db99c5626076aaf2e2a541db7e31",
+      "lines": 19,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/TownWandererBot.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/BotClientHandler.java",
+      "sha256": "5bdafacb9c3e104efe0724eab0a909fe8a163f617122347185b7a67aad28c086",
+      "lines": 46,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotCommands.java",
+      "sha256": "242e18eb01bd83e0384b3bb2d9aa5af108eab117fcefdf4f6b336bd98e24e023",
+      "lines": 33,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotCommandsPack/BotAttack.java",
+      "sha256": "0d395ba2cb5174af07da32d289294dfc92fdc242b099cca21ee4c0c8182d9a1d",
+      "lines": 522,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotCommandsPack/DropCommands.java",
+      "sha256": "aa83c0b927837700ca2ef0f9e9c980bdf23a6a0c8a93b157ea4b30376fbe1642",
+      "lines": 253,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotCommandsPack/MapleMessengerCommands.java",
+      "sha256": "d3356726305bb71a6e3a8d726a4bc07ee52ff7f5062b677453349dd455e08be6",
+      "lines": 122,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotCommandsPack/MegaphoneCommands.java",
+      "sha256": "aefae5b8ff98254a3f3c65d9e594f58d542a772eb82465936f0bd98fc3cb7fbe",
+      "lines": 110,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotCommandsPack/SocialCommands.java",
+      "sha256": "c0573f69c24e96c9d0b1c1dec9983755aa5d9e3245e92e54620ce2acb5f1d9f8",
+      "lines": 209,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotOutput.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotCommandsPack/VFXCommands.java",
+      "sha256": "12a5379df7e15f90e609168b2633634ffa1f63c940af9e9aa935354cd98292d7",
+      "lines": 23,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotCommandsPack/WarpCommands.java",
+      "sha256": "72151b344aff33972852a5c94eb7404726c86a71c3c20de50d9bbb0d6d5b39f5",
+      "lines": 124,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotCustomization.java",
+      "sha256": "a51d1953b0b607fece3b40912a03f18c0aaece4c1a80d82b6d1d733af9e40044",
+      "lines": 153,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/BotCustomization.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotDebugHandler.java",
+      "sha256": "4b6ba3d8b58f651f7ea55cf75a908e877d4436c81ab7c290d3bfefe369c899d7",
+      "lines": 116,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/BotCosmeticPool.java",
+      "sha256": "be8e9aa7f1f1c8139a904df8eb97eae4fc3ce2e46cc10051974156aa31a58912",
+      "lines": 186,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/BotCosmeticPool.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/BotDecorate.java",
+      "sha256": "473f5fc1a72fdcc9cd852e31d8e5c4139fad08558fd378f7815c4f6cb8c587c0",
+      "lines": 359,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/BotDecorate.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/BotDecorateBody.java",
+      "sha256": "f717c70dc14cd4eb230d665448fdee3edd60c555a5bbd93133c5549538e88044",
+      "lines": 17,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/BotDecorateEquips.java",
+      "sha256": "cc530c62d4dac0c6981f9497908953637b18ebe9074f9f8789e8e4407fa4c20a",
+      "lines": 370,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/BotDecorateEquips.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/BotDecorateNX.java",
+      "sha256": "5cb04caaa451ce5c21301f4fad87b38ba7a277b0f90e9d7563e8c7efbaa1f8e8",
+      "lines": 239,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/BotDecorateNX.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/BotDecorationQueue.java",
+      "sha256": "40b05654f8812910eb49626108daac0f991eed5ff2327b612b3fc38ef4a71629",
+      "lines": 138,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/BotEquipChecker.java",
+      "sha256": "568ea117698ab92d25c4a2802c478b432bd99c110e646d3891ba18f64dfc0f7c",
+      "lines": 89,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/CosmeticTier.java",
+      "sha256": "78d7b8df7e03ec9a096198221a90eb95da0bb06785d5223382bf2a25057aeb8f",
+      "lines": 15,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/EquipDecoratorRules.java",
+      "sha256": "7cd40d95ff48b5f1ca7979a7fc3c4a182559303b680a942571af73e9572fb808",
+      "lines": 117,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/EquipDecoratorRules.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/FashionCashShopPool.java",
+      "sha256": "ef0f623acd9c9e7af58c0a49d685f72ff107b801c11999961f0a91bb14149e20",
+      "lines": 105,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/NXItemPool.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/GenericEquipPool.java",
+      "sha256": "7f44a55dcb7052ffce642bf4438c39de764aa542578fd1bc991fd9cf121f4d31",
+      "lines": 167,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/GenericEquipPool.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/JobPathLogic.java",
+      "sha256": "d5f15c0c3d602d57781be7c4e3cdf4c4181501b947c7e32f94fa74c34479eea1",
+      "lines": 84,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/JobPathLogic.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/NXItemPool.java",
+      "sha256": "20eb14d341ca9c17876ce7d38c916a9d0fe6d3707b3ce4e589cb3ca86bdd2fc5",
+      "lines": 364,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/NXItemPool.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotDecoratorSystem/QuickEquip.java",
+      "sha256": "2b035eaf83f62293ccfc213d2347325930f7438aed02da0ade5eadf1473c3ec7",
+      "lines": 120,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/QuickEquip.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotDialogueHandler.java",
+      "sha256": "f4b9d2d21a221ab65f891e782cf68633095da03a7e5abe1b7070e017a4672290",
+      "lines": 204,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotDialogue.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotFlavorSystem/BotFlavor.java",
+      "sha256": "74171f58398082186e835f375266490466179c67c7d275a0f4c687996101bac0",
+      "lines": 89,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotFlavor.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/BotFlavorSystem/FlavorAction.java",
+      "sha256": "b97bde0700cecd468eec3811c5ccd28560e72f58d9d651d45159526bd98ba600",
+      "lines": 14,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotFlavor.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/BotFlavorSystem/LevelUpCongrats.java",
+      "sha256": "260025e3a83aa278908d4f3a05d30b802408e1ad739d57c454da7a1a27169ea1",
+      "lines": 70,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/TownWandererBot.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/BotGeneration.java",
+      "sha256": "a64bd3ecb604847f697bc00d3c4550ec241b17b02fc9f3b9396505fcc1bb03c0",
+      "lines": 308,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotGeneration.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotGrindSystem/BotSpotPicker.java",
+      "sha256": "7318232f0e6c4eee8f7d07e1730704cba4da66701ce3c901832fd5c509499852",
+      "lines": 145,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotGroundSpotPicker.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/BotGrindSystem/MapMobIndex.java",
+      "sha256": "608de6e3f27da7df1c043c8cbd072d5f09058af6df0a4778ccc3f60a9cd97c1e",
+      "lines": 21,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotHelpers.java",
+      "sha256": "47e0b851104cd62d0a1a6cafd0bbbb1c97326e393504c4a00f1d3272cb84556e",
+      "lines": 201,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotInteractorsHandler.java",
+      "sha256": "8465a83ac98252af52d17edef52c0c8c7fef30d9fa8765b5c2215b60e69d5e91",
+      "lines": 99,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotMessages.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotLogic.java",
+      "sha256": "d42a0cd656da92ddd2ae53e871c8180e96b1fd8cdbbb1c0f202bdac90ad874bd",
+      "lines": 355,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMapEntryResponder.java",
+      "sha256": "791e1d3f2fc4135c43bfbbfc69381f011c25b1ee67d84001b1baaea03a87ca4c",
+      "lines": 75,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMessagingSystem/CharacterStorage.java",
+      "sha256": "f8564a8657a4a17ffd72ff2700d59dad00d3a1c5dc932cfafc3cf9735e09d463",
+      "lines": 98,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotStore.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotMessagingSystem/ChatMessage.java",
+      "sha256": "1c89c14c338ea473d836f6c6bcdbed958c2fbb1555ec959a018c68953f779764",
+      "lines": 34,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotMessages.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotMessagingSystem/Dispatcher.java",
+      "sha256": "0e26c8d28ecefe46dda63c1d9039005756ec80638e276bbc09145cf80387ccf1",
+      "lines": 182,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotDispatcher.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotMessagingSystem/MessageQueue.java",
+      "sha256": "597e63a7cc908153bd07f0691465da284ef84630ba0367b055f9d87899307afe",
+      "lines": 165,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotMessages.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotMessagingSystem/QueueCleaner.java",
+      "sha256": "f655aa7d9fac0f6e94ace393aee0ddb48f1c0514b925b42b76023cca1c1d1549",
+      "lines": 57,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotDispatcher.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotMessagingSystem/QueueMonitor.java",
+      "sha256": "7ab919d06515212c3813b273c71e25de7f0039e1832fde3dcc8d8eeafcdf708c",
+      "lines": 75,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/InPacketReader.java",
+      "sha256": "a6b1cc81ad5823b0707775bd2f64bee6c3c0b313800a0f2098a7cf69eb2c5951",
+      "lines": 377,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotMovementRecording.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/MovementCommands.java",
+      "sha256": "4e45b45d32b11411c1a42348d7ac6f73fc0908760a2ba17f06320302e48c25e2",
+      "lines": 825,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotMovementPlayback.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotMovementPacket.cs"
+      ]
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/MovementPacketConstructor.java",
+      "sha256": "4aef8d006c5f475b2756d7403e8bced314e95a8d1d0d1a8754a5a5eb8f4bc286",
+      "lines": 508,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotMovementPacket.cs"
+      ]
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/MovementStructures/MovementEnums.java",
+      "sha256": "1200928885a38da06fffa6ba628a29be83d88e8941a211289e7e93520b05b85e",
+      "lines": 71,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/MovementStructures/MovementPacket.java",
+      "sha256": "4c52fa2079a4f50752d8ef99533cfa948baea53fa465525caddd60d4be85c402",
+      "lines": 123,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/MovementStructures/MovementPacketRaw.java",
+      "sha256": "e2330dc3f710f270f3d6a5c3c098c757af1efbcaa5a6803cfe5177391677c178",
+      "lines": 53,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/MovementStructures/MovementRecording.java",
+      "sha256": "63799caeac8de302280803a4901183947ca8b924da754972f7aea7f85d4adcf5",
+      "lines": 36,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/MovementStructures/MovementRecordingRaw.java",
+      "sha256": "87c8602228d3d5fa5d794906c25ee94181b294ef075cc9a3fb3dfad9870930ed",
+      "lines": 260,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/MovementStructures/SingleMoveCommand.java",
+      "sha256": "7db56f11783112d60850aded5c1d55b172497aa27e3a7e490d1de541caf3127f",
+      "lines": 179,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/MovementStructures/StartEndPair.java",
+      "sha256": "4f849470c9f9cfa8c3bf3d29efd1c96b064abb25aa3014c7c9f30506133b5674",
+      "lines": 38,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/MovementStructures/TimeCoordinatePair.java",
+      "sha256": "70b280d2b12949fa4807693bf65a407150907eaad84332be5efb25a692af05ef",
+      "lines": 28,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/NavigationSystem/Connector.java",
+      "sha256": "64a4eecac25d2ed295558653906122bae6dd2d21e2cbe33475dc6b1300dd3d8e",
+      "lines": 49,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/NavigationSystem/FMMovementCommands.java",
+      "sha256": "db23c551e69a41f74b7cbae2d0a9bd1baf64de1b6e101efc6a0b0c19eb8d3ef5",
+      "lines": 290,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/NavigationSystem/MainArea.java",
+      "sha256": "50a9730054c8c73f6a4d8386896c7fae1a234ded3010814ffd75be159572be19",
+      "lines": 17,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/NavigationSystem/MapGraph.java",
+      "sha256": "fb5da90727570a149bab5e0b45ec4929c0f0631ddc22b17d68a31c3756cf7000",
+      "lines": 442,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/NavigationSystem/NavigationElement.java",
+      "sha256": "479b64c8095e5fc88e5ce174583c276e9bbdb3f5ec7e9be327c43385947b6f5d",
+      "lines": 42,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/NavigationSystem/PathFinder.java",
+      "sha256": "2da58f5f3548d7e02b1ca58747903d5fc7b5ce46b6558f63fa4295f244aa08af",
+      "lines": 526,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/NavigationSystem/PortalConnection.java",
+      "sha256": "e1d0518180aa86c107d619a22dffc8d87cdae0e452296f33560f48e35b04bcda",
+      "lines": 133,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/PlayerReaction.java",
+      "sha256": "49502d99e2a88bd4fcae9ad25c9c7e011ff1a0336448e5732c2940bb3b284e38",
+      "lines": 134,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotMovementSystem/PlayerSnapshot.java",
+      "sha256": "450e1867245ecca9dbb2039f3e3167a78fef438cd03a10663feea013b436c158",
+      "lines": 38,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotOrphanAudit.java",
+      "sha256": "cc5afa557130249b96bc1dc6dc623790e9e838f602c8cef01336ae9824f60898",
+      "lines": 237,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotPartySystem/BotDamageModel.java",
+      "sha256": "cb5cb5e3a55f13f6fb42b95ac044312345ff139754ea05c3e13d78c9faa6e103",
+      "lines": 26,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotPartySystem/BotPartyCommands.java",
+      "sha256": "d41318df2aa9f32a369bafcc3d0d48866fe22e6a574d6ad1d94dcc74d08d5a1d",
+      "lines": 139,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotPartySystem/BotPartyLogic.java",
+      "sha256": "45cc3bd1091af8c0576fbd3461ecf782a39a7518feaa6c7b64af5498d9ca403e",
+      "lines": 19,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotPartySystem/BotPartyQueue.java",
+      "sha256": "d0a42abbf441f645586c67e2752419312311d381c64f6c4cc40d83ade6e196b0",
+      "lines": 57,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotPartySystem/BotRecruitManager.java",
+      "sha256": "f24d66258f6a38bffa3fb65eabfa016b38bb7ba1fba5b0ed650cc295e7823373",
+      "lines": 10,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotPartySystem/PartyGrindFloors.java",
+      "sha256": "aa65de362e0072b18d3153f156258947e1e409a9cdc27afb25e087d97fd1a9c8",
+      "lines": 99,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotPartySystem/PartyGrindService.java",
+      "sha256": "881e0634bd3a397cf925abb704fcf9108b65dad45187aa7399cf619ce98f82f4",
+      "lines": 327,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotSM.java",
+      "sha256": "fcede1fd4a202372805d00063f26d67efe8011a4cdf0328c463363054478bc2a",
+      "lines": 530,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotStateMachine.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotSpotClaims.java",
+      "sha256": "553d5bed8ec92616a6083c46a817ccfeeef2a392f3fdf140f99dd609c709ec4e",
+      "lines": 73,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotSpotClaims.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotTier.java",
+      "sha256": "6dc4945955303d37aaa485362a49eb698b34836d417220fe14fb451f27da68e5",
+      "lines": 212,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotTier.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotTownSystem/TownLoiter.java",
+      "sha256": "f7984f4c30d23a4cff8e3c34743e2ffb1aaf41fff8a69282b626d1c755a3ffc5",
+      "lines": 135,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTownSystem/TownOverrides.java",
+      "sha256": "8750f39a071bc9cb5b88dbc4f3d0b2798bf37eefa1cd2b01ef8f68343bb84940",
+      "lines": 98,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTownSystem/TownPinsStore.java",
+      "sha256": "4d073732f0613b7a5ee659c033bddc84438238bc71229bac2e046f3de09b47ad",
+      "lines": 22,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTownSystem/TownPresenceConfig.java",
+      "sha256": "56ac2058225f37dc2fcadbd2331ed19d6c1ff48616fd97376ee240a2054cc836",
+      "lines": 280,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTownSystem/TownPresenceSampler.java",
+      "sha256": "b53391313c6c17dc4d0565a79b44e5d5f28ed3b98e580ace0cf5391102b5ea77",
+      "lines": 285,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTownSystem/TownStation.java",
+      "sha256": "9c68e7254f4f2cbed90a794dc23ca4cdbb44917daf11364e4c046b6746e94166",
+      "lines": 115,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/BotTradeCommands.java",
+      "sha256": "65fa1143f893da5dd985629edd47d0ea2d5fda25519bf593c078461ae3807a49",
+      "lines": 300,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Trade/BotTradeCommands.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/BotTradeHandler.java",
+      "sha256": "20a4272efb60320d189f0a2107e663e68def0d10eaec557642e08f61dace2f64",
+      "lines": 81,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Trade/BotTradeQueue.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/BotTradeInventory.java",
+      "sha256": "1e24e34c9e9aea4076aeb5d36008f7dab948153ffd2c6e9b48fa81e3888b1fab",
+      "lines": 47,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/BotTradeLogic.java",
+      "sha256": "0fb6163558f39edac49b5a08e11d93866697a6439752a23ca00606c5b1e4d850",
+      "lines": 38,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/BotTradeQueue.java",
+      "sha256": "18b58abcfd85304ab940f74b3d0b306a33e6d6e65ade164fafb3e8f54ea18fae",
+      "lines": 51,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Trade/BotTradeQueue.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/BotTradeSM.java",
+      "sha256": "ccba921118a6db94de6731c37a5cc80c58111cf85f96f9c55c349a31a684bb31",
+      "lines": 393,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/BotTradeWants.java",
+      "sha256": "feec18811136895b20e3005c2cad8dcea7252572c074534dba8bd79636987846",
+      "lines": 260,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Trade/BotTradeWants.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/ItemQuantity.java",
+      "sha256": "032baa6c5003eaa9815074b6b4abc7115e28e9c623c907386a4d2bf3351f7071",
+      "lines": 19,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/TradeChat.java",
+      "sha256": "e6ebf09994b74e31341c09152a083ca0abd08cd78acd5efc789d487c26de915c",
+      "lines": 50,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/TradeMessage.java",
+      "sha256": "108cfe0e41be24e16e09c3d6a370ef5dfc3d917b42d95e9554215d905098fabd",
+      "lines": 40,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTradeSystem/TradeRequest.java",
+      "sha256": "fe098a109cf570e2457a97eb15a5289d67331ae43477538d4521ad019d7b5b97",
+      "lines": 21,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTravelSystem/BotScriptedWarp.java",
+      "sha256": "3e1c08220144db48a5423b0247e3d9b9860ff4ef5854ec9c878f20a29fedf081",
+      "lines": 28,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypeManager.java",
+      "sha256": "af99e7a7d3b8decb1e565a82feafaef5b2b355156b86fa2210670da2570e0b0a",
+      "lines": 298,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotTypeManager.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/AmbientMapBot.java",
+      "sha256": "6281a4adb1ee09ed2f5b2c1cd052a128f75a7c9915e3ef3111058b3396c2c362",
+      "lines": 249,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/AmbientMapBot.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/Blackjack/BlackjackAI.java",
+      "sha256": "2a2bab7638e5be76af9f037dd108c2e99ee197d9479f010f377161c3d140b2b9",
+      "lines": 21,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/Blackjack/BlackjackDealerBot.java",
+      "sha256": "cd3c42dec459dc27a099ea7c4543407e4823d6224af8fe6d3d96f8283e7830fa",
+      "lines": 860,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/Blackjack/BlackjackPlayer.java",
+      "sha256": "7a8c1d8881ee90a650a69ba063ea60aad083acb8b757e19792338b529df8a563",
+      "lines": 211,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/Blackjack/BlackjackRules.java",
+      "sha256": "57457646d05b61200a6620f53f7ef4d9c5bf9465d2ad8575222bff3f01f76af5",
+      "lines": 125,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/Blackjack/BlackjackTable.java",
+      "sha256": "ee10938b5a29d125803fc7e305b0b75a538bede968d317bbeca691b07216a10b",
+      "lines": 203,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/Blackjack/CardVisuals.java",
+      "sha256": "6c8d894ec3beb28c034d9ba93f321c0f5b63aead9a032b144a26fbc80bcfbb80",
+      "lines": 36,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/Blackjack/Deck.java",
+      "sha256": "5f3f72f9b5308a63dffd6a1ecc266281f02abafe4308ffdc2582af77c10d7d8f",
+      "lines": 42,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/BuyingMerchantBot.java",
+      "sha256": "bb32cc2d7318ebb5fb3d54a7c621ac9ec1622dfc6b602232bd6889cbf28d958c",
+      "lines": 227,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/CompanionGrindBot.java",
+      "sha256": "3326a2c26a7d72860922f55547fb05627067134d1d43400a42228fb25a3de92d",
+      "lines": 157,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/DiceBot.java",
+      "sha256": "dec5afc4860ff5c4b142f10a482c5a8f26a97bc363c0d70b0dc1c7d4dbc63ea2",
+      "lines": 326,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/DropGameBot.java",
+      "sha256": "644247e3741d32239a66308935ea23d9fe3d005196480db147528f6eb2d6c501",
+      "lines": 611,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/DropGameLootPool.java",
+      "sha256": "f33055a3ad0207c517e1e777739f0580d28bd7e0cd6130cb8294b13759099176",
+      "lines": 117,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/DropGameSpectatorSystem.java",
+      "sha256": "2afc94a16337e085f0c4d0aedb9a9f28d5932f05659eba4de9e47a1958393d12",
+      "lines": 122,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/FMBot.java",
+      "sha256": "bd0647b1663a7ed6f8332ca26c3631491bfae973e87ce851f9607767c3ab7a27",
+      "lines": 448,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/GachaBot.java",
+      "sha256": "b0655df76656719ecf4f732dd0f88337ca4fa02f36b48ac0919854cc47dcee4b",
+      "lines": 256,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/GameZoneHostBot.java",
+      "sha256": "ef0b455c6effc3dbfc9deda4ebb4b11f87cea6926534a5c534587c9172df8c2b",
+      "lines": 288,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/HenesysBot.java",
+      "sha256": "f29cd85149117746d2772798372d56f785b9bbcfa68c8efdded4ef1db38daa7b",
+      "lines": 364,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/HenesysJQBot.java",
+      "sha256": "47fef01a21dcb40e208ae1474fa8a2f02c3dec22d745e2eef02449338e57e20f",
+      "lines": 308,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/NXMerchantBot.java",
+      "sha256": "90b1fb854168726123f8bc7b49c296053a9cf35735cd7a636b4897fc57d14a64",
+      "lines": 215,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/OPQ/OPQBot.java",
+      "sha256": "e0a769e5716b8c0d7880e7fa1ffe32d251b876253e9c05590ae57d07843eccad",
+      "lines": 995,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/OPQ/OPQConstants.java",
+      "sha256": "1c818cbbdb6b2dec8467fecec0b67a0991e44b9d3924ed06c1f7f798b44494e9",
+      "lines": 116,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/OPQ/OPQOrchestrator.java",
+      "sha256": "f795c619b871302acd7467feac27c4fa3d36c8ae77d43afb67fbe87e047f215e",
+      "lines": 532,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/OPQ/OPQRecruitMessages.java",
+      "sha256": "bb86b846fded6c501f57e16d9122ac0d64e3b8922a7c6bbde23f523577bf72a5",
+      "lines": 69,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/OPQ/OPQSharedContext.java",
+      "sha256": "ee77e45a79a8fbf8756154436edf140c2fa46effff6df8cbea81388410106703",
+      "lines": 123,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/ScrollingBot.java",
+      "sha256": "3628052a016524d653da81def7db10f8fdd01260d993b3cec5b4106a2ced40bc",
+      "lines": 238,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/SellingMerchantBot.java",
+      "sha256": "610d9be7f317760e26f21bc67119a8160fd9318030e607b29a4b35eb06bdcd6b",
+      "lines": 247,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/SocialBot.java",
+      "sha256": "008c1c7886d157989591e6236be1176a7f76d5b184953d4698c9d837a1e7341b",
+      "lines": 427,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/SocialBot.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/TownWandererBot.java",
+      "sha256": "9ee7093902ab9ff7e3b584794e07160530a412c332a3fa44a8fd55ce5fa8c4f1",
+      "lines": 179,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/TownWandererBot.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/BotTypes/TutorialBot.java",
+      "sha256": "3fbc6d77724552ea64a39d6721b00ff1de26e000db9762bb8d890c17a9e53b95",
+      "lines": 599,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/BotWanderSystem/BotWanderSystem.java",
+      "sha256": "1eb2e216b3a7872cf4af7e16d1f36eb1dae22b04d5e009db5b01f13ce5b54b28",
+      "lines": 234,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotWander.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/ConversationManager.java",
+      "sha256": "650fce463c6fa9837dec1ac01264087da39b82619e65832f565d137a4f19a313",
+      "lines": 404,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/ConversationScript.java",
+      "sha256": "39ae34d1b157e9f52f36fa9e58b192db71ca87e10f9e79ea807e6e8d858581aa",
+      "lines": 40,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotContactDamage.java",
+      "sha256": "4e2c7bfce405fb0baac828db3f1ae88aafc9d413c803e9248ae0c0a57e0aef9e",
+      "lines": 251,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotFallbackMovementManager.java",
+      "sha256": "41bd23c4fbeb11f6fcf92c2ba4291c99b0e4ff8259ecccdc8ad26b3f480d7230",
+      "lines": 240,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotMobHitboxProvider.java",
+      "sha256": "3e1dad5213faef96049624609a6d7fab7fe6db806a00128d8fb90dba3d2fed52",
+      "lines": 144,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotMovementManager.java",
+      "sha256": "03301a60cd7eb3824d1d3aacf9b112968298ad803741fb606eb5fa4a617e5bf4",
+      "lines": 884,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotMovementRuntime.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotMovementProfile.java",
+      "sha256": "8a3173c813b98a11c8a1f4e0404e78839fe74438890f156b536b474630f38bdc",
+      "lines": 229,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotMovementProfile.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotMovementState.java",
+      "sha256": "650aa0082a504ae2fa8ee80bc3e7481cb79727389f7e34c139ebcdc46937a003",
+      "lines": 131,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotNavigationGraph.java",
+      "sha256": "a59046abdc08456edef0cac20b3925ebbce95162267098f14e308642c435605b",
+      "lines": 321,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotNavigationGraph.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotNavigationGraphBuilder.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotNavigationGraphBuilder.Ropes.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotNavigationAnchors.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotPathSearch.cs"
+      ],
+      "integration": "Backend subset checked; full navigation graph, movement manager and gameplay consumers are not integrated."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotNavigationGraphProvider.java",
+      "sha256": "6b04c06f3f56b318f2362b7eb2cc031cfb44a600131d838987528c6cc14a92bd",
+      "lines": 2210,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotFootholdCollision.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotWalkRegions.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotNavigationGraphs.cs"
+      ],
+      "integration": "Backend subset checked; full navigation graph, movement manager and gameplay consumers are not integrated."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotNavigationManager.java",
+      "sha256": "afca9d512df7e2388b3ec63302fe3bf85e4a498027571cf0bebfe6a4ddd19ea0",
+      "lines": 1543,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotNavigationRuntime.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotNavigationMapLoader.java",
+      "sha256": "1048226bf609ac1ff6496269a731a23c5202d2f4196b062e531bf991538cea15",
+      "lines": 141,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotNavigationMapLoader.cs"
+      ],
+      "integration": "Backend subset checked; full navigation graph, movement manager and gameplay consumers are not integrated."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotPerformanceMonitor.java",
+      "sha256": "12ed186257d09e13c5861cc65e415205d1b03ddbaf92072ba00f5ad4bb9f1741",
+      "lines": 17,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotPhysicsEngine.java",
+      "sha256": "ac8b67a45fac175e4b5539f1bec2858a6c828f6bace6a43ae1bb9f476168650f",
+      "lines": 2794,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotGroundPhysics.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotGroundIndex.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotGroundMotion.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotAirCollision.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotAirMotion.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotRopeMotion.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotSwimMotion.cs",
+        "Assets/Scripts/Server/Bot/Environment/BotTrajectory.cs"
+      ],
+      "integration": "Backend subset checked; full navigation graph, movement manager and gameplay consumers are not integrated."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotPlayerReaction.java",
+      "sha256": "eee7e2164f80de3320715fce80aee82e159b73820e5d7740f610ed413db5be41",
+      "lines": 114,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/BotWzXml.java",
+      "sha256": "d9f513e54ed4f78d3d55bac2c5637864269419e118f5196ce7af6659e65e04dc",
+      "lines": 50,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/CoarseExecutor.java",
+      "sha256": "5401b689f15a27e5bb2d443e4e3a5c711ff838fa7c23bfe728a2718bac27df61",
+      "lines": 45,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/GCFidget.java",
+      "sha256": "370fa24704ac9f68b13a95f5d6c10f2dbf7dbdd8ea9c2966093a80bed5eb8f90",
+      "lines": 118,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/GCFollow.java",
+      "sha256": "64b97bf385bbed01841c6bddf638a0d8935f5b9903b27eeb00f8b84b86ddc7b7",
+      "lines": 90,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/GCMovement.java",
+      "sha256": "b474d2fc9e87340ac7659406f61ca313d63671588deea5b133bd8b8fa6bf19d2",
+      "lines": 754,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotMovementService.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/GCMovementDriver.java",
+      "sha256": "0c97b4fdaf6b82769fa88d1c3bafe44a7062ea503682001a59fca247f8eca07c",
+      "lines": 446,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotMovementService.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/GCMovementSkills.java",
+      "sha256": "92f73e071f48bc859d8f3c7c9c4b44db826f79971e7338bd641bd1e7e919f5b7",
+      "lines": 202,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/GCPortals.java",
+      "sha256": "aeed913f2dadca98ab918a0fb687df09ec4c048f9847d3b98b055f6b6579ca82",
+      "lines": 44,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotRuntime.cs"
+      ],
+      "integration": "Verified subset recorded in reverse reference; full source API and gameplay acceptance remain incomplete."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/GCTaxi.java",
+      "sha256": "91fb197a7e8cbdab826ad7886a65401ac5455009483f7f85a39d18ac7435656e",
+      "lines": 101,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotWorldGraph.cs"
+      ],
+      "integration": "Backend subset checked; full navigation graph, movement manager and gameplay consumers are not integrated."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/GCTravel.java",
+      "sha256": "aee610d9dd5d9d0c3a831683fc5ef812c4b7a33b325bb851f7d1ff1bc5cf5b6c",
+      "lines": 302,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/GCWorldGraph.java",
+      "sha256": "6f66cd6d60e7d490843e19efe344245d1d45c4626c45be9f3e3ddc76ab010fda",
+      "lines": 235,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotWorldGraph.cs"
+      ],
+      "integration": "Backend subset checked; full navigation graph, movement manager and gameplay consumers are not integrated."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/LodCounts.java",
+      "sha256": "f7ba5d6ee4af6d3ef53abab3eb1da10f3cb3939c323c721d32a6df0e4ce494d5",
+      "lines": 35,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/LodMetrics.java",
+      "sha256": "5f3efec0cb4b06ef65538e8829c8b6ae1c49c4e4d1e39ab75046cdb6a2f8ce36",
+      "lines": 115,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/MovementPlan.java",
+      "sha256": "2fa3dd4ecdf98f93decd3b557a006649a75a2b017bc998ef33f2f4b5c787e052",
+      "lines": 87,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/ObserverTracker.java",
+      "sha256": "37119118cfd93e32e17b56d6ce81a10740becd5a8d184749258d35268de42d63",
+      "lines": 179,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/BotObserverTracker.cs"
+      ],
+      "integration": "Backend subset checked; full navigation graph, movement manager and gameplay consumers are not integrated."
+    },
+    {
+      "source": "ArtificialPlayer/GCMoveSystem/TierDwell.java",
+      "sha256": "ea5b7ca3ccfb7989a033b4417b5361026b0f4295783fb5cce02ad4a9c05d4e1c",
+      "lines": 42,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/SocialHotPotatoManager.java",
+      "sha256": "23375b59e4d29fa8b10c70deae3902e6bfdadbc486a90a1fe62e640ed42b9651",
+      "lines": 324,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "ArtificialPlayer/TestMethods.java",
+      "sha256": "2f2bab647a17a4386882346c422d1257b21ff79557881970913693991e237fdd",
+      "lines": 194,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "BotLogger.java",
+      "sha256": "3ad929bc7a185c6dc3e2e64607e8449a22ea63a59505fc78260f0c326aed7c93",
+      "lines": 37,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "Casino/CasinoChipConfig.java",
+      "sha256": "9cea89926f00886972db3a702d013ef69cdcff90e435c6a8cb5f512058cd59eb",
+      "lines": 49,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "Casino/WzXmlPatcher.java",
+      "sha256": "05329d4c6d7aecf624a09bc0d16a738ce86b0f039a4dd4fb5a6dcdf0b330bbbf",
+      "lines": 160,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "DebugUtilities.java",
+      "sha256": "c4e5377b9f8ca8f9e6450cae7df378bd13f82ccc202aad5d981a17f854d8d8c8",
+      "lines": 57,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "Environment/EnvironmentManager.java",
+      "sha256": "bb6751915414c58d680747e86426f6ca12da31256d5ce344c1edb675388ce726",
+      "lines": 1505,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "Environment/Platform.java",
+      "sha256": "01b49f81c434c5c993290d843e355d1b81591a73919fc5a53df029a42faa15dd",
+      "lines": 128,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/Platform.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "Environment/PlatformParser.java",
+      "sha256": "c38d2d14e3c75a4515e5e1fdf498e64b87e250a64d51639a1403aa9e979318f1",
+      "lines": 287,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/PlatformParser.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "Environment/PlatformSpawner.java",
+      "sha256": "795a9cf2056f92ea87ca5d73e5b6d392a337221869ad4610dd2534134b8f123d",
+      "lines": 322,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Environment/PlatformSpawner.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "FreeMarket/ArtificialFreeMarket.java",
+      "sha256": "59fc0de08f810ee917576b5055bee185d30258cdab732b610258bf1afc601308",
+      "lines": 647,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/ArtificialShopGenerator.java",
+      "sha256": "dd772d749fb15fd9accbf8c58aef0497e23a1a6178c187eb00fa9d7e6bd69ea9",
+      "lines": 423,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/EquipListGenerator.java",
+      "sha256": "c779f7745141b98e8d50b92a36b89f7aa591fbfe6c3a97debe032e9c8378ca02",
+      "lines": 276,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/FMEconomyManager.java",
+      "sha256": "8bb45d02674b8d429d0926b5da27e4b80d96488b53794701e15c279cfc32f429",
+      "lines": 440,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/FMEquip.java",
+      "sha256": "11b7bdbc52c3b2d7be42e8e8f266e1f98db7dea395f0d9dcb7d99d4152173d1f",
+      "lines": 39,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/FMItem.java",
+      "sha256": "c89b327b78c301d29c9f51b91ccba0c178f88c920bcca217197f13ca7b20dcde",
+      "lines": 42,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/FMShopDescGen.java",
+      "sha256": "c37fa4d1566f695202a64e2c472923f8689b096c1ce9acea4143549bc1b9ea5a",
+      "lines": 439,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotNamePool.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "FreeMarket/FMShopDescriptionManager.java",
+      "sha256": "96a276107aa0fe71257cf4be7dd26a5b0c970157cb61d834c17c9c104db19ae9",
+      "lines": 513,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/FMShopInfoManager.java",
+      "sha256": "cfef759c8b7bc835434d8bc497a939371615d3156bd1089b1c4572b35d5cf77d",
+      "lines": 131,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/FMShopTypeManager.java",
+      "sha256": "2f285c76f9bd5a8dbdab1196939964cbf4d50ccc60651ba25d26c5588481dc21",
+      "lines": 111,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/HiredMerchantAdapter.java",
+      "sha256": "3d8b2c4a0e75d29bd3f7294960e3bb640f5275b83cbdf3b659d5574e92eb7e5b",
+      "lines": 58,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/HiredMerchantArtificial.java",
+      "sha256": "73d07ace744f0129e6ec55a553871cfb169c7b64d60922d27c3773afe5ee877a",
+      "lines": 88,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/MarketBotAmbient.java",
+      "sha256": "29954f19aaca686579c72a50af840f81faed1a404552feb73a81bd9e0bed92a9",
+      "lines": 352,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/MarketBotFlavor.java",
+      "sha256": "81dcaa4c9b77cb695e48b380fd67a8779c9dbf32ce79ae0bb51b7515f50b84d1",
+      "lines": 1335,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/MarketBotFlavor.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "FreeMarket/MarketBotLog.java",
+      "sha256": "264b75fa5c7858017241cfcfd9bd98752e26691a0da673b7960f0cac181aafc7",
+      "lines": 35,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/MarketBotTradeHook.java",
+      "sha256": "859ae3da9443311ffd40d70d71b082d5d761bcb96cc66f3eebab99f9e4b66734",
+      "lines": 50,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/MarketShopTitles.java",
+      "sha256": "6c052b744694df3e9c3bdf02fac88f3170a1d24e9e4f58f934171053ebcceebe",
+      "lines": 119,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/PlayerShopAdapter.java",
+      "sha256": "34e277d9dc9d2860490d43075623c5747773a1367eef7aa00ccf02e29ccdf206",
+      "lines": 58,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/ShopKeeper.java",
+      "sha256": "f2db48ee346badb7cf76fda400e64088d4fa572ab0e3548dc6186a52a63ca494",
+      "lines": 18,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/ShopOfferSystem/HaggleSession.java",
+      "sha256": "4fb34e6b64e58d15e4febe49709e5d07d30f4f909f6ddffce1ef370d4611e0c7",
+      "lines": 51,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/ShopOfferSystem/OfferEvaluator.java",
+      "sha256": "54070461fdb450cb600cf8a515615fc7e2bbd687b2e6722279f2427038997e10",
+      "lines": 55,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/ShopOfferSystem/OfferParser.java",
+      "sha256": "20f953d35608d17e3e4c0573cc646b526a6a03de85fbbf29ce1fcd11b6e9b904",
+      "lines": 134,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/ShopOfferSystem/ShopOfferResponse.java",
+      "sha256": "029cbac63c71bc4875e8947ae42135f29853d7d2175c143d08fc5d164284b6ed",
+      "lines": 193,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/ShopOfferSystem/ShopOfferSystem.java",
+      "sha256": "f504a9648800e0ecba9e644844fb9cbf6ef597bdf4cd58dc0a0723e297e2449e",
+      "lines": 142,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "FreeMarket/ShopOfferSystem/ShopOfferWelcome.java",
+      "sha256": "860a88c51f55bab92dcb89af611f57b45d0f44a68f703456d655ce5058ef14fe",
+      "lines": 84,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "MapVFX/CustomReactor.java",
+      "sha256": "6e1003352ed780b1a99e9d53c255e7ff329f6af7d8533c5b66ea5da9bf994f51",
+      "lines": 268,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "SoloMaplingConfig.java",
+      "sha256": "4a8ae2fa1ac13e570474b90916eac8dd323cd01f36576d96c84dc8cd8052bd06",
+      "lines": 294,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ComparisonResult.java",
+      "sha256": "596450d4f9d53dafe9711b6e301a469de7c45f01f0853734010ef28d1fe556b0",
+      "lines": 63,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/DesirableEquipList.java",
+      "sha256": "e3c68aaa443ec4de1bea4956d55f06c42d3f95089729642fa5300c7dbdb95755",
+      "lines": 51,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/EquipMetadataCache.java",
+      "sha256": "7fc2f4ae7f146920f7b479b642218a449fbcc1b21d30c1d34fded6bb58777297",
+      "lines": 502,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/EquipMetadataCache.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "itemPool/GachaFillerSystem.java",
+      "sha256": "1de512211b79b007b6894f60f4241739e48aab8224eca89fff08ef964863f590",
+      "lines": 266,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ItemDataParserXML.java",
+      "sha256": "4af300befb3b928762b9aef51c8c8cb739c6db911c0d67241ccf702ac4d967ad",
+      "lines": 86,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ItemDatabase.java",
+      "sha256": "418fff5e94d20acb76880233150295d2ff3cbae207b0412e3a4c0b7bcb816eb7",
+      "lines": 240,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ItemInformationProviderUtilities.java",
+      "sha256": "1dbbeebaff46ea2c492c92eb97271aaef9dc648ba4e45ac0c2051a1afa440271",
+      "lines": 501,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Decorator/EquipSelection.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "itemPool/ItemNode.java",
+      "sha256": "53607738536d221d52543016ecddfd664b4d99b7b29cf658a209937853508deb",
+      "lines": 42,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ItemQuantityConfig.java",
+      "sha256": "fb5df57064e032167ded9c33c64482779322c82f15ffbbb3c32a722c26c73e87",
+      "lines": 37,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ItemSelector.java",
+      "sha256": "914b41a76cc2f9e8b4a61b09b2eecbcdd41fd5452fed88743796db7cc94c4a16",
+      "lines": 227,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ItemUtilities.java",
+      "sha256": "15f0c8722647d0c906dcc26cf7febafc2c7200b44a20a5ff813ff4cd2a6b5a34",
+      "lines": 69,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/QuantitySelector.java",
+      "sha256": "dc4bb52eec175ca565643ca67f187681a92976b11b4dc4c0096a1fd0a07fa512",
+      "lines": 77,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ScrollInfoManager.java",
+      "sha256": "96dd8103e2a7c45af5ac50dce3a1a472121e96e484c56c98490e76b49f67dd03",
+      "lines": 258,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ScrollNode.java",
+      "sha256": "7f6457ba3f20fdc031470726f1304ef6436299be28ae2530f0017b8bf0cc1e0d",
+      "lines": 24,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ScrollPatternGenerator.java",
+      "sha256": "a69886f3e1629214ce9660208798259acaa720740e52dd3d3fd8220d3176c854",
+      "lines": 116,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/ScrolledItemComparator.java",
+      "sha256": "34f19ea90670ea9f1ccb8a0e08edc11a2b98f244c89971a5097da97823317778",
+      "lines": 73,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/UniqueStatBonusList.java",
+      "sha256": "3af5f887f0e8f492db7f868d4cbdb31127a2033eb518d8ad6a4fe0e53659f016",
+      "lines": 71,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "itemPool/UpgradeSimulator.java",
+      "sha256": "3c64f153992d9a34bbeb5d74e30aaf48a302ab460f37f55f4643a214fb3a2084",
+      "lines": 269,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "server/BotPerfStats.java",
+      "sha256": "e2e751deb0fcfc1a03378be35f72049c493646e525c35e781ca70e8a7b5185b7",
+      "lines": 13,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "server/BotTickService.java",
+      "sha256": "218041a24235fd12c9728ebb4f551adec8f85de17627e9cf766b9af7bb73f15c",
+      "lines": 213,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotScheduler.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/BotTiming.java",
+      "sha256": "32a318e1d4b8fe9f3052e486a309eb60f65c1d8b4f85f42d43cbef81a1fba8dd",
+      "lines": 69,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotTiming.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/EventMessageSystem/BotEventBuffer.java",
+      "sha256": "1bac5820b8b92efe9d6eae33f718f87a7728d3b7ab42ecd367d5cf62c2d15916",
+      "lines": 44,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Events/EventBus.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/EventMessageSystem/EventBus.java",
+      "sha256": "daaf8c24082695e1ce7fe096a18e4ecbedf666ea9d2f66330fd793e41689a1ae",
+      "lines": 70,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Events/EventBus.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/EventMessageSystem/EventFactory.java",
+      "sha256": "3bd835c2e2f9c622ae666343f63757580bf4be2d0170a932bfd4f58ff09b0eb6",
+      "lines": 36,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Events/GameEvent.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/EventMessageSystem/EventMonitorTest.java",
+      "sha256": "9beb77a8710f3f6c474021bf37927250ed47e7edb3e4c22c6928dc47416f20e2",
+      "lines": 297,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "server/EventMessageSystem/EventStore.java",
+      "sha256": "d2041e57df5d7ded48b9aa69b51fddb36fd616c6d2e332cde74aeb5af4e20a50",
+      "lines": 116,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Events/EventBus.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/EventMessageSystem/EventSubscriber.java",
+      "sha256": "088e16917f00ae9cf3efc8fc93420197060da1e7da43d7d38979a3e64b466168",
+      "lines": 6,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Events/GameEvent.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/EventMessageSystem/EventType.java",
+      "sha256": "4efb508ce062bc79d7432b2a61cc6619fd60bd2628f296ea467e0a073d8f5229",
+      "lines": 23,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Events/GameEvent.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/EventMessageSystem/GameEvent.java",
+      "sha256": "25ca1a919c13fb88bd1900742fc45d4372cac9c1041ea54987eb04bdf5f074d5",
+      "lines": 57,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Events/GameEvent.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/ExecutorServiceManager.java",
+      "sha256": "512899e305d1aad970c88c5b009163499d3e9e97dcbbba19663da02cb231599f",
+      "lines": 64,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotTasks.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/MapleMessengerConsole.java",
+      "sha256": "9726cd3cc1ecb7feae7fc6d859cf69a9676ca02de1162da4b6abc63dfa96da05",
+      "lines": 360,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "server/MapleVersionManager.java",
+      "sha256": "d1222d7f7ecf7e37fac64f76f58ecc4f374f8ae8f3b79a1761fefb781f450a6b",
+      "lines": 75,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "server/MarketBotDirector.java",
+      "sha256": "c6e24a2e6a6a6ad05bacea7e915ffe5fb898ee6d416e5ec889540ae393e59d4b",
+      "lines": 221,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/MarketBotDirector.cs"
+      ],
+      "integration": "Source logic subset migrated; runtime integration and remaining APIs are not accepted as complete. See solomapling reverse reference."
+    },
+    {
+      "source": "server/MethodScheduler.java",
+      "sha256": "29475e67a3e35ac20dd0cbd3c2c0f8bdf4472228d6c2a7d6bb3f47d785d508db",
+      "lines": 57,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotTasks.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/NXCodeManager.java",
+      "sha256": "8ca70e9490d500abc8bd730164a708e385aecc5615687ec1b42d9e87b8ecabd5",
+      "lines": 155,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "server/NpcSpawner.java",
+      "sha256": "e34234edf6d7bd4f5bd24c4d809e59af547e27ea3c161f84b56d0cea4a9dc992",
+      "lines": 68,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "server/SoloMaplingConstants.java",
+      "sha256": "6de9c74ce353095b6d89ce21196558e0676d78bae989689860052eb72429247a",
+      "lines": 16,
+      "status": "not_ported",
+      "targets": []
+    },
+    {
+      "source": "server/SoloMaplingResource.java",
+      "sha256": "58085ec801db3e2825c77463157e6c9c81407ccf6f63de27e21830a7914bf184",
+      "lines": 127,
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotResources.cs"
+      ],
+      "integration": "Full source API and gameplay integration not yet accepted; see reverse reference for verified subset."
+    },
+    {
+      "source": "server/SoloMaplingUtilities.java",
+      "sha256": "0740a9391789b8f016fb9010530860f98100cc870b10ecf3cc0a7665c7d832a3",
+      "lines": 254,
+      "status": "not_ported",
+      "targets": []
+    }
+  ],
+  "systemStatus": "incomplete",
+  "validation": {
+    "serverChecks": 309,
+    "failed": 0,
+    "scope": "Backend regression including real trade settlement/invitation, original map geometry shards, ground and air motion, closed-loop classification, walk regions and observer boundaries. No full navigation, Unity runtime or Android acceptance."
+  },
+  "remainingIntegration": [
+    "16 bot types still use GenericBot",
+    "Full navigation edges, route manager and movement execution replacing simplified wander",
+    "Environment population, startup and observer producers",
+    "Character statistics/set bonuses/HPMP recovery and spawn choreography",
+    "Party/combat/market/casino behaviors",
+    "Real-player chat/map events and trade transport/save lifecycle",
+    "Frontend original character rendering and interaction consumers",
+    "TownWandererDialogue source runtime format remains unresolved"
+  ]
+}

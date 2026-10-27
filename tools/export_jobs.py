@@ -11,7 +11,7 @@
 输出两份：
     1) Assets/Resources/UI/JobTree.json  —— 运行时唯一职业/技能数据源
     2) Assets/Resources/NativeAssetIndex.json 的 aliases 增补 skillicon/<id>
-       （只增不删；package_native_assets.py 重跑时会以现有 aliases 为基线合并）
+       （新增或纠正源节点路径，不删除别名；保留 IMG 节点名的前导零）
 
 用法：
     python3 tools/export_jobs.py             # 生成 + 校验
@@ -300,6 +300,7 @@ def main():
 
     jobs = []
     skills: dict[str, dict] = {}
+    icon_sources: dict[int, str] = {}
     missing_icon, missing_name, no_levels = [], [], []
     derived_names = []
 
@@ -337,6 +338,8 @@ def main():
 
             icon = node.get("icon")
             has_icon = isinstance(icon, WzCanvasProperty)
+            if has_icon:
+                icon_sources[sid] = f"{job_img_name(job)}.img/skill/{node.name}/icon"
             if not has_icon:
                 missing_icon.append(sid)
 
@@ -437,16 +440,19 @@ def main():
     index_path = ROOT / "Assets/Resources/NativeAssetIndex.json"
     index = json.loads(index_path.read_text(encoding="utf-8"))
     aliases = index["aliases"]
-    added = 0
+    added = updated = 0
     for s in skills.values():
         if not s["icon"]:
             continue
         key = "skillicon/" + str(s["id"])
-        if key in aliases:
-            continue
-        aliases[key] = {"source": f"Skill/{s['id'] // 10000:03}.img/skill/{s['id']}/icon"}
-        added += 1
-    print(f"skillicon 别名: 原 {len(aliases) - added} 条 → 新增 {added} → 共 {len(aliases)}")
+        source = icon_sources[s["id"]]
+        if key not in aliases:
+            aliases[key] = {"source": source}
+            added += 1
+        elif aliases[key]["source"] != source:
+            aliases[key]["source"] = source
+            updated += 1
+    print(f"skillicon 别名: 新增 {added}，纠正 {updated}，共 {len(aliases)}")
 
     if args.check:
         return

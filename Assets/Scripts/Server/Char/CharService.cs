@@ -17,6 +17,18 @@ public sealed class InventoryEntry
     public long itemRowId;
     public long expiration = -1;
     public int itemId, inventoryType, position, quantity;
+    public int flag;
+    public string owner = "", giftFrom = "";
+    public int petId = -1;
+    // 保留原背包行的扩展列，交易转移不丢失强化、潜能等未显示字段。
+    public Dictionary<string, object> itemData, equipmentData;
+    public InventoryEntry Copy()
+    {
+        var copy = (InventoryEntry)MemberwiseClone();
+        if (itemData != null) copy.itemData = new Dictionary<string, object>(itemData);
+        if (equipmentData != null) copy.equipmentData = new Dictionary<string, object>(equipmentData);
+        return copy;
+    }
     public bool isEquip;
     // 装备属性（inventoryequipment 行；非装备为 0）
     public int str, dex, int_, luk, hp, mp, watk, matk, wdef, mdef, acc, avoid, hands, speed, jump, upgradeslots;
@@ -74,11 +86,15 @@ public static class CharService
                 inventoryType = (int)Convert(r, "inventorytype"),
                 position = (int)Convert(r, "position"),
                 quantity = (int)Convert(r, "quantity"),
+                flag = (int)Convert(r, "flag"),
+                owner = DbStore.Str(r, "owner"), giftFrom = DbStore.Str(r, "giftFrom"),
+                petId = DbStore.Int(r, "petid", -1), itemData = new Dictionary<string, object>(r),
             };
             var eq = InventoryDao.EquipmentOf(db, e.itemRowId);
             if (eq != null)
             {
                 e.isEquip = true;
+                e.equipmentData = new Dictionary<string, object>(eq);
                 e.str = (int)Convert(eq, "str"); e.dex = (int)Convert(eq, "dex");
                 e.int_ = (int)Convert(eq, "int"); e.luk = (int)Convert(eq, "luk");
                 e.hp = (int)Convert(eq, "hp"); e.mp = (int)Convert(eq, "mp");

@@ -46,7 +46,8 @@ public class GameLoop : MonoBehaviour
     static void Boot()
     {
 #if UNITY_EDITOR
-        if (UnityEditor.SessionState.GetBool("NativeCashSceneChecks", false)) return;
+        if (UnityEditor.SessionState.GetBool("NativeCashSceneChecks", false) ||
+            UnityEditor.SessionState.GetBool("NativeViewportChecks", false)) return;
 #endif
 #if UNITY_WEBGL && !UNITY_EDITOR
         WzWebLoader.Begin(CreateGame);

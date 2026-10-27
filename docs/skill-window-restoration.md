@@ -36,3 +36,30 @@ Unity Editor 播放模式运行8秒，直接进入40000地图并打开新手技�
   现有-smokePlayerLevel参数仅能升级，不能降到1；没有为截图修改真实玩家等级/技能点逻辑。
 - 宏面板此次实现显示、编辑、拖入/移除与保存配置，未接入组合施放和宏快捷键执行。
 - 未构建APK、未做安卓设备截图验收。整体缩放仍沿用BottomBar.S。
+
+## 2026-10-27：新手技能图标为空的资源别名修复
+
+用户指出`native-viewport-2400.png`技能列表有名称、无图标。前次视口回归只验证窗口坐标，未验证技能图标能解析，不能据此前次PASS宣称面板内容完整。
+
+原始`clien/Data/Skill/000.img`与项目`MapleDashResources/Data/Skill/000.img`一致，SHA256均为
+`0c3f6dafa83540139a3a27deb5afb6350ac78432eb86f0aebb8e8e6c7f21604f`。
+该IMG技能节点保留7位前导零：`0001001`团队治疗、`0001002`疾风步、`0001000`蜗牛投掷术、`0000012`精灵的祝福；
+四个`icon`均为32×32、origin(0,32)。沿用已核实的行内32×32绘制区域(8,100+40n)，此次不改布局。
+
+根因调用链：`SkillWindow.SkillIcon` → `Art.Tex(SkillData.icon)` → `WzAssets.Texture/AliasNode` →
+`NativeAssetIndex.aliases[skillicon/1001].source`曾为`Skill/000.img/skill/1001/icon`（节点不存在）→返回null→DrawRows跳过图标。
+应指向`Skill/000.img/skill/0001001/icon`。731条SkillBook记录里727条声明有图标，逐一核对原IMG后发现26条别名路径错误，全部属于000.img前导零丢失，其余701条节点存在。
+
+修复26条现有别名；`export_jobs.py`从实际`node.name`构建路径，并纠正已有错误source（旧版仅增不改导致错误持久保留）；
+`package_native_assets.py`引导旧skillicon资源别名时也保留真实节点名，防止重新打包写回错误。
+没有改IMG像素、技能ID、名称、SP或战斗逻辑。另4条记录源数据未声明可用图标，未补画占位图。
+
+复现/验证入口：`rtk proxy python3 tools/imgdump.py Skill/000.img skill --depth 1`，
+`rtk proxy python3 tools/export_jobs.py --check`，以及`NativeViewportChecks.Run`中的`SkillIcons`：
+在Unity中遍历声明有图标的技能，用实际`Art.Tex`解码并检查尺寸和非零alpha，随后重跑面板视口回归并重拍截图。
+
+本次实际结果：`export_jobs.py --check`为63职业、731技能、727条有图标记录，修正后的别名再生成预览为“新增0、纠正0”；
+Unity日志`/tmp/mapledash-skill-icons-checks.log`确认`decoded 727 nonempty skill icons`及**1536项PASS、exit=0**。
+已重拍800×600、2400×1080两张视口图，并打开检查`docs/hud-review/skill-icons-fixed.png`
+（从2400×1080真实OnGUI截图裁出，非重绘）：新手四行图标均已显示。
+该结果仍不等同于Android设备验收。

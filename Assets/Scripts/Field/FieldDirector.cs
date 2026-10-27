@@ -1,15 +1,17 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Server.Field;
 
-// 原版地图会话：换图、传送门、刷怪点、掉落，全部按原服务端语义执行。
+// 原版地图会话：换图、传送门、掉落由本类驱动；**刷怪逻辑放入后端 Server.Field（MapSpawner +
+// SpawnPoint）**，逐条对齐源端 SpawnPoint.java / MapleMap.respawn / MapFactory.loadLifeFromWz。
 //
-// 刷怪规则（SpawnPoint.java / MapFactory.java）：
-//   1. 地图载入时每个刷怪点立刻生成 1 只（addMonsterSpawn → shouldSpawn 为真）
+// 刷怪规则（后端持有，源端语义）：
+//   1. 地图载入时每个刷怪点立刻生成 1 只（MapSpawner.AddMonsterSpawn → shouldSpawn 为真 或 mobTime==-1 强制一次）
 //   2. 一只怪同一时间只占一个刷怪点；mobTime>0 按秒重生，mobTime==0 等死亡动画结束再重生，
-//      mobTime<0 不再重生
-//   3. 每 respawn_interval(默认 10s) 补一次，补到 ceil((0.70+0.05*玩家数)*刷怪点数量)
+//      mobTime<0 不再重生（SpawnPoint.ShouldSpawn / OnKilled）
+//   3. 每 respawn_interval(默认 10s) 调 MapSpawner.Respawn，补到 ceil((0.70+0.05*玩家数)*刷怪点数量)
 //      —— 单人是 75%，use_enable_full_respawn 默认 false
-//   4. 出生位置按 calcPointBelow 落到脚下 foothold
+//   4. 出生位置按 calcPointBelow 落到脚下 foothold（前端几何，构造 SpawnPointDef 时折算）
 //
 // 掉落（MapleMap.dropFromMonster）：
 //   chance 分母 999999；条目先打乱再逐条判定；itemid=0 是金币 [min, max-1]；
@@ -20,8 +22,9 @@ public sealed class FieldDirector : MonoBehaviour
     public int AliveCount { get; private set; }
 
     FieldView view;
+    MapSpawner spawner;                       // 后端刷怪调度（Server.Field）
     readonly List<Point> points = new List<Point>();
-    readonly List<Point> candidates = new List<Point>();
+    readonly Dictionary<SpawnPoint, Point> bySpawn = new Dictionary<SpawnPoint, Point>();
     readonly Dictionary<int, Point> byMob = new Dictionary<int, Point>();
     readonly List<EnemyUnit> dynamicMobs = new List<EnemyUnit>();
     readonly System.Random rng = new System.Random();
@@ -33,9 +36,7 @@ public sealed class FieldDirector : MonoBehaviour
     float saveTimer;
     bool logKills;
 
-    const float RespawnInterval = 10f;      // GameConfig respawn_interval
-    const float SpawnRateBase = 0.70f;      // MapleMap.getCurrentSpawnRate
-    const float SpawnRatePerPlayer = 0.05f;
+    const float RespawnInterval = 10f;      // GameConfig respawn_interval（后端 MapSpawner 用同源公式）
     const int   AggroRangePx = 320;         // 客户端视野内的主动攻击距离（本地适配）
 
     public FieldPortal NearPortal => nearPortal;
@@ -53,8 +54,7 @@ public sealed class FieldDirector : MonoBehaviour
 
     sealed class Point
     {
-        public FieldSpawn def;
-        public double readyAt;
+        public SpawnPoint sp;        // 后端刷怪点（Server.Field）
         public EnemyUnit mob;
     }
 
@@ -112,7 +112,6 @@ public sealed class FieldDirector : MonoBehaviour
         AudioManager.PlayBgm(map.bgm);
 
         BuildPoints(map);
-        SpawnInitial();
 
         respawnTimer = RespawnInterval;
         portalLock = 0.4f;
@@ -120,6 +119,7 @@ public sealed class FieldDirector : MonoBehaviour
         portalArmed = false;
         nearPortal = null;
         Profile.LastMapId = map.id;
+        NativeSkillBackdrop.Enter(this);
 
         Debug.Log("[Field] 进入 " + map.id + " " + map.name + "：刷怪点 " + points.Count +
                   "，传送门 " + map.portals.Count);
@@ -176,37 +176,89 @@ public sealed class FieldDirector : MonoBehaviour
 
     // ——————————————————— 刷怪点 ———————————————————
 
+    // 构建后端刷怪器并登记每个刷怪点；进入地图时按源端 addMonsterSpawn 立即生成 mobTime>=0 / -1 的点。
     void BuildPoints(FieldMap map)
     {
         points.Clear();
         byMob.Clear();
+        bySpawn.Clear();
+
+        spawner = new MapSpawner();
+        spawner.Clock = NowMs;                 // 与帧时钟对齐（源端 Server.getCurrentTime）
+        spawner.SetMobInterval(5000);          // MapleMap 默认 mobInterval
+        spawner.SetRandomRefresh(true);        // use_monster_random_refresh_position（与原客户端一致）
+
         foreach (var s in map.spawns)
-            points.Add(new Point { def = s, readyAt = 0 });
+        {
+            // calcPointBelow：落到脚下 foothold（源端 addMonsterSpawn 内部做，newpos.y-=1）
+            float droppedY = DropToFoothold(s.x, s.y) - 1f;
+            var def = new SpawnPointDef
+            {
+                mob = s.mob,
+                mobTime = s.mobTime,
+                fh = s.fh,
+                f = s.dir,
+                team = s.team,
+                cy = (int)s.cy,
+                x = s.x,
+                y = droppedY,
+                rx0 = s.rx0,
+                rx1 = s.rx1,
+                immobile = false,
+                isBoss = IsBossMob(s.mob),
+            };
+            var sp = spawner.AddMonsterSpawn(def);   // 构造并登记（含 boss 倍率缩放）
+            var p = new Point { sp = sp, mob = null };
+            points.Add(p);
+            bySpawn[sp] = p;
+            // 源端 addMonsterSpawn：sp.shouldSpawn() || mobTime == -1 时立即生成
+            if (sp.ShouldSpawn(NowMs()) || def.mobTime == -1)
+                SpawnAt(p);
+        }
     }
 
-    void SpawnInitial()
+    // 源端 MapleMap.calcPointBelow：在 mapX 处找脚下（y>=mapY 且最接近）的 foothold 的 y。
+    // 地图像素坐标，y 向下为正；找不到下方 foothold 时返回原 y（不掉落）。
+    float DropToFoothold(float mapX, float mapY)
     {
-        // MapFactory.addMonsterSpawn：载入地图时每个点立刻生成一只
-        foreach (var p in points) SpawnAt(p);
+        if (Map == null) return mapY;
+        float best = mapY;
+        bool found = false;
+        foreach (var fh in Map.footholds)
+        {
+            float minX = Mathf.Min(fh.x1, fh.x2), maxX = Mathf.Max(fh.x1, fh.x2);
+            if (mapX < minX || mapX > maxX) continue;
+            float t = (fh.x2 == fh.x1) ? 0f : (mapX - fh.x1) / (fh.x2 - fh.x1);
+            float yAtX = fh.y1 + (fh.y2 - fh.y1) * t;
+            if (yAtX >= mapY && (!found || yAtX < best)) { best = yAtX; found = true; }
+        }
+        return best;
     }
+
+    static bool IsBossMob(int mobId)
+        => FieldCatalog.Mobs.TryGetValue(mobId, out var m) && Art.Num(m.stats, "boss", 0) > 0;
+
+    // 当前毫秒时钟（与 Unity Time.realtimeSinceStartup 一致），注入后端 MapSpawner.Clock。
+    static long NowMs() => (long)(Time.realtimeSinceStartupAsDouble * 1000.0);
 
     void SpawnAt(Point p)
     {
-        if (!FieldCatalog.Mobs.TryGetValue(p.def.mob, out var def)) return;
+        var sd = p.sp.Def;                       // 后端刷怪点定义
+        if (!FieldCatalog.Mobs.TryGetValue(sd.mob, out var mdef)) return;
 
-        var go = new GameObject("Mob_" + p.def.mob);
+        var go = new GameObject("Mob_" + sd.mob);
         var sr = go.AddComponent<SpriteRenderer>();
         sr.enabled = false;
         var e = go.AddComponent<EnemyUnit>();
 
-        e.artKey = string.IsNullOrEmpty(def.artKey) ? def.id.ToString() : def.artKey;
+        e.artKey = string.IsNullOrEmpty(mdef.artKey) ? mdef.id.ToString() : mdef.artKey;
         e.fieldMode = true;
-        e.fieldMobId = p.def.mob;
-        e.label = def.name;
-        float x = Map.WorldX(p.def.x);
-        float refY = Map.WorldY(p.def.y);
+        e.fieldMobId = sd.mob;
+        e.label = mdef.name;
+        float x = Map.WorldX(sd.x);
+        float refY = Map.WorldY(sd.y);
         e.homeX = x;
-        float rx0 = p.def.rx0, rx1 = p.def.rx1;
+        float rx0 = sd.rx0, rx1 = sd.rx1;
         if (rx1 > rx0)
         {
             e.roamMin = Map.WorldX(rx0);
@@ -220,10 +272,11 @@ public sealed class FieldDirector : MonoBehaviour
         e.aggroRange = AggroRangePx / Art.PPU;
 
         e.Init(2, x, refY);
-        ApplyStats(e, def);
+        ApplyStats(e, mdef);
         e.BindNative(this);
 
         p.mob = e;
+        p.sp.MarkSpawned(NowMs());              // ≡ SpawnPoint.getMonster：占用该刷怪点
         byMob[e.GetInstanceID()] = p;
     }
 
@@ -270,6 +323,7 @@ public sealed class FieldDirector : MonoBehaviour
 
     void Update()
     {
+        TickBots();
         // 渐变优先于一切：死亡时 GameLoop 可能已经 gameOver，但黑幕仍要走完
         if (Warping) { TickWarpFade(); return; }
 
@@ -291,6 +345,16 @@ public sealed class FieldDirector : MonoBehaviour
         if (saveTimer > 20f) { saveTimer = 0f; Profile.Save(); }
     }
 
+    // FieldMap坐标转换为WorldX=x/PPU、WorldY=-y/PPU；同步真实脚底位置。
+    void TickBots()
+    {
+        if (Map == null || GameServer.Local == null || !GameSession.InGame || GameLoop.I == null || GameLoop.I.player == null) return;
+        var player = GameLoop.I.player;
+        var bots = GameServer.Local.Bots;
+        bots.SynchronizePlayer(GameSession.Character, Map.id, player.transform.position.x * Art.PPU, -player.transform.position.y * Art.PPU);
+        bots.Drive((long)(Time.realtimeSinceStartup * 1000));
+    }
+
     // 靠近 NPC 按 ↑ 对话。传送门优先（同位置时按原端行为进图）。
     void CheckNpc(PlayerCtrl player)
     {
@@ -306,32 +370,13 @@ public sealed class FieldDirector : MonoBehaviour
         if (respawnTimer > 0f) return;
         respawnTimer = RespawnInterval;
 
-        // 单人：getCurrentSpawnRate(1) = 0.70 + 0.05*1 = 0.75；服务端只在缺怪时补，
-        // 且每点仍受自己的 mobTime/死亡动画约束（SpawnPoint.shouldSpawn）
-        int target = Mathf.CeilToInt((SpawnRateBase + SpawnRatePerPlayer) * points.Count);
-        int alive = 0;
-        foreach (var p in points) if (p.mob != null && !p.mob.dead) alive++;
-        if (alive >= target) return;
-
-        // 原服 use_monster_random_refresh_position=true → Collections.shuffle(randomSpawn)，
-        // 补怪顺序是随机的；不洗牌会固定只补列表靠前的刷怪点。
-        candidates.Clear();
-        foreach (var p in points)
+        if (spawner == null) return;
+        // 后端按源端 MapleMap.respawn：计算应补数量 + 遍历（可打乱）刷怪点 + ShouldSpawn 闸门。
+        var toSpawn = spawner.Respawn(1);
+        foreach (var sp in toSpawn)
         {
-            if (p.mob != null && !p.mob.dead) continue;
-            if (p.def.mobTime < 0) continue;
-            candidates.Add(p);
-        }
-        FieldLoot.Shuffle(candidates, rng);
-
-        double now = Time.realtimeSinceStartupAsDouble;
-        foreach (var p in candidates)
-        {
-            if (alive >= target) break;
-            if (p.mob != null && !p.mob.dead) continue;
-            if (now < p.readyAt) continue;
-            SpawnAt(p);
-            alive++;
+            if (bySpawn.TryGetValue(sp, out var p) && (p.mob == null || p.mob.dead))
+                SpawnAt(p);
         }
     }
 
@@ -492,8 +537,8 @@ public sealed class FieldDirector : MonoBehaviour
         {
             byMob.Remove(e.GetInstanceID());
             p.mob = null;
-            if (p.def.mobTime > 0) p.readyAt = Time.realtimeSinceStartupAsDouble + p.def.mobTime;
-            else p.readyAt = Time.realtimeSinceStartupAsDouble + DeathAnimSeconds(e);
+            // 源端 MonsterListener.monsterKilled：mobTime>0 按秒、mobTime==0 按死亡动画时长
+            p.sp.OnKilled((long)(DeathAnimSeconds(e) * 1000.0), NowMs());
         }
 
         FieldMob mob;
@@ -554,6 +599,8 @@ public sealed class FieldDirector : MonoBehaviour
             if (p.mob != null) { p.mob.gameObject.SetActive(false); Destroy(p.mob.gameObject); p.mob = null; }
         points.Clear();
         byMob.Clear();
+        bySpawn.Clear();
+        spawner = null;
         AliveCount = 0;
     }
 

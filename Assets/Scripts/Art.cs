@@ -182,11 +182,10 @@ public static class Art
         return new Color(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f);
     }
 
-    // —— 伤害数字（原版 Effect.wz/BasicEff.img 的 NoRed/NoCri/NoBlue/NoViolet） ——
-    //
-    // 每个数字由两层叠出来：edge 是带黑描边的深色外层，base 是白黄橙的内层高光。
-    // 两者 origin 不同（外层的锚点比内层偏 3,5），所以必须各自按自己的 origin 摆，
-    // 不能把两层合成一张图 —— 合成会把描边的位置写死，换字号就对不上了。
+    // Legacy presentation manifest. Historical base/edge field names refer to
+    // the original digit groups 0/1, not two overlapping digit layers.
+    // Numeric hits now read IMG directly through NativeDamageNumber; Miss still
+    // reads this manifest until its separate EXE animation path is migrated.
     public class DmgGlyph
     {
         public string file;
@@ -197,7 +196,7 @@ public static class Art
     public class DmgSkin
     {
         public DmgGlyph[] baseDigit = new DmgGlyph[10];
-        public DmgGlyph[] edgeDigit;      // 可能是 null（个别皮肤没有外层）
+        public DmgGlyph[] edgeDigit;      // Legacy group 1 field; not a glyph outline
         public DmgGlyph miss;
         public DmgGlyph fx;               // 暴击星爆
     }

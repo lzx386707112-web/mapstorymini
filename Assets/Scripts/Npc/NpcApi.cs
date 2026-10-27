@@ -51,6 +51,19 @@ public static class NpcApi
         cm.Set("getMapId", Ret(_ => N(MapId)));
         cm.Set("getClient", Ret(_ => BuildClient(player)));
         cm.Set("spawnMonster", Fn(c => SpawnScriptMob(Int(c,0),Int(c,1),Int(c,2))));
+        cm.Set("showSkillBackdrop", Fn(c => NativeSkillBackdrop.ShowMap(Str(c, 0), Int(c, 1))));
+        cm.Set("clearSkillBackdrop", Fn(c => NativeSkillBackdrop.ShowMap(null, 0)));
+        cm.Set("showLocalSkillBackdrop", Fn(c => NativeSkillBackdrop.ShowLocal(Str(c, 0), Int(c, 1))));
+        cm.Set("clearLocalSkillBackdrop", Fn(c => NativeSkillBackdrop.ShowLocal(null, 0)));
+        cm.Set("getDamageSkinIds", Ret(_ =>
+        {
+            var ids = new List<JsValue>();
+            foreach (int id in NativeDamageSkinCatalog.Ids()) ids.Add(N(id));
+            return new JsArray(ids);
+        }));
+        cm.Set("getDamageSkinName", Ret(c => S(NativeDamageSkinCatalog.Name(Int(c, 0)))));
+        cm.Set("getDamageSkinId", Ret(_ => N(NativeDamageSkinCatalog.Selected)));
+        cm.Set("setDamageSkin", Ret(c => B(NativeDamageSkinCatalog.Select(Int(c, 0)))));
 
         // —— 对话 ——
         cm.Set("sendNext", Fn(c => session.SetDialog(NpcDialogMode.Next, Str(c, 0))));
@@ -203,14 +216,15 @@ public static class NpcApi
         cm.Set("resetStats", Fn(c => JobSystem.ResetStats(Profile.JobId)));
 
         // —— 提示 / 其它 ——
-        cm.Set("dropMessage", Fn(c =>
-        {
-            string text = c.ArgCount > 1 ? Str(c, 1) : Str(c, 0);
-            if (!string.IsNullOrEmpty(text)) BottomBar.Toast(text);
-        }));
-        cm.Set("message", Fn(c => ToastIfAny(Str(c, 0))));
-        cm.Set("playerMessage", Fn(c => ToastIfAny(c.ArgCount > 1 ? Str(c, 1) : Str(c, 0))));
-        cm.Set("mapMessage", Fn(c => ToastIfAny(Str(c, 0))));
+        // 源端这几个 API 最终都是 SERVERMESSAGE(type, text)，由客户端按 type 决定落点：
+        //   0 → 聊天窗浅蓝、1 → 居中弹窗、5 → 聊天窗粉色、6 → 聊天窗浅蓝。
+        // 以前一律塞进 Toast，落点和颜色都不对（脚本里 143 处 type5、73 处 type6 全被吃掉）。
+        cm.Set("dropMessage", Fn(c => DropNotice(c)));
+        // Character.message(msg) 在源端等价于 dropMessage(5, msg)
+        cm.Set("message", Fn(c => NativeSystemMessage.Drop(5, Str(c, 0))));
+        cm.Set("playerMessage", Fn(c => DropNotice(c)));
+        // AbstractPlayerInteraction.mapMessage(type, message) → 整图广播 serverNotice(type, message)
+        cm.Set("mapMessage", Fn(c => DropNotice(c)));
         cm.Set("topMessage", Fn(c => ToastIfAny(Str(c, 0))));
         cm.Set("numberWithCommas", Ret(c => S(Int(c, 0).ToString("N0"))));
         cm.Set("showInfo", Fn(c => { }));
@@ -401,6 +415,14 @@ public static class NpcApi
     static void ToastIfAny(string text)
     {
         if (!string.IsNullOrEmpty(text)) BottomBar.Toast(text);
+    }
+
+    // dropMessage / playerMessage / mapMessage 三种签名一致：
+    //   (type, message) 两参 → 按 type 落点；(message) 单参 → 源端等价 type 0。
+    static void DropNotice(JsCall c)
+    {
+        if (c.ArgCount > 1) NativeSystemMessage.Drop(Int(c, 0), Str(c, 1));
+        else NativeSystemMessage.Drop(0, Str(c, 0));
     }
 
     static string Key(JsCall c, int i)

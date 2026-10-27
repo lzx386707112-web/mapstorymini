@@ -3,6 +3,15 @@ using UnityEngine;
 // Shared drawing helpers; every visible bitmap comes from an original IMG node.
 public static class NativeUi
 {
+    // Mobile presentation constraint, in the window's own IMG coordinates.
+    // Keep native geometry intact; move the whole window back into the viewport.
+    public static Vector2 ClampWindowPosition(Vector2 position, Vector2 size, float scale)
+    {
+        return new Vector2(
+            Mathf.Clamp(position.x, 0f, Mathf.Max(0f, UiKit.W / scale - size.x)),
+            Mathf.Clamp(position.y, 0f, Mathf.Max(0f, UiKit.H / scale - size.y)));
+    }
+
     public static bool Button(Rect rect, string node)
     {
         return Button(rect, node, Pointer.Pos);

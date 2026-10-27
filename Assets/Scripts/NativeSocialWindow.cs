@@ -24,7 +24,8 @@ public static class NativeSocialWindow
     static void Run(SocialOperation operation, string name = "")
     {
         var result = Request(operation, name);
-        if (!result.ok) BottomBar.Toast(result.error);
+        // 源端组队/好友这类失败一律 serverNotice(5, …)：聊天窗粉色行，不是浮层提示。
+        if (!result.ok) NativeSystemMessage.Drop(5, result.error);
     }
     public static void Toggle(GameAction next)
     {

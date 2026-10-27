@@ -137,3 +137,43 @@ items = [ (layer, 0, z,  'obj') ] + [ (layer, 1, zM, 'tile') ]   # 层 → 组 �
 - 地面行走重新使用 `FollowGround` 跟随坡面。接续段必须 x/y 端点都重合，不能因为远下方有平台就悬空保持 grounded，也不能自动跳上有高度差的台阶。
 - 静态 NPC 缺少原客户端落地控制器，现在按 life/fh 指定段在 life/x 处插值，显示、交互及任务标记共用落地坐标；无有效支撑段保留原始 life/y，不猜测最近平台。此为静态落地适配，不等同于完整原客户端 NPC 移动模拟。
 - 原始 10000：希娜 life/y=293，cy=305，fh51=(96,305)→(174,305)，故应落在305（差12px）；莎丽 y=cy=125 不变。20000 罗杰 y=58，cy=65，fh7 支撑高度65（差7px）。地图/素材 origin/角色 Body 原点与 PPU 不作整体偏移。
+
+## tile/obj 的 z 键与缺素材容忍（2026-10-26 EXE 复核）
+
+文件 SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`。两处 z 公式已在本地 EXE 逐条指令核对，与 `NativeMapView.Show()` 现行实现**逐字节一致**：
+
+- `MakeObj 0x0063C27B..0x0063C289`：`imul eax,eax,0x7530`(30000×layer) → `mov ecx,[ebp+0x1c]`(obj z) → `lea eax,[eax+ecx-0x3FFFF830]`。即 `Z = obj.z + 30000×layer - 0x3FFFF830`，层优先、z 次之。
+- `RestoreTile 0x0063A911..0x0063A91F`：`imul ecx,ecx,0xBB8`(3000×layer) → `sub ecx,esi`(zM) → `lea ecx,[ecx+ecx*4]`(×5) → `lea edi,[eax+ecx*2-0x3FFFB1EA]`。即 `Z = tile.canvas.z + 10×(3000×layer − zM) − 0x3FFFB1EA`。
+- 排序稳定性：同 z 时原端按 ZMap 插入顺序（即 WZ 节点顺序）绘制，运行时的 `Sequence`（节点序）等价。910000000 实测 326 个 obj 按 `(layer, z)` 升序无逆层。
+
+### 缺素材不中断整图（2026-10-26 核实并修复）
+
+`MakeObj 0x0063C25D..0x0063C269`：解析得到的节点指针 `cmp eax,edi`(edi=0) → `je 0x63C275`，**该分支只跳过一次引用计数调用（0x63C26B），随后照常计算 z 并创建对象**，函数没有提前 return/抛错路径。`RestoreTile` 同理。也就是说：**素材缺失只少那一件摆件，不会让整张地图加载失败**。
+
+迁移侧此前 `NativeMapView.Show()` 对缺 tile/obj/back/NPC 素材直接 `throw`，`FieldView` 捕获后销毁整个地图对象 → **整图白屏**。已改为「跳过该条目 + 去重告警 + 计入 `MissingArt`」，与原端行为等价（不生成空渲染器）。
+
+**受影响地图实测（离线全量扫描 `Map/Map/Map*/*.img`，共 6337 张）**：69 张地图存在 12194 个解析不到的节点（OBJ 6713 / TILE 5208 / BACK 257 / NPC 16）。修复前这些地图全部整图失败；修复后按原端只缺那几件。
+
+| 类别 | 例子 | 根因 |
+| --- | --- | --- |
+| TILE | 702300000..702300010 引用 `Map/Tile/eventCN1.img` | **源端 `BeiDou-Server/clien/Data` 也没有该文件**（本版 WZ 不含，非打包遗漏） |
+| BACK | 211080000..211080600 引用 `blizzardCastle/back/26..28` | 文件存在但节点缺（版本差异） |
+| OBJ | 541020800 引用 `guide/citySG/Jungle/house/15` | 同上 |
+| NPC | 010006000..010006090 引用 `Npc/0000700..0000707`、`0800015`；262000000 引用 `2182xxx/2183xxx` | **源端 Data 也没有这些 NPC img** |
+
+受影响最多的地图：702300004/702300007（各702条）、709000101..709000601（各438）、749020000..749020920、749050200。
+另：`NativeAssetChecks.Run` 报的 `skillicon/1003 source` 失败是 `NativeAssetIndex.json` 里别名 `Skill/000.img/skill/1003/icon` 过期（该 img 内是 8 位 ID `0001003`），与地图渲染无关，基线（未改代码）同样失败。
+
+### 910000000（自由市场）逐节点核对结果（2026-10-26）
+
+以 Unity 批处理探针（`Assets/Editor/MapDrawProbe.cs`，`PROBE_MAPS`/`PROBE_OUT` 环境变量）实例化 `Show(910000000)` 导出全部 SpriteRenderer，与 wzpy 离线解析逐条比对：
+
+- 数据层：0 tile、326 obj（全部可解析）、31 back（全部可解析）、40 portal、9 life（8 个可见 NPC + 1 个 `hide=1`），`Npc/*` 与 `stand` 帧齐全。
+- 运行层：`draws=365`（326 obj + 31 back + 8 NPC + 0 portal），`missingArt=0`，无异常。
+- 326 个 obj 的 **位置/尺寸/origin 与 WZ 逐条完全一致（0 条差异）**，排序无逆层。
+- `portal` 的 `pt` 分布为 `{0:3, 1:32, 3:4, 7:1}`，**没有 pt=2**，而原端/运行时只对 `pt==2` 画 `MapHelper.img/portal/game/pv`，所以自由市场本来就不画传送门光效——门内蓝色光圈是 `Obj/signboard.img/market/potal0|potal1` 摆件，不是 portal。
+- 门牌数字是 `Obj/signboard.img/market/number/<n>`：底排 1..6（y≈-70）、上排 7..12（y≈-352）、再上 13..17、18..22。
+- 截图里门 1 位置的「卡车」就是 NPC `9071003`（stand 133×101 货车造型，x=1450），即 NPC 确有渲染；其余可见 NPC 9900008/9900009/9063168 也在其授权位置。
+- 小地图 `miniMap/canvas` 246×143 透明底，`width=3937/height=2289/centerX=1321/centerY=2044/mag=4`；246<280、143<150，视口不缩放、滚动恒为 0，整张画布完整显示，8 个 NPC 绿点 + 玩家黄点齐全。
+
+结论：**自由市场这张图的野外与小地图渲染没有缺口**；用户看到的「缺元素」来自 69 张缺素材地图的同类问题在其它图上的表现，以及小地图（已撤销的）不透明白底。

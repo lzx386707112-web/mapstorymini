@@ -321,8 +321,24 @@ public class BossUnit : MonoBehaviour
 
     // nativeHit：技能已用原版 hit 部件打爆点，跳过得占位的柔光
     public void TakeHit(DamageResult hit, int fromDir, bool nativeHit = false)
+        => ApplyHit(hit, fromDir, nativeHit, true);
+
+    public Vector3 DamageAnchor => new Vector3(transform.position.x,
+        (body != null && body.sprite != null ? body.bounds.max.y : transform.position.y + 2.2f) - .2f, 0);
+
+    public void TakeReplayHit(DamageResult[] hits, int direction, bool indexed, int interval, bool total = false)
     {
-        if (dead || hit.Amount <= 0) return;
+        if (dead) return;
+        long sum = 0; bool critical = false;
+        foreach (var hit in hits) { sum += hit.Amount; critical |= hit.Critical; }
+        NativeDamageLines.Show(this, hits, indexed, interval, total);
+        ApplyHit(new DamageResult((int)System.Math.Min(int.MaxValue, sum), critical), direction, true, false);
+    }
+
+    void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber)
+    {
+        if (dead) return;
+        if (hit.Amount <= 0) { if (showNumber && hit.Amount == 0) DamageText.Miss(DamageAnchor); return; }
         bool crit = hit.Critical;
         float real = hit.Amount;
         hp = Mathf.Max(0f, hp - real);
@@ -350,7 +366,7 @@ public class BossUnit : MonoBehaviour
         float top = body != null && body.sprite != null
             ? body.bounds.max.y
             : transform.position.y + 2.2f;
-        DamageText.Show(new Vector3(transform.position.x, top - 0.2f, 0f),
+        if (showNumber) DamageText.Show(new Vector3(transform.position.x, top - 0.2f, 0f),
                         real, crit ? "cri" : "red", crit ? 1.15f : 1.06f);
 
         if (hp <= 0f) Die();

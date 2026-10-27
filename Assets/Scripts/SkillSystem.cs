@@ -120,6 +120,7 @@ public partial class SkillSystem : MonoBehaviour
         if (p.mp < s.native.MpCost) return Reject("魔力不足（需要 " + s.native.MpCost + "）");
         if (!State(s.native.Id).TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
         p.TrySpendMp(s.native.MpCost);
+        NativeSkillVideo.PlaySkill(s.native.Id, p);
 
         bool hasArt = !string.IsNullOrEmpty(s.art);
         float preparation = hasArt ? Preparation(s) : 0f;
@@ -136,6 +137,7 @@ public partial class SkillSystem : MonoBehaviour
             actionUntil = Time.unscaledTime + Mathf.Max(p.SkillActionDuration, 0.32f);
         }
 
+        bool replay = BeginReplay(s, p.FeetPos, p.facing);
         if (s.native.Kind == "Buff") p.AddAttackBonus(s.native.AttackBuff, s.native.Duration);
         else if (s.native.Kind == "Summon")
         {
@@ -146,6 +148,7 @@ public partial class SkillSystem : MonoBehaviour
         // 施法音效（源端 Sound/Skill.img/<技能ID>/Use；原端没配音的技能不发声）
         AudioManager.Play("Skill/" + s.native.Id + "/Use", 0.9f);
 
+        if (replay) return true;
         if (s.art == "dash") StartCoroutine(Rush(s));
         else StartCoroutine(Cast(s,p.FeetPos,p.facing));
         return true;
@@ -157,18 +160,6 @@ public partial class SkillSystem : MonoBehaviour
         float preparation = Preparation(s);
         if (preparation > 0) yield return new WaitForSeconds(preparation);
         if (s.native.Kind == "Buff" || s.native.Kind == "Summon") yield break;
-        if (s.art == "illusion")
-        {
-            int[] times = {1320,1470,1590,1710,1800,1950,2070,2190,2280,2430,2550,2670,2790,2820,2880,2940,3000};
-            int previous = 0;
-            foreach (int at in times)
-            {
-                yield return new WaitForSeconds((at - previous) / 1000f);
-                previous = at;
-                HitAt(s, NativeSkillCatalog.Get(at <= 2670 ? "illusion_slash" : "illusion_explosion"), p.FeetPos, p.facing);
-            }
-            yield break;
-        }
         if (UsesProjectile(s))
         {
             yield return ProjectileCast(s,origin,facing);
@@ -280,6 +271,8 @@ public partial class SkillSystem : MonoBehaviour
     public void CancelActions()
     {
         StopAllCoroutines();
+        spearCombo.Reset();
+        NativeSkillVideo.Stop(NativeSkillVideo.Channel.PlayerSkill);
         ClearVisuals();
         if (summon != null) { summon.gameObject.SetActive(false); Destroy(summon.gameObject); }
         summon = null; actionUntil = 0;

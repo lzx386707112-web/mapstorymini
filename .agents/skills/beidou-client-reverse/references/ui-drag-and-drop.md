@@ -83,6 +83,8 @@ ImageBase `0x400000`（地址均为 VA）。复现入口 `tools/inspect_beidou_c
 
 回归：`NativeKeyboardChecks.CheckKeyConfigCarry`、`CheckSkillWindowCarry`。
 
+2026-10-27视口修复：Stat/Equip/Item/Skill保持原IMG内部几何，对整个窗体应用手机视口约束；技能窗标题拖动后立即同步主窗绘制/命中矩形，组合栏按原重叠2px一起约束。此处是标题栏位置修复，不改变本页已核实的技能/键位“按下拿起、再按下放下”语义。新增`NativeViewportChecks`在五种GameView尺寸注入Pointer检查，82项PASS；具体范围见 [DLL 与手机适配](ijl15-mobile-adaptation.md)。
+
 ## 待核实
 
 - `0x989588` 派发的 `DragStart` 事件：参数（Ztl variant）与接收方未解析，只确定"在 0x201 分支里发出"。

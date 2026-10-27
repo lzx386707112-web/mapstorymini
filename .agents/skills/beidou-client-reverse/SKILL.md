@@ -13,16 +13,21 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 
 | 当前问题 | 读取记录 |
 | --- | --- |
+| SoloMapling 假人生成、调度、地图索引、迁移缺口 | [假人系统](references/solomapling.md) |
 | 文件版本、地址、字符串池、复现工具、反编译陷阱 | [二进制与工具](references/binary-and-tools.md) |
+| ijl15/2ijl15 职责、手机用版本差异、分辨率补丁与 Android 适配价值 | [DLL 与手机适配](references/ijl15-mobile-adaptation.md) |
+| 自定义DLL身份、V/VI视频表版本差异、MCV双流/Android解码、Boss标记选片、数字首位/后续位与Miss、伤害皮肤、V/VI回放/雷枪12按、天气/skillback合同与迁移边界 | [自定义功能 DLL](references/custom-dll-systems.md) |
 | 按键组合、重复权、普通跳/下跳、普攻攻速 | [输入与物理](references/input-and-physics.md) |
 | 小地图模式、视口、标记、大地图边框与定位 | [地图窗口](references/map-windows.md) |
 | 商城子窗口、商品列表、坐标与素材 | [现金商城](references/cash-shop.md) |
 | 家族列表、按钮分派、职位、对话框、公告板、Tab | [家族与 Tab](references/guild-and-tabs.md) |
 | Point/Linear 采样、虚拟控制层、已有验证范围 | [渲染与验证](references/rendering-and-validation.md) |
 | 哪些 UI 尚未替换、原端与移动适配的区别 | [UI 迁移审计](references/ui-audit.md) |
+| 底栏 71 高分组、11 个按钮坐标、通知槽、客户区 578 | [底栏布局](references/statusbar-layout.md) |
 | 相机 VR、分辨率补丁、背景滚动；技能窗已定位函数 | [地图与技能窗入口](references/map-and-skill-window.md) |
 | 鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义 | [UI 拖动语义](references/ui-drag-and-drop.md) |
 | NPC 对话窗口素材、纸面几何、共享滚动条、`#L` 行内选项 | [NPC 对话窗口](references/npc-dialog.md) |
+| 背包/装备窗物品悬浮详情：ToolTip 图集、名称/描述来源、属性/需求字段、配色与帧绘制 | [背包与悬浮详情](references/inventory-and-tooltip.md) |
 
 地图坐标/脚底/平台/绳梯的运行时约定另见 [mapledash-map-port](../mapledash-map-port/SKILL.md)。服务端和脚本语义仍以源端服务端/脚本为依据，不能用 EXE 的显示行为替代服务端规则。
 

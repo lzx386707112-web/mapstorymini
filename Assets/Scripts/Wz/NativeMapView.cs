@@ -87,6 +87,8 @@ public sealed class NativeMapView : MonoBehaviour
     readonly HashSet<ImgNode> framesUsed = new HashSet<ImgNode>();
     readonly List<Animation> animations = new List<Animation>();
     readonly List<Background> backgrounds = new List<Background>();
+    readonly HashSet<SpriteRenderer> weatherSkyBacks = new HashSet<SpriteRenderer>();
+    NativeWeatherField weather;
     public int DrawCount { get; private set; }
     public int TextureCount => framesUsed.Count;
     public int FileCount => files.Count;
@@ -125,11 +127,12 @@ public sealed class NativeMapView : MonoBehaviour
             indexed.Sort((a, b) => int.Parse(a.Name).CompareTo(int.Parse(b.Name)));
             foreach (var child in indexed)
             {
-                var f = child.Resolve();
-                if (f.Kind == "Canvas") frames.Add(f);
+                // 悬空 UOL 用不抛异常的解析：一帧坏链接不该打断整段收集。
+                var f = child.TryResolve();
+                if (f != null && f.Kind == "Canvas") frames.Add(f);
             }
         }
-        if (frames.Count == 0) throw new InvalidDataException("No Canvas frames " + name);
+        if (frames.Count == 0) return null;
         var go = new GameObject(name); go.transform.SetParent(transform, false);
         go.transform.localPosition = new Vector3(x / Art.PPU, -y / Art.PPU, 0);
         var sr = go.AddComponent<SpriteRenderer>(); sr.sortingOrder = order; sr.flipX = flip;
@@ -156,6 +159,45 @@ public sealed class NativeMapView : MonoBehaviour
         public long Z;
         public int Layer, Sequence;
     }
+    // 原端 MakeObj 0x63C263：解析不到素材节点时只跳过一次引用计数调用
+    // （cmp eax,edi / je 0x63c275），随后照常算 z 并创建对象，函数不会中断。
+    // RestoreTile 同理。也就是说缺一件素材只少那一件，绝不会让整张地图加载失败。
+    // 本实现等价地「跳过该条目并告警」：不生成空渲染器，效果与原端一致。
+    // 修复前这里直接 throw，导致 69 张地图（eventCN1/blizzardCastle/城SG 等
+    // 数据里本来就引用了本版 Data 不存在的素材）整图渲染失败、白屏。
+    readonly HashSet<string> reportedMissing = new HashSet<string>();
+    public int MissingArt { get; private set; }
+    // 与 Draw() 的帧收集一致：节点本身是 Canvas，或数字子节点里至少一帧可解析。
+    static bool Drawable(ImgNode node)
+    {
+        var n = node?.TryResolve();
+        if (n == null) return false;
+        if (n.Kind == "Canvas") return true;
+        foreach (var child in n.Children)
+            if (int.TryParse(child.Name, out _) && child.TryResolve()?.Kind == "Canvas") return true;
+        return false;
+    }
+    void Missing(ImgNode owner, int mapId, string kind, string path, string label)
+    {
+        MissingArt++;
+        if (reportedMissing.Add(kind + "/" + path))
+            Debug.LogWarning("[NativeMapView] 地图 " + mapId + " 缺少 " + kind + " 素材 " + path +
+                             "（节点 " + owner.Name + "/" + label + "），按原端行为跳过");
+    }
+    // NPC img 支持 info/link 链；链上任一文件缺失返回 null，由调用方跳过。
+    static ImgNode NpcRoot(string npcId)
+    {
+        string file = "Npc/" + npcId + ".img";
+        for (int i = 0; i < 16; i++)
+        {
+            if (!WzAssets.HasFile(file)) return null;
+            var root = WzAssets.FileRoot(file);
+            var link = root.Get("info/link");
+            if (link == null) return root;
+            file = "Npc/" + Convert.ToInt32(link.Value).ToString("D7") + ".img";
+        }
+        return null;
+    }
     public void Show(int id)
     {
         var map = MapRoot(id);
@@ -168,16 +210,22 @@ public sealed class NativeMapView : MonoBehaviour
         {
             var n = map.Get(layer.ToString());
             if (n == null) continue;
+            string tileSet = n.Text("info/tS");
+            string tileFile = "Map/Tile/" + tileSet + ".img";
+            bool hasTiles = !string.IsNullOrEmpty(tileSet) && WzAssets.HasFile(tileFile);
             foreach (var d in Children(n.Get("tile")))
             {
-                var art = FileRoot("Map/Tile/" + n.Text("info/tS") + ".img").Get(d.Text("u") + "/" + d.Int("no"));
-                if (art == null) throw new InvalidDataException("Missing tile " + d.Name);
+                var art = hasTiles ? FileRoot(tileFile).Get(d.Text("u") + "/" + d.Int("no")) : null;
+                if (!Drawable(art)) { Missing(n, id, "tile", tileSet + "/" + d.Text("u") + "/" + d.Int("no"), d.Name); continue; }
                 draws.Add(new MapDraw { Definition = d, Art = art, Layer = layer,
                     Z = art.Resolve().Int("z") + 10L * (3000L * layer - d.Int("zM")) - 0x3FFFB1EA, Sequence = draws.Count });
             }
             foreach (var d in Children(n.Get("obj")))
             {
-                var art = FileRoot("Map/Obj/" + d.Text("oS") + ".img").Get(d.Text("l0") + "/" + d.Text("l1") + "/" + d.Text("l2"));
+                string oS = d.Text("oS");
+                string objFile = "Map/Obj/" + oS + ".img";
+                var art = WzAssets.HasFile(objFile) ? FileRoot(objFile).Get(d.Text("l0") + "/" + d.Text("l1") + "/" + d.Text("l2")) : null;
+                if (!Drawable(art)) { Missing(n, id, "obj", oS + "/" + d.Text("l0") + "/" + d.Text("l1") + "/" + d.Text("l2"), d.Name); continue; }
                 draws.Add(new MapDraw { Definition = d, Art = art, Layer = layer,
                     Z = d.Int("z") + 30000L * layer - 0x3FFFF830, Sequence = draws.Count });
             }
@@ -187,16 +235,20 @@ public sealed class NativeMapView : MonoBehaviour
         {
             var item = draws[i]; var d = item.Definition;
             var draw = Draw(item.Art, d.Parent.Name + "_" + item.Layer + "_" + d.Name, d.Int("x"), d.Int("y"), i, d.Int("f") != 0);
+            if (draw == null) continue;
             draw.Renderer.transform.SetParent(body.transform, false);
         }
         foreach (var b in Children(map.Get("back")))
         {
             if (b.Text("bS") == "") continue;
-            var root = FileRoot("Map/Back/" + b.Text("bS") + ".img");
+            string backFile = "Map/Back/" + b.Text("bS") + ".img";
             string kind = b.Int("ani") != 0 ? "ani" : "back";
-            var art = root.Get(kind + "/" + b.Int("no"));
+            var root = WzAssets.HasFile(backFile) ? FileRoot(backFile) : null;
+            var art = root != null ? root.Get(kind + "/" + b.Int("no")) : null;
+            if (!Drawable(art)) { Missing(b, id, "back", b.Text("bS") + "/" + kind + "/" + b.Int("no"), b.Name); continue; }
             var a = Draw(art, "Back_" + b.Name, 0, 0,
                 (b.Int("front") != 0 ? 600 : -800) + int.Parse(b.Name), b.Int("f") != 0, b.Int("a", 255));
+            if (a == null) continue;
             a.Renderer.enabled = false;
             backgrounds.Add(new Background { Definition = b, Art = a });
         }
@@ -204,18 +256,56 @@ public sealed class NativeMapView : MonoBehaviour
         {
             if (life.Text("type") != "n" || life.Int("hide") != 0) continue;
             string npcId = int.Parse(life.Text("id")).ToString("D7");
-            var npc = FileRoot("Npc/" + npcId + ".img");
-            if (npc.Get("info/link") != null) npc = FileRoot("Npc/" + Convert.ToInt32(npc.Get("info/link").Value).ToString("D7") + ".img");
+            var npc = NpcRoot(npcId);
+            if (!Drawable(npc?.Get("stand"))) { Missing(life, id, "npc", npcId + "/stand", life.Name); continue; }
             Draw(npc.Get("stand"), "Npc_" + npcId, life.Int("x"), NpcGroundY(map, life), 100, life.Int("f") != 0);
         }
         foreach (var p in Children(map.Get("portal")))
             if (p.Int("pt") == 2) Draw(FileRoot("Map/MapHelper.img").Get("portal/game/pv"), "Portal_" + p.Name, p.Int("x"), p.Int("y"), 200, defaultDelay: 120);
-        Debug.Log("[DirectIMG] Map=" + id + " files=" + FileCount + " draws=" + DrawCount + " textures=" + TextureCount + " animations=" + animations.Count);
+        weather = gameObject.AddComponent<NativeWeatherField>();
+        weather.Bind(this, id, map);
+        Debug.Log("[DirectIMG] Map=" + id + " files=" + FileCount + " draws=" + DrawCount + " textures=" + TextureCount +
+                  " animations=" + animations.Count + " missingArt=" + MissingArt);
     }
     void LateUpdate()
     {
         foreach (var a in animations) a.Tick(Time.timeSinceLevelLoad);
+        weather?.Tick();
         if (Camera.main != null) UpdateBackgrounds(Camera.main, Time.timeSinceLevelLoad);
+    }
+    public SpriteRenderer AddWeatherBack(Dictionary<string,object> row, int order)
+    {
+        string file = "Map/Back/" + (string)row["bank"] + ".img";
+        var node = FileRoot(file).Get((Convert.ToInt32(row["ani"])!=0 ? "ani/" : "back/") + Convert.ToInt32(row["no"]));
+        if (!Drawable(node)) throw new InvalidDataException("Missing original weather art " + file);
+        var b = new ImgNode { Name = "weather", Kind = "Property" };
+        foreach (var entry in row)
+            b.Children.Add(new ImgNode {Name=entry.Key,Kind="Int",Value=entry.Value,Parent=b});
+        if ((bool)row["sizePitch"])
+        {
+            var canvas = WzAssets.Canvas(node.Resolve().Kind=="Canvas" ? node : node.Get("0"));
+            b.Get("cx").Value=canvas.Width; b.Get("cy").Value=canvas.Height;
+        }
+        var a=Draw(node,"Weather_"+row["group"],0,0,order);
+        if(a==null)return null;
+        a.Renderer.enabled=false; a.Renderer.color=new Color(1,1,1,0);
+        backgrounds.Add(new Background {Definition=b,Art=a});return a.Renderer;
+    }
+    public void PromoteWeatherBacks(ImgNode map)
+    {
+        var first=map.Get("back/0");
+        foreach(var back in backgrounds)
+        {
+            var b=back.Definition;
+            if(b.Name=="weather" || b.Int("front")!=0)continue;
+            int index=int.Parse(b.Name);
+            bool repeated=string.Equals(b.Text("bS"),first.Text("bS"),StringComparison.OrdinalIgnoreCase) && b.Int("no")==first.Int("no");
+            if(index<2 || repeated) {back.Art.Renderer.sortingOrder=-1200+index;weatherSkyBacks.Add(back.Art.Renderer);}
+        }
+    }
+    public void SetWeatherSkyVisibility(bool hidden)
+    {
+        foreach(var image in weatherSkyBacks)if(image!=null) {var color=image.color;color.a=hidden?0:1;image.color=color;}
     }
     public void UpdateBackgrounds(Camera camera, float elapsed)
     {

@@ -307,7 +307,27 @@ public class EnemyUnit : MonoBehaviour
     public void TakeHit(DamageResult hit, int fromDir, bool nativeHit = false, bool magic = false)
     {
         if (NativeController != null) hit = NativeController.FilterHit(hit, magic);
-        if (dead || hit.Amount <= 0) return;
+        ApplyHit(hit, fromDir, nativeHit, true);
+    }
+
+    public void TakeReplayHit(DamageResult[] hits, int direction, bool magic, bool indexed, int interval, bool total = false)
+    {
+        if (dead) return;
+        var filtered = new DamageResult[hits.Length];
+        long sum = 0; bool critical = false;
+        for (int i = 0; i < hits.Length; i++)
+        {
+            filtered[i] = NativeController != null ? NativeController.FilterHit(hits[i], magic) : hits[i];
+            sum += filtered[i].Amount; critical |= filtered[i].Critical;
+        }
+        NativeDamageLines.Show(this, filtered, indexed, interval, total);
+        ApplyHit(new DamageResult((int)System.Math.Min(int.MaxValue, sum), critical), direction, true, false);
+    }
+
+    void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber)
+    {
+        if (dead) return;
+        if (hit.Amount <= 0) { if (showNumber && hit.Amount == 0) DamageText.Miss(HeadPos); return; }
         bool crit = hit.Critical;
         float real = hit.Amount;
         if (NativeController != null) NativeController.ApplyDamage(hit.Amount);
@@ -334,13 +354,14 @@ public class EnemyUnit : MonoBehaviour
         string mid = MobSoundId;
         if (mid != null) AudioManager.PlayAt("Mob/" + mid + "/Damage", transform.position, 0.9f, 9f);
 
-        DamageText.Show(HeadPos, real, crit ? "cri" : "red", crit ? 1.08f : 1f);
+        if (showNumber) DamageText.Show(HeadPos, real, crit ? "cri" : "red", crit ? 1.08f : 1f);
         if (crit) HitFeel.Punch(1.35f);
 
         if (hp <= 0f) Die();
     }
 
     // 数字从头顶冒出来：素材 1:1 时 bounds 就是实际贴图范围
+    public Vector3 DamageAnchor => HeadPos;
     Vector3 HeadPos
     {
         get
