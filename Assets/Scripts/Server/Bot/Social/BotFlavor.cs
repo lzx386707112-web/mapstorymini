@@ -31,7 +31,7 @@ namespace Server.Bot.Social
             {
                 var motion = BotMovementService.Get(bot.chr);
                 if (motion != null) motion.alertedUntilMs = BotScheduler.Now() + 5000;
-                bot.output.Send(BotOutput.Kind.Attack, bot.chr, value: 0);
+                BotAttack.BasicSwing(bot.chr,random,bot.output);
             }
         }
     }

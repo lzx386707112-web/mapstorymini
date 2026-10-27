@@ -180,6 +180,338 @@ static class BotChecks
         CheckAmbientMap(check);
         CheckTownPresence(check);
         CheckMarketAmbient(check);
+        CheckMerchantRuntime(check);
+        CheckPartyGrindRuntime(check);
+        CheckTradeSnapshotLifecycle(check);
+    }
+
+    static void CheckTradeSnapshotLifecycle(Action<bool,string> check)
+    {
+        var db=DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(),"mapledash_trade_snapshot.json"));
+        int account=(int)db.Table("accounts").Insert(new DbRow { ["name"]="SnapshotAccount" });
+        int id=(int)db.Table("characters").Insert(new DbRow { ["accountid"]=(long)account,["name"]="SnapshotTrader",["level"]=120L,["meso"]=1000L });
+        var server=GameServer.StartWith(db);
+        try
+        {
+            var runtime=server.Bots;
+            var player=runtime.SynchronizePlayer(CharService.Load(db,id),910000000,0,0);
+            var stale=CharService.Load(db,id);
+            var seller=BotGeneration.CreateBotPollReadiness(0,0,910000000,true,false);
+            int mirroredDelta=0; server.TradeInventoryCommitted+=(actor,delta)=> { if(actor.id==id) mirroredDelta+=delta; };
+            runtime.trades.Invite(player,seller);
+            var local=(BotTradeService.Session)player.trade;
+            local.Accept(); local.SetMeso(50);
+            stale.record.exp=123;
+            server.Transport.SaveCharacter(new SaveCharacterRequest { characterId=id,character=stale });
+            check(CharactersDao.FindById(db,id).meso==950 && CharactersDao.FindById(db,id).exp==123 && mirroredDelta==-50,
+                "托管期间旧快照不能补回金币，同时保留客户端真实经验进度");
+            var older=CharService.Load(db,id);
+            local.Decline();
+            older.record.meso=950;
+            server.Transport.SaveCharacter(new SaveCharacterRequest { characterId=id,character=older });
+            check(CharactersDao.FindById(db,id).meso==1000 && mirroredDelta==0,
+                "取消后的旧快照不能覆盖已返还金币，提交事件净变化归零");
+            runtime.SynchronizePlayer(older,910000000,0,0);
+            check(player.character.record.meso==1000 && player.character.tradeRevision>0,
+                "真人帧同步旧快照保留当前交易修订与实际余额");
+            var preSale=CharService.Load(db,id);
+            runtime.trades.Invite(player,seller); local=(BotTradeService.Session)player.trade; local.Accept();
+            var remote=(BotTradeService.Session)seller.trade;
+            remote.AddItem(BotItemCatalog.Shared.CleanItem(2000000,1),1);
+            local.SetMeso(100); local.Confirm(); remote.Confirm();
+            server.Transport.SaveCharacter(new SaveCharacterRequest { characterId=id,character=preSale });
+            check(player.trade==null && CharactersDao.FindById(db,id).meso==900 && InventoryDao.CountOf(db,id,2000000)==1 && mirroredDelta==-100,
+                "成交后旧快照不补回货款、不抹掉到账商品且金币镜像净扣一次");
+        }
+        finally { GameServer.Stop(); }
+    }
+
+    static void CheckPartyGrindRuntime(Action<bool,string> check)
+    {
+        BotScheduler.Stop(); BotTasks.Stop(); BotScheduler.Clock=200000;
+        var db=DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(),"mapledash_grind_runtime.json"));
+        long account=db.Table("accounts").Insert(new DbRow { ["name"]="GrindAccount" });
+        int id=(int)db.Table("characters").Insert(new DbRow { ["accountid"]=account,["name"]="GrindLeader",["level"]=120L,["world"]=0L });
+        using var runtime=new BotRuntime(db);
+        var player=runtime.SynchronizePlayer(CharService.Load(db,id),100000000,0,0);
+        var service=runtime.partyGrind;
+        check(!service.Start(player),"基友集合无队伍不召集");
+        runtime.parties.Create(player);
+        check(service.Start(player) && service.Companions(id).Count==5 && runtime.parties.For(id).members.Count==6,
+            "基友集合真实生成五个成员并加入六人队伍");
+        check(!service.Start(player),"三十分钟召集生效期间拒绝重复召集");
+        int companionId=service.Companions(id)[0];
+        check(service.Leader(companionId)==player,"同频道真实在线队长可被战斗成员解析");
+        player.channel++;
+        check(service.Leader(companionId)==null,"换频道队长不再被旧频道战斗成员解析");
+        player.channel--; player.world++;
+        check(service.Leader(companionId)==null,"换世界队长不跨世界跟随");
+        player.world--;
+
+        var bots=new List<BotCharacter>(); bool tuned=true;
+        foreach (int botId in service.Companions(id))
+        {
+            var bot=BotRegistry.Get(botId); bots.Add(bot);
+            tuned &= BotStore.GetBotById(botId) is CompanionGrindBot && bot.level>=117 && bot.level<=123 &&
+                bot.str==Math.Min(999,4+(bot.level-1)*5) && bot.str==bot.dex && bot.dex==bot.intelligence && bot.intelligence==bot.luk &&
+                BotMovementService.Get(bot).grinding;
+        }
+        check(tuned,"五人均接具体220ms战斗FSM、原等级抖动四属性和grinding移动状态");
+        var lead=bots[0]; lead.x=player.x; lead.y=player.y;
+        var mobs=new List<BotGrindMob> {
+            new BotGrindMob { id=1,mapId=player.mapId,channel=1,x=(int)player.x,y=(int)player.y,maxHp=18000,alive=true,boss=true },
+            new BotGrindMob { id=2,mapId=player.mapId,channel=1,x=(int)player.x+10,y=(int)player.y,maxHp=18000,alive=true,fake=true },
+            new BotGrindMob { id=3,mapId=player.mapId,channel=1,x=(int)player.x+20,y=(int)player.y,maxHp=18000,alive=true },
+            new BotGrindMob { id=4,mapId=player.mapId,channel=1,x=(int)player.x+30,y=(int)player.y,maxHp=18000,alive=true } };
+        service.Monsters=(_,__,___)=>mobs;
+        var first=service.Target(lead,player); bots[1].x=player.x; bots[1].y=player.y;
+        check(first?.id==3 && service.Target(bots[1],player)?.id==4 && service.Target(lead,player)==first,
+            "战斗排除Boss假怪、保留有效认领且同队不同假人不争抢目标");
+        int hits=0,damage=0; service.Hit=(bot,mob,total,skill,lines)=> { hits++; damage=total; };
+        BotStore.GetBotById(lead.id).UpdateState(); BotStore.GetBotById(lead.id).UpdateState();
+        check(hits==1 && damage>=1000,"具体战斗FSM接真实伤害回调并受800ms冷却保护");
+        foreach (var bot in bots) bot.level=120;
+        var contributions=new Dictionary<int,long> { [lead.id]=1000 };
+        var reward=BotPartyExperience.Calculate(db,runtime.parties,player,120,1000,1000,contributions);
+        check(reward.eligible && reward.personal==133 && reward.party==40 && reward.reputationCalls==2,
+            "假人击杀按六人等级分配经验与30%队伍加成，不把整份经验发给队长");
+        player.level=1;
+        check(!BotPartyExperience.Calculate(db,runtime.parties,player,120,1000,1000,contributions).eligible,
+            "未攻击且低于怪物等级门槛的队员不蹭经验");
+        contributions[player.id]=1;
+        check(BotPartyExperience.Calculate(db,runtime.parties,player,120,1000,1000,contributions).eligible,
+            "真实造成伤害的低等级队员保留原端参与资格");
+        player.level=120;
+        mobs[2].alive=false; mobs[3].alive=false;
+        check(service.Target(lead,player)==null,"目标死亡后释放认领且不会打已死怪");
+        runtime.Drive(200000+BotPartyGrindService.Duration);
+        bool cleaned=service.Companions(id).Count==0 && !service.IsActive(id) && runtime.parties.For(id).members.Count==1;
+        foreach (var bot in bots) cleaned &= BotRegistry.Get(bot.id)==null && BotStore.GetBotById(bot.id)==null && BotMovementService.Get(bot)==null;
+        check(cleaned,"30分钟到期完整清除五人实体、FSM、移动任务和队伍成员");
+        check(BotAttack.GrindSkill(412,1472000).id==4121007 && BotAttack.GrindSkill(412,1332000).id==4001334 &&
+            BotAttack.GrindSkill(200,1302000).id==0 && BotAttack.GrindSkill(312,1462000).id==3201005,
+            "职业技能须通过普通武器兼容性校验，否则采用原武器回退或普攻");
+        check(BotAttack.GrindSkill(112,1342000).id==0 && BotAttack.GrindSkill(112,1352000).id==0 &&
+            BotAttack.GrindSkill(112,1362000).id==0 && BotAttack.GrindSkill(112,1392000).id==0,
+            "原ItemInformationProvider标记非武器的134/135/136/139类别不能错误施放近战技能");
+        var split=BotAttack.SplitDamage(2,6);
+        check(split.Length==6 && split[5]==1 && BotAttack.JobTier(132)==4,"原分段伤害最少1及职业档位语义保留");
+        InventoryDao.InsertItem(db,id,BotPartyGrindService.ItemId,2,1,2);
+        var scripts=(Dictionary<string,object>)MiniJsonDb.Parse(PlatformRes.LoadText("Scripts/npc_scripts"));
+        string original=(string)scripts["item/consume_2431159"];
+        bool disposed=false;
+        void UseOriginalItemScript()
+        {
+            var engine=new MapleDash.Js.JsEngine(original,"item/consume_2431159");
+            var actor=new MapleDash.Js.JsHostObject(null);
+            actor.Set("getParty",MapleDash.Js.JsFunction.FromNative("getParty",_=>runtime.parties.For(id)!=null ? new MapleDash.Js.JsObject() : MapleDash.Js.JsNull.Value));
+            actor.Set("startPartyGrindCompanions",MapleDash.Js.JsFunction.FromNative("startPartyGrindCompanions",_=>MapleDash.Js.JsBoolean.Of(
+                BotPartyGrindProtocol.Handle(runtime,new PartyGrindRequest { characterId=id,operation=PartyGrindOperation.Start }).ok)));
+            actor.Set("dropMessage",MapleDash.Js.JsFunction.FromNative("dropMessage",_=>MapleDash.Js.JsNull.Value));
+            var im=new MapleDash.Js.JsHostObject(null);
+            im.Set("getPlayer",MapleDash.Js.JsFunction.FromNative("getPlayer",_=>actor));
+            im.Set("dispose",MapleDash.Js.JsFunction.FromNative("dispose",_=> { disposed=true; return MapleDash.Js.JsNull.Value; }));
+            im.Set("gainItem",MapleDash.Js.JsFunction.FromNative("gainItem",call=> {
+                InventoryDao.ConsumeItem(db,id,(int)MapleDash.Js.JsConvert.ToNumber(call.Arg(0)),-(int)MapleDash.Js.JsConvert.ToNumber(call.Arg(1)));
+                return MapleDash.Js.JsNull.Value;
+            }));
+            engine.Bind("im",im); engine.Run(); engine.Call("start");
+        }
+        UseOriginalItemScript();
+        check(disposed && service.IsActive(id) && InventoryDao.CountOf(db,id,BotPartyGrindService.ItemId)==1,
+            "未改写原consume_2431159.js实际执行，五人召集成功后才扣一件道具并释放脚本");
+        UseOriginalItemScript();
+        check(InventoryDao.CountOf(db,id,BotPartyGrindService.ItemId)==1,"原道具脚本重复使用失败不扣道具");
+        var companions=new List<int>(service.Companions(id));
+        runtime.RemovePlayer(id);
+        bool removed=!service.IsActive(id);
+        foreach (int botId in companions) removed &= BotRegistry.Get(botId)==null;
+        check(removed,"队长退出会话立即取消watch并清理五名战斗假人");
+        player=runtime.SynchronizePlayer(CharService.Load(db,id),100000000,0,0);
+        runtime.parties.Create(player); service.Start(player);
+        var follower=BotRegistry.Get(service.Companions(id)[0]);
+        player.mapId=101000000;
+        BotStore.GetBotById(follower.id).UpdateState();
+        check(follower.mapId==player.mapId && service.IsActive(id),"同频道换图实际FSM跟随队长并重绑站位");
+        player.channel++;
+        BotStore.GetBotById(follower.id).UpdateState();
+        check(!service.IsActive(id) && service.Companions(id).Count==0 && BotRegistry.Get(follower.id)==null,
+            "队长跨频道后实际FSM清理全队而非跨频道搬运假人");
+        player.channel--; service.Start(player);
+        var departing=BotRegistry.Get(service.Companions(id)[0]);
+        runtime.parties.Leave(departing.id);
+        BotStore.GetBotById(departing.id).UpdateState();
+        check(!service.IsActive(id) && runtime.parties.For(id).members.Count==1,"成员脱离原队伍后实际FSM终止召集并清理其余成员");
+        BotTasks.Stop();
+    }
+
+    static void CheckMerchantRuntime(Action<bool,string> check)
+    {
+        BotScheduler.Stop(); BotTasks.Stop(); BotScheduler.Clock = 100000;
+        var db = DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(),"mapledash_merchant_runtime.json"));
+        db.Table("game_config").Insert(new DbRow { ["config_code"] = "solo_mapling_market_wander_enabled", ["config_value"] = "false" });
+        long account = db.Table("accounts").Insert(new DbRow { ["name"] = "MerchantAccount" });
+        int id = (int)db.Table("characters").Insert(new DbRow { ["accountid"] = account, ["name"] = "MerchantBuyer", ["level"] = 120L, ["meso"] = 100000000L, ["world"] = 0L });
+        var social = new NativeSocialService(db);
+        using var runtime = new BotRuntime(db,social.BotMessenger,social.Parties);
+        var player = runtime.SynchronizePlayer(CharService.Load(db,id),910000000,0,0);
+        var seller = BotGeneration.CreateBotPollReadiness(0,0,910000000,true,false);
+        var resources = BotResources.Load(); var random = new FirstChoiceRandom();
+        var pool = new MarketItemPool(resources,random);
+        var economy = new MarketEconomy(random,() => new DateTime(2026,10,28));
+        var ambient = new MarketBotAmbient(resources,() => db,random);
+        var selling = new MerchantBot(seller,false,pool,economy,ambient,random);
+        BotStore.AddActiveBot(seller.id,selling); selling.running = true;
+        selling.UpdateState(); selling.UpdateState();
+        check(selling.tradeMode == TradeMode.SELLING && selling.tradeInventory.MainItem.quantity == 1 &&
+            selling.tradeWants.mesoWanted > 0 && selling.CurrentItem.itemId == selling.tradeInventory.MainItem.itemId,
+            "出售商人实际FSM从原商品池选择单件商品，接原市场价格和交易需求");
+        var buyer = BotGeneration.CreateBotPollReadiness(0,0,910000000,true,false);
+        var buying = new MerchantBot(buyer,true,pool,economy,ambient,random);
+        BotStore.AddActiveBot(buyer.id,buying); buying.running = true;
+        buying.UpdateState(); buying.UpdateState();
+        check(buying.tradeMode == TradeMode.BUYING && buying.tradeWants.itemsWanted.Count == 1 &&
+            buying.tradeWants.mesoWanted == 0 && buying.tradeWants.mesoOffering > 0,
+            "收购商人实际FSM设置原80%-90%折价及一件收购需求");
+        check(BotTypeManager.CreateAndSetBot(buyer,BotType.BUYING_MERCHANT_BOT) is MerchantBot &&
+            BotTypeManager.CreateAndSetBot(buyer,BotType.SELLING_MERCHANT_BOT) is MerchantBot &&
+            BotTypeManager.CreateAndSetBot(buyer,BotType.NX_MERCHANT_BOT) is NXMerchantBot,
+            "三种商人枚举均替换通用占位，原概率转换可到具体类型");
+        var scrollActor=BotGeneration.CreateBotPollReadiness(0,0,910000000,true,false);
+        var scrollItem=BotItemCatalog.Shared.CleanEquip(1082002);
+        scrollItem.equipmentData=new Dictionary<string,object> { ["level"]=2L };
+        var scrolling=new ScrollingBot(scrollActor,()=>new List<MarketEquipment> { new MarketEquipment(scrollItem,100) },
+            new MarketScrollPricing(pool,BotItemCatalog.Shared,random),economy,new BotDialogue(resources,random),random);
+        BotStore.AddActiveBot(scrollActor.id,scrolling); scrolling.running=true;
+        scrolling.UpdateState(); scrolling.UpdateState();
+        check(scrolling.CurrentStep==ScrollingBot.Step.ScrollingItems,"卷轴商人具体FSM取原装备强化次数与原IMG槽数");
+        var exact=ScrollingBot.ExactScrollList(2,7,random); int successes=0;
+        foreach(bool value in exact) if(value) successes++;
+        check(exact.Length==7 && successes==2,"卷轴表Fisher-Yates打乱后严格保留原成功次数");
+        BotTypeManager.Output.Clear(); scrolling.UpdateState();
+        bool effect=false;
+        for(var message=BotTypeManager.Output.Poll();message!=null;message=BotTypeManager.Output.Poll())
+            if(message.kind==BotOutput.Kind.Scroll) effect=message.actorId==scrollActor.id && (message.value==1 || message.value==2);
+        check(effect && scrolling.IsBusy,"卷轴商人产生原SUCCESS/CURSE结果且10至15秒等待不阻塞主线程");
+        check(BotTypeManager.CreateAndSetBot(scrollActor,BotType.SCROLL_BOT) is ScrollingBot,"SCROLL_BOT不再落入Generic占位");
+        var protocol = runtime.tradeProtocol;
+        check(protocol.Handle(new BotTradeRequest { characterId = id, botId = seller.id, operation = BotTradeOperation.Invite }).ok,
+            "运行时交易入口连接当前真人与同图商人");
+        check(!protocol.Handle(new BotTradeRequest { characterId = id, operation = BotTradeOperation.OfferMeso, meso = 1 }).ok,
+            "交易尚未接受时不能提前托管物品金币");
+        selling.CheckForTrades(); selling.UpdateState(); selling.UpdateState();
+        var quote = protocol.Handle(new BotTradeRequest { characterId = id, operation = BotTradeOperation.Read });
+        check(quote.accepted && quote.partnerId == seller.id && quote.partnerItems.Count == 1,
+            "运行时交易读取已接受窗口及商人真实上架物品");
+        int payment = selling.tradeWants.mesoWanted, balance = player.character.record.meso;
+        var offered = protocol.Handle(new BotTradeRequest { characterId = id, operation = BotTradeOperation.OfferMeso, meso = payment });
+        check(offered.ok && player.character.record.meso == balance-payment,"客户端交易协议实际托管金币而非假报价");
+        runtime.RemovePlayer(id);
+        check(player.trade == null && seller.trade == null && CharactersDao.FindById(db,id).meso == balance,
+            "真人退服回滚双边交易托管，金币持久化返还且清除会话");
+        player = runtime.SynchronizePlayer(CharService.Load(db,id),910000000,0,0);
+        var nx = BotTypeManager.CreateAndSetBot(buyer,BotType.NX_MERCHANT_BOT) as NXMerchantBot;
+        nx.running = true; nx.UpdateState();
+        check(nx.tradeInventory.MainItem.itemId == 4031865 && nx.tradeInventory.MainItem.quantity == 100 && nx.tradeWants.mesoWanted == 50000000,
+            "点券商人配置原100份占位道具及五千万售价");
+        nx.lastTradeResult = TradeResult.SUCCESSFUL; nx.lastTradedCharacter = player; nx.UpdateState();
+        int invitation = social.BotMessenger.Invitation(id);
+        var accepted = social.Handle(new SocialRequest { characterId = id, operation = SocialOperation.AcceptMessenger, messengerRoom = invitation });
+        check(invitation > 0 && accepted.ok && accepted.messenger && accepted.messengerMembers.Count == 2,
+            "成功点券交易发真实聊天邀请，玩家通过现有social transport接受并进入双方会话");
+        var previousErrorHandler = BotTasks.OnError;
+        Exception deliveryError = null; BotTasks.OnError = e => deliveryError = e;
+        At(102000); At(105000); At(112000); At(114000);
+        if (deliveryError != null) throw new Exception("NX delivery failed",deliveryError);
+        var received = social.Handle(new SocialRequest { characterId = id, operation = SocialOperation.Read });
+        string code = null; foreach (var message in received.messengerMessages) if (message.text != null && message.text.Length == 17 && message.text[5] == '-') code = message.text;
+        check(code != null && db.Table("nxcode").Select(r => true).Count == 1 && received.messengerMessages.Exists(m => m.typing),
+            "点券商人按2秒轮询、3/7/2秒输入时序交付已落库兑换码");
+        var codes = new BotNXCodes(db,random);
+        db.BeginTransaction(); string error = codes.Redeem(player.character.record,code.Replace("-",""),0); db.Commit();
+        check(error == null && DbStore.Int(AccountsDao.FindById(db,(int)account),"nxCredit") == 10000 &&
+            codes.Redeem(player.character.record,code.Replace("-",""),0) != null,
+            "原type4兑换实际发nxCredit一万点并禁止重复领取（不是注释误称的prepaid）");
+        At(116000);
+        check(social.BotMessenger.Members(id).Count == 1 && nx.CurrentStep == NXMerchantBot.Step.ConvertBack,
+            "点券交付结束退出聊天并进入原商人转换步骤");
+        var messenger=new BotMessenger();
+        messenger.Open(player);
+        check(messenger.InviteMember(player,seller) && messenger.Answer(seller.id,messenger.Invitation(seller.id),true) &&
+            messenger.InviteMember(seller,buyer) && messenger.Answer(buyer.id,messenger.Invitation(buyer.id),true) && messenger.Members(id).Count==3,
+            "普通信使邀请复用已有房间并允许实际三人入房");
+        messenger.Leave(buyer.id); messenger.InviteMember(player,buyer);
+        for(int tick=0;tick<6;tick++) messenger.TickInvitationTimeouts();
+        check(messenger.Invitation(buyer.id)>0,"信使邀请六轮超时计数后仍保留（原端先检查大于5）");
+        messenger.TickInvitationTimeouts();
+        check(messenger.Invitation(buyer.id)==0 && !messenger.Answer(buyer.id,1,true),"信使邀请第七轮移除且拒绝过期接受");
+        int[] weaponTypes = {1302000,1402000,1432000,1372000,1472000,1452000,1462000,1492000};
+        int[] actions = {16,16,13,28,24,9,9,13}; bool correctActions = true;
+        for (int i = 0; i < weaponTypes.Length; i++) correctActions &= BotAttack.ActionFor(weaponTypes[i],random) == actions[i];
+        check(correctActions && BotAttack.PoseFor(28) == "swingO1" && BotAttack.PoseFor(24) == "swingO1",
+            "假人挥击使用源武器类别动作桶，魔杖及拳套保留原动作别名");
+        check(BotAttack.LineDamage(0,0,0,random) == 80 && BotAttack.LineDamage(4,80,1800000,random) == 99999,
+            "组队假人伤害按原职业档/等级缩放与怪物HP十八分之一保底，上限99999");
+        var parties = social.Parties;
+        check(parties.Create(player) && parties.For(id).id == 1000000001 &&
+            CharactersDao.FindById(db,id).party == 1000000001,
+            "实际队伍ID从原世界序列起始且持久化，不以队长角色ID冒充");
+        seller.level = 60; seller.job = 410;
+        check(parties.Invite(player,seller) && !parties.Invite(buyer,seller) &&
+            parties.Pending(seller.id).inviter == player,
+            "组队邀请保留首份待处理邀请，不被其他假人覆盖");
+        for(int tick=0;tick<6;tick++) parties.TickInvitationTimeouts();
+        check(parties.Pending(seller.id)!=null,"组队邀请保留原端前六轮超时边界");
+        parties.TickInvitationTimeouts();
+        check(parties.Pending(seller.id)==null && parties.Invite(player,seller),"第七轮组队邀请释放且可重新邀请");
+        int partyId = parties.For(id).id;
+        check(!parties.Answer(seller,partyId+1,true) && parties.Answer(seller,partyId,true) &&
+            parties.For(seller.id) == parties.For(id),"接受组队校验邀请队伍并接入同一运行时成员表");
+        check(!parties.Invite(seller,buyer),"非队长假人不能发出BotPartyCommands邀请");
+        var slow = new BotCharacter { id = -998, level = 10, job = 100 };
+        parties.Join(slow,partyId);
+        check(BotMovementService.ResolveProfile(slow,runtime.GetMap(910000000)).speed == 155,
+            "移动运行时真正读取队伍中的60级飞侠疾行加成");
+        parties.Leave(seller.id);
+        check(parties.For(id) != null && parties.For(seller.id) == null &&
+            BotMovementService.ResolveProfile(slow,runtime.GetMap(910000000)).speed == 125,
+            "普通队员离开保留队伍且移除疾行来源");
+        parties.Leave(id);
+        check(parties.For(slow.id) == null && CharactersDao.FindById(db,id).party == 0,
+            "队长离开解散成员关系并清除持久化队伍ID");
+        check(!runtime.trades.Invite(player,player) && player.trade == null,
+            "失败的自我交易邀请不遗留占用会话");
+        var floors = BotPartyGrindFloors.Cluster(new[] {
+            new BotPartyGrindFloors.Floor(81,40,90),new BotPartyGrindFloors.Floor(0,-40,0),
+            new BotPartyGrindFloors.Floor(80,0,40),new BotPartyGrindFloors.Floor(170,-20,20) });
+        check(floors.Count == 2 && floors[0].centerY == 54 && floors[0].minX == -40 && floors[0].maxX == 90,
+            "刷怪楼层按稳定Y序和动态平均80px带聚类，保留横向覆盖");
+        check(BotPartyGrindFloors.IndexFor(-1,3) == 2 && BotPartyGrindFloors.IndexFor(2,0) == 0 &&
+            floors[0].ContainsY(134) && !floors[0].ContainsY(135),
+            "刷怪分层使用Java floorMod和80px闭区间");
+        var fallbackFloor = BotPartyGrindFloors.FromMap(null,new BotNavigationGraph.Point(100,200))[0];
+        var station = BotPartyGrindFloors.Station(null,fallbackFloor,999);
+        check(station.x == 500 && station.y == 200,"无平台刷怪站位保留源端队长左右400px回退与横向钳制");
+        selling = new MerchantBot(seller,false,pool,economy,ambient,random);
+        BotStore.AddActiveBot(seller.id,selling); selling.running = true;
+        selling.UpdateState(); selling.UpdateState();
+        int purchasedId = selling.CurrentItem.itemId, quotedPrice = selling.tradeWants.mesoWanted;
+        int cashBeforeSale = player.character.record.meso;
+        check(protocol.Handle(new BotTradeRequest { characterId=id,botId=seller.id,operation=BotTradeOperation.Invite }).ok,
+            "取消后同一商人可重新建立交易");
+        selling.CheckForTrades();
+        var sale = new BotTradeStateMachine(selling,TradeMode.SELLING);
+        sale.Update(); sale.Update();
+        protocol.Handle(new BotTradeRequest { characterId=id,operation=BotTradeOperation.OfferMeso,meso=quotedPrice });
+        sale.Update(); sale.Update();
+        var completedSale = protocol.Handle(new BotTradeRequest { characterId=id,operation=BotTradeOperation.Confirm });
+        check(completedSale.ok && !completedSale.active && seller.trade == null &&
+            player.character.record.meso == cashBeforeSale-quotedPrice &&
+            player.character.inventory.Exists(i => i.itemId == purchasedId && i.quantity >= 1) &&
+            CharService.Load(db,id).inventory.Exists(i => i.itemId == purchasedId),
+            "商人真实报价经transport双边确认交付原商品并持久化金币库存");
+        BotTasks.OnError = previousErrorHandler;
+        BotTasks.Stop();
     }
 
     static void CheckMarketData(Action<bool, string> check)

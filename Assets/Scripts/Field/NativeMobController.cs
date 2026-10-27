@@ -30,6 +30,8 @@ public sealed class NativeMobController : MonoBehaviour
     readonly List<int> revives = new List<int>();
     readonly string killId = Guid.NewGuid().ToString("N");
     public static long Now => (long)(Time.timeAsDouble * 1000);
+    public long CurrentHp => health?.Current ?? 0;
+    public long MaximumHp => health?.Maximum ?? 1;
     public bool Busy => Now < busyUntil;
     public bool CanMove => root != null && root.Get("move") != null;
     public int Direction { get; private set; } = 1;
@@ -327,7 +329,7 @@ public sealed class NativeMobController : MonoBehaviour
         long applied = health.Damage(damage); mob.hp = health.Current;
         encounter.OnDamaged(mob,(int)applied);
     }
-    public void Heal(long amount) { health.Heal(amount); mob.hp = health.Current; }
+    public void Heal(long amount) { long before=health.Current; health.Heal(amount); mob.TotalHealed+=Math.Max(0,health.Current-before); mob.hp = health.Current; }
     public void SetHpPercent(int percent) { health.SetPercent(percent); mob.hp = health.Current; }
     public void FakeDamage(int damage) { health.Damage(Math.Min(damage,Math.Max(0,health.Current-1))); mob.hp = health.Current; }
     public void OnKilled()

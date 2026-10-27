@@ -12,6 +12,7 @@ namespace Server.Bot.Trade
         public Action<BotActor, TradeResult> ResultOutput;
         public Action<Exception> OnError;
         public Action<BotActor, BotActor> Invited;
+        public event Action<BotActor,int> InventoryCommitted;
         public BotTradeService(DbStore db, BotItemCatalog catalog) { this.db = db; rules = new TradeItemRules(db, catalog); }
         public Session Start(BotActor actor)
         {
@@ -21,6 +22,7 @@ namespace Server.Bot.Trade
         }
         public bool Invite(BotActor from, BotActor to)
         {
+            if (from == null || to == null || from.id == to.id || to.trade != null) return false;
             var local = Start(from);
             if (local == null || local.FullTrade || to.trade != null || local.other != null) return false;
             int minimum = GameConfigDao.GetInt(db, "minimum_gm_level_to_trade");
@@ -90,6 +92,15 @@ namespace Server.Bot.Trade
                 if (second != null) { Inventory(second.actor).Clear(); Inventory(second.actor).AddRange(oldRight); Balance(second.actor, oldRightBalance); }
                 throw;
             }
+            PublishInventory(first.actor,leftBalance-oldLeftBalance);
+            if (second!=null) PublishInventory(second.actor,rightBalance-oldRightBalance);
+        }
+        void PublishInventory(BotActor actor,int mesoDelta)
+        {
+            if (actor.IsBot()) return;
+            actor.character.tradeRevision++;
+            try { InventoryCommitted?.Invoke(actor,mesoDelta); }
+            catch (Exception e) { OnError?.Invoke(e); }
         }
         public sealed class Session : IBotTradeSession
         {

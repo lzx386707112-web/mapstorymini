@@ -9,7 +9,20 @@ public sealed class GameServer
     public ITransport Transport { get; private set; }
     public IMapInfo MapInfo { get; set; }   // 客户端注入（FieldCatalog 数据）
     Server.Bot.BotRuntime bots;
-    public Server.Bot.BotRuntime Bots => bots ??= new Server.Bot.BotRuntime(Db);
+    public event Action<Server.Bot.BotActor,int> TradeInventoryCommitted;
+    public Server.Bot.BotActor ActiveBotPlayer(int id) => bots?.Player(id);
+    public Server.Bot.BotRuntime Bots
+    {
+        get
+        {
+            if (bots==null)
+            {
+                bots=new Server.Bot.BotRuntime(Db,Social.BotMessenger,Social.Parties);
+                bots.trades.InventoryCommitted+=(actor,delta)=>TradeInventoryCommitted?.Invoke(actor,delta);
+            }
+            return bots;
+        }
+    }
     public NativeScriptValues ScriptValues { get; private set; }
     public NativeScriptService Scripts { get; private set; }
     public NativeSocialService Social { get; private set; }
@@ -69,6 +82,7 @@ public sealed class GameServer
     }
 
     public void Save() => Db.Save();
+    public void EndBotSession(int id) => bots?.RemovePlayer(id);
     void RouteBotChat(SocialRequest request)
     {
         if (request.channel == NativeChatChannel.All) bots?.ReceiveChat(request.characterId, request.text);

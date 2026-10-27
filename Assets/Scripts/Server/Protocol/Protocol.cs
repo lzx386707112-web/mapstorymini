@@ -131,6 +131,8 @@ public interface ITransport
     CommunityResponse Community(CommunityRequest req);
     BossResponse Boss(BossRequest req);
     CashResponse Cash(CashRequest req);
+    Server.Bot.PartyGrindResponse PartyGrind(Server.Bot.PartyGrindRequest req);
+    Server.Bot.Trade.BotTradeResponse BotTrade(Server.Bot.Trade.BotTradeRequest req);
     InventoryChangeResponse ChangeInventory(InventoryChangeRequest req);
     void EndSocialSession(int characterId);
 }
@@ -146,11 +148,13 @@ public sealed class InProcessTransport : ITransport
     public ScriptValueResponse ScriptValue(ScriptValueRequest r) => server.ScriptValues.Handle(r);
     public ScriptResponse Script(ScriptRequest r) => server.Scripts.Handle(r);
     public SocialResponse Social(SocialRequest r) => server.Social.Handle(r);
+    public Server.Bot.PartyGrindResponse PartyGrind(Server.Bot.PartyGrindRequest r) => Server.Bot.BotPartyGrindProtocol.Handle(server.Bots,r);
+    public Server.Bot.Trade.BotTradeResponse BotTrade(Server.Bot.Trade.BotTradeRequest r) => server.Bots.tradeProtocol.Handle(r);
     public CommunityResponse Community(CommunityRequest r) => server.Community.Handle(r);
     public BossResponse Boss(BossRequest r) => server.Bosses.Handle(r);
     public InventoryChangeResponse ChangeInventory(InventoryChangeRequest r) => NativeInventoryService.Handle(server.Db, r);
     public CashResponse Cash(CashRequest r) => server.Cash.Handle(r);
-    public void EndSocialSession(int characterId) { server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); }
+    public void EndSocialSession(int characterId) { server.EndBotSession(characterId); server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); }
 
     public LoginResponse Login(LoginRequest r)
     {
@@ -263,6 +267,12 @@ public sealed class InProcessTransport : ITransport
                 incoming.guildid = stored.guildid; incoming.guildrank = stored.guildrank;
                 incoming.familyId = stored.familyId; incoming.allianceRank = stored.allianceRank;
                 incoming.party = stored.party; incoming.monsterbookcover = stored.monsterbookcover;
+                var actor=server.ActiveBotPlayer(r.characterId);
+                if (actor?.character!=null && (actor.trade!=null || r.character.tradeRevision<actor.character.tradeRevision))
+                {
+                    incoming.meso=stored.meso;
+                    r.character.tradeRevision=actor.character.tradeRevision;
+                }
                 if (incoming.level > stored.level) server.Community.GiveReputation(r.characterId,
                     (incoming.level - stored.level) * GameConfigDao.GetInt(server.Db, "family_rep_per_level_up", 200));
             }

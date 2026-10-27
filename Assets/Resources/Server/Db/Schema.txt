@@ -448,29 +448,17 @@ CREATE TABLE extend_value (
     PRIMARY KEY (extend_id, extend_type, extend_name)
 );
 
--- V1.0.28__create_nx.sql: SoloMapling点券兑换码
-CREATE TABLE IF NOT EXISTS `nxcode`
-(
-    `id`         INT(11)             NOT NULL AUTO_INCREMENT,
-    `code`       VARCHAR(17)         NOT NULL UNIQUE,
-    `retriever`  VARCHAR(13)                  DEFAULT NULL,
-    `expiration` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0',
-    PRIMARY KEY (`id`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  AUTO_INCREMENT = 1;
-
-
-CREATE TABLE IF NOT EXISTS `nxcode_items`
-(
-    `id`       INT(11) NOT NULL AUTO_INCREMENT,
-    `codeid`   INT(11) NOT NULL,
-    `type`     INT(11) NOT NULL DEFAULT '5',
-    `item`     INT(11) NOT NULL DEFAULT '4000000',
-    `quantity` INT(11) NOT NULL DEFAULT '1',
-    PRIMARY KEY (`id`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  AUTO_INCREMENT = 1;
-
-
+-- V1.0.28__create_nx.sql: SoloMapling点券兑换码（本地schema语法，原字段不变）
+CREATE TABLE nxcode (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    retriever TEXT,
+    expiration INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE nxcode_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codeid INTEGER NOT NULL,
+    type INTEGER NOT NULL DEFAULT 5,
+    item INTEGER NOT NULL DEFAULT 4000000,
+    quantity INTEGER NOT NULL DEFAULT 1
+);

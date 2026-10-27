@@ -352,6 +352,8 @@ public sealed class FieldDirector : MonoBehaviour
         var player = GameLoop.I.player;
         var bots = GameServer.Local.Bots;
         bots.SynchronizePlayer(GameSession.Character, Map.id, player.transform.position.x * Art.PPU, -player.transform.position.y * Art.PPU, GameSession.Channel);
+        var combat=GetComponent<BotCombatField>() ?? gameObject.AddComponent<BotCombatField>();
+        combat.Bind(this,bots);
         bots.Drive((long)(Time.realtimeSinceStartup * 1000));
         var botField = GetComponent<BotField>() ?? gameObject.AddComponent<BotField>();
         botField.Synchronize(Map.id, GameSession.World, GameSession.Channel);
@@ -547,12 +549,28 @@ public sealed class FieldDirector : MonoBehaviour
         if (!FieldCatalog.Mobs.TryGetValue(e.fieldMobId, out mob)) return;
 
         int exp = (int)Art.Num(mob.stats, "exp", 0);
-        var rates = GameSession.InGame ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId, operation = CommunityOperation.RecordKill,
-            value = (int)Art.Num(mob.stats, "maxHP", 0), targetId = (int)Art.Num(mob.stats, "boss", 0) }) : new CommunityResponse();
-        if (exp > 0) Profile.GrantExperience((int)(exp * rates.expRate));
+        var rates = GameSession.InGame ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId, operation = CommunityOperation.Read }) : new CommunityResponse();
+        bool questCredit=true;
+        int reputationCalls=1;
+        if (e.HasBotContribution && GameSession.InGame && GameServer.Local!=null)
+        {
+            var bots=GameServer.Local.Bots;
+            var award=Server.Bot.BotPartyExperience.Calculate(GameServer.Local.Db,bots.parties,bots.Player(GameSession.CharacterId),
+                (int)Art.Num(mob.stats,"level",1),exp,(e.NativeController!=null ? e.NativeController.MaximumHp : (long)e.hpMax)+e.TotalHealed,
+                e.DamageContributions,(float)rates.expRate,(float)rates.expRate);
+            reputationCalls=award.reputationCalls;
+            questCredit=award.eligible && GameLoop.I?.player!=null && GameLoop.I.player.hp>0;
+            if (GameLoop.I?.player!=null && GameLoop.I.player.hp>0 && award.eligible)
+                Profile.GrantExperience((int)System.Math.Min(int.MaxValue,(long)award.personal+award.party));
+        }
+        else if (exp > 0) Profile.GrantExperience((int)(exp * rates.expRate));
+
+        for (int rep=0; GameSession.InGame && rep<reputationCalls; rep++)
+            GameSession.Net.Community(new CommunityRequest { characterId=GameSession.CharacterId, operation=CommunityOperation.RecordKill,
+                value=(int)Art.Num(mob.stats,"maxHP",0), targetId=(int)Art.Num(mob.stats,"boss",0) });
 
         // 任务击杀计数（原端 Character 收到 MOB_KILLED 后推进已接任务的 mob 进度）
-        QuestLogic.OnMobKilled(mob.id);
+        if (questCredit) QuestLogic.OnMobKilled(mob.id);
 
         int dropped = 0, mesos = 0;
         DropLoot(e, mob, ref dropped, ref mesos);

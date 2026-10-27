@@ -1062,7 +1062,7 @@ public class PlayerCtrl : MonoBehaviour
     }
     public void DispelNativeBuffs()
     {
-        attackBonus = 0; attackBonusUntil = 0;
+        attackBonus = 0; attackBonusUntil = 0; partyGrindDefense=0;
         GetComponent<SkillSystem>()?.CancelActions();
     }
     public void Heal(float v, bool skill = false)
@@ -1106,11 +1106,17 @@ public class PlayerCtrl : MonoBehaviour
         attackBonusUntil = Time.unscaledTime + seconds;
     }
 
+    int partyGrindDefense;
+    public void SetPartyGrindEffect(bool active)
+    {
+        partyGrindDefense=active ? WzAssets.Node("Item/Consume/0243.img/02431159/spec").Int("pdd") : 0;
+    }
     void RefreshAttributes()
     {
         baseAttributes = Profile.Attributes;
         Attributes = baseAttributes.WithWeapon(weapon, Time.unscaledTime < attackBonusUntil ? Mathf.RoundToInt(attackBonus) : 0,
             out weaponAttack, out magicAttack);
+        Attributes.weaponDefense+=partyGrindDefense;
     }
     public DamageResult RollAttack(System.Collections.Generic.Dictionary<string, object> target, NativeSkillDefinition skill = null)
     {
@@ -1195,7 +1201,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         hp = hpMax; mp = mpMax;
         CancelRush();
-        attackBonus = 0; attackBonusUntil = 0;
+        attackBonus = 0; attackBonusUntil = 0; partyGrindDefense=0;
         pending.active = false;
         GetComponent<SkillSystem>()?.CancelActions();
     }

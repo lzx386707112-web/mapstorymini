@@ -52,6 +52,8 @@ public sealed class QuestEntry
 public sealed class FullCharacter
 {
     public CharRecord record;
+    // Session-local revision prevents an older client snapshot from undoing trade escrow.
+    public long tradeRevision;
     public List<SkillEntry> skills = new List<SkillEntry>();
     public List<InventoryEntry> inventory = new List<InventoryEntry>();
     public List<KeymapEntry> keymap = new List<KeymapEntry>();

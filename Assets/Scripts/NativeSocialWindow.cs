@@ -8,6 +8,7 @@ public static class NativeSocialWindow
     static SocialResponse state;
     static string target = "", group = "Default Group", minimum = "1", maximum = "30";
     static Vector2 scroll;
+    static double nextRefresh;
     public static SocialResponse Request(SocialOperation operation, string name = "", string text = "",
         NativeChatChannel channel = NativeChatChannel.All)
     {
@@ -18,7 +19,7 @@ public static class NativeSocialWindow
         int.TryParse(minimum, out int min); int.TryParse(maximum, out int max);
         state = GameSession.Net.Social(new SocialRequest { characterId = GameSession.CharacterId,
             operation = operation, target = name, group = group, text = text, channel = channel, minLevel = min, maxLevel = max });
-        GameSession.Character.record.party = state.party ? GameSession.CharacterId : 0;
+        GameSession.Character.record.party = state.partyId;
         return state;
     }
     static void Run(SocialOperation operation, string name = "")
@@ -47,6 +48,8 @@ public static class NativeSocialWindow
     public static void Draw()
     {
         if (!Visible || state == null) return;
+        if (Time.realtimeSinceStartupAsDouble >= nextRefresh)
+        { state = Request(SocialOperation.Read); nextRefresh = Time.realtimeSinceStartupAsDouble + .25; }
         string folder = action == GameAction.Messenger ? "Messenger" : action == GameAction.PartySearch ? "PartySearch" : "UserList";
         var background = WzAssets.Texture("wz://UI/UIWindow.img/" + folder + "/backgrnd");
         float s = BottomBar.S;
@@ -65,7 +68,8 @@ public static class NativeSocialWindow
         else if (action == GameAction.Party || action == GameAction.PartySearch) DrawParty();
         else if (action == GameAction.Messenger)
         {
-            GUILayout.Label("讯息成员（1 / 3）"); GUILayout.Label(Profile.playerName);
+            GUILayout.Label("讯息成员（" + state.messengerMembers.Count + " / 3）");
+            foreach (var member in state.messengerMembers) GUILayout.Label(member.name);
             target = GUILayout.TextField(target, 13);
             if (GUILayout.Button("邀请")) Run(SocialOperation.InviteMessenger, target);
             if (GUILayout.Button("聊天")) BottomBar.FocusChat(NativeChatChannel.Messenger);
@@ -92,8 +96,10 @@ public static class NativeSocialWindow
     }
     static void DrawParty()
     {
-        GUILayout.Label(state.party ? "队长：" + Profile.playerName + "  （1 / 6）" : "尚未加入组队");
-        if (GUILayout.Button(state.party ? "解散组队" : "创建组队")) Run(state.party ? SocialOperation.LeaveParty : SocialOperation.CreateParty);
+        string leaderName = "";
+        foreach (var member in state.partyMembers) if (member.id == state.partyLeader) leaderName = member.name;
+        GUILayout.Label(state.party ? "队长：" + leaderName + "  （" + state.partyMembers.Count + " / 6）" : "尚未加入组队");
+        if (GUILayout.Button(state.party ? (state.partyLeader == GameSession.CharacterId ? "解散组队" : "离开组队") : "创建组队")) Run(state.party ? SocialOperation.LeaveParty : SocialOperation.CreateParty);
         target = GUILayout.TextField(target, 13);
         if (GUILayout.Button("邀请队员")) Run(SocialOperation.InviteParty, target);
         if (state.party && GUILayout.Button("组队聊天")) BottomBar.FocusChat(NativeChatChannel.Party);

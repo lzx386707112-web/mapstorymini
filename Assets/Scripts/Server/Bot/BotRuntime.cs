@@ -15,12 +15,26 @@ namespace Server.Bot
         public readonly BotTownSpawner townSpawner;
         public readonly BotMapEntryResponder mapEntryResponder;
         readonly Social.BotDispatcher dispatcher;
+        public readonly Trade.BotTradeService trades;
+        public readonly Trade.BotTradeProtocol tradeProtocol;
+        public readonly BotPartyService parties;
+        public readonly BotPartyGrindService partyGrind;
         public event Action<BotCharacter, byte[]> Movement;
         bool disposed;
-        public BotRuntime(DbStore db)
+        readonly BotTasks.Handle invitationWatch;
+        public BotRuntime(DbStore db, Social.BotMessenger messenger = null, BotPartyService parties = null)
         {
             BotClient.Init(db);
+            BotTypeManager.Messenger = messenger ?? new Social.BotMessenger();
+            this.parties = parties ?? new BotPartyService(db);
+            invitationWatch=BotTasks.ScheduleFixedRate(()=> { this.parties.TickInvitationTimeouts(); BotTypeManager.Messenger.TickInvitationTimeouts(); },30000,30000);
+            trades = new Trade.BotTradeService(db,BotItemCatalog.Shared);
+            tradeProtocol = new Trade.BotTradeProtocol(trades, id => players.TryGetValue(id,out var player) ? player : null);
+            trades.ChatOutput = (actor,text) => BotTypeManager.Output.Send(Social.BotOutput.Kind.TradeChat,actor,text,
+                targetId: actor.IsBot() ? actor.trade?.partner?.actor.id ?? 0 : actor.id);
             maps = BotNavigationMapLoader.Load();
+            partyGrind = new BotPartyGrindService(this.parties,GetMap);
+            BotTypeManager.PartyGrind = partyGrind;
             observers = new BotObserverTracker(() => players.Values, GetMap, BotWorldGraph.Load());
             townSpawner = new BotTownSpawner(new BotTownPresenceConfig(BotResources.Load()), GetMap);
             mapEntryResponder = new BotMapEntryResponder(BotTypeManager.Events);
@@ -31,6 +45,8 @@ namespace Server.Bot
             BotMovementService.IsObserved = observers.IsActive;
             BotMovementService.Broadcast = PublishMovement;
             BotMovementService.EnterPortal = EnterPortal;
+            BotMovementService.ResolveProfile = (actor,map) => BotMovementProfile.FromCharacter(actor,
+                (map.fieldLimit & 2) != 0,this.parties.Members(actor.id),BotMovementService.HasSnowShoes(actor));
             BotMovementPlayback.Broadcast = PublishMovement;
             BotTypeManager.RealPlayersOnMap = observers.HasRealPlayerNow;
             observers.Start();
@@ -80,14 +96,22 @@ namespace Server.Bot
             if (disposed) throw new ObjectDisposedException(nameof(BotRuntime));
             if (character?.record == null) throw new ArgumentNullException(nameof(character));
             var record = character.record; int id = checked((int)record.id);
-            bool changedMap = !players.TryGetValue(id, out var actor) || actor.mapId != mapId || actor.channel != channel;
+            bool changedMap = !players.TryGetValue(id, out var actor) || actor.mapId != mapId || actor.channel != channel || actor.world != record.world;
+            if (changedMap) actor?.trade?.Decline();
             if (actor == null) { actor = new BotActor { id = id }; players.Add(id, actor); }
             int previousLevel = actor.level;
             bool knownPlayer = actor.character != null;
+            if (actor.character!=null && character.tradeRevision<actor.character.tradeRevision)
+            {
+                var persisted=CharService.Load(BotClient.GetBotClient().db,id);
+                character.inventory=persisted.inventory; record.meso=persisted.record.meso;
+                character.tradeRevision=actor.character.tradeRevision;
+            }
             actor.character = character; actor.name = record.name; actor.world = record.world; actor.channel = channel;
             actor.level = record.level; actor.job = record.job; actor.gender = record.gender;
             actor.skinColor = record.skincolor; actor.hair = record.hair; actor.face = record.face;
             actor.mapId = mapId; actor.x = mapX; actor.y = mapY; actor.online = true;
+            parties.Bind(actor);
             if (changedMap)
             {
                 actor.MarkMapEntry();
@@ -100,7 +124,8 @@ namespace Server.Bot
             return actor;
         }
         public void RemovePlayer(int id)
-        { if (players.TryGetValue(id, out var actor)) actor.online = false; players.Remove(id); observers.Refresh(); }
+        { partyGrind.Stop(id); if (players.TryGetValue(id, out var actor)) { actor.trade?.Decline(); actor.online = false; } parties.EndSession(id); players.Remove(id); BotTypeManager.Messenger.Leave(id); observers.Refresh(); }
+        public BotActor Player(int id) => players.TryGetValue(id,out var actor) ? actor : null;
         public IEnumerable<BotActor> Players => players.Values;
         public void Drive(long nowMs)
         {
@@ -110,15 +135,20 @@ namespace Server.Bot
         public void Dispose()
         {
             if (disposed) return; disposed = true;
+            foreach (var player in new List<BotActor>(players.Values)) player.trade?.Decline();
+            invitationWatch.Cancel();
+            partyGrind.Dispose(); BotTypeManager.PartyGrind = null;
+            parties.Clear();
             dispatcher.Dispose(); mapEntryResponder.Dispose(); townSpawner.Dispose(); observers.Dispose();
             foreach (var bot in new List<BotCharacter>(BotRegistry.All().Values)) BotGeneration.RemoveBotFromServer(bot);
             BotMovementService.Shutdown(); BotTypeManager.Market.Stop(); BotTasks.Stop(); BotScheduler.Stop();
             BotTypeManager.RealPlayersOnMap = null;
-            BotMovementService.EnterPortal = null;
+            BotMovementService.EnterPortal = null; BotMovementService.ResolveProfile = null;
             BotMovementService.IsObserved = null; BotMovementService.Broadcast = null; BotMovementPlayback.Broadcast = null;
             BotTypeManager.Output.Clear(); players.Clear();
             BotTypeManager.Messages.Clear();
             BotTypeManager.Ambient.Clear();
+            BotTypeManager.Messenger.Clear();
             foreach (int id in registeredMaps) MapService.Unregister(id);
             registeredMaps.Clear(); Movement = null;
         }

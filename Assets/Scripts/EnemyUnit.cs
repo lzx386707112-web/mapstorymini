@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class EnemyUnit : MonoBehaviour
 {
+    public readonly Dictionary<int,long> DamageContributions = new Dictionary<int,long>();
+    public bool HasBotContribution { get; private set; }
+    public long TotalHealed;
     public static readonly List<EnemyUnit> All = new List<EnemyUnit>();
 
     public string  label = "杂兵";
@@ -327,12 +330,25 @@ public class EnemyUnit : MonoBehaviour
     // Server-owned periodic damage is already resolved; do not re-roll mob filtering.
     public void TakeReplayDot(int amount) => ApplyHit(new DamageResult(amount,false),0,true,true,false);
 
-    void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber, bool react = true)
+    public void TakeBotHit(int actorId,int damage,int fromDir)
+    {
+        if (dead) return;
+        HasBotContribution=true;
+        ApplyHit(new DamageResult(damage,false),fromDir,true,false,true,actorId);
+    }
+
+    void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber, bool react = true, int attackerId = 0)
     {
         if (dead) return;
         if (hit.Amount <= 0) { if (showNumber && hit.Amount == 0) DamageText.Miss(HeadPos); return; }
         bool crit = hit.Critical;
         float real = hit.Amount;
+        if (fieldMode && (attackerId!=0 || GameSession.InGame))
+        {
+            int source=attackerId!=0 ? attackerId : GameSession.CharacterId;
+            long actual=System.Math.Min(NativeController!=null ? NativeController.CurrentHp : (long)hp,hit.Amount);
+            DamageContributions.TryGetValue(source,out long previous); DamageContributions[source]=previous+actual;
+        }
         if (NativeController != null) NativeController.ApplyDamage(hit.Amount);
         else hp = Mathf.Max(0f, hp - real);
 

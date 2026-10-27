@@ -7,6 +7,39 @@ public static class BotPresentationChecks
 {
     static void Require(bool condition, string message)
     { if (!condition) throw new Exception("[BotPresentationChecks] " + message); }
+    static void CheckCombatAdapter(GameObject root,BotCharacter actor)
+    {
+        var db=DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(),"mapledash_bot_img_combat.json"));
+        int world=actor.world,channel=actor.channel;
+        using var runtime=new BotRuntime(db);
+        var director=root.AddComponent<FieldDirector>();
+        typeof(FieldDirector).GetProperty("Map").SetValue(director,new FieldMap { id=actor.mapId });
+        var adapter=root.AddComponent<BotCombatField>(); adapter.Bind(director,runtime);
+        var enemyObject=new GameObject("OriginalSnailDamageFixture"); enemyObject.transform.SetParent(root.transform);
+        var enemy=enemyObject.AddComponent<EnemyUnit>(); enemy.fieldMode=true; enemy.fieldMobId=100100;
+        if (!EnemyUnit.All.Contains(enemy)) EnemyUnit.All.Add(enemy);
+        try
+        {
+            enemy.BindNative(director); enemy.hpMax=enemy.NativeController.MaximumHp; enemy.hp=enemy.hpMax;
+            actor.world=GameSession.World; actor.channel=GameSession.Channel;
+            var snapshot=runtime.partyGrind.Monsters(actor.mapId,actor.world,actor.channel);
+            var target=snapshot.Find(m=>m.id==enemy.GetInstanceID());
+            Require(target!=null && target.maxHp==enemy.NativeController.MaximumHp,"adapter reads original native mob HP and live Unity identity");
+            long before=enemy.NativeController.CurrentHp;
+            runtime.partyGrind.Hit(actor,target,2,new BotAttack.Skill(0,0,1,BotAttack.PacketKind.CLOSE),new[] {2});
+            Require(enemy.NativeController.CurrentHp==before-2 && enemy.DamageContributions[actor.id]==2 && enemy.HasBotContribution,
+                "real bot adapter deducts native HP and attributes actual damage to bot");
+            actor.channel++;
+            runtime.partyGrind.Hit(actor,target,2,new BotAttack.Skill(0,0,1,BotAttack.PacketKind.CLOSE),new[] {2});
+            Require(enemy.NativeController.CurrentHp==before-2,"stale other-channel attack cannot damage current field");
+        }
+        finally
+        {
+            actor.world=world; actor.channel=channel;
+            EnemyUnit.All.Remove(enemy); UnityEngine.Object.DestroyImmediate(enemyObject);
+            UnityEngine.Object.DestroyImmediate(adapter); UnityEngine.Object.DestroyImmediate(director);
+        }
+    }
     public static void Run()
     {
         var root = new GameObject("BotPresentationChecks");
@@ -20,6 +53,8 @@ public static class BotPresentationChecks
         try
         {
             var field = root.AddComponent<BotField>();
+            // Edit-mode AddComponent does not run MonoBehaviour activation callbacks.
+            field.SendMessage("OnEnable");
             field.Synchronize(actor.mapId, 0, 1);
             var animations = root.GetComponentsInChildren<SpriteAnim>();
             Require(animations.Length == 1, "map creates exactly one bot");
@@ -32,18 +67,33 @@ public static class BotPresentationChecks
                 field.Synchronize(actor.mapId, 0, 1);
                 Require(animation.Renderer.sprite != null, "original movement frame " + stance);
                 string expected = stance < 4 ? "walk" : stance < 8 ? "jump" : stance < 16 ? "ladder" : "rope";
-                Require(animation.Current == expected, "movement must not silently fall back to stand " + stance);
+                Require(animation.Current == expected && Art.Resolve("chars",animation.key,expected,"stand") == expected, "movement must not silently fall back to stand " + stance);
                 Require(animation.Renderer.flipX == ((stance & 1) == 0), "facing " + stance);
             }
             actor.moving = false; field.Synchronize(actor.mapId, 0, 1);
             Require(animation.speed == 0, "stationary rope pauses animation");
             Require(animation.Express(2), "native smile expression");
+            foreach (string pose in new[] { "swingO1", "swingO2", "swingO3", "stabO1", "stabO2" })
+            {
+                Require(Art.GetClip("chars",animation.key,pose) != null, "original attack clip " + pose);
+                BotTypeManager.Output.Send(Server.Bot.Social.BotOutput.Kind.Attack,actor,pose,4);
+                Require(animation.Current == pose && animation.IsOneShot && animation.speed == 1,
+                    "published native attack reaches renderer " + pose);
+                field.Synchronize(actor.mapId,0,1);
+                Require(animation.Current == pose && animation.IsOneShot,"base synchronization preserves swing " + pose);
+            }
+            field.PlaySkillEffect(actor,1001005);
+            var effects=root.GetComponentsInChildren<NativeImgAnimation>();
+            Require(effects.Length==1 && effects[0].Image.sprite!=null,"original Slash Blast effect reaches bot renderer");
+            effects[0].Tick(Time.realtimeSinceStartupAsDouble+60);
+            Require(root.GetComponentsInChildren<NativeImgAnimation>().Length==0,"one-shot skill IMG expires without orphan objects");
             actor.equips[-111] = 1702000;
             field.Synchronize(actor.mapId, 0, 1);
             Require(animation.key.EndsWith("01702000", StringComparison.Ordinal), "cash weapon replaces visible recipe");
             field.Synchronize(actor.mapId, 0, 2);
             Require(root.GetComponentsInChildren<SpriteAnim>().Length == 0, "other channel removes entity");
-            Debug.Log("[BotPresentationChecks] PASS native paper doll / feet / movement / facing / rope pause / expression / cash weapon / channel cleanup");
+            CheckCombatAdapter(root,actor);
+            Debug.Log("[BotPresentationChecks] PASS native paper doll / feet / movement / facing / rope pause / expression / attack output / cash weapon / channel cleanup");
         }
         finally { UnityEngine.Object.DestroyImmediate(root); BotRegistry.Remove(actor); }
     }

@@ -160,3 +160,56 @@
 | `itemPool/DesirableEquipList.java` | `e3c68aaa443ec4de1bea4956d55f06c42d3f95089729642fa5300c7dbdb95755` |
 
 最终复检：新增ForJob及低WZ价回退之后，后端399通过/0失败，全Unity脚本编译0警告/0错误；仍非完整系统交付。
+
+## 商人业务、信使、队伍状态与攻击显示接线续迁移（2026-10-27）
+
+- Selling/Buying/NX三个枚举改为具体FSM，当前6/17具体、11/17仍Generic。商人按原商品池、先递增索引、买入80%..90%/卖出90%、叫卖概率和共享市场调度运行；NX原占位道具4031865×100、5000万报价、15轮转换。未接原交易UI、商城店铺和全部市场业务，不称完整商人系统。
+- 新增BotTradeProtocol并接ITransport/本地运行时：同world/channel/map校验、接受前禁止托管、真实库存/金币托管、锁定和取消。真人离图/换频道/退服及运行时释放取消交易并持久化返还。失败自我邀请不再残留单边session。**客户端存档快照与托管库存权威关系仍需进一步接线，不能称生命周期完成。**
+- BotMessenger提供三人房、首邀请、接受/拒绝、消息序列、typing和离开；NativeSocial响应实际成员/消息。NX成功后按源15次(0..28秒，每2秒)等接受，3/7/2/2秒交付并离开；停止取消待执行回调。原同步flavor对白的等待用BusyFor原duration保留，不允许后台FSM提前推进。邀请超时和原信使界面尚未完整。
+- NXCodeManager原随机码字符集、3×5段和数据库两表接线；建表使用DbStore支持的声明。该本地解析器把TEXT DEFAULT NULL误读为字符串NULL，retriever采用隐式nullable。源注释称type4 prepaid不可信：CouponCodeHandler实际type4发nxCredit，type2才prepaid，现按实际handler发10000 credit并拒重复兑换。没有迁完其他兑换类型。
+- BotPartyService接NativeSocial与BotRuntime的共同成员状态，世界队伍序列从1000000001起，最多6人、低等级配置、首邀请、假人只有队长可发邀请、普通离队/队长解散及退出清理；NativeSocialWindow保存真实partyId，取消旧角色ID冒充。移动profile读取实际队友，60级飞侠疾行加入/移除生效。BotPartyLogic队列仅OPQBot源调用，未擅自给所有bot自动接受。
+- BotAttack使用普通-11武器动作桶、固定速度4，BotFlavor SkillSwing生产真实Attack输出；BotField按自身最后同步map/world/channel过滤输出并调用PlayNativeAttack，不依赖单例FieldDirector才可显示。真实Editor IMG烟测覆盖五个单手挥/刺动作、事件订阅和SetBase不打断oneShot；原移动测试加强为检查Resolve实际无stand回退。Edit模式需显式触发OnEnable，不能把Edit激活差异当运行时攻击失败。
+- PartyGrindFloors迁移动态float平均、Java round、80px带稳定聚类、floorMod、无平台±400px回退和地面站位钳制。GCMovement.groundPointBelow实际调用BotPhysicsEngine.findGroundPoint（含上探26px），**不是仅PointBelow**。updateStrDexIntLuk(primary)源AbstractCharacterObject:692明确给四属性同值。五人召集、实际怪物选择/伤害归属、技能表现、30分钟watch尚未接完整，Companion仍不计具体类型。
+- 最终本轮验证：后端425通过/0失败，全Unity编译0警告/0错误；真实Unity batch BotPresentationChecks PASS（原IMG/脚底/移动/表情/攻击输出/现金覆盖/频道清理）。未构建APK，未完成Play或Android验收；系统继续标为incomplete。无新增EXE布局结论，姓名/气泡/交易窗不凭猜测绘制。
+
+本轮源身份（SHA256，相对soloMapling）：
+
+| 源文件 | SHA256 |
+| --- | --- |
+| `ArtificialPlayer/BotTypes/SellingMerchantBot.java` | `610d9be7f317760e26f21bc67119a8160fd9318030e607b29a4b35eb06bdcd6b` |
+| `ArtificialPlayer/BotTypes/BuyingMerchantBot.java` | `bb32cc2d7318ebb5fb3d54a7c621ac9ec1622dfc6b602232bd6889cbf28d958c` |
+| `ArtificialPlayer/BotTypes/NXMerchantBot.java` | `90b1fb854168726123f8bc7b49c296053a9cf35735cd7a636b4897fc57d14a64` |
+| `ArtificialPlayer/BotCommandsPack/MapleMessengerCommands.java` | `d3356726305bb71a6e3a8d726a4bc07ee52ff7f5062b677453349dd455e08be6` |
+| `server/NXCodeManager.java` | `8ca70e9490d500abc8bd730164a708e385aecc5615687ec1b42d9e87b8ecabd5` |
+| `ArtificialPlayer/BotCommandsPack/BotAttack.java` | `0d395ba2cb5174af07da32d289294dfc92fdc242b099cca21ee4c0c8182d9a1d` |
+| `ArtificialPlayer/BotAttackSystem/BotAttackData.java` | `7c711a90f52d554ac953236b304a80678010280c8cf7f906314a0134df9d759e` |
+| `ArtificialPlayer/BotPartySystem/BotDamageModel.java` | `cb5cb5e3a55f13f6fb42b95ac044312345ff139754ea05c3e13d78c9faa6e103` |
+| `ArtificialPlayer/BotPartySystem/PartyGrindFloors.java` | `aa65de362e0072b18d3153f156258947e1e409a9cdc27afb25e087d97fd1a9c8` |
+
+追加真实成交回归：取消后重新邀请、原报价金币托管、双边确认、商品实际入包与重读存档均通过；最新后端427通过/0失败。以上没有消除交易UI和快照权威生命周期缺口。
+
+## 基友战斗、卷轴商人和交易快照继续接线（2026-10-27）
+
+本节更新前文历史数量：目前8/17具体类型，9种仍Generic，系统仍为incomplete。此前“仅保留资源”“接口存在”不作为完成依据。
+
+- 基友道具原`item/consume_2431159.js`不改写：`im`绑定原脚本宿主，读`Item/Consume/0243.img/02431159/spec`的npc9900001、script consume_2431159、time1800000、pdd1。源`Character.startPartyGrindCompanions`要求真实在线、已有仅自己一人的队伍，召集5人后才扣道具。已接实际NPC道具入口、五人FSM、30分钟watch和效果清理。
+- CompanionGrindBot原220ms轮、800ms攻击冷却、同图120×120接敌、280px队长横向约束、560px选怪范围、排除Boss/fake、同队认领及楼层分配已接。源resolveLeader从**假人当前频道**CharacterStorage查队长，因此换频道/世界应解散；同频道换图跟随。真实回归覆盖换图、跨频道、离队、退服、到期清理。四属性全相同来自AbstractCharacterObject.updateStrDexIntLuk，不能推断HPMP已完整重算。
+- BotAttack.resolveBossAttackSkill转写可用`tools/export_solomapling_attack_skills.py --source <Java根目录>`复现；Job.isA、技能常量、普通武器兼容/回退、分段最少1保留。ItemInformationProvider.getWeaponType:648..654的134/135/136/139类别为NOT_A_WEAPON，不能误判近战。当前真实地图伤害接EnemyUnit，按实际扣HP记录贡献及治疗总量；原IMG技能effect有显式帧生命周期，含单帧不残留。**远程/魔法目前仍用普通挥击，未完成原动作与投射物合同**。
+- Monster.distributePartyExperience:558起按实际队伍贡献/MVP、等级门槛、等级总和、common0.8/MVP0.2和每人5%队伍加成，个人/队伍经验分开Java round。非攻击且等级低于怪物-config5不合格；经验/任务要求活着，familyRep既在distributePlayerExperience末尾又在distributePartyExperience循环内调用，**组队每名合格成员两次、单人一次**；两处均在存活经验检查之外，因此合格的死亡成员仍可获声望。FieldDirector先Read倍率、判资格，再决定RecordKill；不再让不合格队长获得声望/任务或整份怪物经验。完整状态倍率、掉落归属仍需迁移。
+- ScrollingBot源listIndex从未递增：始终处理生成列表第0件；预先强化的level作为成功次数、原干净装备tuc作为槽数，Fisher-Yates随机排列显示结果，**不会在播放时再强化装备**。失败调用VFXCommands.botScrollFail实际发送CURSE，非FAIL；20%原对白，随后10..15秒等待，10%物品喇叭，原装备估价/价格修正，5..8分钟后下一批。C#等待主线程续接；原无货while改为下一轮重试避免卡住Unity。Scroll/ItemMegaphone保留结构输出，原UI消费者尚未迁完。
+- InviteCoordinator.runTimeoutSchedule先检查计数>5再递增，Server:789每30秒首轮及周期。因此第6轮后仍存在，第7轮移除，不用固定180秒近似。队伍/信使共用运行时30秒轮并测试边界；普通信使邀请复用已有房间，NX完整邀请仍新建房，真实最多3人。NativeSocialWindow只更换已有布局中的人数/队长/成员状态与250ms刷新，没有新增猜测布局。
+- BotTradeService提交事务后发布真实库存和金币delta；GameSession只同步这部分镜像，保留经验任务。FullCharacter.tradeRevision是**本地会话适配字段**，不新增原数据库列；SaveCharacter及真人帧同步拦截旧交易快照，防止托管金额补回或取消返还被旧金币覆盖。原CharService.Save本就不覆写inventory表，不能错误宣称新增背包全快照落库。真实交易UI、完整交互与客户端运行验收仍待处理。
+- 验证检查点：后端463通过/0失败（含成交后旧快照保存保护），Unity全脚本编译0警告/0错误。真实UnityEditor BotPresentationChecks通过原IMG技能effect及过期检查，以及原Mob IMG创建的NativeMobController真实扣血、伤害归属和旧频道攻击拦截；不是实机或Play验收。NPC源目录实际在项目外层MapleDashResources；889脚本parseFail0，768执行、48宿主接口运行失败、73Java互操作；2777打包脚本parseFail0，不能称全脚本业务通过。
+
+源身份（SHA256）：
+
+| 文件 | SHA256 |
+| --- | --- |
+| `soloMapling/ArtificialPlayer/BotTypes/ScrollingBot.java` | `3628052a016524d653da81def7db10f8fdd01260d993b3cec5b4106a2ced40bc` |
+| `soloMapling/ArtificialPlayer/BotTypes/CompanionGrindBot.java` | `3326a2c26a7d72860922f55547fb05627067134d1d43400a42228fb25a3de92d` |
+| `soloMapling/ArtificialPlayer/BotPartySystem/PartyGrindService.java` | `881e0634bd3a397cf925abb704fcf9108b65dad45187aa7399cf619ce98f82f4` |
+| `org/gms/server/life/Monster.java` | `5ba9c02cdcb3becee14439c7d0b2a9a6b2576fe9c9cec95139e012460a80a566` |
+| `org/gms/net/server/coordinator/world/InviteCoordinator.java` | `ce9332f9403e0f344a2fd7127544be7a8e1bede2ed8b551682da52635cf0e3d3` |
+| `org/gms/server/ItemInformationProvider.java` | `86b777480f979d7c15c469dc43e745fd10e7ecc551ba79216f54be9c2ef81ee8` |
+
+原SocialCommands.BotFullChat(mode0)与BotChatbubble(mode1)有明确区别；BotField现将Chat输出接入现有BottomBar聊天记录，Bubble仍不写聊天记录。没有据此自行实现尚未核实的头顶气泡几何。

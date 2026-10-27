@@ -237,8 +237,8 @@ public static class NpcApi
         cm.Set("openNpc", Fn(c => session.RequestOpenNpc(Int(c, 0), c.ArgCount > 1 ? Str(c, 1, null) : null)));
         cm.Set("openShopNPC", Fn(c => BottomBar.Toast("商店系统尚未接入")));
         cm.Set("getPlayerCount", Ret(_ => N(1)));
-        cm.Set("isLeader", Ret(_ => B(HasParty())));
-        cm.Set("isPartyLeader", Ret(_ => B(HasParty())));
+        cm.Set("isLeader", Ret(_ => B(IsPartyLeader())));
+        cm.Set("isPartyLeader", Ret(_ => B(IsPartyLeader())));
         cm.Set("isEventLeader", Ret(_ => B(false)));
         cm.Set("isUsingOldPqNpcStyle", Ret(_ => B(false)));
         cm.Set("getHourOfDay", Ret(_ => N(DateTime.Now.Hour)));
@@ -381,19 +381,36 @@ public static class NpcApi
             characterId = GameSession.CharacterId, location = type, mapId = MapId, portalId = 0 }).value;
     }
 
+    static bool IsPartyLeader()
+    {
+        if (!GameSession.InGame) return false;
+        var party=GameSession.Net.Social(new SocialRequest { characterId=GameSession.CharacterId });
+        return party.party && party.partyLeader==GameSession.CharacterId;
+    }
     static bool HasParty() => GameSession.InGame && GameSession.Net.Social(new SocialRequest
         { characterId = GameSession.CharacterId, operation = SocialOperation.Read }).party;
 
     static JsValue BuildParty(NpcSession session)
     {
-        if (!HasParty()) return JsNull.Value;
-        var party = new JsHostObject(null);
-        var self = BuildPlayer(session);
-        party.Set("getId", Ret(_ => N(GameSession.CharacterId)));
-        party.Set("getLeaderId", Ret(_ => N(GameSession.CharacterId)));
-        party.Set("getLeader", Ret(_ => self));
-        party.Set("getMembers", Ret(_ => new JsArray(new JsValue[] { self })));
-        party.Set("getMemberById", Ret(c => Int(c, 0) == GameSession.CharacterId ? (JsValue)self : JsNull.Value));
+        if (!GameSession.InGame) return JsNull.Value;
+        var state=GameSession.Net.Social(new SocialRequest { characterId=GameSession.CharacterId });
+        if (!state.party) return JsNull.Value;
+        var party=new JsHostObject(null);
+        JsValue Member(SocialMember member)
+        {
+            if (member==null) return JsNull.Value;
+            if (member.id==GameSession.CharacterId) return BuildPlayer(session);
+            var actor=new JsHostObject(null);
+            actor.Set("getId",Ret(_=>N(member.id))); actor.Set("getName",Ret(_=>S(member.name)));
+            actor.Set("getLevel",Ret(_=>N(member.level))); actor.Set("getJobId",Ret(_=>N(member.job)));
+            actor.Set("getMapId",Ret(_=>N(member.mapId))); actor.Set("getChannel",Ret(_=>N(member.channel)));
+            return actor;
+        }
+        party.Set("getId",Ret(_=>N(state.partyId)));
+        party.Set("getLeaderId",Ret(_=>N(state.partyLeader)));
+        party.Set("getLeader",Ret(_=>Member(state.partyMembers.Find(m=>m.id==state.partyLeader))));
+        party.Set("getMembers",Ret(_=> { var members=new JsArray(); foreach (var member in state.partyMembers) members.Items.Add(Member(member)); return members; }));
+        party.Set("getMemberById",Ret(c=>Member(state.partyMembers.Find(m=>m.id==Int(c,0)))));
         return party;
     }
 
@@ -493,6 +510,12 @@ public static class NpcApi
         // Character.saveLocation(type) / saveLocationOnWarp()：warp 前记住「从哪来」（Character.java:8120/8131）
         p.Set("saveLocation", Fn(c => SaveLocation(Str(c, 0))));
         p.Set("saveLocationOnWarp", Fn(_ => SaveLocationOnWarp()));
+        p.Set("startPartyGrindCompanions", Ret(_ => B(GameSession.InGame && GameSession.Net.PartyGrind(
+            new Server.Bot.PartyGrindRequest { characterId=GameSession.CharacterId, operation=Server.Bot.PartyGrindOperation.Start }).ok)));
+        p.Set("isPartyGrindActive", Ret(_ => B(GameSession.InGame && GameSession.Net.PartyGrind(
+            new Server.Bot.PartyGrindRequest { characterId=GameSession.CharacterId }).active)));
+        p.Set("stopPartyGrindCompanions", Fn(_ => { if (GameSession.InGame) GameSession.Net.PartyGrind(
+            new Server.Bot.PartyGrindRequest { characterId=GameSession.CharacterId,operation=Server.Bot.PartyGrindOperation.Stop }); }));
         p.Set("getParty", Ret(_ => BuildParty(session)));
         p.Set("getId", Ret(_ => N(GameSession.InGame ? GameSession.CharacterId : 1)));
         p.Set("getMeso", Ret(_ => N(Profile.gold)));

@@ -31,6 +31,7 @@ public static class GameSession
         Server.Community.CanFamilyTravel = NativeCommunityMaps.CanTravel;
         Server.Cash.CanEnter = NativeCommunityMaps.CanEnterCash;
         Net = Server.Transport;
+        Server.TradeInventoryCommitted += ApplyTradeInventory;
         MigrateLegacyProfile();
     }
 
@@ -230,6 +231,29 @@ public static class GameSession
         d.hair = HairFromId(rec.hair);
         Profile.LastMapId = rec.map;
 
+        ApplyInventoryToProfile();
+
+        // 任务状态（服务端随角色一起下发，客户端不直接查表）
+        d.questStarted.Clear();
+        d.questCompleted.Clear();
+        d.questCompletedAt.Clear();
+        foreach (var q in Character.quests)
+        {
+            if (q.completed > 0 || q.status == 2) d.SetQuestCompleted(q.quest);
+            else if (q.status == 1) d.SetQuestStarted(q.quest);
+        }
+
+        // 技能等级
+        SkillProgress.ClearAll();
+        foreach (var s in Character.skills)
+            if (s.skillLevel > 0) SkillProgress.SetLearned(s.skillId, s.skillLevel);
+
+        Profile.Save();
+    }
+
+    static void ApplyInventoryToProfile()
+    {
+        var d=Profile.Data;
         // 共享 Profile 只是当前角色的镜像，切角时必须清掉上一人的装备。
         foreach (int slot in EquipSlot.Worn) d.SetEquipSlot(slot, 0);
         d.owned.Clear();
@@ -251,22 +275,17 @@ public static class GameSession
             d.AddItem(it.itemId, it.quantity);
         }
 
-        // 任务状态（服务端随角色一起下发，客户端不直接查表）
-        d.questStarted.Clear();
-        d.questCompleted.Clear();
-        d.questCompletedAt.Clear();
-        foreach (var q in Character.quests)
-        {
-            if (q.completed > 0 || q.status == 2) d.SetQuestCompleted(q.quest);
-            else if (q.status == 1) d.SetQuestStarted(q.quest);
-        }
-
-        // 技能等级
-        SkillProgress.ClearAll();
-        foreach (var s in Character.skills)
-            if (s.skillLevel > 0) SkillProgress.SetLearned(s.skillId, s.skillLevel);
-
-        Profile.Save();
+    }
+    static void ApplyTradeInventory(Server.Bot.BotActor actor,int mesoDelta)
+    {
+        if (!InGame || Character==null || actor.id!=CharacterId) return;
+        // Preserve XP, quests and gameplay earnings; only apply the committed trade delta.
+        Profile.Data.gold=checked(Profile.Data.gold+mesoDelta);
+        var inventory=new List<InventoryEntry>();
+        foreach (var item in actor.character.inventory) inventory.Add(item.Copy());
+        Character.inventory=inventory;
+        Character.tradeRevision=actor.character.tradeRevision;
+        ApplyInventoryToProfile(); Profile.Save();
     }
 
     // —————————————————— 现有玩法数据 → DB ——————————————————

@@ -73,6 +73,22 @@ public sealed class NpcSession
         QuestEnd = questEnd;
     }
 
+    // ItemScriptManager entry: execute the original item/consume_<id>.js unchanged.
+    public static NpcSession UseItem(int itemId)
+    {
+        if (!GameSession.InGame || Profile.ItemCount(itemId)<=0 || Blocking) return null;
+        string img="Item/Consume/"+(itemId/10000).ToString("D4")+".img/"+itemId.ToString("D8");
+        var spec=WzAssets.Node(img+"/spec");
+        string script=spec?.Text("script");
+        if (string.IsNullOrEmpty(script)) return null;
+        string key="item/"+script;
+        string source=ScriptSource.LoadKey(key);
+        if (string.IsNullOrEmpty(source)) return null;
+        CloseActive();
+        var session=new NpcSession(spec.Int("npc"),0,false,false);
+        Active=session; session.Begin(source,key); session.FinishInvocation(); return session;
+    }
+
     public static NpcSession Talk(int npcId) => Talk(npcId, null);
 
     // scriptName 对应源端 NPCScriptManager.start(c, npcId, scriptName)：
@@ -176,7 +192,7 @@ public sealed class NpcSession
             cm = NpcApi.Build(this, NpcId, QuestId, IsQuest);
             var bindings = new Dictionary<string, JsValue>
             {
-                [IsQuest ? "qm" : "cm"] = cm, ["pi"] = cm,
+                [IsQuest ? "qm" : "cm"] = cm, ["pi"] = cm, ["im"] = cm,
                 ["player"] = NpcApi.BuildPlayer(this), ["Java"] = NpcApi.BuildJava()
             };
             var opened = Dispatch(new ScriptRequest { operation = ScriptOperation.Open, name = name, source = source, bindings = bindings });

@@ -16,6 +16,8 @@ public sealed class BotField : MonoBehaviour
     readonly HashSet<int> present = new HashSet<int>();
     readonly List<int> removed = new List<int>();
     Server.Bot.Social.BotOutput output;
+    int currentMap, currentWorld, currentChannel;
+    bool synchronized;
 
     void OnEnable()
     {
@@ -25,14 +27,18 @@ public sealed class BotField : MonoBehaviour
     void OnOutput(Server.Bot.Social.BotOutput.Message message)
     {
         var actor = BotRegistry.Get(message.actorId);
-        var field = GetComponent<FieldDirector>();
-        if (actor == null || field?.Map == null || message.mapId != field.Map.id ||
-            actor.world != GameSession.World || actor.channel != GameSession.Channel) return;
+        if (!synchronized || actor == null || message.mapId != currentMap ||
+            actor.world != currentWorld || actor.channel != currentChannel) return;
+        if (message.kind == Server.Bot.Social.BotOutput.Kind.Chat && !string.IsNullOrEmpty(message.text))
+            BottomBar.AddChat(actor.name + " : " + message.text,BottomBar.ChatWhite);
         if (message.kind == Server.Bot.Social.BotOutput.Kind.Emote) Express(message.actorId, message.value);
+        if (message.kind == Server.Bot.Social.BotOutput.Kind.Attack && views.TryGetValue(message.actorId,out var view))
+            view.animation.PlayNativeAttack(message.text,message.value);
     }
 
     public void Synchronize(int mapId, int world, int channel)
     {
+        currentMap = mapId; currentWorld = world; currentChannel = channel; synchronized = true;
         present.Clear();
         foreach (var actor in BotRegistry.OnMap(mapId))
         {
@@ -81,6 +87,17 @@ public sealed class BotField : MonoBehaviour
         }
     }
 
+    public void PlaySkillEffect(BotCharacter actor,int skillId)
+    {
+        if (!views.TryGetValue(actor.id,out var view)) return;
+        string path="Skill/"+(skillId/10000).ToString("D3")+".img/skill/"+skillId+"/effect";
+        var frames=WzAssets.Frames(WzAssets.Node(path));
+        if (frames.Count==0) return;
+        float lifetime=0;
+        foreach (var frame in frames) lifetime+=Mathf.Max(1,Mathf.Abs(frame.Int("delay",100)))/1000f;
+        NativeImgAnimation.Spawn(path,view.root.transform,view.root.transform.position,360,actor.facing>0,lifetime:lifetime);
+    }
+
     public void Express(int actorId, int expression)
     {
         if (!views.TryGetValue(actorId, out var view)) return;
@@ -91,7 +108,7 @@ public sealed class BotField : MonoBehaviour
     public void Clear()
     {
         foreach (var view in views.Values) RemoveView(view);
-        views.Clear(); present.Clear(); removed.Clear();
+        views.Clear(); present.Clear(); removed.Clear(); synchronized = false;
     }
     static void RemoveView(View view)
     {

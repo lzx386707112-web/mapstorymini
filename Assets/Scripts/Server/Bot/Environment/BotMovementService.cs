@@ -34,7 +34,7 @@ namespace Server.Bot.Environment
         public static bool Observed(int mapId) => IsObserved != null && IsObserved(mapId);
         static BotMovementProfile Profile(BotCharacter actor, MapRuntime map) => ResolveProfile != null ? ResolveProfile(actor, map) :
             BotMovementProfile.FromCharacter(actor, (map.fieldLimit & 2) != 0, snowShoes: HasSnowShoes(actor));
-        static bool HasSnowShoes(BotCharacter actor)
+        internal static bool HasSnowShoes(BotCharacter actor)
         {
             return actor.equipment.TryGetValue(-7, out var entry) && entry != null &&
                 BotItemCatalog.Int(BotItemCatalog.Shared.Info(entry.itemId), "fs") >= 1;
@@ -75,6 +75,10 @@ namespace Server.Bot.Environment
                 }
             }, delay);
         }
+        public static void SetGrinding(BotCharacter actor, bool grinding)
+        { var motion=Enable(actor); if (motion!=null) motion.grinding=grinding; }
+        public static void Teleport(BotCharacter actor, Point point)
+        { var motion=Enable(actor); if (motion==null) return; Stop(actor); motion.Teleport(point); }
         public static void Move(BotCharacter actor, int x, int y, Action arrival = null)
         {
             if (Enable(actor) == null) return;

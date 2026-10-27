@@ -352,6 +352,8 @@ public static class InvenWindow
             if (icon != null) GUI.DrawTexture(slot, icon, ScaleMode.ScaleToFit);
             if (tab != 0) Text(At(r, x, y + 20, 31, 12), Profile.ItemCount(id).ToString(), true, 9);
             if (Event.current.type == EventType.Repaint && id > 0 && slot.Contains(Pointer.Pos)) ItemTooltip.SetHover(id);
+            if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && slot.Contains(Pointer.Pos) && tab == 1)
+                NpcSession.UseItem(id);
             if (release && slot.Contains(Pointer.Pos) && tab == 0)
             {
                 int eqSlot = EquipSlot.SlotOf(id);

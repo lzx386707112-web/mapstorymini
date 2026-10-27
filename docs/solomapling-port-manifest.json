@@ -6,8 +6,11 @@
       "source": "ArtificialPlayer/BotAttackSystem/BotAttackData.java",
       "sha256": "7c711a90f52d554ac953236b304a80678010280c8cf7f906314a0134df9d759e",
       "lines": 91,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotAttack.cs"
+      ],
+      "integration": "Original weapon action buckets and attack speed4 connected; complete attack subsystem pending."
     },
     {
       "source": "ArtificialPlayer/BotAutoSpawner.java",
@@ -64,8 +67,12 @@
       "source": "ArtificialPlayer/BotCommandsPack/BotAttack.java",
       "sha256": "0d395ba2cb5174af07da32d289294dfc92fdc242b099cca21ee4c0c8182d9a1d",
       "lines": 522,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotAttack.cs",
+        "Assets/Scripts/Server/Bot/BotAttackSkills.cs"
+      ],
+      "integration": "Preferred skills transcribed with reproducible exporter, ordinary weapon compatibility, fallback and damage split; basic swing and original effect IMG connected; exact magic/ranged presentation pending."
     },
     {
       "source": "ArtificialPlayer/BotCommandsPack/DropCommands.java",
@@ -78,8 +85,11 @@
       "source": "ArtificialPlayer/BotCommandsPack/MapleMessengerCommands.java",
       "sha256": "d3356726305bb71a6e3a8d726a4bc07ee52ff7f5062b677453349dd455e08be6",
       "lines": 122,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Social/BotMessenger.cs"
+      ],
+      "integration": "Runtime rooms, invitation answer, messages, typing and leave connected to social transport; full invitation lifecycle pending."
     },
     {
       "source": "ArtificialPlayer/BotCommandsPack/MegaphoneCommands.java",
@@ -579,8 +589,11 @@
       "source": "ArtificialPlayer/BotPartySystem/BotDamageModel.java",
       "sha256": "cb5cb5e3a55f13f6fb42b95ac044312345ff139754ea05c3e13d78c9faa6e103",
       "lines": 26,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotAttack.cs"
+      ],
+      "integration": "Original damage formula regression checked; actual combat producer pending."
     },
     {
       "source": "ArtificialPlayer/BotPartySystem/BotPartyCommands.java",
@@ -614,8 +627,11 @@
       "source": "ArtificialPlayer/BotPartySystem/PartyGrindFloors.java",
       "sha256": "aa65de362e0072b18d3153f156258947e1e409a9cdc27afb25e087d97fd1a9c8",
       "lines": 99,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotPartyGrindFloors.cs"
+      ],
+      "integration": "Original clustering, floorMod, fallback and ground station migrated; five-companion service integration pending."
     },
     {
       "source": "ArtificialPlayer/BotPartySystem/PartyGrindService.java",
@@ -877,15 +893,23 @@
       "source": "ArtificialPlayer/BotTypes/BuyingMerchantBot.java",
       "sha256": "bb32cc2d7318ebb5fb3d54a7c621ac9ec1622dfc6b602232bd6889cbf28d958c",
       "lines": 227,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/MerchantBot.cs"
+      ],
+      "integration": "Concrete buying FSM connected to runtime escrow protocol; original trade UI and gameplay acceptance pending."
     },
     {
       "source": "ArtificialPlayer/BotTypes/CompanionGrindBot.java",
       "sha256": "3326a2c26a7d72860922f55547fb05627067134d1d43400a42228fb25a3de92d",
       "lines": 157,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/CompanionGrindBot.cs",
+        "Assets/Scripts/Server/Bot/BotPartyGrindService.cs",
+        "Assets/Scripts/Field/BotCombatField.cs"
+      ],
+      "integration": "Concrete220ms FSM, five companions, original item script, target claims/damage, expiry/map/channel/party cleanup wired; full statistics and exact ranged/magic animation remain."
     },
     {
       "source": "ArtificialPlayer/BotTypes/DiceBot.java",
@@ -957,8 +981,11 @@
       "source": "ArtificialPlayer/BotTypes/NXMerchantBot.java",
       "sha256": "90b1fb854168726123f8bc7b49c296053a9cf35735cd7a636b4897fc57d14a64",
       "lines": 215,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/NXMerchantBot.cs"
+      ],
+      "integration": "Concrete NX sale and timed messenger delivery; original messenger UI and full transaction gameplay pending."
     },
     {
       "source": "ArtificialPlayer/BotTypes/OPQ/OPQBot.java",
@@ -999,15 +1026,21 @@
       "source": "ArtificialPlayer/BotTypes/ScrollingBot.java",
       "sha256": "3628052a016524d653da81def7db10f8fdd01260d993b3cec5b4106a2ced40bc",
       "lines": 238,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/ScrollingBot.cs"
+      ],
+      "integration": "Original common equipment pool, exact successes shuffle, SUCCESS/CURSE outputs, nonblocking waits and sale/trade checks. Original scroll/item-megaphone frontend remains."
     },
     {
       "source": "ArtificialPlayer/BotTypes/SellingMerchantBot.java",
       "sha256": "610d9be7f317760e26f21bc67119a8160fd9318030e607b29a4b35eb06bdcd6b",
       "lines": 247,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/MerchantBot.cs"
+      ],
+      "integration": "Concrete selling FSM connected to runtime escrow protocol; original trade UI and gameplay acceptance pending."
     },
     {
       "source": "ArtificialPlayer/BotTypes/SocialBot.java",
@@ -1928,8 +1961,11 @@
       "source": "server/NXCodeManager.java",
       "sha256": "8ca70e9490d500abc8bd730164a708e385aecc5615687ec1b42d9e87b8ecabd5",
       "lines": 155,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/BotNXCodes.cs"
+      ],
+      "integration": "Original generated type4 codes persisted and redeemed as nxCredit; other code types remain outside this migrated subset."
     },
     {
       "source": "server/NpcSpawner.java",
@@ -1965,17 +2001,17 @@
   ],
   "systemStatus": "incomplete",
   "validation": {
-    "serverChecks": 399,
+    "serverChecks": 463,
     "failed": 0,
-    "scope": "Backend regression: 399 passed, 0 failed, including original YAML scalar semantics, market economy, scroll cost simulation and real IMG equipment stock generation. Final full Unity script compile: 0 warnings, 0 errors. Prior Editor presentation smoke only; no full Play or Android acceptance."
+    "scope": "Backend463 passed,0 failed. Full Unity compile0 warnings/errors before final combat adapter smoke; real Unity Editor original IMG smoke passed including skill effect expiry, native monster HP damage/contribution and other-channel rejection. NPC harness889 parsed/768 executed/48 run failures/73 Java interop; packed2777 parseFail0. No Play/Android acceptance."
   },
   "remainingIntegration": [
-    "14 bot types still use GenericBot",
+    "9 bot types still use GenericBot; CompanionGrind and Scrolling now concrete (8 of 17)",
     "Movement locks, follow, damage/skill business and original client packet interpolation",
     "Full three-wave environment population and startup",
     "Character statistics/set bonuses/HPMP recovery",
     "Party/combat/market/casino behaviors",
-    "Trade transport/save/logout lifecycle",
+    "Original trade frontend and gameplay acceptance; escrow/settlement/cancel revision guard and committed inventory/meso mirror wired, session-local adapter requires client acceptance",
     "Frontend name tags, speech balloons, accessories, chairs, mounts, skill effects and interactions; basic paper-doll and known movement/emote output wired",
     "Original TownWandererDialogue bytes preserved; source catches parser failure and skips speech"
   ]

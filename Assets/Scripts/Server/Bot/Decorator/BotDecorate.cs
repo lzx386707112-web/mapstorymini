@@ -51,6 +51,7 @@ namespace Server.Bot.Decorator
             int path = basic <= 2 ? (int)(random.NextDouble() * 3) + 1 : random.NextDouble() < .5 ? 1 : 2;
             return basic * 100 + path * 10 + (level < 70 ? 0 : level < 120 ? 1 : 2);
         }
+        public void EquipWeapon(BotCharacter bot) => full.Weapon(bot);
         public void ApplyAppearance(BotCharacter bot, DbStore db)
         {
             bot.tier = RandomTier(); bot.level = GenerateLevel(bot.tier, 120, 200);

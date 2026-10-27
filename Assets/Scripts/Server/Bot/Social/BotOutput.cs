@@ -6,20 +6,21 @@ namespace Server.Bot.Social
     // 源端PacketCreator广播的纯数据适配。前端只消费事件，不在AI层绘制UI。
     public sealed class BotOutput
     {
-        public enum Kind { Chat, Bubble, Emote, Hint, EnableActions, Chair, Skill, Chalkboard, Guide, GuideTalk, YellowMessage, Movement, Appearance, Attack, Mount }
+        public enum Kind { Chat, Bubble, Emote, Hint, EnableActions, Chair, Skill, Chalkboard, Guide, GuideTalk, YellowMessage, Movement, Appearance, Attack, Mount, TradeChat, Scroll, ItemMegaphone }
         public sealed class Message
         {
             public Kind kind;
             public int actorId, mapId, targetId, value, width, duration;
             public string text;
             public float x, y;
+            public InventoryEntry item;
         }
         readonly Queue<Message> messages = new Queue<Message>();
         public event System.Action<Message> Published;
-        public void Send(Kind kind, BotActor actor, string text = null, int value = 0, int targetId = 0, int width = 0, int duration = 0)
+        public void Send(Kind kind, BotActor actor, string text = null, int value = 0, int targetId = 0, int width = 0, int duration = 0, InventoryEntry item = null)
         {
             var message = new Message { kind = kind, actorId = actor.id, mapId = actor.mapId, text = text,
-                value = value, targetId = targetId, width = width, duration = duration, x = actor.x, y = actor.y };
+                value = value, targetId = targetId, width = width, duration = duration, x = actor.x, y = actor.y, item = item?.Copy() };
             messages.Enqueue(message);
             Published?.Invoke(message);
         }
