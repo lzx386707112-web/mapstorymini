@@ -49,13 +49,13 @@ public sealed class NativeMapView : MonoBehaviour
         if (info == null) throw new InvalidDataException("Missing map info " + previous.id);
         var m = new FieldMap { id = previous.id, name = previous.name, street = previous.street,
             town = info.Int("town") != 0, returnMap = info.Int("returnMap"),
-            fieldLimit = info.Int("fieldLimit"), bgm = info.Text("bgm"), mobRate = info.Get("mobRate")?.Value == null ? 1f : Convert.ToSingle(info.Get("mobRate").Value) };
+            fieldLimit = info.Int("fieldLimit"), fieldType = info.Int("fieldType"), bgm = info.Text("bgm"), mobRate = info.Get("mobRate")?.Value == null ? 1f : Convert.ToSingle(info.Get("mobRate").Value) };
         foreach (var layer in Children(n.Get("foothold")))
             foreach (var group in layer.Children)
                 foreach (var f in group.Children)
                     m.footholds.Add(new FieldFoothold { id = int.Parse(f.Name), layer = int.Parse(layer.Name),
                         group = int.Parse(group.Name), x1 = f.Int("x1"), y1 = f.Int("y1"), x2 = f.Int("x2"), y2 = f.Int("y2"),
-                        forbidFallDown = f.Int("forbidFallDown") });
+                        forbidFallDown = f.Int("forbidFallDown"), force = f.Int("force"), drag = f.Int("drag") });
         foreach (var r in Children(n.Get("ladderRope")))
             m.ropes.Add(new FieldRope { x = r.Int("x"), y1 = r.Int("y1"), y2 = r.Int("y2"),
                 ladder = r.Int("l") != 0, upperExit = r.Int("uf") != 0 });

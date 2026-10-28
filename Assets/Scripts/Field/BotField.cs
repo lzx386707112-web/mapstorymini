@@ -111,7 +111,7 @@ public sealed class BotField : MonoBehaviour
         foreach (var entry in views) if (!present.Contains(entry.Key)) removed.Add(entry.Key);
         foreach (int id in removed) { RemoveView(views[id]); views.Remove(id); balloons.Remove(id); }
         // 换图：假人一次性站好（对齐联机 —— 进图那一刻周边玩家就已经在场上，不是一个个冒出来）。
-        // 前提是纸娃娃已经在登录界面预合成完（BotAppearancePrebake.Finished）：
+        // 前提是纸娃娃已经在启动期间预合成完（BotAppearancePrebake.Finished）：
         // 那时建视图只是查表 + new GameObject，一个人 0.1~0.3ms。
         // 预合成没赶完就退回增量排队——宁可晚出现，也不能在进图那一帧连做十几次 CPU 合成。
         if (mapChanged && BotAppearancePrebake.Finished) CreateQueued(MaxCreateOnMapEnter, false);

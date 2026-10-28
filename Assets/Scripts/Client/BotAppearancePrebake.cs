@@ -1,7 +1,7 @@
 using Server.Bot;
 using UnityEngine;
 
-// 假人纸娃娃预合成：借登录/选角界面的空闲帧，把模板池的常用动作帧提前算好。
+// 假人纸娃娃预合成：Android 在加载页等待全部完成，其他平台借登录/选角空闲帧推进。
 //
 // 背景：WzCharacter.Compose 是 CPU 逐像素混合 + Texture2D 上传，单次 3~10ms，
 // 且 Texture2D 只能在主线程创建。等玩家进图再合成，就是「进游戏卡一段」的直接来源。

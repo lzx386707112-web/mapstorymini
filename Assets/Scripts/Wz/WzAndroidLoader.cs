@@ -234,12 +234,35 @@ public sealed class WzAndroidLoader : MonoBehaviour
 
     System.Collections.IEnumerator StartGameRoutine()
     {
-        phase = "资源就绪，正在启动游戏";
+        phase = "正在加载AI假人系统";
         starting = true;
         visibleProgress = 1f;
         progressText = "100%";
-        yield return null;                 // 先让「正在启动游戏」渲染一帧
+        yield return null;                 // 先让假人系统加载提示渲染一帧
 
+        // 资源可读之后先启动本地服务端，把原来登录期间的预建/合成留在加载页。
+        // 两个组件仍按原有帧预算推进，完成后自行销毁；此时尚未创建可交互的登录界面。
+        BotPreload botPreload;
+        BotAppearancePrebake botPrebake;
+        try
+        {
+            GameSession.Boot();
+            botPrebake = GetComponent<BotAppearancePrebake>();
+            if (botPrebake == null) botPrebake = gameObject.AddComponent<BotAppearancePrebake>();
+            botPreload = GetComponent<BotPreload>();
+            if (botPreload == null) botPreload = gameObject.AddComponent<BotPreload>();
+        }
+        catch (Exception e)
+        {
+            starting = false; failed = true; startInvoked = false;
+            phase = "启动失败"; message = e.Message;
+            yield break;
+        }
+        while (botPreload != null || botPrebake != null)
+            yield return null;
+
+        phase = "资源就绪，正在启动游戏";
+        yield return null;
         try { complete?.Invoke(); }
         catch (Exception e)
         {

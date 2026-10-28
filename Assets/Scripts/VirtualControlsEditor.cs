@@ -4,7 +4,7 @@ using UnityEngine;
 // ————————————————————————————————————————————————————————————
 // 虚拟按键编辑器（深色版）—— 外壳
 //
-//   工具条：← 返回 | 图层 1 ▾ | ⚙ |（＋ 或 ↶ ↷ 🗑 ⧉ ✏️）
+//   工具条：← 返回 | 图层 1 ▾ | 默认布局 |（＋ 或 ↶ ↷ 🗑 ⧉ ✏️）
 //     · 没有选中控件时显示 ＋（添加控件）
 //     · 选中控件后 ＋ 收起，换成 垃圾桶 / 复制 / 铅笔
 //   画面：纯黑；控件按「真实样式」渲染（背景色/描边/光环/形状/旋转），
@@ -332,7 +332,7 @@ public static partial class VirtualControlsEditor
     const float PadX = 26f, GapIn = 12f, GapGroup = 30f, DivW = 2f;
 
     // 各按钮宽度
-    const float W_BACK = 64f, W_LAYER = 140f, W_GEAR = 72f, W_PLUS = 72f, W_ICON = 62f;
+    const float W_BACK = 64f, W_LAYER = 140f, W_DEFAULT = 140f, W_PLUS = 72f, W_ICON = 62f;
 
     // 严格跟着 Toolbar() 的排布算，避免两边对不上导致工具条被裁掉一截
     static float BarWidth()
@@ -340,7 +340,7 @@ public static partial class VirtualControlsEditor
         float x = PadX;
         x += W_BACK + GapGroup + DivW + GapGroup;
         x += W_LAYER + GapGroup + DivW + GapGroup;
-        x += W_GEAR + GapGroup + DivW + GapGroup;
+        x += W_DEFAULT + GapGroup + DivW + GapGroup;
         if (selected == null) x += W_PLUS + GapGroup + DivW + GapGroup;
         x += W_ICON + GapIn + W_ICON;
         if (selected != null) x += GapIn + W_ICON + GapIn + W_ICON + GapIn + W_ICON;
@@ -382,11 +382,25 @@ public static partial class VirtualControlsEditor
         x += W_LAYER + GapGroup;
         Divider(x, cy); x += DivW + GapGroup;
 
-        // ⚙ 设置（下一步接）
-        var gearR = new Rect(x, iy, W_GEAR, ih);
-        HoverCircle(gearR, act);
-        Gear(new Vector2(gearR.center.x, cy), gearR.Contains(aPos) ? Color.white : Ink);
-        x += W_GEAR + GapGroup;
+        // 默认布局：复用现有工具条样式，点击立即套用并保存。
+        var defaultR = new Rect(x, iy, W_DEFAULT, ih);
+        Pill(defaultR, defaultR.Contains(aPos) ? Accent : BarBg);
+        Text(defaultR, "默认布局", 24, Ink, TextAnchor.MiddleCenter);
+        if (BarTap(defaultR, act))
+        {
+            PushHistory();
+            foreach (var e in VirtualControls.elems) VirtualControls.ReleaseForEdit(e);
+            VirtualControls.RestoreDefaultLayout();
+            selected = null;
+            dragging = resizing = false;
+            panelMoving = scrollArm = false;
+            dragSlider = -1;
+            dirty = false;
+            page = P_None;
+            BottomBar.Toast("已应用默认布局");
+            return;
+        }
+        x += W_DEFAULT + GapGroup;
         Divider(x, cy); x += DivW + GapGroup;
 
         if (selected == null)

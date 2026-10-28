@@ -247,10 +247,11 @@ public partial class SkillSystem : MonoBehaviour
                 var result = p.RollAttack(e != null ? e.CombatStats : b.CombatStats, d);
                 rawHits.Add(result);
                 landed |= result.Amount > 0;
-                // 技能自带原版 hit 部件时，关掉占位的黄色柔光爆点
-                if (e != null) e.TakeHit(result, direction, true, d.Magic);
-                else if (b != null) b.TakeHit(result, direction, true);
             }
+            // Settle all original attackCount lines together so lethal first hits
+            // cannot discard later lines; each line keeps its own index and Miss.
+            if (e != null) e.TakeReplayHit(rawHits.ToArray(), direction, d.Magic, false, 120, false, d.Id);
+            else if (b != null) b.TakeReplayHit(rawHits.ToArray(), direction, false, 120, false, d.Id);
             Impact(s,d,targets[i],direction,landed);
             captured.Add(new CapturedReplayHit{Target=targets[i],Hits=rawHits.ToArray()});
             if (e != null)

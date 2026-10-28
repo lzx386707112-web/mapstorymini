@@ -17,6 +17,7 @@ public class SpriteAnim : MonoBehaviour
     int idx;
     string expression;
     float expressionStarted, lastExpression = -10f;
+    float expressionDuration = EmoteDuration;
 
     // 表情名表：BeiDou.exe 0xBEC284 的 23 项静态数组（初始化 0x45E8E8..0x45EDFA，
     // 每项由字符串池 GetString 填充）。下标就是表情编号，和 Face.img 的节点同名。
@@ -42,9 +43,20 @@ public class SpriteAnim : MonoBehaviour
         if (kind != "chars" || emote < 1 || emote > MaxEmote) return false;
         if (Time.unscaledTime - lastExpression < EmoteCooldown) return false;
         expression = EmoteNames[emote];
+        expressionDuration = EmoteDuration;
         expressionStarted = lastExpression = Time.unscaledTime;
         Apply(idx);
         return true;
+    }
+
+    // CUserLocal::OnHit 0x95922C: automatic hit face bypasses keyboard cooldown.
+    public void ShowHitExpression()
+    {
+        if (kind != "chars") return;
+        expression = "hit";
+        expressionStarted = Time.unscaledTime;
+        expressionDuration = 1.5f;
+        Apply(idx);
     }
 
     // 0 号表情 = 回默认脸（SetEmotion(0) 的有效路径）。
@@ -63,6 +75,7 @@ public class SpriteAnim : MonoBehaviour
     public float Duration => cur != null ? cur.Duration : 0f;
     // 当前播到第几帧（0 起）：残影要「角色挥到第几帧才出哪张图」，必须能读到
     public int FrameIndex => idx;
+    public string FrameUri => cur != null && idx < cur.frames.Length ? cur.frames[idx] : null;
     // 距当前帧结束还有多少秒：供外部在精确帧边界上触生效果
     public float FrameRemaining => cur != null ? Mathf.Max(0f, cur.delays[idx] - t) : 0f;
 
@@ -162,7 +175,7 @@ public class SpriteAnim : MonoBehaviour
         if (cur == null || sr == null) return;
         if (expression != null)
         {
-            if (Time.unscaledTime - expressionStarted >= EmoteDuration) expression = null;
+            if (Time.unscaledTime - expressionStarted >= expressionDuration) expression = null;
             Apply(idx);
         }
         float dt = Time.deltaTime * Mathf.Max(0f, speed);

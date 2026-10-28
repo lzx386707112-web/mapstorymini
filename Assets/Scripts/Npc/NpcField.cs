@@ -88,7 +88,7 @@ public static class NpcField
         }
         if (markers.TryGetValue(npcId, out var m)) return m;
 
-        m = new Marker();
+        m = new Marker { complete = npcId == 2104 && WelcomeTutorial.CanComplete };
         var ids = QuestCatalog.ForNpc(npcId);
         for (int i = 0; i < ids.Count; i++)
         {
@@ -109,11 +109,16 @@ public static class NpcField
         public int npcId;
         public QuestDef quest;
         public bool complete;
+        public bool welcome;
+        public string Title => welcome ? WelcomeTutorial.Title + (complete ? " (已完成)" : "") : quest.name;
+        public int AlertId => welcome ? int.MinValue : quest.id;
     }
 
     public static List<QuestChoice> ChoicesFor(int npcId)
     {
         var choices = new List<QuestChoice>();
+        if (npcId == 2104 && WelcomeTutorial.CanComplete)
+            choices.Add(new QuestChoice { npcId = npcId, welcome = true, complete = true });
         foreach (int id in QuestCatalog.ForNpc(npcId))
         {
             var q = QuestCatalog.Get(id);
@@ -121,11 +126,11 @@ public static class NpcField
             if (QuestLogic.CanComplete(q, npcId)) choices.Add(new QuestChoice { npcId = npcId, quest = q, complete = true });
             else if (QuestLogic.CanStart(q, npcId)) choices.Add(new QuestChoice { npcId = npcId, quest = q });
         }
-        choices.Sort((a, b) => a.complete == b.complete ? a.quest.id.CompareTo(b.quest.id) : a.complete ? -1 : 1);
+        choices.Sort((a, b) => a.complete == b.complete ? a.AlertId.CompareTo(b.AlertId) : a.complete ? -1 : 1);
         return choices;
     }
 
-    public static string DefaultTalk(int npcId) => WzAssets.FileRoot("String/Npc.img").Get(npcId.ToString())?.Text("d0", "(...)") ?? "(...)";
+    public static string DefaultTalk(int npcId) => WzAssets.FileRoot("String/Npc.img").Get(npcId.ToString())?.Text("d0", "") ?? "";
 
     static bool IsSilentNpc(int npcId)
     {
@@ -133,7 +138,7 @@ public static class NpcField
         if (info == null) return false;
         if (info.Int("MapleTV") == 1) return true;
         var speak = info.Get("speak");
-        return speak != null && speak.Children.Count > 0;
+        return speak != null && speak.Children.Count > 0 && !ScriptSource.Has("npc", npcId);
     }
 
     public static void Interact(int npcId)
@@ -148,12 +153,14 @@ public static class NpcField
                 string name = entry.Text("script");
                 if (!string.IsNullOrEmpty(name)) scripts.Add(name);
             }
-        // 这两类 NPC 源端本来就没有对白脚本，点了不该弹「没有对白脚本」：
+        // 没有脚本的装饰 NPC 不弹「没有对白脚本」。speak 仅定义气泡，
+        // 不能据此吞掉有数字脚本的 NPC（例如训练营 2100）。
         //   info/MapleTV = 1  → 自由市场的电视（客户端走 MapleTV 界面，不是对话）
-        //   info/speak 有条目 → 只会冒头顶气泡的装饰 NPC（9000069 彪鲁：speak = [n0, n1]）
+        //   info/speak 有条目且无脚本 → 只有头顶气泡的装饰 NPC（9000069 彪鲁）
         if (choices.Count == 0 && scripts.Count == 0 && IsSilentNpc(npcId)) return;
-        if (choices.Count == 0 && scripts.Count == 0) { NpcSession.Talk(npcId); return; }
-        if (scripts.Count == 0 && ScriptSource.Has("npc", npcId)) scripts.Add("");
+        // BeiDou.exe 6D3400..6D347C：没有任务候选时直接发起普通 NPC
+        // 对话。info/script 是分派元数据，不应凭它多插入一层内部名称菜单。
+        if (choices.Count == 0) { NpcSession.Talk(npcId, scripts.Count > 0 ? scripts[0] : null); return; }
         var session = NpcSession.Choose(npcId, DefaultTalk(npcId), index =>
         {
             if (index >= 0 && index < choices.Count) OpenQuest(choices[index]);
@@ -172,29 +179,23 @@ public static class NpcField
 
     static readonly List<QuestChoice> alerts = new List<QuestChoice>();
     static float alertsRefresh;
-    // 角色头顶灯泡列出「当前地图上能做」的任务，点开就是这些 NPC 的任务列表。
-    //
-    // 口径来自源端两处（之前只按 autoStart/autoComplete 过滤，导致新建 1 级角色一进图就被
-    // 12 条别处 NPC 的活动任务刷屏——富翁先生的鞭炮、佳佳的遗物大会、圣诞派对…）：
-    //   QuestScriptManager.java:111  end():  !containsNPC(npc) && !isAutoComplete() 直接 dispose
-    //   QuestActionHandler.java:55   isNpcNearby(): 非 autoStart/autoComplete 的任务要 NPC 在本地图
-    // 反过来说：除了 autoComplete 的远程任务，接/交任务都必须 NPC 在当前地图，灯泡不该列它。
+    // BeiDou.exe 720F8A / A08AB7：灯泡候选来自 QuestInfo/autoStart，
+    // 与 NPC 是否在本地图无关。服务端的距离检查不能代替客户端的通知筛选。
     public static IReadOnlyList<QuestChoice> QuestAlerts()
     {
         if (Time.unscaledTime < alertsRefresh) return alerts;
         alertsRefresh = Time.unscaledTime + .4f;
         alerts.Clear();
-        var present = new HashSet<int>();
-        if (map != null)
-            foreach (var npc in map.npcs)
-                if (npc.hide == 0) present.Add(npc.id);
+        if (WelcomeTutorial.Available)
+            alerts.Add(new QuestChoice { npcId = 9010000, welcome = true });
         foreach (int id in QuestCatalog.Ids)
         {
             var q = QuestCatalog.Get(id);
             if (q == null) continue;
-            if (QuestLogic.CanComplete(q, q.completeReq.npc) && (present.Contains(q.completeReq.npc) || q.autoComplete))
+            if (QuestLogic.CanComplete(q, q.completeReq.npc) && q.autoStart && q.autoPreComplete)
                 alerts.Add(new QuestChoice { npcId = q.completeReq.npc, quest = q, complete = true });
-            else if (QuestLogic.CanStart(q, q.startReq.npc) && present.Contains(q.startReq.npc))
+            else if (q.autoStart && !q.autoAccept &&
+                QuestLogic.NotificationDateAvailable(q.startReq, System.DateTime.Now) && QuestLogic.CanStart(q, q.startReq.npc))
                 alerts.Add(new QuestChoice { npcId = q.startReq.npc, quest = q });
         }
         return alerts;
@@ -248,8 +249,8 @@ public static class NpcField
         bool fresh = false;
         foreach (var choice in list)
         {
-            alertLive.Add(choice.quest.id);
-            if (alertSeen.Add(choice.quest.id)) fresh = true;
+            alertLive.Add(choice.AlertId);
+            if (alertSeen.Add(choice.AlertId)) fresh = true;
         }
         alertGone.Clear();
         foreach (int id in alertSeen)
@@ -277,8 +278,8 @@ public static class NpcField
             for (int i = 0; i < choices.Count; i++)
             {
                 if (choices[i].complete != complete) continue;
-                if (!header) { content.Selections.Add(new DialogSelection { Index = -1, HeaderArt = complete ? "list1" : "list0" }); header = true; }
-                content.Selections.Add(new DialogSelection { Index = i, Text = choices[i].quest.name });
+                if (!header) { content.Selections.Add(new DialogSelection { Index = -1, HeaderArt = complete ? "list0" : "list1" }); header = true; }
+                content.Selections.Add(new DialogSelection { Index = i, Text = choices[i].Title });
             }
         }
     }
@@ -288,15 +289,17 @@ public static class NpcField
         if (NpcSession.Blocking) return;
         var choices = new List<QuestChoice>(QuestAlerts());
         if (choices.Count == 0) return;
-        var session = NpcSession.Choose(choices[0].npcId, "冒险岛上有人要给你传话。", index =>
+        var session = NpcSession.Choose(9010000, "冒险岛上有人要给你传话。", index =>
         {
             if (index >= 0 && index < choices.Count) OpenQuest(choices[index]);
         });
+        session.SpeakerName = "冒险岛运营员";
         FillQuestMenu(session.Dialog.Content, choices);
     }
 
     public static void OpenQuest(QuestChoice choice)
     {
+        if (choice.welcome) { if (choice.complete) WelcomeTutorial.Complete(); else WelcomeTutorial.Open(); return; }
         // QuestActionHandler.isNpcNearby: 1200px horizontally, 800px vertically.
         var player = GameLoop.I != null ? GameLoop.I.player : null;
         if (map != null && player != null && !choice.quest.autoStart && !choice.quest.autoComplete)

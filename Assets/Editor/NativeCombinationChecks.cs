@@ -48,7 +48,8 @@ public static class NativeCombinationChecks
             animation.Play("stand", false);
             TouchInput.MoveV = 0;
             step.Invoke(player, new object[] { 1f / 60 });
-            Require(!player.Crouching && animation.Current == "stand", "Releasing Down kept prone pose");
+            // A basic attack leaves the native five-second alert stance active.
+            Require(!player.Crouching && animation.Current == "alert", "Releasing Down did not restore post-attack alert pose");
             TouchInput.PushJump();
             step.Invoke(player, new object[] { 1f / 60 });
             TouchInput.MoveV = -1;

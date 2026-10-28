@@ -41,11 +41,17 @@ public class PlayerCtrl : MonoBehaviour
     // 与 Terrain 一一对应：true 表示这条 foothold 在原端带 forbidFallDown，
     // 站在上面按 ↓+跳跃不许穿下去（0x94C4F8 查的支持段 +0x30）。
     public static System.Collections.Generic.List<bool> TerrainNoFallThrough;
+    public static System.Collections.Generic.List<int> TerrainForces;
+    public static System.Collections.Generic.List<int> TerrainDrag;
     // 长度对不上就当没有这个数据：宁可允许下跳，也不要按错段号误禁。
     public static void SetTerrain(System.Collections.Generic.List<Vector4> t,
-                                  System.Collections.Generic.List<bool> forbidFallDown = null)
+                                  System.Collections.Generic.List<bool> forbidFallDown = null,
+                                  System.Collections.Generic.List<int> forces = null,
+                                  System.Collections.Generic.List<int> drag = null)
     {
         Terrain = t;
+        TerrainDrag = t != null && drag != null && drag.Count == t.Count ? drag : null;
+        TerrainForces = t != null && forces != null && forces.Count == t.Count ? forces : null;
         TerrainNoFallThrough = t != null && forbidFallDown != null && forbidFallDown.Count == t.Count
             ? forbidFallDown : null;
     }
@@ -197,6 +203,10 @@ public class PlayerCtrl : MonoBehaviour
     public float moveSpeed = BaseWalkPx / Art.PPU;
     public float jumpSpeed = 555f / Art.PPU;
     public float gravity   = -2000f / Art.PPU;
+    NativeMovementPhysics movementPhysics;
+    double horizontalVelocity; // px/s: preserved when leaving a foothold.
+    float contactWallX;
+    int contactWallDirection;
 
     [Header("普攻")]
     public float attackInterval = 0.55f;
@@ -207,6 +217,11 @@ public class PlayerCtrl : MonoBehaviour
     public float hpMax = 100f;
     public float hp    = 100f;
     public float invulnUntil;
+    float alertUntil;
+    float contactTintStarted;
+    int contactTintPhase;
+    bool contactTintActive;
+    public void BeginNativeAlert() => alertUntil = Time.unscaledTime + 5f;
     public float mpMax = 100f;
     public float mp = 100f;
     float attackBonus;
@@ -231,6 +246,8 @@ public class PlayerCtrl : MonoBehaviour
         terrainY = GroundAt(worldX, GroundY);
         jumpY = 0f;
         vy = 0f;
+        horizontalVelocity = 0;
+        contactWallDirection = 0;
         grounded = true;
     }
 
@@ -239,6 +256,7 @@ public class PlayerCtrl : MonoBehaviour
     public void PlaySkill(string skill,float phaseDuration=0)
     {
         if (vis == null || IsClimbing) return;
+        BeginNativeAlert();
         string action = "skill_" + skill;
         if (Art.GetClip(vis.kind, vis.key, action) == null) action = "atk";
         SkillActionDuration = GetSkillActionDuration(skill);
@@ -302,6 +320,19 @@ public class PlayerCtrl : MonoBehaviour
     public int   SortingOrder   => 300 - lane * 12;
     public Vector2 FeetPos      => new Vector2(worldX, terrainY + jumpY + DepthOffset);
 
+    // CAvatar::GetBodyRect 0x45183B; ordinary body constants at 0xAF14B8/C8.
+    // Equipment, weapon and hair pixel bounds do not enlarge this rectangle.
+    public Rect ContactBounds
+    {
+        get
+        {
+            float left = Crouching ? (facing > 0 ? 0 : -46) : -22;
+            float right = Crouching ? (facing > 0 ? 46 : 0) : 22;
+            return Rect.MinMaxRect(FeetPos.x + left / Art.PPU,
+                FeetPos.y, FeetPos.x + right / Art.PPU, FeetPos.y + (Crouching ? 31 : 65) / Art.PPU);
+        }
+    }
+
     // 身体判定框（世界尺寸，脚底为原点）。怪物接触伤害必须真实碰到身体，
     // 站在高低不同的平台上、只是 Y 方向错位重叠不算碰到。
     public float BodyHeight
@@ -327,6 +358,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         Profile.Load();
         Profile.LeveledUp += OnLevelUp;
+        movementPhysics = NativeMovementPhysics.Load();
         var physics = WzAssets.FileRoot("Map/Physics.img");
         moveSpeed = physics.Int("walkSpeed", 125) / Art.PPU;
         jumpSpeed = physics.Int("jumpSpeed", 555) / Art.PPU;
@@ -452,6 +484,13 @@ public class PlayerCtrl : MonoBehaviour
         throw new System.IO.InvalidDataException("Missing original character IMG recipe: " + artKey);
     }
 
+    public void RefreshFieldAppearance()
+    {
+        if (vis == null) return; // 首次生成由 Start 按已绑定地图构建。
+        vis.gameObject.SetActive(false); Destroy(vis.gameObject); vis = null;
+        BuildArt();
+    }
+
     // 武器属性 + 装扮覆盖层：每次（重新）进关都会按当前 Profile 重建
     void ApplyLoadout()
     {
@@ -539,7 +578,8 @@ public class PlayerCtrl : MonoBehaviour
         if (vis != null)
         {
             string action = IsClimbing ? (climb.ladder ? "ladder" : "rope") :
-                !grounded ? "jump" : moving ? "walk" : Crouching ? "prone" : Sitting ? "sit" : "stand";
+                !grounded ? "jump" : moving ? "walk" : Crouching ? "prone" : Sitting ? "sit" :
+                Time.unscaledTime < alertUntil ? "alert" : "stand";
             vis.SetBase(action);
             if (IsClimbing) vis.Play(action, false); // 抓绳打断攻击/受击残留
             if (IsClimbing) vis.speed = Mathf.Abs(climbInput);
@@ -592,6 +632,7 @@ public class PlayerCtrl : MonoBehaviour
     // 没有素材时返回 0，调用方立即结算。
     float BeginSwing()
     {
+        BeginNativeAlert();
         pending.active = false;      // 新挥砍开始，上一段前摇作废（理论上前摇必早于挥砍结束）
         swingSfxAt = -1f;            // 上一段空挥计时作废
         swingPlayback = 1f;
@@ -697,24 +738,102 @@ public class PlayerCtrl : MonoBehaviour
         {
             // ↓ + 跳跃 = 穿平台下跳；条件不满足才退回普通跳跃
             if (climbInput < -0.15f && BeginDownJump()) return;
+            int support = SupportSegment(worldX, terrainY);
+            double slope = 0, cosine = 1;
+            if (support >= 0) {
+                var f = Terrain[support];
+                double dx = System.Math.Abs(f.z - f.x), dy = -(f.w - f.y) * Mathf.Sign(f.z - f.x);
+                double length = System.Math.Sqrt(dx * dx + dy * dy);
+                cosine = dx / length; slope = dy / length;
+            }
+            horizontalVelocity *= cosine;
+            int input = h > .15f ? 1 : h < -.15f ? -1 : 0;
+            if (input != 0) {
+                double limit = moveSpeed * Art.PPU * (1 + System.Math.Sign(input * slope) * slope * slope);
+                if (input * horizontalVelocity < .8 * limit) horizontalVelocity += input * .8 * limit;
+                if (input * horizontalVelocity > limit) horizontalVelocity = input * limit;
+            }
             vy = jumpSpeed;
             grounded = false;
             AudioManager.Play("Game/Jump", 0.7f, false);
         }
         float previousY = terrainY + jumpY;
-        float nextX = ClampX(worldX + h * moveSpeed * dt);
+        double oldVelocity = horizontalVelocity;
+        int direction = h > .15f ? 1 : h < -.15f ? -1 : 0;
+        float tangentX = 1f;
+        if (grounded)
+        {
+            int support = SupportSegment(worldX, previousY);
+            double force = support >= 0 && TerrainForces != null ? TerrainForces[support] * .01 : 0;
+            double drag = support >= 0 && TerrainDrag != null && TerrainDrag[support] != 0 ? TerrainDrag[support] * .01 : 1;
+            double slope = 0;
+            if (support >= 0) {
+                var f = Terrain[support];
+                float length = new Vector2(f.z - f.x, f.w - f.y).magnitude;
+                tangentX = Mathf.Abs(f.z - f.x) / length;
+                slope = -(f.w - f.y) * Mathf.Sign(f.z - f.x) / length;
+            }
+            horizontalVelocity = movementPhysics.Ground(horizontalVelocity, direction, force, drag,
+                moveSpeed * Art.PPU / movementPhysics.WalkSpeed, slope, dt);
+        }
+        else horizontalVelocity = movementPhysics.Air(horizontalVelocity, -vy * Art.PPU, direction, dt);
+        float displacement = (float)((oldVelocity + horizontalVelocity) * .5 * dt / Art.PPU) * tangentX;
+        // Rush is a separate skill movement; ordinary movement always uses native integration.
+        if (Mathf.Abs(h) > 1f) { displacement = h * moveSpeed * dt; horizontalVelocity = 0; }
+        float nextX = ClampX(worldX + displacement);
+        if (worldX + displacement < XMin || worldX + displacement > XMax) horizontalVelocity = 0;
         moving = Mathf.Abs(h) > 0.15f;
         if (moving && !NativeBasicAttackActive) facing = h > 0f ? 1 : -1;
 
+        if (MoveHorizontal(nextX)) horizontalVelocity *= tangentX;
+        if (grounded) return;
+
+        // 帧内细分由调用方控制；用解析位移避免跳高随帧率变化。
+        float beforeVy = vy;
+        vy = Mathf.Max(vy + gravity * dt, -fallSpeed);
+        float nextY = previousY + (beforeVy + vy) * .5f * dt;
+        float landing;
+        if (vy <= 0f && FindLanding(worldX, previousY, nextY, dropSegment, out landing))
+        {
+            terrainY = landing;
+            int support = SupportSegment(worldX, landing);
+            if (support >= 0) {
+                var f = Terrain[support];
+                double dx = System.Math.Abs(f.z - f.x), dy = -(f.w - f.y) * Mathf.Sign(f.z - f.x);
+                double length = System.Math.Sqrt(dx * dx + dy * dy);
+                horizontalVelocity = horizontalVelocity * dx / length - vy * Art.PPU * dy / length;
+            }
+            jumpY = 0f;
+            vy = 0f;
+            grounded = true;
+            dropSegment = -1;      // 落到别的段上：忽略指针作废（0x9B4963）
+        }
+        else jumpY = nextY - terrainY;
+
+        // 掉到地图可视范围以下：说明一条 foothold 都没接住（真空缺口，或数据异常）。
+        // 原端会由服务端把角色复位回最近地面；这里做等价兜底，避免一路掉到屏幕外卡死。
+        if (nextY < FallFloor) RecoverFromFall();
+    }
+
+    // Walking and contact displacement must use the same wall/support resolution.
+    bool MoveHorizontal(float nextX)
+    {
         // 连续支持段优先：上层平台的竖直侧边可能穿过下层可走地面。
         // 只有脚下不能连续通过（真实台阶/边缘）或处于空中时，才检查竖直墙。
+        bool wasGrounded = grounded;
+        float previousY = terrainY + jumpY;
         float supportY = previousY;
+        int direction = System.Math.Sign(nextX - worldX);
+        int blockedDirection = direction == 0 ? contactWallDirection : 0;
+        float blockedX = direction == 0 ? contactWallX : 0;
         bool followsGround = grounded && FollowGround(worldX, previousY, nextX, out supportY);
         if (Terrain != null)
             foreach (var wall in Terrain)
             {
                 if (Mathf.Abs(wall.z - wall.x) >= 0.01f) continue;
-                if ((worldX < wall.x && nextX >= wall.x) || (worldX > wall.x && nextX <= wall.x))
+                if ((worldX < wall.x && nextX >= wall.x) || (worldX > wall.x && nextX <= wall.x) ||
+                    (worldX == wall.x && direction != 0 &&
+                     (contactWallDirection == 0 || contactWallX != wall.x || direction == contactWallDirection)))
                 {
                     // 目标恰在墙线上时，也必须确认墙另一侧有接续地面。
                     float beyondY;
@@ -723,11 +842,17 @@ public class PlayerCtrl : MonoBehaviour
                     if (previousY < Mathf.Max(wall.y, wall.w) - 0.01f &&
                         previousY >= Mathf.Min(wall.y, wall.w) - 0.01f)
                     {
-                        nextX = worldX;
+                        // Stay on the wall plane so its lower endpoint can support landing.
+                        nextX = wall.x;
+                        blockedX = wall.x;
+                        blockedDirection = direction;
+                        horizontalVelocity = 0;
                         followsGround = false;
                     }
                 }
             }
+        contactWallX = blockedX;
+        contactWallDirection = blockedDirection;
         if (grounded)
         {
             // Only follow the supporting segment and geometrically connected slopes.
@@ -744,25 +869,7 @@ public class PlayerCtrl : MonoBehaviour
             }
         }
         worldX = nextX;
-        if (grounded) return;
-
-        // 帧内细分由调用方控制；用解析位移避免跳高随帧率变化。
-        float nextY = previousY + vy * dt + 0.5f * gravity * dt * dt;
-        vy = Mathf.Max(vy + gravity * dt, -fallSpeed);
-        float landing;
-        if (vy <= 0f && FindLanding(worldX, previousY, nextY, dropSegment, out landing))
-        {
-            terrainY = landing;
-            jumpY = 0f;
-            vy = 0f;
-            grounded = true;
-            dropSegment = -1;      // 落到别的段上：忽略指针作废（0x9B4963）
-        }
-        else jumpY = nextY - terrainY;
-
-        // 掉到地图可视范围以下：说明一条 foothold 都没接住（真空缺口，或数据异常）。
-        // 原端会由服务端把角色复位回最近地面；这里做等价兜底，避免一路掉到屏幕外卡死。
-        if (nextY < FallFloor) RecoverFromFall();
+        return wasGrounded && !grounded;
     }
 
     void RecoverFromFall()
@@ -773,6 +880,8 @@ public class PlayerCtrl : MonoBehaviour
         terrainY = y;
         jumpY = 0f;
         vy = 0f;
+        horizontalVelocity = 0;
+        contactWallDirection = 0;
         grounded = true;
         climb = null;
         dropSegment = -1;
@@ -805,6 +914,7 @@ public class PlayerCtrl : MonoBehaviour
             if (climb != null)
             {
                 worldX = climb.x;
+                horizontalVelocity = 0;
                 grounded = false;
                 vy = 0f;
                 dropSegment = -1;      // 抓住绳梯 = 离开原来那条平台，忽略指针作废
@@ -932,6 +1042,7 @@ public class PlayerCtrl : MonoBehaviour
         if (TerrainNoFallThrough != null && TerrainNoFallThrough[segment]) return false;
         dropSegment = segment;
         grounded = false;
+        horizontalVelocity = 0;
         vy = -jumpSpeed * DownJumpRatio;   // 脱离支持时横向速度清 0：本帧不再推进 worldX
         jumpY = 0f;
         AudioManager.Play("Game/Jump", 0.7f, false);
@@ -1018,7 +1129,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         if(e!=null&&!e.dead&&(weapon.kind==WeaponKind.bow||weapon.kind==WeaponKind.crossbow))
             GetComponent<SkillSystem>()?.NativeBasicRangedHit(e,hit,dir);
-        if (e == null || e.dead || hit.Amount <= 0) return;
+        if (e == null || e.dead) return;
         e.TakeHit(hit, dir);
         HitFeel.Punch(1f);
     }
@@ -1027,7 +1138,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         if(b!=null&&!b.dead&&(weapon.kind==WeaponKind.bow||weapon.kind==WeaponKind.crossbow))
             GetComponent<SkillSystem>()?.NativeBasicRangedHit(b,hit,facing);
-        if (b == null || b.dead || hit.Amount <= 0) return;
+        if (b == null || b.dead) return;
         b.TakeHit(hit, facing);
         HitFeel.Punch(1f);
     }
@@ -1037,30 +1148,50 @@ public class PlayerCtrl : MonoBehaviour
         if (hp <= 0f || Time.unscaledTime < invulnUntil) return;
         RefreshAttributes();
         dmg = CombatRules.Incoming(dmg, Attributes, magic, attackerLevel, Random.value).Amount;
-        if (dmg <= 0) return;
-        hp = Mathf.Max(0f, hp - dmg);
-        invulnUntil = Time.unscaledTime + 0.5f;
-        if (IsClimbing) { climb = null; grabCooldown = 0.25f; vy = 0f; grounded = false; }
-        worldX += dir * 0.25f;
-        Fx.Flash(sr, new Color(1f, 0.35f, 0.35f));
-        if (vis != null)
+        if (dmg <= 0)
         {
-            // 受击反应是 alert（3 帧 x 300ms）。原版播完整段，但本地玩家受击后还要继续跑，
-            // 整段 900ms 的硬直会把走路动画摁住，所以压到 1.6 倍速（≈560ms，接近无敌窗）
-            vis.PlayOnce(hp <= 0f ? "die" : "hit", hp <= 0f ? 1f : 1.6f);
+            // Native -1500 timer approaches zero by +30 each tick; it blocks
+            // another contact, but does not set hit face/alert or apply an impulse.
+            invulnUntil = Time.unscaledTime + 1.5f;
+            DamageText.Miss(DamageAnchor, 1f, "violet");
+            return;
         }
-        HitFeel.Punch(0.6f);
-        // 玩家挨打是原版的蓝字（NoBlue），和打怪的红字区分开
-        DamageText.Show(new Vector3(FeetPos.x, FeetPos.y + 2.55f, 0f), dmg, "blue", 0.85f);
+        hp = Mathf.Max(0f, hp - dmg);
+        TickContactTint();
+        contactTintStarted = Time.unscaledTime;
+        contactTintActive = true;
+        invulnUntil = Time.unscaledTime + 1.5f;
+        BeginNativeAlert();
+        // Ordinary contact: 0x958686/0x958C94 -> 0x7A6353 -> 0x9B222A.
+        // Apply signed 270px/s impulses; native air/terrain integration determines distance.
+        if (IsClimbing) { climb = null; grabCooldown = 0.25f; }
+        grounded = false;
+        horizontalVelocity = ContactImpulse(horizontalVelocity, System.Math.Sign(dir) * 270);
+        vy = -(float)ContactImpulse(-vy * Art.PPU, -270) / Art.PPU;
+        vis?.ShowHitExpression();
+        if (vis != null && hp <= 0f) vis.PlayOnce("die");
+        DamageText.Show(DamageAnchor, dmg, "blue");
         if (hp <= 0f && GameLoop.I != null) GameLoop.I.OnPlayerDead();
     }
+
+    // 0x9B227F..0x9B239B preserves an already faster velocity in the impulse direction.
+    internal static double ContactImpulse(double velocity, double impulse)
+    {
+        if (impulse < 0 && velocity > impulse) velocity = System.Math.Max(impulse, velocity + impulse);
+        else if (impulse > 0 && velocity < impulse) velocity = System.Math.Min(impulse, velocity + impulse);
+        return System.Math.Truncate(velocity); // 0x9B239B..0x9B23DD, _ftol2.
+    }
+
+    // 0x92EC50 subtracts avatar layer height, without a hand-tuned scale/offset.
+    public Vector3 DamageAnchor => new Vector3(FeetPos.x,
+        FeetPos.y + (sr != null && sr.sprite != null ? sr.bounds.size.y : BodyHeight), 0);
 
     // Boss percent/fixed damage is authoritative: no defense roll or contact i-frame.
     public void TakeBossDamage(float value)
     {
         if (hp <= 0 || value <= 0) return;
         hp = Mathf.Max(0,hp-value);
-        DamageText.Show(new Vector3(FeetPos.x,FeetPos.y+2.55f,0),value,"blue",.85f);
+        DamageText.Show(DamageAnchor,value,"blue");
         if (hp <= 0 && GameLoop.I != null) GameLoop.I.OnPlayerDead();
     }
     public void DispelNativeBuffs()
@@ -1195,6 +1326,8 @@ public class PlayerCtrl : MonoBehaviour
         terrainY = groundY;
         jumpY = 0f;
         vy = 0f;
+        horizontalVelocity = 0;
+        contactWallDirection = 0;
         grounded = true;
         laneVis = lane;
         SyncTransform();
@@ -1202,6 +1335,9 @@ public class PlayerCtrl : MonoBehaviour
 
     public void ResetCombatState()
     {
+        alertUntil = 0;
+        contactTintActive = false;
+        if (sr != null) sr.color = Color.white;
         hp = hpMax; mp = mpMax;
         CancelRush();
         attackBonus = 0; attackBonusUntil = 0; partyGrindDefense=0;
@@ -1213,6 +1349,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         transform.position = new Vector3(worldX, terrainY + jumpY + DepthOffset, 0f);
         if (sr == null) return;
+        TickContactTint();
         sr.sortingOrder = SortingOrder;
         if (vis != null)
         {
@@ -1222,5 +1359,22 @@ public class PlayerCtrl : MonoBehaviour
         }
         var s = sr.transform.localScale;
         sr.transform.localScale = new Vector3(Mathf.Abs(s.x) * (facing >= 0 ? 1f : -1f), s.y, 1f);
+    }
+
+    // 0x93257A: positive immunity alternates FF808080/FFFFFFFF for two
+    // 30ms ticks each. Negative (Miss) immunity does not tint the avatar.
+    void TickContactTint()
+    {
+        if (!contactTintActive) return;
+        int ticks = Mathf.Clamp(Mathf.FloorToInt((Time.unscaledTime - contactTintStarted) / .03f), 0, 50);
+        if (Time.unscaledTime >= contactTintStarted + 1.5f)
+        {
+            contactTintPhase = (contactTintPhase + ticks) & 3;
+            contactTintActive = false;
+            if (sr != null) sr.color = Color.white;
+            return;
+        }
+        if (sr != null) sr.color = hp > 0 && ((contactTintPhase + ticks + 1) & 3) < 2
+            ? (Color)new Color32(128, 128, 128, 255) : Color.white;
     }
 }

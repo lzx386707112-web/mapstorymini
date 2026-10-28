@@ -32,7 +32,6 @@ public class EnemyUnit : MonoBehaviour
     public float aggroRange = 8f;
     int patrolDir = 1;
 
-    float atkTimer;
     float stunUntil;
     float knockV;
     float laneCooldown;
@@ -46,7 +45,6 @@ public class EnemyUnit : MonoBehaviour
     Transform hpRoot;
     float laneVis;
     float visHeight = 1.15f;
-    float bodyHalfW = 0.39f;    // 身体半宽（接触判定用，随当前动画帧同步）
 
     public int Lane => lane;
     public Dictionary<string, object> CombatStats
@@ -200,24 +198,14 @@ public class EnemyUnit : MonoBehaviour
             else
             {
                 faceDir = dx >= 0f ? 1 : -1;
-                atkTimer -= dt;
-                // 只有身体真的碰到才造成接触伤害；
-                // 只在 Y 方向错位重叠（比如站在高低不同的平台上）不扣血。
-                if (atkTimer <= 0f && TouchesPlayer(p))
-                {
-                    atkTimer = attackInterval;
-                    p.TakeDamage(NativeController != null ? NativeCombatData.Int(CombatStats,"PADamage") : damage,
-                        dx > 0f ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1));
-                    // 有 attack1 的怪（蘑菇王/僵尸菇王…）接触攻击时播自己的攻击动作，按 WZ 时延；
-                    // 没有的怪（蜗牛/猪…）原版就是纯接触伤害，不放动画。
-                    if (vis != null && Art.GetClip("mobs", artKey, "attack1") != null)
-                        vis.PlayOnce("atk", 1f);
-                    string mid = MobSoundId;
-                    if (mid != null && AudioManager.Has("Mob/" + mid + "/Attack1"))
-                        AudioManager.PlayAt("Mob/" + mid + "/Attack1", transform.position, 0.9f, 10f);
-                }
             }
         }
+
+        // 0x94B30B checks the player's contact immunity before testing mob overlap.
+        // Movement/attack cadence and mob action state do not schedule touch damage.
+        if (TouchesPlayer(p))
+            p.TakeDamage(NativeController != null ? NativeCombatData.Int(CombatStats,"PADamage") : damage,
+                p.worldX >= transform.position.x ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1));
 
         laneVis = Mathf.Lerp(laneVis, lane, 1f - Mathf.Exp(-12f * dt));
         if (vis != null)
@@ -282,7 +270,6 @@ public class EnemyUnit : MonoBehaviour
         {
             var b = body.bounds;
             visHeight = Mathf.Max(0.6f, b.size.y);
-            bodyHalfW = Mathf.Max(0.2f, b.size.x * 0.5f);
         }
     }
 
@@ -291,12 +278,23 @@ public class EnemyUnit : MonoBehaviour
     // 站在高低不同的平台上只要贴近就会被打——现在必须两个身体真的碰到。
     bool TouchesPlayer(PlayerCtrl p)
     {
-        const float eps = 0.03f;    // 贴边也算碰到的小容差
-        var pf = p.FeetPos;
-        bool xOverlap = Mathf.Abs(pf.x - transform.position.x) <= p.BodyHalfWidth + bodyHalfW;
-        bool yOverlap = pf.y + p.BodyHeight   >= transform.position.y + eps &&
-                        transform.position.y + visHeight >= pf.y + eps;
-        return xOverlap && yOverlap;
+        if (vis == null || vis.FrameUri == null) return false;
+        var frame = WzAssets.Node(vis.FrameUri);
+        var lt = frame?.Get("lt"); var rb = frame?.Get("rb");
+        if (lt == null || rb == null) return false;
+        int left = lt.X, right = rb.X;
+        if (body.flipX) { left = -rb.X; right = -lt.X; }
+        // CMobPool::FindHitMob 0x678E21: shrink the ordinary body rectangle,
+        // retaining at least a 2px center. Custom multi-rect mobs use another path.
+        int cx = (left + right) / 2, cy = (lt.Y + rb.Y) / 2;
+        left = System.Math.Min(left + 25, cx - 1);
+        right = System.Math.Max(right - 25, cx + 1);
+        int top = System.Math.Min(lt.Y + 30, cy - 1);
+        int bottom = System.Math.Max(rb.Y - 10, cy + 1);
+        var bounds = Rect.MinMaxRect(transform.position.x + left / Art.PPU,
+            transform.position.y - bottom / Art.PPU, transform.position.x + right / Art.PPU,
+            transform.position.y - top / Art.PPU);
+        return bounds.Overlaps(p.ContactBounds);
     }
 
     public void TakeDamage(float dmg, int fromDir)
@@ -313,7 +311,7 @@ public class EnemyUnit : MonoBehaviour
         ApplyHit(hit, fromDir, nativeHit, true);
     }
 
-    public void TakeReplayHit(DamageResult[] hits, int direction, bool magic, bool indexed, int interval, bool total = false)
+    public void TakeReplayHit(DamageResult[] hits, int direction, bool magic, bool indexed, int interval, bool total = false, int ordinarySkill = -1)
     {
         if (dead) return;
         var filtered = new DamageResult[hits.Length];
@@ -323,7 +321,7 @@ public class EnemyUnit : MonoBehaviour
             filtered[i] = NativeController != null ? NativeController.FilterHit(hits[i], magic) : hits[i];
             sum += filtered[i].Amount; critical |= filtered[i].Critical;
         }
-        NativeDamageLines.Show(this, filtered, indexed, interval, total);
+        NativeDamageLines.Show(this, filtered, indexed, interval, total, ordinarySkill);
         ApplyHit(new DamageResult((int)System.Math.Min(int.MaxValue, sum), critical), direction, true, false);
     }
 
@@ -340,7 +338,7 @@ public class EnemyUnit : MonoBehaviour
     void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber, bool react = true, int attackerId = 0)
     {
         if (dead) return;
-        if (hit.Amount <= 0) { if (showNumber && hit.Amount == 0) DamageText.Miss(HeadPos); return; }
+        if (hit.Amount <= 0) { if (showNumber && hit.Amount == 0) DamageText.Miss(DamageAnchor + Vector3.up * (15f / Art.PPU)); return; }
         bool crit = hit.Critical;
         float real = hit.Amount;
         if (fieldMode && (attackerId!=0 || GameSession.InGame))
@@ -360,13 +358,7 @@ public class EnemyUnit : MonoBehaviour
             int pushed = NativeCombatData.Int(CombatStats, "pushed", 1);
             knockV = fromDir * HitFeel.Knockback * 6.1f * Mathf.Clamp01(1f / Mathf.Max(1f, pushed));
             Fx.Flash(body, Color.white);
-            // hit1 是单帧长延迟（600ms）的「挨打定格」；原版只闪一下，所以按 0.3s 目标压着播
-            if (vis != null)
-            {
-                var clip = Art.GetClip("mobs", artKey, Art.Resolve("mobs", artKey, "hit", "hit1"));
-                float dur = clip != null ? clip.Duration : 0.6f;
-                vis.PlayOnce("hit", Mathf.Clamp(dur / 0.3f, 1f, 3f));
-            }
+            if (vis != null) vis.PlayOnce("hit");
             if (!nativeHit)
                 Fx.Burst(transform.position + Vector3.up * 0.7f, crit ? 0.6f : 0.45f,
                          new Color(1f, 0.9f, 0.5f, 0.9f));
@@ -377,7 +369,7 @@ public class EnemyUnit : MonoBehaviour
 
         }
 
-        if (showNumber) DamageText.Show(HeadPos, real, crit ? "cri" : "red", crit ? 1.08f : 1f);
+        if (showNumber) DamageText.Show(DamageAnchor + Vector3.up * (15f / Art.PPU), real, crit ? "cri" : "red");
         if (crit) HitFeel.Punch(1.35f);
 
         if (hp <= 0f) Die();

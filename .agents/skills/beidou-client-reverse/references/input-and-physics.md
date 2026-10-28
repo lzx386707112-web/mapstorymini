@@ -115,3 +115,55 @@ Unity `NativeCombinationChecks.Run` 已通过攻速2/6/10的逐帧时长、90ms�
   8 号无道具不显示 / 持有 5160000 后换成 `vomit`、改绑 1/2/3 后键位表无重复且按下能换脸。
 - 待核实：`0x451CF6` 的时长参数调用方一律传 `-1`，exe 里没定位到「5 秒回默认脸」的常量；
   当前 5 秒取自服务端 `FaceExpressionHandler` 的注释，属实现约定，不是已核实的客户端行为。
+
+## foothold 传送带 force（2026-10-28）
+
+二进制身份同 binary-and-tools.md 中 EXE SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`。
+
+- 地图1 `Map/Map/Map0/000000001.img/foothold`：14/15/16/20/21/25/30/38/41/42/48/50/54/55/56 共15段 `force=-100`，例如20段 (215,128)→(544,128)。低一层 y180 的普通地面没有 force。不是 obj 动画或服务端 NPC 脚本驱动。
+- `0xA44442` 读取字符串2972=`force`，默认0；`0xA44730..0xA44744` 转 double 乘 `0xAF14F0=0.01`，写入支持段属性+0x24（secured double）。因此原始-100→-1，0为普通地面。
+- 地面移动 `0x9B23F2`：movement+0x110 为支持段，其+0x28为属性；`0x9B2582` 解码属性+0x24。`0x9B2602` 无输入时 force×基础力；`0x9B26FA..0x9B2712` 用绝对 force 整数值×基础速度作为速度限制。对教程图-100，静止时最终向左125px/s。
+- `0x9B25AA..0x9B2600` / `0x9B26A5..0x9B26F8`：输入与 force 同向，倍率2×abs(int(force))；反向倍率0.2/abs(int(force))（2026-10-28继续核实常量0xAF1628为0.2，纠正首轮误记0.5）。教程-100，基础125时顺向上限250、逆向25px/s。基础速度见 `0x9B2187..0x9B21BD`，Map/Physics.img/walkSpeed=125。
+- 原端仍对目标速度做加速度/阻力积分（`0x9B2805`后）。本次不宣称该完整积分已还原：项目既有水平移动是直接速度模型，本次接入上述传送方向和速度倍率；起步/刹车过程与极端非整数 force 的原端语义仍有迁移缺口。
+
+迁移链：NativeMapView→FieldFoothold.force→Art.Stage.FootholdForces/GameLoop 或 FieldDirector.ApplyGeometry→PlayerCtrl.TerrainForces→StepMovement。两条现有原地图加载路径都按 foothold 同序传递；SetTerrain 清空/长度不符时清除旧力。FieldDirector 之前还漏传 forbidFallDown，现随同序属性一起传入。只对 grounded 当前 SupportSegment 生效，保留输入朝向/动作和原有 FollowGround/墙碰撞；不按场景贴图识别传送带。
+
+定向验证入口 `MovementChecks.Run`：地图1实际解析、30/60/120Hz静止传送、顺逆向、下层普通平台不受上层force影响、跳跃无地面force、重设地形后清除force。本次 Unity batchmode 实跑通过上述检查及原有绳梯、墙、斜坡、落地回归（退出码0，日志 `/tmp/mapledash-conveyor-check.log`）。Android实机手感尚未核对。
+
+### 原端积分迁移与独立对照（2026-10-28 后续）
+
+上节“直接速度模型”的迁移边界现已更新：`NativeMovementPhysics` 替换普通地面/传送带/斜坡和普通空中水平直接设速。不是以最终速度接近为验收标准。
+
+- `CLifeMoveParam` 构造 `0x4FE802..0x4FE97B`：+0x0C质量=100（0xAF29E0），+0x18/+0x24/+0x30=1，+0x3C滑坡阈值=.9（0xAF32D8），+0x48/+0x54/+0x60/+0x6C=1，+0x78/+0x84=0。用户移动参数持有者 `0x9448EE..0x944948` 创建此对象。
+- `Map/Physics.img` 基础参数：walkForce140000、walkSpeed125、walkDrag80000、slipForce60000、slipSpeed120、floatDrag1 100000、floatDrag2 10000、floatCoefficient .01、gravityAcc2000、fallSpeed670、jumpSpeed555、maxFriction2、minFriction.05。运行时从 IMG 读取，不按手机手感自调。
+- foothold属性 `drag`（字符串2971）同force乘.01，原值0不覆盖构造默认1。`0x9B2793..0x9B27DB` 把drag限制minFriction..maxFriction，小于1再乘.5；加速度是force/mass，地面静止阻力是drag×walkDrag/mass。速度超限先按阻力回落，再积分输入力；不得直接Clamp到目标速度。
+- 坡面 `0x9B2433..0x9B247A` 的正弦与符号参与 `1±sin²` 力修正；超过actor阈值.9进入slipForce/slipSpeed分支。`NativeMovementPhysics.Ground` 照此分支迁移。
+- `0x9B2B69..0x9B2BB7` 地面位移=(旧速度+新速度)×dt×.5；`0x9B3421..0x9B34BE` 空中x/y同为梯形积分。dt原端传入毫秒后乘常量0xAF0E10=.001。
+- 普通空中 `0x96C1D3` 分支→`0x9B2CCF..0x9B2EDE`：按键力=2×floatDrag2×方向，限制=walkSpeed/walkForce×floatDrag2；已有超出该小上限的速度保留，不硬截断。松键时竖速未达fallSpeed，水平阻力乘floatCoefficient（正常默认为1px/s²），达到fallSpeed则100px/s²。因此不能把松开摇杆当作空中横速清0。
+- 普通起跳 `0x9B1E43..0x9B1FFE` 保留地面横向速度；有输入时 `0xAF0D40=.8` 的起跳助推与方向/坡面上限比较，先加再限（不是任何跳跃横速都设125）。`0x9B1553/0x9B1646` 是地面切线和二维速度投影的转换入口。本地已接基础起跳助推、落地投影、墙/边界速度清理、下跳/换图/攀爬速度重置。
+
+独立验证工具 `tools/native_movement_oracle.py`：SHA白名单检查后用Unicorn执行原EXE地面`0x9B2402..0x9B2BB7`和普通空中`0x9B2C46..0x9B34C1`，仅替换secured数值读写、临时分配/释放和明确的普通移动状态入口，不替换积分算术。输出含签名、输入和原函数输出。fixture `tools/native-movement-oracle.json` 有945组（900地面/坡面/force/drag，45普通空中），`MovementChecks.CheckNativeOracle` 比较C#速度/位移，容差0.0001px或px/s，已实跑PASS（包括普通空中竖速校验，最终复核见本节末）。**这是受控参数的原函数对照，不是完整Windows进程/Android操作手感验收**。
+
+复现：`rtk proxy /tmp/mapledash-reverse-venv/bin/python tools/native_movement_oracle.py <BeiDou.exe> --output tools/native-movement-oracle.json`；依赖pefile、unicorn。Unity batchmode入口 `MovementChecks.CheckNativeOracle`。普通地面输入阈值映射到原端整数-1/0/1；手机摇杆采样与原Windows键盘事件时序仍是不同输入设备。
+
+剩余边界：游泳/飞行（独立native分支）、骑乘/特殊技能位移、完整角色/地图/状态属性倍率与原端碰撞分层/固定tick调度尚未全量迁移验证；不得将这945组通过宣称为全游戏所有移动状态1:1。Android实机输入延迟/帧呈现尚待对照。
+
+本次最终复核：独立Unity副本中 `MovementChecks.CheckNativeOracle` 945组全部PASS（含空中竖速，退出码0，`/tmp/native-physics-oracle-final.log`）；`MovementChecks.Run` 的传送带、起步/松键/跳跃惯性、绳梯与全部原图平台落地回归PASS（退出码0，`/tmp/native-movement-final.log`）。`NativeCombinationChecks.Run` 组合输入/下跳/逐帧攻速PASS（退出码0，`/tmp/native-combination-physics-final2.log`）；其中释放下键的预期由普通stand修正为攻击后五秒alert，未改变运行时动作逻辑。当前源码dotnet编译0 warning/0 error，diff空白检查通过。持久复现入口为上述Editor方法与仓库内oracle脚本/fixture，临时日志仅为本次运行记录。
+
+## 台阶直角墙脚漏地（2026-10-28）
+
+### 原端证据与边界
+
+二进制身份同 binary-and-tools.md，EXE SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`。
+碰撞处理 `0x9B3BC8..0x9B3C58`：候选支持段在 edi，方向分量在 +0x30/+0x38，端点坐标 +0x0C/+0x10；以非零方向分量将碰撞位置换算为段内距离，经 `0x5393B6` 写回，并将距离限制到 0..段长度(+0x40)。碰撞位置落在支持段几何上，不是简单保留碰撞前的旧横坐标。
+复现：项目 `tools/inspect_beidou_client.py`，`--start 0x9B3BC8 --end 0x9B3C60`；忽略段条件仍见 `0x9B3B63..0x9B3BC5`。本次没有还原原端完整碰撞调度、受击速度或击退距离。
+
+### 项目缺陷与迁移
+
+旧 `StepMovement` 对竖直 foothold 命中设置 `nextX=worldX`，会把沿墙下降的角色留在墙线外；墙脚下层平台从墙线开始时，`FindLanding` 的严格 x 范围一直不覆盖该角色，最终掉到地图底部。`TakeDamage` 另有 `worldX += dir*0.25f`，受击位移绕过墙与支持段检测。
+
+`PlayerCtrl.MoveHorizontal` 复用走路的连续支持段与竖直墙判断，墙碰撞截在 `wall.x`；记录接触方向以处理“从墙线上继续向墙内移动”，反向可离墙，零位移保留接触方向。显式放置/复位清除接触；原地形与 IMG 不修改。本次最初将 `TakeDamage` 的 0.25 世界单位位移接入该求解器；工作区随后并行更新为原端接触冲量（见当前 `TakeDamage` 与其对应逆向记录），受击速度现经 `StepMovement` 调用同一墙/支持求解器，不再保留直接横向位移。
+
+回归入口 `MovementChecks.CheckStepCorners`：双向 30/60/120Hz 墙脚下落、墙线上起步/停步/反向离墙、步行不穿墙、跳上台阶和实际 `TakeDamage`；原有突进、绳梯检查；扫描资源全部地图的竖直段下端点接地情况。每条原地图墙脚调用实际 `MoveHorizontal`、`FindLanding` 和 `StepMovement`，验证接触与后续下落，而非仅重复几何公式。
+本次 Unity batchmode 实跑 PASS：6337 张地图、16652 个连接下层平台的竖直墙脚，双侧共 33304 个起点均调用实际移动子步接住平台；双向 30/60/120Hz 接触/停步/反向、真实受击、跳台、突进及绳梯检查也通过。相交平台可能高于墙脚，因此判定是落在起始脚底下方的有效支持，不强制吸到墙脚最低点。日志 `/tmp/mapledash-step-corners-final.log`，可由上述持久入口重跑。不代表所有地图路线、不同层相交选择、Android 实机和原端完整物理已验收。
+旧 `CheckAllFootholds` 全段静止半秒后必须留在原高度的检查，在当前工作区悬崖斜段 `(-22.93,13.05)→(-22.05,13.88)` 失败；该检查没有隔离落地后斜坡运动，未作为本次墙脚通过依据，后续需单独区分漏接与落地后滑移。

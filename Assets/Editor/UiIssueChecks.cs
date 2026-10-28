@@ -248,16 +248,17 @@ public static class UiIssueChecks
             bool hasStarter = false;
             foreach (var a in alerts)
             {
+                if (a.welcome) { Log("    截图还原入口：" + a.Title); continue; }
                 bool here = map.npcs.Exists(n => n.id == a.npcId);
-                if (!here && !a.quest.autoComplete) offMap++;
+                if (!a.quest.autoStart || (!a.complete && a.quest.autoAccept)) offMap++;
                 if (a.quest.id == 1031) hasStarter = true;
                 Log("    q" + a.quest.id + " [" + Trim(a.quest.name) + "]  npc/" + a.npcId + " "
                     + WzNames.Npc(a.npcId) + "  " + (a.complete ? "可完成" : "可开始")
                     + "  autoStart=" + a.quest.autoStart + " autoComplete=" + a.quest.autoComplete
                     + "  NPC在本地图=" + here);
             }
-            Check(offMap == 0, "灯泡不列别处 NPC 的任务", "越界 " + offMap + " 项");
-            Check(hasStarter, "灯泡列出出生地图的新手任务 1031（希娜）", "alerts.Count=" + alerts.Count);
+            Check(offMap == 0, "灯泡按原端 autoStart / autoAccept 筛选", "不符合 " + offMap + " 项");
+            Check(!hasStarter, "普通 NPC 任务 1031 不混入远程灯泡", "alerts.Count=" + alerts.Count);
 
             // 出现动画：QuestAlert 有 Appear（一次性冒出）和 Default（常驻呼吸）两段
             var appearFrames = WzAssets.Frames(WzAssets.Node(NpcField.AlertAppear));

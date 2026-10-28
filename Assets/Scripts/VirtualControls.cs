@@ -465,24 +465,67 @@ public static class VirtualControls
         SaveActive();
     }
 
-    // —————————— 默认布局（第一次进入游戏就能玩；尺寸按拇指触控下限放大） ——————————
+    // —————————— 默认布局（按用户参考图的 1920×886 坐标归一化） ——————————
     static void BuildDefaultLayout()
     {
-        // 左摇杆（移动/换层/爬绳）
-        var stick = new VCElem { type = VCElemType.Stick, cx = 0.085f, cy = 0.70f, size = 0.40f, opacity = 0.6f };
-        ApplyStickSkin(stick);
-        elems.Add(stick);
-        // 右侧四格技能（对准快捷格 1-4，点了等于按对应键）
-        elems.Add(new VCElem { type = VCElemType.Button, action = GameAction.Slot1, cx = 0.630f, cy = 0.76f, size = 0.19f, opacity = 0.75f });
-        elems.Add(new VCElem { type = VCElemType.Button, action = GameAction.Slot2, cx = 0.755f, cy = 0.665f, size = 0.19f, opacity = 0.75f });
-        elems.Add(new VCElem { type = VCElemType.Button, action = GameAction.Slot3, cx = 0.880f, cy = 0.57f, size = 0.19f, opacity = 0.75f });
-        elems.Add(new VCElem { type = VCElemType.Button, action = GameAction.Slot4, cx = 0.945f, cy = 0.40f, size = 0.19f, opacity = 0.75f });
-        // 跳跃（Alt 的屏上替身）
-        elems.Add(new VCElem { type = VCElemType.Button, action = GameAction.Jump, cx = 0.545f, cy = 0.60f, size = 0.17f, opacity = 0.75f });
-        // 拾取（Z）
-        elems.Add(new VCElem { type = VCElemType.Button, action = GameAction.Pickup, cx = 0.42f, cy = 0.72f, size = 0.15f, opacity = 0.65f });
-        // 统一套扁平皮肤：深色圆角方 + 极淡描边 + 无光环，整体退到画面后面
+        elems.Add(new VCElem
+        {
+            type = VCElemType.Stick,
+            cx = 192f / 1920f, cy = 669f / 886f, size = 278f / 886f,
+            opacity = 0.6f,
+        });
+
+        // 左上数字区：1 2 3 Tab / 4 5 6 0 / 7 8 9。
+        AddDefaultKey(KeyCode.Alpha1, 106f, 82f);
+        AddDefaultKey(KeyCode.Alpha2, 231f, 82f);
+        AddDefaultKey(KeyCode.Alpha3, 351f, 82f);
+        AddDefaultKey(KeyCode.Tab, 491f, 82f);
+        AddDefaultKey(KeyCode.Alpha4, 106f, 227f);
+        AddDefaultKey(KeyCode.Alpha5, 231f, 230f);
+        AddDefaultKey(KeyCode.Alpha6, 351f, 232f);
+        AddDefaultKey(KeyCode.Alpha0, 491f, 242f);
+        AddDefaultKey(KeyCode.Alpha7, 106f, 347f);
+        AddDefaultKey(KeyCode.Alpha8, 231f, 347f);
+        AddDefaultKey(KeyCode.Alpha9, 351f, 347f);
+
+        // 右上字母区：Q P Y / K E I / A S D。
+        AddDefaultKey(KeyCode.Q, 1569f, 128f);
+        AddDefaultKey(KeyCode.P, 1713f, 128f);
+        AddDefaultKey(KeyCode.Y, 1849f, 128f);
+        AddDefaultKey(KeyCode.K, 1569f, 242f);
+        AddDefaultKey(KeyCode.E, 1713f, 242f);
+        AddDefaultKey(KeyCode.I, 1849f, 242f);
+        AddDefaultKey(KeyCode.A, 1569f, 372f);
+        AddDefaultKey(KeyCode.S, 1713f, 372f);
+        AddDefaultKey(KeyCode.D, 1849f, 372f);
+
+        // 右下操作区，大键保留参考图中的尺寸差异。
+        AddDefaultKey(KeyCode.Z, 1510f, 587f, 140f);
+        AddDefaultKey(KeyCode.C, 1673f, 582f, 140f);
+        AddDefaultKey(KeyCode.V, 1840f, 582f, 150f);
+        AddDefaultKey(KeyCode.X, 1608f, 744f, 140f);
+        AddDefaultKey(KeyCode.Space, 1785f, 750f, 162f, "Space");
+
+        // 底部功能区；「删」绑定 Delete，不是退格键。
+        AddDefaultKey(KeyCode.F, 530f, 796f);
+        AddDefaultKey(KeyCode.W, 662f, 796f);
+        AddDefaultKey(KeyCode.F2, 812f, 796f);
+        AddDefaultKey(KeyCode.F3, 944f, 796f);
+        AddDefaultKey(KeyCode.Delete, 1076f, 796f, 104f, "删");
+        AddDefaultKey(KeyCode.Return, 1219f, 796f, 104f, "Enter");
+        AddDefaultKey(KeyCode.Escape, 1355f, 796f, 104f, "Esc");
+
         foreach (var e in elems) ApplyFlatSkin(e);
+    }
+
+    static void AddDefaultKey(KeyCode key, float x, float y, float size = 104f, string label = "")
+    {
+        elems.Add(new VCElem
+        {
+            type = VCElemType.Button, key = key,
+            cx = x / 1920f, cy = y / 886f, size = size / 886f,
+            opacity = 0.75f, label = label,
+        });
     }
 
     // —————————— 绑定目录（编辑器给按钮选动作用） ——————————
@@ -716,7 +759,8 @@ public static class VirtualControls
     {
         // 后画的优先（列表尾部优先），与绘制顺序一致
         for (int i = elems.Count - 1; i >= 0; i--)
-            if (elems[i].Hit(p)) return elems[i];
+            if ((!NpcSession.Blocking || elems[i].type == VCElemType.Button &&
+                EffectiveAction(elems[i]) == GameAction.NpcTalk) && elems[i].Hit(p)) return elems[i];
         return null;
     }
 

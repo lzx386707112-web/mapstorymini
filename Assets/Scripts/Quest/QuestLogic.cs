@@ -46,6 +46,19 @@ public static class QuestLogic
     public static bool CanStart(QuestDef q, int npcId) { string _; return CanStart(q, npcId, out _); }
     public static bool CanComplete(QuestDef q, int npcId) { string _; return CanComplete(q, npcId, out _); }
 
+    // BeiDou.exe 7213E1..721407: the notification client checks both date bounds.
+    // The server deliberately exempts old event end dates; that request validation
+    // must not make expired events appear in a newly-created character's bulb.
+    public static bool NotificationDateAvailable(QuestRequirement requirement, DateTime now)
+    {
+        return (!TryNotificationDate(requirement.startDate, out var start) || now >= start) &&
+               (!TryNotificationDate(requirement.endDate, out var end) || now <= end);
+    }
+
+    static bool TryNotificationDate(string text, out DateTime date)
+        => DateTime.TryParseExact(text, "yyyyMMddHH", System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out date);
+
     static bool Check(QuestRequirement r, int questId, int npcId, out string reason)
     {
         reason = null;

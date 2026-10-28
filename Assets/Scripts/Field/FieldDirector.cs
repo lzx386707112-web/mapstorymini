@@ -127,8 +127,10 @@ public sealed class FieldDirector : MonoBehaviour
         var player = GameLoop.I != null ? GameLoop.I.player : null;
         player?.GetComponent<SkillSystem>()?.CancelActions();
 
+        bool appearanceChanged = (Map != null && Map.fieldType == 82) != (map.fieldType == 82);
         Map = map;
         NpcField.Bind(map);
+        if (appearanceChanged) player?.RefreshFieldAppearance();
         ApplyGeometry(map);
         PlacePlayer(map, spawnPortalName, spawnPortalIndex);
 
@@ -155,15 +157,21 @@ public sealed class FieldDirector : MonoBehaviour
     void ApplyGeometry(FieldMap map)
     {
         var terrain = new List<Vector4>();
+        var forces = new List<int>();
+        var drag = new List<int>();
+        var noFallThrough = new List<bool>();
         float minX = float.MaxValue, maxX = float.MinValue;
         foreach (var f in map.footholds)
         {
             float x1 = map.WorldX(f.x1), y1 = map.WorldY(f.y1);
             float x2 = map.WorldX(f.x2), y2 = map.WorldY(f.y2);
             terrain.Add(new Vector4(x1, y1, x2, y2));
+            forces.Add(f.force);
+            drag.Add(f.drag);
+            noFallThrough.Add(f.forbidFallDown != 0);
             minX = Mathf.Min(minX, x1); maxX = Mathf.Max(maxX, x2);
         }
-        PlayerCtrl.SetTerrain(terrain.Count > 0 ? terrain : null);
+        PlayerCtrl.SetTerrain(terrain.Count > 0 ? terrain : null, noFallThrough, forces, drag);
 
         var climbs = new List<Art.ClimbLine>();
         foreach (var r in map.ropes)

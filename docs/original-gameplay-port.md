@@ -424,7 +424,7 @@
 
 - `item` 条件里 `count <= 0` 表示「必须**没有**这件道具」（不是「数量不限」）
 - `mob` 进度用怪物 id 当键，`killMob` 只累加已接取且条件里确实列了这只怪的任务
-- `infoEx` 用 `info<i>` 字符串严格相等比较（源端就是字符串比）
+- 源服务端 `InfoExRequirement.check` 当前恒 true；原客户端另按 `infoex/value/cond` 与 `infoNumber` 检查通知，不能把两者混为严格字符串比较（详见逆向 skill 的 NPC 对话记录）
 - `interval` 是分钟，配 `questCompletedAt` 时间戳判断冷却
 - `ItemAction` 的 `prop`：缺省 -1 = 必发；`>=0` 参与加权随机
 

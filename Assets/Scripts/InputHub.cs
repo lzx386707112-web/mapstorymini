@@ -660,7 +660,11 @@ public class InputBridge : MonoBehaviour
 
         // 屏上虚拟按键（摇杆/十字/按钮）：先把触摸翻译成注入，
         // 后面读 AxisX/Pressed 时已经包含虚拟键的量。
-        VirtualControls.Tick(playing && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible);
+        bool dialogInput = NpcSession.Blocking && !GameSideMenu.Blocking && !BottomBar.ChatFocused;
+        VirtualControls.Tick((playing || dialogInput) && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible);
+        // 在打开 NPC 的分派之前处理已存在的会话，同一按下不能打开又翻页。
+        if (dialogInput && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible &&
+            InputHub.Pressed(GameAction.NpcTalk)) NpcDialogUi.ContinueWithTalkKey();
         InputHub.TickRepeat(Time.unscaledTime, playing && Application.isFocused && Time.timeScale > 0 &&
             !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible);
 

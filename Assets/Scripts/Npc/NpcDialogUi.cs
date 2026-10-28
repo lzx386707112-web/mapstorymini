@@ -9,7 +9,21 @@ public static class NpcDialogUi
     const string BtnRoot = "UI/UIWindow.img/UtilDlgEx/";
 
     static float scrollY;
-    static GUIStyle title, hint;
+    static GUIStyle title, hint, inputStyle;
+    static int talkKeyFrame = -1;
+    public static void ConsumeTalkKeyFrame() { talkKeyFrame = Time.frameCount; }
+
+    public static bool ContinueWithTalkKey()
+    {
+        if (talkKeyFrame == Time.frameCount) return false;
+        talkKeyFrame = Time.frameCount;
+        var session = NpcSession.Active;
+        if (session == null || !session.Dialog.Visible) return false;
+        var mode = session.Dialog.Mode;
+        if (mode != NpcDialogMode.Next && mode != NpcDialogMode.NextPrev && mode != NpcDialogMode.Ok) return false;
+        session.Reply(1);
+        return true;
+    }
 
     public static void Draw()
     {
@@ -116,7 +130,9 @@ public static class NpcDialogUi
             var gui = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);
             if (gui.x < -40f || gui.x > UiKit.W + 40f || gui.y < -40f || gui.y > UiKit.H + 40f) continue;
 
-            DrawQuestIcon("UI/UIWindow.img/QuestIcon/" + (marker.complete ? "2" : "0"), gui);
+            string art = "UI/UIWindow.img/QuestIcon/" + (marker.complete ? "2" : "0");
+            DrawQuestIcon(art, gui);
+            if (ClickQuestIcon(QuestIconRect(art, gui, 0f))) NpcField.Interact(npc.id);
         }
     }
 
@@ -173,6 +189,15 @@ public static class NpcDialogUi
         NpcSession.Active == null && GameLoop.I != null && !GameLoop.I.gameOver &&
         GameLoop.I.field != null && !PlayerCtrl.InputLocked;
 
+    // 任务图标单击打开；先消费抬起事件，避免同一次点击继续操作刚打开的对话框。
+    static bool ClickQuestIcon(Rect rect)
+    {
+        if (Event.current.type != EventType.Repaint || !Pointer.Clicked || !CanClickField || !rect.Contains(Pointer.Pos))
+            return false;
+        Pointer.ConsumeClick();
+        return true;
+    }
+
     static void HandleNpcClick()
     {
         if (Event.current.type != EventType.Repaint || !Pointer.DoubleClicked || !CanClickField) return;
@@ -194,11 +219,7 @@ public static class NpcDialogUi
         var anchor = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);
         DrawQuestIcon(art, anchor, elapsed);
         var rect = QuestIconRect(NpcField.AlertDefault, anchor, 0f);   // 恒定第 0 帧，热区不抖
-        if (Event.current.type == EventType.Repaint && Pointer.Clicked && CanClickField && rect.Contains(Pointer.Pos))
-        {
-            Pointer.ConsumeClick();
-            NpcField.ShowQuestAlerts();
-        }
+        if (ClickQuestIcon(rect)) NpcField.ShowQuestAlerts();
     }
 
     // ——————————————— 对话框 ———————————————
@@ -209,44 +230,49 @@ public static class NpcDialogUi
         var e = Event.current;
         if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
         { session.Cancel(); e.Use(); return; }
-        if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter || e.keyCode == KeyMap.Of(GameAction.NpcTalk)) &&
+        if (e.type == EventType.KeyDown && e.keyCode != KeyCode.None && e.keyCode == KeyMap.Of(GameAction.NpcTalk))
+        { ContinueWithTalkKey(); e.Use(); return; }
+        if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter) &&
             (session.Dialog.Mode == NpcDialogMode.Next || session.Dialog.Mode == NpcDialogMode.NextPrev || session.Dialog.Mode == NpcDialogMode.Ok))
         { session.Reply(1); e.Use(); return; }
 
-        float w = Mathf.Min(529f, UiKit.W - 20f);          // 原端窗口固定 529 宽
+        float w = 529f;
         var content = session.Dialog.Content;
-        float contentH = DialogFlow.ContentHeight(content, w);
-        // 窗口高度跟正文走（原端也是这么自适应），超过一屏才滚动
-        float h = Mathf.Clamp(DialogFlow.PaperY + 8f + contentH + 8f + DialogFlow.PaperBottom,
-                              220f, UiKit.H - BottomBar.Height - 16f);
+        float reservedHeight = session.Dialog.Mode == NpcDialogMode.Simple ? 24f :
+            session.Dialog.Mode == NpcDialogMode.Next || session.Dialog.Mode == NpcDialogMode.Prev || session.Dialog.Mode == NpcDialogMode.NextPrev ? 18f : 0f;
+        bool input = session.Dialog.Mode == NpcDialogMode.GetText || session.Dialog.Mode == NpcDialogMode.GetNumber;
+        float contentH = DialogFlow.ContentHeight(content, w, input) + reservedHeight;
+        float h = (input ? Mathf.Max(120f, contentH) : DialogFlow.BodyHeight(contentH)) + 86f;
         var rect = new Rect((UiKit.W - w) * .5f, (UiKit.H - h) * .5f, w, h);
         NativeUi.DialogPanel(rect);
-        DrawPortrait(session.NpcId, rect);
+        DrawPortrait(session.NpcId, rect, session.SpeakerName);
 
         var closeSize = BtnSize("BtClose");
-        if (NativeUi.Button(new Rect(rect.x + 10f, rect.yMax - 27f, closeSize.x, closeSize.y), BtnRoot + "BtClose"))
+        if (NativeUi.Button(new Rect(rect.x + 9f, rect.yMax - 26f, closeSize.x, closeSize.y), BtnRoot + "BtClose"))
         { session.Cancel(); return; }
 
-        int picked = DialogFlow.DrawPane(rect, content, ref scrollY);
+        int picked = DialogFlow.DrawPane(rect, content, ref scrollY, reservedHeight, input);
         if (picked >= 0) { session.Reply(1, picked); return; }
 
-        // 底部按钮：原端放在 s 的蓝灰底板上（窗口底往上 30..6 行）
-        float bx = rect.xMax - 18f;
-        float by = rect.yMax - 27f;
+        // 翻页按钮在 h-77 的纸面内，其余按钮在 h-26 的底栏。
+        float bx = rect.xMax - 8f;
+        float by = rect.yMax - 26f;
+        float pageY = rect.yMax - 77f;
+        float pageRight = rect.xMax - 32f - (DialogFlow.NeedsScroll(contentH) ? 8f : 0f);
 
         switch (session.Dialog.Mode)
         {
             case NpcDialogMode.Next:
-                if (Button(ref bx, by, "BtNext")) session.Reply(1);
+                if (Button(ref pageRight, pageY, "BtNext")) session.Reply(1);
                 break;
 
             case NpcDialogMode.Prev:
-                if (Button(ref bx, by, "BtPrev")) session.Reply(0);
+                if (PageButton(rect, contentH, "BtPrev", 122f)) session.Reply(0);
                 break;
 
             case NpcDialogMode.NextPrev:
-                if (Button(ref bx, by, "BtNext")) session.Reply(1);
-                if (Button(ref bx, by, "BtPrev")) session.Reply(0);
+                if (Button(ref pageRight, pageY, "BtNext")) session.Reply(1);
+                if (PageButton(rect, contentH, "BtPrev", 122f)) session.Reply(0);
                 break;
 
             case NpcDialogMode.Ok:
@@ -254,31 +280,26 @@ public static class NpcDialogUi
                 break;
 
             case NpcDialogMode.YesNo:
-                if (Button(ref bx, by, "BtNo")) session.Reply(0);
-                if (Button(ref bx, by, "BtYes")) session.Reply(1);
+                if (FooterButton(rect, "BtNo", 54f)) session.Reply(0);
+                if (FooterButton(rect, "BtYes", 108f)) session.Reply(1);
                 break;
 
             case NpcDialogMode.AcceptDecline:
-                if (Button(ref bx, by, "BtQNo")) session.Reply(0);
-                if (Button(ref bx, by, "BtQYes")) session.Reply(1);
+                if (FooterButton(rect, "BtQNo", 65f)) session.Reply(0);
+                if (FooterButton(rect, "BtQYes", 130f)) session.Reply(1);
                 break;
 
             case NpcDialogMode.GetText:
             case NpcDialogMode.GetNumber:
-                DrawInput(session, rect, by);
+                DrawInput(session, rect, contentH);
                 break;
 
             case NpcDialogMode.Simple:
-                if (session.Dialog.IsMenu && Button(ref bx, by, "BtNext"))
-                {
-                    foreach (var selection in content.Selections)
-                        if (selection.HeaderArt == null) { session.Reply(1, selection.Index); break; }
-                }
                 break;
         }
     }
 
-    static void DrawPortrait(int npcId, Rect rect)
+    static void DrawPortrait(int npcId, Rect rect, string speakerName = null)
     {
         if (npcId <= 0) return;
         int speakerId = npcId;
@@ -290,7 +311,19 @@ public static class NpcDialogUi
             npc = WzAssets.FileRoot("Npc/" + npcId.ToString("D7") + ".img");
         }
         var frames = WzAssets.Frames(npc.Get("stand"));
-        float feet = rect.y + DialogFlow.PaperY + (rect.height - DialogFlow.PaperY - DialogFlow.PaperBottom) * .5f;
+        float minX = 0f, minY = 0f, maxX = 0f, maxY = 0f;
+        bool first = true;
+        foreach (var frame in frames)
+        {
+            var texture = WzAssets.Texture(frame);
+            var origin = WzAssets.Origin(frame);
+            if (texture == null) continue;
+            if (first) { minX = -origin.x; minY = -origin.y; maxX = texture.width - origin.x; maxY = texture.height - origin.y; first = false; }
+            else { minX = Mathf.Min(minX, -origin.x); minY = Mathf.Min(minY, -origin.y);
+                maxX = Mathf.Max(maxX, texture.width - origin.x); maxY = Mathf.Max(maxY, texture.height - origin.y); }
+        }
+        float spriteH = maxY - minY, groupH = spriteH + 23f, bodyH = rect.height - 86f;
+        float groupTop = groupH <= bodyH ? 28f + (int)((bodyH - groupH) / 2f) : rect.height - groupH - 62f;
         if (frames.Count > 0)
         {
             float total = 0;
@@ -305,34 +338,46 @@ public static class NpcDialogUi
             }
             var tex = WzAssets.Texture(current);
             var origin = WzAssets.Origin(current);
-            GUI.DrawTexture(new Rect(rect.x + 78f - origin.x, feet - origin.y, tex.width, tex.height), tex);
+            GUI.DrawTexture(new Rect(rect.x + 80f - (minX + maxX) * .5f - origin.x, rect.y + groupTop + 7f - minY - origin.y, tex.width, tex.height), tex);
         }
         var bar = Art.Tex("wz://" + BtnRoot + "bar");
-        var nameRect = new Rect(rect.x + 18f, feet + 2, 121, 19);
+        var nameRect = new Rect(rect.x + 20f, rect.y + groupTop + spriteH + 3f, 121, 19);
         GUI.DrawTexture(nameRect, bar);
         title.fontSize = 12;
         title.alignment = TextAnchor.MiddleCenter;
         title.normal.textColor = Color.white;
-        GUI.Label(nameRect, WzNames.Npc(speakerId), title);
+        GUI.Label(nameRect, speakerName ?? WzNames.Npc(speakerId), title);
     }
 
-    static void DrawInput(NpcSession session, Rect rect, float by)
+    static void DrawInput(NpcSession session, Rect rect, float contentH)
     {
-        var inputRect = new Rect(rect.x + 160f, by - 2f, rect.width - 250f, 24f);
+        // 9A83F6: native edit control is below the text, inside an 18px black/white frame.
+        float textY = 28f + (int)((rect.height - 86f - contentH - 20f) / 2f);
+        float top = rect.y + textY + contentH;
+        UiKit.Fill(new Rect(rect.x + 156f, top + 2f, rect.width - 311f, 18f), Color.black);
+        UiKit.Fill(new Rect(rect.x + 157f, top + 3f, rect.width - 313f, 16f), Color.white);
+        var inputRect = new Rect(rect.x + 159f, top + 5f, rect.width - 316f, 14f);
+        if (inputStyle == null)
+        {
+            inputStyle = new GUIStyle { font = UiKit.Font, fontSize = 12, alignment = TextAnchor.UpperLeft,
+                padding = new RectOffset(), margin = new RectOffset(), clipping = TextClipping.Clip };
+            inputStyle.normal.textColor = Color.black;
+        }
         GUI.SetNextControlName("npcInput");
         string value;
         if (session.Dialog.Mode == NpcDialogMode.GetNumber)
         {
-            value = GUI.TextField(inputRect, session.Dialog.Input);
+            value = GUI.TextField(inputRect, session.Dialog.Input, inputStyle);
             value = FilterDigits(value);
         }
-        else value = GUI.TextField(inputRect, session.Dialog.Input, 120);
+        else value = GUI.TextField(inputRect, session.Dialog.Input, 120, inputStyle);
 
         session.Dialog.Input = value;
         var e = Event.current;
         bool enter = e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter);
 
-        var okRect = new Rect(rect.xMax - 70f, by - 2f, 44f, 18f);
+        var okSize = BtnSize("BtOK");
+        var okRect = new Rect(rect.xMax - 54f, rect.yMax - 26f, okSize.x, okSize.y);
         if (NativeUi.Button(okRect, BtnRoot + "BtOK") || enter)
         {
             int selection = -1;
@@ -350,6 +395,19 @@ public static class NpcDialogUi
         for (int i = 0; i < s.Length && digits.Length < 11; i++)
             if (char.IsDigit(s[i]) || (i == 0 && s[i] == '-')) digits += s[i];
         return digits;
+    }
+
+    static bool FooterButton(Rect window, string node, float inset)
+    {
+        var size = BtnSize(node);
+        return NativeUi.Button(new Rect(window.xMax - inset, window.yMax - 26f, size.x, size.y), BtnRoot + node);
+    }
+
+    static bool PageButton(Rect window, float contentH, string node, float inset)
+    {
+        var size = BtnSize(node);
+        return NativeUi.Button(new Rect(window.xMax - 10f - inset - (DialogFlow.NeedsScroll(contentH) ? 8f : 0f),
+            window.yMax - 77f, size.x, size.y), BtnRoot + node);
     }
 
     // 右对齐排按钮：每次往左挪
@@ -370,7 +428,7 @@ public static class NpcDialogUi
     static void EnsureStyles()
     {
         if (title != null) return;
-        title = new GUIStyle { fontSize = 15, fontStyle = FontStyle.Bold };
+        title = new GUIStyle { font = UiKit.Font, fontSize = 12 };
         hint = new GUIStyle { fontSize = 11, alignment = TextAnchor.MiddleCenter };
     }
 

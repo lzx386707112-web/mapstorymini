@@ -544,3 +544,40 @@ CREATE TABLE command_info (
     clazz        TEXT NOT NULL,
     default_level INTEGER NOT NULL DEFAULT 0
 );
+
+-- 假人档案：对齐联机的「账号表」。
+-- 联机里每个玩家账号唯一，所以别人看到他永远是同一张脸、同一个名字；假人现在照这个来：
+-- 几百条档案一次性预置好，之后只读不改，同一个 id 永远同一套外观 + 同一个名字。
+-- template 指向 BotAppearanceTemplates 的模板下标 —— 外观模板被同模板假人共享，
+-- 纸娃娃纹理才能一份多用（这才是联机客户端同屏几十人也不爆显存的原因）。
+-- map_id 是「档案归属地图」：0 表示自由分配，>0 表示这只只会出现在该图。
+CREATE TABLE bot_profile (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    template     INTEGER NOT NULL DEFAULT 0,
+    map_id       INTEGER NOT NULL DEFAULT 0,
+    channel      INTEGER NOT NULL DEFAULT 1,
+    bound        INTEGER NOT NULL DEFAULT 0,
+    enabled      INTEGER NOT NULL DEFAULT 1
+);
+
+-- 钓鱼系统物品配置表 ← 源端 V1.9.9__insert_fishing_items.sql + V2.0.2__update_fishing_items.sql。
+-- 源端 Fishing.getItemsByType(type) 就是 `SELECT item_id FROM fishing_items WHERE item_type = ?`
+-- （Fishing.java:153）。npc/9330045.js 在脚本顶层就要这 6 类清单，表不在 → 整个 NPC 打不开。
+-- 后续 V2.1.101/102/105 的清理只删武器 / 饰品区间，没有一条命中这里的 item_id。
+CREATE TABLE fishing_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_type   INTEGER NOT NULL,
+    item_id     INTEGER NOT NULL,
+    create_time TEXT,
+    update_time TEXT
+);
+INSERT INTO fishing_items (item_type, item_id) VALUES
+(1, 4031627), (1, 4031628), (1, 4031630), (1, 4031631),
+(2, 4031633), (2, 4031637), (2, 4031641), (2, 4031645),
+(3, 4031634), (3, 4031638), (3, 4031642), (3, 4031646),
+(4, 4031635), (4, 4031639), (4, 4031643), (4, 4031647),
+(5, 4031636), (5, 4031640), (5, 4031644), (5, 4031648),
+(5, 1112752), (5, 1113149), (5, 1113162), (5, 1113227), (5, 1113235),
+(6, 4031629), (6, 4031632),
+(6, 1113096), (6, 1113187), (6, 1113191), (6, 1113211);

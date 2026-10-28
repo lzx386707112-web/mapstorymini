@@ -14,6 +14,9 @@ public static class CharFactory
     public const int JobGroupAdventurer = 1;
     public const int JobGroupAran = 2;
 
+    public const int MapBeidouBeginner = 4;      // MapId.BEIDOU_BEGINNER
+    public const int MapAranTutorialStart = 914000000; // MapId.ARAN_TUTORIAL_START
+    public const int ItemLegendsGuide = 4161048; // ItemId.LEGENDS_GUIDE
     public const int MapMushroomTown = 10000;      // MapId.MUSHROOM_TOWN
     public const int MapStartingNoblesse = 130030000; // MapId.STARTING_MAP_NOBLESSE
     public const int ItemBeginnersGuide = 4161001; // ItemId.BEGINNERS_GUIDE
@@ -116,6 +119,8 @@ public static class CharFactory
 
         // 4) 初始数值（Character.getDefault）
         bool cygnus = job == JobGroupCygnus;
+        bool aran = job == JobGroupAran;
+        int beginnerMap = GameConfigDao.GetBool(db, "use_beidou_beginner_map", false) ? MapBeidouBeginner : MapMushroomTown;
         var rec = new CharRecord
         {
             accountid = accountId,
@@ -125,13 +130,13 @@ public static class CharFactory
             exp = 0,
             str = 12, dex = 5, int_ = 4, luk = 4,
             hp = 50, maxhp = 50, mp = 5, maxmp = 5,
-            job = cygnus ? 1000 : 0,             // NOBLESSE / BEGINNER
+            job = cygnus ? 1000 : aran ? 2000 : 0, // NOBLESSE / LEGEND / BEGINNER
             skincolor = skinColor,
             gender = gender,
             hair = hair + hairColor,             // 源端把发色加进发型 id
             face = face,
             ap = 0,
-            map = cygnus ? MapStartingNoblesse : MapMushroomTown,
+            map = cygnus ? MapStartingNoblesse : aran ? MapAranTutorialStart : beginnerMap,
             spawnpoint = 0,
             equipslots = 24, useslots = 24, setupslots = 24, etcslots = 24,
             fishLevel = 1,
@@ -151,7 +156,7 @@ public static class CharFactory
             InventoryDao.InsertItem(db, (int)id, shoes, InventoryDao.Equipped, EquipPosShoes, 1);
             InventoryDao.InsertItem(db, (int)id, weapon, InventoryDao.Equipped, EquipPosWeapon, 1);
             // 新手指南（ETC 背包第一位）
-            InventoryDao.InsertItem(db, (int)id, cygnus ? ItemNoblesseGuide : ItemBeginnersGuide, InventoryDao.Etc, 1, 1);
+            InventoryDao.InsertItem(db, (int)id, cygnus ? ItemNoblesseGuide : aran ? ItemLegendsGuide : ItemBeginnersGuide, InventoryDao.Etc, 1, 1);
 
             db.Commit();
             return new Result { code = Ok, characterId = (int)id };

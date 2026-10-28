@@ -65,8 +65,11 @@ public class GameLoop : MonoBehaviour
         go.AddComponent<HitFeelRunner>();
         go.AddComponent<GameLoop>();
         go.AddComponent<InputBridge>();  // 键盘/虚拟键 → 游戏意图（原版是纯键盘操作）
-        go.AddComponent<BotPreload>();   // 登录界面期间把假人运行时先建好，别拖到进图第一帧
-        go.AddComponent<BotAppearancePrebake>();   // 同上：把模板纸娃娃的动作帧提前合成，进图不再现场合成
+#if !UNITY_ANDROID || UNITY_EDITOR
+        // Android 已在资源加载页完成预热，不能在这里重新挂载并重置合成状态。
+        go.AddComponent<BotPreload>();
+        go.AddComponent<BotAppearancePrebake>();
+#endif
     }
 
     void Awake()
@@ -329,7 +332,7 @@ public class GameLoop : MonoBehaviour
             var st = Art.Stage(themeKey);
             PlayerCtrl.SetBounds(backdrop.WalkMin, backdrop.WalkMax);
             // foothold 地形交给角色/怪物：贴台阶、走斜坡、到段尽头被挡住
-            PlayerCtrl.SetTerrain(st != null ? st.Footholds : null, st != null ? st.ForbidFallDown : null);
+            PlayerCtrl.SetTerrain(st != null ? st.Footholds : null, st != null ? st.ForbidFallDown : null, st != null ? st.FootholdForces : null, st != null ? st.FootholdDrag : null);
             PlayerCtrl.Climbs = st != null ? st.Climbs : null;
             if (camRig != null && st != null) camRig.SetStage(st);
         }

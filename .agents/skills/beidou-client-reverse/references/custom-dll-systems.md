@@ -64,7 +64,7 @@ rtk proxy /tmp/mapledash-reverse-venv/bin/python tools/inspect_beidou_client.py 
 
 **已迁移范围**：普通、暴击、blue/violet 数字走 `NativeDamageNumber`，使用原 IMG Canvas 合成，去掉数字的旧随机横漂、逐位弹入、两层叠字、上移星爆。时间用实时钟，不跟随项目的 timeScale 顿帧。
 
-**边界**：调用者仍传项目已有 HeadPos/FeetPos、scale（含暴击1.08），并非已还原原端所有伤害锚点。多段 indexed 行号与调度尚未接；零值/Miss/玩家guard等独立路径仍待迁移；`DamageText` 旧类仅保留 Miss 的旧表现，不能把旧注释当 EXE 依据。CPU source-over 合成不等于对原 Gr2D 所有像素格式及透明舍入逐位验收。
+**更新后的边界**：普通/自定义多段已接 NativeDamageLines 行号，0值走原 Miss，额外暴击1.08等缩放已移除；详见后文 indexed 合同及 [角色受击与飘字](character-reactions-and-damage.md)。原端所有伤害锚点、普通攻击起始命中时点、玩家guard尚未全部还原。CPU source-over 合成不等于对原 Gr2D 所有像素格式及透明舍入逐位验收。
 
 ## MCV 容器、双流解码与播放（续作更新）
 

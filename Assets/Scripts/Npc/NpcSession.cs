@@ -21,6 +21,7 @@ public sealed class NpcSession
     public bool Closed;
     public string LastError;
     public string ScriptName { get; private set; }
+    public string SpeakerName;
 
     int scriptSessionId;
     int scriptCharacterId;
@@ -63,6 +64,17 @@ public sealed class NpcSession
         session.localResponse = (mode, selection) => { if (mode == 1) choose(selection); };
         session.SetDialog(NpcDialogMode.Simple, text);
         session.Dialog.IsMenu = true;
+        Active = session;
+        return session;
+    }
+
+    // 截图还原等本地数据对白复用同一窗口及回复分派，不伪造 Quest.wz 任务ID。
+    public static NpcSession Conversation(int npcId, string speakerName, Action<NpcSession, int> reply)
+    {
+        CloseActive();
+        var session = new NpcSession(npcId, 0, false, false) { SpeakerName = speakerName };
+        session.localKeepsSession = true;
+        session.localResponse = (mode, selection) => reply(session, mode);
         Active = session;
         return session;
     }

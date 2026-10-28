@@ -35,7 +35,13 @@ public static class NativeUi
         var center = Art.Tex(root + "c");
         // Preserve native dithering: stretching a 20px row creates vertical stripes.
         for (float y = rect.y + 28; y < rect.yMax - 58; y += 20)
-            Strip(new Rect(rect.x, y, rect.width, Mathf.Min(20, rect.yMax - 58 - y)), center);
+        {
+            float height = Mathf.Min(20, rect.yMax - 58 - y);
+            if (center != null && rect.width == center.width)
+                GUI.DrawTextureWithTexCoords(new Rect(rect.x, y, rect.width, height), center,
+                    new Rect(0f, 1f - height / center.height, 1f, height / center.height));
+            else Strip(new Rect(rect.x, y, rect.width, height), center);
+        }
         Strip(new Rect(rect.x, rect.yMax - 58, rect.width, 58), Art.Tex(root + "s"));
     }
 

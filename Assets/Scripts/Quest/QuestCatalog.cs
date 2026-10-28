@@ -23,7 +23,7 @@ public sealed class QuestSkillReward
 public sealed class QuestRequirement
 {
     public int level, maxLevel, meso, fame, npc = -1, interval, fieldEnter, completedQuests, monsterBookMin, petTameness;
-    public string endDate = "";
+    public string startDate = "", endDate = "";
     public readonly List<int> pets = new List<int>();
     public readonly List<int> jobs = new List<int>();
     public readonly List<QuestItemReq> items = new List<QuestItemReq>();
@@ -46,7 +46,7 @@ public sealed class QuestDef
     public int area, medalCategory, medalItem;
     public string[] info = Array.Empty<string>();
     public string startScript = "", endScript = "";
-    public bool autoStart, autoComplete;
+    public bool autoStart, autoComplete, autoPreComplete, autoAccept;
 
     public QuestRequirement startReq = new QuestRequirement();
     public QuestRequirement completeReq = new QuestRequirement();
@@ -154,6 +154,8 @@ public static class QuestCatalog
             def.medalCategory = info.Int("medalCategory", -1);
             def.medalItem = info.Int("viewMedalItem");
             def.autoStart = info.Int("autoStart") == 1;
+            def.autoAccept = info.Int("autoAccept") == 1;
+            def.autoPreComplete = info.Int("autoPreComplete") == 1;
             def.autoComplete = info.Int("autoComplete") == 1 || info.Int("autoPreComplete") == 1;
             var pages = new List<string>();
             for (int i = 0; ; i++)
@@ -184,6 +186,7 @@ public static class QuestCatalog
         r.completedQuests = node.Int("questComplete");
         r.monsterBookMin = node.Int("mbmin");
         r.petTameness = node.Int("pettamenessmin");
+        r.startDate = node.Text("start", "");
         r.endDate = node.Text("end", "");
         var pets = node.Get("pet"); if (pets != null) foreach (var pet in pets.Children) r.pets.Add(pet.Int("id"));
         r.level = node.Int("lvmin", node.Int("level"));

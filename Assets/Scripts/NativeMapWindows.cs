@@ -78,10 +78,6 @@ public static class NativeMapWindows
         float height = miniMode == 2 ? 20 : mapHeight + (miniMode == 0 ? 87 : 43);
         var panel = new Rect(8, 8, width * s, height * s);
         const string root = "UI/UIWindow.img/MiniMap/";
-        // 小地图背景直接由 IMG 的 c 片提供：MiniMap/MaxMap|MinMap/c 是
-        // 1x1、RGBA(255,255,255,119) 的半透明白，叠在游戏画面上就是原端外观
-        // （能透出地图）。不要在此铺不透明白底：源端小地图无此操作，
-        // 该做法曾导致背景变为纯白、与地图不一致（已撤销）。
         if (miniMode == 2)
         {
             DrawPart(root + "Min/w", panel.x, panel.y, 8 * s, panel.height);
@@ -89,7 +85,7 @@ public static class NativeMapWindows
             DrawPart(root + "Min/e", panel.xMax - 4 * s, panel.y, 4 * s, panel.height);
         }
         else DrawMiniFrame(panel, root + (miniMode == 0 ? "MaxMap/" : "MinMap/"), header * s,
-            (miniMode == 0 ? 15 : 14) * s, s);
+            (miniMode == 0 ? 15 : 14) * s, s, mapWidth * s);
         // EXE 0x857616: title canvas is copied at (8,10).
         var title = Art.Tex("wz://" + root + "title");
         if (title != null) GUI.DrawTexture(new Rect(panel.x + 8 * s, panel.y + 10 * s, title.width * s, title.height * s), title);
@@ -111,10 +107,8 @@ public static class NativeMapWindows
             // the original shadow copies occupy the adjacent pixels. Mark is copied at (6,23).
             float labelX = panel.x + (mark != null ? 48 : 8) * s;
             if (mark != null) GUI.DrawTexture(new Rect(panel.x + 6 * s, panel.y + 23 * s, mark.width * s, mark.height * s), mark);
-            var streetStyle = new GUIStyle(miniLabel);
-            streetStyle.normal.textColor = new Color32(82, 117, 156, 255);
-            GUI.Label(new Rect(labelX, panel.y + 28 * s, panel.xMax - labelX - 6 * s, 18 * s), map.street, streetStyle);
-            GUI.Label(new Rect(labelX, panel.y + 44 * s, panel.xMax - labelX - 6 * s, 18 * s), map.name, miniLabel);
+            DrawMiniLabel(new Rect(labelX + s, panel.y + 28 * s, panel.xMax - labelX - 6 * s, 18 * s), map.street, miniLabel, s);
+            DrawMiniLabel(new Rect(labelX + s, panel.y + 44 * s, panel.xMax - labelX - 6 * s, 18 * s), map.name, miniLabel, s);
         }
         if (tex == null) return;
         var r = new Rect(panel.x + (width - mapWidth) * .5f * s, panel.y + header * s, mapWidth * s, mapHeight * s);
@@ -128,6 +122,12 @@ public static class NativeMapWindows
         float scrollY = Mathf.Floor((Mathf.Min(Mathf.Max(py - mapHeight * divisor / 2, -mini.Int("centerY")),
             mini.Int("height", tex.height * (int)divisor) - mini.Int("centerY") - mapHeight * divisor) + mini.Int("centerY")) / divisor);
         GUI.BeginGroup(r);
+        // EXE 0x859279/0x8592CD: clear the viewport, then FillRect(0xA0000000).
+        // The IMG c strip must not remain underneath this cleared region.
+        Color previousColor = GUI.color;
+        GUI.color = new Color32(0, 0, 0, 160);
+        GUI.DrawTexture(new Rect(0, 0, r.width, r.height), Texture2D.whiteTexture);
+        GUI.color = previousColor;
         GUI.DrawTexture(new Rect(-scrollX * s, -scrollY * s, tex.width * s, tex.height * s), tex);
         Func<float, float, Vector2> point = (x, y) => new Vector2(
             Mathf.Floor((x + mini.Int("centerX")) / divisor) - scrollX,
@@ -141,14 +141,29 @@ public static class NativeMapWindows
         GUI.EndGroup();
     }
 
+    static void DrawMiniLabel(Rect r, string text, GUIStyle style, float scale)
+    {
+        // 0x8576A4..0x858107: eight blue outline copies, then white at centre.
+        var outline = new GUIStyle(style);
+        outline.normal.textColor = new Color32(82, 117, 156, 255);
+        for (int x = -1; x <= 1; x++)
+            for (int y = -1; y <= 1; y++)
+                if (x != 0 || y != 0)
+                    GUI.Label(new Rect(r.x + x * scale, r.y + y * scale, r.width, r.height), text, outline);
+        GUI.Label(r, text, style);
+    }
+
     static void DrawPart(string path, float x, float y, float width, float height)
     {
         if (width <= 0 || height <= 0) return;
         GUI.DrawTexture(new Rect(x, y, width, height), Art.Tex("wz://" + path));
     }
-    static void DrawMiniFrame(Rect r, string root, float top, float bottom, float s)
+    static void DrawMiniFrame(Rect r, string root, float top, float bottom, float s, float viewportWidth)
     {
-        DrawPart(root + "c", r.x + 6 * s, r.y + top, r.width - 12 * s, r.height - top - bottom);
+        // Native viewport clear removes the frame centre only inside the map rectangle.
+        float side = (r.width - viewportWidth) * .5f - 6 * s;
+        DrawPart(root + "c", r.x + 6 * s, r.y + top, side, r.height - top - bottom);
+        DrawPart(root + "c", r.xMax - 6 * s - side, r.y + top, side, r.height - top - bottom);
         DrawPart(root + "nw", r.x, r.y, 60 * s, top);
         DrawPart(root + "n", r.x + 60 * s, r.y, r.width - 66 * s, top);
         DrawPart(root + "ne", r.xMax - 6 * s, r.y, 6 * s, top);

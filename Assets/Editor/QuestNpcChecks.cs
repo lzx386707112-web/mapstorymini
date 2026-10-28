@@ -34,6 +34,8 @@ public static class QuestNpcChecks
         CheckDialogText();
         CheckQuestRules();
         CheckDialogProtocol();
+        CheckRepeatedTalkPresses();
+        CheckBirthRoutes();
         CheckNewCharacterMarkers();
         CheckAllMapQuestLinks();
 
@@ -185,6 +187,52 @@ public static class QuestNpcChecks
         return session;
     }
 
+    static void CheckRepeatedTalkPresses()
+    {
+        var frame = typeof(NpcDialogUi).GetField("talkKeyFrame",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        int savedFrame = (int)frame.GetValue(null);
+        bool savedEnabled = InputHub.Enabled;
+        int replies = 0;
+        var session = NpcSession.Conversation(2101, null, (current, mode) =>
+        {
+            replies++;
+            if (replies == 3) current.Close();
+            else current.SetDialog(replies == 1 ? NpcDialogMode.NextPrev : NpcDialogMode.Ok, "page" + replies);
+        });
+        session.SetDialog(NpcDialogMode.Next, "first");
+        try
+        {
+            InputHub.Enabled = true;
+            InputHub.ReleaseAllVirtual();
+            NpcDialogUi.ConsumeTalkKeyFrame();
+            Check(!NpcDialogUi.ContinueWithTalkKey() && replies == 0, "打开对话的同一按下不得跳过首页");
+            // 编辑器同步自检不推进真实帧；仅将去重戳移到上一帧，模拟下一次采样。
+            for (int i = 0; i < 3; i++)
+            {
+                frame.SetValue(null, Time.frameCount - 1);
+                var key = KeyMap.Of(GameAction.NpcTalk);
+                if (key != KeyCode.None) InputHub.SetVirtual(key, true);
+                else InputHub.SetVirtualAction(GameAction.NpcTalk, true);
+                Check(InputHub.Pressed(GameAction.NpcTalk) && NpcDialogUi.ContinueWithTalkKey() && replies == i + 1,
+                    "第" + (i + 1) + "次虚拟对话键按下须推进一次（Next/NextPrev/OK）");
+                Check(!NpcDialogUi.ContinueWithTalkKey() && replies == i + 1, "Update/GUI同帧不得重复推进");
+                InputHub.EndFrame();
+                Check(!InputHub.Pressed(GameAction.NpcTalk), "持续按住不得生成新的按下边沿");
+                if (key != KeyCode.None) InputHub.SetVirtual(key, false);
+                else InputHub.SetVirtualAction(GameAction.NpcTalk, false);
+            }
+            Check(session.Closed && !NpcSession.Blocking, "最后一次确定须释放对话会话");
+        }
+        finally
+        {
+            session.Close();
+            InputHub.ReleaseAllVirtual();
+            InputHub.Enabled = savedEnabled;
+            frame.SetValue(null, savedFrame);
+        }
+    }
+
     static void CheckDialogProtocol()
     {
         var session = ScriptSession(@"
@@ -202,7 +250,10 @@ public static class QuestNpcChecks
                 else if(step == 7 && type == 0) cm.dispose();
                 else cm.sendOk('WRONG');
             }");
-        session.Reply(1);
+        typeof(NpcSession).GetField("<Active>k__BackingField",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).SetValue(null, session);
+        Check(NpcDialogUi.ContinueWithTalkKey(), "NPC 对话键须推进已打开的 Next 页");
+        Check(!NpcDialogUi.ContinueWithTalkKey(), "同帧 Update 与 GUI 对话键不得重复回复");
         Check(session.Dialog.Mode == NpcDialogMode.YesNo, "继续按钮消息类型必须为0");
         session.Reply(1);
         Check(session.Dialog.Mode == NpcDialogMode.Simple, "是/否消息类型必须为1");
@@ -232,11 +283,112 @@ public static class QuestNpcChecks
         Check(callbacks == 1 && NpcSession.Active == null, "一次选择只能执行一次，重复响应不得重复发放动作");
     }
 
+    static void CheckBirthRoutes()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "mapledash-birth-" + Guid.NewGuid() + ".json");
+        try
+        {
+            var db = DbStore.Create(path);
+            int account = AccountsDao.AutoRegister(db, "BirthCheck", "test");
+            var transport = GameServer.StartWith(db).Transport;
+            for (int group = 0; group <= 2; group++)
+            {
+                bool aran = group == 2;
+                var result = CharFactory.CreateCharacter(db, account, 0, "Birth" + group, group,
+                    aran ? 20100 : 20000, 30300, 0, 0, aran ? 1042167 : 1040002,
+                    aran ? 1062115 : 1060002, aran ? 1072383 : 1072001, aran ? 1442079 : 1302000, 0);
+                Check(result.code == CharFactory.Ok, "真实建号职业群 " + group);
+                var full = transport.CharSelect(new CharSelectRequest { accountId = account, characterId = result.characterId });
+                int expectedMap = group == 0 ? 130030000 : group == 1 ? 10000 : 914000000;
+                int expectedJob = group == 0 ? 1000 : group == 1 ? 0 : 2000;
+                int guide = group == 0 ? 4161047 : group == 1 ? 4161001 : 4161048;
+                Check(full.ok && full.character.record.map == expectedMap && full.character.record.job == expectedJob &&
+                    full.character.inventory.Exists(item => item.itemId == guide), "建号→选角保留源端地图/职业/指南：" + group);
+                Debug.Log("[BirthTrace] group=" + group + " map=" + full.character.record.map + " job=" + full.character.record.job + " guide=" + guide);
+                if (group == 1) CheckWelcomePersistence(transport, full.character, path);
+            }
+            db.Table("game_config").Update(row => (string)row["config_code"] == "use_beidou_beginner_map",
+                new DbRow { ["config_value"] = "true" });
+            int secondAccount = AccountsDao.AutoRegister(db, "BirthCheck2", "test");
+            var beidou = CharFactory.CreateCharacter(db, secondAccount, 0, "BirthMap4", 1,
+                20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0);
+            var selected = transport.CharSelect(new CharSelectRequest { accountId = secondAccount, characterId = beidou.characterId });
+            Check(selected.ok && selected.character.record.map == 4, "北斗新手地图配置必须让冒险家出生在4");
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    static void CheckWelcomePersistence(ITransport transport, FullCharacter character, string path)
+    {
+        string snapshot = JsonUtility.ToJson(Profile.Data);
+        int savedMap = Profile.LastMapId;
+        var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public;
+        var saved = new Dictionary<string, object>();
+        try
+        {
+            foreach (var pair in new Dictionary<string, object> {
+                ["Net"] = transport, ["CharacterId"] = (int)character.record.id, ["InGame"] = true,
+                ["Character"] = character })
+            {
+                var property = typeof(GameSession).GetProperty(pair.Key, flags);
+                saved[pair.Key] = property.GetValue(null);
+                property.GetSetMethod(true).Invoke(null, new[] { pair.Value });
+            }
+            Profile.Data.level = 1;
+            Profile.Data.SetJob(0);
+            Profile.LastMapId = 10000;
+            Check(WelcomeTutorial.Available, "真实新建角色必须有问候入口");
+            WelcomeTutorial.Open();
+            var dialog = NpcSession.Active;
+            for (int i = 0; i < 4; i++) dialog?.Reply(1);
+            dialog?.Reply(1);
+            var reopened = new NativeScriptValues(DbStore.Open(path));
+            Check(reopened.Handle(new ScriptValueRequest { characterId = (int)character.record.id,
+                name = WelcomeTutorial.StateKey }).value == "1", "接受问候状态必须实际写盘并可重载");
+            Profile.LastMapId = 4;
+            NpcField.Bind(FieldCatalog.GetMap(4));
+            NpcField.Interact(2104);
+            var deliveryMenu = NpcSession.Active;
+            Check(WelcomeTutorial.CanComplete && NpcField.MarkerOf(2104).complete &&
+                deliveryMenu != null && deliveryMenu.Dialog.Mode == NpcDialogMode.Simple,
+                "截图问候接取后，昨日酣睡必须显示可完成任务提示及混合菜单");
+            int welcomeDelivery = NpcField.ChoicesFor(2104).FindIndex(c => c.welcome && c.complete);
+            int beforeWelcomeGold = Profile.gold;
+            deliveryMenu?.Reply(1, welcomeDelivery);
+            Check(NpcSession.Active != null && NpcSession.Active.Dialog.Mode == NpcDialogMode.Ok &&
+                NpcSession.Active.Dialog.RawText.Contains("10000") && Profile.LastMapId == 4,
+                "交付问候须先显示奖励页，不得直接传送");
+            NpcSession.Active?.Reply(1);
+            Check(NpcSession.Active == null && !WelcomeTutorial.CanComplete &&
+                Profile.gold == beforeWelcomeGold + 10000 && !NpcField.MarkerOf(2104).complete,
+                "奖励确定必须发放10000金币、关闭会话并移除完成提示");
+            WelcomeTutorial.Complete();
+            Check(Profile.gold == beforeWelcomeGold + 10000, "已交付问候不得重复领取金币");
+            NpcField.Interact(2104);
+            NpcSession.CloseActive();
+            Check(new NativeScriptValues(DbStore.Open(path)).Handle(new ScriptValueRequest {
+                characterId = (int)character.record.id, name = WelcomeTutorial.StateKey }).value == "2",
+                "交付完成状态必须落盘");
+            Profile.LastMapId = 10000;
+            Check(!WelcomeTutorial.Available, "已接受的同一角色回到10000不得重复出现问候");
+        }
+        finally
+        {
+            NpcSession.CloseActive();
+            foreach (var pair in saved)
+                typeof(GameSession).GetProperty(pair.Key, flags).GetSetMethod(true).Invoke(null, new[] { pair.Value });
+            JsonUtility.FromJsonOverwrite(snapshot, Profile.Data);
+            Profile.LastMapId = savedMap;
+            NpcField.InvalidateMarkers();
+        }
+    }
+
     static void CheckNewCharacterMarkers()
     {
         var data = Profile.Data;
         string snapshot = JsonUtility.ToJson(data);
         var previousMap = NpcField.Map;
+        int previousMapId = Profile.LastMapId;
         try
         {
             data.level = 1;
@@ -245,6 +397,8 @@ public static class QuestNpcChecks
             data.questCompleted.Clear();
             data.itemIds.Clear();
             data.itemCounts.Clear();
+            data.AddItem(CharFactory.ItemBeginnersGuide, 1);
+            Profile.LastMapId = CharFactory.MapMushroomTown;
             FieldCatalog.Ensure();
             var map = FieldCatalog.GetMap(CharFactory.MapMushroomTown);
             NpcField.Bind(map);
@@ -277,14 +431,124 @@ public static class QuestNpcChecks
                 "拒绝任务必须显示Say/no且不得改状态");
             confirmation?.Reply(1);
             Check(NpcSession.Active == null, "拒绝对白结束必须释放会话");
+            var welcomeAlerts = new List<NpcField.QuestChoice>(NpcField.QuestAlerts());
+            int welcomeIndex = welcomeAlerts.FindIndex(c => c.welcome);
+            Check(welcomeIndex >= 0 && welcomeAlerts.Count == 1, "一级map10000必须有截图问候灯泡，不能混入过期活动");
+            NpcField.ShowQuestAlerts();
+            Check(NpcSession.Active != null && NpcSession.Active.SpeakerName == "冒险岛运营员", "灯泡菜单须显示截图的运营员名字");
+            NpcSession.Active?.Reply(1, welcomeIndex);
+            var welcome = NpcSession.Active;
+            Check(welcome != null && welcome.SpeakerName == "昨日小睡" && welcome.Dialog.RawText.Contains("引导者"), "选择问候后须显示截图第一页");
+            welcome?.Reply(1);
+            Check(welcome != null && welcome.Dialog.Mode == NpcDialogMode.NextPrev && welcome.Dialog.RawText.Contains("命运的骰子"), "问候第二页须可返回");
+            welcome?.Reply(0);
+            Check(welcome != null && welcome.Dialog.RawText.Contains("引导者"), "问候上一页须返回第一页");
+            for (int step = 0; step < 3; step++) welcome?.Reply(1);
+            Check(welcome != null && welcome.Dialog.Mode == NpcDialogMode.AcceptDecline && welcome.Dialog.RawText.Contains("青苹果乐园"), "三页后须询问是否返回青苹果乐园");
+            welcome?.Reply(0);
+            Check(Profile.LastMapId == 10000 && NpcSession.Active == null && WelcomeTutorial.Available, "拒绝问候不得传送或移除入口");
+            WelcomeTutorial.Open();
+            welcome = NpcSession.Active;
+            for (int step = 0; step < 4; step++) welcome?.Reply(1);
+            Check(Profile.LastMapId == 4 && welcome != null && welcome.Dialog.Mode == NpcDialogMode.Ok && welcome.Dialog.RawText.Contains("昨日酣睡"),
+                "接受后必须到截图Training camp入口map4并保留最后一页提示");
+            Check(!WelcomeTutorial.Available, "离开10000后不可再显示问候入口");
+            welcome?.Reply(1);
+            Check(NpcSession.Active == null, "最终确定必须关闭问候会话");
+            Profile.LastMapId = CharFactory.MapMushroomTown;
             data.level = 2;
             NpcField.InvalidateMarkers();
             Check(QuestCatalog.Get(1029).autoStart && QuestCatalog.Get(1030).autoComplete, "必须读取QuestInfo的远程任务标记");
             Check(!QuestLogic.CanStart(QuestCatalog.Get(1047), 2006), "fieldEnter/0限制必须生效，不能显示999999999地图任务");
-            NpcField.ShowQuestAlerts();
-            Check(NpcSession.Active != null && NpcSession.Active.Dialog.Content.Selections.Count > 0,
-                "角色灯泡必须打开任务列表");
+            Check(NpcField.QuestAlerts().Count == 0, "无物品/进度的出生角色不得显示过期活动灯泡");
+            Check(!QuestLogic.NotificationDateAvailable(QuestCatalog.Get(10110).startReq, new DateTime(2026, 10, 28)),
+                "灯泡必须过滤已结束的邀请，不能套用服务端历史日期豁免");
+            var dateReq = new QuestRequirement { startDate = "2026102812", endDate = "2026102813" };
+            Check(!QuestLogic.NotificationDateAvailable(dateReq, new DateTime(2026, 10, 28, 11, 59, 59)) &&
+                QuestLogic.NotificationDateAvailable(dateReq, new DateTime(2026, 10, 28, 12, 0, 0)) &&
+                !QuestLogic.NotificationDateAvailable(dateReq, new DateTime(2026, 10, 28, 13, 0, 1)), "灯泡日期包含边界比较");
+            // 原端远程任务脚本：确认四页后传送蘑菇城堡，且 warp 后继续执行 forceStartQuest。
+            data.level = 30;
+            data.SetJob(110);
+            NpcField.InvalidateMarkers();
+            var remote = new List<NpcField.QuestChoice>(NpcField.QuestAlerts()).Find(c => c.quest.id == 2300);
+            Check(remote != null, "异地图 NPC 的 autoStart 任务 2300 必须出现在灯泡");
+            if (remote != null)
+            {
+                NpcField.OpenQuest(remote);
+                var warpSession = NpcSession.Active;
+                for (int step = 0; step < 4 && warpSession != null && !warpSession.Closed; step++) warpSession.Reply(1);
+                Check(warpSession != null && warpSession.LastError == null && Profile.LastMapId == 106020000,
+                    "源端 quest/2300.js 确认后必须传送到 106020000");
+                Check(data.questStarted.Contains(2300), "warp 后脚本仍需执行 forceStartQuest");
+                NpcSession.CloseActive();
+            }
+            // BeginnerCreator 的配置分支：map4/life/0=2104，原始 JS 第二次调用 warp(1)。
+            data.SetJob(0);
+            data.level = 1;
+            Profile.LastMapId = CharFactory.MapBeidouBeginner;
+            NpcField.Bind(FieldCatalog.GetMap(CharFactory.MapBeidouBeginner));
+            Check(NpcField.Map.npcs.Exists(n => n.id == 2104), "map4 必须引用原端 NPC2104");
+            NpcField.Interact(2104);
+            var departure = NpcSession.Active;
+            Check(departure != null && departure.Dialog.Mode != NpcDialogMode.Simple &&
+                !departure.Dialog.RawText.Contains("HL_LADDER"),
+                "map4 NPC 点击须直接打开对白，不得插入 HL_LADDER 内部名称菜单");
+            Check(departure != null && departure.ScriptName == "2104" && departure.Dialog.RawText.Contains("冒险旅途"),
+                "IMG 的 HL_LADDER 无命名脚本时须按源端回退 npc/2104.js 原始对白");
+            departure?.Reply(1);
+            Check(departure != null && departure.LastError == null && Profile.LastMapId == 1,
+                "源端出生图 NPC2104 确认对白必须传送 map1");
             NpcSession.CloseActive();
+            var training = FieldCatalog.GetMap(1);
+            NpcField.Bind(training);
+            Check(training.npcs.Exists(n => n.id == 2100), "map1 必须引用 NPC2100");
+            Check(training.fieldType == 82, "青苹果教程地图必须保留原端fieldType82");
+            var tutorialIds = WzCharacter.TutorialAppearance(new[] {
+                "00002000", "00012000", "00020000", "00030000", "01040002", "01302000" });
+            Check(Array.IndexOf(tutorialIds, "01002562") >= 0 && Array.IndexOf(tutorialIds, "01052081") >= 0 &&
+                Array.IndexOf(tutorialIds, "01040002") < 0 && tutorialIds[tutorialIds.Length - 1] == "01302000",
+                "教程外观必须覆盖帽服并保留武器，不改真实装备");
+            var tutorialSprite = WzCharacter.Appearance("quest-check-field82", tutorialIds);
+            Check(tutorialSprite != null && tutorialSprite.rect.width > 0 && tutorialSprite.rect.height > 0,
+                "青苹果外观须能使用原始IMG实际合成");
+            if (tutorialSprite != null) File.WriteAllBytes("/tmp/mapledash-field82-appearance.png", tutorialSprite.texture.EncodeToPNG());
+            NpcField.Interact(2100);
+            Check(NpcSession.Active != null && NpcSession.Active.Dialog.Content.Selections.FindAll(c => c.Index >= 0).Count == 1,
+                "莎丽首次菜单只能有一个任务，不得额外插入普通对白选项");
+            var instructorChoices = NpcField.ChoicesFor(2100);
+            int trainingQuestIndex = instructorChoices.FindIndex(c => c.quest.id == 30001 && !c.complete);
+            Check(trainingQuestIndex >= 0, "map1 NPC2100 须提供原端新手任务30001");
+            if (trainingQuestIndex >= 0)
+            {
+                NpcSession.Active?.Reply(1, trainingQuestIndex);
+                var trainingQuest = NpcSession.Active;
+                trainingQuest?.Reply(1);
+                trainingQuest?.Reply(1);
+                Check(trainingQuest != null && trainingQuest.LastError == null && data.questStarted.Contains(30001)
+                    && Profile.LastMapId == 1, "原端30001接取后留在map1，指引参观职业并寻找罗杰");
+                trainingQuest?.Reply(1);
+            }
+            NpcSession.CloseActive();
+            NpcField.Interact(2100);
+            // 若还有其它可接任务，先选择普通对白。
+            if (NpcSession.Active != null && NpcSession.Active.Dialog.Mode == NpcDialogMode.Simple)
+                NpcSession.Active.Reply(1, NpcField.ChoicesFor(2100).Count);
+            var instructor = NpcSession.Active;
+            Check(instructor != null && instructor.ScriptName == "2100" && instructor.Dialog.RawText.Contains("训练课程"),
+                "有 speak 气泡的 NPC2100 仍须执行原始对白脚本");
+            instructor?.Reply(1);
+            Check(instructor != null && instructor.LastError == null && instructor.Dialog.RawText.Contains("射手村"),
+                "map1 教练继续按钮须进入原端职业说明");
+            instructor?.Reply(1);
+            Check(Profile.LastMapId == 1 && NpcSession.Active == null,
+                "源端 NPC2100 教程结束不传送，必须保留 map1");
+            var trainingExit = training.Portal("next00");
+            Check(trainingExit != null && trainingExit.tm == 2 && trainingExit.targetName == "front00",
+                "map1 next00 必须沿原端地图引用通往 map2/front00");
+            NpcField.Bind(map);
+            Profile.LastMapId = CharFactory.MapMushroomTown;
+            data.SetJob(0);
             data.level = 11;
             NpcField.InvalidateMarkers();
             Check(!QuestLogic.CanStart(QuestCatalog.Get(1031), 2101), "1031 的 lvmax=10 未生效");
@@ -303,6 +567,7 @@ public static class QuestNpcChecks
             NpcSession.CloseActive();
             JsonUtility.FromJsonOverwrite(snapshot, data);
             NpcField.Bind(previousMap);
+            Profile.LastMapId = previousMapId;
         }
     }
 
@@ -440,6 +705,10 @@ public static class QuestNpcChecks
         Check(DialogText.Parse("#c4000000#").Body == Profile.ItemCount(4000000).ToString(), "道具数量标记应为数量而非颜色");
 
         // #i/#v 是道具图标，不是文字；取不到图才退回名字
+        var imageLink = DialogText.Parse("#L7##fUI/UIWindow.img/UtilDlgEx/list0##l");
+        Check(imageLink.Runs.Count == 2 && imageLink.Runs[0].Link == 7 && imageLink.Runs[1].Link == 7, "#L 内图片必须保留点击索引");
+        Check(DialogFlow.ContentWidth(529f) == 341f && DialogFlow.BodyHeight(50f) == 120f &&
+              DialogFlow.BodyHeight(400f) == 240f, "普通对话框必须采用原端测量宽与正文区上下限");
         var icon = DialogText.Parse("#i04000000#");
         Check(icon.Runs.Count == 1 && icon.Runs[0].Kind == DialogRunKind.Icon, "#i 应该产生图标节点");
         Check(!string.IsNullOrEmpty(icon.Runs[0].Art), "#i 的道具图标路径没有解析出来");

@@ -20,12 +20,13 @@ public sealed class DialogRun
     public string Text = "";        // Text / Link：可见文字
     public int Link = -1;           // Link：回给脚本的选项号
     public bool Bold;
+    public bool SelectionMarker;
     public Color Color = DialogText.Ink;
     public string Art = "";         // Icon：WZ 路径（相对 Data 根）
     public string Fallback = "";    // Icon：取不到图时退回的文字
 }
 
-// 程序生成的列表行（任务菜单 / 多脚本选择）。与 #L 无关，画在正文下方。
+// 程序生成的菜单元数据；渲染时按源端 #f/#L 格式并入正文流。
 public sealed class DialogSelection
 {
     public int Index;
@@ -42,12 +43,12 @@ public sealed class DialogContent
 
 public static class DialogText
 {
-    public static readonly Color Ink = new Color(0.12f, 0.12f, 0.14f);
-    public static readonly Color Blue = new Color(0.29f, 0.46f, 0.78f);
-    public static readonly Color Red = new Color(0.78f, 0.28f, 0.23f);
-    public static readonly Color Green = new Color(0.24f, 0.58f, 0.31f);
+    public static readonly Color Ink = Color.black;
+    public static readonly Color Blue = Color.blue;
+    public static readonly Color Red = Color.red;
+    public static readonly Color Green = Color.green;
     public static readonly Color Orange = new Color(0.75f, 0.50f, 0.19f);
-    public static readonly Color Purple = new Color(0.54f, 0.35f, 0.78f);
+    public static readonly Color Purple = new Color(81f / 255f, 55f / 255f, 140f / 255f);
     public static readonly Color White = Color.white;
 
     public static DialogContent Parse(string raw)
@@ -99,6 +100,8 @@ public static class DialogText
                 {
                     Flush();
                     int.TryParse(raw.Substring(i + 2, j - i - 2), out link);
+                    content.Runs.Add(new DialogRun { Kind = DialogRunKind.Icon, Link = link,
+                        SelectionMarker = true, Art = "UI/UIWindow.img/UtilDlgEx/dot1" });
                     i = j + 1;
                     continue;
                 }
@@ -136,6 +139,7 @@ public static class DialogText
                         content.Runs.Add(new DialogRun
                         {
                             Kind = DialogRunKind.Icon,
+                            Link = link, Bold = bold, Color = color,
                             Art = ItemIconPath(id) ?? "",
                             Fallback = "[" + WzNames.Item(id) + "]",
                         });
@@ -143,7 +147,7 @@ public static class DialogText
                     }
                 case 'f':
                     Flush();
-                    if (payload.Length > 0) content.Runs.Add(new DialogRun { Kind = DialogRunKind.Icon, Art = payload });
+                    if (payload.Length > 0) content.Runs.Add(new DialogRun { Kind = DialogRunKind.Icon, Link = link, Bold = bold, Color = color, Art = payload });
                     break;
                 default: break;
             }

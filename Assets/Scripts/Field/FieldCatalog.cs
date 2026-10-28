@@ -11,6 +11,8 @@ public sealed class FieldFoothold
     public float x1, y1, x2, y2;
     // 原端 foothold 的 forbidFallDown 属性：这一格禁止 ↓+跳跃穿下去
     public int forbidFallDown;
+    public int drag;
+    public int force; // foothold force，百分比；负数向左，正数向右。
 }
 
 public sealed class FieldRope
@@ -77,7 +79,7 @@ public sealed class FieldChunk
 
 public sealed class FieldMap
 {
-    public int id, returnMap, fieldLimit;
+    public int id, returnMap, fieldLimit, fieldType;
     public string name, street, bgm;
     public bool town;
     public float mobRate;

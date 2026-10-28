@@ -326,12 +326,12 @@ public class BossUnit : MonoBehaviour
     public Vector3 DamageAnchor => new Vector3(transform.position.x,
         (body != null && body.sprite != null ? body.bounds.max.y : transform.position.y + 2.2f) - .2f, 0);
 
-    public void TakeReplayHit(DamageResult[] hits, int direction, bool indexed, int interval, bool total = false)
+    public void TakeReplayHit(DamageResult[] hits, int direction, bool indexed, int interval, bool total = false, int ordinarySkill = -1)
     {
         if (dead) return;
         long sum = 0; bool critical = false;
         foreach (var hit in hits) { sum += hit.Amount; critical |= hit.Critical; }
-        NativeDamageLines.Show(this, hits, indexed, interval, total);
+        NativeDamageLines.Show(this, hits, indexed, interval, total, ordinarySkill);
         ApplyHit(new DamageResult((int)System.Math.Min(int.MaxValue, sum), critical), direction, true, false);
     }
 
@@ -340,7 +340,7 @@ public class BossUnit : MonoBehaviour
     void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber, bool react = true)
     {
         if (dead) return;
-        if (hit.Amount <= 0) { if (showNumber && hit.Amount == 0) DamageText.Miss(DamageAnchor); return; }
+        if (hit.Amount <= 0) { if (showNumber && hit.Amount == 0) DamageText.Miss(DamageAnchor + Vector3.up * (15f / Art.PPU)); return; }
         bool crit = hit.Critical;
         float real = hit.Amount;
         hp = Mathf.Max(0f, hp - real);
@@ -352,14 +352,7 @@ public class BossUnit : MonoBehaviour
                 body.color = Color.white;
                 flashT = HitFeel.FlashDur;
             }
-            // Boss 也有受击反应（hit1 单帧长延迟，压到 ~0.3s）；不会打断跳砸——
-            // Telegraph/Air 的 want 是 attack1，一次性动作播完自动回去。
-            if (vis != null)
-            {
-                var clip = Art.GetClip("mobs", bossArtKey, "hit1");
-                float dur = clip != null ? clip.Duration : 0.6f;
-                vis.PlayOnce("hit", Mathf.Clamp(dur / 0.3f, 1f, 3f));
-            }
+            if (vis != null) vis.PlayOnce("hit");
             if (!nativeHit)
                 Fx.Burst(transform.position + Vector3.up * 0.9f, crit ? 0.7f : 0.5f,
                          new Color(1f, 0.85f, 0.4f, 0.9f));
@@ -369,11 +362,8 @@ public class BossUnit : MonoBehaviour
         }
 
         // Boss 体积大，数字要压到头顶，否则会被身体挡住
-        float top = body != null && body.sprite != null
-            ? body.bounds.max.y
-            : transform.position.y + 2.2f;
-        if (showNumber) DamageText.Show(new Vector3(transform.position.x, top - 0.2f, 0f),
-                        real, crit ? "cri" : "red", crit ? 1.15f : 1.06f);
+        if (showNumber) DamageText.Show(DamageAnchor + Vector3.up * (15f / Art.PPU),
+                        real, crit ? "cri" : "red");
 
         if (hp <= 0f) Die();
     }

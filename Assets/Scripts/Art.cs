@@ -41,6 +41,9 @@ public static class Art
         public readonly System.Collections.Generic.List<bool> ForbidFallDown =
             new System.Collections.Generic.List<bool>();
 
+        public readonly List<int> FootholdDrag = new List<int>();
+        public readonly List<int> FootholdForces = new List<int>();
+
         public readonly List<ClimbLine> Climbs = new List<ClimbLine>();
 
         public bool HasFront => !string.IsNullOrEmpty(fileFront);
@@ -159,11 +162,13 @@ public static class Art
                 st.orderFront = Int(ord, "front", 600);
             }
             var native = NativeMapView.LoadMap(new FieldMap { id = int.Parse(st.map) });
-            st.Footholds.Clear(); st.ForbidFallDown.Clear(); st.Climbs.Clear();
+            st.Footholds.Clear(); st.ForbidFallDown.Clear(); st.FootholdForces.Clear(); st.FootholdDrag.Clear(); st.Climbs.Clear();
             foreach (var f in native.footholds)
             {
                 st.Footholds.Add(new Vector4(st.WorldX(f.x1), st.WorldY(f.y1), st.WorldX(f.x2), st.WorldY(f.y2)));
                 st.ForbidFallDown.Add(f.forbidFallDown != 0);
+                st.FootholdForces.Add(f.force);
+                st.FootholdDrag.Add(f.drag);
             }
             foreach (var r in native.ropes) st.Climbs.Add(new ClimbLine { x = st.WorldX(r.x), top = st.WorldY(r.y1), bottom = st.WorldY(r.y2), ladder = r.ladder, upperExit = r.upperExit });
             st.view = new Vector4(native.vr[0], native.vr[1], native.vr[2], native.vr[3]); st.hasView = true;

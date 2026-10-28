@@ -81,7 +81,9 @@ public static class NativeKeyActions
             case GameAction.Quest: QuestWindow.Visible = !QuestWindow.Visible; return;
             case GameAction.Interface: GameHUD.InterfaceHidden = !GameHUD.InterfaceHidden; return;
             case GameAction.Sit: player?.ToggleSit(); return;
-            case GameAction.NpcTalk: NpcField.TryInteractNearest(); return;
+            case GameAction.NpcTalk:
+                NpcDialogUi.ConsumeTalkKeyFrame();
+                NpcField.TryInteractNearest(); return;
             case GameAction.Chat: BottomBar.FocusChat(); return;
             case GameAction.ChatAll: BottomBar.FocusChat(NativeChatChannel.All); return;
             case GameAction.Family: case GameAction.School: case GameAction.ChatRoom:

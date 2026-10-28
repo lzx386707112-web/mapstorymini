@@ -283,3 +283,10 @@
 - 效果系统分支（`applyConsumeOnPickup`、`ScriptedItem.runOnPickup`、`needQuestItem` 深层、`CashShop.gainCash`、`updateAriantScore`）不自行发明数值，经 `BotLootHooks` 委托给上层，未接线即退化为直接入包。
 
 验证：`tools/server-check` 509 通过 / 0 失败（其中地面掉落回归 31 项：落点、归属窗口、队伍收养、400ms 延迟、拾取入库、满包回退、botLoot 不入包、permanentOwner 原端短路语义、限时掉落宽限、item_limit 逐出、一字排开）；`tools/unity-compile-check` 0 警告 0 错误。**未做实机显示/听音验收**，整体仍 incomplete。
+
+
+## Android 启动预热时机（2026-10-28，迁移实现）
+
+- 本节是 Android 启动编排调整，不是新增原端逆向结论。资源校验成功后，`WzAndroidLoader.StartGameRoutine` 先调用幂等的 `GameSession.Boot`，在加载页挂载 `BotAppearancePrebake` 与 `BotPreload`，沿用原帧预算、stand 就绪后驱动生成的顺序及假人预热 45 秒兜底。
+- 等两个组件完成并自行销毁后才调用 `CreateGame` 创建登录流程；纸娃娃等待 stand/walk/sit/jump 全部预合成完。Android 的 `GameLoop.CreateGame` 不再重复挂载组件，避免重置 Finished/StandReady；Editor 与其他平台保留原路径。加载页素材、布局、服务端假人行为规则未调整。
+- 验证：启动顺序与 Android 条件编译分支的定向静态断言通过，diff 空白检查通过；未运行构建或 Android 实机耗时/流畅度验收。

@@ -97,11 +97,24 @@ public static class WzCharacter
                 position = slot, itemId = id });
         }
         var ids = CharacterIds(GameSession.Character.record, inventory);
+        if (NpcField.Map != null && NpcField.Map.fieldType == 82)
+            ids = TutorialAppearance(ids);
         string key = "character_" + string.Join("_", ids);
         if (!appearanceRecipes.ContainsKey(key))
             appearanceRecipes.Add(key, new Dictionary<string, object> {
                 { "ids", new List<object>(ids) }, { "attack", "swingO1" } });
         return key;
+    }
+
+    // CField_FieldType82::OnUserEnter 57E981：仅改变显示，不写入装备栏。
+    public static string[] TutorialAppearance(string[] original)
+    {
+        var ids = new List<string>();
+        for (int i = 0; i < original.Length; i++)
+            if (i < 4 || Category(original[i]) == "Weapon") ids.Add(original[i]);
+        ids.Insert(4, "01002562");
+        ids.Insert(5, "01052081");
+        return ids.ToArray();
     }
 
     public static bool Has(string key) => Recipe(key) != null;
