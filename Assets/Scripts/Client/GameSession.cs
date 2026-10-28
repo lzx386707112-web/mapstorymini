@@ -256,7 +256,7 @@ public static class GameSession
         Profile.Save();
     }
 
-    static void ApplyInventoryToProfile()
+    public static void ApplyInventoryToProfile()
     {
         var d=Profile.Data;
         // 共享 Profile 只是当前角色的镜像，切角时必须清掉上一人的装备。
@@ -277,7 +277,8 @@ public static class GameSession
                 if (pos == -11) d.owned.Add(it.itemId.ToString());
                 continue;
             }
-            d.AddItem(it.itemId, it.quantity);
+            if (EquipSlot.SlotOf(it.itemId) == EquipSlot.Weapon) d.owned.Add(it.itemId.ToString());
+            else d.AddItem(it.itemId, it.quantity);
         }
 
     }

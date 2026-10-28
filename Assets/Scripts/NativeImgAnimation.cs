@@ -11,6 +11,14 @@ public sealed class NativeImgAnimation : MonoBehaviour
     bool repeat;
     public Color Tint = Color.white;
     public SpriteRenderer Image => image;
+    // PacketCreator.showInfo → CUser effect 0x17 (9388F2): original IMG animation
+    // attached to the user's origin. It outlives the disposing NPC session.
+    public static NativeImgAnimation ShowInfo(string path)
+    {
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        if (player == null || string.IsNullOrEmpty(path)) return null;
+        return Spawn(path, player.transform, player.FeetPos, player.SortingOrder + 1);
+    }
     public static NativeImgAnimation Spawn(string path, Transform parent, Vector3 position, int order,
         bool flip=false, bool repeat=false, float lifetime=0)
     {

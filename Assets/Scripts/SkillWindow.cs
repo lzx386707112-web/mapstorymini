@@ -80,11 +80,7 @@ public static class SkillWindow
     public static void Toggle()
     {
         Visible = !Visible;
-        if (Visible)
-        {
-            StatWindow.Visible = false;
-        }
-        else
+        if (!Visible)
         {
             CancelDrag();
         }

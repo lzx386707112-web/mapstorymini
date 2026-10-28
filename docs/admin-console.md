@@ -41,8 +41,14 @@ HTTP 服务，同时供出前端静态资源和 REST 接口；游戏内从侧边
      横屏弹键盘会盖住表单，所以不用它）。
    - WebView 必须 `setLoadWithOverviewMode(false)`：OVERVIEW 会把整页（含高度）
      缩到一屏，登录页这种高页面会被缩到 0.65，字和提示条看着「被挤压」。
-   - 不要给 WebView 设 `WebViewClient`：它是抽象类，`AndroidJavaProxy` 只能代理接口，
-     设了会抛 `is not an interface` 把整个打开流程拱去系统浏览器。
+   - 不要用 `AndroidJavaProxy` 给 WebView 设 `WebViewClient`（抽象类会抛
+     `is not an interface`）。改用真实 Java 插件 `Assets/Plugins/Android/AdminWebViewClient.java`
+     （Gradle 编进 APK）：它把**所有导航锁死在应用内**——没有它时页面的
+     `window.location` 整页导航会被 WebView 派发给系统 → 跳外部浏览器 → 游戏切后台
+     被厂商冻结（nubia CpuFreezer）→ 本地 HTTP 服务停摆，外部浏览器里全部超时。
+   - 前端 axios 拦截器 401 只做 SPA 内跳登录页（`router.push`），**禁止
+     `window.location` 整页跳转**（同样会逃逸到外部浏览器）。会话只存在游戏进程内存，
+     每次重启游戏后第一次请求必 401，属预期行为：拦截器会清旧 token 并弹「登录已过期」。
 5. **明文 HTTP 放行**：Android 9+ 默认禁 cleartext，系统 WebView 会直接报
    `net::ERR_CLEARTEXT_NOT_PERMITTED`（表现为一片黑底 + 错误页）。构建钩子
    `Assets/Editor/AndroidNativeDataBuild.cs`（`IPostGenerateGradleAndroidProject`）

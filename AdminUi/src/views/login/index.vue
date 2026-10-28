@@ -19,7 +19,10 @@
 <style lang="less" scoped>
   .container {
     display: flex;
-    height: 100vh;
+    // 手机横屏视口很矮（外部浏览器还带地址栏）：固定 100vh 会把 flex 内容压扁、
+    // footer 叠到表单上。改成 min-height + 可滚动，内容多时自然撑开。
+    min-height: 100vh;
+    overflow-y: auto;
 
     .banner {
       width: 550px;
@@ -32,7 +35,7 @@
       flex: 1;
       align-items: center;
       justify-content: center;
-      padding-bottom: 40px;
+      padding: 24px 0 56px;
     }
 
     .footer {

@@ -1,5 +1,17 @@
 # NPC 对话窗口（UIWindow.img/UtilDlgEx）
 
+## 罗杰苹果的新手引导 showInfo（2026-10-28）
+
+原始 `quest/1021.js` start在status3发2010007并forceStartQuest，status4继续说明使用苹果，status5调用 `qm.showInfo("UI/tutorial.img/28")` 后dispose；并非在发苹果的同一页立刻播放。源服务端 `AbstractPlayerInteraction.showInfo` → `PacketCreator.showInfo` 发SHOW_ITEM_GAIN_INCHAT，子类型0x17、路径、int1。EXE身份同下文：`0x9377D9`读取effect类型，经`0x938AD2`跳表第0x17项到`0x9388F2`，读字符串与int，`0x938934..0x93897A`从用户layer取得父引用并调用`0x439750`播放资源。不能用Toast或新绘提示替代该IMG动画。
+
+`UI/tutorial.img/28`共12帧，各215×283、origin=(90,355)、delay270ms，总3240ms。旧NpcApi.showInfo为空实现，现接NativeImgAnimation.ShowInfo，跟随角色原点并复用原origin/delay，动画生命周期独立于dispose。无player时不创建。QuestNpcChecks实际推进原始1021脚本五次，验证发苹果、创建原动画、关闭会话不销毁动画及播毕释放；日志`/tmp/roger-apple-unity.log`为24177通过/0失败。脚本包2777条解析0失败；全量NPC harness仍769ok/47runFail/73JavaInterop既有基线。未改原始JS，未进行Android实机引导位置/遮挡验收。
+
+## 罗杰菜单中的「你好，我是莎丽」（2026-10-28 核对）
+
+用户截图显示罗杰菜单在「正在进行中的任务」下列出此任务。任务名不能用来判断归属：复制版 `Quest/Check.img/30001/0/npc=2100`（莎丽接取），`/1/npc=2000`（罗杰交付），与源服务端 `wz/Quest.wz/Check.img.xml` 一致；QuestInfo/30001/1 明写「去找罗杰吧」。原始 `scripts-zh-CN/quest/30001.js` 的 end 首屏为「是莎莉让您来的吧？」，下一页 forceCompleteQuest。因此此项属于当前 NPC 的交付候选，不能因名称含莎丽或尚处 started 状态而隐藏。
+
+复现：`rtk proxy /tmp/mapledash-reverse-venv/bin/python tools/imgdump.py Quest/Check.img 30001`（在 MapleDash 下执行）。当前 `NpcField.ChoicesFor` 按 CanComplete/CanStart 筛选，未把所有 started 任务直接塞入 NPC 菜单；「正在进行中的任务」是原 IMG list0 标题。本次只核对数据和脚本，未新增 EXE 逆向结论、未改运行时代码，也未做点击交付或 Android 实机验证。
+
 核实快照：2026-10-28。二进制身份见 [binary-and-tools](binary-and-tools.md)（SHA256 `1b91cf5b…f134b2`，ImageBase `0x400000`）。
 本文件区分「已用 IMG/汇编核实的原端行为」与「MapleDash 当前实现」，未核实的推测单列在末尾。
 
@@ -186,7 +198,7 @@ MapleDash 原实现仅角色头顶灯泡有 Pointer.Clicked 热区；NPC 的 Que
 
 用户要求连续按 NPC 对话键继续对白。原端同一 EXE SHA256 1b91cf5b…f134b2 的 `CUtilDlgEx` 键盘入口 `0x9AC0B6`：`0x9AC295..0x9AC2C5` 读取扫描码对应键位，检查 type5/action54（0x36），再进入与 Enter 相同的对话分派。不是只有打开 NPC 时才识别此键。
 
-当前缺陷：InputBridge 的 playing 排除 NpcSession.Blocking，又用 playing 门控 VirtualControls.Tick，导致打开窗口后虚拟对话按钮被 ReleaseAll；GUI 的 KeyDown 无法收到虚拟注入。修正为对话期间只保留 EffectiveAction=NpcTalk 的按钮命中，移动/攻击等仍不参与；InputBridge 在场景 NPC 打开分派之前处理既有会话的 InputHub.Pressed(NpcTalk)。Update 和 GUI 共用 ContinueWithTalkKey，每帧最多回复一次；打开时也消费该帧，防首次按键直接跳页。每次新的按下继续 Next/NextPrev/OK；选项、输入、接受/拒绝暂保留原有显式操作，不新增自动选择。此修改没有宣称特殊对话类型全部键盘迁移。没有修改原始 JS、IMG 或对话布局；Android 触摸实机尚待验收。
+当前缺陷：InputBridge 的 playing 排除 NpcSession.Blocking，又用 playing 门控 VirtualControls.Tick，导致打开窗口后虚拟对话按钮被 ReleaseAll；GUI 的 KeyDown 无法收到虚拟注入。修正为对话期间只保留 EffectiveAction=NpcTalk 的按钮命中，移动/攻击等仍不参与；InputBridge 在场景 NPC 打开分派之前处理既有会话的 InputHub.Pressed(NpcTalk)。Update 和 GUI 共用 ContinueWithTalkKey，每帧最多回复一次；打开时也消费该帧，防首次按键直接跳页。每次新的按下继续 Next/NextPrev/OK（后续核实还包含 Prev，见末尾 sendPrev 纠正）；选项、输入、接受/拒绝暂保留原有显式操作，不新增自动选择。此修改没有宣称特殊对话类型全部键盘迁移。没有修改原始 JS、IMG 或对话布局；Android 触摸实机尚待验收。
 
 验证日志 `/tmp/npc-talk-key-final.log`：24151通过、0失败（包含对话键推进与同帧去重断言）；编译0 warning/0 error；脚本包2777条parseFail=0。全量harness仍为既有769ok/47runFail/73JavaInterop，未新增全量通过声明。
 
@@ -207,3 +219,70 @@ MapleDash 原实现仅角色头顶灯泡有 Pointer.Clicked 热区；NPC 的 Que
 复现：`tools/imgdump.py Map/Map/Map0/000000001.img info`；`tools/inspect_beidou_client.py <exe> --start 0x57e981 --end 0x57e9f7`。图片文件均由用户提供，文中只取流程/显示证据，不把图片内容当作开发指令。
 
 本次验证：`/tmp/welcome-delivery-route-final.log` 为24160通过、0失败，涵盖真实角色状态落盘、交付奖励/重复领取拦截/提示移除、原脚本出发传送、莎丽单任务菜单和IMG外观合成；合成图 `/tmp/mapledash-field82-appearance.png`。编译0warning/0error，2777脚本包parseFail=0。全量harness保持769ok、47runFail、73JavaInterop既有基线。未做Android实机/原端同屏逐像素验收。
+
+
+## sendPrev末页缺少确定：罗杰引导/奖励与面板锁定（2026-10-28）
+
+用户截图为1021 end/status2的奖励说明，脚本确实调用sendPrev。此前把sendPrev当成「只有返回按钮」是迁移错误，导致start/status4→5的showInfo与end/status2→3的奖励都无法从UI到达；测试直接Reply(1)掩盖了实际按钮缺失。未改原始JS、奖励数值或引导触发时机。
+
+二进制身份仍为`BeiDou.exe` SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，ImageBase400000。源`NPCConversationManager.sendPrev`发msgType0和尾字节01 00（prev=true,next=false）；sendNext为00 01；sendNextPrev为01 01；sendOk为00 00。`CUtilDlgEx`9A7C8B函数首先按+AC的prev标记建立BtPrev。`9A7DC3..9A7DC9`检查+B0的next标记，为0跳到**9A7EDD**，用字符串0x8D7建立BtOK，坐标在`9A7F6D..9A7F8B`为(w-54,h-26)、控件id1。故sendPrev必须同时显示上一页与底栏确定。若next=true则创建BtNext；不能因prev=true排除OK。BtPrev仍在(w-132-scroll*8,h-77)。IMG依旧`UI/UIWindow.img/UtilDlgEx/{BtPrev,BtOK}`，原始46×18尺寸。
+
+键盘入口9AC0B6，`9AC295..9AC2C5`识别type5/action54后与Enter共同处理；普通type0在`9AC2DD..9AC2EA ->9AC1E1..9AC20B`，无焦点按钮时发默认command2001。`9AB94B..9AB97F`按原生对话类型分派，type0的2001交窗口处理。因此prev-only正常末页也支持正向确认，不是对话键无效页。运行时`NpcDialog.CanConfirmWithTalkKey`纳入Prev，NpcDialogUi补同屏BtOK并允许NPC对话键/Enter回复mode1/type0；返回仍mode0。NativeKeyActions.NpcTalk在已有对话时继续，防直接动作入口再次尝试开NPC；按键/快捷入口的任务窗统一调用QuestWindow.Toggle。
+
+普通背包/任务窗当前Toggle互不关闭；旧末页卡住时NpcSession.Blocking一直为true，会关闭常规InputBridge动作分派且GameHUD禁用底栏/浮窗按钮，表现为其他窗口打不开。此处原先仅修正释放路径、保留窗口模态门控；用户后续纠正源端对话期间也能开其他窗口，该迁移限制已在下一节取消。接受/拒绝、菜单选择仍须明确选择，未添加自动接受。
+
+复现工具：`tools/inspect_beidou_client.py <exe> --start 0x9a7c8b --end 0x9a8047`，`--start 0x9ac0b6 --end 0x9ac3ae`，`--start 0x9ab94b --end 0x9aba3a`；字符串可按同二进制池索引核对。`NativeViewportChecks.RunNpc`新增真实Play模式分帧对话、实际OnGUI原BtOK点击、引导SpriteRenderer相机可见性、背包/任务窗共存的回归，不再只以Reply断言代替UI路径。引导渲染测试使用不运行角色玩法的fixture并将生成视觉脱离inactive父节点以实际更新绘制；这不代表Android实机验证。
+
+本次验证：`/tmp/roger-npc-gui-2.log` 的 Play/OnGUI 集成为14项通过，实际点击BtOK发奖并释放会话；生成并目检 `/tmp/roger-reward-fixed.png`，底栏确定恢复。`/tmp/roger-guide-fixed.png` 确认原始教程素材进入相机；测试特意改变相机/视觉父节点，不据此声称实地图定位已验收。`/tmp/roger-quest-regression.log` 为24183项通过、0失败；unity-compile-check 为0 warning/0 error。脚本包2777条、parseFail=0；全量harness仍是769ok/47runFail/73JavaInterop既有基线。分帧检查调用NativeKeyActions真实动作入口，不等同InputBridge到Android触摸全链路；Android实机尚未验证。
+
+## 对话未结束时独立窗口可操作（2026-10-28，用户纠正）
+
+源端行为依据是用户实跑反馈：NPC对话未结束也可以打开其他窗口。此前把NpcSession.Blocking同时用于角色控制与全局窗口封锁是迁移错误；上节“释放对话后共存”的验证不足以覆盖此要求。此条不是新反汇编结论，二进制身份与sendPrev证据沿用上节，不虚构窗口输入函数地址；未改IMG布局。
+
+修正共用层：GameHUD取消对BottomBar/GameWindows的GUI.enabled禁用；BottomBar的大/小窗口按钮去掉对话状态门控；InputBridge在dialogInput期间继续派发type4界面动作及Help/QuickSlot，NativeKeyActions.AvailableDuringNpcDialog供虚拟按键命中共用。移动/攻击/拾取仍不因开窗口放行。QuestWindow.Toggle不再CloseActive；能力值窗/技能窗Toggle不再互关。新NPC交互仍避免覆盖已有会话。物品使用与传送不在本次“开窗”修改范围。
+
+此为全部NPC/任务共享输入与窗口层，不以任务ID分支。sendPrev同样由NpcApi统一映射NpcDialogMode.Prev，全部脚本共用上一页+确定和对话键处理；源脚本中37个文件使用sendPrev（19任务、18NPC）。不能据此声称其他脚本/API缺口均解决。新增NativeViewportChecks.RunNpc覆盖9种常见页的实际InputBridge动作、底栏原按钮Repaint点击及会话保持，继续走原始罗杰流程验证引导/奖励。
+
+本次验证：`/tmp/npc-window-coexist-4.log` 为41项通过（9种页面×InputBridge开窗/会话保留/实际底栏点击，共27项，另14项罗杰GUI流程）。编译0warning/0error；2777条脚本打包parseFail=0。全量889个NPC脚本为769ok/47runFail/73JavaInterop，与既有基线相同，不宣称所有任务均无缺陷。测试为编辑器真实Play/OnGUI和虚拟动作注入，尚未进行Android触摸实机验证。
+
+## 第二次对话键停在任务菜单（2026-10-28）
+
+用户再次指出第一下打开任务弹窗、第二下无反应。实际遗漏是ContinueWithTalkKey明确排除了Simple、YesNo、AcceptDecline；以前以TalkQuest起步的测试绕过NpcField.Interact产生的任务列表，并用Reply直接接受，故不能证明连续对话键完成真实入口。此前“选择须显式鼠标操作”的限制仅为迁移缺口，不是源端禁止NPC对话键的结论，现纠正。
+
+重新读取同一EXE，SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，base400000。`9AC2DD..9AC304`对话键分派不仅包含type0：type1进入9AC1E1，type4进入9AC1BE，type9进入9AC1E1。type4的`9AC1BE..9AC1DC`从键盘子对象+F4取得选项序号，以+F8数组解引用，再从选项+28读真实返回索引写+F0，发command1。`9AC347..9AC391`上下移动当前项并刷新；type0/1/9的`9AC1E1..9AC20B`确认焦点按钮或默认2001。复现：`/tmp/mapledash-reverse-venv/bin/python tools/inspect_beidou_client.py <exe> --start 0x9ac0b6 --end 0x9ac3ae`。输入type2/3等其他分派不据此擅自扩大。
+
+迁移共用ContinueWithTalkKey现支持Simple默认首个可选项（正文#L的真实Link索引优先，再程序Selections，跳过HeaderArt分组标题），YesNo默认是与AcceptDecline默认接受；Enter复用同一入口。拒绝与其他选项仍可点击。当前未实现原端上下键焦点移动，不能宣称所有键盘焦点行为完全迁移；未改变IMG、脚本或奖励值。无任务ID特例。
+
+Play回归改为虚拟NpcTalk按下→实际InputBridge.Update→Nearest→NpcField.Interact任务菜单→第二下选中1021→后续逐帧按键→接受→引导与dispose；不再调用TalkQuest绕过入口，也不以Reply代替接受。`/tmp/npc-talk-inputbridge.log` 为43项通过（含既有9种页开窗保持回归）。这是编辑器动作注入，尚非Android实体触摸验收。编译0warning/0error；脚本包2777条parseFail=0；全量脚本维持769ok/47runFail/73JavaInterop既有基线。
+
+补充协议回归：`/tmp/npc-talk-menu-protocol.log` 为24186项通过、0失败，包含对话键确认YesNo、AcceptDecline以及原始`#L7#`非零选项返回索引，避免仅覆盖程序生成任务菜单。
+
+## 训练图任务提示核查与身份纠正（2026-10-28）
+
+此前把用户截图识别为 map40000 的透德2004、map1010000的麦加12100是错误的。截图实际为 map2 透德9101002、map3彼特9101001。CheckBeginnerNpcBindings及NativeViewportChecks.RunMarkers此前通过的2004/12100用例仅属于其他地图的回归，不能用于判定截图问题。撤回此前“用户等级/职业未知”的描述：用户已说明2级；只读设备存档核查为level2/job0、完成30001/1021/1032/1033、进行中1034。没有修改设备存档。
+
+确定的数据证据：
+- Map/Map/Map0/000000002.img 的life含9101002、9101003、9409000、9409001；map3包含9101001。
+- Quest/Check.img 的8142起始NPC为9101002，要求job0且持有1042003×1；交付NPC9101003，要求9409000/9409001各1击杀及4000300/4000301各1物品。原端gms-server/wz与wz-zh-CN两套Quest.wz/Check.img.xml与客户端IMG均有此衣服限制；ItemRequirement.java未提供普通角色绕过规则。当前角色无1042003。不能直接删除条件或把2004任务1035绑定到同名9101002。
+- 9101001未在Check.img中绑定普通任务；Npc/9101001.img/info/script/0/script为begin_jp2，原始npc/9101001.js为训练结束对白、经验与传送40000入口。脚本入口不等于普通任务候选。
+- 当前MarkerOf只处理普通任务可接/可交及已迁移WelcomeTutorial；因此上述状态不会产生普通QuestIcon。源端是否另有教程/脚本提示、如何决定显示，尚未核实，不能以当前实现的无图标反证原端预期。
+
+剩余边界：截图头顶提示尚未修好。须继续定位原端脚本/教程提示状态，区分普通QuestIcon与教程提示；不得凭同名NPC、角色等级或测试通过编造绑定。可复现IMG证据使用tools/imgdump.py；此节属于资源/服务端证据，无新增EXE函数地址结论。
+
+### 本次验证与下一逆向入口
+
+QuestNpcChecks新增真实NPC索引/交付NPC/彼特原脚本存在检查，24197项通过、0失败（/tmp/actual-training-npc-checks.log）；这仅验证数据，不代表提示已修复。编译0warning/0error。
+
+BeiDou.exe身份沿用1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2、ImageBase400000。新定位普通QuestIcon更新函数6D1779..6D1B10：清空NPC+CC/+D0/+D4/+C8列表，遍历+C4的WORD quest id；6D185B调用721D2C，6D189F/6D18B2调用721163进行分类。6D18D9..6D192B按+D4非空→图2、+CC非空→图0、+D0非空→图1、否则3（无图）；6D1966使用字符串3190(UI/UIWindow.img/QuestIcon/%d)，6D1943..6D1956状态3清除图层。可复现tools/inspect_beidou_client.py --start 0x6d1779 --end 0x6d1b11。这里只确定列表/图标状态分派；721163与721D2C的完整条件、脚本提示是否走其他图层仍待追踪，不将其写成运行时修改规则。
+
+## 公共进行中标记与击杀进度修正（2026-10-28）
+
+二进制身份沿用上述SHA256/ImageBase。已迁移6D1779..6D1B10中+D0非空对应QuestIcon/1的进行中状态（优先级可交2 > 可接0 > 进行中1）；原图UI/UIWindow.img/QuestIcon/1共4帧，每帧42×44，origin(21,22)、delay150ms。NpcField新增progress状态，仅Profile.started且Check/1/npc为当前NPC的任务进入此列表，不能把接取NPC或其他同名NPC也算进去；混合菜单分组读取UtilDlgEx/list3，选择走结束对白入口。
+
+非脚本任务条件未达成时读取原始Quest/Say.img/<id>/1/stop/item或mob；这条原端资源入口字符串3219=`Quest/Say.img/%d/1/stop/%s`，71902B..719057格式化并加载，不应直接拒绝为toast或进入完成奖励。脚本任务结束入口依据服务端QuestScriptManager.end，仅要求STARTED及NPC存在，具体发奖仍由原脚本判断。确认发奖阶段继续CanComplete检查。本次stop分类仅覆盖物品/击杀，不声称已移植所有条件失败分派。
+
+另修正独立公共逻辑错误：Quest.java初始化把Check/0与Check/1/mob都登记为relevantMobs，但getMobAmountNeeded(452..460行)只取completeReqs[MOB]；QuestStatus.registerMobs与progress(133..170行)只推进已登记且未到需求上限的怪物。旧QuestLogic.OnMobKilled误读startReq.mobs，导致8142、1035等完成条件击杀永不增加。现改读completeReq.mobs、按需求封顶并立即InvalidateMarkers。无需给NPC/任务硬编码击杀数量。
+
+QuestNpcChecks.CheckTrainingQuestProgress使用level2/job0、真实8142条件和原文：验证原1042003门槛仍生效、人工设置STARTED后仅9101003有进行中标记、stop/item与stop/mob不发奖、两种9409000/9409001计数及上限、满足后切换可交、未接不累计。/tmp/training-quest-progress.log共24208项通过、0失败；编译0warning/0error；脚本包2777 parseFail0；全量NPC脚本769ok/47runFail/73JavaInterop，保持既有基线。这些公共修正不能解释用户尚未接8142时9101002无灯泡，也不能给9101001凭空绑定任务：原端限制与脚本/教程提示缺口仍保留。
+
+绘制验证：NativeViewportChecks.RunMarkers追加map2/9101003，STARTED8142条件不足时DrawField实际绘制QuestIcon1，共9项通过（/tmp/training-progress-marker-render.log）；/tmp/npc-marker-9101003.png已生成并目检。仍是隔离相机/GUI回归，无NPC外观或完整地图，不是Android实机验收。

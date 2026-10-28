@@ -19,8 +19,18 @@ public static class NpcDialogUi
         talkKeyFrame = Time.frameCount;
         var session = NpcSession.Active;
         if (session == null || !session.Dialog.Visible) return false;
-        var mode = session.Dialog.Mode;
-        if (mode != NpcDialogMode.Next && mode != NpcDialogMode.NextPrev && mode != NpcDialogMode.Ok) return false;
+        var dialog = session.Dialog;
+        if (dialog.Mode == NpcDialogMode.Simple)
+        {
+            // Native type4 confirms the selected entry; section headers are not choices.
+            foreach (var run in dialog.Content.Runs)
+                if (run.SelectionMarker && run.Link >= 0) { session.Reply(1, run.Link); return true; }
+            foreach (var choice in dialog.Selections)
+                if (choice.HeaderArt == null && choice.Index >= 0) { session.Reply(1, choice.Index); return true; }
+            return false;
+        }
+        if (!dialog.CanConfirmWithTalkKey && dialog.Mode != NpcDialogMode.YesNo &&
+            dialog.Mode != NpcDialogMode.AcceptDecline) return false;
         session.Reply(1);
         return true;
     }
@@ -29,12 +39,17 @@ public static class NpcDialogUi
     {
         NpcSession.Tick();
         OnlineTime.Tick();
+        var session = NpcSession.Active;
+        if (session != null && session.Dialog.Visible) DrawDialog(session);
+    }
+
+    // 场景名牌/任务标记在浮窗下面，对话框仍在浮窗上面。
+    public static void DrawField()
+    {
         DrawNpcNames();
         DrawMarkers();
         DrawPlayerQuestAlert();
         HandleNpcClick();
-        var session = NpcSession.Active;
-        if (session != null && session.Dialog.Visible) DrawDialog(session);
     }
 
     // NPC 名字牌（原客户端默认开启「显示 NPC 名字」）：半透明深绿底 + 亮绿 1px 边框 + 黄绿字。
@@ -121,7 +136,7 @@ public static class NpcDialogUi
             var npc = map.npcs[i];
             if (npc.hide != 0) continue;
             var marker = NpcField.MarkerOf(npc.id);
-            if (!marker.start && !marker.complete) continue;
+            if (!marker.start && !marker.complete && !marker.progress) continue;
 
             float wx = map.WorldX(npc.x);
             float wy = map.WorldY(npc.y) + (npc.head + 26f) / Art.PPU;   // 名字行（约 14px）上方，避免图标压在名字上
@@ -130,7 +145,7 @@ public static class NpcDialogUi
             var gui = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);
             if (gui.x < -40f || gui.x > UiKit.W + 40f || gui.y < -40f || gui.y > UiKit.H + 40f) continue;
 
-            string art = "UI/UIWindow.img/QuestIcon/" + (marker.complete ? "2" : "0");
+            string art = "UI/UIWindow.img/QuestIcon/" + (marker.complete ? "2" : marker.start ? "0" : "1");
             DrawQuestIcon(art, gui);
             if (ClickQuestIcon(QuestIconRect(art, gui, 0f))) NpcField.Interact(npc.id);
         }
@@ -233,8 +248,8 @@ public static class NpcDialogUi
         if (e.type == EventType.KeyDown && e.keyCode != KeyCode.None && e.keyCode == KeyMap.Of(GameAction.NpcTalk))
         { ContinueWithTalkKey(); e.Use(); return; }
         if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter) &&
-            (session.Dialog.Mode == NpcDialogMode.Next || session.Dialog.Mode == NpcDialogMode.NextPrev || session.Dialog.Mode == NpcDialogMode.Ok))
-        { session.Reply(1); e.Use(); return; }
+            ContinueWithTalkKey())
+        { e.Use(); return; }
 
         float w = 529f;
         var content = session.Dialog.Content;
@@ -267,7 +282,8 @@ public static class NpcDialogUi
                 break;
 
             case NpcDialogMode.Prev:
-                if (PageButton(rect, contentH, "BtPrev", 122f)) session.Reply(0);
+                if (PageButton(rect, contentH, "BtPrev", 122f)) { session.Reply(0); return; }
+                if (Button(ref bx, by, "BtOK")) session.Reply(1);
                 break;
 
             case NpcDialogMode.NextPrev:

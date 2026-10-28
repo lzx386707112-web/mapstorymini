@@ -49,9 +49,19 @@ public static class AdminWebView
                 settings.Call("setBuiltInZoomControls", false);
                 settings.Call("setTextZoom", 100);                   // 别被系统「字体大小」设置二次缩放
                 web.Call("setBackgroundColor", unchecked((int)0xFF101418));   // 先铺底色，避免加载前白闪
-                // 不设 WebViewClient：它是抽象类不是接口，AndroidJavaProxy 代理不了
-                // （会抛 "android.webkit.WebViewClient is not an interface" 并让整个打开流程回退）。
-                // 不设 client 时 WebView 自己接管导航，加载失败也会显示系统自带的错误页。
+                // 导航拦截：Assets/Plugins/Android/AdminWebViewClient.java（真实 Java 类，
+                // WebViewClient 是抽象类没法用 AndroidJavaProxy 代理）。没有它时页面里的
+                // window.location 整页导航会被 WebView 派发给系统 → 跳外部浏览器 →
+                // 游戏切后台被冻结 → 后台接口全部超时。设了之后任何导航都留在应用内。
+                try
+                {
+                    web.Call("setWebViewClient",
+                        new AndroidJavaObject("com.mapledash.game.AdminWebViewClient"));
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("[Admin] AdminWebViewClient 挂载失败（旧包缺 Java 插件？重出 APK）: " + e.Message);
+                }
                 // 关闭 Dialog 时同步销毁 WebView，防泄漏
                 dialog.Call("setOnDismissListener", new DismissCallback(web));
                 dialog.Call("setContentView", web);
@@ -68,8 +78,11 @@ public static class AdminWebView
             catch (Exception e)
             {
                 dialog = null;
-                Debug.LogError("[Admin] 应用内 WebView 打开失败，回退系统浏览器: " + e.Message);
-                Application.OpenURL(url);
+                // 绝不回退 Application.OpenURL：跳外部浏览器 = 游戏切后台被冻结 =
+                // 本地服务停摆 = 后台页面全部超时。失败就在游戏内提示。
+                Debug.LogError("[Admin] 应用内 WebView 打开失败: " + e);
+                try { BottomBar.Toast("后台系统打开失败：" + e.Message); }
+                catch (Exception) { }
             }
         }));
     }
@@ -120,10 +133,9 @@ public static class AdminWebView
         }
     }
 
-    // 注：这里没有 WebViewClient。它是抽象类，AndroidJavaProxy 只能代理接口，
-    // 设了会抛 "android.webkit.WebViewClient is not an interface"，把整个打开流程拱去系统浏览器。
-    // 想自绘错误页就得写 Java 插件（Assets/Plugins/Android/*.java 里的子类），暂不值得。
-    // 不设 client 时 WebView 自己处理导航，失败也会显示系统错误页（内容可读，够定位问题）。
+    // 注：WebViewClient 通过 Assets/Plugins/Android/AdminWebViewClient.java 提供
+    // （抽象类没法用 AndroidJavaProxy 代理，见该文件头注释）。它把所有导航锁死在
+    // 应用内，包括 SPA 401 登出跳转；前端 interceptor 也不再做整页导航（双保险）。
 #else
     public static bool Supported => false;
 

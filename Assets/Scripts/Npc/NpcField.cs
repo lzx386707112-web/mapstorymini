@@ -13,6 +13,7 @@ public static class NpcField
     {
         public bool start;       // 可接
         public bool complete;    // 可交
+        public bool progress;    // 已接取，交付条件尚未满足
     }
 
     public static void Bind(FieldMap m)
@@ -78,7 +79,7 @@ public static class NpcField
         return best;
     }
 
-    // 原客户端：NPC 头顶 ! = 可接，? = 可交。优先返回「可交」，与服务端交任务优先一致。
+    // CNpc 6D18D9..6D192B: complete(2) > start(0) > progress(1).
     public static Marker MarkerOf(int npcId)
     {
         if (Time.unscaledTime >= markerRefresh)
@@ -95,6 +96,7 @@ public static class NpcField
             var q = QuestCatalog.Get(ids[i]);
             if (q == null) continue;
             if (QuestLogic.CanComplete(q, npcId)) { m.complete = true; break; }
+            if (QuestLogic.InProgressAt(q, npcId)) m.progress = true;
             if (m.start) continue;
             if (QuestLogic.CanStart(q, npcId)) m.start = true;
         }
@@ -109,6 +111,7 @@ public static class NpcField
         public int npcId;
         public QuestDef quest;
         public bool complete;
+        public bool progress;
         public bool welcome;
         public string Title => welcome ? WelcomeTutorial.Title + (complete ? " (已完成)" : "") : quest.name;
         public int AlertId => welcome ? int.MinValue : quest.id;
@@ -125,6 +128,7 @@ public static class NpcField
             if (q == null) continue;
             if (QuestLogic.CanComplete(q, npcId)) choices.Add(new QuestChoice { npcId = npcId, quest = q, complete = true });
             else if (QuestLogic.CanStart(q, npcId)) choices.Add(new QuestChoice { npcId = npcId, quest = q });
+            else if (QuestLogic.InProgressAt(q, npcId)) choices.Add(new QuestChoice { npcId = npcId, quest = q, progress = true });
         }
         choices.Sort((a, b) => a.complete == b.complete ? a.AlertId.CompareTo(b.AlertId) : a.complete ? -1 : 1);
         return choices;
@@ -272,13 +276,14 @@ public static class NpcField
 
     static void FillQuestMenu(DialogContent content, IReadOnlyList<QuestChoice> choices)
     {
-        foreach (bool complete in new[] { true, false })
+        foreach (int group in new[] { 0, 1, 3 })
         {
             bool header = false;
             for (int i = 0; i < choices.Count; i++)
             {
-                if (choices[i].complete != complete) continue;
-                if (!header) { content.Selections.Add(new DialogSelection { Index = -1, HeaderArt = complete ? "list0" : "list1" }); header = true; }
+                int choiceGroup = choices[i].complete ? 0 : choices[i].progress ? 3 : 1;
+                if (choiceGroup != group) continue;
+                if (!header) { content.Selections.Add(new DialogSelection { Index = -1, HeaderArt = "list" + group }); header = true; }
                 content.Selections.Add(new DialogSelection { Index = i, Text = choices[i].Title });
             }
         }
@@ -309,7 +314,7 @@ public static class NpcField
                 Mathf.Abs(player.FeetPos.y - map.WorldY(n.y)) <= 800f / Px);
             if (!nearby) { BottomBar.Toast("目标 NPC 距离过远"); return; }
         }
-        NpcSession.TalkQuest(choice.quest, choice.npcId, choice.complete);
+        NpcSession.TalkQuest(choice.quest, choice.npcId, choice.complete || choice.progress);
     }
 
     public static bool TryInteractNearest()

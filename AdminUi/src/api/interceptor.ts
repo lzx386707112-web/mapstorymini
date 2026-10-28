@@ -3,6 +3,7 @@ import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Message } from '@arco-design/web-vue';
 import { useUserStore } from '@/store';
 import { getToken } from '@/utils/auth';
+import router from '@/router';
 
 /* eslint-disable no-bitwise */
 function generateUUID() {
@@ -92,9 +93,35 @@ axios.interceptors.response.use(
     return res;
   },
   (error) => {
+    // 401 = 会话失效（token 过期或游戏重启后内存会话已清空）。
+    // 注意：绝不能 window.location 整页跳转——应用内 WebView 没有外部浏览器兜底，
+    // 整页导航会被 WebView 派发给系统，直接逃逸到外部浏览器（且游戏切后台被冻结，
+    // 外部浏览器里的后台全部超时）。只在 SPA 内部清 token + 跳登录页。
+    if (error.response?.status === 401) {
+      const msg =
+        (error.response?.data as { message?: string } | undefined)?.message ||
+        '登录已过期，请重新登录';
+      const userStore = useUserStore();
+      userStore.logoutCallBack();
+      Message.error({
+        content: msg,
+        duration: 5 * 1000,
+      });
+      const current = router.currentRoute.value;
+      if (current.name !== 'login') {
+        router.push({
+          name: 'login',
+          query: {
+            redirect: (current.name as string) || '',
+            ...current.query,
+          },
+        });
+      }
+      return Promise.reject(new Error(msg));
+    }
     let errorMessage;
     if (error.message === 'Network Error') {
-      errorMessage = '无法连接到服务器';
+      errorMessage = '无法连接到服务器（确认游戏是否切到了后台）';
     } else {
       errorMessage = error.message || 'Request Error';
     }
@@ -102,14 +129,6 @@ axios.interceptors.response.use(
       content: errorMessage,
       duration: 5 * 1000,
     });
-    if (error.response.status === 401) {
-      const userStore = useUserStore();
-
-      userStore.logoutCallBack();
-      // window.location.reload();
-      window.location.href = '/';
-      return Promise.reject(new Error('登录已过期'));
-    }
     return Promise.reject(error);
   }
 );

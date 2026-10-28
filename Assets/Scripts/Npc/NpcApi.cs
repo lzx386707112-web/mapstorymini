@@ -244,7 +244,7 @@ public static class NpcApi
         cm.Set("mapMessage", Fn(c => DropNotice(c)));
         cm.Set("topMessage", Fn(c => ToastIfAny(Str(c, 0))));
         cm.Set("numberWithCommas", Ret(c => S(Int(c, 0).ToString("N0"))));
-        cm.Set("showInfo", Fn(c => { }));
+        cm.Set("showInfo", Fn(c => NativeImgAnimation.ShowInfo(Str(c, 0))));
         cm.Set("showIntro", Fn(c => { }));
         cm.Set("showVideo", Fn(c => { }));
         cm.Set("playSound", Fn(c => { }));

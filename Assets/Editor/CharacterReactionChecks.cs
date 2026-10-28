@@ -100,6 +100,19 @@ public static class CharacterReactionChecks
                 Require(!(bool)touches.Invoke(contactMob, new object[] { p }), "Native contact hit separated bodies " + action);
             }
             Require(Math.Abs(mobAnimation.Duration - .6f) < .001f, "Snail hit1 was accelerated away from native 600ms");
+            p.PlaceAt(0, 0);
+            contactMob.fieldMode = true;
+            foreach (int mobId in new[] { 9300018, 9409000, 9409001 })
+            {
+                contactMob.fieldMobId = mobId;
+                Require(WzAssets.FileRoot("Mob/" + mobId + ".img").Int("info/notAttack") == 1,
+                    "Training monster must retain original notAttack flag " + mobId);
+                Require(!(bool)touches.Invoke(contactMob, new object[] { p }),
+                    "notAttack training monster must not hit overlapping player " + mobId);
+            }
+            contactMob.fieldMobId = 100100;
+            Require((bool)touches.Invoke(contactMob, new object[] { p }),
+                "Ordinary field snail contact must still hit overlapping player");
             UnityEngine.Object.DestroyImmediate(contactMob.gameObject);
             UnityEngine.Object.DestroyImmediate(go);
             ClearNumbers();

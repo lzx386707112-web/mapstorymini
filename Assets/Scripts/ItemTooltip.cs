@@ -2,25 +2,8 @@ using System.Collections.Generic;
 using MapleDash.Wz;
 using UnityEngine;
 
-// ————————————————————————————————————————————————————————————
-// 背包 / 装备窗 物品悬浮详情（tooltip）。
-//
-// 源端依据（BeiDou / GMS083 WZ）：
-//   UI/UIWindow.img/ToolTip/Equip  是需求/属性小图标图集：
-//     Can / Cannot / Dot / WeaponCategory / ItemCategory / Speed / Property /
-//     mesos / cash / GrowthEnabled / GrowthDisabled。这些是用客户端位图字体预先
-//     渲染好的小标签（reqLEV、职业名、Cannot 等）。
-//   除图标外，原端用客户端字体绘制物品名称与各数值，并用代码绘制半透明深色
-//   背景框——本 WZ 的 ToolTip 节点下没有任何 backgrnd/cover/line 帧图，属于
-//   「原端确实用代码绘制」的例外，按项目规则照搬其绘制逻辑（深色框 + 1px 描边）。
-//   物品名称/描述取自 String/{Eqp,Consume,Ins,Etc,Cash}.img（按 id 首位分段）；
-//   装备属性/需求取自 Character/<类别>/<8位id>.img/info，与 EquipCatalog 同源。
-//
-// 渲染约定：本项目所有窗口的中文文本都走 UiKit.Font（StatWindow / SkillWindow /
-// NpcDialog 一致），名称与数值同理用运行时字体绘制；小标签的源端位图图集仅作
-// 还原参考，不强行逐字贴图。
-// ————————————————————————————————————————————————————————————
-
+// Original tooltip dispatch/frame geometry is recorded in inventory-and-tooltip.md.
+// Common items use CToolTip::SetItem and the source item canvas; equipment has a separate layout.
 public static class ItemCatalog
 {
     static readonly Dictionary<int, string> nameCache = new Dictionary<int, string>();
@@ -36,6 +19,7 @@ public static class ItemCatalog
     //   Consume/Ins/Cash : String/<cat>.img/<id>
     static ImgNode ItemNode(int id)
     {
+        if (id / 10000 == 500) return WzAssets.Node("String/Pet.img/" + id);
         if (IsEquip(id)) return WzAssets.Node("String/Eqp.img/Eqp/" + EqpSubcat(id) + "/" + id);
         int cat = id / 1000000;
         string file = "String/" + CatFile(id) + ".img";
@@ -94,19 +78,22 @@ public static class ItemCatalog
         else if (p == 110) sub = "Cape";
         else if (p == 111) sub = "Ring";
         else if (p >= 112 && p <= 119) sub = "Accessory";
+        else if (p >= 180 && p <= 183) sub = "PetEquip";
+        else if (p == 190 || p == 191 || p == 193) sub = "Taming";
+        else if (p >= 194 && p <= 197) sub = "Dragon";
         else sub = "Weapon"; // 121-160 / 169 / 170
         subcatCache[id] = sub;
         return sub;
     }
 
-    // 稀有度颜色：现金道具金色，其余白色（源端 v83 装备默认白、现金黄）
-    public static Color RarityColor(int id) => IsCash(id) ? new Color(1f, 0.85f, 0.20f) : Color.white;
+
 }
 
 public static class ItemTooltip
 {
     static int hoverId;
     static bool hasHover;
+    static InventoryEntry hoverItem;
 
     static Texture2D white;
     static Texture2D White
@@ -121,9 +108,13 @@ public static class ItemTooltip
     // 每帧开始清空，由窗口 Draw 在指向物品时重新置位
     public static void Reset() { hasHover = false; }
 
-    public static void SetHover(int id)
+    public static void SetHover(int id, bool equipped = false, InventoryEntry instance = null)
     {
         if (id <= 0) return;
+        hoverItem = instance;
+        if (instance == null && GameSession.Character != null)
+            foreach (var item in GameSession.Character.inventory)
+                if (item.itemId == id && (item.position < 0) == equipped) { hoverItem = item; break; }
         hoverId = id;
         hasHover = true;
     }
@@ -137,138 +128,231 @@ public static class ItemTooltip
         hasHover = false;
     }
 
-    class Line { public string text; public Color color; public int size; public bool wrap; public float y, h; }
-
-    static readonly Color light = new Color(0.86f, 0.90f, 1.00f);
-    static readonly Color statColor = new Color(0.70f, 1.00f, 0.80f);
-    static readonly Color reqFail = new Color(1.00f, 0.50f, 0.50f);
-    static readonly Color reqOk = new Color(0.80f, 0.85f, 0.95f);
-
+    const string Atlas = "UI/UIWindow.img/ToolTip/Equip/";
     static void Draw(int id)
     {
+        if (ItemCatalog.IsEquip(id)) DrawEquipment(id);
+        else DrawCommon(id);
+    }
+
+    static void Canvas(Rect rect, string node, float x, float y, float s)
+    {
+        var path = Atlas + node;
+        var texture = WzAssets.Texture(path);
+        if (texture == null) return;
+        var origin = WzAssets.Node(path)?.Get("origin");
+        GUI.DrawTexture(new Rect(rect.x + (x - (origin?.X ?? 0)) * s,
+            rect.y + (y - (origin?.Y ?? 0)) * s, texture.width * s, texture.height * s), texture);
+    }
+
+    static void DrawIcon(Rect rect, int id, float header, float s)
+    {
+        Fill(new Rect(rect.x + 10 * s, rect.y + (header + 32) * s, 68 * s, 68 * s), new Color32(255,255,255,160));
+        var icon = NativeItemSource.Icon(id);
+        if (icon == null) return;
+        var origin = NativeItemSource.IconNode(id)?.Get("origin");
+        GUI.DrawTexture(new Rect(rect.x + (12 - 2 * (origin?.X ?? 0)) * s,
+            rect.y + (header + 98 - 2 * (origin?.Y ?? 0)) * s, icon.width * 2 * s, icon.height * 2 * s), icon);
+    }
+
+    // 8E8252 -> 8ED0D2 (requirements) / 8F3BC3 (property rows).
+    static void DrawEquipment(int id)
+    {
+        var info = EquipCatalog.Info(id);
+        if (info == null) return;
         float s = BottomBar.S;
-        var a = Profile.Attributes;
-        var lines = new List<Line>();
-
-        string name = ItemCatalog.Name(id);
-        if (string.IsNullOrEmpty(name)) name = "#" + id;
-        lines.Add(new Line { text = name, color = ItemCatalog.RarityColor(id), size = 13 });
-
-        if (ItemCatalog.IsEquip(id))
+        var rows = new List<string[]>();
+        int prefix = id / 10000;
+        string[] weaponCategories = { " ONE-HANDED SWORD", " ONE-HANDED AXE", " ONE_HANDED MACE", " DAGGER", "", "", "", " WAND", " STAFF", "", " TWO-HANDED SWORD", " TWO-HANDED AXE", " TWO-HANDED MACE", " SPEAR", " POLE ARM", " BOW", " CROSSBOW", " CLAW", "KNUCKLE", "GUN" };
+        string category = prefix >= 130 && prefix <= 149 ? weaponCategories[prefix - 130] : null;
+        if (category == null)
         {
-            int slot = EquipSlot.SlotOf(id);
-            if (slot != 0) lines.Add(new Line { text = EquipSlot.NameOf(slot), color = reqOk, size = 10 });
-            var info = EquipCatalog.Info(id);
-            if (info != null)
+            switch (prefix)
             {
-                AddStat(lines, info, "incSTR", "力量");
-                AddStat(lines, info, "incDEX", "敏捷");
-                AddStat(lines, info, "incINT", "智力");
-                AddStat(lines, info, "incLUK", "运气");
-                AddStat(lines, info, "incMHP", "最大HP");
-                AddStat(lines, info, "incMMP", "最大MP");
-                AddStat(lines, info, "incPAD", "攻击力");
-                AddStat(lines, info, "incMAD", "魔法力");
-                AddStat(lines, info, "incPDD", "物理防御");
-                AddStat(lines, info, "incMDD", "魔法防御");
-                AddStat(lines, info, "incACC", "命中率");
-                AddStat(lines, info, "incEVA", "回避率");
-                AddStat(lines, info, "incSpeed", "移动速度");
-                AddStat(lines, info, "incJump", "跳跃力");
-
-                bool anyReq = false;
-                int reqLev = info.Int("reqLevel");
-                int reqJob = info.Int("reqJob");
-                int reqStr = info.Int("reqSTR"), reqDex = info.Int("reqDEX");
-                int reqInt = info.Int("reqINT"), reqLuk = info.Int("reqLUK");
-                if (reqLev > 0 || reqJob > 0 || reqStr > 0 || reqDex > 0 || reqInt > 0 || reqLuk > 0) anyReq = true;
-                if (anyReq) lines.Add(new Line { text = "", color = light, size = 4 }); // 分隔
-
-                if (reqLev > 0)
-                    lines.Add(new Line { text = "需要等级 " + reqLev, color = a.level >= reqLev ? reqOk : reqFail, size = 11 });
-                if (reqJob > 0)
-                {
-                    bool ok = (reqJob & JobDefs.JobBit(Profile.JobId)) != 0;
-                    lines.Add(new Line { text = "需要职业 " + ReqJobNames(reqJob), color = ok ? reqOk : reqFail, size = 11 });
-                }
-                AddReq(lines, a.str, reqStr, "需要力量 ");
-                AddReq(lines, a.dex, reqDex, "需要敏捷 ");
-                AddReq(lines, a.intelligence, reqInt, "需要智力 ");
-                AddReq(lines, a.luk, reqLuk, "需要运气 ");
+                case 100: category = "HAT"; break;
+                case 101: category = "FACE ACCESSORY"; break;
+                case 102: category = "EYE ACCESSORY"; break;
+                case 103: category = "EARRING"; break;
+                case 104: category = "TOP"; break;
+                case 105: category = "OVERALL"; break;
+                case 106: category = "BOTTOM"; break;
+                case 107: category = "SHOES"; break;
+                case 108: category = "GLOVE"; break;
+                case 109: category = "SHIELD"; break;
+                case 110: category = "CAPE"; break;
+                case 111: category = "RING"; break;
+                case 112: category = "PENDANT"; break;
+                case 113: category = "BELT"; break;
+                case 114: category = "MEDAL"; break;
             }
         }
-        else
+        if (!string.IsNullOrEmpty(category)) rows.Add(new[] { "CATEGORY :", category });
+        if (prefix >= 130 && prefix <= 149 && info.Get("attackSpeed") != null)
         {
-            string desc = ItemCatalog.Desc(id);
-            if (!string.IsNullOrEmpty(desc))
-                lines.Add(new Line { text = desc, color = light, size = 11, wrap = true });
+            string[] speeds = { " FASTEST", " FASTEST", " FASTER", " FASTER", " FAST", " FAST", " NORMAL", " SLOW", " SLOW", " SLOWER", " SLOWER", " SLOWEST", " SLOWEST" };
+            int speed = info.Int("attackSpeed");
+            if (speed >= 0 && speed < speeds.Length) rows.Add(new[] { "ATTACK SPEED :", speeds[speed] });
         }
-
-        // 测量高度
-        float pad = 8 * s;
-        float innerW = 190 * s;
-        float y = pad;
-        var style = new GUIStyle { font = UiKit.Font, wordWrap = true, clipping = TextClipping.Overflow };
-        foreach (var ln in lines)
+        string[] keys = { "incSTR", "incDEX", "incINT", "incLUK", "incMHP", "incMMP", "incPAD", "incMAD", "incPDD", "incMDD", "incACC", "incEVA", "incCraft", "incSpeed", "incJump" };
+        string[] labels = { "STR :", "DEX :", "INT :", "LUK :", "HP :", "MP :", "WEAPON ATTACK :", "MAGIC ATTACK :", "WEAPON DEF. :", "MAGIC DEF. :", "ACCURACY :", "AVOIDABILITY :", "HANDS :", "SPEED :", "JUMP :" };
+        int[] actual = hoverItem?.isEquip == true ? new[] { hoverItem.str, hoverItem.dex, hoverItem.int_, hoverItem.luk,
+            hoverItem.hp, hoverItem.mp, hoverItem.watk, hoverItem.matk, hoverItem.wdef, hoverItem.mdef,
+            hoverItem.acc, hoverItem.avoid, hoverItem.hands, hoverItem.speed, hoverItem.jump } : null;
+        for (int i = 0; i < keys.Length; i++)
         {
-            style.fontSize = Mathf.RoundToInt((ln.size > 0 ? ln.size : 11) * s);
-            style.normal.textColor = ln.color;
-            float h = ln.wrap ? style.CalcHeight(new GUIContent(ln.text), innerW)
-                              : (ln.size > 0 ? ln.size : 11) * s + 4 * s;
-            if (h < 1) h = 12 * s;
-            ln.h = h; ln.y = y; y += h;
+            int value = actual == null ? info.Int(keys[i]) : actual[i];
+            if (value > 0) rows.Add(new[] { labels[i], " +" + value });
         }
-        float w = innerW + pad * 2;
-        float hTotal = y + pad;
+        int upgrades = actual == null ? info.Int("tuc") : hoverItem.upgradeslots;
+        if (upgrades > 0) rows.Add(new[] { "NUMBER OF UPGRADES AVAILABLE :", " " + upgrades });
+        float height = Mathf.Max(166, 166 + rows.Count * 13) * s;
+        var p = Pointer.Pos;
+        var rect = new Rect(Mathf.Clamp(p.x, 0, Mathf.Max(0, UiKit.W - 236 * s)),
+            Mathf.Clamp(p.y + 20 * s, 0, Mathf.Max(0, UiKit.H - height)), 236 * s, height);
+        DrawFrame(rect, s);
+        var title = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(12 * s) };
+        title.normal.textColor = Color.white;
+        GUI.Label(new Rect(rect.x + 18 * s, rect.y + 10 * s, 208 * s, 20 * s), ItemCatalog.Name(id), title);
+        Canvas(rect, "Dot/0", 10, 15, s);
+        DrawIcon(rect, id, 0, s);
+        var a = Profile.Attributes;
+        string[] req = { "reqLevel", "reqSTR", "reqDEX", "reqINT", "reqLUK", "reqPOP" };
+        string[] sprites = { "reqLEV", "reqSTR", "reqDEX", "reqINT", "reqLUK", "reqPOP" };
+        int[] have = { a.level, a.str, a.dex, a.intelligence, a.luk, GameSession.Character?.record?.fame ?? 0 };
+        for (int i = 0; i < req.Length; i++)
+        {
+            int need = info.Int(req[i]);
+            string root = (have[i] >= need ? "Can/" : "Cannot/");
+            Canvas(rect, root + sprites[i], 94, 32 + i * 12, s);
+            float x = 144;
+            if (need == 0 && i == 5) Canvas(rect, root + "none", x, 32 + i * 12, s);
+            else foreach (char digit in need.ToString())
+            {
+                Canvas(rect, root + digit, x, 32 + i * 12, s);
+                x += 6;
+            }
+        }
+        string[] jobs = { "beginner", "warrior", "magician", "bowman", "thief", "pirate" };
+        int[] jobX = { 10, 52, 92, 132, 171, 197 };
+        if (info.Get("level") == null)
+        {
+            Canvas(rect, "GrowthDisabled/itemLEV", 94, 104, s);
+            Canvas(rect, "GrowthDisabled/itemEXP", 94, 116, s);
+            Canvas(rect, "GrowthDisabled/none", 148, 104, s);
+            Canvas(rect, "GrowthDisabled/none", 148, 116, s);
+        }
+        int mask = info.Int("reqJob");
+        for (int i = 0; i < jobs.Length; i++)
+        {
+            bool allowed = i == 0 ? mask <= 0 : mask == 0 || mask != -1 && (mask & (1 << (i - 1))) != 0;
+            Canvas(rect, (allowed ? "Can/" : "Cannot/") + jobs[i], jobX[i], 133, s);
+        }
+        Fill(new Rect(rect.x + 6 * s, rect.y + 152 * s, rect.width - 12 * s, s), Color.white);
+        var label = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(9 * s) };
+        label.normal.textColor = new Color32(250,232,203,255);
+        var valueStyle = new GUIStyle(label); valueStyle.normal.textColor = Color.white;
+        for (int i = 0; i < rows.Count; i++)
+        {
+            float y = rect.y + (159 + i * 13) * s;
+            float labelWidth = label.CalcSize(new GUIContent(rows[i][0])).x;
+            GUI.Label(new Rect(rect.x + 10 * s, y, 216 * s, 13 * s), rows[i][0], label);
+            GUI.Label(new Rect(rect.x + 10 * s + labelWidth, y, 216 * s - labelWidth, 13 * s), rows[i][1], valueStyle);
+        }
+    }
 
-        // 跟随光标，靠近右/下边缘时翻转到左侧/上方
+    // BeiDou 8EDFC7 -> 8F3141 / 8F421E / 8F4535 / 8F4818.
+    static void DrawCommon(int id)
+    {
+        float s = BottomBar.S;
+        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(12 * s),
+            wordWrap = true, padding = new RectOffset(), margin = new RectOffset() };
+        style.normal.textColor = Color.white;
+        string desc = FormatDescription(ItemCatalog.Desc(id));
+        style.richText = true;
+        bool questItem = NativeItemSource.Node(id)?.Get("info")?.Int("quest") == 1;
+        float header = questItem ? 19 * s : 0;
+        float textHeight = style.CalcHeight(new GUIContent(desc), 178 * s);
+        float height = header + Mathf.Max(116 * s, 52 * s + textHeight);
         Vector2 p = Pointer.Pos;
-        float x = p.x + 18 * s;
-        if (x + w > UiKit.W) x = p.x - w - 18 * s;
-        x = Mathf.Clamp(x, 4 * s, Mathf.Max(4 * s, UiKit.W - w - 4 * s));
-        float ty = Mathf.Clamp(p.y, 4 * s, Mathf.Max(4 * s, UiKit.H - hTotal - 4 * s));
-
-        var rect = new Rect(x, ty, w, hTotal);
-        // 背景框（原端代码绘制的半透明深色框 + 1px 描边）
-        GUI.color = new Color(0.06f, 0.08f, 0.14f, 0.95f);
-        GUI.DrawTexture(rect, White);
-        GUI.color = new Color(0.55f, 0.65f, 0.85f, 0.90f);
-        GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, 1 * s), White);
-        GUI.DrawTexture(new Rect(rect.x, rect.yMax - 1 * s, rect.width, 1 * s), White);
-        GUI.DrawTexture(new Rect(rect.x, rect.y, 1 * s, rect.height), White);
-        GUI.DrawTexture(new Rect(rect.xMax - 1 * s, rect.y, 1 * s, rect.height), White);
-        GUI.color = Color.white;
-
-        // 文本（覆盖绘制）
-        foreach (var ln in lines)
+        var rect = new Rect(Mathf.Clamp(p.x, 0, Mathf.Max(0, UiKit.W - 290 * s)),
+            Mathf.Clamp(p.y + 20 * s, 0, Mathf.Max(0, UiKit.H - height)), 290 * s, height);
+        DrawFrame(rect, s);
+        // 8F4818: name at (18,10), with the source's leading marker at (10,15).
+        GUI.Label(new Rect(rect.x + 18 * s, rect.y + 10 * s, 262 * s, 20 * s), ItemCatalog.Name(id), style);
+        var dot = WzAssets.Texture("UI/UIWindow.img/ToolTip/Equip/Dot/0");
+        if (dot != null) GUI.DrawTexture(new Rect(rect.x + 10 * s, rect.y + 15 * s, dot.width * s, dot.height * s), dot);
+        if (questItem)
         {
-            if (string.IsNullOrEmpty(ln.text)) continue;
-            style.fontSize = Mathf.RoundToInt((ln.size > 0 ? ln.size : 11) * s);
-            style.normal.textColor = ln.color;
-            style.alignment = TextAnchor.UpperLeft;
-            GUI.Label(new Rect(rect.x + pad, rect.y + ln.y, innerW, ln.h), ln.text, style);
+            var flagStyle = new GUIStyle(style) { alignment = TextAnchor.UpperCenter };
+            flagStyle.normal.textColor = new Color32(255, 138, 24, 255); // font 11, 8E52FB
+            GUI.Label(new Rect(rect.x, rect.y + 29 * s, rect.width, 19 * s), "Quest Item", flagStyle);
         }
+        // 8F421E: 68-square background, doubled source canvas, anchor (x+2,y+66).
+        Fill(new Rect(rect.x + 10 * s, rect.y + header + 32 * s, 68 * s, 68 * s), new Color32(255, 255, 255, 160));
+        var icon = NativeItemSource.Icon(id);
+        var canvas = NativeItemSource.IconNode(id);
+        if (icon != null)
+        {
+            var origin = canvas.Get("origin");
+            float ox = origin?.X ?? 0, oy = origin?.Y ?? 0;
+            GUI.DrawTexture(new Rect(rect.x + (12 - 2 * ox) * s, rect.y + header + (98 - 2 * oy) * s,
+                icon.width * 2 * s, icon.height * 2 * s), icon);
+        }
+        GUI.Label(new Rect(rect.x + 92 * s, rect.y + header + 32 * s, 178 * s, height - header - 40 * s), desc, style);
     }
 
-    static void AddStat(List<Line> lines, ImgNode info, string key, string label)
+    // 8E4217..8E423B toggles emphasis on # (optional c); font 9 is FFFF9900 at 98ADCC.
+    public static string FormatDescription(string text)
     {
-        int v = info.Int(key);
-        if (v != 0) lines.Add(new Line { text = label + " : +" + v, color = statColor, size = 11 });
+        text = (text ?? "").Replace("\\\\n", "\n").Replace("\\n", "\n");
+        var result = new System.Text.StringBuilder();
+        bool emphasis = false;
+        for (int i = 0; i < text.Length; i++)
+        {
+            char ch = text[i];
+            if (ch == '#')
+            {
+                result.Append(emphasis ? "</color>" : "<color=#FF9900>");
+                if (!emphasis && i + 1 < text.Length && text[i + 1] == 'c') i++;
+                emphasis = !emphasis;
+            }
+            else if (ch == '<') result.Append("&lt;");
+            else result.Append(ch);
+        }
+        if (emphasis) result.Append("</color>");
+        return result.ToString();
     }
 
-    static void AddReq(List<Line> lines, int have, int need, string label)
+    static void Fill(Rect rect, Color color)
     {
-        if (need > 0) lines.Add(new Line { text = label + need, color = have >= need ? reqOk : reqFail, size = 11 });
+        var previous = GUI.color;
+        GUI.color = color;
+        GUI.DrawTexture(rect, White);
+        GUI.color = previous;
     }
 
-    static string ReqJobNames(int mask)
+    static Texture2D frame;
+    static int frameWidth, frameHeight;
+    static void DrawFrame(Rect rect, float s)
     {
-        var names = new List<string>();
-        if ((mask & 1) != 0) names.Add("战士");
-        if ((mask & 2) != 0) names.Add("法师");
-        if ((mask & 4) != 0) names.Add("弓箭手");
-        if ((mask & 8) != 0) names.Add("飞侠");
-        if ((mask & 16) != 0) names.Add("海盗");
-        return names.Count > 0 ? string.Join("/", names) : "无";
+        int w = Mathf.RoundToInt(rect.width / s), h = Mathf.RoundToInt(rect.height / s);
+        if (frame == null || w != frameWidth || h != frameHeight)
+        {
+            if (frame != null) Object.Destroy(frame);
+            frameWidth = w; frameHeight = h;
+            frame = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+            var pixels = new Color32[w * h];
+            // 8F3141: fill A0000040; clear four corners and the inset 1-pixel contour (00FFFFFF).
+            for (int y = 0; y < h; y++) for (int x = 0; x < w; x++)
+            {
+                bool clear = (x == 0 || x == w - 1) && (y == 0 || y == h - 1)
+                    || (x == 1 || x == w - 2) && y >= 2 && y < h - 2
+                    || (y == 1 || y == h - 2) && x >= 2 && x < w - 2;
+                pixels[y * w + x] = clear ? new Color32(255,255,255,0) : new Color32(0,0,64,160);
+            }
+            frame.SetPixels32(pixels); frame.Apply();
+        }
+        GUI.DrawTexture(rect, frame);
     }
+
 }

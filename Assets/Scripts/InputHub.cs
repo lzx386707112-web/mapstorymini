@@ -680,12 +680,13 @@ public class InputBridge : MonoBehaviour
             TouchInput.MoveV = 0f;
         }
 
-        if (playing && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible)
+        if ((playing || dialogInput) && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible)
         {
             foreach (var entry in NativeKeyActions.Entries)
             {
                 if (entry.action == GameAction.Jump || entry.action == GameAction.Attack || entry.action == GameAction.Pickup) continue;
-                if (InputHub.Pressed(entry.action)) NativeKeyActions.Execute(entry.action);
+                if ((playing || NativeKeyActions.AvailableDuringNpcDialog(entry.action)) &&
+                    InputHub.Pressed(entry.action)) NativeKeyActions.Execute(entry.action);
             }
             foreach (var action in new[] { GameAction.Help, GameAction.QuickSlot })
                 if (InputHub.Pressed(action)) NativeKeyActions.Execute(action);

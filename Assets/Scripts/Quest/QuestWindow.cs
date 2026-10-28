@@ -16,7 +16,6 @@ public static class QuestWindow
     public static void Toggle()
     {
         Visible = !Visible;
-        if (Visible) NpcSession.CloseActive();
         if (Visible) selectedId = 0;
     }
 

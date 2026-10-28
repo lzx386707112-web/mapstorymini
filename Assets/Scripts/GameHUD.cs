@@ -103,13 +103,11 @@ public class GameHUD : MonoBehaviour
         }
 
         // 原版底部栏：底板 → 左段状态条 → 右侧按钮 + 快捷格（都在 BottomBar 里按顺序画）
-        bool enabled = GUI.enabled;
-        GUI.enabled = enabled && !NpcSession.Blocking;
+        NpcDialogUi.DrawField();
         BottomBar.Draw();
 
         // 浮窗（技能窗/能力值/帮助…）
         GameWindows.DrawAll();
-        GUI.enabled = enabled;
         // 技能施放失败等即时提示
         DrawNotice();
         // NPC 对话（最上层）+ 靠近提示

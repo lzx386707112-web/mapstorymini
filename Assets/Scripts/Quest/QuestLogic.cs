@@ -46,6 +46,22 @@ public static class QuestLogic
     public static bool CanStart(QuestDef q, int npcId) { string _; return CanStart(q, npcId, out _); }
     public static bool CanComplete(QuestDef q, int npcId) { string _; return CanComplete(q, npcId, out _); }
 
+    public static bool InProgressAt(QuestDef q, int npcId) =>
+        q.completeReq.npc == npcId && Profile.QuestStatus(q.id) == PlayerProfileData.QuestStartedState;
+
+    // Quest/Say.img/<id>/1/stop uses the original requirement names.
+    public static string IncompleteStop(QuestDef q)
+    {
+        foreach (var need in q.completeReq.items)
+        {
+            int have = Profile.ItemCount(need.item);
+            if (need.count <= 0 ? have > 0 : have < need.count) return "item";
+        }
+        foreach (var need in q.completeReq.mobs)
+            if (Profile.QuestProgressInt(q.id, need.item.ToString()) < need.count) return "mob";
+        return "";
+    }
+
     // BeiDou.exe 7213E1..721407: the notification client checks both date bounds.
     // The server deliberately exempts old event end dates; that request validation
     // must not make expired events appear in a newly-created character's bulb.
@@ -144,8 +160,7 @@ public static class QuestLogic
     }
 
     // 击杀推进：对应服务端 Character 里的任务击杀计数。
-    // 只累加"已接取且 Check.img/0/mob 里确实列了这个怪"的任务，key 用怪物 id（与
-    // QuestProgressRequirement 读的是同一个键）；上限不截断，交任务时只比较 >=。
+    // Quest.getMobAmountNeeded reads Check.img/1/mob; QuestStatus.progress caps at that count.
     public static void OnMobKilled(int mobId)
     {
         if (mobId <= 0) return;
@@ -155,17 +170,18 @@ public static class QuestLogic
         {
             var q = QuestCatalog.Get(started[i]);
             if (q == null) continue;
-            var mobs = q.startReq.mobs;
-            bool needed = false;
+            var mobs = q.completeReq.mobs;
+            int needed = 0;
             for (int k = 0; k < mobs.Count; k++)
-                if (mobs[k].item == mobId) { needed = true; break; }
-            if (!needed) continue;
+                if (mobs[k].item == mobId) { needed = mobs[k].count; break; }
 
             string key = mobId.ToString();
-            Profile.SetQuestProgress(q.id, key, (Profile.QuestProgressInt(q.id, key) + 1).ToString(), false);
+            int current = Profile.QuestProgressInt(q.id, key);
+            if (current >= needed) continue;
+            Profile.SetQuestProgress(q.id, key, (current + 1).ToString(), false);
             changed = true;
         }
-        if (changed) Profile.Save();
+        if (changed) { Profile.Save(); NpcField.InvalidateMarkers(); }
     }
 
     // 接任务：与 Quest.start 一致 —— 先校验动作，再全部执行，最后置状态。

@@ -19,7 +19,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | ijl15/2ijl15 职责、手机用版本差异、分辨率补丁与 Android 适配价值 | [DLL 与手机适配](references/ijl15-mobile-adaptation.md) |
 | 自定义DLL身份、V/VI视频表版本差异、MCV双流/Android解码、Boss标记选片、数字首位/后续位与Miss、伤害皮肤、V/VI回放/雷枪12按、追击/雷枪numeric动作、天气粒子/地面/声音、skillback合同与迁移边界 | [自定义功能 DLL](references/custom-dll-systems.md) |
 | 按键组合、重复权、普通跳/下跳、foothold传送带force/drag、地空积分/x86对照、台阶直角墙脚碰撞、普攻攻速 | [输入与物理](references/input-and-physics.md) |
-| 站立/警戒计时、接触受击/冲量/免疫、身体框、多段飘字与尚未对齐的边界 | [角色受击与飘字](references/character-reactions-and-damage.md) |
+| 站立/警戒计时、notAttack训练怪接触豁免、接触受击/冲量/免疫、身体框、多段飘字与尚未对齐的边界 | [角色受击与飘字](references/character-reactions-and-damage.md) |
 | 小地图模式、视口、标记、大地图边框与定位 | [地图窗口](references/map-windows.md) |
 | 商城子窗口、商品列表、坐标与素材 | [现金商城](references/cash-shop.md) |
 | 家族列表、按钮分派、职位、对话框、公告板、Tab | [家族与 Tab](references/guild-and-tabs.md) |
@@ -28,7 +28,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 底栏 71 高分组、11 个按钮坐标、通知槽、客户区 578 | [底栏布局](references/statusbar-layout.md) |
 | 相机 VR、分辨率补丁、背景滚动；技能窗已定位函数 | [地图与技能窗入口](references/map-and-skill-window.md) |
 | 鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义 | [UI 拖动语义](references/ui-drag-and-drop.md) |
-| NPC 对话窗口精确布局/字体/按钮、VScr4、`#L` 图文、灯泡 autoStart/日期筛选、截图问候入口/交付奖励10000→4→1、fieldType82青苹果外观、建号路线与远程任务脚本 | [NPC 对话窗口](references/npc-dialog.md) |
+| NPC 对话窗口精确布局/字体/按钮、VScr4、`#L` 图文、sendPrev 上一页+确定/对话键任务菜单与接受页推进、灯泡 autoStart/日期筛选、NPC进行中QuestIcon1/stop对白与完成条件击杀计数、截图问候入口/交付奖励10000→4→1、fieldType82青苹果外观、建号路线与远程任务脚本 | [NPC 对话窗口](references/npc-dialog.md) |
 | 传送门 pt 触发方式、NPC 头顶名字锚点、聊天气泡九宫格与时长 | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |
 | 背包/装备窗物品悬浮详情：ToolTip 图集、名称/描述来源、属性/需求字段、配色与帧绘制 | [背包与悬浮详情](references/inventory-and-tooltip.md) |
 

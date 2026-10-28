@@ -94,13 +94,44 @@ public sealed class NpcSession
         string img="Item/Consume/"+(itemId/10000).ToString("D4")+".img/"+itemId.ToString("D8");
         var spec=WzAssets.Node(img+"/spec");
         string script=spec?.Text("script");
-        if (string.IsNullOrEmpty(script)) return null;
+        if (string.IsNullOrEmpty(script)) { UseRestorative(itemId); return null; }
         string key="item/"+script;
         string source=ScriptSource.LoadKey(key);
         if (string.IsNullOrEmpty(source)) return null;
         CloseActive();
         var session=new NpcSession(spec.Int("npc"),0,false,false);
         Active=session; session.Begin(source,key); session.FinishInvocation(); return session;
+    }
+
+    // UseItemHandler -> StatEffect.calcHP/MPChange: ordinary restoration is not an item script.
+    public static bool UseRestorative(int itemId)
+    {
+        var player = GameLoop.I?.player;
+        if (itemId / 1000000 != 2 || player == null || player.hp <= 0 || Blocking || Profile.ItemCount(itemId) <= 0) return false;
+        var spec = NativeItemSource.Node(itemId)?.Get("spec");
+        if (spec == null || !string.IsNullOrEmpty(spec.Text("script")) || spec.Int("time") != 0) return false;
+        // Do not partially apply buff/special items whose other effects are not handled here.
+        foreach (var field in spec.Children)
+            if (field.Name != "hp" && field.Name != "mp" && field.Name != "hpR" && field.Name != "mpR") return false;
+        int hp = (short)spec.Int("hp"), mp = (short)spec.Int("mp");
+        int hpRate = spec.Int("hpR"), mpRate = spec.Int("mpR");
+        if (hp == 0 && mp == 0 && hpRate == 0 && mpRate == 0) return false;
+        int job = Profile.JobId;
+        int alchemist = job / 10 == 41 ? 4110000 : job / 10 == 141 ? 14110003 : 0;
+        int level = alchemist == 0 ? 0 : SkillProgress.LevelOf(alchemist);
+        if (level > 0)
+        {
+            var effect = WzAssets.Node("Skill/" + (alchemist / 10000).ToString("D3") + ".img/skill/" + alchemist + "/level/" + level);
+            if (effect != null) { hp = (int)(hp * (effect.Int("x") / 100.0)); mp = (int)(mp * (effect.Int("x") / 100.0)); }
+        }
+        int percentHp = (int)(player.hpMax * (hpRate / 100.0));
+        if (player.GetComponent<NativeMobDebuffs>()?.Has(133) == true) { hp /= 2; percentHp /= 2; }
+        // Source removes one even when already at full HP/MP; never apply an effect if removal fails.
+        if (!Profile.RemoveItem(itemId, 1)) return false;
+        player.hp = Mathf.Clamp(player.hp + hp + percentHp, 0, player.hpMax);
+        player.mp = Mathf.Clamp(player.mp + mp + (int)(player.mpMax * (mpRate / 100.0)), 0, player.mpMax);
+        GameSession.SaveToDb();
+        return true;
     }
 
     public static NpcSession Talk(int npcId) => Talk(npcId, null);
@@ -143,8 +174,8 @@ public sealed class NpcSession
     public static NpcSession TalkQuest(QuestDef quest, int npcId, bool end)
     {
         CloseActive();
-        string reason;
-        if (!(end ? QuestLogic.CanComplete(quest, npcId, out reason) : QuestLogic.CanStart(quest, npcId, out reason)))
+        string reason = null;
+        if (!(end ? QuestLogic.InProgressAt(quest, npcId) || QuestLogic.CanComplete(quest, npcId, out reason) : QuestLogic.CanStart(quest, npcId, out reason)))
         { BottomBar.Toast(reason); return null; }
         var session = new NpcSession(npcId, quest.id, true, end);
         string source = ScriptSource.Load("quest", quest.id);
@@ -173,7 +204,13 @@ public sealed class NpcSession
         var pages = QuestPages(say);
         if (pages.Count == 0) pages.Add(quest.info.Length > 0 ? quest.info[Math.Min(end ? 1 : 0, quest.info.Length - 1)] : quest.name);
         int page = 0;
-        bool branch = false;
+        bool branch = end && !QuestLogic.CanComplete(quest, npcId);
+        if (branch)
+        {
+            var stopPages = QuestPages(say?.Get("stop/" + QuestLogic.IncompleteStop(quest)));
+            // Some IMG quests omit stop text; retain their original progress description.
+            pages = stopPages.Count > 0 ? stopPages : new List<string> { quest.info.Length > 1 ? quest.info[1] : quest.name };
+        }
         Action show = () => SetDialog(branch ? (page == pages.Count - 1 ? NpcDialogMode.Ok : NpcDialogMode.Next) :
             page == pages.Count - 1 ? NpcDialogMode.AcceptDecline : page == 0 ? NpcDialogMode.Next : NpcDialogMode.NextPrev, pages[page]);
         localKeepsSession = true;

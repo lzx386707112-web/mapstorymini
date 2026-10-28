@@ -54,6 +54,11 @@ public static class NativeKeyActions
         new Entry(GameAction.FaceBewildered, 105, "惊讶"),
         new Entry(GameAction.FaceStunned, 106, "发呆"),
     };
+    // NPC conversation blocks character control, not independent UI windows.
+    public static bool AvailableDuringNpcDialog(GameAction action) =>
+        action == GameAction.NpcTalk || action == GameAction.Menu || action == GameAction.Help ||
+        action == GameAction.QuickSlot || Of(action)?.Type == 4;
+
     // Existing windows/actions share the same path for hardware keys and quick-bar clicks.
     public static void Execute(GameAction action)
     {
@@ -78,10 +83,11 @@ public static class NativeKeyActions
             case GameAction.Shop: ShopWindow.Toggle(); return;
             case GameAction.Shortcut: ShortcutWindow.Toggle(); return;
             case GameAction.Help: HelpWindow.Toggle(); return;
-            case GameAction.Quest: QuestWindow.Visible = !QuestWindow.Visible; return;
+            case GameAction.Quest: QuestWindow.Toggle(); return;
             case GameAction.Interface: GameHUD.InterfaceHidden = !GameHUD.InterfaceHidden; return;
             case GameAction.Sit: player?.ToggleSit(); return;
             case GameAction.NpcTalk:
+                if (NpcSession.Blocking) { NpcDialogUi.ContinueWithTalkKey(); return; }
                 NpcDialogUi.ConsumeTalkKeyFrame();
                 NpcField.TryInteractNearest(); return;
             case GameAction.Chat: BottomBar.FocusChat(); return;

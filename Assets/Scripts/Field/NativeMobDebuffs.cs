@@ -23,6 +23,7 @@ public sealed class NativeMobDebuffs : MonoBehaviour
         active[id] = new Disease { x = x, y = y, until = NativeMobController.Now + duration, nextTick = NativeMobController.Now + 1000 };
     }
     public void Clear() => active.Clear();
+    public void Clear(int id) => active.Remove(id);
     public void Input(ref float horizontal, ref bool jump, ref float vertical)
     {
         if (Has(132)) { horizontal = -horizontal; vertical = -vertical; }

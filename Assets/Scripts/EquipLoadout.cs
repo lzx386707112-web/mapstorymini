@@ -55,24 +55,8 @@ public static class EquipSlot
     }
 
     /// <summary>物品 id → 装备位置（源端 Equip.inventory 的负位置）。</summary>
-    public static int SlotOf(int itemId)
-    {
-        switch (itemId / 10000)
-        {
-            case 100: return Hat;
-            case 101: return FaceAccessory;
-            case 102: return EyeAccessory;
-            case 103: return Earring;
-            case 104: case 105: return Top;         // 104 上衣 / 105 长袍
-            case 106: return Bottom;
-            case 107: return Shoes;
-            case 108: return Glove;
-            case 109: return Shield;
-            case 110: return Cape;
-            case 114: return Medal;
-            default: return itemId / 10000 >= 121 && itemId / 10000 <= 160 ? Weapon : 0;
-        }
-    }
+    public static int SlotOf(int itemId) => NativeInventoryService.EquipmentSlotOf(itemId);
+
 }
 
 public static class EquipCatalog
@@ -99,6 +83,7 @@ public static class EquipCatalog
                 if (t >= 112 && t <= 119) return "Accessory";
                 // 客户端 Character/PetEquip 实际只有 180~183（180:296, 181:10, 182:1, 183:1）。
                 if (t >= 180 && t <= 183) return "PetEquip";
+                if (t == 190 || t == 191 || t == 193 || t == 198 || t == 199) return "TamingMob";
                 // 客户端 Character/Weapon 实际含 130~151、160、169、170（170 有 1040 个文件，
                 // 商城里 259 件点装武器都是 170xxxx），169/170 必须映射过来，否则图标取不到。
                 if (t == 169 || t == 170) return "Weapon";
@@ -170,23 +155,45 @@ public static class EquipLoadout
     public static int Get(int slot) => SlotItem(slot);
 
     /// <summary>穿上一件（槽位由物品 id 决定）。返回 null 表示成功，否则是原因。</summary>
-    public static string Equip(int itemId, CharacterAttributes attrs)
+    public static string Equip(int itemId, CharacterAttributes attrs, int inventoryPosition = 0)
     {
         int slot = EquipSlot.SlotOf(itemId);
         if (slot == 0) return "这不是可装备的物品";
-        if (slot == EquipSlot.Weapon) { Profile.EquipWeapon(itemId.ToString()); return null; }
+        if (slot == EquipSlot.Weapon)
+        {
+            if (!WeaponDefs.TryGet(itemId.ToString(), out var weapon)) return "这件武器的穿戴尚未接入";
+            string error = EquipCatalog.WhyNot(itemId, attrs, Profile.JobId);
+            if (error != null) return error;
+            return MoveEquipment(itemId, slot, false, inventoryPosition);
+        }
+        if (slot == EquipSlot.Medal) { NativeMedalWindow.Wear(itemId, false); return null; }
+        if (slot != EquipSlot.Hat && slot != EquipSlot.Top && slot != EquipSlot.Bottom && slot != EquipSlot.Shoes &&
+            slot != EquipSlot.Glove && slot != EquipSlot.Cape && slot != EquipSlot.Shield) return "这个装备栏位尚未接入";
         string why = EquipCatalog.WhyNot(itemId, attrs, Profile.JobId);
         if (why != null) return why;
-        // 单机便捷：只要这件防具在 WZ 里存在就允许穿（源端要求背包持有，这里放宽以便试用；
-        // 真正联机时由服务端 inventoryitems 校验持有）。
-        if (!EquipCatalog.Exists(itemId)) return "背包里没有这件装备";
-        Profile.SetEquipSlot(slot, itemId);
+        if (Profile.ItemCount(itemId) <= 0) return "背包里没有这件装备";
+        return MoveEquipment(itemId, slot, false, inventoryPosition);
+    }
+
+    static string MoveEquipment(int itemId, int slot, bool unequip, int inventoryPosition = 0)
+    {
+        if (!GameSession.InGame) return "请先进入游戏";
+        var response = GameSession.Net.ChangeInventory(new InventoryChangeRequest {
+            characterId = GameSession.CharacterId, itemId = itemId, equipSlot = slot, sourcePosition = inventoryPosition, equip = true, quantity = unequip ? 0 : 1 });
+        if (!response.ok) return response.error;
+        GameSession.Character.inventory = response.inventory;
+        GameSession.ApplyInventoryToProfile();
+        Profile.Save();
         return null;
     }
 
     public static void Unequip(int slot)
     {
-        if (slot != EquipSlot.Weapon) Profile.SetEquipSlot(slot, 0);   // 武器总得拿着
+        if (slot == EquipSlot.Weapon) return;
+        int itemId = Profile.EquipOfSlot(slot);
+        if (itemId <= 0) return;
+        string error = MoveEquipment(itemId, slot, true);
+        if (error != null) BottomBar.Toast(error);
     }
 
     /// <summary>当前角色套装差量（源端 Character.setItemBonus 的取用入口，FieldDirector 消费倍率类）。</summary>

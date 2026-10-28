@@ -26,24 +26,194 @@ public static class QuestNpcChecks
 
     public static void Run()
     {
-        pass = fail = 0;
+        var data = Profile.Data;
+        string snapshot = JsonUtility.ToJson(data);
+        var saveOverride = typeof(Profile).GetField("debugOverride", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        bool previousOverride = (bool)saveOverride.GetValue(null);
+        saveOverride.SetValue(null, true);
+        try
+        {
+            pass = fail = 0;
 
-        CheckScriptPack();
-        CheckQuestCatalog();
-        CheckScriptLookup();
-        CheckDialogText();
-        CheckQuestRules();
-        CheckDialogProtocol();
-        CheckRepeatedTalkPresses();
-        CheckBirthRoutes();
-        CheckNewCharacterMarkers();
-        CheckAllMapQuestLinks();
+            CheckScriptPack();
+            CheckQuestCatalog();
+            CheckScriptLookup();
+            CheckDialogText();
+            CheckQuestRules();
+            CheckBeginnerNpcBindings();
+            CheckTrainingQuestProgress();
+            CheckDialogProtocol();
+            CheckRepeatedTalkPresses();
+            CheckBirthRoutes();
+            CheckNewCharacterMarkers();
+            CheckRogerApplePresentation();
+            CheckRestorativeItems();
+            CheckAllMapQuestLinks();
 
-        Debug.Log("[QuestNpcCheck] 通过 " + pass + " 项，失败 " + fail + " 项");
+            Debug.Log("[QuestNpcCheck] 通过 " + pass + " 项，失败 " + fail + " 项");
+        }
+        finally
+        {
+            JsonUtility.FromJsonOverwrite(snapshot, data);
+            saveOverride.SetValue(null, previousOverride);
+        }
         if (fail > 0 && Application.isBatchMode) EditorApplication.Exit(1);
     }
 
     // 独立进程、临时数据库；验证真实 NpcApi，而非宽松 mock。
+    static void CheckRogerApplePresentation()
+    {
+        string description = ItemTooltip.FormatDescription(ItemCatalog.Desc(2010007));
+        Check(description.Contains("\n\n") && description.Contains("<color=#FF9900>双击") && !description.Contains("#c"),
+            "苹果说明须解析原端换行和强调控制码");
+        var icon = NativeItemSource.Icon(2010007);
+        Check(icon != null && icon.width == 26 && icon.height == 30,
+            "罗杰任务苹果须直接解码0201.img/02010007/info/icon");
+        var previousLoop = GameLoop.I;
+        var data = Profile.Data;
+        string snapshot = JsonUtility.ToJson(data);
+        var host = new GameObject("RogerApplePresentationCheck");
+        host.SetActive(false);
+        try
+        {
+            var loop = host.AddComponent<GameLoop>();
+            loop.player = host.AddComponent<PlayerCtrl>();
+            GameLoop.I = loop;
+            data.questStarted.Remove(1021);
+            data.questCompleted.Remove(1021);
+            var session = NpcSession.TalkQuest(QuestCatalog.Get(1021), 2000, false);
+            for (int i = 0; i < 5 && session != null; i++) session.Reply(1);
+            Check(session != null && session.LastError == null && Profile.ItemCount(2010007) > 0,
+                "原始1021脚本须实际发放任务苹果");
+            var effect = host.GetComponentInChildren<NativeImgAnimation>(true);
+            Check(effect != null && effect.name == "UI/tutorial.img/28" && effect.Image.sprite != null,
+                "原始1021脚本结束须实际创建新手引导原IMG动画");
+            if (effect != null)
+            {
+                Check(effect.Image.sprite.texture.width == 215 && effect.Image.sprite.texture.height == 283,
+                    "引导素材尺寸须保持215×283");
+                session?.Close();
+                Check(effect != null, "关闭NPC会话不得销毁新手引导");
+                effect.Tick(double.MaxValue);
+                Check(host.GetComponentInChildren<NativeImgAnimation>(true) == null,
+                    "引导动画完整播完后须释放");
+            }
+        }
+        finally
+        {
+            NpcSession.CloseActive();
+            GameLoop.I = previousLoop;
+            UnityEngine.Object.DestroyImmediate(host);
+            JsonUtility.FromJsonOverwrite(snapshot, data);
+            NpcField.InvalidateMarkers();
+        }
+    }
+
+    static void CheckRestorativeItems()
+    {
+        var previousLoop = GameLoop.I;
+        var data = Profile.Data;
+        string snapshot = JsonUtility.ToJson(data);
+        var host = new GameObject("RestorativeItemCheck");
+        host.SetActive(false);
+        try
+        {
+            var loop = host.AddComponent<GameLoop>();
+            var player = host.AddComponent<PlayerCtrl>();
+            loop.player = player; GameLoop.I = loop;
+            player.hpMax = 100; player.mpMax = 100; player.hp = 25; player.mp = 10;
+            data.AddItem(2010007, 2);
+            int count = Profile.ItemCount(2010007);
+            Check(NpcSession.UseRestorative(2010007) && player.hp == 55 && Profile.ItemCount(2010007) == count - 1,
+                "任务苹果双击须恢复原IMG的30HP并仅扣一个");
+            player.hp = 99;
+            Check(NpcSession.UseRestorative(2010007) && player.hp == 100, "恢复不得超过最大HP");
+            player.hp = 0; count = Profile.ItemCount(2010007);
+            Check(!NpcSession.UseRestorative(2010007) && Profile.ItemCount(2010007) == count, "死亡不得消耗药品");
+            player.hp = 100;
+            data.RemoveItem(2010007, Profile.ItemCount(2010007));
+            Check(!NpcSession.UseRestorative(2010007), "没有物品不得恢复");
+            data.RemoveItem(2000003, Profile.ItemCount(2000003)); data.AddItem(2000003, 1); player.mp = 0;
+            Check(NpcSession.UseRestorative(2000003) && player.mp > 0 && Profile.ItemCount(2000003) == 0,
+                "普通蓝药须读取MP效果而非仅特判苹果");
+        }
+        finally
+        {
+            GameLoop.I = previousLoop;
+            UnityEngine.Object.DestroyImmediate(host);
+            JsonUtility.FromJsonOverwrite(snapshot, data);
+        }
+    }
+
+    public static void RunInventory()
+    {
+        pass = fail = 0;
+        string path = Path.Combine(Path.GetTempPath(), "mapledash-inventory-" + Guid.NewGuid() + ".json");
+        var data = Profile.Data;
+        string snapshot = JsonUtility.ToJson(data);
+        var overrideField = typeof(Profile).GetField("debugOverride", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        bool previousOverride = (bool)overrideField.GetValue(null);
+        overrideField.SetValue(null, true);
+        var previousLoop = GameLoop.I;
+        var host = new GameObject("InventoryUseCheck"); host.SetActive(false);
+        try
+        {
+            var db = DbStore.Create(path);
+            var character = new CharRecord { accountid = 1, name = "InventoryTest", level = 30, equipslots = 24, useslots = 24, setupslots = 24, etcslots = 24 };
+            int id = (int)CharactersDao.Insert(db, character); character.id = id;
+            long oldHat = InventoryDao.InsertItem(db, id, 1002000, 1, -1, 1);
+            InventoryDao.InsertEquipment(db, oldHat, str: 7);
+            long firstHat = InventoryDao.InsertItem(db, id, 1002001, 1, 1, 1);
+            InventoryDao.InsertEquipment(db, firstHat, str: 13);
+            long secondHat = InventoryDao.InsertItem(db, id, 1002001, 1, 2, 1);
+            InventoryDao.InsertEquipment(db, secondHat, str: 19);
+            var moved = NativeInventoryService.Handle(db, new InventoryChangeRequest { characterId = id, itemId = 1002001, equip = true, equipSlot = -1, quantity = 1, sourcePosition = 2 });
+            Check(moved.ok && moved.inventory.Exists(x => x.itemRowId == secondHat && x.position == -1 && x.str == 19), "双击须穿戴实际格位的强化装备并保留属性");
+            Check(moved.inventory.Exists(x => x.itemRowId == firstHat && x.position == 1 && x.str == 13) && moved.inventory.Exists(x => x.itemRowId == oldHat && x.position == 2 && x.str == 7), "同ID另一件装备不得被替换；旧装备回原格");
+            var invalid = NativeInventoryService.Handle(db, new InventoryChangeRequest { characterId = id, itemId = 1002001, equip = true, equipSlot = -7, quantity = 1 });
+            Check(!invalid.ok, "帽子不能穿入鞋子栏");
+            character.equipslots = 2; CharactersDao.Save(db, character);
+            InventoryDao.InsertItem(db, id, 1002002, 1, 2, 1);
+            var full = NativeInventoryService.Handle(db, new InventoryChangeRequest { characterId = id, itemId = 1002001, equip = true, equipSlot = -1, quantity = 0 });
+            Check(!full.ok && CharService.Load(db, id).inventory.Exists(x => x.itemRowId == secondHat && x.position == -1), "背包满时不得卸装或丢失装备");
+            foreach (int item in new[] { 2010007, 2050001, 2050002, 2050003, 2050004, 4000000, 3010000, 5000000 }) InventoryDao.InsertItem(db, id, item, item / 1000000, 1, 2);
+            db.Save();
+            var server = GameServer.StartWith(db);
+            foreach (var pair in new Dictionary<string, object> { ["Net"] = server.Transport, ["CharacterId"] = id, ["InGame"] = true, ["Character"] = CharService.Load(db, id) })
+                typeof(GameSession).GetProperty(pair.Key).GetSetMethod(true).Invoke(null, new[] { pair.Value });
+            GameSession.ApplyInventoryToProfile();
+            var loop = host.AddComponent<GameLoop>(); var player = host.AddComponent<PlayerCtrl>(); loop.player = player; GameLoop.I = loop;
+            player.hpMax = player.mpMax = 100; player.hp = 25;
+            var diseases = NativeMobDebuffs.For(player);
+            Check(NativeInventoryActions.TryUse(2010007) == null && player.hp == 55 && Profile.ItemCount(2010007) == 1, "统一双击入口须恢复苹果HP且扣一个");
+            diseases.Apply(121, 1, 0, 60000); diseases.Apply(133, 1, 0, 60000);
+            Check(NativeInventoryActions.TryUse(2050001) == null && !diseases.Has(121) && diseases.Has(133), "眼药水只解除黑暗，不能解除僵尸");
+            diseases.Clear(); diseases.Apply(122, 1, 0, 60000); diseases.Apply(126, 1, 0, 60000);
+            Check(NativeInventoryActions.TryUse(2050002) == null && !diseases.Has(122) && !diseases.Has(126), "补药解除虚弱和缓慢");
+            diseases.Clear(); diseases.Apply(120, 1, 0, 60000); diseases.Apply(124, 1, 0, 60000);
+            Check(NativeInventoryActions.TryUse(2050003) == null && !diseases.Has(120) && !diseases.Has(124), "圣水解除封印和诅咒");
+            diseases.Clear(); diseases.Apply(125, 1, 0, 60000); diseases.Apply(133, 1, 0, 60000);
+            Check(NativeInventoryActions.TryUse(2050004) == null && !diseases.Has(125) && diseases.Has(133), "万能药不得解除原端不能驱散的僵尸状态");
+            foreach (int item in new[] { 4000000, 3010000, 5000000 })
+            {
+                int count = Profile.ItemCount(item);
+                Check(NativeInventoryActions.TryUse(item) != null && Profile.ItemCount(item) == count, "未接入的特殊道具不得误扣：" + item);
+            }
+            player.hp = 0;
+            Check(NativeInventoryActions.TryUse(2010007) != null && Profile.ItemCount(2010007) == 1, "死亡不得使用物品");
+            Check(ItemCatalog.Name(5000000) == "褐色小猫" && !string.IsNullOrEmpty(ItemCatalog.Desc(5000000)), "宠物提示须读取String/Pet.img");
+        }
+        catch (Exception e) { Check(false, e.ToString()); }
+        finally
+        {
+            GameServer.Stop(); GameLoop.I = previousLoop; UnityEngine.Object.DestroyImmediate(host);
+            JsonUtility.FromJsonOverwrite(snapshot, data); overrideField.SetValue(null, previousOverride);
+            if (File.Exists(path)) File.Delete(path);
+        }
+        Debug.Log("[InventoryCheck] passed=" + pass + " failed=" + fail);
+        if (Application.isBatchMode) EditorApplication.Exit(fail == 0 ? 0 : 1);
+    }
+
     public static void RunAuction()
     {
         pass = fail = 0;
@@ -255,11 +425,16 @@ public static class QuestNpcChecks
         Check(NpcDialogUi.ContinueWithTalkKey(), "NPC 对话键须推进已打开的 Next 页");
         Check(!NpcDialogUi.ContinueWithTalkKey(), "同帧 Update 与 GUI 对话键不得重复回复");
         Check(session.Dialog.Mode == NpcDialogMode.YesNo, "继续按钮消息类型必须为0");
-        session.Reply(1);
+        var talkFrame = typeof(NpcDialogUi).GetField("talkKeyFrame",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        talkFrame.SetValue(null, Time.frameCount - 1);
+        Check(NpcDialogUi.ContinueWithTalkKey(), "对话键确认是/否页默认是按钮");
         Check(session.Dialog.Mode == NpcDialogMode.Simple, "是/否消息类型必须为1");
-        session.Reply(1, 7);
+        talkFrame.SetValue(null, Time.frameCount - 1);
+        Check(NpcDialogUi.ContinueWithTalkKey(), "对话键确认原始#L选项且保留非零索引7");
         Check(session.Dialog.Mode == NpcDialogMode.AcceptDecline, "选项消息类型必须为4且保留索引");
-        session.Reply(1);
+        talkFrame.SetValue(null, Time.frameCount - 1);
+        Check(NpcDialogUi.ContinueWithTalkKey(), "对话键确认接受页默认接受按钮");
         Check(session.Dialog.Mode == NpcDialogMode.GetNumber, "接受/拒绝消息类型必须为12");
         session.Reply(1, 87);
         Check(session.Dialog.Mode == NpcDialogMode.GetText, "数字输入消息类型必须为3且传递输入值");
@@ -715,6 +890,87 @@ public static class QuestNpcChecks
     }
 
     // ————— 任务规则 —————
+    static void CheckBeginnerNpcBindings()
+    {
+        var data = Profile.Data;
+        string snapshot = JsonUtility.ToJson(data);
+        try
+        {
+            data.level = 1; data.jobId = 0;
+            data.questStarted.Clear(); data.questCompleted.Clear();
+            Check(QuestCatalog.ForNpc(2004).Contains(1035), "透德原始任务1035必须进入NPC索引");
+            Check(QuestCatalog.ForNpc(12100).Contains(1041), "麦加原始任务1041必须进入NPC索引");
+            Check(NpcField.ChoicesFor(2004).Exists(c => c.quest?.id == 1035), "一级初心者透德显示1035");
+            NpcField.Interact(2004);
+            Check(NpcSession.Active != null && NpcSession.Active.Dialog.Mode == NpcDialogMode.Simple,
+                "透德即使speak且无NPC JS也必须打开任务菜单");
+            NpcSession.CloseActive();
+            data.questStarted.Add(1040);
+            Check(NpcField.ChoicesFor(12100).Exists(c => c.quest?.id == 1041), "1040进行中时麦加显示1041");
+            NpcField.Interact(12100);
+            Check(NpcSession.Active != null && NpcSession.Active.Dialog.Mode == NpcDialogMode.Simple,
+                "麦加即使speak且无NPC JS也必须打开任务菜单");
+            NpcSession.CloseActive();
+            // The screenshot NPCs are different instances, despite sharing the name 透德.
+            // Keep the real level/progress fixture separate from the other-map regression above.
+            data.level = 2;
+            data.questStarted.Clear(); data.questCompleted.Clear();
+            data.questStarted.Add(1034);
+            data.questCompleted.AddRange(new[] { 30001, 1021, 1032, 1033 });
+            Check(QuestCatalog.ForNpc(9101002).Contains(8142), "截图训练图透德索引必须包含原始8142");
+            Check(QuestCatalog.Get(8142).startReq.npc == 9101002 &&
+                  QuestCatalog.Get(8142).completeReq.npc == 9101003, "训练图8142必须保留原始接取和交付NPC");
+            Check(ScriptSource.Load("npc", 9101001) != null, "截图彼特原始训练结束脚本必须存在");
+            data.level = 11;
+            Check(!NpcField.ChoicesFor(2004).Exists(c => c.quest?.id == 1035), "透德1035遵循lvmax10");
+            Check(!NpcField.ChoicesFor(12100).Exists(c => c.quest?.id == 1041), "麦加1041遵循lvmax10");
+        }
+        finally { NpcSession.CloseActive(); JsonUtility.FromJsonOverwrite(snapshot, data); }
+    }
+
+    static void CheckTrainingQuestProgress()
+    {
+        var data = Profile.Data;
+        string snapshot = JsonUtility.ToJson(data);
+        try
+        {
+            data.level = 2; data.jobId = 0;
+            data.questStarted.Clear(); data.questCompleted.Clear(); data.questProgress.Clear();
+            data.itemIds.Clear(); data.itemCounts.Clear();
+            var quest = QuestCatalog.Get(8142);
+            Check(!QuestLogic.CanStart(quest, 9101002), "训练图8142不得擅自绕过原始1042003条件");
+            data.SetQuestStarted(8142);
+            NpcField.InvalidateMarkers();
+            Check(NpcField.MarkerOf(9101003).progress, "训练图8142进行中须在交付NPC显示原图1");
+            Check(!NpcField.MarkerOf(9101002).progress && !NpcField.MarkerOf(9101001).progress,
+                "任务进行中提示不得串到接取NPC或同名脚本NPC");
+            var choice = NpcField.ChoicesFor(9101003).Find(c => c.quest?.id == 8142);
+            Check(choice != null && choice.progress && !choice.complete, "交付NPC须提供本NPC进行中的任务");
+            var session = NpcSession.TalkQuest(quest, 9101003, true);
+            Check(session != null && session.Dialog.Mode == NpcDialogMode.Ok &&
+                  session.Dialog.Content.Body.Contains("还没完成透德的请求"), "未收齐物品须读原端stop/item对白");
+            session.Reply(1);
+            Check(Profile.QuestStatus(8142) == PlayerProfileData.QuestStartedState, "未完成对白不能发奖或完成任务");
+            data.AddItem(4000300, 1); data.AddItem(4000301, 1);
+            session = NpcSession.TalkQuest(quest, 9101003, true);
+            Check(session != null && session.Dialog.Content.Body.Contains("先攻击(Ctrl)"),
+                "物品齐但击杀不足须读原端stop/mob对白");
+            NpcSession.CloseActive();
+            QuestLogic.OnMobKilled(9409000);
+            QuestLogic.OnMobKilled(9409000);
+            Check(Profile.QuestProgressInt(8142, "9409000") == 1, "完成条件里的击杀须计数且按原端封顶");
+            Check(!QuestLogic.CanComplete(quest, 9101003), "不能漏掉第二种怪物条件");
+            QuestLogic.OnMobKilled(9409001);
+            Check(QuestLogic.CanComplete(quest, 9101003) && NpcField.MarkerOf(9101003).complete,
+                "真实训练怪击杀完毕须进入可交付状态并立即刷新标记");
+            data.questStarted.Remove(8142);
+            data.questProgress.Clear();
+            QuestLogic.OnMobKilled(9409000);
+            Check(Profile.QuestProgressInt(8142, "9409000") == 0, "未接任务不得累计击杀");
+        }
+        finally { NpcSession.CloseActive(); JsonUtility.FromJsonOverwrite(snapshot, data); NpcField.InvalidateMarkers(); }
+    }
+
     static void CheckQuestRules()
     {
         // JobId 映射必须和服务端 Quest.java 的 Job 枚举一致，否则 level/job 条件全错
@@ -726,7 +982,14 @@ public static class QuestNpcChecks
         var q = QuestCatalog.Get(1021);
         if (q == null) return;
         string reason;
-        // 不接任务时不该显示"可交付"
-        Check(QuestLogic.CanComplete(q, q.completeReq.npc, out reason) == false, "未接取的任务却判定可完成");
+        // Explicit fixture: the real saved profile may already have accepted Roger's quest.
+        bool started = Profile.Data.questStarted.Remove(q.id);
+        bool completed = Profile.Data.questCompleted.Remove(q.id);
+        try { Check(!QuestLogic.CanComplete(q, q.completeReq.npc, out reason), "未接取的任务却判定可完成"); }
+        finally
+        {
+            if (started) Profile.Data.questStarted.Add(q.id);
+            if (completed) Profile.Data.questCompleted.Add(q.id);
+        }
     }
 }

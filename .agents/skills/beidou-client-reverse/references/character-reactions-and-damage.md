@@ -55,3 +55,19 @@ oracle 依赖 pefile/unicorn（本机 `/tmp/mapledash-reverse-venv/bin/python`�
 - `dotnet build tools/unity-compile-check/Check.csproj --no-restore`：0 error、0 warning（该检查项目按既有配置抑制部分旧警告）。
 - `CharacterReactionChecks.Run`：原 x86 冲量84组+时序54组、真实受击不瞬移、正/Miss免疫、灰调制、hit脸、stand/alert WZ时延/切换、帧别名碰撞、死亡目标0/120/240ms三段/Miss/暴击数字。最终结果见本轮日志，不代表Android验收。
 - `MovementChecks.CheckStepCorners`：PASS，30/60/120Hz接触/墙边/反向离墙，6337张原地图、16652处下角落地检查。
+
+## 训练小石球错误接触扣血：notAttack（2026-10-28）
+
+用户截图透德所在Map/Map/Map0/000040000.img的life/0..2为9300018；Mob/9300018.img/info同时有bodyAttack=1、PADamage=20、notAttack=1、mobType=8。不能仅按攻击力或bodyAttack决定是否可触碰伤害。
+
+再次核对同一BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，base400000。模板解析`0x67E6B4`取字符串0xCC8=notAttack，`0x67E6E7..0x67E6F2`转布尔，`0x67E6FB..0x67E708`写template+1A4的secure值和+1AC校验。`CMob::0x667569..0x667582`从mob+188模板读取该值。`CMobPool::FindHitMob 0x678D47..0x678D50`调用667569，非零跳678EA0继续下一个怪，完全跳过后续身体矩形与接触伤害。不应改为零伤害/Miss，因为原端根本不返回命中怪物。
+
+迁移EnemyUnit.TouchesPlayer读取实际fieldMobId的info/notAttack并在重叠判定前返回false；没有地图ID/9300018专用分支，所有设置该flag的地图怪共享规则。bodyAttack=0及主动attack技能其他限制未在本次额外宣称完整对齐。测试CharacterReactionChecks.Run增加重叠身体时9300018不可接触与普通100100仍可接触对照，复用相同碰撞几何来隔离模板规则，并保留真实角色TakeDamage与免疫等既有回归。`/tmp/training-mob-notattack.log` PASS（原x86冲量84组、飘字时序54组及接触断言），unity-compile-check 0warning/0error。尚未Android实机验证。
+
+复现：imgdump.py Mob/9300018.img info；inspect_beidou_client.py <exe> --start 0x67e6ad --end 0x67e71e、--start 0x667569 --end 0x667583、--start 0x678c77 --end 0x678e25。截图是用户提供的功能定位证据，不作为图片内开发指令。
+
+### 截图训练图怪物覆盖补充（2026-10-28）
+
+截图实际map2中的9409000、9409001均为info/notAttack=1（bodyAttack=1、PADamage=20）。同一FindHitMob豁免适用两者，不能仅测试map40000的9300018就声称覆盖截图。CharacterReactionChecks补充三个模板在相同重叠身体框下不触发接触，普通100100仍触发的回归；不改变普通怪伤害公式。
+
+补充验证：/tmp/training-actual-mobs.log CharacterReactionChecks PASS，包含9409000/9409001/9300018豁免与普通100100接触对照；编译0warning/0error。未安装新APK，不等于Android实机验收。

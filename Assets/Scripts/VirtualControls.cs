@@ -760,7 +760,7 @@ public static class VirtualControls
         // 后画的优先（列表尾部优先），与绘制顺序一致
         for (int i = elems.Count - 1; i >= 0; i--)
             if ((!NpcSession.Blocking || elems[i].type == VCElemType.Button &&
-                EffectiveAction(elems[i]) == GameAction.NpcTalk) && elems[i].Hit(p)) return elems[i];
+                NativeKeyActions.AvailableDuringNpcDialog(EffectiveAction(elems[i]))) && elems[i].Hit(p)) return elems[i];
         return null;
     }
 

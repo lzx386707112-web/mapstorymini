@@ -278,6 +278,8 @@ public class EnemyUnit : MonoBehaviour
     // 站在高低不同的平台上只要贴近就会被打——现在必须两个身体真的碰到。
     bool TouchesPlayer(PlayerCtrl p)
     {
+        // CMobPool::FindHitMob 678D47 -> 667569: notAttack templates cannot hit by contact.
+        if (fieldMode && WzAssets.FileRoot("Mob/" + fieldMobId.ToString("D7") + ".img").Int("info/notAttack") != 0) return false;
         if (vis == null || vis.FrameUri == null) return false;
         var frame = WzAssets.Node(vis.FrameUri);
         var lt = frame?.Get("lt"); var rb = frame?.Get("rb");

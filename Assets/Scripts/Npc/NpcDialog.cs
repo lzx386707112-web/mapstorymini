@@ -4,7 +4,7 @@ public enum NpcDialogMode
 {
     None,
     Next,          // 单按钮「继续」  action(1, 0, -1)
-    Prev,          // 单按钮「返回」  action(0, 0, -1)
+    Prev,          // 上一页 + 确定；返回 action(0,0,-1)，确定 action(1,0,-1)
     NextPrev,      // 上一页/下一页
     Ok,            // 确定            action(1, 0, -1)
     YesNo,
@@ -23,6 +23,12 @@ public sealed class NpcDialog
     public string Input = "";
     public bool ScrollReset;
     public bool IsMenu;
+
+    // Native 9A7DC3: no next-page flag still creates footer OK (9A7EDD).
+    public bool HasPagePrevious => Mode == NpcDialogMode.Prev || Mode == NpcDialogMode.NextPrev;
+    public bool HasPageNext => Mode == NpcDialogMode.Next || Mode == NpcDialogMode.NextPrev;
+    public bool HasFooterOk => Mode == NpcDialogMode.Prev || Mode == NpcDialogMode.Ok;
+    public bool CanConfirmWithTalkKey => HasPageNext || HasFooterOk;
 
     public bool Visible => Mode != NpcDialogMode.None;
 

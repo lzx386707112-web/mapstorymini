@@ -53,7 +53,7 @@ public static class StatWindow
         style.normal.textColor = Color.black;
         GUI.Label(At(r, x, y, width, 16), text, style);
     }
-    public static void Toggle() { Visible = !Visible; SkillWindow.Visible = false; }
+    public static void Toggle() { Visible = !Visible; }
 
     public static void Draw()
     {
@@ -211,13 +211,14 @@ public static class EquipWindow
                 if (id <= 0) continue;
                 var icon = IconOf(slot, id);
                 if (icon != null) GUI.DrawTexture(cellRect, icon, ScaleMode.ScaleToFit);
-                if (Event.current.type == EventType.Repaint && id > 0 && cellRect.Contains(Pointer.Pos)) ItemTooltip.SetHover(id);
-                // 点击脱下：武器必须一直持有，卸武器走背包换装
-                if (release && cellRect.Contains(Pointer.Pos) && slot != EquipSlot.Weapon)
+                if (Event.current.type == EventType.Repaint && id > 0 && cellRect.Contains(Pointer.Pos)) ItemTooltip.SetHover(id, true);
+                // 双击脱下：武器必须一直持有，卸武器走背包换装
+                if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && cellRect.Contains(Pointer.Pos) && slot != EquipSlot.Weapon)
                 {
+                    Pointer.ConsumeClick();
                     if (slot == EquipSlot.Medal) NativeMedalWindow.Wear(id, true);
-                    else Profile.SetEquipSlot(slot, 0);
-                    BottomBar.Toast("已脱下" + EquipSlot.NameOf(slot));
+                    else EquipLoadout.Unequip(slot);
+                    if (Profile.EquipOfSlot(slot) == 0) BottomBar.Toast("已脱下" + EquipSlot.NameOf(slot));
                 }
             }
 
@@ -293,7 +294,7 @@ public static class InvenWindow
         var r = new Rect(pos.x * S, pos.y * S, width * S, 289 * S);
         bool press = Event.current.type == EventType.Repaint && Pointer.Pressed;
         bool release = Event.current.type == EventType.Repaint && Pointer.Released;
-        if (press && At(r, 0, 0, width - 40, 22).Contains(Pointer.Pos)) { dragging = true; grab = Pointer.Pos / S - pos; }
+        if (press && At(r, 0, 0, width - 50, 22).Contains(Pointer.Pos)) { dragging = true; grab = Pointer.Pos / S - pos; }
         if (dragging && Pointer.Down)
         {
             pos = NativeUi.ClampWindowPosition(Pointer.Pos / S - grab, new Vector2(width, 289), S);
@@ -316,7 +317,14 @@ public static class InvenWindow
         int maxScroll = Mathf.Max(0, Mathf.CeilToInt(capacity / 4f) - 6);
         scroll = Mathf.Clamp(scroll, 0, maxScroll);
         var entries = new List<int>();
-        if (tab == 0)
+        List<InventoryEntry> equipment = null;
+        if (tab == 0 && GameSession.InGame)
+        {
+            equipment = GameSession.Character.inventory.FindAll(item => item.inventoryType == 1 && item.position > 0);
+            equipment.Sort((left, right) => sorted ? left.itemId.CompareTo(right.itemId) : left.position.CompareTo(right.position));
+            foreach (var item in equipment) entries.Add(item.itemId);
+        }
+        else if (tab == 0)
         {
             bool equipped = false;
             foreach (string id in Profile.OwnedWeapons)
@@ -326,8 +334,8 @@ public static class InvenWindow
                 if (int.TryParse(id, out int number)) entries.Add(number);
             }
         }
-        entries.AddRange(Profile.InventoryItems(tab));
-        if (sorted) entries.Sort();
+        if (equipment == null) entries.AddRange(Profile.InventoryItems(tab));
+        if (sorted && equipment == null) entries.Sort();
         if (!expanded && maxScroll > 0 && Event.current.type == EventType.Repaint && At(r, 8, 50, 148, 202).Contains(Pointer.Pos))
         {
             float wheel = Input.mouseScrollDelta.y;
@@ -345,24 +353,15 @@ public static class InvenWindow
             if (index >= capacity) { Image(r, "disabled", x, y); continue; }
             if (index >= entries.Count) continue;
             int id = entries[index];
-            Texture2D icon = null;
-            if (FieldCatalog.Items.TryGetValue(id, out var info) && !string.IsNullOrEmpty(info.icon)) icon = Art.Tex(info.icon);
-            else if (tab == 0 && WeaponDefs.TryGet(id.ToString(), out _)) icon = Art.Tex("wz://Character/Weapon/" + id.ToString("D8") + ".img/info/icon");
-            else if (tab == 0 && EquipCatalog.DirOf(id) != null) icon = Art.Tex("wz://Character/" + EquipCatalog.DirOf(id) + "/" + id.ToString("D8") + ".img/info/icon");
+            var icon = NativeItemSource.Icon(id);
             if (icon != null) GUI.DrawTexture(slot, icon, ScaleMode.ScaleToFit);
             if (tab != 0) Text(At(r, x, y + 20, 31, 12), Profile.ItemCount(id).ToString(), true, 9);
-            if (Event.current.type == EventType.Repaint && id > 0 && slot.Contains(Pointer.Pos)) ItemTooltip.SetHover(id);
-            if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && slot.Contains(Pointer.Pos) && tab == 1)
-                NpcSession.UseItem(id);
-            if (release && slot.Contains(Pointer.Pos) && tab == 0)
+            if (Event.current.type == EventType.Repaint && id > 0 && slot.Contains(Pointer.Pos)) ItemTooltip.SetHover(id, false, equipment == null ? null : equipment[index]);
+            if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && slot.Contains(Pointer.Pos))
             {
-                int eqSlot = EquipSlot.SlotOf(id);
-                if (eqSlot == EquipSlot.Weapon) Profile.EquipWeapon(id.ToString());
-                else if (eqSlot != 0)
-                {
-                    string err = EquipLoadout.Equip(id, Profile.Attributes);
-                    if (err != null) BottomBar.Toast(err);
-                }
+                Pointer.ConsumeClick();
+                NativeInventoryActions.DoubleClick(id, equipment == null ? 0 : equipment[index].position);
+                break; // The action can change the inventory and open another window.
             }
         }
 
@@ -394,9 +393,10 @@ public static class InvenWindow
         Image(r, "BtCoin/normal/0", 7, 266);
         Text(At(r, 25, 267, 115, 14), Profile.gold.ToString(), true);
 
-        // 标题栏右侧按钮：展开/收起 (W-34,6)、整理/分类 (W-49,6)
-        if (NativeUi.Button(At(r, width - 34, 6, 12, 12), "UI/UIWindow.img/Item/" + (expanded ? "BtSmall" : "BtFull"))) { expanded = !expanded; scroll = 0; return; }
-        if (NativeUi.Button(At(r, width - 49, 6, 12, 12), "UI/UIWindow.img/Item/" + (sorted ? "BtSort" : "BtGather"))) sorted = !sorted;
+        // 81CE50 / 81E47D：内部宽 W-20，再分别减30/15；基类负责最右侧关闭。
+        if (NativeUi.Button(At(r, width - 50, 6, 12, 12), "UI/UIWindow.img/Item/" + (expanded ? "BtSmall" : "BtFull"))) { expanded = !expanded; scroll = 0; return; }
+        if (NativeUi.Button(At(r, width - 35, 6, 12, 12), "UI/UIWindow.img/Item/" + (sorted ? "BtSort" : "BtGather"))) sorted = !sorted;
+        if (NativeUi.Button(At(r, width - 20, 6, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
         if (expanded && NativeUi.Button(At(r, 449, 258, 93, 18), "UI/UIWindow.img/Item/BtCashshop"))
             BottomBar.Toast("容量扩充需在商城购买：2000点券增加4格，最多96格");
     }

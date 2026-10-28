@@ -550,7 +550,7 @@ public static class BottomBar
             string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
             var t = T(keys[i] + "_" + state) ?? T(keys[i] + "_normal");
             if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
-            if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) PressBig(i);
+            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) PressBig(i);
         }
     }
 
@@ -609,7 +609,7 @@ public static class BottomBar
             string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
             var t = T(keys[i] + "_" + state) ?? T(keys[i] + "_normal");
             if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
-            if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) { PressSmall(i); }
+            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) { PressSmall(i); }
         }
     }
 
