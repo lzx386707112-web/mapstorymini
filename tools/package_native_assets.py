@@ -221,6 +221,19 @@ def main():
             aliases["ui/bar/%s_%s" % (_n, _s)] = {"source": "UI/StatusBar.img/%s/%s/0" % (_n, _s)}
     aliases["ui/bar/BtNPT_disabled"] = {"source": "UI/StatusBar.img/BtNPT/disabled/0"}
     aliases["ui/bar/BtWhisper_normal"] = {"source": "UI/StatusBar.img/BtWhisper/normal/0"}
+    # 聊天窗展开/收起按钮与滚动条，全部是原版 UI/Basic.img 节点（exe 字符串池
+    # id 1261 BtMin / 1262 BtMax / 2598 BtUP / 2599 BtDown；滚动条 VScr5 实测
+    # 与源端截图吻合：15 宽，箭头 15x13，滑块 15x25）。收起态条右端那对灰箭头
+    # 用 VScr/disabled（12x12，statusbar-layout.md 2026-10-27 实测灰底白箭头）。
+    for _n in ("BtMin", "BtMax", "BtUP", "BtDown"):
+        for _s in ("normal", "mouseOver", "pressed", "disabled"):
+            aliases.setdefault("ui/bar/%s_%s" % (_n, _s), {"source": "UI/Basic.img/%s/%s/0" % (_n, _s)})
+    for _p in ("prev0", "prev1", "next0", "next1", "base", "thumb0", "thumb1"):
+        aliases.setdefault("ui/bar/VScr5_%s" % _p, {"source": "UI/Basic.img/VScr5/enabled/" + _p})
+    for _p in ("prev", "next", "base"):
+        aliases.setdefault("ui/bar/VScr5d_%s" % _p, {"source": "UI/Basic.img/VScr5/disabled/" + _p})
+    for _p in ("prev", "next", "base"):
+        aliases.setdefault("ui/bar/VScrD_%s" % _p, {"source": "UI/Basic.img/VScr/disabled/" + _p})
 
     unmatched = sorted(alias for group in targets.values() for alias in group if alias not in aliases and alias != "ui/statusbar/identity_plate")
     (ROOT / "Library/NativeAssets-unmatched.json").write_text(json.dumps(unmatched, indent=2))

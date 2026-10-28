@@ -560,3 +560,24 @@ CREATE TABLE bot_profile (
     bound        INTEGER NOT NULL DEFAULT 0,
     enabled      INTEGER NOT NULL DEFAULT 1
 );
+
+-- 钓鱼系统物品配置表 ← 源端 V1.9.9__insert_fishing_items.sql + V2.0.2__update_fishing_items.sql。
+-- 源端 Fishing.getItemsByType(type) 就是 `SELECT item_id FROM fishing_items WHERE item_type = ?`
+-- （Fishing.java:153）。npc/9330045.js 在脚本顶层就要这 6 类清单，表不在 → 整个 NPC 打不开。
+-- 后续 V2.1.101/102/105 的清理只删武器 / 饰品区间，没有一条命中这里的 item_id。
+CREATE TABLE fishing_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_type   INTEGER NOT NULL,
+    item_id     INTEGER NOT NULL,
+    create_time TEXT,
+    update_time TEXT
+);
+INSERT INTO fishing_items (item_type, item_id) VALUES
+(1, 4031627), (1, 4031628), (1, 4031630), (1, 4031631),
+(2, 4031633), (2, 4031637), (2, 4031641), (2, 4031645),
+(3, 4031634), (3, 4031638), (3, 4031642), (3, 4031646),
+(4, 4031635), (4, 4031639), (4, 4031643), (4, 4031647),
+(5, 4031636), (5, 4031640), (5, 4031644), (5, 4031648),
+(5, 1112752), (5, 1113149), (5, 1113162), (5, 1113227), (5, 1113235),
+(6, 4031629), (6, 4031632),
+(6, 1113096), (6, 1113187), (6, 1113191), (6, 1113211);

@@ -64,7 +64,27 @@ namespace MapleDash.Js
                 return set;
             }));
 
-            var arrayFn = JsFunction.FromNative("Array", c => new JsArray());
+            // new Array(...) 的三种语义（ES5 §15.4.2）：
+            //   无参       → 空数组
+            //   单个非负整数 n → length=n 的稀疏数组（脚本里很常见：new Array(8) 再按下标填）
+            //   其余       → 元素列表 new Array("武器","上衣", …)
+            // 之前这里无条件返回空数组，BeiDouSpecial/时尚点装.js 的
+            //   var options = new Array("武器", "上衣", …); for (i=0;i<options.length;i++)
+            // 因此一个部位都渲染不出来，玩家看到的就是「装备列表是空的」。
+            var arrayFn = JsFunction.FromNative("Array", c =>
+            {
+                if (c.ArgCount == 1 && c.Arg(0) is JsNumber length)
+                {
+                    double n = length.Value;
+                    if (n >= 0 && n <= int.MaxValue && Math.Floor(n) == n)
+                    {
+                        var sized = new JsArray();
+                        for (int i = 0; i < (int)n; i++) sized.Items.Add(JsUndefined.Value);
+                        return sized;
+                    }
+                }
+                return new JsArray(c.Args);
+            });
             var arrayProto = new JsObject();
             foreach (var name in ArrayMethodNames) arrayProto.Set(name, ArrayMethod(it, name));
             arrayFn.Members.Set("prototype", arrayProto);

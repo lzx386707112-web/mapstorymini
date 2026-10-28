@@ -436,3 +436,148 @@ CREATE TABLE bosslog_daily (
  bosstype TEXT NOT NULL,
  attempttime INTEGER NOT NULL
 );
+
+-- V1.1.2__create_extend_value.sql：源端账号/角色永久、日清、周清脚本数据。
+CREATE TABLE extend_value (
+    extend_id TEXT NOT NULL,
+    extend_type INTEGER NOT NULL,
+    extend_name TEXT NOT NULL,
+    extend_value TEXT,
+    create_time BIGINT NOT NULL DEFAULT 0,
+    update_time BIGINT DEFAULT 0,
+    PRIMARY KEY (extend_id, extend_type, extend_name)
+);
+
+-- V1.0.28__create_nx.sql: SoloMapling点券兑换码（本地schema语法，原字段不变）
+CREATE TABLE nxcode (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    retriever TEXT,
+    expiration INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE nxcode_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codeid INTEGER NOT NULL,
+    type INTEGER NOT NULL DEFAULT 5,
+    item INTEGER NOT NULL DEFAULT 4000000,
+    quantity INTEGER NOT NULL DEFAULT 1
+);
+
+-- 后台管理（gms-ui）数据表：结构照抄源端 db/migration，字段名保持 MySQL 原样。
+-- V1.0.8__create_drop_data.sql：怪物掉落。游戏内 FieldLoot 经 DropStore 直读该表，
+-- 后台改掉落即时生效（写操作后 DropStore.Invalidate()）。
+CREATE TABLE drop_data (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    dropperid        INTEGER NOT NULL DEFAULT 0,
+    itemid           INTEGER NOT NULL DEFAULT 0,
+    minimum_quantity INTEGER NOT NULL DEFAULT 1,
+    maximum_quantity INTEGER NOT NULL DEFAULT 1,
+    questid          INTEGER NOT NULL DEFAULT 0,
+    chance           INTEGER NOT NULL DEFAULT 0,
+    comments         TEXT
+);
+CREATE TABLE drop_data_global (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    continent        INTEGER NOT NULL DEFAULT -1,
+    itemid           INTEGER NOT NULL DEFAULT 0,
+    minimum_quantity INTEGER NOT NULL DEFAULT 1,
+    maximum_quantity INTEGER NOT NULL DEFAULT 1,
+    questid          INTEGER NOT NULL DEFAULT 0,
+    chance           INTEGER NOT NULL DEFAULT 0,
+    comments         TEXT
+);
+
+-- V1.0.41/1.0.42：NPC 商店与商品（游戏内 NPC 商店界面尚未接入，后台先可维护数据）
+CREATE TABLE shops (
+    shopid INTEGER PRIMARY KEY,
+    npcid  INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE shopitems (
+    shopitemid INTEGER PRIMARY KEY AUTOINCREMENT,
+    shopid     INTEGER NOT NULL,
+    itemid     INTEGER NOT NULL,
+    price      INTEGER NOT NULL,
+    pitch      INTEGER NOT NULL DEFAULT 0,
+    position   INTEGER NOT NULL DEFAULT 0
+);
+
+-- V1.4.0/V1.4.1：扭蛋机奖池与奖品
+CREATE TABLE gachapon_reward_pool (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    gachapon_id  INTEGER NOT NULL DEFAULT 0,
+    weight       INTEGER NOT NULL DEFAULT 0,
+    is_public    INTEGER NOT NULL DEFAULT 0,
+    prob         INTEGER NOT NULL DEFAULT 0,
+    start_time   TEXT,
+    end_time     TEXT,
+    notification INTEGER NOT NULL DEFAULT 0,
+    comment      TEXT
+);
+CREATE TABLE gachapon_reward (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    pool_id    INTEGER NOT NULL,
+    item_id    INTEGER NOT NULL,
+    quantity   INTEGER NOT NULL DEFAULT 1,
+    create_time TEXT,
+    comment    TEXT
+);
+
+-- V2.0.7：自动封禁配置（枚举默认值 + 表覆盖，points/expire_time 为 NULL 表示用默认）
+CREATE TABLE autoban_config (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    type        TEXT NOT NULL,
+    disabled    INTEGER NOT NULL DEFAULT 0,
+    points      INTEGER,
+    expire_time INTEGER,
+    description TEXT,
+    create_time TEXT,
+    update_time TEXT
+);
+
+-- V1.5.1：GM 命令库（level 可改、default_level/clazz/syntax 不可改）
+CREATE TABLE command_info (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    syntax       TEXT NOT NULL,
+    level        INTEGER NOT NULL DEFAULT 0,
+    enabled      INTEGER NOT NULL DEFAULT 1,
+    clazz        TEXT NOT NULL,
+    default_level INTEGER NOT NULL DEFAULT 0
+);
+
+-- 假人档案：对齐联机的「账号表」。
+-- 联机里每个玩家账号唯一，所以别人看到他永远是同一张脸、同一个名字；假人现在照这个来：
+-- 几百条档案一次性预置好，之后只读不改，同一个 id 永远同一套外观 + 同一个名字。
+-- template 指向 BotAppearanceTemplates 的模板下标 —— 外观模板被同模板假人共享，
+-- 纸娃娃纹理才能一份多用（这才是联机客户端同屏几十人也不爆显存的原因）。
+-- map_id 是「档案归属地图」：0 表示自由分配，>0 表示这只只会出现在该图。
+CREATE TABLE bot_profile (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    template     INTEGER NOT NULL DEFAULT 0,
+    map_id       INTEGER NOT NULL DEFAULT 0,
+    channel      INTEGER NOT NULL DEFAULT 1,
+    bound        INTEGER NOT NULL DEFAULT 0,
+    enabled      INTEGER NOT NULL DEFAULT 1
+);
+
+-- 钓鱼系统物品配置表 ← 源端 V1.9.9__insert_fishing_items.sql + V2.0.2__update_fishing_items.sql。
+-- 源端 Fishing.getItemsByType(type) 就是 `SELECT item_id FROM fishing_items WHERE item_type = ?`
+-- （Fishing.java:153）。npc/9330045.js 在脚本顶层就要这 6 类清单，表不在 → 整个 NPC 打不开。
+-- 后续 V2.1.101/102/105 的清理只删武器 / 饰品区间，没有一条命中这里的 item_id。
+CREATE TABLE fishing_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_type   INTEGER NOT NULL,
+    item_id     INTEGER NOT NULL,
+    create_time TEXT,
+    update_time TEXT
+);
+INSERT INTO fishing_items (item_type, item_id) VALUES
+(1, 4031627), (1, 4031628), (1, 4031630), (1, 4031631),
+(2, 4031633), (2, 4031637), (2, 4031641), (2, 4031645),
+(3, 4031634), (3, 4031638), (3, 4031642), (3, 4031646),
+(4, 4031635), (4, 4031639), (4, 4031643), (4, 4031647),
+(5, 4031636), (5, 4031640), (5, 4031644), (5, 4031648),
+(5, 1112752), (5, 1113149), (5, 1113162), (5, 1113227), (5, 1113235),
+(6, 4031629), (6, 4031632),
+(6, 1113096), (6, 1113187), (6, 1113191), (6, 1113211);

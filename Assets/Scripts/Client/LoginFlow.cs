@@ -1457,9 +1457,9 @@ public class LoginFlow : MonoBehaviour
 
     void ConfirmCharName()
     {
-        if (!GameSession.NameFormatOk(charName)) { status = "角色名需 4-13 位英文数字"; return; }
+        if (!GameSession.NameFormatOk(charName)) { SetAlert("角色名需 2-12 位中文、英文或数字。", null); return; }
         var check = GameSession.CheckCharName(charName);
-        if (!check.available) { status = check.reason == -2 ? "该名字已被使用" : "角色名不合法"; return; }
+        if (!check.available) { SetAlert(check.reason == -2 ? "该名字已被使用，请重新输入。" : "角色名不合法，请重新输入。", null); return; }
         status = "";
         createStep = 1;
     }
@@ -1632,9 +1632,9 @@ public class LoginFlow : MonoBehaviour
 
     void DoCreate()
     {
-        if (!GameSession.NameFormatOk(charName)) { status = "角色名需 4-13 位英文数字"; return; }
+        if (!GameSession.NameFormatOk(charName)) { SetAlert("角色名需 2-12 位中文、英文或数字。", null); return; }
         var check = GameSession.CheckCharName(charName);
-        if (!check.available) { status = check.reason == -2 ? "该名字已被使用" : "角色名不合法"; return; }
+        if (!check.available) { SetAlert(check.reason == -2 ? "该名字已被使用，请重新输入。" : "角色名不合法，请重新输入。", null); return; }
 
         var res = GameSession.CreateChar(new CreateCharRequest
         {
@@ -1644,7 +1644,7 @@ public class LoginFlow : MonoBehaviour
             top = top, bottom = bottom, shoes = shoes, weapon = weapon,
             gender = gender,
         });
-        if (res.code != 0) { status = res.error ?? ("创建失败（" + res.code + "）"); return; }
+        if (res.code != 0) { SetAlert(res.error ?? ("创建失败（" + res.code + "）"), null); return; }
 
         status = "";
         charList = GameSession.CharList(GameSession.World, GameSession.Channel);

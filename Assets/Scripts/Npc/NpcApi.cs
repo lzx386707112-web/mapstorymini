@@ -751,6 +751,28 @@ public static class NpcApi
         return party;
     }
 
+    // Character.getStorage() + Storage.sendStorage（源端 Storage.java:232）。
+    // 仓库系统未迁移，但源端的 15 级门槛要照搬：不到 15 级是「15级以后才可以使用仓库服务」，
+    // 到了 15 级才轮到「尚未接入」。这样玩家看到的是明确的中文提示，而不是一句「对话脚本出错」。
+    static JsHostObject BuildStorage()
+    {
+        var storage = new JsHostObject(null);
+        storage.Set("sendStorage", Fn(c =>
+        {
+            if (Profile.level < 15) { BottomBar.Toast("15级以后才可以使用仓库服务"); return; }
+            BottomBar.Toast("仓库系统尚未接入");
+            NpcSession.CloseActive();
+        }));
+        // 其余 Storage 入口一起兜住，免得别的脚本换了写法又崩在同一个地方
+        foreach (string name in new[] { "sendStored", "sendTakenOut", "sendMeso", "arrange", "close", "save", "increaseSlots" })
+            storage.Set(name, Fn(_ => { }));
+        storage.Set("getSlots", Ret(_ => N(0)));
+        storage.Set("getMeso", Ret(_ => N(0)));
+        storage.Set("getItems", Ret(_ => new JsArray()));
+        storage.Set("isEmpty", Ret(_ => B(true)));
+        return storage;
+    }
+
     static JsHostObject BuildCashShop()
     {
         var cash = new JsHostObject(null);
@@ -821,6 +843,13 @@ public static class NpcApi
         p.Set("getLevel", Ret(_ => N(Profile.level)));
         p.Set("getJobId", Ret(_ => N(QuestLogic.PlayerJob)));
         p.Set("getJob", Ret(_ => BuildJob(QuestLogic.PlayerJob)));
+        // Character.isCygnus()（Character.java:6118）→ getJobType()==1，
+        // getJobType() = job.getId()/1000（:5190），即 job ∈ [1000,1999] 的骑士团。
+        // 缺了它 npc/9900008.js 五转女神在骑士团分支上直接抛「undefined is not a function」
+        //（冒险家因为 && 短路躲过去，所以只绑冒险家测不出来）。
+        p.Set("isCygnus", Ret(_ => B(QuestLogic.PlayerJob / 1000 == 1)));
+        // Character.getFishLevel()（源端 V1.9.9__insert_fishing_items.sql 给 characters 加的 fishLevel 列）
+        p.Set("getFishLevel", Ret(_ => N(GameSession.Character?.record.fishLevel ?? 1)));
         p.Set("getGender", Ret(_ => N(GameSession.Character?.record.gender ?? 0)));
         p.Set("getName", Ret(_ => S(Profile.playerName)));
         p.Set("isGM", Ret(_ => B((GameSession.Character?.record.gm ?? 0) > 1)));
@@ -889,6 +918,10 @@ public static class NpcApi
         p.Set("getAreaInfos", Ret(_ => new JsArray()));
         p.Set("getPartnerId", Ret(_ => N(0)));
         p.Set("getCashShop", Ret(_ => GameSession.InGame ? BuildCashShop() : JsNull.Value));
+        // Character.getStorage()（源端 Character.java）。仓库整套（存/取/金币/槽位 UI）未迁移，
+        // 但必须返回一个对象：npc/9030100.js 是 `cm.getPlayer().getStorage().sendStorage(...)`，
+        // 返回 undefined 会让「点仓库 NPC」直接崩成「对话脚本出错」。
+        p.Set("getStorage", Ret(_ => BuildStorage()));
         p.Set("getFamilyEntry", Ret(_ => JsNull.Value));
         p.Set("sendPacket", Fn(c => { }));
         p.Set("cancelEffect", Fn(c => { }));
@@ -1229,6 +1262,34 @@ public static class NpcApi
                 type.Set("ETC", N(4)); type.Set("CASH", N(5)); type.Set("EQUIPPED", N(-1));
                 return type;
             }
+            // org.gms.client.inventory.manipulator.InventoryManipulator（源端 InventoryManipulator.java）。
+            // addById(Client, itemId, quantity) 语义就是往背包加道具，等价于 gainItem，可以照做；
+            // removeFromSlot(Client, type, slot, quantity, fromDrop) 依赖背包格位（slot 来自 Item.getPosition()），
+            // 单机没有格位概念，按 removeAllByInventorySlot 的既有口径明确报错，不装作成功。
+            if (name == "org.gms.client.inventory.manipulator.InventoryManipulator")
+            {
+                var manipulator = new JsHostObject(null);
+                Lenient(manipulator, "InventoryManipulator");
+                manipulator.Set("addById", Ret(args =>
+                {
+                    int id = Int(args, 1), count = Int(args, 2, 1);
+                    if (id > 0 && count > 0) Profile.AddItem(id, count);
+                    return B(true);
+                }));
+                manipulator.Set("removeFromSlot", Fn(args =>
+                    throw new JsRuntimeException("Unmigrated server API: InventoryManipulator.removeFromSlot（单机没有背包格位概念）")));
+                return manipulator;
+            }
+            // org.gms.constants.id.ItemId（ItemId.java）：npc/9330045.js 用它的 isChair 判断
+            // 玩家背包里有没有椅子（决定能不能进钓鱼场）。源端就是 RELAXER=3010000 ~ 3019999。
+            if (name == "org.gms.constants.id.ItemId")
+            {
+                var itemId = new JsHostObject(null);
+                Lenient(itemId, "ItemId");
+                itemId.Set("RELAXER", N(3010000));
+                itemId.Set("isChair", Ret(args => { int id = Int(args, 0); return B(id >= 3010000 && id <= 3019999); }));
+                return itemId;
+            }
             // org.gms.constants.game.ExpTable：客户端已按原经验表算好，直接查同一张表
             if (name == "org.gms.constants.game.ExpTable")
             {
@@ -1345,6 +1406,10 @@ public static class NpcApi
         Lenient(inv, "inventory");
         inv.Set("countById", Ret(c => N(Profile.ItemCount(Int(c, 0)))));
         inv.Set("getNumFreeSlot", Ret(_ => N(24)));
+        // Inventory.iterator()（源端 Inventory.java）：脚本拿它遍历某一栏的道具。
+        // npc/9330045.js 的 hasChair() 就是扫 SETUP 栏找椅子，决定能不能进钓鱼场。
+        // 栏位 = 道具 id 首位，与上面的 InventoryType 数值（EQUIP=1…SETUP=3…）同一套。
+        inv.Set("iterator", Ret(_ => BuildInventoryIterator(type)));
         inv.Set("listById", Ret(c =>
         {
             var arr = new JsArray();
@@ -1359,5 +1424,30 @@ public static class NpcApi
             return arr;
         }));
         return inv;
+    }
+
+    static JsHostObject BuildInventoryIterator(int type)
+    {
+        var ids = new List<int>();
+        var data = Profile.Data;
+        if (data.itemIds != null)
+            for (int i = 0; i < data.itemIds.Count; i++)
+            {
+                if (i >= data.itemCounts.Count) break;
+                int id = data.itemIds[i];
+                if (id / 1000000 == type && data.itemCounts[i] > 0) ids.Add(id);
+            }
+        int index = 0;
+        var it = new JsHostObject(null);
+        it.Set("hasNext", Ret(_ => B(index < ids.Count)));
+        it.Set("next", Ret(_ =>
+        {
+            int id = index < ids.Count ? ids[index++] : 0;
+            var item = new JsHostObject(id);
+            item.Set("getItemId", Ret(__ => N(id)));
+            item.Set("getQuantity", Ret(__ => N(Profile.ItemCount(id))));
+            return item;
+        }));
+        return it;
     }
 }

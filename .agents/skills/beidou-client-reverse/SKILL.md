@@ -13,6 +13,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 
 | 当前问题 | 读取记录 |
 | --- | --- |
+| 建号中文名字、长度规则、重名与错误提示 | [角色命名](references/character-name.md) |
 | SoloMapling 假人生成、调度、地图索引、迁移缺口、地面掉落权威服务（MapItem/pickupItem/pickItemDrop） | [假人系统](references/solomapling.md) |
 | 文件版本、地址、字符串池、复现工具、反编译陷阱 | [二进制与工具](references/binary-and-tools.md) |
 | ijl15/2ijl15 职责、手机用版本差异、分辨率补丁与 Android 适配价值 | [DLL 与手机适配](references/ijl15-mobile-adaptation.md) |

@@ -67,11 +67,11 @@ public sealed class BotField : MonoBehaviour
         if (message.kind == Server.Bot.Social.BotOutput.Kind.Chat && !string.IsNullOrEmpty(message.text))
         {
             BottomBar.AddChat(actor.name + " : " + message.text, BottomBar.ChatWhite);
-            ShowBalloon(message.actorId, message.text);
+            ShowBalloon(message.actorId, actor.name + ": " + message.text);
         }
         // SocialCommands.BotChatbubble 只冒泡不进聊天记录。
         if (message.kind == Server.Bot.Social.BotOutput.Kind.Bubble && !string.IsNullOrEmpty(message.text))
-            ShowBalloon(message.actorId, message.text);
+            ShowBalloon(message.actorId, actor.name + ": " + message.text);
         if (message.kind == Server.Bot.Social.BotOutput.Kind.Emote) Express(message.actorId, message.value);
         if (message.kind == Server.Bot.Social.BotOutput.Kind.Scroll && views.TryGetValue(message.actorId,out var scrolling))
         {
@@ -270,7 +270,24 @@ public sealed class BotField : MonoBehaviour
         if (string.IsNullOrEmpty(text)) return;
         if (balloons.Count > 64) balloons.Clear();   // 兜底：假人异常刷屏时不把 GUI 拖死
         balloons[actorId] = new Balloon { text = text, until = Time.unscaledTime + BalloonSeconds };
+        // debug_balloon=1（一次有效）：气泡锚点画红点 + logcat 打说话人坐标。
+        // 气泡以说话人的头顶为锚（UI 层，画在所有东西上面）；如果红点处看不到人，
+        // 那人就在那儿、只是被前景物件（排序序号 > 300 的 obj）挡住了——源端同样如此。
+        if (!balloonDebugTried)
+        {
+            balloonDebugTried = true;
+            balloonDebug = PlayerPrefs.GetInt("debug_balloon", 0) != 0;
+            if (balloonDebug) PlayerPrefs.DeleteKey("debug_balloon");
+        }
+        if (balloonDebug)
+        {
+            var speaker = BotRegistry.Get(actorId);
+            Debug.Log("[Bot/Balloon] speaker=" + (speaker?.name ?? "?") + "(#" + actorId + ")" +
+                      " map=" + (speaker?.mapId ?? 0) + " x=" + (speaker?.x ?? 0) + " y=" + (speaker?.y ?? 0) +
+                      " text=" + text);
+        }
     }
+    static bool balloonDebugTried, balloonDebug;
 
     static GUIStyle balloonStyle;
     static Texture2D balloonNw, balloonNe, balloonSw, balloonSe, balloonN, balloonS, balloonW, balloonE, balloonC, balloonArrow;
@@ -315,7 +332,7 @@ public sealed class BotField : MonoBehaviour
             balloonStyle = new GUIStyle(GUI.skin.label)
             {
                 font = UiKit.Font,
-                fontSize = 12,                       // 原气泡正文 12px，行高 14px
+                fontSize = 12,                       // 原气泡正文 12px；行高由字体决定（ui.ttf 是 17）
                 alignment = TextAnchor.MiddleCenter,
                 wordWrap = false,
                 clipping = TextClipping.Overflow,
@@ -345,14 +362,12 @@ public sealed class BotField : MonoBehaviour
             //   前 5 行是下边框带的逐像素复制（ee/ccddee/bbccdd/bbbbdd/黑），
             //   所以它必须整体「压」在主体的 6px 下边框上，不能挂在下边框下面——
             //   挂下面就是一块白板 + 一条边框线横切，气泡看上去被切成两半。
-            //   这几行里没有圆角处的黑色，说明尾巴开在直边段上（sw 圆角之后 6px），
-            //   而不是压住左下角（压住会把角的黑边刷成浅蓝，缺一块轮廓）。
+            //   这几行里没有圆角处的黑色 —— 尾巴是压在直边段上的，不是压住左下角。
             const float Border = 6f;                    // 九宫格下边框厚度（sw/s/se 的高度）
-            const float Corner = 6f;                    // 九宫格圆角宽度
-            // 水平：尾巴开在气泡左边往右 Corner，尾尖（arrow 图像 x1）要正好落在角色头顶，
-            // 所以气泡左边 = 头顶 - Corner，而不是「气泡左边 = 头顶」——那样尾尖会偏右 6px。
-            var rect = new Rect(anchor.x - Corner, anchor.y - (balloonArrow != null ? balloonArrow.height - Border : 7f) - h, w, h);
-            var tailX = rect.x + Corner - 1f;            // origin.x = 1：尾巴贴在下边框直边段的起点
+            // 水平：气泡整体以角色头顶（人物）为**中心**，尾巴也在气泡底边上**居中**，
+            // 于是尾尖正好落在头顶（源端就是这么摆的，不是左对齐）。
+            var rect = new Rect(anchor.x - w * 0.5f, anchor.y - (balloonArrow != null ? balloonArrow.height - Border : 7f) - h, w, h);
+            var tailX = rect.x + (w - (balloonArrow != null ? balloonArrow.width : 13f)) * 0.5f;
             float viewW = UiKit.W / s, viewH = UiKit.H / s;
             if (rect.xMax < -40f || rect.x > viewW + 40f || rect.yMax < -40f || rect.y > viewH + 40f) continue;
 
@@ -370,51 +385,68 @@ public sealed class BotField : MonoBehaviour
                 GUI.DrawTexture(new Rect(tailX, rect.yMax - Border, balloonArrow.width, balloonArrow.height), balloonArrow);
             balloonStyle.normal.textColor = new Color(0f, 0f, 0f, alpha);   // clr = -16777216，黑字
             GUI.Label(new Rect(rect.x + 6f, rect.y + 6f, innerW, innerH), balloon.wrapped, balloonStyle);
+            if (balloonDebug)
+            {
+                // 红点 = 气泡锚点 = 说话人头顶。红点落在空处 = 人在那儿、被前景物件挡住。
+                var keep = GUI.color;
+                GUI.color = new Color(1f, 0.2f, 0.2f, 1f);
+                GUI.DrawTexture(new Rect(anchor.x - 3f, anchor.y - 3f, 6f, 6f), Texture2D.whiteTexture);
+                GUI.color = keep;
+            }
             GUI.color = previousColor;
             GUI.matrix = previousMatrix;
         }
     }
 
-    // 正文区宽度上限：12px 字体一行最多 12 个汉字（144px），超出就断行、往下长。
-    // 反汇编链路（构造 0x48A935 → 九宫格 0x4890C4）里只走素材与文本，没有独立的宽度常量可比对，
-    // 所以这是本实现里唯一一个「按排版常识」定的值：要改一行就够。
-    const float MaxTextWidth = 144f;
+    // 一行最多 11 个字符（源端实测：`ieskk: 11222` 正好一行、长串一行 11 个），
+    // **空格不占位**；宽度自适应（气泡宽度 = 最宽那行），四周内边距固定 6px。
+    const int MaxCharsPerLine = 11;
 
-    // 逐字量宽断行（原端是 CreateTextCanvas 按宽度折行）；同时算出正文区尺寸：
-    // 宽按 12 取整、高按行数×14（**不能用 CalcSize 的高**，它含字体行距，
-    // 单行会被撑成两层高、气泡中间多一圈空白）。
+    // 折行（源端行为）：一行**填满 11 个字符**再硬断，不在空格处退让——
+    // 退让会让长消息的第一行只剩「昵称: 」，气泡里冒出半行空白，和源端截图不符。
+    // 空格不占位（`ieskk: 11222` 是 11 个字符、正好一行）；显式 '\n' 也断行。
+    // 同时算出正文区尺寸：宽 = 最宽那行的实际像素宽（向上取整到整像素，不做任何步进取整），
+    // 高按行数 × 字体行距（**不能用 CalcSize 的高**，它含行距，单行会被撑成两层高、气泡中间多一圈空白）。
     static void Measure(Balloon balloon, GUIStyle style)
     {
         string text = balloon.text ?? string.Empty;
-        var builder = new System.Text.StringBuilder(text.Length + 8);
-        var line = new System.Text.StringBuilder();
-        float lineWidth = 0f, widest = 0f;
+        var builder = new System.Text.StringBuilder(text.Length + 16);
+        float widest = 0f;
         int lines = 0;
-        for (int i = 0; i < text.Length; i++)
+        int start = 0;
+        while (start < text.Length)
         {
-            char c = text[i];
-            if (c == '\n')
+            int end = start, count = 0;
+            while (end < text.Length && text[end] != '\n')
             {
-                widest = Mathf.Max(widest, lineWidth);
-                builder.Append(line).Append('\n');
-                line.Length = 0; lineWidth = 0f; lines++;
-                continue;
+                char c = text[end];
+                if (c != ' ' && count + 1 > MaxCharsPerLine) break;   // 填满 11 个字，硬断
+                if (c != ' ') count++;
+                end++;
             }
-            float charWidth = style.CalcSize(new GUIContent(c.ToString())).x;
-            if (line.Length > 0 && lineWidth + charWidth > MaxTextWidth)
+            if (end == start && text[start] != '\n') end = start + 1;   // 兜底，别死循环
+            string lineText = text.Substring(start, end - start).Trim();
+            if (lineText.Length > 0)
             {
-                widest = Mathf.Max(widest, lineWidth);
-                builder.Append(line).Append('\n');
-                line.Length = 0; lineWidth = 0f; lines++;
+                if (lines > 0) builder.Append('\n');
+                builder.Append(lineText);
+                lines++;
+                widest = Mathf.Max(widest, style.CalcSize(new GUIContent(lineText)).x);
             }
-            line.Append(c); lineWidth += charWidth;
+            start = end < text.Length && text[end] == '\n' ? end + 1 : end;
         }
-        widest = Mathf.Max(widest, lineWidth);
-        builder.Append(line); lines++;
+        if (lines == 0) lines = 1;
         balloon.wrapped = builder.ToString();
-        balloon.innerW = Mathf.Max(12f, Mathf.Ceil(widest / 12f) * 12f);
-        // 行高取字体自己的行距（原端 12px 字体是 14px 行距，这里不小于 14），
-        // 否则多行文字会比正文区高、压到上下边框上。
+        // 宽度自适应：正文区就是最宽那行的实际像素宽（**不要按 12 取整**，那是给分块平铺留余量用的；
+        // 现在主体是整张合成图，切图最后一块会被裁切，任意宽度都不会出缝）。
+        // 一句话的长度直接决定气泡宽度：短句就窄，长句才宽。只向上取整到整像素，
+        // 避免合成图比文字少 1px 把正文压到右边框上。
+        balloon.innerW = Mathf.Max(12f, Mathf.Ceil(widest));
+        // 行高必须取字体自己的行盒（`style.lineHeight`），不能写死 14：
+        // ui.ttf 在 fontSize=12 时 ascent=13 / descent=4 ⇒ 行盒 **17px**，而 CJK 墨迹只有 11px，
+        // 上下各留 3px。正文区高 = 行数 × 行盒高，GUI.Label 的 MiddleCenter 居中的就是这个行盒，
+        // 于是墨迹上下间距天然相等（3/3）。**把行高写死成 14 会让行盒比正文区高 3px、文字整体
+        // 下沉、下沿被下边框裁掉——表现就是「上面内边距大、下面没有」（2026-10-27 用户在对照图上指出）。
         float lineHeight = Mathf.Max(14f, style.lineHeight);
         balloon.innerH = Mathf.Max(14f, lines * lineHeight);
     }

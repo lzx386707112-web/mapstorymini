@@ -60,6 +60,11 @@ public static class Program
         int accId = relogin.accountId;
 
         Console.WriteLine("== 3. 建号事务 ==");
+        Check(CharNameRules.Valid("中文"), "两字中文名允许");
+        Check(CharNameRules.Valid("中文Ab12"), "中英文数字混合名允许");
+        Check(CharNameRules.Valid("一二三四五六七八九十一二"), "12 字中文名允许");
+        Check(!CharNameRules.Valid("一二三四五六七八九十一二三"), "13 字中文名拒绝");
+        Check(!CharNameRules.Valid("名字！"), "中文标点拒绝");
         // 默认外观：男 + 脸20000 + 发30300 + 发色0 + 肤0 + 衣1040002 + 裤1060002 + 鞋1072001 + 剑1302000
         var create = CharFactory.CreateCharacter(db, accId, 0, "HeroOne", CharFactory.JobGroupAdventurer,
             20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0);
@@ -88,9 +93,9 @@ public static class Program
         Check(CharFactory.CreateCharacter(db, accId, 0, "BadFace", CharFactory.JobGroupAdventurer,
             99999, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0).code != 0, "非法脸型拒绝");
         Check(CharFactory.CreateCharacter(db, accId, 0, "Bad Name!", CharFactory.JobGroupAdventurer,
-            20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0).code != 0, "4~13 位英文数字以外拒绝");
-        Check(CharFactory.CreateCharacter(db, accId, 0, "Ab", CharFactory.JobGroupAdventurer,
-            20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0).code != 0, "少于 4 位拒绝");
+            20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0).code != 0, "中文、英文、数字以外拒绝");
+        Check(CharFactory.CreateCharacter(db, accId, 0, "A", CharFactory.JobGroupAdventurer,
+            20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0).code != 0, "少于 2 位拒绝");
         Check(CharFactory.CreateCharacter(db, accId, 0, "HeroOne", CharFactory.JobGroupAdventurer,
             20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0).code != 0, "重名拒绝");
         // 第 2、3 个角色（女性：脸 21001 / 发 31010 / 发色 2）

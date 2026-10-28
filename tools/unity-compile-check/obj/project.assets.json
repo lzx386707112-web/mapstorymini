@@ -13,9 +13,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/AndroidCheck.csproj",
+      "projectUniqueName": "/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/Check.csproj",
       "projectName": "AssemblyCSharpCheck",
-      "projectPath": "/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/AndroidCheck.csproj",
+      "projectPath": "/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/Check.csproj",
       "packagesPath": "/Users/lizixian/.nuget/packages/",
       "outputPath": "/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/obj/",
       "projectStyle": "PackageReference",

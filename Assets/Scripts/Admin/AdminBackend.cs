@@ -584,7 +584,7 @@ public static class AdminBackend
         {
             var db = RequireDb();
             if (!CharNameRules.Valid(newName))
-                throw new AdminApiException("角色名必须是 " + CharNameRules.MinLength + "~" + CharNameRules.MaxLength + " 位英文或数字");
+                throw new AdminApiException("角色名必须是 " + CharNameRules.MinLength + "~" + CharNameRules.MaxLength + " 位中文、英文或数字");
             var t = db.Table("characters");
             if (t.Find(DbStore.Eq("id", id)) == null) throw new AdminApiException("角色不存在: " + id);
             foreach (var r in t.rows)

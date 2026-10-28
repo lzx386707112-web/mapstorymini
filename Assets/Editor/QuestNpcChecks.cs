@@ -178,7 +178,10 @@ public static class QuestNpcChecks
         var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
         var session = (NpcSession)Activator.CreateInstance(typeof(NpcSession), flags, null,
             new object[] {2101, 0, false, false}, null);
-        typeof(NpcSession).GetMethod("Begin", flags).Invoke(session, new object[] {source, "dialog-check"});
+        // Begin 有两个重载（Begin(src,name) 和 Begin(src,name,entry)），GetMethod 会抛 AmbiguousMatchException
+        var begin = Array.Find(typeof(NpcSession).GetMethods(flags),
+            m => m.Name == "Begin" && m.GetParameters().Length == 2);
+        begin.Invoke(session, new object[] {source, "dialog-check"});
         return session;
     }
 

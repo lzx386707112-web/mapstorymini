@@ -75,6 +75,7 @@ public sealed class NativeScriptService
             engine.Interp.ResolveHostType = name =>
             {
                 if (name == "org.gms.config.GameConfig" && db != null) return ConfigClass();
+                if (name == "org.gms.util.packets.Fishing") return FishingClass();
                 if (request.bindings != null && request.bindings.TryGetValue("Java", out var fallback))
                     return engine.Interp.Call(engine.Interp.GetMember(fallback, "type"), fallback, new JsValue[] { new JsString(name) });
                 return null;
@@ -181,6 +182,41 @@ public sealed class NativeScriptService
             call => JsBoolean.Of(Scoped("server", call, true) is string raw
                 && (raw == "1" || raw.Equals("true", StringComparison.OrdinalIgnoreCase)))));
         return config;
+    }
+
+    // org.gms.util.packets.Fishing（源端 Fishing.java）。
+    // npc/9330045.js 在脚本顶层就 Java.type 它，随后立刻用 getInstance().getItemsByType()
+    // 把 6 类掉落填进 dropTypes 常量 —— 类不注册的话脚本连 start() 都跑不到，
+    // 自由市场里「余夫」这个 NPC 等于完全打不开（玩家只看到「未接入的服务端类」）。
+    // 常量照抄 Fishing.java:44-60；物品清单走 fishing_items 表（:153 同一条 SQL）。
+    JsValue FishingClass()
+    {
+        var type = new JsHostObject(null);
+        type.Set("COMMON_BAIT_BASE_RATE", new JsNumber(0.3));
+        type.Set("ADVANCED_BAIT_BASE_RATE", new JsNumber(0.6));
+        type.Set("MAX_SUCCESS_LEVEL_RATE", new JsNumber(0.3));
+        type.Set("ITEM_RATE_MYTHIC", new JsNumber(0.0001));
+        type.Set("ITEM_RATE_LEGENDARY", new JsNumber(0.0002));
+        type.Set("ITEM_RATE_SUPER_RARE", new JsNumber(0.001));
+        type.Set("ITEM_RATE_RARE", new JsNumber(0.01));
+        type.Set("ITEM_RATE_UNCOMMON", new JsNumber(0.1));
+        type.Set("ITEM_RATE_COMMON", new JsNumber(0.8887));
+        var instance = new JsHostObject(null);
+        instance.Set("getItemsByType", JsFunction.FromNative("getItemsByType",
+            call => new JsArray(FishingItems(JsConvert.ToInt32(call.Arg(0))).ConvertAll<JsValue>(id => new JsNumber(id)))));
+        instance.Set("refreshItemCache", JsFunction.FromNative("refreshItemCache", _ => JsUndefined.Value));
+        type.Set("getInstance", JsFunction.FromNative("getInstance", _ => instance));
+        return type;
+    }
+
+    // SELECT item_id FROM fishing_items WHERE item_type = ?（Fishing.java:153）
+    List<int> FishingItems(int itemType)
+    {
+        var items = new List<int>();
+        if (db == null) return items;
+        foreach (var row in db.Table("fishing_items").rows)
+            if (DbStore.Int(row, "item_type") == itemType) items.Add(DbStore.Int(row, "item_id"));
+        return items;
     }
 
     // 找不到键时按源端默认值返回：getServerInt → 0，getServerString → ""

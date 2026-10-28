@@ -139,13 +139,18 @@ public static class BottomBar
     public static void FocusChat(NativeChatChannel channel, string target = "")
     { ChatChannel = channel; whisperTarget = target; FocusChat(); }
     public static void ResetChat()
-    { ChatFocused = focusChat = false; chatInput = whisperTarget = ""; chatLines.Clear(); ChatChannel = NativeChatChannel.All; channelOpen = false; }
+    {
+        ChatFocused = focusChat = false; chatInput = whisperTarget = ""; chatLines.Clear();
+        ChatChannel = NativeChatChannel.All; channelOpen = false;
+        chatExpanded = false; panelH = ChatPanelDefaultH; chatScroll = 0;
+    }
     static string chatInput = "";
 
     // —————— 聊天窗消息 ——————
     // 源端聊天窗不是「一串纯白字符串」：每条消息带类型，按类型上色（见 NativeSystemMessage）。
     // 颜色证据：type5 粉色取自 10-27 截图实测字形像素（R:G:B ≈ 255:209:207）；
     // type0/6 的浅蓝没有截图，按服务端 PacketCreator.serverNotice 的类型名 Lightblue 取值，待核实。
+    // 黄色取自展开面板截图里「[欢迎] 欢迎光临冒险岛ONLINE世界。」的字形实测（R:G:B ≈ 255:256:96）。
     public struct ChatLine
     {
         public string text;
@@ -154,6 +159,7 @@ public static class BottomBar
     public static readonly Color ChatWhite = Color.white;
     public static readonly Color ChatPink = new Color32(255, 208, 208, 255);
     public static readonly Color ChatLightBlue = new Color32(170, 215, 255, 255);
+    public static readonly Color ChatYellow = new Color32(255, 255, 96, 255);
 
     static readonly List<ChatLine> chatLines = new List<ChatLine>();
     public static IReadOnlyList<ChatLine> ChatHistory => chatLines;
@@ -163,38 +169,70 @@ public static class BottomBar
         if (string.IsNullOrEmpty(text)) return;
         chatLines.Add(new ChatLine { text = text, color = color });
         if (chatLines.Count > 200) chatLines.RemoveAt(0);
+        chatScroll = 0; // 新消息进来回到最新一行，和源端一致
     }
 
     public static bool SubmitChat(string text, NativeChatChannel channel, string target = "")
     {
         var result = NativeSocialWindow.Request(SocialOperation.SendChat, target, text, channel);
         // 源端发送失败走 serverNotice(5, …)：聊天窗粉色，不是浮层提示。
-        if (result.ok) AddChat("[" + ChatNames[(int)channel] + "] " + Profile.playerName + " : " + text, ChatWhite);
+        // 所有人频道的行没有频道前缀（源端截图：「ieskk : 11222」）。
+        string label = channel == NativeChatChannel.All
+            ? Profile.playerName + " : " + text
+            : "[" + ChatNames[(int)channel] + "] " + Profile.playerName + " : " + text;
+        if (result.ok) AddChat(label, ChatWhite);
         else AddChat(result.error, ChatPink);
         return result.ok;
     }
 
+    // —————— 聊天窗面板（源端 CChatLog，BeiDou.exe 0x8D4A6D SetMode / 0x8D4AB1 应用高度）——————
+    // 反编译读到的参数：
+    //   行高 13；面板底边固定 y=509（客户区 578，即距底 69）；高度钳制 [26,507]，
+    //   可见行数 = 高度/13；模式 2 = 最小展开（高 24 = 1 行，面板顶 486），
+    //   模式 3 = 自由高度（减号态，[0xd00]==3 时创建 BtMin，否则 BtMax，见 0x8DF9C2）。
+    // 素材：+/− = UI/Basic.img/BtMax、BtMin（12×12 四态）；
+    //   滚动条 = UI/Basic.img/VScr5（15 宽：箭头 15×13、滑块 15×25，与源端截图吻合）；
+    //   收起态条右端那对灰箭头 = VScr/disabled（12×12，statusbar-layout.md 实测）；
+    //   拖顶边时的红色上下箭头 = BtUP/BtDown 的 normal 态（橙红）。
+    const int ChatLineH = 13;
+    const int ChatPanelFromBottom = 69;
+    const int ChatPanelMinH = 24;
+    const int ChatPanelMaxH = 507;
+    const int ChatPanelDefaultH = 76;   // 默认 5 行
+    static bool chatExpanded;
+    static int panelH = ChatPanelDefaultH;
+    static int chatScroll;              // 底部起被滚走的行数
+    static bool draggingHeight, draggingThumb;
+
     static void DrawChat()
     {
-        // 原版聊天行有两种状态，源端两张截图各拍到一种：
-        //   收起态：白条被一层深色底压住（实测 RGB≈(124,117,116)，等于白底上约 55% 黑），
-        //           最后一条聊天记录用浅色字压在上面；**没有**频道按钮。点条即进入输入态。
-        //   输入态：频道按钮 base/chatTarget(81×20) 贴左边 → 右边是白色输入行 → 行下沿压一条 base/chat 凹线。
-        // 聊天记录不铺任何底板，白字黑描边直接压在画面上（原版就是这样，不做“聊天框”这种东西）。
-        float y = UiKit.H - 64 * S;
+        // 原版聊天条两种状态，源端截图各拍到一种：
+        //   收起态：白条压一层深色底 + 最后一条聊天记录（浅色字）+ 右端 BtMax(+) 与一对灰色上下箭头。
+        //   展开态：上方拉出半透明黑面板，消息都在面板里（带 VScr5 滚动条），
+        //           白条变空白、频道按钮常驻，右端 BtMin(−)（最小高度时仍显示 BtMax）。
         var e = Event.current;
         if (!NpcSession.Blocking && !ChatFocused && e.type == EventType.KeyDown && e.keyCode == KeyCode.Return)
         { ChatFocused = true; focusChat = true; e.Use(); }
 
-        var strip = new Rect(2 * S, y, 566 * S, 20 * S);
-        var targetRect = new Rect(2 * S, y, 81 * S, 20 * S);
-        // 频道下拉展开时 ChatFocused 会被置 false，但按钮必须留着，所以按 channelOpen 一起判断。
-        if (ChatFocused || channelOpen) DrawChatInput(y, targetRect, strip);
-        else DrawCollapsedChat(strip);
+        float stripTop = UiKit.H - 64 * S;
+        var strip = new Rect(2 * S, stripTop, 566 * S, 20 * S);
+        var targetRect = new Rect(2 * S, stripTop, 81 * S, 20 * S);
+        bool panelOn = chatExpanded;
+        var panel = panelOn
+            ? new Rect(2 * S, UiKit.H - (ChatPanelFromBottom + panelH) * S, 566 * S, panelH * S)
+            : Rect.zero;
 
         // 输入行下沿：base/chat 的 566×5 凹线，紧贴白色条的下边缘（底板内 y28）
         var groove = T("chat_full");
         if (groove != null) GUI.DrawTexture(new Rect(2 * S, UiKit.H - 43 * S, 566 * S, 5 * S), groove);
+
+        if (ChatFocused || channelOpen) DrawChatInput(stripTop, targetRect, strip);
+        else if (panelOn) DrawTargetButton(targetRect);   // 展开且没在打字：白条空白，只有频道按钮
+        else DrawCollapsedChat(strip);
+
+        if (panelOn) DrawChatPanel(panel);
+        DrawExpandButton(stripTop);
+        if (!panelOn) DrawCollapsedArrows(stripTop);
 
         if (!NpcSession.Blocking && e.type == EventType.KeyDown && e.keyCode == KeyCode.Return)
         {
@@ -214,19 +252,6 @@ public static class BottomBar
         if (ChatFocused && e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
         { GUI.FocusControl(null); ChatFocused = false; e.Use(); }
 
-        // 聊天记录：原版没有聊天框，就是几行带黑描边的彩色字压在画面上，颜色跟着消息类型走。
-        int shown = Mathf.Min(5, chatLines.Count);
-        if (shown > 0)
-        {
-            float lineH = 14f * S;
-            float top = UiKit.H - (74 + shown * 14) * S;
-            for (int i = 0; i < shown; i++)
-            {
-                var line = chatLines[chatLines.Count - shown + i];
-                ShadowLabel(new Rect(3 * S, top + i * lineH, 540 * S, lineH), line.text,
-                    Style(11, line.color, TextAnchor.UpperLeft));
-            }
-        }
         DrawChannelList(targetRect);
     }
 
@@ -242,15 +267,150 @@ public static class BottomBar
             GUI.Label(new Rect(strip.x + 4f * S, strip.y, strip.width - 8f * S, strip.height),
                 last.text, text);
         }
-        if (!NpcSession.Blocking && Event.current.type == EventType.Repaint && Pointer.Clicked && strip.Contains(Pointer.Pos))
+        // 点击条进入输入态；右端 549 起是 +/− 按钮与那对灰色箭头，点到它们不算点条。
+        if (!NpcSession.Blocking && Event.current.type == EventType.Repaint && Pointer.Clicked &&
+            strip.Contains(Pointer.Pos) && Pointer.Pos.x < 549f * S)
             FocusChat();
     }
 
-    // 输入态：频道按钮 + 白色输入行（白条是 backgrnd2 自带的，这里只画字）。
-    static void DrawChatInput(float y, Rect targetRect, Rect strip)
+    // 展开面板：半透明黑底 + 底对齐的消息行 + 右侧 VScr5 滚动条 + 顶边拖高。
+    static void DrawChatPanel(Rect panel)
     {
-        // 频道按钮就是原版 base/chatTarget（81×20）——客户端 exe 的字符串池里直接引用的就是这个路径，
-        // 是专门给聊天目标做的按钮皮肤。展开时按钮本身换成 ComboBox2/pressed 表示“按下”。
+        // 源端面板是压在画面上的半透明黑，顶边有一条明显更深的 2px 线（截图 2/5 实测）。
+        UiKit.Fill(panel, new Color(0f, 0f, 0f, 0.55f));
+        UiKit.Fill(new Rect(panel.x, panel.y, panel.width, 2f * S), new Color(0f, 0f, 0f, 0.9f));
+
+        int count = chatLines.Count;
+        int visible = Mathf.Max(1, panelH / ChatLineH);
+        int maxScroll = Mathf.Max(0, count - visible);
+        chatScroll = Mathf.Clamp(chatScroll, 0, maxScroll);
+
+        // 消息行：底对齐（最新一行贴面板底边），行高 13
+        float lineH = ChatLineH * S;
+        int first = count - visible - chatScroll;
+        for (int i = 0; i < visible; i++)
+        {
+            int idx = first + i;
+            if (idx < 0 || idx >= count) continue;
+            var line = chatLines[idx];
+            var r = new Rect(panel.x + 4f * S, panel.yMax - (visible - i) * lineH,
+                panel.width - 24f * S, lineH);
+            ShadowLabel(r, line.text, Style(11, line.color, TextAnchor.MiddleLeft));
+        }
+
+        // —— 滚动条：VScr5（15 宽，箭头 15×13，滑块 15×25）——
+        float sbX = panel.xMax - 15f * S;
+        bool overflow = maxScroll > 0;
+        var prevRect = new Rect(sbX, panel.y, 15f * S, 13f * S);
+        var nextRect = new Rect(sbX, panel.yMax - 13f * S, 15f * S, 13f * S);
+        var baseTex = T(overflow ? "VScr5_base" : "VScr5d_base");
+        if (baseTex != null)
+            GUI.DrawTexture(new Rect(sbX, prevRect.yMax, 15f * S, nextRect.y - prevRect.yMax),
+                baseTex, ScaleMode.StretchToFill);
+        var prevTex = T(overflow ? "VScr5_prev0" : "VScr5d_prev");
+        var nextTex = T(overflow ? "VScr5_next0" : "VScr5d_next");
+        if (prevTex != null) GUI.DrawTexture(prevRect, prevTex);
+        if (nextTex != null) GUI.DrawTexture(nextRect, nextTex);
+
+        var ev = Event.current;
+        bool clickable = !NpcSession.Blocking;
+
+        if (overflow)
+        {
+            float travel = (nextRect.y - prevRect.yMax) - 25f * S;
+            if (travel > 0f)
+            {
+                float t = 1f - (float)chatScroll / maxScroll;
+                var thumbRect = new Rect(sbX, prevRect.yMax + travel * t, 15f * S, 25f * S);
+                var thumb = T(draggingThumb || (Pointer.Down && thumbRect.Contains(Pointer.Pos))
+                    ? "VScr5_thumb1" : "VScr5_thumb0");
+                if (thumb != null) GUI.DrawTexture(thumbRect, thumb);
+                if (clickable && ev.type == EventType.Repaint)
+                {
+                    if (Pointer.Clicked && prevRect.Contains(Pointer.Pos)) chatScroll = Mathf.Min(maxScroll, chatScroll + 1);
+                    else if (Pointer.Clicked && nextRect.Contains(Pointer.Pos)) chatScroll = Mathf.Max(0, chatScroll - 1);
+                    else if (Pointer.Clicked && thumbRect.Contains(Pointer.Pos)) draggingThumb = true;
+                    if (draggingThumb)
+                    {
+                        if (!Pointer.Down) draggingThumb = false;
+                        else
+                        {
+                            float k = Mathf.Clamp01((Pointer.Pos.y - prevRect.yMax) / travel);
+                            chatScroll = Mathf.RoundToInt((1f - k) * maxScroll);
+                        }
+                    }
+                }
+            }
+        }
+        // 鼠标滚轮：面板内滚一动一行（Pointer.Pos 与其余命中判定同一坐标系）
+        if (clickable && ev.type == EventType.ScrollWheel && panel.Contains(Pointer.Pos))
+        {
+            chatScroll = Mathf.Clamp(chatScroll + (ev.delta.y > 0f ? -1 : 1), 0, maxScroll);
+            ev.Use();
+        }
+
+        HandlePanelResize(panel);
+    }
+
+    // 顶边拖高：悬浮在面板顶边 ±4px 显示红色上下箭头（BtUP/BtDown normal），按住上下拖。
+    static void HandlePanelResize(Rect panel)
+    {
+        var ev = Event.current;
+        if (ev.type != EventType.Repaint || NpcSession.Blocking) return;
+        var edge = new Rect(panel.x, panel.y - 4f * S, panel.width, 8f * S);
+        bool over = edge.Contains(Pointer.Pos);
+        if (Pointer.Clicked && over) draggingHeight = true;
+        if (draggingHeight)
+        {
+            if (!Pointer.Down) draggingHeight = false;
+            else
+            {
+                float bottomY = UiKit.H - ChatPanelFromBottom * S;
+                panelH = Mathf.Clamp(Mathf.RoundToInt((bottomY - Pointer.Pos.y) / S),
+                    ChatPanelMinH, ChatPanelMaxH);
+            }
+        }
+        if (over || draggingHeight)
+        {
+            float cx = Mathf.Clamp(Pointer.Pos.x, panel.x + 6f * S, panel.xMax - 6f * S);
+            var up = T("BtUP_normal");
+            var dn = T("BtDown_normal");
+            if (up != null) GUI.DrawTexture(new Rect(cx - 6f * S, panel.y - 12f * S, 12f * S, 12f * S), up);
+            if (dn != null) GUI.DrawTexture(new Rect(cx - 6f * S, panel.y, 12f * S, 12f * S), dn);
+        }
+    }
+
+    // 右端 +/− 按钮：收起/最小高度 = BtMax(+)，展开（高 >26）= BtMin(−)。
+    // 源端截图 4（最小高度）里按钮仍是加号，与 [0xd00]!=3 → BtMax 的反汇编结论一致。
+    static void DrawExpandButton(float stripTop)
+    {
+        var r = new Rect(549f * S, stripTop + 4f * S, 12f * S, 12f * S);
+        bool minus = chatExpanded && panelH > 26;
+        string key = minus ? "BtMin" : "BtMax";
+        bool hover = r.Contains(Pointer.Pos);
+        string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
+        var t = T(key + "_" + state) ?? T(key + "_normal");
+        if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
+        if (!NpcSession.Blocking && Event.current.type == EventType.Repaint && Pointer.Released && hover)
+        {
+            if (minus) chatExpanded = false;                       // − → 收起，回到正常状态
+            else if (chatExpanded) { panelH = ChatPanelDefaultH; } // 最小高度的 + → 展开到默认高度
+            else { chatExpanded = true; panelH = ChatPanelDefaultH; chatScroll = 0; }
+        }
+    }
+
+    // 收起态条右端那对灰色上下箭头（VScr/disabled，纯展示，源端即禁用态）。
+    static void DrawCollapsedArrows(float stripTop)
+    {
+        var up = T("VScrD_prev");
+        var dn = T("VScrD_next");
+        if (up != null) GUI.DrawTexture(new Rect(561f * S, stripTop - 2f * S, 12f * S, 12f * S), up);
+        if (dn != null) GUI.DrawTexture(new Rect(561f * S, stripTop + 10f * S, 12f * S, 12f * S), dn);
+    }
+
+    // 频道按钮：原版 base/chatTarget（81×20）。展开态常驻（源端截图 2/5），打字态同样在。
+    static void DrawTargetButton(Rect targetRect)
+    {
         bool overTarget = targetRect.Contains(Pointer.Pos);
         var comb = channelOpen ? (T("combo_pressed") ?? T("chatTarget_full")) : T("chatTarget_full");
         if (comb != null) GUI.DrawTexture(targetRect, comb, ScaleMode.StretchToFill);
@@ -261,7 +421,12 @@ public static class BottomBar
             channelOpen = !channelOpen;
             if (channelOpen) { ChatFocused = false; GUI.FocusControl(null); }
         }
+    }
 
+    // 输入态：频道按钮 + 白色输入行（白条是 backgrnd2 自带的，这里只画字）。
+    static void DrawChatInput(float y, Rect targetRect, Rect strip)
+    {
+        DrawTargetButton(targetRect);
         // 输入行必须完全透明：白条是 backgrnd2 自带的，任何一态的默认背景都会把它盖成深灰。
         // 不能从 GUI.skin.textField 复制——那是 Unity 深色皮肤的 #2A2A2A 圆角九宫格（实测条内正好 42,42,42），
         // 复制过来后即使把 8 个状态的 background 置空，皮肤态仍会回落出深色底。

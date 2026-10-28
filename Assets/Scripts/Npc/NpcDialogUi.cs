@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using MapleDash.Wz;
 using UnityEngine;
 
 // 对话窗口 + NPC 任务图标。图片全部来自原版 UI/UIWindow.img/UtilDlgEx。
@@ -21,12 +23,33 @@ public static class NpcDialogUi
         if (session != null && session.Dialog.Visible) DrawDialog(session);
     }
 
-    // NPC 名字牌（原客户端默认开启「显示 NPC 名字」）：黄字黑描边。
+    // NPC 名字牌（原客户端默认开启「显示 NPC 名字」）：半透明深绿底 + 亮绿 1px 边框 + 黄绿字。
     // 锚点固定为 NPC 的脚点（life/y），与 NPC 图高无关——所有 NPC 名字都在脚下同一条线上。
     // 以前按 stand 首帧 origin.y 贴头顶，结果巨型雕像/矮 NPC 名字高低全不一样，是错的。
     // 任务图标（!/?）仍挂在头顶，和名字分开。
-    const float NameGapPx = 3f;     // 脚点往下 3px 起排，名字整体压在脚下不盖住身体
+    //
+    // 字号是「逻辑像素」：GUI 已经按 UiKit.Scale 缩放过，这里不能再乘 Screen.height。
+    // 原来写的是 13 * Screen.height / 768，1080p 下等于 18，比源端（字高约 12 逻辑像素）大了一半。
+    public const int NameFontSize = 12;
+    public const float NamePadX = 3f;      // 源端牌子左右各留约 2px，很紧
+    public const float NamePadY = 2f;      // 上下各 2px
+    public const float NameGapPx = 1f;     // 脚点往下 1px，牌子顶边贴着脚底
     static GUIStyle nameStyle;
+
+    // 配色取自源端截图（名字牌内部主色 #33460F、边框 #6BAE4A、字 #D9EB38）
+    static readonly Color NameBg = new Color(0.20f, 0.275f, 0.06f, 0.88f);
+    static readonly Color NameBorder = new Color(0.42f, 0.68f, 0.29f, 0.95f);
+    static readonly Color NameText = new Color(0.85f, 0.92f, 0.22f);
+    static readonly Color NameOutline = new Color(0.03f, 0.08f, 0f, 0.95f);
+
+    // 牌子与文字的位置：牌宽 = 文字宽 + NamePadX*2、牌高 = 文字高 + NamePadY*2，水平居中于脚点，牌顶 = 脚点 + NameGapPx。
+    // 单独抽出来是为了让 Editor 自检能直接验几何，不必起 GUI。
+    public static void NamePlateRects(Vector2 anchor, Vector2 textSize, out Rect plate, out Rect text)
+    {
+        float w = textSize.x + NamePadX * 2f, h = textSize.y + NamePadY * 2f;
+        plate = new Rect(anchor.x - w * .5f, anchor.y + NameGapPx, w, h);
+        text = new Rect(plate.x + NamePadX, plate.y + NamePadY, textSize.x, textSize.y);
+    }
 
     static void DrawNpcNames()
     {
@@ -38,8 +61,10 @@ public static class NpcDialogUi
             nameStyle = new GUIStyle(GUI.skin.label)
             {
                 font = UiKit.Font,
-                fontSize = Mathf.Max(12, Mathf.RoundToInt(13f * Screen.height / 768f)),
+                fontSize = NameFontSize,
                 alignment = TextAnchor.UpperCenter,
+                wordWrap = false,
+                clipping = TextClipping.Overflow,
             };
         }
         for (int i = 0; i < map.npcs.Count; i++)
@@ -56,16 +81,16 @@ public static class NpcDialogUi
             if (gui.x < -60f || gui.x > UiKit.W + 60f || gui.y < -30f || gui.y > UiKit.H + 60f) continue;
 
             var size = nameStyle.CalcSize(new GUIContent(name));
-            var rect = new Rect(gui.x - size.x * .5f, gui.y + NameGapPx, size.x, size.y);
-            var prev = nameStyle.normal.textColor;
-            // 黑描边：四向偏移各画一次
-            nameStyle.normal.textColor = new Color(0f, 0f, 0f, 0.9f);
+            NamePlateRects(gui, size, out var plate, out var text);
+            UiKit.Fill(plate, NameBorder);                                    // 外框
+            UiKit.Fill(new Rect(plate.x + 1f, plate.y + 1f,
+                plate.width - 2f, plate.height - 2f), NameBg);                // 内底，四周留 1px 边框
+
+            nameStyle.normal.textColor = NameOutline;                         // 深色描边：四向偏移各画一次
             foreach (var d in new[] { new Vector2(1, 0), new Vector2(-1, 0), new Vector2(0, 1), new Vector2(0, -1) })
-                GUI.Label(new Rect(rect.x + d.x, rect.y + d.y, rect.width, rect.height), name, nameStyle);
-            // 原版 NPC 名字黄
-            nameStyle.normal.textColor = new Color(1f, 0.87f, 0.35f);
-            GUI.Label(rect, name, nameStyle);
-            nameStyle.normal.textColor = prev;
+                GUI.Label(new Rect(text.x + d.x, text.y + d.y, text.width, text.height), name, nameStyle);
+            nameStyle.normal.textColor = NameText;
+            GUI.Label(text, name, nameStyle);
         }
     }
 
@@ -95,13 +120,23 @@ public static class NpcDialogUi
         }
     }
 
-    static Rect DrawQuestIcon(string path, Vector2 anchor)
+    // elapsedMs >= 0 时按「这段动画自己走过的毫秒」取帧——出现动画必须从第 0 帧起播，
+    // 不能沿用全局时钟取模（那样会从随机相位开始，灯泡像是闪一下就到了中段）。
+    static Rect DrawQuestIcon(string path, Vector2 anchor, float elapsedMs = -1f)
     {
         var frames = WzAssets.Frames(WzAssets.Node(path));
         if (frames.Count == 0) return new Rect();
         float total = 0f;
         foreach (var frame in frames) total += Mathf.Max(1, frame.Int("delay", 120));
-        float time = Mathf.Repeat(Time.unscaledTime * 1000f, total);
+        float time = elapsedMs >= 0f ? Mathf.Repeat(elapsedMs, total) : Mathf.Repeat(Time.unscaledTime * 1000f, total);
+        var shown = FrameAt(frames, time);
+        var rect = FrameRect(shown, anchor);
+        GUI.DrawTexture(rect, WzAssets.Texture(shown));
+        return rect;
+    }
+
+    static ImgNode FrameAt(List<ImgNode> frames, float time)
+    {
         var current = frames[0];
         foreach (var frame in frames)
         {
@@ -109,13 +144,28 @@ public static class NpcDialogUi
             time -= Mathf.Max(1, frame.Int("delay", 120));
             if (time < 0f) break;
         }
-        var tex = WzAssets.Texture(current);
-        var origin = WzAssets.Origin(current);
+        return current;
+    }
+
+    // 只算矩形不画：点击热区要跟 Default 那颗灯泡的固定大小走。
+    // Appear 是很大的闪光（最大 197×178），热区跟着它抖会出现「明明点中了却没反应」。
+    static Rect QuestIconRect(string path, Vector2 anchor, float elapsedMs = -1f)
+    {
+        var frames = WzAssets.Frames(WzAssets.Node(path));
+        if (frames.Count == 0) return new Rect();
+        float total = 0f;
+        foreach (var frame in frames) total += Mathf.Max(1, frame.Int("delay", 120));
+        float time = elapsedMs >= 0f ? Mathf.Repeat(elapsedMs, total) : Mathf.Repeat(Time.unscaledTime * 1000f, total);
+        return FrameRect(FrameAt(frames, time), anchor);
+    }
+
+    static Rect FrameRect(ImgNode frame, Vector2 anchor)
+    {
+        var tex = WzAssets.Texture(frame);
+        var origin = WzAssets.Origin(frame);
         float scale = Screen.height / 768f / UiKit.Scale;
-        var rect = new Rect(anchor.x - origin.x * scale, anchor.y - origin.y * scale,
+        return new Rect(anchor.x - origin.x * scale, anchor.y - origin.y * scale,
             tex.width * scale, tex.height * scale);
-        GUI.DrawTexture(rect, tex);
-        return rect;
     }
 
     static bool CanClickField => !GameWindows.AnyVisible && !ShopWindow.Visible &&
@@ -137,11 +187,13 @@ public static class NpcDialogUi
         var map = NpcField.Map;
         var cam = Camera.main;
         if (player == null || map == null || cam == null) return;
-        if (NpcField.QuestAlerts().Count == 0) return;
+        // 灯泡刚冒出来时先播一次 Appear（QuestAlert/Appear），播完转 Default 常驻呼吸
+        if (!NpcField.AlertAnim(out string art, out float elapsed)) return;
         var sp = cam.WorldToScreenPoint(new Vector3(player.FeetPos.x, player.FeetPos.y + 1.3f, 0f));
         if (sp.z < 0f) return;
         var anchor = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale);
-        var rect = DrawQuestIcon("Effect/BasicEff.img/QuestAlert/Default", anchor);
+        DrawQuestIcon(art, anchor, elapsed);
+        var rect = QuestIconRect(NpcField.AlertDefault, anchor, 0f);   // 恒定第 0 帧，热区不抖
         if (Event.current.type == EventType.Repaint && Pointer.Clicked && CanClickField && rect.Contains(Pointer.Pos))
         {
             Pointer.ConsumeClick();

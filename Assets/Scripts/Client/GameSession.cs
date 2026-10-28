@@ -99,7 +99,7 @@ public static class GameSession
     public static CheckCharNameResponse CheckCharName(string name)
         => Net.CheckCharName(new CheckCharNameRequest { name = name });
 
-    /// <summary>只判格式（4-13 位英文数字），不查重 —— 建号界面边打字边提示用。</summary>
+    /// <summary>只判格式（2-12 位中文、英文或数字），不查重 —— 建号界面边打字边提示用。</summary>
     public static bool NameFormatOk(string name) => CharNameRules.Valid(name);
 
     public static CreateCharResponse CreateChar(CreateCharRequest req)
@@ -170,6 +170,11 @@ public static class GameSession
         CharacterId = characterId;
         Character = res.character;
         BottomBar.ResetChat();
+        // 源端进游戏后聊天窗的第一行（2026-10-27 展开面板截图）：
+        //   [欢迎] 欢迎光临冒险岛ONLINE世界。
+        // 服务端 Java/i18n/脚本与客户端字符串池都搜不到这条文案（三种编码 0 命中），
+        // 属于源端新手引导链路的客户端侧问候；这里进游戏时按同样的文案与黄色补上。
+        BottomBar.AddChat("[欢迎] 欢迎光临冒险岛ONLINE世界。", BottomBar.ChatYellow);
         NativeSocialWindow.Reset();
         NativeCommunityWindow.Reset();
         NativeMedalWindow.Visible = false;

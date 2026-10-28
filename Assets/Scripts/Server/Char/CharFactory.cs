@@ -111,7 +111,7 @@ public static class CharFactory
         // 3) 槽位与名字
         if (CharactersDao.ByAccount(db, accountId, world).Count >= AccountsDao.CharacterSlots(db, accountId))
             return Fail(ErrNoSlot, "角色位已满");
-        if (!CharactersDao.CanCreateChar(name)) return Fail(ErrBadName, "名字需 4-13 位英文数字");
+        if (!CharactersDao.CanCreateChar(name)) return Fail(ErrBadName, "名字需 2-12 位中文、英文或数字");
         if (CharactersDao.NameTaken(db, name)) return Fail(ErrBadName, "名字已被使用");
 
         // 4) 初始数值（Character.getDefault）
