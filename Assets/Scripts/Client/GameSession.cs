@@ -209,6 +209,9 @@ public static class GameSession
         // 属于源端新手引导链路的客户端侧问候；这里进游戏时按同样的文案与黄色补上。
         BottomBar.AddChat("[欢迎] 欢迎光临冒险岛ONLINE世界。", BottomBar.ChatYellow);
         NativeSocialWindow.Reset();
+        NativeTradeWindow.Reset(); NativeCharacterMenu.Close();
+        NativeMarketWindow.Reset();
+        NativeUtilPrompt.Clear();
         NativeCommunityWindow.Reset();
         NativeMedalWindow.Visible = false;
         NativeCashWindow.Reset();

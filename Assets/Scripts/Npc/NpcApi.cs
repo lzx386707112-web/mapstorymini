@@ -150,12 +150,18 @@ public static class NpcApi
         cm.Set("haveItemWithId", Ret(c => B(Profile.ItemCount(Int(c, 0)) >= Math.Max(1, Int(c, 1, 1)))));
         cm.Set("itemQuantity", Ret(c => N(Profile.ItemCount(Int(c, 0)))));
         cm.Set("getItemQuantity", Ret(c => N(Profile.ItemCount(Int(c, 0)))));
-        cm.Set("gainItem", Fn(c =>
+        // 源端 AbstractPlayerInteraction.gainItem（:587-690）：正数发道具后返回**新道具对象**
+        // （背包满才返回 null），负数走 removeById、item 保持 null 返回。
+        // 脚本靠这个返回值判断成败：quest/3414_free10rate.js 的 `item != null` 决定
+        // 「给经验 + 交任务」，BeiDouSpecial 制作脚本的 `if (!newItem)` 决定「制作失败」。
+        // 以前一律返回 undefined，于是这两个判断都判反了。
+        cm.Set("gainItem", Ret(c =>
         {
             int id = Int(c, 0), count = Int(c, 1, 1);
-            if (id <= 0 || count == 0) return;
-            if (count > 0) Profile.AddItem(id, count);
-            else Profile.RemoveItem(id, -count);
+            if (id <= 0 || count == 0) return JsNull.Value;
+            if (count < 0) { Profile.RemoveItem(id, -count); return JsNull.Value; }
+            Profile.AddItem(id, count);
+            return NewItemRef(id, count);
         }));
         cm.Set("canHold", Ret(_ => B(true)));
         cm.Set("canHoldAll", Ret(_ => B(true)));
@@ -221,8 +227,13 @@ public static class NpcApi
         cm.Set("getQuestProgressInt", Ret(c => N(Profile.QuestProgressInt(Int(c, 0), Key(c, 1), Int(c, 2, 0)))));
         cm.Set("getQuestProgress", Ret(c => S(Profile.QuestProgress(Int(c, 0), Key(c, 1), ""))));
         cm.Set("setQuestProgress", Fn(c => Profile.SetQuestProgress(Int(c, 0), Key(c, 1), Str(c, 2))));
-        cm.Set("startQuest", Fn(c => StartQuest(Int(c, 0), npcId)));
-        cm.Set("completeQuest", Fn(c => CompleteQuest(Int(c, 0), npcId)));
+        // 源端 QuestActionManager（QuestActionManager.java:57-73）：
+        //   forceStartQuest() / forceCompleteQuest() 无参 = **当前任务**；
+        //   startQuest() / completeQuest() 无参只是老脚本的兼容写法，同样指向当前任务。
+        // AbstractPlayerInteraction 只有带 id 的重载，所以这里必须给无参调用兜底，
+        // 否则 quest/2001.js、3414.js 交付后写的 qm.completeQuest() 会变成空操作。
+        cm.Set("startQuest", Fn(c => StartQuest(Int(c, 0, questId), npcId)));
+        cm.Set("completeQuest", Fn(c => CompleteQuest(Int(c, 0, questId), npcId)));
         cm.Set("forceStartQuest", Fn(c => StartQuest(Int(c, 0, questId), npcId)));
         cm.Set("forceCompleteQuest", Fn(c => CompleteQuest(Int(c, 0, questId), npcId)));
 
@@ -886,6 +897,11 @@ public static class NpcApi
         p.Set("getTotalLuk", Ret(_ => N(Total().luk)));
         p.Set("getTotalWatk", Ret(_ => N(Total().watk)));
         p.Set("getTotalMagic", Ret(_ => N(Total().matk)));
+        // Character.getJobStyle()（Character.java:577）= getJobStyleInternal(jobId, str>dex ? 0x80 : 0x40)。
+        // 返回的是 Job 枚举常量本身——源端是 enum 引用相等，脚本写的是
+        // `stance == Job.WARRIOR`，所以这里必须和 JobEnum.Js(Job.WARRIOR) 是同一个实例。
+        // 少了它 quest/2001.js、3414.js、3414_free10rate.js 的「选卷轴」菜单根本出不来。
+        p.Set("getJobStyle", Ret(_ => JobEnum.Js(JobEnum.Style(QuestLogic.PlayerJob, Total().str, Total().dex))));
         p.Set("getItemQuantity", Ret(c => N(Profile.ItemCount(Int(c, 0)))));
         p.Set("getItemName", Ret(c => S(WzNames.Item(Int(c, 0)))));
         // 源端这两个是服务器喇叭；单机没有别的玩家，落成底部提示才对得上「玩家看到了什么」。
@@ -1311,6 +1327,19 @@ public static class NpcApi
                     B(RemoveSlotItem(Int(args, 1), Int(args, 2), Math.Max(1, Int(args, 3, 1))))));
                 return manipulator;
             }
+            // org.gms.client.Job（Job.java）：脚本拿它比职业样式（stance == Job.WARRIOR）
+            // 或按名字取常量（Java.type('org.gms.client.Job')["DAWNWARRIOR1"]，20101~20315 转职脚本）。
+            // 常量必须始终是同一个实例，== 才是源端的 enum 引用相等。
+            if (name == "org.gms.client.Job")
+            {
+                var job = new JsHostObject(null);
+                Lenient(job, "Job");
+                foreach (var const_ in JobEnum.All) job.Set(const_.Name, JobEnum.Js(const_));
+                // Job.getJobStyleInternal(jobid, opt)：opt=0x80 走拳手，否则火枪手。
+                job.Set("getJobStyleInternal", Ret(args =>
+                    JobEnum.Js(JobEnum.Of(JobEnum.StyleOf(Int(args, 0), Int(args, 1, 0x40) == 0x80)))));
+                return job;
+            }
             // org.gms.constants.id.ItemId（ItemId.java）：npc/9330045.js 用它的 isChair 判断
             // 玩家背包里有没有椅子（决定能不能进钓鱼场）。源端就是 RELAXER=3010000 ~ 3019999。
             if (name == "org.gms.constants.id.ItemId")
@@ -1499,6 +1528,20 @@ public static class NpcApi
     {
         if (e == null || e.itemRowId <= 0) return;
         dirtyEquip[e.itemRowId] = e;
+    }
+
+    // 源端 gainItem 返回的 Item（AbstractPlayerInteraction.gainItem:611-690）。
+    // 单机没有「装备实例」这层，只给脚本一个可判定成功/失败的句柄；
+    // 未迁移的 Item 方法走 Lenient，明确报「缺少 item.xxx」而不是静默出错。
+    static JsValue NewItemRef(int id, int count)
+    {
+        var item = new JsHostObject(null);
+        Lenient(item, "item");
+        item.Set("getItemId", Ret(_ => N(id)));
+        item.Set("getId", Ret(_ => N(id)));
+        item.Set("getQuantity", Ret(_ => N(count)));
+        item.Set("getPosition", Ret(_ => N(-1)));
+        return item;
     }
 
     static InventoryEntry SlotEntry(int type, int slot)

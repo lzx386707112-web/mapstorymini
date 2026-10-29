@@ -2,23 +2,8 @@
 // 流程：喊「请下注」→ 等玩家说 "bet han/cho" → 扫描玩家脚下的赌注图章 → 3 秒后掷双骰
 //       → 2 秒后判定 → 赢则按数量把押注物铺开扔回玩家脚下，输则把地上的押注收走。
 //
-// 与源端的差异（全部源于「没有独立线程 / 没有阻塞 sleep」和源端自身的两处笔误）：
-//   1. 源端 sleepAmountSeconds / MethodScheduler.runAfterDelay / TimeUnit.sleep(100) 全部换成
-//      BotScheduler.Now() 时间戳 + BotTasks.Schedule 延时续接（≡ DropGameBot / TutorialBot 的写法）。
-//      派彩逐枚 100ms 的间隔改成同一串错峰的单次任务，先后与间隔语义一致。
-//   2. 源端 waitForState(BET, 25) 的判定写成
-//      `if (!diceBotState.equals(targetState) && now < endTime) processMessages(); else {收摊}`，
-//      即「等到了 BET」反而会走进收摊分支——这会让赌桌永远掷不出骰子，属于源端笔误。
-//      这里按方法名与日志（"Waiting for state: BET"）还原为正常语义：
-//      到达 BET → 返回继续；未到达且未超时 → 收消息；超时 → 收摊。
-//   3. 源端等待下注靠 synchronized + waitingForBet 双检锁防重入（因为那条线程会被长时间挂住）。
-//      C# 侧单线程 tick，重入不可能发生，该字段与双检逻辑整体去掉。
-//   4. 源端 calculateIfPlayerWins 在 currentBet == NONE 时抛 IllegalArgumentException（会炸掉整轮 tick）。
-//      这里改成「记日志 + 判负」，不让一次异常把假人打死。
-//   5. 源端 respondant 由外部脚本/交互系统灌进来；本端口的入口是 BotDispatcher 写入的 inquirer
-//      队列，故照 GameZoneHostBot.checkForInquirer 的写法在 WAIT_FOR_BET 里把 inquirer 提升为 respondant。
-//   6. 源端 handlePlayerStealsBets 的 dropMessage(5, ...) 用黄字广播（≡ BotOutput.Kind.YellowMessage）。
-//      掉名声是纯内存写入，客户端是权威进程，改了也不会同步，但仍按源端照做（与 Blackjack 一致）。
+// 原端 waitForState 只轮询一次；消息回调将状态改成 BET，下一 tick 直接进入 BET。
+// 延时以可取消任务接续，不阻塞地图线程；不改写原端判胜或等待条件。
 using System;
 using System.Collections.Generic;
 using Server.Bot.Social;
@@ -55,6 +40,7 @@ namespace Server.Bot.Types
         long startTime, endTime;
         bool betsProcessed;
         bool optionsShown;
+        int generation;
         BotTasks.Handle sequenceTask;
 
         public DiceBot(BotCharacter c, BotMessages messages = null, Random random = null) : base(c)
@@ -172,24 +158,17 @@ namespace Server.Bot.Types
             var player = Player;
             if (player == null) return;
 
-            if (currentBet == BetType.None)
+            endTime = startTime + BetTimeoutMs;
+            if (diceBotState != DiceBotState.Bet && BotScheduler.Now() < endTime)
             {
-                // 源端 waitForState 每轮都重算 endTime（startTime 会被 handleIfListIsEmpty 推后）
-                endTime = startTime + BetTimeoutMs;
-                if (BotScheduler.Now() < endTime)
-                {
-                    if (!optionsShown) { optionsShown = true; DisplayCommands(player); }
-                    ProcessMessages();
-                    return;
-                }
-                ExpireOptions();
-                output.Speak(chr, "Please place your bets when you are ready!");
-                state = State.FINISHED;
-                ResetDiceBotState();
+                if (!optionsShown) { optionsShown = true; DisplayCommands(player); }
+                ProcessMessages();
                 return;
             }
-            // 已收到 "bet han/cho"（≡ waitForState 等到目标状态后返回）
-            SetState(DiceBotState.Bet);
+            ExpireOptions();
+            output.Speak(chr, "Please place your bets when you are ready!");
+            state = State.FINISHED;
+            ResetDiceBotState();
         }
 
         // ≡ GameZoneHostBot.checkForInquirer：把排队询问的玩家提升为本局对话对象
@@ -240,14 +219,8 @@ namespace Server.Bot.Types
         {
             if (rolled == null || rolled.Length < 2) { betsProcessed = true; return; }
 
-            bool playerWins;
-            if (currentBet == BetType.None)
-            {
-                // 降级点 4：源端在这里抛 IllegalArgumentException，这里记日志后判负
-                DebugLog("[DiceBot] no bet type selected, treating round as a loss");
-                playerWins = false;
-            }
-            else playerWins = BotDealerDice.PlayerWins(currentBet, rolled);
+            if (currentBet == BetType.None) throw new ArgumentException("Invalid bet: " + currentBet);
+            bool playerWins = BotDealerDice.PlayerWins(currentBet, rolled);
 
             output.Speak(chr, BotDealerDice.ResultText(rolled));
             output.Emote(chr, 2);
@@ -264,6 +237,7 @@ namespace Server.Bot.Types
             var player = Player;
             if (player == null) return;
 
+            int token = generation;
             int throwIndex = 0;
             foreach (var mapItem in currentPot)
             {
@@ -279,7 +253,7 @@ namespace Server.Bot.Types
                     int px = pos.x, py = pos.y;
                     BotTasks.Schedule(() =>
                     {
-                        if (!Alive()) return;
+                        if (!Alive() || token != generation) return;
                         // ≡ DropCommands.botThrowItem(getChr(), mapItem.getItemId(), center)
                         DropCommands.BotThrowItem(chr, capturedItemId, px, py, out _);
                     }, delay);
@@ -368,6 +342,7 @@ namespace Server.Bot.Types
 
         public override void StopScheduledTask()
         {
+            generation++;
             sequenceTask?.Cancel();
             sequenceTask = null;
             base.StopScheduledTask();

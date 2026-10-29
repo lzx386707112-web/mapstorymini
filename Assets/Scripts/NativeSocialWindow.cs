@@ -9,8 +9,9 @@ public static class NativeSocialWindow
     static string target = "", group = "Default Group", minimum = "1", maximum = "30";
     static Vector2 scroll;
     static double nextRefresh;
+    static int partyInvitation, messengerInvitation;
     public static SocialResponse Request(SocialOperation operation, string name = "", string text = "",
-        NativeChatChannel channel = NativeChatChannel.All)
+        NativeChatChannel channel = NativeChatChannel.All, int partyId = 0, int messengerRoom = 0)
     {
         if (!GameSession.InGame || GameSession.Net == null)
             return new SocialResponse { ok = false, error = "请先进入角色" };
@@ -18,7 +19,7 @@ public static class NativeSocialWindow
         if (operation == SocialOperation.CreateParty || operation == SocialOperation.SearchParty) GameSession.SaveToDb();
         int.TryParse(minimum, out int min); int.TryParse(maximum, out int max);
         state = GameSession.Net.Social(new SocialRequest { characterId = GameSession.CharacterId,
-            operation = operation, target = name, group = group, text = text, channel = channel, minLevel = min, maxLevel = max });
+            operation = operation, target = name, group = group, partyId = partyId, messengerRoom = messengerRoom, text = text, channel = channel, minLevel = min, maxLevel = max });
         GameSession.Character.record.party = state.partyId;
         return state;
     }
@@ -30,7 +31,7 @@ public static class NativeSocialWindow
     }
     public static void Toggle(GameAction next)
     {
-        if (Visible && action == next) { Visible = false; return; }
+        if (Visible && action == next) { Close(); return; }
         action = next; Visible = true; scroll = Vector2.zero;
         state = Request(SocialOperation.Read);
         if (next == GameAction.Messenger) Run(SocialOperation.OpenMessenger);
@@ -38,18 +39,42 @@ public static class NativeSocialWindow
         maximum = (Mathf.Max(1, Profile.level - 15) + 30).ToString();
     }
     public static void Reset()
-    { Visible = false; state = null; target = ""; }
+    { Visible = false; state = null; target = ""; partyInvitation = messengerInvitation = 0; nextRefresh = 0; NativeMessengerWindow.Reset(); }
     // 关闭按钮 / Esc 共用：信使要先按源端发一条关闭，再收起窗口
     public static void Close()
     {
         if (Visible && action == GameAction.Messenger) Run(SocialOperation.CloseMessenger);
         Visible = false;
     }
+    public static void Tick()
+    {
+        if (!GameSession.InGame || GameSession.Net == null || Time.realtimeSinceStartupAsDouble < nextRefresh) return;
+        state = Request(SocialOperation.Read); nextRefresh = Time.realtimeSinceStartupAsDouble + .25;
+        if (NativeUtilPrompt.Visible) return;
+        if (state.partyInvite != 0 && partyInvitation != state.partyInvite)
+        {
+            int invite = partyInvitation = state.partyInvite;
+            NativeUtilPrompt.Confirm("收到组队邀请。是否接受？",yes =>
+            { Request(yes ? SocialOperation.AcceptParty : SocialOperation.DeclineParty,partyId:invite); partyInvitation = 0; });
+        }
+        else if (state.messengerInvite != 0 && messengerInvitation != state.messengerInvite)
+        {
+            int invite = messengerInvitation = state.messengerInvite;
+            NativeUtilPrompt.Confirm(state.messengerInviter+" 邀请你加入聊天。是否接受？",yes =>
+            {
+                var response = Request(yes ? SocialOperation.AcceptMessenger : SocialOperation.DeclineMessenger,messengerRoom:invite);
+                messengerInvitation = 0;
+                if (yes && response.ok) { action = GameAction.Messenger; Visible = true; NativeMessengerWindow.Reset(); }
+            });
+        }
+        if (state.partyInvite == 0) partyInvitation = 0;
+        if (state.messengerInvite == 0) messengerInvitation = 0;
+    }
     public static void Draw()
     {
+        Tick();
         if (!Visible || state == null) return;
-        if (Time.realtimeSinceStartupAsDouble >= nextRefresh)
-        { state = Request(SocialOperation.Read); nextRefresh = Time.realtimeSinceStartupAsDouble + .25; }
+        if (action == GameAction.Messenger) { NativeMessengerWindow.Draw(state); return; }
         string folder = action == GameAction.Messenger ? "Messenger" : action == GameAction.PartySearch ? "PartySearch" : "UserList";
         var background = WzAssets.Texture("wz://UI/UIWindow.img/" + folder + "/backgrnd");
         float s = BottomBar.S;
@@ -66,14 +91,6 @@ public static class NativeSocialWindow
         scroll = GUILayout.BeginScrollView(scroll);
         if (action == GameAction.Buddy) DrawBuddies();
         else if (action == GameAction.Party || action == GameAction.PartySearch) DrawParty();
-        else if (action == GameAction.Messenger)
-        {
-            GUILayout.Label("讯息成员（" + state.messengerMembers.Count + " / 3）");
-            foreach (var member in state.messengerMembers) GUILayout.Label(member.name);
-            target = GUILayout.TextField(target, 13);
-            if (GUILayout.Button("邀请")) Run(SocialOperation.InviteMessenger, target);
-            if (GUILayout.Button("聊天")) BottomBar.FocusChat(NativeChatChannel.Messenger);
-        }
         GUILayout.EndScrollView(); GUI.skin.font = oldFont;
         GUILayout.EndArea();
     }

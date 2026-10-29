@@ -14,6 +14,7 @@ namespace Server.Bot.Trade
     {
         public bool ok = true, active, accepted, locked, partnerLocked, incomingInvitation;
         public string error, partnerName;
+        public string[] partnerAppearance;
         public int partnerId, meso, partnerMeso;
         public FullCharacter character;
         public List<InventoryEntry> items = new List<InventoryEntry>(), partnerItems = new List<InventoryEntry>();
@@ -76,6 +77,8 @@ namespace Server.Bot.Trade
                 result.meso = current.meso; result.items.AddRange(current.Items);
                 if (current.partner != null)
                 {
+                    result.partnerAppearance = current.partner.actor is BotCharacter bot ? BotAppearance.CharacterIds(bot)
+                        : null;
                     result.partnerId = current.partner.actor.id; result.partnerName = current.partner.actor.name;
                     result.partnerMeso = current.partner.meso; result.partnerLocked = current.partner.locked;
                     result.partnerItems.AddRange(current.partner.Items);

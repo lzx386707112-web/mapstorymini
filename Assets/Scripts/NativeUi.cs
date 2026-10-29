@@ -19,13 +19,51 @@ public static class NativeUi
     public static bool Button(Rect rect, string node, Vector2 pointer)
     {
         bool hover = rect.Contains(pointer);
-        var tex = Art.Tex("wz://" + node + "/" + (!GUI.enabled ? "disabled" : hover ? Pointer.Down ? "pressed" : "mouseOver" : "normal") + "/0");
+        bool enabled = GUI.enabled && (!NativeUtilPrompt.Visible || NativeUtilPrompt.Drawing);
+        var tex = Art.Tex("wz://" + node + "/" + (!enabled ? "disabled" : hover ? Pointer.Down ? "pressed" : "mouseOver" : "normal") + "/0");
         if (tex != null) GUI.DrawTexture(rect, tex);
-        bool clicked = GUI.enabled && Event.current.type == EventType.Repaint && Pointer.Clicked && hover;
+        bool clicked = enabled && Event.current.type == EventType.Repaint && Pointer.Clicked && hover;
         // 原版 UI 点击音（Sound/UI.img/BtMouseClick）；这里覆盖所有用原生 UI 资源的按钮
         if (clicked) { Pointer.ConsumeClick(); AudioManager.Play("UI/BtMouseClick", 0.7f, false); }
         return clicked;
     }
+    static int scrollDrag;
+    static float scrollGrab;
+    public static float Scroll4(Rect bar, Rect view, float value, float maximum, float step, Vector2 pointer)
+    {
+        value = Mathf.Clamp(value, 0, maximum);
+        bool active = maximum > 0;
+        string root = "wz://UI/Basic.img/VScr4/" + (active ? "enabled/" : "disabled/");
+        var track = new Rect(bar.x, bar.y + 13, 15, bar.height - 26);
+        var texture = Art.Tex(root + "base");
+        for (float y = track.y; y < track.yMax; y += 13)
+        {
+            float height = Mathf.Min(13, track.yMax - y);
+            if (texture != null) GUI.DrawTextureWithTexCoords(new Rect(bar.x,y,15,height),texture,new Rect(0,1-height/13,1,height/13));
+        }
+        GUI.DrawTexture(new Rect(bar.x,bar.y,15,13),Art.Tex(root + (active ? "prev0" : "prev")));
+        GUI.DrawTexture(new Rect(bar.x,bar.yMax-13,15,13),Art.Tex(root + (active ? "next0" : "next")));
+        if (!active) return 0;
+        int id = GUIUtility.GetControlID(FocusType.Passive);
+        float travel = Mathf.Max(1,track.height - 25);
+        var thumb = new Rect(bar.x,track.y+travel*value/maximum,15,25);
+        if (GUI.enabled && Event.current.type == EventType.Repaint)
+        {
+            if (view.Contains(pointer)) value -= Input.mouseScrollDelta.y * step * 2;
+            if (Pointer.Pressed)
+            {
+                if (thumb.Contains(pointer)) { scrollDrag = id; scrollGrab = pointer.y-thumb.y; Pointer.ConsumeClick(); }
+                else if (new Rect(bar.x,bar.y,15,13).Contains(pointer)) { value -= step; Pointer.ConsumeClick(); }
+                else if (new Rect(bar.x,bar.yMax-13,15,13).Contains(pointer)) { value += step; Pointer.ConsumeClick(); }
+            }
+            if (scrollDrag == id)
+            { if (Pointer.Down) value = (pointer.y-scrollGrab-track.y)/travel*maximum; else scrollDrag = 0; }
+        }
+        value = Mathf.Clamp(Mathf.Round(value/step)*step,0,maximum);
+        GUI.DrawTexture(new Rect(bar.x,track.y+travel*value/maximum,15,25),Art.Tex(root+"thumb0"));
+        return value;
+    }
+
     public static void DialogPanel(Rect rect)
     {
         const string root = "wz://UI/UIWindow.img/UtilDlgEx/";

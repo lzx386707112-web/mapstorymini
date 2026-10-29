@@ -55,6 +55,7 @@ namespace Server.Bot.Types
         List<string> hint;
         long startTime, endTime;
         bool scripted;
+        int generation;
         BotTasks.Handle sequenceTask;
 
         public GameZoneHostBot(BotCharacter c, EventBus events = null, BotDialogue dialogue = null,
@@ -148,7 +149,8 @@ namespace Server.Bot.Types
             catch (Exception e) { DebugLog("dialogue read failed " + node + ": " + e.Message); entry = null; }
             if (entry == null || entry.text == null || entry.text.Count == 0) { then?.Invoke(); return; }
             scripted = true;
-            dialogue.Run(chr, entry, output, flavor, () => { scripted = false; then?.Invoke(); });
+            int token = generation;
+            dialogue.Run(chr, entry, output, flavor, () => { scripted = false; then?.Invoke(); }, () => Alive() && token == generation);
         }
 
         void ResetHostBotState()
@@ -309,7 +311,7 @@ namespace Server.Bot.Types
                 output.Speak(chr, "One " + DrinkNames[i] + ", coming right up!");
                 int drinkId = DrinkIds[i];
                 // ≡ BotHelpers.sleepAmountSeconds(2000)：先报单再上饮料
-                After(2000, () => selectedDrink = drinkId);
+                After(2000, () => { selectedDrink = drinkId; scripted = false; });
                 return;
             }
             output.Speak(chr, "Hmm, I don't have that. Try again!");
@@ -324,6 +326,7 @@ namespace Server.Bot.Types
 
         public override void StopScheduledTask()
         {
+            generation++;
             sequenceTask?.Cancel();
             sequenceTask = null;
             scripted = false;

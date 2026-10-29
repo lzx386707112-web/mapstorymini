@@ -87,6 +87,9 @@ namespace Server.Bot
                 BotType.HENESYS_JQ_BOT => new HenesysJQBot(c),
                 BotType.DROP_GAME_BOT => new DropGameBot(c, Parties),
                 BotType.TUTORIAL_BOT => new TutorialBot(c, TradeService),
+                BotType.DICE_BOT => new DiceBot(c, Messages),
+                BotType.GACHA_BOT => new GachaBot(c, Events, Dialogue),
+                BotType.GAME_ZONE_HOST_BOT => new GameZoneHostBot(c, Events, Dialogue, Messages),
                 _ => new GenericBot(c),
             };
             if (sm is GenericBot) sm.botType = t.ToString();

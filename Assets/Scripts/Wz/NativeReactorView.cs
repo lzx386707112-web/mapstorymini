@@ -58,14 +58,14 @@ public sealed class NativeReactorView : MonoBehaviour
         {
             var frame = child.TryResolve(); if (frame == null || frame.Kind != "Canvas") continue;
             int delay = Math.Max(1, Math.Abs(frame.Int("delay", 100)));
-            clip.frames.Add(WzAssets.Sprite(frame)); clip.delays.Add(delay); clip.duration += delay;
+            clip.frames.Add(WzAssets.Sprite(frame, "reactor:" + key + "/" + child.Name)); clip.delays.Add(delay); clip.duration += delay;
         }
         if (clip.frames.Count == 0) clip = null;
         clips[key] = clip; return clip;
     }
-    void LateUpdate()
+    void LateUpdate() => Tick(MapReactorService.Now());
+    public void Tick(long now)
     {
-        long now = MapReactorService.Now();
         var current = new HashSet<int>();
         foreach (var reactor in MapReactorService.Get(mapId))
         {

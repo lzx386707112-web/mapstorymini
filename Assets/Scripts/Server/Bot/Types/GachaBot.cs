@@ -2,27 +2,13 @@
 // 循环：定站位 → 喷一轮扭蛋掉落 → 两个空转 tick → 把自己喷出来的东西捡回去 →
 //       消费事件队列（升级/上卷/扭蛋中奖的反应）→ 处理奖励（源端是空实现）→ 回到喷掉落。
 //
-// 与源端的差异（全部源于「没有独立线程 / 没有阻塞 sleep」与能力边界）：
-//   1. 源端 resetGachaBotState 每次 RESET 都 EventBus.subscribe(LEVEL_UP/SCROLLING)；
-//      C# 的 Subscribe 会先 UnsubscribeAll 再订阅，重复订阅没有意义，故移到构造函数只订一次。
-//      另外源端 handleEvent 有 GACHAPON_REWARD 分支却没订阅它（死代码），这里补上订阅让它可达。
-//   2. 源端 handleLevelUpEvent 里两次 sleepAmountSeconds(1500)；这里用 BotTiming 链续接，
-//      期间不推进内部状态（≡ TutorialBot 的 scripted 语义）。
-//   3. **最大的降级**：源端 runRoulette 走 MapVFX.CustomReactor——spawnReactor(2202004)
-//      → threeHitReactor → sprayFromReactor（喷泉式逐件延迟掉落）。本工程 Server 层没有
-//      Reactor / ReactorDropEntry / 地图反应堆这套东西（grep 无命中），无法照搬。
-//      这里按 delayedReactorDrops 的**可见结果**做等价：同一套 adjustCenterPositionXAxis
-//      左右交替铺开、同一套 200ms/件的节奏、itemId==0 时掉随机零钱（getRandomMesoGachaFiller），
-//      用 DropCommands + BotTasks 延时投放到地上。差别只是没有反应堆的破箱动画。
-//   4. 源端 processReward / reactToReward 是注释掉的空实现，这里保持空实现（只迁移状态迁移）。
-//   5. 源端 handleEvent 的 default 分支抛 IllegalStateException；这里改成忽略未知事件，
-//      不让一次未知事件把整轮 tick 炸掉。
-//   6. 奖池：源端 itemPool.GachaFillerSystem 用 YamlBeans 读 gachaFiller.yaml；本工程
-//      YAML 在打包时已转成文本，照 MarketItemPool 的套路取字典后自己按行解析（不引第三方库）。
+// CustomReactor 的出生、四次状态更新、喷出掉落均走地图权威服务。
+// 阻塞 sleep 改为带活动代数守卫的延时链；原奖池及事件订阅保持不变。
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Server.Bot.Environment;
+using Server.Field;
 using Server.Bot.Events;
 using Server.Bot.Social;
 
@@ -40,7 +26,6 @@ namespace Server.Bot.Types
         const int DropSprayLength = 2;
         const int DropSprayFullWidth = DropSprayLength * 2;
         const int ItemDropOffset = 30;
-        const long SprayIntervalMs = 200;
 
         // ≡ GachaFillerSystem.DEFAULT_LIST_SIZE / DEFAULT_ITEM_REPLACE_CHANCE
         internal const int GachaListSize = 10;
@@ -65,6 +50,7 @@ namespace Server.Bot.Types
 
         int baseX, baseY;
         bool scripted;
+        int generation;
         BotTasks.Handle sequenceTask;
 
         public GachaBot(BotCharacter c, EventBus events = null, BotDialogue dialogue = null, Random random = null) : base(c)
@@ -73,7 +59,7 @@ namespace Server.Bot.Types
             this.random = random ?? new Random();
             pool = GachaFillerPool.Shared;
             botType = "GachaBot";
-            Subscribe(events ?? BotTypeManager.Events, EventType.LEVEL_UP, EventType.SCROLLING, EventType.GACHAPON_REWARD);
+            Subscribe(events ?? BotTypeManager.Events, EventType.LEVEL_UP, EventType.SCROLLING);
         }
 
         // =========================================================================
@@ -170,11 +156,20 @@ namespace Server.Bot.Types
             GachaPop(pool.CreateGachaListWithPrize(PrizeItemId, random));
         }
 
-        // 降级点 3：没有 Reactor 系统，按 delayedReactorDrops 的可见结果做等价投放。
+        // CustomReactor.gachaPop / delayedReactorDrops.
         void GachaPop(List<int> itemIds)
         {
             if (itemIds == null || itemIds.Count == 0) return;
-            int centerX = baseX, centerY = baseY;
+            int mapId = chr.mapId;
+            MapReactorService.Spawn(mapId, 2202004, (int)chr.x, (int)chr.y);
+            MapReactor reactor = null;
+            foreach (var candidate in MapReactorService.Get(mapId))
+                if (candidate.Hittable && (candidate.x - chr.x) * (candidate.x - chr.x) +
+                    (candidate.y - chr.y) * (candidate.y - chr.y) <= 25 * 25)
+                { reactor = candidate; break; }
+            if (reactor == null) return;
+            for (int hit = 0; hit < 3; hit++) MapReactorService.ForceHit(mapId, reactor.objectId);
+            int centerX = reactor.x - (itemIds.Count % 2 == 0 ? 12 : 0), centerY = reactor.y;
             for (int i = 0; i < itemIds.Count; i++)
             {
                 int itemId = itemIds[i];
@@ -182,21 +177,19 @@ namespace Server.Bot.Types
                 var pos = BotHelpers.AdjustCenterPositionXAxis(centerX, centerY, i, DropSprayLength, DropSprayFullWidth, ItemDropOffset);
                 centerX = pos.x;
                 int throwX = pos.x, throwY = pos.y;
-                int delay = i * (int)SprayIntervalMs;
-                BotTasks.Schedule(() =>
+                // The shipped MapleMap overloads discard their delay argument for
+                // both items and mesos. Preserve that behavior instead of adding timers.
+                if (itemId == 0)
                 {
-                    if (!Alive()) return;
-                    if (itemId == 0)
-                    {
-                        // ≡ d.itemId == 0 → 掉随机零钱
-                        DropCommands.BotThrowMeso(chr, MesoFillerAmounts[random.Next(MesoFillerAmounts.Length)], throwX, throwY);
-                        return;
-                    }
-                    // ≡ ItemConstants.getInventoryType(itemId) != EQUIP ? new Item : getEquipById
-                    if (itemId / 1000000 == 1) DropCommands.BotThrowEquip(chr, itemId, throwX, throwY);
-                    else DropCommands.BotThrowItem(chr, itemId, throwX, throwY, out _);
-                }, delay);
+                    MapItemService.CalcDropPos(mapId,throwX,throwY,reactor.x,reactor.y,out float mesoX,out float mesoY);
+                    MapItemService.SpawnMesoDrop(mapId, MesoFillerAmounts[random.Next(MesoFillerAmounts.Length)], mesoX, mesoY,
+                        reactor.objectId, chr.id, MapItemService.PartyOf?.Invoke(chr.id) ?? -1, false, 2);
+                    continue;
+                }
+                MapItemService.DropFromReactor(mapId,reactor.objectId,chr.id,
+                    BotLogic.GenerateCleanItem(itemId),throwX,throwY,reactor.x,reactor.y);
             }
+            MapReactorService.ForceHit(mapId, reactor.objectId);
         }
 
         // ——— PICKUP_ITEM ———
@@ -234,7 +227,7 @@ namespace Server.Bot.Types
                 case EventType.GACHAPON_REWARD: HandleGachaponEvent(ev); break;
                 case EventType.SCROLLING: HandleScrollingEvent(ev); break;
                 case EventType.LEVEL_UP: HandleLevelUpEvent(ev); break;
-                default: break;   // 降级点 5：源端抛 IllegalStateException，这里忽略
+                default: throw new InvalidOperationException("Unknown Event Type: " + ev.type);
             }
         }
 
@@ -260,7 +253,8 @@ namespace Server.Bot.Types
 
         void HandleLevelUpEvent(GameEvent ev)
         {
-            var chain = BotTiming.CreateChain().StopUnless(Alive);
+            int token = generation;
+            var chain = BotTiming.CreateChain().StopUnless(() => Alive() && token == generation);
             chain.Run(() => PlayRecording(LevelUpRecordingFirst))
                 .Pause(LevelUpPauseMs)
                 .Run(() =>
@@ -308,6 +302,8 @@ namespace Server.Bot.Types
 
         public override void StopScheduledTask()
         {
+            generation++;
+            BotMovementPlayback.Cancel(chr);
             sequenceTask?.Cancel();
             sequenceTask = null;
             scripted = false;

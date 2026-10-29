@@ -456,3 +456,98 @@ QuestNpcChecks.CheckTrainingQuestProgress使用level2/job0、真实8142条件和
 
 `QuestNpcChecks.CheckDialogSelection` 已改为断言「默认选中首项」「分组标题不算首项」「非选项页不得有焦点」
 「换页后重新默认选中新页首项」。实拍：`docs/hud-review/npc-option-menu-{idle,selected}.png`。
+
+## 任务脚本侧的 selection 语义：带选项类任务脚本全量遍历（2026-10-29）
+
+用户问「带选项类的任务脚本是不是都没校验答案的正确行就直接放行」。逐个跑完的结论：**不是**。
+12 个带选项类调用的任务脚本里，只有 1 个（3953）真的不看 selection，其余 11 个要么校验答案、
+要么把 selection 当数组下标（还有持有量校验）。
+
+### 源端 selection 回传链路（已核实）
+
+`NPCMoreTalkHandler`（BeiDou-Server/gms-server/.../handlers/NPCMoreTalkHandler.java）收包：
+
+```
+lastMsg = p.readByte();   // 上一次对话框类型
+action  = p.readByte();    // 0=否/取消，1=是/确定
+if (lastMsg == 2) { … 读文本 … selection = -1 }
+else { selection = p.available()>=4 ? p.readInt() : (p.available()>0 ? p.readUnsignedByte() : -1); }
+→ QuestScriptManager.start/end(c, action, lastMsg, selection)
+→ 脚本 start/end(mode, type, selection)
+```
+
+`QuestScriptManager` 初次进入调 `iv.invokeFunction("start", (byte)1, (byte)0, 0)` / `end` 同理——
+即**第一次回包的 mode 恒为 1、type 恒为 0、selection 恒为 0**；之后才由 NPCMoreTalkHandler 透传。
+本机 `NpcSession.Begin` 对任务脚本调 `CallScript(QuestEnd?"end":"start", 1, 0, 0)`，与源端一致。
+
+对话框类型字节（`NPCConversationManager`）↔ 客户端 `NpcDialog.MessageType`：
+sendOk/sendNext/sendPrev/sendNextPrev=0、sendYesNo=1、sendGetText=2、sendGetNumber=3、
+sendSimple=4、sendAcceptDecline=12。
+
+### 全量遍历口径
+
+「带选项类」= 脚本里出现 `sendSimple` / `sendGetNumber` / `sendGetText` / `sendSelectLevel` /
+`sendNextSelectLevel` / `getInputNumberLevel` / `getInputTextLevel`（**不含** sendYesNo /
+sendAcceptDecline —— 那是二值按钮，不是 `#L` 选项列表）。
+按这个集合扫三处目录，命中集合完全一致：
+
+| 目录 | quest 脚本总数 | 命中 |
+| --- | --- | --- |
+| `MapleDashResources/Data/scripts/quest`（运行时副本） | 470 | 12 |
+| `BeiDou-Server/gms-server/scripts-zh-CN/quest` | 468 | 12 |
+| `BeiDou-Server/gms-server/scripts/quest` | 274 | 12 |
+| `content/script-overrides/quest`（截图重建脚本） | — | 0 |
+
+12 个是：`20008 2001 20020 21013 2230 2293 3301 3303 3414 3414_free10rate 3927 3953`。
+
+### 12 个脚本的 selection 语义分类
+
+| 脚本 | 选项用途 | selection 语义 | 选错会怎样 |
+| --- | --- | --- | --- |
+| `2293` 最后演奏的歌曲 | 选歌 + 数字作答 | **真校验**：sendGetNumber 只能输入 1/2/3，输入 3 才 `forceCompleteQuest()+gainExp(32500)` | 输入 1/2 走失败文案；其它值 `qm.dispose()` |
+| `3927` 秘密组织的存在 | 两道问答 | **真校验**：`selection==0` 才继续；status==2 无条件 gainExp(28843)+forceCompleteQuest，但 status==2 只有经 status==1 且 selection==0 才可达 | 选 1 → sendOk「我猜你还没有找到…」+ dispose，不放行 |
+| `20008` 骑士之路 | 是否接受测试 | **真校验**：selection 0=再试一次→dispose；1=接受→forceStart+forceComplete | 选 0 不完成任务 |
+| `20020` 5条岔路 | 是否看骑士领袖造型 | **真校验**：`selection==1`（「不，我没事」）提前退出 | 选 1 不完成任务（要走完 是/否 才 forceComplete+warp） |
+| `2230` 神秘的小蛋 | 单选「什么职责？你是谁？」 | **真校验**：只有 `selection==0 && status==1` 才推进 | 非 0 → 脚本无分支，对话直接结束 |
+| `2001` 酋长盖房子 | 选卷轴 | **下标**：`vecItem[selection]`，按职业样式给 2~8 个选项 | 无对错，但选错号会拿到别的卷轴 |
+| `3414` / `3414_free10rate` 白外星人 | 选卷轴 | **下标**（同上） | 同上 |
+| `3301` / `3303` 蒙特鸠协会考试 | 选矿石 | **下标 + 持有量校验**：`qm.haveItem(oreArray[selection], 2)` 才扣 2 个并完成 | 没矿石 → sendOk「没有矿石」+ dispose |
+| `21013` 英雄的椅子 | 单选「(好像有点害羞...)」 | **无对错语义**：只有一个选项且不按 selection 分支 | 选什么都一样 |
+| `3953` 说服莫哈莫德 | 四问连续 `#L` | **不校验**：全文不看 selection，选 0 和选 1 都走到 status==4 完成 + gainExp(20000) | —— |
+
+结论：**「没校验就放行」只有 3953 一个**，而且这是源端脚本本身如此，不是本机实现的问题。
+
+### 本轮补齐的本机缺口（照源端改，不自创逻辑）
+
+1. `qm.completeQuest()` / `qm.startQuest()` **无参** = 当前任务。
+   源端 `QuestActionManager.completeQuest()`（QuestActionManager.java:66-73）→ `forceCompleteQuest(quest)`；
+   `AbstractPlayerInteraction` 只有带 id 的重载。原先本机 `Int(c,0)` 取不到 id → id=0 直接 return，
+   于是 2001/3414/3414_free10rate 交付后**任务不会被标记完成**
+   （全库 **36 个任务脚本、46 处**调用点用到无参写法）。
+   现改为 `Int(c, 0, questId)`（带 id 时仍按 id）。
+2. `player.getJobStyle()`：源端 `Character.getJobStyle()`（Character.java:577）=
+   `Job.getJobStyleInternal(jobId, str>dex ? 0x80 : 0x40)`（Job.java:144）。
+   新增 `Assets/Scripts/Npc/JobEnum.cs`：82 个枚举常量（名字/id/中文名逐条取自
+   `Job.java` + `i18n/message_zh_CN.properties`）+ 样式映射。
+   **注意源端 `jobid/10 == CROSSBOWMAN.getId()/10`（=32）只命中 320/321/322**，
+   风灵使者一族（1300/1310…）归 BOWMAN 而不是 CROSSBOWMAN。
+3. `Java.type('org.gms.client.Job')`：脚本拿它比样式（`stance == Job.WARRIOR`）或按名字取常量
+   （`Java.type('org.gms.client.Job')["DAWNWARRIOR1"]`，20101~20315 转职脚本）。
+   源端是 **Java enum 引用相等**，所以 `getJobStyle()` 必须和 `Job.WARRIOR` 返回**同一个实例**
+   （`JobEnum.Js()` 缓存），换成数字比较会恒不等、脚本掉进 else 分支。
+4. `cm.gainItem()` 的**返回值**：源端 `AbstractPlayerInteraction.gainItem`（:587-690）正数发完返回
+   **Item 对象**（背包满才返回 null），负数走 removeById 返回 null。原先本机一律返回 undefined，
+   于是 `quest/3414_free10rate.js` 的 `item = qm.gainItem(item,1); if (item != null)` 永远为假
+   （不给经验也不交任务），BeiDouSpecial 制作脚本的 `if (!newItem)` 永远为真（误报「制作失败」）。
+
+### 验证入口
+
+`QuestNpcChecks.CheckQuestOptionScripts`（2026-10-29 新增，85 项断言）：用**真实脚本**
+（`ScriptSource.Load("quest", …)`）造任务会话，推进 `session.Reply(1, selection)`，
+逐个断言选对/选错的不同结果；其中一条走完整客户端链路
+（`NpcDialogUi.MoveSelection` → `ConfirmSelection` → 脚本第三参）。
+
+- Unity batchmode：`/tmp/quest_npc2.log` **24355 通过 / 3 失败**。
+- 失败的 3 项（1021 苹果发放、1021 引导动画、QuestClear 特效）在**移除本用例的基线**
+  `/tmp/quest_base.log`（24270 通过 / 3 失败，失败项相同）里同样存在，属改动之前就有的问题。
+- 编译检查 `tools/unity-compile-check`：0 warning / 0 error。

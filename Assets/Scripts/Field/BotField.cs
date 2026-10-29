@@ -34,6 +34,7 @@ public sealed class BotField : MonoBehaviour
         public GameObject root;
         public SpriteAnim animation;
         public string appearance;
+        public NativeBotChair chair;
         public float previousY;
         public Vector3 target;
         public float speed = 0f;        // 世界单位/秒；由封包位移/时长算出来，别给默认值
@@ -60,6 +61,7 @@ public sealed class BotField : MonoBehaviour
     // 进图补建窗口的截止时间（unscaledTime）；-1 表示不在窗口内。
     float catchUpUntil = -1f;
     bool synchronized;
+    NativeMarketField market;
 
     void OnEnable()
     {
@@ -95,6 +97,8 @@ public sealed class BotField : MonoBehaviour
 
     public void Synchronize(int mapId, int world, int channel)
     {
+        if (market == null) market = GetComponent<NativeMarketField>() ?? gameObject.AddComponent<NativeMarketField>();
+        market.Synchronize(mapId,world,channel);
         bool sameMap = synchronized && mapId == currentMap;
         bool sameContext = sameMap && world == currentWorld && channel == currentChannel;
         if (sameContext && Time.unscaledTime - lastSync < SyncSeconds) return;
@@ -172,6 +176,7 @@ public sealed class BotField : MonoBehaviour
         var renderer = root.AddComponent<SpriteRenderer>();
         renderer.sortingOrder = 300;
         var view = new View { root = root, animation = root.AddComponent<SpriteAnim>(), previousY = actor.y };
+        view.chair = root.AddComponent<NativeBotChair>();
         var ids = BotAppearance.CharacterIds(bot);
         string key = "bot_" + string.Join("_", ids);
         WzCharacter.Appearance(key, ids);
@@ -202,9 +207,26 @@ public sealed class BotField : MonoBehaviour
         }
         var bot = actor as BotCharacter;
         if (bot == null) return;
+        var ids = BotAppearance.CharacterIds(bot);
+        string appearance = "bot_" + string.Join("_", ids);
+        if (bot.mountActive && bot.mountItemId > 0 && bot.chair <= 0)
+        {
+            WzCharacter.Appearance(appearance, ids);
+            appearance = WzCharacter.MountedAppearance(appearance, bot.mountItemId);
+        }
+        if (view.appearance != appearance)
+        {
+            if (!bot.mountActive || bot.chair > 0) WzCharacter.Appearance(appearance, ids);
+            view.appearance = appearance;
+            view.animation.key = appearance;
+            view.animation.Play(view.animation.Current, view.animation.IsOneShot, true);
+        }
         string pose = bot.chair > 0 ? "sit" : Pose(bot.stance);
         view.animation.SetBase(pose);
+        if (bot.chair > 0 && view.animation.Current != "sit") view.animation.Play("sit", false, true);
         view.animation.SetFacing((bot.stance & 1) == 0 ? 1 : -1);
+        view.chair.Set(bot.chair, view.animation);
+        view.chair.Refresh();
         // walk 的播放速率按「实际走多快」算（见 Update）：walkAlongX 的 62.5px/s 和录制动作的
         // 真实速度不一样，写死一个系数总有一边滑步。站/跳/爬仍按原 delay 播。
         if (pose == "rope" || pose == "ladder")
@@ -281,6 +303,7 @@ public sealed class BotField : MonoBehaviour
 
     public void Clear()
     {
+        if (market != null) market.Clear();
         foreach (var view in views.Values) RemoveView(view);
         views.Clear(); present.Clear(); removed.Clear(); pending.Clear(); balloons.Clear();
         synchronized = false;
@@ -357,7 +380,32 @@ public sealed class BotField : MonoBehaviour
 
     void OnGUI()
     {
-        if (!synchronized || balloons.Count == 0) return;
+        if (!synchronized) return;
+        if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && !Pointer.Blocked && !GameWindows.AnyVisible)
+        {
+            var camera = Camera.main;
+            if (camera != null && market != null)
+            {
+                var point = camera.ScreenToWorldPoint(new Vector3(Pointer.Pos.x * UiKit.Scale,
+                    Screen.height - Pointer.Pos.y * UiKit.Scale,0));
+                market.TryVisit(point,id => views.TryGetValue(id,out var view) ? view.animation.Renderer : null);
+            }
+        }
+        if (Event.current.type == EventType.Repaint && Pointer.RightPressed && !Pointer.Blocked && !NativeTradeWindow.Visible && !NativeUtilPrompt.Visible)
+        {
+            var camera = Camera.main;
+            if (camera != null)
+            {
+                var world = camera.ScreenToWorldPoint(new Vector3(Pointer.Pos.x * UiKit.Scale, Screen.height - Pointer.Pos.y * UiKit.Scale, 0));
+                foreach (var entry in views)
+                {
+                    var renderer = entry.Value.animation.Renderer;
+                    if (renderer != null && renderer.sprite != null && renderer.bounds.Contains(new Vector3(world.x,world.y,renderer.bounds.center.z)))
+                    { NativeCharacterMenu.Open(BotRegistry.Get(entry.Key)); break; }
+                }
+            }
+        }
+        if (balloons.Count == 0) return;
         var cam = Camera.main;
         if (cam == null) return;
         EnsureBalloonArt();

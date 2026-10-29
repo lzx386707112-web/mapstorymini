@@ -396,3 +396,116 @@
 - 访问/购买限世界频道地图和有效访问会话；3访客上限，离图应关闭访问。`BotTradeService.Purchase`复用原背包/金币持久化事务和tradeRevision通知，不建立伪交易会话，拒绝托管中消费。商品按原float乘法算总价，转移karma，成功才减库存。
 - 验证：server-check最新633通过/0失败（新增10项），全Unity脚本编译0错误/0警告。第一次全回归632/1，未改代码第二次633/0，需留意既有随机/压测断言，不宣称首次全绿。**地图商店美术/点击前端、主人销售款记录、可见摊主椅子绘制仍待接续，不等于第四步完成。**
 - 前端定位：同既有EXE身份，TradingRoom构造0x7C1C76取串1817背景565×474；vtable0xB37448的OnCreate=0x7C23D0，递归454指令完整到0x7C2958。PersonalShop购买按钮串2613真实push=0x6FA705。UIWindow/PersonalShop原backgrnd525×553、backgrnd2 233×143、backgrnd3 233×276、select162×35、soldout199×35。尚未完成所有坐标合同核对，不据此自行设计界面。
+
+
+## 反应堆原画与受击动画续接（2026-10-29）
+
+沿用本记录 BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`、ImageBase 0x400000。
+
+- 出生解析0x735127：objectId→对象+0，templateId→+4；0x735176..735187把初始state同时写+0x10与+0xC；地图短整型x/y→+0x14/+0x18。状态更新0x73551F在0x735572..735578先把旧+0x10复制到+0xC，再读取新state写+0x10，更新xy，+0x30置4。旧/新状态不是同一个字段。
+- 渲染0x7348A0：普通模式使用新+0x10；受击模式1/4在0x734DCE..734DD8把旧+0xC传给0x73AC7B。后者0x73B200..73B22A格式化串3079=`%d/hit`，参数为旧状态。0x734688等待受击层结束后回新状态或移除对象。用已有inspect工具`--fn`上述地址可重现。
+- 原模板路径`Reactor/%07d.img`，info/link经`Reactor/%s.img`跳转；Canvas origin不添加人为居中。Unity `NativeReactorView`读取原数字帧和delay，状态改变播放旧状态/hit一遍后循环新状态，Respawn清旧状态并重置计时；随NativeMapView创建，地图销毁释放对象。每模板/状态/帧使用稳定缓存键，避免UOL解析包装对象身份导致重复Sprite。
+- 云朵2002001/0/0原106×72，origin(53,36)；旧状态hit第二帧111×87，origin(53,50)。Unity2022.3 batch执行`BotPresentationChecks.RunReactors`已实际PASS：原站立帧、原坐标(120,-40)→世界(3,1)、受击第二帧、受击后新状态、重生。
+- 明确边界：当前Unity sortingOrder100复用世界物件层，尚非EXE完整foothold层公式；EXE查foothold后info/z=0时使用10*(3000*layer-zM)-0x3FFF8ADA，否则30000*layer-0x3FFFF830。出生包+0x40字段的方向语义与event-indexed动画分支尚待核实。不能将本项PASS扩展为所有反应堆/事件状态机/Android验收。
+
+### 商店销售结算补充
+
+核对`org/gms/server/maps/{PlayerShop,HiredMerchant}.java`的buy：购买者付税前float乘法总价；店主所得扣`Trade.getFee`。PlayerShop先用税前金额校验店主金币容量，销售quantity记录捆数，直接给摊主金币，全部购买售罄时关闭。HiredMerchant销售quantity记录实际件数，销售款独立累计并封顶int.MaxValue，售罄不自动关闭。
+
+`MarketShopService`补齐上述税费、销售记录、玩家摊主收款与容量校验、雇佣销售款、售罄关闭；离线移除访问会话。新增4项真实服务回归，server-check **637通过/0失败**。新增MarketShopProtocol经ITransport提供Read/Visit/Buy/Leave，向客户端深拷贝商品快照，不暴露可变权威库存；这不代表商店画面已完成。
+
+## 剩余迁移持续接续（2026-10-29）
+
+沿用本记录 EXE SHA256 / ImageBase。以下是接续状态，不是全部完成声明。
+
+- `BotPresentationChecks.Run` 已在 Unity batch 实际 PASS（原角色移动/攻击/表情/卷轴原素材）；修正编辑器同帧100ms同步节流造成的测试误判。BotField.Apply 在装备外观 key 改变时重新注册纸娃娃并恢复当前姿势，避免假人上卷换装后仍显示旧外观。
+- `MarketShopProtocol` 增加真实访问回归：非bot在线身份、深拷贝道具/库存、离图清访问、离线拒绝。server-check 最新 **648通过/0失败**；全Unity脚本编译 **0错误/0警告**（ContextMenu接线后的编译仍需更新验证）。
+- Step1 三个工厂已接线 DiceBot / GachaBot / GameZoneHostBot。重新核对 DiceBot.java:278 的 waitForState 是**一次轮询而非循环**；processMessages 内消息已直接把状态置BET，下一tick进入BET，不会再进入WAIT。因此早期草稿声称“原端下注后必收摊”是错误解读，已删除并恢复原条件；无地面赌注返回等待，不擅自重复旧下注。NONE判胜恢复原抛错语义。骰子派彩、扭蛋反应链、招待员对话使用活动代数，停止后不继续旧链；修正招待员2000ms报单等待后scripted未释放的卡死。
+- `CustomReactor.gachaPop` 原动态2202004出生→第一个25px内state<4且alive反应堆→三次hit→200ms/件喷出→末次hit；偶数列表初始x−12，喷出位置逐次累加。GachaBot现创建地图权威动态实例，掉落dropper为反应堆oid，保留原归属/FFA片金币；取消草稿额外的GACHAPON_REWARD订阅（原端只订LEVEL_UP/SCROLLING）。真实播放和掉落位置仍待Unity验收。
+
+### 原交易 / 数量 / 确认窗口合同
+
+- CUITradingRoom构造0x7C1C76，OnCreate0x7C23D0，Draw0x7C2C3B /物品0x7C33CB。背景UI/UIWindow.img/TradingRoom/backgrnd=565×474；BtTrade(116,49)60×19，BtReset(116,71)60×19实际取消，BtCoin(170,244)14×14；Messenger/BtEnter(520,244)39×17；聊天输入(296,245)192×15，max127；原聊天卷轴(542,23)height192。头像0x7C1F37自己(227,101)、对方(66,101)；名字中心229/64,y107。九格local底图(169,129)，other(6,129)，39×37间隔，锁定白色0x80FFFFFF覆盖113×109。物品原绘制调用锚点x171+39col,y161+37row，另一侧−162；当前32px贴图与此2px差异尚待核实。
+- 0x7C39A0调用0x992BFD确认，0x7C37CA调用CUtilDlgEx数字输入。`NativeTradeWindow`接真实Read/Invite/Accept/OfferItem/OfferMeso/Confirm/Cancel/Chat协议、背包拖入与邀请确认；GameSession退出重置。未完成原交易卷轴、举报、完整输入遮挡及Unity画面验收，不能扩展为全部UI完成。
+- 原CUtilDlg OnCreate0x991899：0x991B77/991C60读取串2692/2693=**YesNo3/t,c**，type1001或1003在0x991D63选2694=YesNo3/s；此前误用Notice3底图已纠正。高=55+21+20*max(2,floor(textHeight/20)+1)，BtOK2(155,h−30)，BtCancel2(205,h−30)。数字compact使用Notice3/t,c与Notice4/s，输入黑框(19,textH+24)229×18/白内框(20,textH+25)227×16/文本(22,textH+27)224×14。`NativeUtilPrompt`共用这些原素材；文本居中等完整排版仍待核实。
+
+### 原角色右键菜单
+
+- 构造0x996570：基础5行；无队伍或自己为队长(角色+2ED4/+2F86与+20A0)加Party成6行；公会/家族另有条件。窗口宽100，高15*(rows+2)，原800×600边界夹取。移动端沿用当前虚拟指针右键/长按事件，不重画菜单。
+- OnCreate0x9967FB：背景先白FillRect；ContextMenu/t100×23在(0,0)，c97×15从(3,23)逐行，s97×7在(3,23+15rows)。按钮85×15，x9：Info y24、Save y39、Trade y54、Whisper y69；可邀Party y84，Claim顺延15。实际字符串2601..2611已核对，复现用inspect --fn 0x9967fb。
+- 新NativeCharacterMenu使用原素材与几何；BotField以已绘制sprite.bounds选中角色，接交易/加好友/悄悄话/组队，Info/Claim暂disabled，尚未接完整资料及举报模块。不得把这些disabled按钮说成完整资料功能。
+
+### 继续逆向已定位入口
+
+- Messenger重建0x850264：mode0=295×364/backgrnd；mode1逻辑宽392×240/backgrnd2(原图295×240)，mode2=184×22/backgrnd3。OnCreate0x8505E2：mode0滚动条x273,y148,h154，聊天输入(9,318)207×15，BtEnter(225,315)，Claim(225,315)共占按钮位置依状态；mode1滚动条x273,y55,h125，输入(9,194)207×15，Enter(225,191)。顶栏Basic/BtClose x276,y2，BtMin x248,y2，BtMax x262,y2；mode2 x166/138/152。人物创建0x84F44B按slot间隔94，x54+94slot，y118。这些入口仍需完整名称栏/聊天记录/邀请输入与真实画面验证，未据此声称已完成。
+
+
+### 接续核对与修正：扭蛋、信使、角色菜单和交易图标
+
+仍使用本文既有 BeiDou.exe SHA256 / ImageBase，服务端文件以本文 CustomReactor.java 身份为准。
+
+- `BotLogic.java:213..216` 的 `isPointNear` 调 `java.awt.Point.distance`，是欧氏距离 <=25，并非边长50的矩形。GachaBot选首个可击反应堆改为平方距离 <=625。`CustomReactor.hitReactor` 只state+1并广播，新增 `MapReactorService.ForceHit` 专供这条路径；扭蛋末击state4仍alive且不安排respawn。OPQ现有显式破坏/掉落路径不改。server-check真实扭蛋断言包含alive/respawnAt，最新 **648通过/0失败**。
+- 信使窗口 `NativeMessengerWindow` 已接原素材、三模式、原坐标、200条消息缓存、输入及VScr4；共享 `NativeUi.Scroll4` 取原前后箭头13高和thumb25高，不使用GUILayout滚动条。邀请确认由NativeSocialWindow持续轮询，接受后打开窗口；同一入口再次切换关闭也发CloseMessenger，避免服务器房间残留。尚未完成主动邀请拖放、typing/气泡、完整名称栏核对、Unity画面及Android验收。
+- **纠正信使mode1背景拉伸推断**：0x850264把logical width写0x188，但0x9E0AB2只把IMG Canvas赋窗口+0x68，偏移写+0x40/+0x44；0x9E0502..0x9E0587将该Canvas、x/y与alpha传给Canvas虚表+0x80的Copy，没有目标宽高参数。因此mode1逻辑窗口392×240，背景295×240仍按原尺寸复制，不能把背景拉成392。0x850769..85077B在mode2禁用Min，0x850824..850835在mode0禁用Max；前端已对齐。复现inspect --fn 0x850264 / 0x9e0ab2 / 0x9e0502 / 0x8505e2。
+- 角色菜单Draw=0x997194（vtable0xB3DA68+0x2C），目标名位于对象+0xC4，0x9971D0限制宽0x4E=78，0x997298..9972AA在(11,6)用font0绘字。NativeCharacterMenu补上名字裁剪，并在目标离图/离线/换世界频道后关闭。资料与举报仍disabled，未迁对应模块。
+- **纠正交易图标统一缩放32×32**：0x7C33CB调用0x5D6458时原图标锚点(171+39col,161+37row)，对方x减162。0x5D719F..5D71D6分别取Canvas origin.y/x，从传入y/x减去后Copy，不能把各图标强拉32。NativeTradeWindow按原节点origin和原宽高绘制；例如红药02000000的icon27×30/origin(-3,30)，原本应保留该透明留白/位置关系。数量/命中格仍取原格，不随不等宽图标缩放。复现inspect --fn 0x5d6458 --start 0x5d719c --end 0x5d71dc。
+- 本次商店继续定位但尚未实现窗口：PersonalShop ctor0x6FA0F5 / OnCreate0x6FA4B2 / Draw0x6FB99D，backgrnd6=525×553；商品可视5行y157+40*i，select在(44,y)162×35，icon锚点(8,y+34)，名称(48,y+1)裁152px；list scrollbar(211,158,15,197)。购买BtBuy(144,90)，BtExit(144,110)，BtInfo/BtItem(144,62)；聊天输入(238,323)231×15。需继续确认雇佣商人对应类及原地图店招，不将该部分定位当作已迁移。
+- 椅子定位尚待核实：0x93C7C3读取Install/0301.img/%08d/effect和effect2，经0x941417读取fixed/pos；pos1调用0x932CBF返回Avatar+0x10B4。0x453AD1正常分支0x4557ED/455F51取首帧+0x14/+0x18，0x456226..456240对10B4设(-x,y)。不能未经验证把这两个字段叫navel：0x41258D的0x41262D调用0x401DE9，navel输出实际是新帧+0x28，而+0x14数据从源帧+0x54连续拷入。下一步应追源帧+0x54写入及Avatar向量父层；未据此新增猜测性椅子绘制。
+
+
+### 扭蛋喷出 delay 的下游核对纠正
+
+`CustomReactor.delayedReactorDrops` 虽逐件传short delay+=200，但当前源端 `MapleMap.java:937..939` 的dropFromReactor(delay)仅转调无delay版本，`1312..1314`的spawnMesoDrop(delay)亦相同，**两者均忽略delay**。此前仅看CustomReactor写成“200ms/件”并加C#任务队列并不符合这份北斗源码，现移除附加计时器，全部立即入权威地图；本节覆盖此前喷出延迟描述。
+
+无delay道具路径`:933..935`使用calcDropPos(dropPos,reactor.position)，再spawnDrop，dropType=有队伍?1:0。`:1275..1292`创建原MapItem、注册过期、激活物品反应堆，不经过spawnItemDrop的DROP_LIMIT消失分支。新增MapItemService.DropFromReactor承接该路径；Gacha道具调用它，金币先calcDropPos到反应堆fallback，再原spawnMesoDrop处理，type2并保留owner当时队伍。新增实际喷出回归断言：不驱动计时器即有两件掉落，道具type1/party42、金币type2/party42；验证结果待本次检查结束更新。
+
+Unity batch `BotPresentationChecks.Run` 本次实际PASS（日志/mxd-bot-presentation-final.log在/tmp，永久复现入口仍是Assets/Editor/BotPresentationChecks.cs）。仅验证已有角色/攻击/卷轴/反应堆路径，不代表新信使/交易/菜单已通过画面验收。
+
+
+本次追加验证：server-check **649通过/0失败**，包括上述立即喷出与队伍归属回归；新加入的DropFromReactor目前用于Gacha，旧OPQ显式破坏路径尚未改走该API。交易、右键菜单、确认框已纳入GameWindows.AnyVisible以阻止NPC点击穿透；确认框显示期间底层原按钮/输入被禁用，Esc统一Cancel而非仅Clear，确保拒绝交易/社交邀请会执行false回调。NativeUtilPrompt.Clear仍仅供会话reset等无回调释放。新交互尚待真实OnGUI/Play验证。
+
+椅子锚点进一步核实（仍未绘制）：先前把0x41258D当普通身体帧输出不正确；0x407925..407978显示该函数仅mount分类190/193时进入。普通身体由0x41272C产生中间0x64帧，再0x4123D2最终组装0x2C帧；0x41246B..412490将final+0x1C传给0x401DE9的arg+0x10（navel），final+0x14传给arg+0x14（BE7884所对应第二锚点，需核字符串初始化）。因此须沿正确final帧路线核对Avatar+10B4，不可拿mount中间结构解释普通椅子。保留这个更正以避免重复走错函数。
+
+
+脚本验证按项目规则实际重跑：script-harness `--run` 为889文件、ok769、parseFail0、runFail47、javaInterop73；这是原脚本全量宿主边界，**并未全部通过**。`--pack` 为2779条（npc889 / quest470）、parseFail0、mangled0。本次未改源JS。全脚本Rebuild最新0错误/0警告；git diff --check在本次C#与reverse记录上通过，全仓仍有既存三个.meta的Unity尾随空格，不修改无关meta来掩盖它们。
+
+
+### 椅子锚点收口、坐骑合成与计时回归接续（2026-10-29）
+
+仍沿用本文 EXE SHA256 / ImageBase。`0x4010F4..401105`以字符串池0x432初始化BE7884，解码值为 **brow**；0x433为navel。结合前述普通帧+14输出及Avatar+10B4父链，pos1取最终合成眉部锚点，不能再称待定neck或navel。0x45614C后的镜像分支取(-x,y)，0x45642F后的非镜像分支取(x,y)。`NativeBotChair`读取原Install/0301.img/{id}/effect、effect2，用原Canvas origin、delay、z、fixed与pos；当前BotFurniture池仅用pos0/1。WzCharacter.Attachment返回最终feet-space锚点，BotField在坐下时中断旧挥击，站起删除椅子层。Unity batch实际通过3010000原58×36/origin(21,-16)、pos1眉部、左右转向、后层z、起身无遗留回归。**这不是所有Install椅子（pos2/3/bodyRelMove等）完整支持声明。**
+
+坐骑原端链：407925..407978对190/193类别走4138BE→413A43→41258D；40797D..407992骑手body action设39，攀爬24/25都改37；4A8CE6查BEC620+24*action，4A4296..4A42BF把string1045=sit写BEC9C8，确认39=sit，37=rope。455826..45583B计算mount navel减rider navel。WzCharacter增加骑乘配方，mount原动作/帧delay驱动，骑手sit或rope，以navel对齐；原TamingMob多个Canvas按各自map/navel对齐，按原zmap的tamingMobRear/Mid/Front排序。市场8种坐骑及5动作的实际Unity回归进行中，未提前算PASS。
+
+新招待员定时回归三项通过（1999ms未交付、2000ms释放scripted、停止取消待完成请求）。回归夹具曾使用旧绝对时间2100/4200导致时钟倒退，改为基于当前Clock推进；市场启动夹具随12房商品生成增长，将原4秒后台解析等待上限提高到30秒，生产调度不变。最新server-check **652通过/0失败**。全脚本compile-check在椅子加入后0警告/0错误；后续坐骑修改仍须重编译。剩余OPQ私有实例、市场界面与社交前端完整验收未完成，不能据此声称全部移植完成。
+
+
+### 市场实际入口与坐骑验证接续（2026-10-29）
+
+同上 EXE 身份。市场8种坐骑×5动作的 BotPresentationChecks Unity batch 实际 PASS（复现入口为 Assets/Editor/BotPresentationChecks.cs）；1902002 的多个 Canvas 分别带不同 navel，须逐层对齐，1902009 首 Canvas 无 navel，使用后续有效锚点；1902005 ladder 的 navel.y=-15 是原值，不得用测试阈值强改原资源。前述“坐骑回归进行中”由此节更新。
+
+雇佣购买窗口继承已确认：517ECA 调基类 ctor 6FA0F5，再写 vtable AF3928；+0C OnCreate=6FA4B2，+2C Draw=518173，后者先调用6FB99D再调虚表+64=5181EE。518531 读取 Item/Cash/0503.img/{permit:D8}/employee 第一动作下的 stand/0 Canvas，存+780。5181EE调用+3C=6FC3FD取得slot0坐标(53,127)，以宽/2和全高从此点减去后Copy；这里不是Canvas origin贴图。NativeMarketWindow已补同一原店员肖像，背板/行坐标仍沿既有6FA4B2/6FB99D记录。
+
+地图雇佣对象：50D56C 从包读short x/y→对象+C0/C4，创建世界向量；50D97B通过40F4EA→40FAE8加载employee动作，逐Canvas交426BAB，原delay来自帧+40，不对店员做0.75缩放。前述97A3FB的0.75图属于人物商店展示分支，不可混用于独立雇佣对象。NativeMarketField接OnMap快照、原employee/stand动画、原origin和脚底世界位置；BotField双击真实sprite.bounds调用Visit，购买窗数量输入→权威Buy。换图/禁用清实体，查询保留世界频道地图过滤。此时尚未完成地图店招、聊天/访客肖像或窗口真实OnGUI画面验收，不能算第四步全部完成。
+
+店招继续定位：50D56C以字符串3460格式化“%s's Hired Merchant”，调用5F0334，type1000，其UI/NameTag/1000不存在时走5F0E1D代码绘制默认分支。默认黑底A0000000、字宽+5/字高+4（5F12E5）、白色1px边（5F1445起）、文字x2/y0（5F15EC）。原完整边角、世界层偏移仍须沿5F1644后核对，未据此新增猜测性店招。
+
+本轮新增NativeMarketField及肖像后dotnet全脚本Rebuild 0警告/0错误；5种permit店员的真实Unity检查实际PASS。此后店招新增尚需重编译及OnGUI验收。
+
+店招默认分支补核：5F1445..5F150A传入0x00FFFFFF清四角，为透明白，**并非白色边框**；其余A0000000黑底。5F1654..5F1669设置origin.x=floor(width/2)，5F1691设置origin.y=-2，脚点下2px。type1000无特殊牌时5F10C8选font0，98A74A..98A7CB确认Arial12白色，默认无NPC牌的BA粗体。NativeMarketField据此复用NpcDialogUi.NamePlateRects的同一几何，原代码绘制三块不重叠黑底、四角透明、名字“%s's Hired Merchant”；点击名牌同样访问真实shop。前述“白色1px边”解读纠正为清角；本轮只完成雇佣店名，人物商店头顶描述牌及悬浮店铺说明仍待核实。
+
+
+### 信使座位与队伍成员操作接续（2026-10-29）
+
+原端身份沿用本文 BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，ImageBase400000。
+
+- 服务端 `net/server/world/Messenger.java` 的 `pos[3]` 与 `MessengerCharacter.position` 独立于成员 List 顺序；`removeMember` 仅清该槽，`getLowestPosition` 返回最小空槽。BotMessenger 现维护独立 positions，SocialMember.messengerPosition 传给前端，头像与 NameBar 按座位显示，不能按遍历序号压缩。`0x84F44B`（头像/名牌生成）内 `0x84F5CB` 使用字符串1867 `UI/UIWindow/Messenger/NameBar/%d`，格式参数为座位+1。窗口真实 OnCreate 为 `0x84DDB0`，调用 `0x850264` 背景重建及 `0x8505E2` 控件辅助；后两者均不是 OnCreate 本身。Draw `0x84E8A1` 调用 `0x850D42/0x850EC9`，后续气泡/正在输入布局仍待核实，不能以本次座位修复声称整体 UI 验收。
+- `Party.expelFromParty` 验证发送者为队长且目标在队伍，再移除成员并调用其离队事件；`PartyOperationHandler` case6 将现有成员交给 `World.updateParty(CHANGE_LEADER)`，源 handler 没有额外同图/同频道限制，也没有新增队长身份判断。BotPartyService.Expel/ChangeLeader 与 social transport 现补上普通队伍成员路径。独立事件副本 changedLeader/leftParty 的完整桥接仍属于事件宿主缺口。
+- UserList OnCreate `0x919B73`，Party 资源加载 `0x90B43D`，Party Draw `0x90BDDB`，子对象来自父窗口+888；主 Draw `0x91BEAB` 的 tab1 由 `0x91C39C..0x91C46A` 调用它。最终 `0x91CCBB..0x91CD27` 将 party composite 在主窗口(6,53)复制，高度最多278，滚动源 y 为滚动索引×33。
+- Party 资源字段（相对子对象）：+4 party0在线标题281×27、+8 party1成员底279×18、+C party2底线279×4、+10 party3线278×1、+14 party4离线标题281×27、+18 party5列头279×18、+1C icon0 13×13、+20 icon1 17×16。组内列头 y31、成员首行 y49、行高18，名字/职业/等级 x25/125/205，文字 y行顶+2；名字裁剪67px。选中行原 FillRect FF244768，宽281高18；在线数组+28/+30与离线数组+2C的构建分类还需核实。在线组结束 party2 高4后间隔10。
+- 原按钮初始化坐标：BtCreate(13,355) ID2200；BtInvite(72,365)2201；BtKick(190,344)2202；BtWithdraw(190,364)2203；BtWhisper(249,345)2204；BtChat(249,365)2205；BtChangeBoss(131,365)2206；BtHP(131,345)2207；BtSearch(72,345)2208。可复现 `tools/inspect_beidou_client.py ... --fn 0x919b73`。按钮状态、Tab 与在线分类未完整核实前仍不替换为猜测布局。
+- Tab 构造 `0x4DD4FF` 的 `0x4DD51B` 明确等宽开关+34初始化0；`0x4DE15F` 非等宽分支 `0x4DE2BD` 按 enabled/disabled 标签 canvas.width−4 定长（首段leading6，间隔13）；还需核实后续 setter 是否覆盖该开关。
+
+验证：`dotnet run --project tools/server-check -c Release` 实际657通过/0失败（`/tmp/mxd-bot-followup-check.log`），新增中间座位退出/重入2项及队伍权限、移交、逐出持久化3项。前端座位修复已通过完整 Unity 源码编译检查（0 warning/0 error，`/tmp/mxd-bot-followup-compile.log`）；实际 OnGUI 验证尚待运行。
+
+
+Party 分类补证：`0x90B8D0` 重建三个数组，`0x90B990` 检查成员 channel==-2 归+2C离线；否则 `0x90B9A1` 比较成员 mapId 与当前 mapId，相同归+28、不同归+30（不是按同频道/异频道直接分组）。`0xA3F836` 从角色+2ED8读取id、+2EF0名字、+2F3E职业、+2F56等级、+2F6E频道、+2F8A地图，+2F86为队长ID。PacketCreator.addPartyStatus同样按id/name/job/level/channel/leader/map顺序写包，异频道地图写0、离线频道写-2。三个数组各按名字比较排序（`0x90BA13..0x90BC13`）。这些新增确定结论已归档，尚未替换临时队伍窗口。

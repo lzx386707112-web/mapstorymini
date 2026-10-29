@@ -126,6 +126,19 @@ namespace Server.Field
             return null;
         }
 
+        // CustomReactor.spawnReactor: dynamic instances share the map's authoritative pool.
+        public static MapReactor Spawn(int mapId, int id, int x, int y, int maxState = 4)
+        {
+            var list = Get(mapId);
+            if (!byMap.ContainsKey(mapId)) byMap[mapId] = list;
+            var reactor = new MapReactor { mapId = mapId, id = id, objectId = nextObjectId++,
+                x = x, y = y, maxState = maxState, lastHitAt = Now(),
+                template = Templates.TryGetValue(id, out var template) ? template : null };
+            list.Add(reactor);
+            Changed?.Invoke(reactor);
+            return reactor;
+        }
+
         /// <summary>按 WZ 模板 id 统计还活着的数量（OPQ 用它判断云堆/箱子是否清完）。</summary>
         public static int AliveCount(int mapId, int reactorId)
         {
@@ -135,6 +148,20 @@ namespace Server.Field
         }
 
         // ——————————————————— 受击 / 破坏 / 重生 ———————————————————
+
+        // CustomReactor.hitReactor only increments state and broadcasts. In particular,
+        // reaching state 4 does not remove the reactor or arrange a respawn.
+        public static MapReactor ForceHit(int mapId, int objectId)
+        {
+            var reactor = Find(mapId, objectId);
+            if (reactor == null) return null;
+            reactor.previousState = reactor.state;
+            reactor.state++;
+            reactor.visualRevision++;
+            reactor.lastHitAt = Now();
+            Changed?.Invoke(reactor);
+            return reactor;
+        }
 
         /// <summary>
         /// 源端 OPQ CustomReactor 四击路径：状态 +1；到上限后按显式传入表投放。
@@ -191,6 +218,7 @@ namespace Server.Field
             reactor.alive = true;
             reactor.state = 0;
             reactor.previousState = -1; reactor.visualRevision++;
+            reactor.lastHitAt = Now();
             reactor.respawnAt = 0;
             Changed?.Invoke(reactor);
         }

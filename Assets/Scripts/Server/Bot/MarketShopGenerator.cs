@@ -12,14 +12,22 @@ namespace Server.Bot
         public bool exists = true;
     }
 
+    public sealed class MarketSoldItem
+    {
+        public string buyer;
+        public int itemId, quantity, meso;
+    }
+
     public sealed class MarketShop
     {
         public int ownerId, mapId, world, channel, permitId, x, y;
+        public int merchantMeso, purchasedStocks;
         public string ownerName, description, tier;
         public bool open, playerStore;
         public MarketShopType primary, secondary;
         public MarketShopType? tertiary;
         public readonly List<MarketShopStock> items = new List<MarketShopStock>();
+        public readonly List<MarketSoldItem> sold = new List<MarketSoldItem>();
     }
 
     // ArtificialFreeMarket + ArtificialShopGenerator。商店数据与地图展示分离。

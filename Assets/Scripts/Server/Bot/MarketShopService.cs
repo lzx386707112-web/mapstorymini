@@ -6,7 +6,7 @@ using Server.Bot.Trade;
 
 namespace Server.Bot
 {
-    public enum MarketPurchaseResult { Success, Unavailable, InvalidQuantity, InsufficientMeso, InventoryFull }
+    public enum MarketPurchaseResult { Success, Unavailable, InvalidQuantity, InsufficientMeso, InventoryFull, OwnerMesoFull }
 
     // 地图商店权威集合。店主mock角色不加入BotRegistry；可见摊主走原角色生成路径。
     public sealed class MarketShopService : IDisposable
@@ -95,6 +95,7 @@ namespace Server.Bot
         }
         public MarketShop Visit(BotActor actor, int owner)
         {
+            if (actor == null) return null;
             Leave(actor.id); var shop = Get(owner);
             if (shop == null || !Matches(actor, shop) || actor.trade != null || actor.id == owner) return null;
             int count = 0; foreach (int visiting in visits.Values) if (visiting == owner) count++;
@@ -103,6 +104,13 @@ namespace Server.Bot
         }
         static bool Matches(BotActor actor, MarketShop shop) => actor != null && actor.online && shop.open
             && actor.world == shop.world && actor.channel == shop.channel && actor.mapId == shop.mapId;
+        public MarketShop Visiting(BotActor actor)
+        {
+            if (actor == null || !visits.TryGetValue(actor.id, out int owner)) return null;
+            var shop = Get(owner);
+            if (shop != null && Matches(actor, shop)) return shop;
+            Leave(actor.id); return null;
+        }
         public void Leave(int actor) => visits.Remove(actor);
         public MarketPurchaseResult Buy(BotActor actor, int owner, int index, int quantity)
         {
@@ -116,9 +124,28 @@ namespace Server.Bot
             int price = MarketEconomy.JavaInt(Math.Min((float)stock.price * quantity, int.MaxValue));
             int balance = actor is BotCharacter bot ? bot.meso : actor.character?.record.meso ?? 0;
             if (balance < price) return MarketPurchaseResult.InsufficientMeso;
+            var seller = shop.playerStore ? BotRegistry.Get(shop.ownerId) as BotCharacter : null;
+            // PlayerShop checks capacity against the gross price, before its trade fee.
+            if (shop.playerStore && (seller == null || (long)seller.meso + price > int.MaxValue)) return MarketPurchaseResult.OwnerMesoFull;
             TradeItemRules.ApplyKarma(item);
             if (!trades.Purchase(actor, item, price)) return MarketPurchaseResult.InventoryFull;
-            stock.bundles -= quantity; if (stock.bundles < 1) stock.exists = false;
+            int proceeds = price - BotTradeService.Fee(price);
+            if (shop.playerStore) seller.meso += proceeds;
+            else shop.merchantMeso = (int)Math.Min((long)shop.merchantMeso + proceeds, int.MaxValue);
+            shop.sold.Add(new MarketSoldItem {buyer = actor.name, itemId = item.itemId,
+                quantity = shop.playerStore ? quantity : item.quantity, meso = proceeds});
+            stock.bundles -= quantity;
+            if (stock.bundles < 1)
+            {
+                stock.exists = false;
+                if (shop.playerStore && ++shop.purchasedStocks == shop.items.Count)
+                {
+                    shop.open = false;
+                    var leaving = new List<int>();
+                    foreach (var visit in visits) if (visit.Value == owner) leaving.Add(visit.Key);
+                    foreach (int visitor in leaving) Leave(visitor);
+                }
+            }
             return MarketPurchaseResult.Success;
         }
         public void Dispose()

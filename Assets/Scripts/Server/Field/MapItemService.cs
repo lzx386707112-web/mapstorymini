@@ -254,6 +254,21 @@ namespace Server.Field
             return mdrop;
         }
 
+        /// <summary>MapleMap.dropFromReactor -> spawnDrop；原 short delay 重载忽略 delay。</summary>
+        public static MapItem DropFromReactor(int mapId, int dropperId, int ownerId,
+            InventoryEntry item, float x, float y, float reactorX, float reactorY)
+        {
+            if (item == null) return null;
+            int partyId = PartyOf?.Invoke(ownerId) ?? -1;
+            CalcDropPos(mapId, x, y, reactorX, reactorY, out float dx, out float dy);
+            // MapleMap.dropFromReactor -> spawnDrop, not spawnItemDrop: no DROP_LIMIT
+            // disappearance branch, party drop type, then item-reactor activation.
+            var drop = NewItem(mapId,item,dropperId,ownerId,partyId,(byte)(partyId == -1 ? 0 : 1),false,dx,dy);
+            Register(mapId,drop,true);
+            Spawned?.Invoke(drop);
+            return drop;
+        }
+
         /// <summary>源端 spawnMesoDrop(meso, position, dropper, owner, playerDrop, droptype)。</summary>
         public static MapItem SpawnMesoDrop(int mapId, int meso, float x, float y,
             int dropperId, int ownerId, int partyId, bool playerDrop, byte dropType)

@@ -53,6 +53,8 @@ public static class QuestNpcChecks
             CheckNinaCandyChain();
             CheckQuestPresentation();
             CheckAllMapQuestLinks();
+            // 放最后：这轮会真的给经验/发道具（会改动 Profile），别影响前面的用例。
+            CheckQuestOptionScripts();
 
             Debug.Log("[QuestNpcCheck] 通过 " + pass + " 项，失败 " + fail + " 项");
         }
@@ -569,6 +571,280 @@ public static class QuestNpcChecks
         NpcDialogUi.MoveSelection(1);
         session.Reply(1, 0);
         Check(session.Dialog.SelectedLink == 0, "换页后须重新默认选中新页首项");
+    }
+
+    // ————————————————————————————————————————————————————————————
+    // 带选项类任务脚本的 selection 语义。
+    //
+    // 源端口径（BeiDou-Server）：
+    //   NPCMoreTalkHandler 收包 = lastMsg(上一次对话框类型) + action(0/1) + selection(int)
+    //   → QuestScriptManager.start/end(c, action, lastMsg, selection)
+    //   → 脚本 start/end(mode, type, selection)
+    // 「玩家选了第几项」必须原样进到脚本第三个参数，脚本按 selection 的分支才有意义。
+    //
+    // 全量遍历（scripts/quest 470 个；源端 scripts-zh-CN 468 个、scripts 274 个，三处集合一致）：
+    // 带选项类调用（sendSimple / sendGetNumber / sendGetText / sendSelectLevel …）的任务脚本
+    // 只有 12 个：20008 2001 20020 21013 2230 2293 3301 3303 3414 3414_free10rate 3927 3953。
+    // 这里逐个用**真实脚本**跑一遍，验「选对」和「选错」的结果确实不同。
+    static void CheckQuestOptionScripts()
+    {
+        string[] names = { "20008", "2001", "20020", "21013", "2230", "2293",
+                           "3301", "3303", "3414", "3414_free10rate", "3927", "3953" };
+        foreach (var n in names)
+            Check(ScriptSource.Load("quest", n) != null, "quest/" + n + " 取不到脚本");
+
+        // ——— 1. 客户端链路：菜单里选中的链接号必须原样进任务脚本第三参 ———
+        Profile.ResetQuest(2293);
+        var ui = QuestScriptSession(2293, true);
+        Check(ui != null && ui.LastError == null, "2293 脚本必须能直接跑起来");
+        Check(ui.Dialog.Mode == NpcDialogMode.Simple, "2293 首屏必须是 #L 选项菜单");
+        var songLinks = DialogFlow.Links(ui.Dialog.Content);
+        Check(songLinks.Count == 4 && songLinks[0] == 1 && songLinks[3] == 4,
+            "2293 的选项链接号必须是 1/2/3/4（脚本按 selection 取分支，不是按数组下标）");
+        SetActive(ui);
+        NpcDialogUi.MoveSelection(1);
+        NpcDialogUi.MoveSelection(1);
+        NpcDialogUi.MoveSelection(1);
+        Check(ui.Dialog.SelectedLink == 4, "菜单上下键必须能移动到第 4 项");
+        typeof(NpcDialogUi).GetMethod("ConfirmSelection",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+            .Invoke(null, new object[] { ui });
+        Check(ui.Dialog.Mode == NpcDialogMode.GetNumber,
+            "确认选中项后必须把链接号 4 送进任务脚本（客户端 → selection → 脚本第三参）");
+        ui.Close();
+
+        // ——— 2. 2293：真校验答案 ———
+        Profile.ResetQuest(2293);
+        var song = QuestScriptSession(2293, true);
+        song.Reply(1, 1);
+        Check(song.Dialog.RawText.Contains("令人尴尬"), "2293 选 1 必须进失败分支（selection 确实送到了脚本）");
+        Check(!Profile.IsQuestCompleted(2293), "2293 选错不得完成任务");
+        song.Close();
+
+        Profile.ResetQuest(2293);
+        song = QuestScriptSession(2293, true);
+        song.Reply(1, 4);
+        Check(song.Dialog.Mode == NpcDialogMode.GetNumber, "2293 选 4 必须进入数字输入");
+        song.Reply(1, 1);
+        Check(!Profile.IsQuestCompleted(2293), "2293 答错（输入 1）不得完成任务");
+        Check(!song.Dialog.RawText.Contains("所以这就是他演奏的那首歌"), "2293 答错不得给过关文案");
+        song.Close();
+
+        Profile.ResetQuest(2293);
+        song = QuestScriptSession(2293, true);
+        song.Reply(1, 4);
+        int songLv = Profile.level;
+        long expBefore = Profile.experience;
+        song.Reply(1, 3);
+        Check(Profile.IsQuestCompleted(2293), "2293 答对（输入 3）必须完成任务");
+        Check(GrantedExp(songLv, expBefore) == 32500, "2293 答对必须给 32500 经验");
+        song.Close();
+
+        // ——— 3. 3927：真校验答案 ———
+        Profile.ResetQuest(3927);
+        Profile.SetQuestProgress(3927, "", "1");   // 脚本要 getQuestProgress(3927)=="1" 才给选项
+        var wall = QuestScriptSession(3927, true);
+        Check(wall.Dialog.Mode == NpcDialogMode.Simple, "3927 首屏必须是选项菜单");
+        wall.Reply(1, 1);
+        Check(!Profile.IsQuestCompleted(3927), "3927 选错（拜伦爱西林）不得完成任务");
+        Check(wall.Disposed, "3927 选错必须结束对话（源端 sendOk + dispose）");
+        wall.Close();
+
+        Profile.ResetQuest(3927);
+        Profile.SetQuestProgress(3927, "", "1");
+        wall = QuestScriptSession(3927, true);
+        wall.Reply(1, 0);
+        Check(wall.Dialog.Mode == NpcDialogMode.Simple, "3927 选对必须进入第二问");
+        wall.Reply(1, 0);
+        Check(Profile.IsQuestCompleted(3927), "3927 选对必须完成任务");
+        wall.Close();
+
+        // ——— 4. 20008：真校验答案（两个分支都可达）———
+        Profile.ResetQuest(20008);
+        var knight = QuestScriptSession(20008, false);
+        Check(knight.Dialog.Mode == NpcDialogMode.Simple, "20008 首屏必须是选项菜单");
+        knight.Reply(1, 0);
+        Check(!Profile.IsQuestCompleted(20008), "20008 选 0（我稍后再试试）不得完成任务");
+        Check(knight.Disposed, "20008 选 0 必须结束对话");
+        knight.Close();
+
+        Profile.ResetQuest(20008);
+        knight = QuestScriptSession(20008, false);
+        knight.Reply(1, 1);
+        Check(Profile.IsQuestCompleted(20008), "20008 选 1（我不怕）必须完成任务");
+        knight.Close();
+
+        // ——— 5. 20020：真校验答案（选 1 提前退出，选 0 走完才完成）———
+        Profile.ResetQuest(20020);
+        var cygnus = QuestScriptSession(20020, false);
+        cygnus.Reply(1);
+        cygnus.Reply(1);
+        Check(cygnus.Dialog.Mode == NpcDialogMode.Simple, "20020 第三屏必须是选项菜单");
+        cygnus.Reply(1, 1);
+        Check(!Profile.IsQuestCompleted(20020), "20020 选 1（不，我没事）不得完成任务");
+        Check(cygnus.Disposed, "20020 选 1 必须提前结束");
+        cygnus.Close();
+
+        Profile.ResetQuest(20020);
+        cygnus = QuestScriptSession(20020, false);
+        cygnus.Reply(1);
+        cygnus.Reply(1);
+        cygnus.Reply(1, 0);
+        Check(cygnus.Dialog.Mode == NpcDialogMode.YesNo, "20020 选 0 必须进入是/否确认");
+        cygnus.Reply(1);
+        Check(Profile.IsQuestCompleted(20020), "20020 确认后必须完成任务");
+        cygnus.Close();
+
+        // ——— 6. 2230：真校验答案（selection==0 才继续）———
+        Profile.ResetQuest(2230);
+        var egg = QuestScriptSession(2230, true);
+        Check(egg.Dialog.Mode == NpcDialogMode.Simple, "2230 首屏必须是选项菜单");
+        egg.Reply(1, 0);
+        Check(egg.Dialog.RawText.Contains("宠物"), "2230 选 0 必须继续推进");
+        Check(!Profile.IsQuestCompleted(2230), "2230 没走完不得完成任务");
+        egg.Close();
+
+        Profile.ResetQuest(2230);
+        egg = QuestScriptSession(2230, true);
+        egg.Reply(1, 1);   // 界面上选不到（只有一个选项），但脚本的闸门必须只认 0
+        Check(!Profile.IsQuestCompleted(2230), "2230 选非 0 不得放行");
+        Check(!egg.Dialog.Visible, "2230 选非 0 不得继续对话");
+        egg.Close();
+
+        // ——— 7. 21013：单选项，无对错语义 ——
+        Profile.ResetQuest(21013);
+        var gift = QuestScriptSession(21013, false);
+        Check(gift.Dialog.Mode == NpcDialogMode.Simple, "21013 首屏必须是选项菜单");
+        gift.Reply(1, 0);
+        Check(gift.Dialog.Mode == NpcDialogMode.AcceptDecline, "21013 选 0 之后是接受/拒绝页");
+        gift.Close();
+
+        Profile.ResetQuest(21013);
+        gift = QuestScriptSession(21013, false);
+        gift.Reply(1, 5);
+        Check(gift.Dialog.Mode == NpcDialogMode.AcceptDecline,
+            "21013 的选项不参与分支：换个选项号也是同一页（无对错语义）");
+        gift.Close();
+
+        // ——— 8. 3953：全程不看 selection ———
+        Profile.ResetQuest(3953);
+        int dayuLv = Profile.level;
+        long dayuExp = Profile.experience;
+        var dayu = QuestScriptSession(3953, true);
+        for (int i = 0; i < 4; i++) dayu.Reply(1, 0);
+        Check(Profile.IsQuestCompleted(3953), "3953 走完四问必须完成任务");
+        Check(GrantedExp(dayuLv, dayuExp) == 20000, "3953 必须给 20000 经验");
+        dayu.Close();
+
+        Profile.ResetQuest(3953);
+        dayu = QuestScriptSession(3953, true);
+        for (int i = 0; i < 4; i++) dayu.Reply(1, 1);
+        Check(Profile.IsQuestCompleted(3953),
+            "3953 是唯一不校验答案的：选 1 和选 0 一样放行（源端脚本本来就不看 selection）");
+        dayu.Close();
+
+        // ——— 9. 3301 / 3303：选项即下标 + 持有量校验 ———
+        Profile.ResetQuest(3301);
+        var ore = QuestScriptSession(3301, true);
+        Check(ore.Dialog.RawText.Contains("矿石") && !Profile.IsQuestCompleted(3301),
+            "3301 没有矿石时必须拒绝交易");
+        ore.Close();
+
+        Profile.ResetQuest(3303);
+        ore = QuestScriptSession(3303, true);
+        Check(!Profile.IsQuestCompleted(3303), "3303 没有矿石不得完成任务");
+        ore.Close();
+
+        Profile.AddItem(4020000, 2);
+        Profile.ResetQuest(3301);
+        ore = QuestScriptSession(3301, true);
+        Check(ore.Dialog.Mode == NpcDialogMode.Simple, "3301 有矿石时必须是选项菜单");
+        var oreLinks = DialogFlow.Links(ore.Dialog.Content);
+        Check(oreLinks.Count == 1 && oreLinks[0] == 0, "3301 的选项必须按持有矿石生成（这里是 #L0#）");
+        ore.Reply(1, 0);
+        Check(Profile.IsQuestCompleted(3301), "3301 交出矿石必须完成任务");
+        Check(Profile.ItemCount(4020000) == 0, "3301 必须扣掉 2 个矿石");
+        ore.Close();
+
+        // ——— 10. 2001 / 3414 / 3414_free10rate：选项即数组下标 ———
+        var scrollQuests = new (int Id, string Script)[] { (2001, "2001"), (3414, "3414"), (3414, "3414_free10rate") };
+        foreach (var pair in scrollQuests)
+        {
+            int qid = pair.Id;
+            Profile.ResetQuest(qid);
+            var scroll = QuestScriptSession(qid, true, pair.Script);
+            scroll.Reply(1);
+            Check(scroll.LastError == null, pair.Script + " 选卷轴页不得报未迁移接口");
+            Check(scroll.Dialog.Mode == NpcDialogMode.Simple, pair.Script + " 第二屏必须是卷轴选项菜单");
+            var ids = ScrollIds(scroll.Dialog.RawText);
+            var links = DialogFlow.Links(scroll.Dialog.Content);
+            Check(ids.Count > 0 && ids.Count == links.Count, pair.Script + " 每个选项必须对应一件卷轴");
+            scroll.Reply(1, 0);
+            Check(Profile.ItemCount(ids[0]) > 0, pair.Script + " 选第 0 项必须发对应卷轴（selection 是数组下标）");
+            Check(Profile.IsQuestCompleted(qid), pair.Script + " 交付后必须完成任务");
+            scroll.Close();
+        }
+
+        // ——— 11. 职业样式映射必须与源端 Job.getJobStyleInternal 一致 ———
+        Check(JobEnum.StyleOf(100, true) == 100, "战士的样式必须是 WARRIOR");
+        Check(JobEnum.StyleOf(0, true) == 0, "新手的样式必须是 BEGINNER");
+        Check(JobEnum.StyleOf(200, true) == 200, "魔法师的样式必须是 MAGICIAN");
+        Check(JobEnum.StyleOf(300, true) == 300, "弓手的样式必须是 BOWMAN");
+        Check(JobEnum.StyleOf(320, true) == 320, "弩弓手的样式必须是 CROSSBOWMAN");
+        Check(JobEnum.StyleOf(400, true) == 400, "飞侠的样式必须是 THIEF");
+        Check(JobEnum.StyleOf(1100, true) == 100, "魂骑士的样式归到 WARRIOR");
+        Check(JobEnum.StyleOf(1300, true) == 300, "风灵使者的样式归到 BOWMAN");
+        Check(JobEnum.StyleOf(1301, true) == 300, "风灵使者二转仍归 BOWMAN（源端只认 jobid/10==32 的弩弓手族）");
+        Check(JobEnum.StyleOf(320, true) == 320, "弩弓手的样式必须是 CROSSBOWMAN");
+        Check(JobEnum.StyleOf(322, true) == 320, "箭神也归到 CROSSBOWMAN（源端 jobid/10==32）");
+        Check(JobEnum.StyleOf(1400, true) == 400, "夜行者的样式归到 THIEF");
+        Check(JobEnum.StyleOf(2200, true) == 200, "龙神的样式归到 MAGICIAN");
+        Check(JobEnum.StyleOf(500, false) == 520, "海盗按 str≤dex 走 GUNSLINGER");
+        Check(JobEnum.StyleOf(500, true) == 510, "海盗按 str>dex 走 BRAWLER");
+
+        NpcSession.CloseActive();
+    }
+
+    // 造一个任务脚本会话（源端 QuestScriptManager.start(c, questid, npc)）。
+    // end=true 走脚本的 end()，false 走 start()——与源端 isStart() 决定的一样。
+    // scriptName 只在「同一任务的另一个脚本文件」时不同（3414 / 3414_free10rate）。
+    static NpcSession QuestScriptSession(int questId, bool end, string scriptName = null)
+    {
+        string source = ScriptSource.Load("quest", scriptName ?? questId.ToString());
+        if (string.IsNullOrEmpty(source)) return null;
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var session = (NpcSession)Activator.CreateInstance(typeof(NpcSession), flags, null,
+            new object[] { 0, questId, true, end }, null);
+        var begin = Array.Find(typeof(NpcSession).GetMethods(flags),
+            m => m.Name == "Begin" && m.GetParameters().Length == 2);
+        begin.Invoke(session, new object[] { source, "quest/" + (scriptName ?? questId.ToString()) });
+        return session;
+    }
+
+    static void SetActive(NpcSession session)
+    {
+        typeof(NpcSession).GetField("<Active>k__BackingField",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
+            .SetValue(null, session);
+    }
+
+    // 脚本把卷轴写成 "#L<i># #i<道具id># #t<道具id>#"，从正文里取回道具 id。
+    static List<int> ScrollIds(string text)
+    {
+        var ids = new List<int>();
+        foreach (System.Text.RegularExpressions.Match m in
+            System.Text.RegularExpressions.Regex.Matches(text ?? "", @"#i(\d+)#"))
+            ids.Add(int.Parse(m.Groups[1].Value));
+        return ids;
+    }
+
+    // 这一轮实际发出去多少经验。升级会把当级所需经验扣掉（LevelSystem.AddExperience），
+    // 所以「剩余经验差 + 升级吃掉的那一级」才是脚本真正发出去的经验。
+    static long GrantedExp(int levelBefore, long expBefore)
+    {
+        long gained = Profile.experience - expBefore;
+        if (Profile.level > levelBefore) gained += ExpTable.Needed(levelBefore);
+        return gained;
     }
 
     static void CheckBirthRoutes()

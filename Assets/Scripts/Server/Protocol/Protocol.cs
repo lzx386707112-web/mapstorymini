@@ -142,6 +142,7 @@ public interface ITransport
     CashResponse Cash(CashRequest req);
     Server.Bot.PartyGrindResponse PartyGrind(Server.Bot.PartyGrindRequest req);
     Server.Bot.Trade.BotTradeResponse BotTrade(Server.Bot.Trade.BotTradeRequest req);
+    Server.Bot.MarketResponse Market(Server.Bot.MarketRequest req);
     InventoryChangeResponse ChangeInventory(InventoryChangeRequest req);
     EquipPatchResponse UpdateEquip(EquipPatchRequest req);
     SlotRemoveResponse RemoveSlot(SlotRemoveRequest req);
@@ -161,6 +162,7 @@ public sealed class InProcessTransport : ITransport
     public SocialResponse Social(SocialRequest r) => server.Social.Handle(r);
     public Server.Bot.PartyGrindResponse PartyGrind(Server.Bot.PartyGrindRequest r) => Server.Bot.BotPartyGrindProtocol.Handle(server.Bots,r);
     public Server.Bot.Trade.BotTradeResponse BotTrade(Server.Bot.Trade.BotTradeRequest r) => server.Bots.tradeProtocol.Handle(r);
+    public Server.Bot.MarketResponse Market(Server.Bot.MarketRequest r) => server.Bots.marketProtocol.Handle(r);
     public CommunityResponse Community(CommunityRequest r) => server.Community.Handle(r);
     public BossResponse Boss(BossRequest r) => server.Bosses.Handle(r);
     public InventoryChangeResponse ChangeInventory(InventoryChangeRequest r) => NativeInventoryService.Handle(server.Db, r);

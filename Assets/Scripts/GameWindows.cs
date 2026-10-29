@@ -357,10 +357,15 @@ public static class InvenWindow
             if (icon != null) GUI.DrawTexture(slot, icon, ScaleMode.ScaleToFit);
             if (tab != 0) Text(At(r, x, y + 20, 31, 12), Profile.ItemCount(id).ToString(), true, 9);
             if (Event.current.type == EventType.Repaint && id > 0 && slot.Contains(Pointer.Pos)) ItemTooltip.SetHover(id, false, equipment == null ? null : equipment[index]);
+            if (press && NativeTradeWindow.CanOffer && slot.Contains(Pointer.Pos))
+            {
+                var offered = equipment == null ? GameSession.Character.inventory.Find(item => item.itemId == id && item.inventoryType == tab + 1 && item.position > 0) : equipment[index];
+                NativeTradeWindow.BeginItemDrag(offered);
+            }
             if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && slot.Contains(Pointer.Pos))
             {
                 Pointer.ConsumeClick();
-                NativeInventoryActions.DoubleClick(id, equipment == null ? 0 : equipment[index].position);
+                if (!NativeTradeWindow.CanOffer) NativeInventoryActions.DoubleClick(id, equipment == null ? 0 : equipment[index].position);
                 break; // The action can change the inventory and open another window.
             }
         }
@@ -497,7 +502,8 @@ public static class GameWindows
         ShortcutWindow.Visible || HelpWindow.Visible || GameMenuWindow.Visible ||
         SkillWindow.Visible || QuestWindow.Visible || KeyConfigWindow.Visible ||
         NativeMapWindows.WorldVisible || NativeSocialWindow.Visible || NativeMonsterBook.Visible ||
-        NativeCommunityWindow.Visible || NativeMedalWindow.Visible || ShopWindow.Visible;
+        NativeCommunityWindow.Visible || NativeMedalWindow.Visible || ShopWindow.Visible ||
+        NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible;
 
     // ——————————————— Esc 分层关闭 ———————————————
     // 原版 Esc 是「系统菜单」键，但用户要求：只要有面板开着，Esc 先关面板。
@@ -573,6 +579,10 @@ public static class GameWindows
     // 关掉最后打开的那个面板；没有面板时返回 false（调用方去开系统菜单）。
     public static bool CloseTop()
     {
+        if (NativeUtilPrompt.Visible) { NativeUtilPrompt.Cancel(); return true; }
+        if (NativeCharacterMenu.Visible) { NativeCharacterMenu.Close(); return true; }
+        if (NativeTradeWindow.Visible) { NativeTradeWindow.Close(); return true; }
+        if (NativeMarketWindow.Visible) { NativeMarketWindow.Close(); return true; }
         TrackPanels();
         if (openOrder.Count == 0) return false;
         var top = openOrder[openOrder.Count - 1];
@@ -587,6 +597,10 @@ public static class GameWindows
         TrackPanels();
         ItemTooltip.Reset();
         NativeCashWindow.Tick();
+        bool enabled = GUI.enabled;
+        GUI.enabled &= !NativeUtilPrompt.Visible;
+        try
+        {
         NativeMapWindows.DrawMini();
         StatWindow.Draw();
         EquipWindow.Draw();
@@ -603,7 +617,13 @@ public static class GameWindows
         NativeCommunityWindow.DrawBoard();
         NativeCommunityWindow.Draw();
         NativeMedalWindow.Draw();
+        NativeTradeWindow.Draw();
+        NativeMarketWindow.Draw();
+        NativeCharacterMenu.Draw();
         ItemTooltip.Flush();
+        }
+        finally { GUI.enabled = enabled; }
+        NativeUtilPrompt.Draw();
         UiPreviewHook.Emit();
     }
 }

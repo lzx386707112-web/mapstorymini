@@ -20,6 +20,7 @@ namespace Server.Bot
         public readonly BotPartyService parties;
         public readonly BotPartyGrindService partyGrind;
         public readonly MarketShopService shops;
+        public readonly MarketShopProtocol marketProtocol;
         // 移动事件：**只有真的有人订阅时才把包发出来**。单机宿主没有网络出口，
         // 没人订阅时整条「构包 → 转发」链都是白做（每秒几千次分配），
         // 所以这里用自定义访问器把「有没有消费者」同步给下游，而不是无条件接上。
@@ -53,6 +54,7 @@ namespace Server.Bot
                 targetId: actor.IsBot() ? actor.trade?.partner?.actor.id ?? 0 : actor.id);
             maps = BotNavigationMapLoader.Load();
             shops = new MarketShopService(db, trades, GetMap);
+            marketProtocol = new MarketShopProtocol(shops, id => players.TryGetValue(id, out var player) ? player : null);
             BotEnvironment.PopulateMarketRooms = shops.PopulateRooms;
             partyGrind = new BotPartyGrindService(this.parties,GetMap,null,db);
             BotTypeManager.PartyGrind = partyGrind;
@@ -193,7 +195,7 @@ namespace Server.Bot
             return actor;
         }
         public void RemovePlayer(int id)
-        { partyGrind.Stop(id); if (players.TryGetValue(id, out var actor)) { actor.trade?.Decline(); actor.online = false; } parties.EndSession(id); players.Remove(id); BotTypeManager.Messenger.Leave(id); observers.Refresh(); }
+        { partyGrind.Stop(id); shops.Leave(id); if (players.TryGetValue(id, out var actor)) { actor.trade?.Decline(); actor.online = false; } parties.EndSession(id); players.Remove(id); BotTypeManager.Messenger.Leave(id); observers.Refresh(); }
         public BotActor Player(int id) => players.TryGetValue(id,out var actor) ? actor : null;
         public IEnumerable<BotActor> Players => players.Values;
         public void Drive(long nowMs)

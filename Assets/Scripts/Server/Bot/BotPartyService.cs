@@ -86,6 +86,22 @@ namespace Server.Bot
             else { membership.Remove(id); party.members.Remove(id); Persist(id,0); Left?.Invoke(id); }
             db.Save();
         }
+        // Party.expelFromParty: only the leader may expel an existing member.
+        public bool Expel(int sender, int member)
+        {
+            var party = For(sender);
+            if (party == null || party.leader != sender || !party.members.Contains(member)) return false;
+            membership.Remove(member); party.members.Remove(member); Persist(member,0); Left?.Invoke(member);
+            db.Save(); return true;
+        }
+        // PartyOperationHandler case 6 / World.updateParty(CHANGE_LEADER).
+        // The source handler does not add a same-map/channel restriction.
+        public bool ChangeLeader(int sender, int member)
+        {
+            var party = For(sender);
+            if (party == null || !party.members.Contains(member)) return false;
+            party.leader = member; return true;
+        }
         public void EndSession(int id) { Leave(id); players.Remove(id); }
         public IEnumerable<BotActor> Members(int id)
         {

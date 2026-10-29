@@ -304,7 +304,9 @@ public static class WzCharacter
         if (clips.TryGetValue(cacheKey, out var clip)) return clip;
         var recipe = Recipe(key); if (recipe == null) return null;
         string pose = Pose(recipe, action); if (pose == null) return null;
-        var body = Equipment((string)((List<object>)recipe["ids"])[0]);
+        var body = recipe.TryGetValue("mount", out var mount)
+            ? WzAssets.FileRoot("Character/TamingMob/" + Convert.ToInt32(mount).ToString("D8") + ".img")
+            : Equipment((string)((List<object>)recipe["ids"])[0]);
         var frames = WzAssets.Frames(body.Get(pose));
         // Existing dead pose has no source frame: retain its transparent single-frame transition.
         if (frames.Count == 0 && action != "die") return null;
@@ -417,6 +419,7 @@ public static class WzCharacter
     }
     static List<Part> Placements(Dictionary<string, object> recipe, ref string pose, ref int frame)
     {
+        if (recipe.ContainsKey("mount")) return MountedPlacements(recipe, pose, frame);
         var ids = (List<object>)recipe["ids"];
         var body = Equipment((string)ids[0]);
         for (int i = 0; i < 64; i++)
@@ -513,6 +516,41 @@ public static class WzCharacter
         parts.Sort((a, b) => { int z = a.Z.CompareTo(b.Z); return z != 0 ? z : a.Sequence.CompareTo(b.Sequence); });
         return parts;
     }
+    static List<Part> MountedPlacements(Dictionary<string, object> recipe, string pose, int frame)
+    {
+        var rider = new Dictionary<string, object>(recipe); rider.Remove("mount");
+        // 40797D: native mount rider action 39=sit; ladder/rope use 37=rope.
+        string riderPose = pose == "ladder" || pose == "rope" ? "rope" : "sit";
+        int riderFrame = 0;
+        var parts = Placements(rider, ref riderPose, ref riderFrame);
+        var mount = WzAssets.FileRoot("Character/TamingMob/" + Convert.ToInt32(recipe["mount"]).ToString("D8") + ".img");
+        var source = mount.Get(pose + "/" + frame)?.TryResolve();
+        var mountParts = new List<Part>();
+        Vector2Int saddle = Vector2Int.zero, riderNavel = Vector2Int.zero;
+        bool hasSaddle = false;
+        if (source != null) foreach (var child in source.Children)
+        {
+            var canvas = child.TryResolve();
+            if (canvas == null || canvas.Kind != "Canvas") continue;
+            var part = new Part { Category = "TamingMob", Name = child.Name, Node = canvas,
+                Origin = Vector(canvas.Get("origin")), Slot = canvas.Text("z"), Sequence = parts.Count + mountParts.Count };
+            part.Top = -part.Origin; part.Z = BaseZ(part.Slot);
+            var anchors = canvas.Get("map");
+            if (anchors != null) foreach (var point in anchors.Children) part.Anchors[point.Name] = Vector(point);
+            if (!hasSaddle && part.Anchors.TryGetValue("navel", out saddle)) hasSaddle = true;
+            mountParts.Add(part);
+        }
+        foreach (var part in parts)
+            if (part.Category == "Body" && part.Name == "body" && part.Anchors.TryGetValue("navel",out var point))
+            { riderNavel = part.Top + part.Origin + point; break; }
+        // 455826..45583B: mount navel minus rider navel, not a fixed seat offset.
+        foreach (var part in parts) part.Top += saddle - riderNavel;
+        foreach (var part in mountParts)
+            if (part.Anchors.TryGetValue("navel",out var point)) part.Top = saddle - part.Origin - point;
+        parts.AddRange(mountParts);
+        parts.Sort((a,b) => { int z = a.Z.CompareTo(b.Z); return z != 0 ? z : a.Sequence.CompareTo(b.Sequence); });
+        return parts;
+    }
     public static Sprite ExpressionFrame(string uri, string expression, float elapsed)
     {
         string[] address = uri.Substring("avatar://".Length).Split('/');
@@ -550,8 +588,33 @@ public static class WzCharacter
         return Compose(uri, recipe, pose, frame);
     }
 
+    // Original avatar attachment vectors are named IMG map anchors, in feet space.
+    // 4010F4 identifies BE7884 as brow; 41246B writes it to final frame +14.
+    public static Vector2Int Attachment(string uri, string name)
+    {
+        if (string.IsNullOrEmpty(uri)) return Vector2Int.zero;
+        string[] address = uri.Substring("avatar://".Length).Split('/');
+        var recipe = Recipe(address[0]);
+        if (recipe == null) return Vector2Int.zero;
+        string pose = address[1]; int frame = int.Parse(address[2]);
+        foreach (var part in Placements(recipe, ref pose, ref frame))
+            if (part.Anchors.TryGetValue(name, out var point)) return part.Top + part.Origin + point;
+        return Vector2Int.zero;
+    }
+
     static readonly Dictionary<string, Dictionary<string, object>> appearanceRecipes =
         new Dictionary<string, Dictionary<string, object>>();
+
+    public static string MountedAppearance(string key, int itemId)
+    {
+        string mounted = key + "_mount_" + itemId;
+        if (!appearanceRecipes.ContainsKey(mounted))
+        {
+            var recipe = new Dictionary<string, object>(Recipe(key));
+            recipe["mount"] = itemId; appearanceRecipes.Add(mounted, recipe);
+        }
+        return mounted;
+    }
 
     // 登录/选角/建号界面的预览：外观由 CHARLIST/建号选项直接给装备 ID，
     // 不经过职业配方，仍由同一套原版部件合成器拼帧。

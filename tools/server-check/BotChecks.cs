@@ -568,6 +568,12 @@ static class BotChecks
         check(messenger.InviteMember(player,seller) && messenger.Answer(seller.id,messenger.Invitation(seller.id),true) &&
             messenger.InviteMember(seller,buyer) && messenger.Answer(buyer.id,messenger.Invitation(buyer.id),true) && messenger.Members(id).Count==3,
             "普通信使邀请复用已有房间并允许实际三人入房");
+        messenger.Leave(seller.id);
+        check(messenger.Members(id).Find(m => m.id == buyer.id).messengerPosition == 2,
+            "信使中间成员退出后右侧成员保留原座位，不按列表压缩");
+        check(messenger.InviteMember(player,seller) && messenger.Answer(seller.id,messenger.Invitation(seller.id),true) &&
+            messenger.Members(id).Find(m => m.id == seller.id).messengerPosition == 1,
+            "信使新成员复用最小空座位");
         messenger.Leave(buyer.id); messenger.InviteMember(player,buyer);
         for(int tick=0;tick<6;tick++) messenger.TickInvitationTimeouts();
         check(messenger.Invitation(buyer.id)>0,"信使邀请六轮超时计数后仍保留（原端先检查大于5）");
@@ -802,6 +808,46 @@ static class BotChecks
             "金币不足不修改背包和余额");
         buyer.trade = new TradeProbe {actor = buyer};
         check(!trade.Purchase(buyer, potion, 1) && buyer.meso == 993, "交易托管期间拒绝商店购买"); buyer.trade = null;
+        using var shops = new MarketShopService(db, trade, _ => null);
+        var merchant = new MarketShop {ownerId = 810010, open = true, mapId = 910000001, world = 0, channel = 1};
+        merchant.items.Add(new MarketShopStock {item = potion.Copy(), bundles = 3, price = 100000});
+        var registry = (Dictionary<int, MarketShop>)typeof(MarketShopService).GetField("shops", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(shops);
+        registry.Add(merchant.ownerId, merchant);
+        buyer.online = true; buyer.world = 0; buyer.channel = 1; buyer.mapId = merchant.mapId; buyer.meso = 1000000; buyer.name = "买家";
+        check(shops.Visit(buyer, merchant.ownerId) == merchant && shops.Buy(buyer, merchant.ownerId, 0, 2) == MarketPurchaseResult.Success
+            && merchant.merchantMeso == 198400 && merchant.sold.Count == 1 && merchant.sold[0].quantity == 4
+            && merchant.items[0].bundles == 1 && buyer.meso == 800000, "雇佣商人扣原手续费、按实际件数登记销售且减少捆数");
+        shops.Leave(buyer.id);
+        check(shops.Buy(buyer, merchant.ownerId, 0, 1) == MarketPurchaseResult.Unavailable && merchant.items[0].bundles == 1,
+            "离开访问会话后拒绝继续购买");
+        var visitor = new BotActor {id = buyer.id, online = true, world = buyer.world, channel = buyer.channel, mapId = buyer.mapId};
+        var protocol = new MarketShopProtocol(shops, id => id == visitor.id ? visitor : null);
+        var snapshot = protocol.Handle(new MarketRequest {characterId = buyer.id, ownerId = merchant.ownerId, operation = MarketOperation.Visit});
+        check(snapshot.ok && snapshot.visiting.items[0].bundles == 1, "商店协议返回实际访问与库存");
+        snapshot.visiting.items[0].item.quantity = 900;
+        snapshot.visiting.items[0].bundles = 900;
+        check(merchant.items[0].item.quantity == 2 && merchant.items[0].bundles == 1, "商店快照不暴露权威商品与库存引用");
+        visitor.mapId++;
+        snapshot = protocol.Handle(new MarketRequest {characterId = buyer.id, operation = MarketOperation.Read});
+        check(snapshot.visiting == null && snapshot.shops.Count == 0, "读协议在离图后释放访问且不返回其他图商店");
+        visitor.mapId--;
+        visitor.online = false;
+        check(!protocol.Handle(new MarketRequest {characterId = buyer.id}).ok, "离线角色不能操作商店协议");
+        visitor.online = true;
+        var seller = new BotCharacter {id = 810011, meso = int.MaxValue, online = true}; BotRegistry.Add(seller);
+        try
+        {
+            var stall = new MarketShop {ownerId = seller.id, open = true, playerStore = true, mapId = buyer.mapId, world = 0, channel = 1};
+            stall.items.Add(new MarketShopStock {item = potion.Copy(), bundles = 2, price = 100000}); registry.Add(seller.id, stall);
+            shops.Visit(buyer, seller.id);
+            check(shops.Buy(buyer, seller.id, 0, 1) == MarketPurchaseResult.OwnerMesoFull && buyer.meso == 800000 && stall.items[0].bundles == 2,
+                "摊主金币容量按税前总额校验且失败不扣购买者金币");
+            seller.meso = 0;
+            check(shops.Buy(buyer, seller.id, 0, 2) == MarketPurchaseResult.Success && seller.meso == 198400
+                && stall.sold[0].quantity == 2 && !stall.open, "玩家摊位税后直接入账、销售按捆登记且全部售完关闭");
+        }
+        finally { BotRegistry.Remove(seller); }
+
     }
 
     static void CheckOriginalGeometryAndGroundPhysics(Action<bool, string> check)
@@ -920,6 +966,18 @@ static class BotChecks
         var dropper = new BotCharacter { id = 20998, name = "Dropper", mapId = 700000000, x = 0, y = 250 };
 
         var parties = new BotPartyService(db);
+        var partyGuest = new BotActor { id = 20997, name = "PartyGuest", level = 50, world = player.world };
+        var outsider = new BotActor { id = 20996, name = "Outsider", level = 50, world = player.world };
+        parties.Create(player); parties.Join(partyGuest,parties.For(player.id).id);
+        check(!parties.Expel(partyGuest.id,player.id) && !parties.ChangeLeader(player.id,outsider.id),
+            "队员不能逐出队长，移交队长必须指向现有队员");
+        check(parties.ChangeLeader(player.id,partyGuest.id) && parties.For(player.id).leader == partyGuest.id,
+            "移交队长保留同一队伍及成员关系");
+        int removed = 0; parties.Left += id => { if (id == player.id) removed++; };
+        check(parties.Expel(partyGuest.id,player.id) && parties.For(player.id) == null &&
+            parties.For(partyGuest.id).members.Count == 1 && removed == 1 && CharactersDao.FindById(db,player.id).party == 0,
+            "逐出队员同步成员索引、持久化队伍ID及离队事件，不解散其余队伍");
+        parties.Leave(partyGuest.id);
         var trades = new BotTradeService(db, BotItemCatalog.Shared);
         MapItemService.PartyOf = id => parties.For(id)?.id ?? -1;
         MapItemService.IsPartyMember = (ownerId, characterId) => parties.For(ownerId)?.members.Contains(characterId) ?? false;
@@ -1665,7 +1723,7 @@ static class BotChecks
             // 地图分片在后台线程解析、主线程只按帧让位：测试里没有真实帧间隔，
             // 所以每帧补 1ms 真实等待，否则后台解析永远来不及完成。
             long clock = 1100;
-            for (int frame = 0; frame < 4000 && !Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete; frame++)
+            for (int frame = 0; frame < 30000 && !Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete; frame++)
             {
                 runtime.Drive(clock);
                 clock += 5;
@@ -1701,6 +1759,54 @@ static class BotChecks
         record.id = CharactersDao.Insert(db, record);
         var player = runtime.SynchronizePlayer(new FullCharacter { record = record }, record.map, 0, 0);
         BotCharacter Actor(int id) { var c = new BotCharacter { id = id, name = "StepBot" + id, level = 120, mapId = record.map }; BotRegistry.Add(c); return c; }
+        var diceActor = Actor(28890);
+        var dice = BotTypeManager.CreateAndSetBot(diceActor, BotType.DICE_BOT) as DiceBot;
+        check(dice != null, "DICE枚举接入真实骰子荷官");
+        dice.running = true;
+        dice.UpdateState();
+        dice.interactors.SetRespondant(player);
+        var diceHandler = typeof(DiceBot).GetMethod("HandleBetCommand", BindingFlags.Instance | BindingFlags.NonPublic);
+        diceHandler.Invoke(dice, new object[] { new ChatMessage(player, "bet han") });
+        check(dice.diceBotState == DiceBot.DiceBotState.Bet, "原端下注消息立即改BET，下一tick不会再进等待分支");
+        dice.UpdateState();
+        check(dice.diceBotState == DiceBot.DiceBotState.WaitForBet, "无地面赌注回等待，不能凭文字开赌");
+        dice.UpdateState();
+        check(dice.diceBotState == DiceBot.DiceBotState.WaitForBet, "无新下注消息时不重复检测旧下注");
+        dice.StopScheduledTask();
+        var host = BotTypeManager.CreateAndSetBot(Actor(28891), BotType.GAME_ZONE_HOST_BOT) as GameZoneHostBot;
+        check(host != null, "GAME_ZONE枚举接入招待员与原对话包");
+        host.running = true;
+        var drinkChoice = typeof(GameZoneHostBot).GetMethod("HandleDrinkPickResponse",BindingFlags.Instance | BindingFlags.NonPublic);
+        var selectedDrink = typeof(GameZoneHostBot).GetField("selectedDrink",BindingFlags.Instance | BindingFlags.NonPublic);
+        var serving = typeof(GameZoneHostBot).GetField("scripted",BindingFlags.Instance | BindingFlags.NonPublic);
+        drinkChoice.Invoke(host,new object[] {"coke"});
+        BotScheduler.Clock += 1999; BotTasks.Drive(BotScheduler.Clock);
+        check((int)selectedDrink.GetValue(host) == 0 && (bool)serving.GetValue(host),"招待员报单等待原2000ms，不提前交付饮料");
+        BotScheduler.Clock++; BotTasks.Drive(BotScheduler.Clock);
+        check((int)selectedDrink.GetValue(host) == 2020031 && !(bool)serving.GetValue(host),"招待员报单完成释放scripted，下一tick可继续上饮料");
+        drinkChoice.Invoke(host,new object[] {"water"});
+        host.StopScheduledTask();
+        BotScheduler.Clock += 2000; BotTasks.Drive(BotScheduler.Clock);
+        check((int)selectedDrink.GetValue(host) == 2020031 && !(bool)serving.GetValue(host),"招待员停止取消待完成报单，不再恢复旧请求");
+        var gachaActor = Actor(28892);
+        var gacha = BotTypeManager.CreateAndSetBot(gachaActor, BotType.GACHA_BOT) as GachaBot;
+        check(gacha != null, "GACHA枚举接入原扭蛋状态机");
+        gacha.running = true;
+        var previousPartyOf = MapItemService.PartyOf;
+        MapItemService.PartyOf = id => id == gachaActor.id ? 42 : previousPartyOf?.Invoke(id) ?? -1;
+        typeof(GachaBot).GetMethod("GachaPop", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(gacha, new object[] {new List<int> {2000002, 0}});
+        MapItemService.PartyOf = previousPartyOf;
+        var gachaReactors = MapReactorService.Get(gachaActor.mapId);
+        var gachaReactor = gachaReactors.Find(r => r.id == 2202004);
+        check(gachaReactor != null && gachaReactor.state == 4 && gachaReactor.alive && gachaReactor.respawnAt == 0,
+            "扭蛋生成真实2202004反应堆并执行三击加喷出末击，不擅自销毁或重生");
+        var gachaDrops = MapItemService.DroppedItems(gachaActor.mapId).FindAll(d => d.ownerCharacterId == gachaActor.id);
+        check(gachaDrops.Count == 2 && gachaDrops.Exists(d => d.ItemId == 2000002 && d.type == 1 && d.partyOwnerId == 42) &&
+            gachaDrops.Exists(d => d.IsMeso && d.type == 2 && d.partyOwnerId == 42),
+            "原MapleMap忽略喷出delay：道具与金币立即入图，并保留队伍道具归属与FFA金币");
+        foreach (var gachaDrop in gachaDrops) MapItemService.PickItemDrop(gachaDrop.mapId,gachaDrop,0);
+        gacha.StopScheduledTask();
+        MapReactorService.Clear(gachaActor.mapId);
         var jqActor = Actor(28901);
         var jq = BotTypeManager.CreateAndSetBot(jqActor, BotType.HENESYS_JQ_BOT) as HenesysJQBot;
         check(jq != null, "JQ枚举创建实际录制状态机");
@@ -1723,7 +1829,8 @@ static class BotChecks
             "掉落游戏自己接管交易，不进入通用交易FSM");
         var payment = (BotTradeService.Session)player.trade;
         payment.SetMeso(10000000); payment.Confirm(); drop.UpdateState();
-        At(2100); At(4200);
+        long paymentStart = BotScheduler.Clock;
+        At(paymentStart + 1100); At(paymentStart + 3200);
         check(drop.SelectedTier == "medium" && drop.LootPool?.IsEmpty == false && player.trade == null,
             "掉落游戏10m锁定后真实结算并加载原medium奖池");
         drop.UpdateState();
@@ -1741,7 +1848,8 @@ static class BotChecks
         var setTutorial = typeof(TutorialBot).GetMethod("SetState", BindingFlags.Instance | BindingFlags.NonPublic);
         setTutorial.Invoke(tutorial, new object[] { TutorialBot.TutorialState.GiftTrade });
         tutorial.UpdateState();
-        for (long now = 5000; now <= 120000 && tutorialActor.trade == null; now += 1000) At(now);
+        long tutorialStart = BotScheduler.Clock;
+        for (long now = tutorialStart + 1000; now <= tutorialStart + 116000 && tutorialActor.trade == null; now += 1000) At(now);
         check(tutorialActor.trade != null && player.trade != null,
             "教程送礼使用runtime真实交易服务，不跳过赠礼");
         tutorial.StopScheduledTask();

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 // Rules translated from BuddylistModifyHandler, Party.createParty,
 // PartySearchStartHandler, MessengerHandler and the chat handlers.
 // This transport hosts one active character; other saved characters are offline.
-public enum SocialOperation { Read, AddBuddy, AcceptBuddy, DeleteBuddy, CreateParty, LeaveParty, InviteParty, SearchParty, StopSearch, OpenMessenger, CloseMessenger, InviteMessenger, SendChat, AddMonsterCard, SetBookCover, AcceptMessenger, DeclineMessenger, AcceptParty, DeclineParty }
+public enum SocialOperation { Read, AddBuddy, AcceptBuddy, DeleteBuddy, CreateParty, LeaveParty, InviteParty, SearchParty, StopSearch, OpenMessenger, CloseMessenger, InviteMessenger, SendChat, AddMonsterCard, SetBookCover, AcceptMessenger, DeclineMessenger, AcceptParty, DeclineParty, ExpelParty, ChangePartyLeader }
 public enum NativeChatChannel { All, Whisper, Party, Buddy, Guild, Alliance, Spouse, Messenger }
 public sealed class SocialRequest
 {
@@ -16,13 +16,15 @@ public sealed class SocialRequest
     public int cardId;
     public int messengerRoom;
     public int partyId;
+    public int memberId;
     public long afterMessengerMessage;
 }
 public sealed class SocialMember
 {
-    public int id, level, job, mapId, channel;
+    public int id, level, job, mapId, channel, messengerPosition;
     public string name, group;
     public bool pending;
+    public string[] appearance;
 }
 public sealed class SocialResponse
 {
@@ -74,6 +76,12 @@ public sealed class NativeSocialService
                 else if (!Parties.Create(Parties.Actor(self))) error = "无法创建组队";
                 break;
             case SocialOperation.LeaveParty: Parties.Leave((int)self.id); if (searchOwner == self.id) searchOwner = 0; break;
+            case SocialOperation.ExpelParty:
+                if (!Parties.Expel((int)self.id,request.memberId)) error = "无法逐出该队员";
+                break;
+            case SocialOperation.ChangePartyLeader:
+                if (!Parties.ChangeLeader((int)self.id,request.memberId)) error = "该角色不在队伍中";
+                break;
             case SocialOperation.InviteParty:
                 if (request.target == self.name) error = "不能邀请自己";
                 else { var target = Parties.Find(request.target,self.world); if (target == null) error = "该角色不在线";
@@ -122,6 +130,9 @@ public sealed class NativeSocialService
             party = Parties.For((int)self.id) != null, searching = searchOwner == self.id, messenger = messengerOwner == self.id || BotMessenger.Contains((int)self.id),
             messengerInvite = BotMessenger.Invitation((int)self.id), messengerInviter = BotMessenger.Inviter((int)self.id),
             messengerMembers = BotMessenger.Members((int)self.id), messengerMessages = BotMessenger.Messages((int)self.id, request.afterMessengerMessage) };
+        foreach (var member in response.messengerMembers)
+            if (Parties.Get(member.id) is Server.Bot.BotCharacter bot)
+                member.appearance = Server.Bot.BotAppearance.CharacterIds(bot);
         var party = Parties.For((int)self.id);
         response.partyId = party?.id ?? 0; response.partyLeader = party?.leader ?? 0; response.partyInvite = Parties.Pending((int)self.id)?.party ?? 0;
         foreach (var actor in Parties.Members((int)self.id)) response.partyMembers.Add(new SocialMember { id = actor.id, name = actor.name, level = actor.level,job=actor.job,mapId=actor.mapId,channel=actor.channel });
