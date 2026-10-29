@@ -105,3 +105,12 @@ oracle 依赖 pefile/unicorn（本机 `/tmp/mapledash-reverse-venv/bin/python`�
 迁移CombatRules.Incoming在既有物理防御扣除之后、Resolve整数化之前调用InvincibleDamage；PlayerCtrl.TakeDamage传入真实INVINCIBLE状态，魔法伤害不参与。**这次仅对齐该状态的作用阶段与公式，既有Incoming的基础随机、防御、等级公式仍是单机近似，不能宣称整套受伤公式已与EXE一致**。原公式还有额外状态与伤害入口，仍需逐项核实。
 
 复现tools/native_invincible_oracle.py执行原标记构造与7933B2..7933E9，只stub secured getter，native-invincible-oracle.json的20组含小数伤害与百分比边界PASS；CharacterReactionChecks消费该oracle，验证真实2301003状态、物理减伤及魔法不变。/tmp/mapledash-completion-invincible.log退出0，包含INVINCIBLE20组、STANCE84组与真实受击/取消、既有冲量84组及飘字54组回归。未进行Android实机验证。
+
+
+## 2026-10-29：清理普攻的早期附加反馈（迁移代码事实）
+
+本次没有新增 EXE 逆向结论。PlayerCtrl.HitEnemy/HitBoss 原先无条件调用 HitFeel.Punch：默认将 Time.timeScale 置0共60ms，并加入0.18世界单位、140ms随机震屏；EnemyUnit.ApplyHit 暴击另调用一次。当前移除玩家普攻的两处调用，并禁止 fieldMode 暴击附加 Punch。怪物 attack/info/tremble 的显式 Shake 保持其独立触发。
+
+EnemyUnit.ApplyHit 在 fieldMode 下不再叠 Fx.Flash 或 Fx.Burst；后者使用 FxTex.Glow 在运行时生成64×64柔光，并非源IMG。不改变原怪物 hit 动画或技能自身 hit 部件。仅清理已定位的自制反馈，不代表原端普攻武器命中特效已还原；武器命中资源选择、坐标与触发时序仍待核实，不得据此断言原端没有命中特效。
+
+验证：git diff --check通过；未运行Unity或Android实机。怪物受攻击击退的既有近似仍保留，未据本次清理宣称对齐。

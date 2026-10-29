@@ -382,9 +382,9 @@ public class EnemyUnit : MonoBehaviour
             // （原版普攻本身不推怪，这里保留一小段滑动是本地手感选择。）
             int pushed = NativeCombatData.Int(CombatStats, "pushed", 1);
             knockV = fromDir * HitFeel.Knockback * 6.1f * Mathf.Clamp01(1f / Mathf.Max(1f, pushed));
-            Fx.Flash(body, Color.white);
+            if (!fieldMode) Fx.Flash(body, Color.white);
             if (vis != null) vis.PlayOnce("hit");
-            if (!nativeHit)
+            if (!fieldMode && !nativeHit)
                 Fx.Burst(transform.position + Vector3.up * 0.7f, crit ? 0.6f : 0.45f,
                          new Color(1f, 0.9f, 0.5f, 0.9f));
 
@@ -395,7 +395,7 @@ public class EnemyUnit : MonoBehaviour
         }
 
         if (showNumber) DamageText.Show(DamageAnchor + Vector3.up * (15f / Art.PPU), real, crit ? "cri" : "red");
-        if (crit) HitFeel.Punch(1.35f);
+        if (!fieldMode && crit) HitFeel.Punch(1.35f);
 
         if (hp <= 0f) Die();
     }

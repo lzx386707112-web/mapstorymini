@@ -28,6 +28,10 @@ namespace Server.Bot.Environment
         public static readonly BotNavigationGraphs Graphs = new BotNavigationGraphs();
         public static Func<int, bool> IsObserved;
         public static Action<BotCharacter, byte[]> Broadcast;
+        // 只有真的有人订阅移动事件时才构包。单机宿主里 BotRuntime.Movement 没有订阅者，
+        // 这条链上原先每秒要白做几千次 Reconstruct+Copy（见 BotMovementRuntime.Emit）。
+        public static bool HasSink() => Broadcast != null;
+        static readonly Func<bool> sinkProbe = HasSink;
         public static Action<BotCharacter, float> ApplyFallDamage;
         public static Func<BotCharacter, MapPortal, bool> EnterPortal;
         public static Func<BotCharacter, MapRuntime, BotMovementProfile> ResolveProfile;
@@ -57,6 +61,7 @@ namespace Server.Bot.Environment
             var motion = new BotMovementRuntime(actor, map, Profile(actor, map));
             motion.IsObserved = Observed;
             motion.Broadcast = (bot, bytes) => Broadcast?.Invoke(bot, bytes);
+            motion.SinkReady = sinkProbe;
             motion.ApplyFallDamage = (bot, distance) => ApplyFallDamage?.Invoke(bot, distance);
             var nav = new BotNavigationRuntime(motion, Graphs.Get(map, motion.profile));
             nav.UsePortal = portal => EnterPortal != null && EnterPortal(actor, portal);

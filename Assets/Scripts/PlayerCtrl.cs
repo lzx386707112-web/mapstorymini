@@ -1180,7 +1180,7 @@ public class PlayerCtrl : MonoBehaviour
     }
 
     // 前摇到点：真正结算。原版近战的视觉就是角色挥砍帧本身（武器合成在帧里），
-    // 没有额外的弧光贴片；伤害/顿帧/飘字都在这一下出去。
+    // 没有额外的弧光贴片；伤害/飘字都在这一下出去。
     void HitEnemy(EnemyUnit e, DamageResult hit, int dir)
     {
         if (e!=null && !e.dead && UsesRangedWeapon) GetComponent<NativeBuffs>()?.OnRangedAttack(1);
@@ -1188,7 +1188,6 @@ public class PlayerCtrl : MonoBehaviour
             GetComponent<SkillSystem>()?.NativeBasicRangedHit(e,hit,dir);
         if (e == null || e.dead) return;
         e.TakeHit(hit, dir);
-        HitFeel.Punch(1f);
     }
 
     void HitBoss(BossUnit b, DamageResult hit)
@@ -1198,7 +1197,6 @@ public class PlayerCtrl : MonoBehaviour
             GetComponent<SkillSystem>()?.NativeBasicRangedHit(b,hit,facing);
         if (b == null || b.dead) return;
         b.TakeHit(hit, facing);
-        HitFeel.Punch(1f);
     }
 
     public void TakeDamage(float dmg, int dir, bool magic = false, int attackerLevel = 1, EnemyUnit attacker = null, int damageFrom = -1, int mpAttack = 0)

@@ -232,7 +232,7 @@ static class BotChecks
         if (db == null) { check(false, "假人档案用例需要已初始化的 BotClient"); return; }
         BotAppearanceTemplates.Reset(); BotDirectory.Reset();
         BotDirectory.Ensure(db);
-        int wanted = BotConfig.DirectorySize(db);
+        int wanted = BotDirectory.ExpectedCount(db);
         check(BotDirectory.Count == wanted, "假人档案按配置预置 " + BotDirectory.Count + " 条");
         check(BotDirectory.All.Count > 0 && BotDirectory.All[0].name.Length > 0, "档案带固定名字：" + BotDirectory.All[0].name);
 
@@ -247,6 +247,30 @@ static class BotChecks
         check(again != null && again.name == name0 && again.template == template0,
             "同一份档案重读后设定不变（" + (again?.name ?? "?") + " / 模板 " + (again?.template ?? -1) + "）");
 
+        // 覆盖度：每个等级、每个该等级可转的职业都要有档案（这就是「铺满」的判据）。
+        var byLevelJob = new HashSet<long>();
+        var names = new HashSet<string>();
+        int dupNames = 0;
+        foreach (var p in BotDirectory.All)
+        {
+            byLevelJob.Add((long)p.level * 100000 + p.job);
+            if (!names.Add(p.name)) dupNames++;
+        }
+        int maxLevel = BotConfig.DirectoryMaxLevel(db);
+        int missing = 0;
+        for (int lv = 1; lv <= maxLevel; lv++)
+            foreach (int job in BotDirectory.JobsForLevel(lv))
+                if (!byLevelJob.Contains((long)lv * 100000 + job)) missing++;
+        check(missing == 0, "每个等级 × 每个职业都有档案（缺 " + missing + " 组，等级 1.." + maxLevel + "）");
+        check(dupNames == 0, "档案名字唯一（重复 " + dupNames + " 条）");
+        bool hasNovice = false, hasCap = false;
+        foreach (var p in BotDirectory.All)
+        {
+            if (p.level == 1 && p.job == 0) hasNovice = true;
+            if (p.level == 200) hasCap = true;
+        }
+        check(hasNovice && hasCap, "覆盖到 1 级新手与 200 级封顶");
+
         // 生成假人要真的领用档案，下线要归还。
         var map = new MapRuntime { mapId = -121 }; map.AddFoothold(-500, 0, 500, 0);
         MapService.Register(map);
@@ -255,6 +279,14 @@ static class BotChecks
         check(bot != null && bot.profileId != 0, "生成假人会领用档案（账号化）");
         var profile = bot != null ? BotDirectory.Find(bot.profileId) : null;
         check(profile != null && profile.name == bot.name, "假人名字取自档案：" + (bot?.name ?? "?"));
+        check(profile != null && bot.level == profile.level && bot.job == profile.job,
+            "假人等级/职业取自档案：lv" + (bot?.level ?? -1) + " job" + (bot?.job ?? -1));
+        // 武器必须跟职业同系，否则挥击姿势会串。
+        int weapon = 0;
+        if (bot != null) bot.equips.TryGetValue(-11, out weapon);
+        int wantStyle = (bot?.job ?? 0) switch { >= 100 and < 200 => 100, >= 200 and < 300 => 200, >= 300 and < 400 => 300, >= 400 and < 500 => 400, >= 500 and < 600 => 500, _ => 0 };
+        int haveStyle = (weapon / 10000) switch { 130 or 131 or 140 or 141 or 143 or 144 => 100, 137 or 138 => 200, 145 or 146 => 300, 133 or 147 => 400, 148 or 149 => 500, _ => 0 };
+        check(wantStyle == 0 || haveStyle == wantStyle, "假人武器与职业同系（job" + (bot?.job ?? -1) + " 武器 " + weapon + "）");
         check(BotDirectory.InUseCount == inUseBefore + 1, "领用后档案标记为占用");
         if (bot != null) BotGeneration.RemoveBotFromServer(bot);
         check(BotDirectory.InUseCount == inUseBefore, "下线后档案归还");

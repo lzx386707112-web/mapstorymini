@@ -17,28 +17,80 @@ using System.Collections.Generic;
 
 namespace Server.Bot
 {
-    public sealed class BotProfile
+public sealed class BotProfile
+{
+    public int id;
+    public string name = "";
+    public int template;        // BotAppearanceTemplates 下标
+    public int mapId;           // >0 = 只出现在该图；0 = 自由分配
+    public int channel = 1;
+    public int level;           // 0 = 未指定（老库/关掉覆盖模式时回退模板自带等级职业）
+    public int job;
+}
+
+public static class BotDirectory
+{
+    const string TableName = "bot_profile";
+    // 档案生成种子固定：同一份安装永远生成同样的几百个假人，
+    // 不依赖随机时序，重装/换设备看到的是同一批面孔。
+    const int Seed = 20261027;
+    public const int DefaultSize = 300;
+
+    // —— 冒险家职业阶梯（源端 Job 树；与 BotDecorate.SelectJob 的取值范围一致）——
+    // 覆盖模式按「等级 × 该等级可转职业」铺满档案册，所以这里必须是完整的四阶职业表：
+    // 漏掉哪一个职业，那个职业就永远不会有假人。
+    static readonly int[] BeginnerJobs = { 0 };
+    static readonly int[] FirstJobs = { 100, 200, 300, 400, 500 };
+    static readonly int[] SecondJobs = { 110, 120, 130, 210, 220, 230, 310, 320, 410, 420, 510, 520 };
+    static readonly int[] ThirdJobs = { 111, 121, 131, 211, 221, 231, 311, 321, 411, 421, 511, 521 };
+    static readonly int[] FourthJobs = { 112, 122, 132, 212, 222, 232, 312, 322, 412, 422, 512, 522 };
+
+    /// <summary>该等级可选的全部职业（转职门槛：10 一转 / 30 二转 / 70 三转 / 120 四转）。</summary>
+    public static int[] JobsForLevel(int level)
+        => level < 10 ? BeginnerJobs
+         : level < 30 ? FirstJobs
+         : level < 70 ? SecondJobs
+         : level < 120 ? ThirdJobs
+         : FourthJobs;
+
+    /// <summary>覆盖模式需要的档案条数 = Σ 每个等级的可选职业数。</summary>
+    public static int CoverageCount(int maxLevel)
     {
-        public int id;
-        public string name = "";
-        public int template;        // BotAppearanceTemplates 下标
-        public int mapId;           // >0 = 只出现在该图；0 = 自由分配
-        public int channel = 1;
+        int n = 0;
+        int cap = Math.Max(1, Math.Min(200, maxLevel));
+        for (int level = 1; level <= cap; level++) n += JobsForLevel(level).Length;
+        return n;
     }
 
-    public static class BotDirectory
+    /// <summary>档案册应有条数（0 = 关闭档案）。覆盖模式下与 solo_mapling_directory_size 无关。</summary>
+    public static int ExpectedCount(DbStore db)
     {
-        const string TableName = "bot_profile";
-        // 档案生成种子固定：同一份安装永远生成同样的几百个假人，
-        // 不依赖随机时序，重装/换设备看到的是同一批面孔。
-        const int Seed = 20261027;
-        public const int DefaultSize = 300;
+        int size = BotConfig.DirectorySize(db);
+        if (size <= 0) return 0;
+        if (!BotConfig.DirectoryCoverageEnabled(db)) return size;
+        return CoverageCount(BotConfig.DirectoryMaxLevel(db));
+    }
 
-        static readonly List<BotProfile> profiles = new List<BotProfile>();
-        static readonly HashSet<int> inUse = new HashSet<int>();
-        // 按图绑定的档案下标（map_id > 0）
-        static readonly Dictionary<int, List<int>> byMap = new Dictionary<int, List<int>>();
-        static int loadedSize = -1;
+    // 网格第 index 条的身份：先按等级递增，再按该等级的转职表顺序。
+    static bool GridAt(int index, out int level, out int job)
+    {
+        level = 0; job = 0;
+        if (index < 0) return false;
+        int i = index;
+        for (int lv = 1; lv <= 200; lv++)
+        {
+            var jobs = JobsForLevel(lv);
+            if (i < jobs.Length) { level = lv; job = jobs[i]; return true; }
+            i -= jobs.Length;
+        }
+        return false;
+    }
+
+    static readonly List<BotProfile> profiles = new List<BotProfile>();
+    static readonly HashSet<int> inUse = new HashSet<int>();
+    // 按图绑定的档案下标（map_id > 0）
+    static readonly Dictionary<int, List<int>> byMap = new Dictionary<int, List<int>>();
+    static int loadedSize = -1;
 
         public static int Count => profiles.Count;
         public static int InUseCount => inUse.Count;
@@ -57,7 +109,7 @@ namespace Server.Bot
         // 所以改了 solo_mapling_directory_size 之后，老档案不会被改写，只是后面追加。
         public static void Ensure(DbStore db)
         {
-            int wanted = Size(db);
+            int wanted = ExpectedCount(db);
             if (loadedSize == wanted && profiles.Count > 0) return;
             if (wanted <= 0 || db == null) { loadedSize = 0; profiles.Clear(); inUse.Clear(); byMap.Clear(); return; }
             // 表不存在（旧库/资源没同步）就别动，也别记住 loadedSize —— 下次还要再试。
@@ -72,30 +124,51 @@ namespace Server.Bot
             var table = db.Table(TableName);
             if (table == null) { loadedSize = -1; return; }
             var rows = table.Select(null);
+            bool coverage = BotConfig.DirectoryCoverageEnabled(db);
+            bool dirty = false;
+
+            // 升级回来的旧库：表里已有若干条但没有 level/job（列是后加的）。
+            // 按网格顺序把身份补上，否则这些档案生成出来会是 0 级无职业。
+            if (coverage)
+                for (int i = 0; i < rows.Count && i < wanted; i++)
+                    if (ToLong(rows[i], "level", 0) <= 0 && GridAt(i, out int gl, out int gj))
+                    {
+                        rows[i]["level"] = (long)gl;
+                        rows[i]["job"] = (long)gj;
+                        dirty = true;
+                    }
+
             if (rows.Count < wanted)
             {
-                // 先按已有条数推进随机序列，保证「新增的那些」也是确定性的。
-                var rng = new Random(Seed);
-                for (int i = 0; i < rows.Count; i++) rng.Next();
+                // 名字要唯一（联机的账号名本来就唯一）：同批次内查重，撞了就重抽；
+                // 用一个只跟下标有关的种子，保证「第 i 条档案的名字」永远不变，
+                // 不依赖库里已经有几条，追加/重装都不会改名。
+                var usedNames = new HashSet<string>();
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    string name = ToText(rows[i], "name");
+                    if (name.Length > 0) usedNames.Add(name);
+                }
                 for (int i = rows.Count; i < wanted; i++)
                 {
-                    string name = BotConfig.RandomChineseNameEnabled(db)
-                        ? BotHelpers.GetRandomChineseBotName(rng)
-                        : "游客" + (i + 1);
+                    GridAt(i, out int level, out int job);
                     var row = new DbRow
                     {
-                        ["name"] = name,
-                        ["template"] = templateCount > 0 ? rng.Next(templateCount) : 0,
+                        ["name"] = BotConfig.RandomChineseNameEnabled(db) ? UniqueName(i, usedNames) : FixedName(i, usedNames),
+                        ["template"] = templateCount > 0 ? NextTemplate(i, templateCount) : 0,
                         ["map_id"] = 0,
                         ["channel"] = 1,
                         ["bound"] = 0,
                         ["enabled"] = 1,
+                        ["level"] = (long)level,
+                        ["job"] = (long)job,
                     };
                     table.Insert(row);
                     rows.Add(row);
                 }
-                db.Save();
+                dirty = true;
             }
+            if (dirty) db.Save();
 
             for (int i = 0; i < rows.Count && profiles.Count < wanted; i++)
             {
@@ -108,6 +181,8 @@ namespace Server.Bot
                     template = (int)ToLong(row, "template", 0),
                     mapId = (int)ToLong(row, "map_id", 0),
                     channel = (int)ToLong(row, "channel", 1),
+                    level = (int)ToLong(row, "level", 0),
+                    job = (int)ToLong(row, "job", 0),
                 };
                 int index = profiles.Count;
                 profiles.Add(profile);
@@ -117,6 +192,32 @@ namespace Server.Bot
                     list.Add(index);
                 }
             }
+        }
+
+        // 模板下标只跟下标有关：同一条档案永远同一套外观，跟补到第几条无关。
+        static int NextTemplate(int index, int templateCount)
+            => (int)((uint)(index * 2654435761u) % (uint)templateCount);
+
+        static string UniqueName(int index, HashSet<string> used)
+        {
+            for (int salt = 0; salt < 256; salt++)
+            {
+                var rng = new Random(unchecked(Seed * 31 + index * 7919 + salt));
+                string name = BotHelpers.GetRandomChineseBotName(rng);
+                if (used.Add(name)) return name;
+            }
+            // 极端情况（名字池抽干）：补序号，仍保证唯一。
+            string fallback = "游客" + (index + 1);
+            used.Add(fallback);
+            return fallback;
+        }
+
+        // solo_mapling_bot_random_chinese_name=0：沿用旧的「游客N」编号名。
+        static string FixedName(int index, HashSet<string> used)
+        {
+            string name = "游客" + (index + 1);
+            while (!used.Add(name)) name += "_";
+            return name;
         }
 
         // 领一份档案：优先本图绑定的，其次未绑定的；全被占用返回 null（调用方回退随机生成）。

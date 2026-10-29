@@ -19,7 +19,21 @@ namespace Server.Bot
         public readonly Trade.BotTradeProtocol tradeProtocol;
         public readonly BotPartyService parties;
         public readonly BotPartyGrindService partyGrind;
-        public event Action<BotCharacter, byte[]> Movement;
+        // 移动事件：**只有真的有人订阅时才把包发出来**。单机宿主没有网络出口，
+        // 没人订阅时整条「构包 → 转发」链都是白做（每秒几千次分配），
+        // 所以这里用自定义访问器把「有没有消费者」同步给下游，而不是无条件接上。
+        Action<BotCharacter, byte[]> movement;
+        public event Action<BotCharacter, byte[]> Movement
+        {
+            add { movement += value; SyncMovementSink(); }
+            remove { movement -= value; SyncMovementSink(); }
+        }
+        void SyncMovementSink()
+        {
+            Action<BotCharacter, byte[]> sink = movement != null ? (Action<BotCharacter, byte[]>)PublishMovement : null;
+            BotMovementService.Broadcast = sink;
+            BotMovementPlayback.Broadcast = sink;
+        }
         bool disposed;
         readonly BotTasks.Handle invitationWatch;
         public BotRuntime(DbStore db, Social.BotMessenger messenger = null, BotPartyService parties = null)
@@ -48,11 +62,10 @@ namespace Server.Bot
                 (bot, player) => bot.DisplayCommands(player));
             dispatcher.Start();
             BotMovementService.IsObserved = observers.IsActive;
-            BotMovementService.Broadcast = PublishMovement;
+            SyncMovementSink();                    // 没有订阅者时 Broadcast=null，下游据此跳过构包
             BotMovementService.EnterPortal = EnterPortal;
             BotMovementService.ResolveProfile = (actor,map) => BotMovementProfile.FromCharacter(actor,
                 (map.fieldLimit & 2) != 0,this.parties.Members(actor.id),BotMovementService.HasSnowShoes(actor));
-            BotMovementPlayback.Broadcast = PublishMovement;
             BotTypeManager.RealPlayersOnMap = observers.HasRealPlayerNow;
             BotLogic.OnlinePlayers = () => players.Values;
             MapItemService.PartyOf = id => parties.For(id)?.id ?? -1;
@@ -67,7 +80,7 @@ namespace Server.Bot
             if (BotConfig.MarketAutoStartEnabled(db)) BotEnvironment.RequestMarketStartup();
             perf.Dispose();
         }
-        void PublishMovement(BotCharacter actor, byte[] packet) => Movement?.Invoke(actor, packet);
+        void PublishMovement(BotCharacter actor, byte[] packet) => movement?.Invoke(actor, packet);
         IEnumerable<BotActor> CharactersOnMap(Social.ChatMessage message)
         {
             var actors = new List<BotActor>();
@@ -189,7 +202,7 @@ namespace Server.Bot
             BotTypeManager.Ambient.Clear();
             BotTypeManager.Messenger.Clear();
             foreach (int id in registeredMaps) MapService.Unregister(id);
-            registeredMaps.Clear(); Movement = null;
+            registeredMaps.Clear(); movement = null; SyncMovementSink();
             // 档案册的运行期占用状态跟着会话走；档案本身（bot_profile 表）留在库里不动。
             BotDirectory.Reset();
             BotEnvironment.GetMap = null; BotEnvironment.TryGetMap = null; BotEnvironment.TownWanderers = null;

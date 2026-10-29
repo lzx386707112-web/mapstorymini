@@ -26,7 +26,8 @@ namespace Server.Bot.Environment
         }
         static short Floor(BotCharacter actor, int x, int y)
         {
-            var map = MapService.Get(actor.mapId); var fh = map == null ? null : new BotGroundIndex(map).Below(x, y);
+            var map = MapService.Get(actor.mapId);
+            var fh = map == null ? null : MapGeometryCache.Get(map).ground.Below(x, y);
             return unchecked((short)(fh?.id ?? 0));
         }
         static BotMovementRecording.Command Normal(int x, int y, int vx, int vy, int fh, int stance, int duration)

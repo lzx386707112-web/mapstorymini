@@ -663,8 +663,14 @@ public class InputBridge : MonoBehaviour
         bool dialogInput = NpcSession.Blocking && !GameSideMenu.Blocking && !BottomBar.ChatFocused;
         VirtualControls.Tick((playing || dialogInput) && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible);
         // 在打开 NPC 的分派之前处理已存在的会话，同一按下不能打开又翻页。
-        if (dialogInput && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible &&
-            InputHub.Pressed(GameAction.NpcTalk)) NpcDialogUi.ContinueWithTalkKey();
+        // 上下键在 #L 菜单里移动当前选项（原端 0x9AC104/0x9AC347），和对话键同一条派发路径，
+        // 物理方向键和屏上十字键都能用。
+        if (dialogInput && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible)
+        {
+            if (InputHub.Pressed(GameAction.NpcTalk)) NpcDialogUi.ContinueWithTalkKey();
+            else if (InputHub.Pressed(GameAction.Up)) NpcDialogUi.MoveSelection(-1);
+            else if (InputHub.Pressed(GameAction.Down)) NpcDialogUi.MoveSelection(1);
+        }
         InputHub.TickRepeat(Time.unscaledTime, playing && Application.isFocused && Time.timeScale > 0 &&
             !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible);
 

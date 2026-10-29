@@ -47,6 +47,9 @@ public static class DialogFlow
     static readonly Dictionary<char, float> strongWidth = new Dictionary<char, float>();
     static bool dragging;
     static float grabOffset;
+    // 上一次鼠标位置：悬停只在鼠标真的移动时改写选中项（对齐原端 0x9AC040 的鼠标消息路径）。
+    static Vector2 hoverPoint;
+    static bool hoverKnown;
 
     // 窗口宽度 → 纸面宽度（右侧留 529-506=23 的边框）
     public static float PaperWidth(float windowWidth) => windowWidth - PaperX - (529f - PaperRight);
@@ -227,16 +230,37 @@ public static class DialogFlow
     public static float ContentHeight(DialogContent content, float windowWidth, bool input = false)
         => Measure(content, ContentWidth(windowWidth), input).Height;
 
+    // 可选项的链接号，按显示顺序（正文里的 #L 先出现，程序生成的菜单项追加在后，
+    // 与 Measure 追加 selections 的顺序一致）。分组标题（HeaderArt）不是选项，跳过。
+    // 原端 0x9AC8E0 收集的就是这张表，0x9AC1BE 确认时按当前项取 +0x28 的链接号回给脚本。
+    public static List<int> Links(DialogContent content)
+    {
+        var links = new List<int>();
+        if (content == null) return links;
+        foreach (var run in content.Runs)
+            if (run.SelectionMarker && run.Link >= 0) links.Add(run.Link);
+        foreach (var selection in content.Selections)
+            if (selection.HeaderArt == null && selection.Index >= 0 && !links.Contains(selection.Index))
+                links.Add(selection.Index);
+        return links;
+    }
+
     // 9ACC20：超出最大正文区不足 16px 时仍扩大窗口，不启用滚动。
     public static bool NeedsScroll(float contentHeight) => (int)(contentHeight - 240f) / 8 > 1;
     public static float BodyHeight(float contentHeight) => NeedsScroll(contentHeight) ? 240f : Mathf.Max(120f, contentHeight);
 
     // ——————————————— 绘制 ———————————————
     // 返回 >= 0 表示玩家点了这个选项号；-1 表示没点。
-    public static int DrawPane(Rect window, DialogContent content, ref float scroll, float reservedHeight = 0f, bool input = false)
+    // selected 是原端的 +0xF4（当前选项链接号，-1 = 未选中）：绘制时只有它的行首标记
+    // 换成 dot1（红），其余用 dot0（浅灰）；鼠标移到选项上（0x9ABA42）也会改写它。
+    public static int DrawPane(Rect window, DialogContent content, ref float scroll, float reservedHeight,
+        bool input, ref int selected)
     {
         EnsureStyles();
         if (content == null) return -1;
+
+        var links = Links(content);
+        if (selected >= 0 && !links.Contains(selected)) selected = -1;   // 换页后旧选中项已不存在
 
         float width = ContentWidth(window.width);
         var layout = Measure(content, width, input);
@@ -257,12 +281,46 @@ public static class DialogFlow
         bool inside = inner.Contains(Pointer.Pos);
         var local = Pointer.Pos - inner.position + new Vector2(1f, scroll + 1f);
         int clicked = -1;
+        int hovered = -1;
 
         if (maxScroll > 0f && inside && e.type == EventType.Repaint)
         {
             float wheel = Input.mouseScrollDelta.y;
             if (Mathf.Abs(wheel) > .01f)
                 scroll = Mathf.Clamp(scroll - Mathf.Round(wheel) * 16f, 0f, maxScroll);
+        }
+
+        // 原端 0x9AC040 只在鼠标移动时把命中项的链接号写进 +0xF4，不是每帧按位置覆盖，
+        // 否则停在同一行按上下键会被悬停拽回去。
+        if (inside && e.type == EventType.Repaint)
+        {
+            if (!hoverKnown || Pointer.Pos != hoverPoint)
+            {
+                for (int i = 0; i < layout.Spans.Count; i++)
+                {
+                    var span = layout.Spans[i];
+                    if (span.Run.Link >= 0 && span.Rect.Contains(local)) { hovered = span.Run.Link; break; }
+                }
+                if (hovered >= 0) selected = hovered;
+            }
+            hoverPoint = Pointer.Pos;
+            hoverKnown = true;
+        }
+        else if (!inside) hoverKnown = false;
+
+        // 上下键把选中项移出可见区时滚动过去（0x9AC38E → 0x9AC3B4）：按 8 的整数倍滚。
+        if (maxScroll > 0f && selected >= 0)
+        {
+            for (int i = 0; i < layout.Spans.Count; i++)
+            {
+                var span = layout.Spans[i];
+                if (!span.Run.SelectionMarker || span.Run.Link != selected) continue;
+                if (span.Rect.y < scroll)
+                    scroll = Mathf.Clamp(Mathf.Floor(span.Rect.y / 8f) * 8f, 0f, maxScroll);
+                else if (span.Rect.yMax > scroll + bodyH - 2f)
+                    scroll = Mathf.Clamp(Mathf.Floor((span.Rect.yMax - bodyH + 2f) / 8f) * 8f, 0f, maxScroll);
+                break;
+            }
         }
 
         GUI.BeginClip(inner);
@@ -275,7 +333,8 @@ public static class DialogFlow
             {
                 if (span.Run.SelectionMarker)
                 {
-                    var texture = Art.Tex(DlgRoot + (inside && span.Rect.Contains(local) ? "dot0" : "dot1"));
+                    // 0x9A3FD5：只有链接号等于 +0xF4 的那一项换成 dot1，其余保持 dot0。
+                    var texture = Art.Tex(DotArt(selected, span.Run.Link));
                     if (texture != null) GUI.DrawTexture(new Rect(r.x + 10f, r.y + 2f, texture.width, texture.height), texture);
                 }
                 else GUI.DrawTexture(r, span.Tex);
@@ -296,6 +355,11 @@ public static class DialogFlow
         if (clicked >= 0) Pointer.ConsumeClick();
         return clicked;
     }
+
+    // 行首标记贴图：只有当前选中项那一行换成 dot1（红），其余保持 dot0（浅灰）。
+    // 原端 0x9A3FBD/0x9A3FFA：默认先取 dot0，链接号等于 +0xF4 时才换成 dot1。
+    public static string DotArt(int selected, int link)
+        => DlgRoot + (link >= 0 && link == selected ? "dot1" : "dot0");
 
     static void DrawBar(Rect inner, float contentH, float maxScroll, ref float scroll)
     {

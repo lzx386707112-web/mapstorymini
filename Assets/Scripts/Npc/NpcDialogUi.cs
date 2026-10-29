@@ -30,12 +30,32 @@ public static class NpcDialogUi
 
     static bool ConfirmSelection(NpcSession session)
     {
-        // Native type4 confirms the selected entry; section headers are not choices.
+        // Native type4 confirms the selected entry (0x9AC1BE: +0xF4 → 选项 → +0x28 链接号),
+        // not the first option. 只有真的选过一项时才用选中项，否则退回首项。
+        int selected = session.Dialog.SelectedLink;
+        if (selected >= 0 && DialogFlow.Links(session.Dialog.Content).Contains(selected))
+        { session.Reply(1, selected); return true; }
+        // section headers are not choices.
         foreach (var run in session.Dialog.Content.Runs)
             if (run.SelectionMarker && run.Link >= 0) { session.Reply(1, run.Link); return true; }
         foreach (var choice in session.Dialog.Selections)
             if (choice.HeaderArt == null && choice.Index >= 0) { session.Reply(1, choice.Index); return true; }
         return false;
+    }
+
+    // 上/下键移动当前选项（0x9AC104 减、0x9AC347 加，两端夹取不循环；未选中时从首项开始）。
+    // 只有 type4（#L 菜单）有这个焦点，普通对白页不响应。
+    public static bool MoveSelection(int direction)
+    {
+        var session = NpcSession.Active;
+        if (session == null || !session.Dialog.Visible || session.Dialog.Mode != NpcDialogMode.Simple)
+            return false;
+        var links = DialogFlow.Links(session.Dialog.Content);
+        if (links.Count == 0) return false;
+        int index = links.IndexOf(session.Dialog.SelectedLink);
+        index = index < 0 ? 0 : Mathf.Clamp(index + direction, 0, links.Count - 1);
+        session.Dialog.SelectedLink = links[index];
+        return true;
     }
 
     // Use the same native-pixel presentation as inventory/quest windows, rather
@@ -286,7 +306,7 @@ public static class NpcDialogUi
         if (NativeUi.Button(new Rect(rect.x + closeX, rect.yMax - 26f, closeSize.x, closeSize.y), BtnRoot + "BtClose"))
         { session.Cancel(); return; }
 
-        int picked = DialogFlow.DrawPane(rect, content, ref scrollY, reservedHeight, input);
+        int picked = DialogFlow.DrawPane(rect, content, ref scrollY, reservedHeight, input, ref session.Dialog.SelectedLink);
         if (picked >= 0) { session.Reply(1, picked); return; }
 
         // 翻页按钮在 h-77 的纸面内，其余按钮在 h-26 的底栏。

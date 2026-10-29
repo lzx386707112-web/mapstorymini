@@ -36,7 +36,7 @@ namespace Server.Bot.Environment
         public List<Point> Sample(MapRuntime map, Point anchor, int count, IEnumerable<Point> npcs, BotTownOverrides overrides = null)
         {
             var result = new List<Point>(); if (map == null || count <= 0) return result;
-            var ov = overrides ?? new BotTownOverrides(); var ground = new BotGroundIndex(map);
+            var ov = overrides ?? new BotTownOverrides(); var ground = MapGeometryCache.Get(map).ground;
             foreach (var pin in ov.pins)
             {
                 if (result.Count >= count) return result;

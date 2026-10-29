@@ -25,7 +25,8 @@ namespace Server.Bot.Environment
         public BotNavigationGraphBuilder(MapRuntime map, BotMovementProfile profile = null)
         {
             this.map = map; this.profile = profile ?? BotMovementProfile.Base;
-            regions = new BotWalkRegions(map); ground = new BotGroundIndex(map); collision = new BotAirCollision(map, ground);
+            var geometry = MapGeometryCache.Get(map);
+            regions = geometry.regions; ground = geometry.ground; collision = geometry.collision;
             motion = new BotGroundMotion(map, ground, regions, collision, physics); trajectory = new BotTrajectory(map, collision, this.profile);
             anchors = BotNavigationAnchors.Build(map, regions, ground, physics, this.profile);
         }

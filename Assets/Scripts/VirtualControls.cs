@@ -994,11 +994,8 @@ public static class VirtualControls
         // 此时 VirtualControls.Tick 拿到的 feed=false，按键只显示、不注入。
         float dim = KeyConfigWindow.Visible ? 0.42f : 1f;
 
-        // NPC 对话是整屏焦点：按键层压到很淡，并且不再画文字标签
-        // （曾经「跳跃 / 拾取 / 技能格」直接印在对话框正文上）。
-        dialogFade = NpcSession.Blocking;
-        foreach (var e in elems) DrawElement(e, dialogFade ? 0.22f : dim);
-        dialogFade = false;
+        // 对话期间仍可使用对话键；保持配置的透明度和标签，避免出现不可见的触摸区域。
+        foreach (var e in elems) DrawElement(e, dim);
         if (KeyConfigWindow.Visible) return;
 
         if (Input.GetKeyDown(KeyCode.F9)) ShowDebug = !ShowDebug;
@@ -1071,9 +1068,6 @@ public static class VirtualControls
 
     public static void DrawElement(VCElem e) => DrawElement(e, 1f);
 
-    // 对话打开期间按键层让位（只影响绘制，不影响命中：对话里仍可点的键照旧可点）
-    static bool dialogFade;
-
     public static void DrawElement(VCElem e, float dim)
     {
         bool active = e.type == VCElemType.Button ? e.held : e.finger != -1;
@@ -1129,7 +1123,7 @@ public static class VirtualControls
             else
             {
                 string text = ElementText(e);
-                if (!dialogFade && !string.IsNullOrEmpty(text))
+                if (!string.IsNullOrEmpty(text))
                 {
                     // 字占直径约 30%，两个以上字符按长度回缩，避免顶到圆边上
                     float fs = r * 0.60f;

@@ -44,6 +44,7 @@ public static class QuestNpcChecks
             CheckBeginnerNpcBindings();
             CheckTrainingQuestProgress();
             CheckDialogProtocol();
+            CheckDialogSelection();
             CheckRepeatedTalkPresses();
             CheckBirthRoutes();
             CheckNewCharacterMarkers();
@@ -499,6 +500,65 @@ public static class QuestNpcChecks
         session.Reply(1, 0);
         session.Reply(1, 0);
         Check(callbacks == 1 && NpcSession.Active == null, "一次选择只能执行一次，重复响应不得重复发放动作");
+    }
+
+    // #L 选项焦点：原端 CUtilDlgEx 把「当前选项」记在 +0xF4（链接号），
+    // 0x9AC104/0x9AC347 的上下键只增减它并两端夹取（不循环）；0x9A3FD5 只有这一项的
+    // 行首标记换成 dot1（红），其余仍是 dot0（浅灰）。这里只验状态机与贴图取向——
+    // 实际像素留给截图验收，不在 batchmode 里假装看过画面。
+    static void CheckDialogSelection()
+    {
+        var session = ScriptSession(@"
+            function start() { cm.sendSimple('请选择\r\n#L0#10级#l\r\n#L1#8级#l\r\n#L2#6级#l'); }
+            function action(mode,type,selection) {
+                if(type == 4 && selection == 2) { cm.dispose(); return; }
+                cm.sendOk('WRONG' + selection);
+            }");
+        typeof(NpcSession).GetField("<Active>k__BackingField",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).SetValue(null, session);
+        Check(session.Dialog.Mode == NpcDialogMode.Simple, "选项菜单必须是 type4");
+        var links = DialogFlow.Links(session.Dialog.Content);
+        Check(links.Count == 3 && links[0] == 0 && links[1] == 1 && links[2] == 2, "选项链接号须按显示顺序收集");
+        Check(session.Dialog.SelectedLink == -1, "刚打开的菜单不得预选任何一项");
+
+        // 贴图取向：未选中 dot0（浅灰），选中 dot1（红）——旧实现反了，全部选项都是红的。
+        const string dot0 = "wz://UI/UIWindow.img/UtilDlgEx/dot0";
+        const string dot1 = "wz://UI/UIWindow.img/UtilDlgEx/dot1";
+        Check(DialogFlow.DotArt(-1, 0) == dot0, "没有选中项时行首标记必须是 dot0");
+        Check(DialogFlow.DotArt(1, 1) == dot1, "当前选中项的行首标记必须是 dot1");
+        Check(DialogFlow.DotArt(1, 0) == dot0 && DialogFlow.DotArt(1, 2) == dot0, "非当前项的标记必须保持 dot0");
+
+        Check(NpcDialogUi.MoveSelection(-1) && session.Dialog.SelectedLink == 0, "未选中时按上键须落到首项");
+        Check(NpcDialogUi.MoveSelection(-1) && session.Dialog.SelectedLink == 0, "首项再按上键须夹取在首项，不能循环到末项");
+        Check(NpcDialogUi.MoveSelection(1) && session.Dialog.SelectedLink == 1, "下键须移到下一项");
+        Check(NpcDialogUi.MoveSelection(1) && session.Dialog.SelectedLink == 2, "下键须移到末项");
+        Check(NpcDialogUi.MoveSelection(1) && session.Dialog.SelectedLink == 2, "末项再按下键须夹取在末项");
+        Check(NpcDialogUi.MoveSelection(-1) && session.Dialog.SelectedLink == 1, "上键须回到上一项");
+
+        // 确认取的是选中项（末项 2），不是首项。同帧去重帧戳要先放开（别的用例刚用过）。
+        typeof(NpcDialogUi).GetField("talkKeyFrame",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
+            .SetValue(null, Time.frameCount - 1);
+        Check(NpcDialogUi.MoveSelection(1) && NpcDialogUi.ContinueWithTalkKey(), "对话键须确认当前选中项");
+        Check(session.Closed, "确认须带上选中项索引2，不得回退成首项");
+
+        // 分组标题（HeaderArt）不是选项；程序菜单追加在正文 #L 之后。
+        var content = DialogText.Parse("正文\r\n#L0#A#l\r\n#L1#B#l");
+        content.Selections.Add(new DialogSelection { Index = 5, Text = "C" });
+        content.Selections.Add(new DialogSelection { Index = 6, Text = "标题", HeaderArt = "list1" });
+        var mixed = DialogFlow.Links(content);
+        Check(mixed.Count == 3 && mixed[0] == 0 && mixed[1] == 1 && mixed[2] == 5,
+            "链接顺序须为正文#L在前、程序菜单在后、分组标题不算选项");
+
+        // 换页后旧选中项必须失效，否则新页会莫名其妙带一个红三角。
+        session = ScriptSession(@"
+            function start() { cm.sendSimple('#L0#A#l'); }
+            function action(mode,type,selection) { cm.sendSimple('#L0#A#l\r\n#L1#B#l'); }");
+        typeof(NpcSession).GetField("<Active>k__BackingField",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).SetValue(null, session);
+        NpcDialogUi.MoveSelection(1);
+        session.Reply(1, 0);
+        Check(session.Dialog.SelectedLink == -1, "换页后选中项须复位成未选中");
     }
 
     static void CheckBirthRoutes()

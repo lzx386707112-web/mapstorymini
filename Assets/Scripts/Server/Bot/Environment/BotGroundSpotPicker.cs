@@ -21,7 +21,7 @@ namespace Server.Bot.Environment
         {
             var result = new List<Candidate>(); if (map == null) return result;
             var graph = BotMovementService.Graphs.Get(map);
-            var reachable = BotMovementService.Reachable(graph, new BotGroundIndex(map), from);
+            var reachable = BotMovementService.Reachable(graph, MapGeometryCache.Get(map).ground, from);
             int lo = Math.Min(x1, x2), hi = Math.Max(x1, x2);
             foreach (var region in graph.regions)
                 if (!region.isRopeRegion && !region.isLadder && (reachable.Count == 0 || reachable.Contains(region.id)))

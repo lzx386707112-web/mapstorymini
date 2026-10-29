@@ -290,3 +290,23 @@
 - 本节是 Android 启动编排调整，不是新增原端逆向结论。资源校验成功后，`WzAndroidLoader.StartGameRoutine` 先调用幂等的 `GameSession.Boot`，在加载页挂载 `BotAppearancePrebake` 与 `BotPreload`，沿用原帧预算、stand 就绪后驱动生成的顺序及假人预热 45 秒兜底。
 - 等两个组件完成并自行销毁后才调用 `CreateGame` 创建登录流程；纸娃娃等待 stand/walk/sit/jump 全部预合成完。Android 的 `GameLoop.CreateGame` 不再重复挂载组件，避免重置 Finished/StandReady；Editor 与其他平台保留原路径。加载页素材、布局、服务端假人行为规则未调整。
 - 验证：启动顺序与 Android 条件编译分支的定向静态断言通过，diff 空白检查通过；未运行构建或 Android 实机耗时/流畅度验收。
+
+## 联机实体架构核实（2026-10-29，gms-server 源码）
+
+结论：源端假人是「真角色 + mock client」，与真人共用实体/广播路径；「人多不卡」是成本模型决定的，与网络实现无关。
+详见 `MapleDash/docs/online-entity-architecture.md`。
+
+- `MapleMap` 三份索引：`characters`（本图玩家，`chrRLock`）、`mapobjects`（`oid → MapObject`，`objectRLock`）、
+  每个 `Character.visibleMapObjects`（AOI 载体）。`addPlayer`（2791+）同时挂 `characters`(2796) 与 `mapobjects`(2962)。
+- AOI 半径：`getRangedDistance() = 722500`（=850px²，`use_max_range` 开启则变 POSITIVE_INFINITY）；
+  **道具同 850px**（`ITEM_VISIBILITY_RANGE_SQ=722500`，`ITEM_VISIBILITY_UPDATE_INTERVAL=200ms`）。
+- `spawnAndAddRangedMapObject`(456) 只给范围内玩家发 spawn + `addVisibleMapObject`；
+  `movePlayer`(3886) 只重算「已可见对象」+ 范围内新对象，**不遍历全图玩家**；
+  `MovePlayerHandler` 的 `broadcastMessage(source,packet,false)` 走 `POSITIVE_INFINITY`(3255) → **移动包全图广播**。
+  ⇒ 移动成本 O(同图人数)，850px 只决定 spawn/destroy。别把「有 AOI」误记成「移动包只发给视野内」。
+- 传输：Netty，`initPipeline` 未传 executor ⇒ handler 跑在该连接 event loop；`Client.sendPacket` = `ioChannel.writeAndFlush`（异步）。
+- 假人：`BotGeneration.placeBotOnMap` → `map.addPlayer`；`addBotToServer` → `channel.addPlayer` + `world.getPlayerStorage().addPlayer`；
+  移动 = `MovementCommands` 684-690 `map.moveBot` + `broadcastMessage(movePlayer包)`；
+  `Client.createMock()` 的 `ioChannel=null`，`sendPacket` 首行 return ⇒ **发往假人的包在编码前丢弃**。
+  `MapleMap.addPlayer` 用 `BotHelpers.isBot(chr)` 把 `onFirstUserEnter/onUserEnter` 只跑给真人（2816-2834）。
+- 我们的移植对照：`BotRegistry` + `BotField`（每 100ms 轮询）与 `MapRuntime` 是两套并行世界，缺「地图对象 + 每观察者 visible 集合 + spawn/destroy 事件」。

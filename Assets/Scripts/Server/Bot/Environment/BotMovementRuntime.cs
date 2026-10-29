@@ -16,8 +16,7 @@ namespace Server.Bot.Environment
         public readonly BotWalkRegions regions;
         public readonly BotGroundPhysics physics;
         readonly BotGroundMotion groundMotion;
-        readonly BotAirCollision collision;
-        readonly BotAirMotion airMotion;
+        public readonly BotAirCollision collision;        readonly BotAirMotion airMotion;
         readonly BotRopeMotion ropeMotion;
         readonly BotSwimMotion swimMotion;
         public readonly BotMovementProfile profile;
@@ -35,6 +34,9 @@ namespace Server.Bot.Environment
         public Action<BotCharacter, float> ApplyFallDamage;
         // count+commands，已去除录制包9字节前缀，供同一前端消费器使用。
         public Action<BotCharacter, byte[]> Broadcast;
+        // 有没有人消费移动事件。单机宿主没有网络出口时，重建移动包（两次分配）纯属浪费；
+        // 由 BotMovementService 注入「当前是否有人订阅」，离线自检直接给 Broadcast 赋值时不设它（保持原行为）。
+        public Func<bool> SinkReady;
         public Func<int, bool> IsObserved;
         bool broadcastValid, flashBroadcast;
         (int, int, int, int, int, int) lastBroadcast;
@@ -46,8 +48,11 @@ namespace Server.Bot.Environment
         public BotMovementRuntime(BotCharacter actor, MapRuntime map, BotMovementProfile profile = null)
         {
             this.actor = actor; this.map = map; this.profile = profile ?? BotMovementProfile.Base;
-            ground = new BotGroundIndex(map); regions = new BotWalkRegions(map);
-            physics = new BotGroundPhysics(); collision = new BotAirCollision(map, ground);
+            // 地形索引按地图共享：同图 N 个假人以前各建一份（1203 foothold 的图上 3.4ms/人），
+            // 现在只在地图首次被用到时建一次。见 MapGeometry.cs。
+            var geometry = MapGeometryCache.Get(map);
+            ground = geometry.ground; regions = geometry.regions; collision = geometry.collision;
+            physics = new BotGroundPhysics();
             groundMotion = new BotGroundMotion(map, ground, regions, collision, physics);
             airMotion = new BotAirMotion(map, collision, physics, this.profile);
             ropeMotion = new BotRopeMotion(ground); swimMotion = new BotSwimMotion(collision, physics, this.profile);
@@ -273,6 +278,9 @@ namespace Server.Bot.Environment
             int stance = SyncStance();
             if (now < alertedUntilMs && (stance == 4 || stance == 5)) stance += 4;
             if (IsObserved != null && !IsObserved(map.mapId)) { broadcastValid = false; return; }
+            // 没人消费移动事件就别构包：Reconstruct+Copy 每次快照要分配 ~54 字节（实测），
+            // 120 个假人 × 20Hz = 每秒 2400 次，纯 GC 噪音。真联机时会有订阅者，自动恢复。
+            if (Broadcast == null || (SinkReady != null && !SinkReady())) { broadcastValid = false; return; }
             var fh = ground.Ground(Position.x, Position.y); if (fh != null) lastFoothold = fh.id;
             var snapshot = (Position.x, Position.y, velocityX, velocityY, stance, lastFoothold);
             if (broadcastValid && lastBroadcast.Equals(snapshot)) return;
@@ -288,6 +296,8 @@ namespace Server.Bot.Environment
             if (IsObserved != null && !IsObserved(map.mapId)) return;
             var fh = ground.Ground(Position.x, Position.y); if (fh != null) lastFoothold = fh.id;
             flashBroadcast = true;
+            // 与 Emit 同理：没人消费就不构包；但姿态仍要同步（视图侧直接读 actor.stance）。
+            if (Broadcast == null || (SinkReady != null && !SinkReady())) { SyncStance(); broadcastValid = false; return; }
             // 源端二段跳为绝对NORMAL后追加relative6，不用重建器的固定宽度布局。
             using var bytes = new MemoryStream(); using var w = new BinaryWriter(bytes);
             w.Write((byte)2); w.Write((byte)0); w.Write(unchecked((short)actor.x)); w.Write(unchecked((short)actor.y));

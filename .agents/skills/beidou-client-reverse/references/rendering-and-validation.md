@@ -76,3 +76,10 @@ EnemyUnit 统一用 `BodySortingOrder=299-lane*12`，人物保持既有 `300-lan
 持久入口 `ActorOverlapChecks.Run`：真实原IMG人物stand/alert/walk各3帧，与蜗牛stand/walk/hit交叉、lane0/2/4，共81组。每组分别渲染人物、怪物、重叠三张，比较双方不透明交叠像素，要求合成保持人物像素；检查order严格有序。使用有图形设备的Unity batchmode（不可加nographics），没有修改资源或启动游戏存档。实际执行结果见本次交付；该检查不代表全部特殊怪、完整地图层、Android GPU实机已验收。
 
 本轮Unity有图形batchmode实际PASS：81组、35835个不透明重叠像素全部保持角色在前；同一测试临时恢复旧equal-order后36组出现与正确前景不同的像素，45组没有，证实换帧会改变旧平局结果。退出码0；日志 `/tmp/mapledash-overlap.log` 仅作本轮记录，持久复现使用上述Editor入口。`git diff --check`通过。
+
+
+## 2026-10-29：NPC 对话期间虚拟按钮可见性（移动适配修复）
+
+本节是移动输入覆盖层代码事实，不是原 EXE UI 结论；没有改原 NPC 对话素材、节点、布局或时序。
+VirtualControls.Draw 原先在 NpcSession.Blocking 时将每个按钮的配置透明度额外乘0.22，并通过 dialogFade 隐藏文字；InputBridge.Update 同时允许 dialogInput 注入，因此出现按钮近乎不可见但仍能按。现取消该额外淡化及标签隐藏，继续使用用户配置透明度、既有 GUI.depth=-300 和键位设置窗口0.42淡化。输入门控不变：对话键仍可推进，移动/攻击仍受 NPC 会话限制。
+验证：git diff --check通过，静态核对 dialogFade 已无引用；未进行 Unity 绘制或 Android 实机验证。此修改仅处理 NPC 会话分支，不宣称其他弹窗已逐一实测。

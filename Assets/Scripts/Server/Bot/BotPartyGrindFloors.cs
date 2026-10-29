@@ -59,7 +59,7 @@ namespace Server.Bot
         {
             int x = floor.ClampX(desiredX);
             return map == null ? new Point(x,floor.centerY) :
-                new BotGroundIndex(map).GroundPoint(x,floor.centerY) ?? new Point(x,floor.centerY);
+                MapGeometryCache.Get(map).ground.GroundPoint(x,floor.centerY) ?? new Point(x,floor.centerY);
         }
     }
 }

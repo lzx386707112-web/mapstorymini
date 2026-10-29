@@ -117,7 +117,7 @@ public static class DialogText
                     Flush();
                     int.TryParse(raw.Substring(i + 2, j - i - 2), out link);
                     content.Runs.Add(new DialogRun { Kind = DialogRunKind.Icon, Link = link,
-                        SelectionMarker = true, Art = "UI/UIWindow.img/UtilDlgEx/dot1" });
+                        SelectionMarker = true, Art = "UI/UIWindow.img/UtilDlgEx/dot0" });
                     i = j + 1;
                     continue;
                 }

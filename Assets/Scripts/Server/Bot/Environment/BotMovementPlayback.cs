@@ -56,7 +56,9 @@ namespace Server.Bot.Environment
                 if (offset)
                 {
                     var map = MapService.Get(mapId);
-                    var fh = map == null ? null : new BotGroundIndex(map).Below((int)actor.x, (int)actor.y);
+                    // 地形索引按图共享：以前每播一帧都新建一次 BotGroundIndex（1203 foothold 的图上 1ms+），
+                    // 出生编排是逐帧播的，等于把建卡成本乘了帧数。见 MapGeometry.cs。
+                    var fh = map == null ? null : MapGeometryCache.Get(map).ground.Below((int)actor.x, (int)actor.y);
                     bytes = BotMovementPacket.Offset(bytes, (int)actor.x, (int)actor.y, fh == null ? 0 : fh.id);
                 }
                 var broadcast = BotMovementPacket.Apply(bytes, actor);

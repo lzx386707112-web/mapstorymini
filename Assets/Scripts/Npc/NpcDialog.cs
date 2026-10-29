@@ -24,6 +24,12 @@ public sealed class NpcDialog
     public bool ScrollReset;
     public bool IsMenu;
 
+    // 原端 CUtilDlgEx +0xF4：「当前选项」的链接号（不是下标）。绘制时只有这一项的
+    // 行首标记换成 dot1（红），其余仍是 dot0（浅灰）；0x9AC104/0x9AC347 的上下键
+    // 只改这个值（夹取、不循环），0x9ABE86 的鼠标命中也会写它。
+    // -1 = 没有任何选中项（0x9AC4F6/0x9AC566 在换页/滚动时复位成 -1）。
+    public int SelectedLink = -1;
+
     // Native 9A7DC3: no next-page flag still creates footer OK (9A7EDD).
     public bool HasPagePrevious => Mode == NpcDialogMode.Prev || Mode == NpcDialogMode.NextPrev;
     public bool HasPageNext => Mode == NpcDialogMode.Next || Mode == NpcDialogMode.NextPrev;
@@ -44,6 +50,7 @@ public sealed class NpcDialog
         Content = DialogText.Parse(RawText);
         ScrollReset = true;
         IsMenu = false;
+        SelectedLink = -1;
     }
 
     public void Hide()
@@ -52,6 +59,7 @@ public sealed class NpcDialog
         RawText = "";
         Content = new DialogContent();
         Input = "";
+        SelectedLink = -1;
     }
 
     public IReadOnlyList<DialogSelection> Selections => Content.Selections;

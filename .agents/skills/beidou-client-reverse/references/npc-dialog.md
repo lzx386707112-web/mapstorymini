@@ -400,3 +400,41 @@ QuestNpcChecks.CheckTrainingQuestProgress使用level2/job0、真实8142条件和
 - 名字优先级：`session.SpeakerName` > `String/Npc.img/<id>/name`（新增 `WzNames.NpcOrNull`，避免把兜底名「NPC 2104」印到名字条）> 运营员名。
 
 验证：`tools/unity-compile-check` 0 warning / 0 error；`PreviewShot`（`-previewStart 17`）出图 `/tmp/mapledash-preview/06-star-result.png` 左侧为「昨日小睡」立绘+名字条，`08-no-npc-dialog.png`（`Talk(0)` 对照）左侧为「冒险岛运营员」立绘+名字条。未覆盖：`avatar`/`rightPortrait` 特殊模式仍未迁移（沿用 stand 帧包围盒）；未做 Android 实机验收。
+
+## #L 选项的「当前项」标记与上下键焦点（2026-10-29，用户指出全选项都是三角）
+
+现象：用户截图里「10级 / 8级」两个选项**都**带红色三角，且方向键不能移动选择。原端只有一个三角，代表当前项。
+
+**二进制实证**（同 SHA256 `1b91cf5b…f134b2`、ImageBase `0x400000`）：
+
+- `#L` 的标记 run 由 `0x99E4A0` 建：`[run+0]=4`（类型 4）、`[run+0x20]=0x12`（宽 18）、`[run+0x28]=链接号`。
+- 绘制 `0x9A3FBD..0x9A4034`：**先无条件取 `dot0`（0xb60）放进标记槽**；随后
+  `0x9A3FD2` 取 `run+0x28` 与 `[窗口+0xF4]` 比较，相等则 `0x9A3FFA` 用 `dot1`（0xb61）**覆盖**该槽；
+  不等时再看键盘焦点 `[+0xF8]/[+0xFC]` 里的项，命中同样换 `dot1`。
+  即：**未选中 = dot0（浅灰 #CCCCCC 6×7 三角），当前项 = dot1（红色 6×7 三角）**。
+  截图放大对比：dot0 在白纸上是很淡的灰，肉眼几乎看不出；用户看到的「只有一个三角」就是 dot1。
+  旧迁移把两者写反（悬停 dot0、其余 dot1），于是每个选项都是醒目的红三角 —— 就是用户看到的 bug。
+- 上下键 `0x9AC104 / 0x9AC347`：只处理 `[+0x78]==4`（type4 菜单）。
+  上键 `dec [+0xF4]`，<0 则清 0；下键 `inc [+0xF4]`，超出条目数则落到 `count-1`。**两端夹取，不循环**。
+  移动后 `0x9AC38E→0x9AC3B4` 把该条目滚进可见区；`0x9AC396` 重绘。
+- 左右键 `0x9AC210 / 0x9AC129` 动的是按钮焦点 `[+0x6D8]`（`[+0x6BC]` 按钮数组，循环），与选项无关。
+- 确认 `0x9AC1BE`：`[+0xF8]` 数组按 `[+0xF4]` 取条目，再取 `[条目+0x28]` 写 `[+0xF0]` 并 `command=1` 发回脚本；
+  所以「下项」按钮和对话键确认的是**当前项**，不是首项。
+- 鼠标：`0x9ABEBD` 命中测试（y 在 `[-0x30, bodyH+0x18)`、x 在 `[run.x, run.x+run.width+8)`）返回 `run+0x28`，
+  `0x9AC040` 在鼠标消息里写进 `[+0xF4]`；`0x9AC4F6`（滚轮/滚动回调）与 `0x9AC552`（换页 SetDialog）把它复位成 -1。
+- `[+0xF4]` 在键盘路径里当**数组下标**用、在绘制/悬停路径里当**链接号**用。`#L` 序号连续时两者等价，
+  稀疏（如 `#L7#`）时原端本身就不一致；迁移统一按链接号处理。
+
+**迁移**（`NpcDialog.SelectedLink` = 原端 `+0xF4`）：`DialogFlow.DotArt(selected, link)` 选中才用 dot1；
+`DialogFlow.Links(content)` 按显示顺序收集链接（正文 `#L` 在前、程序菜单在后、`HeaderArt` 分组标题不算）；
+`NpcDialogUi.MoveSelection(dir)` 夹取移动、`ConfirmSelection` 优先回选中项；`InputBridge` 在对话期间把
+`GameAction.Up/Down` 派给 `MoveSelection`（物理方向键与屏上十字键同一条路径）；悬停只在指针真的移动时改写选中项。
+
+验证：`QuestNpcChecks.CheckDialogSelection`（16 项断言：链接顺序、换页复位、两端夹取、确认取当前项、dot0/dot1 取向）
+`/tmp/npc-dialog-selection2.log` 24269 通过 / 3 失败——这 3 项（1021 苹果发放、1021 引导动画、QuestClear 特效）
+在**移除本用例的基线运行** `/tmp/npc-baseline-noNewCheck.log`（24253 通过 / 3 失败，失败项相同）里同样存在，
+属本次改动之前就有的问题，与选项焦点无关。实拍见 `PreviewShot -previewStart 25` 的两张图（已归档 `docs/hud-review/npc-option-menu-idle.png`、
+`npc-option-menu-selected.png`）：真实「装备中心」菜单（7 个选项，`npc/9900001.js`），未选中时三行都是浅灰点，
+按两次下键后只有「装备洗练」是红三角。
+**截图注意**：编辑器 `ScreenCapture` 落盘比调用晚（低帧率时 >1.5s），两个状态要在相邻 phase 里各停留 3s 再拍，
+否则两张图会拍到同一个状态（第一次拍的两张就是这样，误判成「状态没变」）。未做 Android 实机验收。

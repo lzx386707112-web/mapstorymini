@@ -158,6 +158,7 @@ namespace Server.Bot
             if (profile != null && all.Count > 0)
             {
                 all[((profile.template % all.Count) + all.Count) % all.Count].ApplyTo(bot);
+                ApplyIdentity(bot, profile);
                 return;
             }
             var template = BotAppearanceTemplates.Take(rng);
@@ -165,6 +166,68 @@ namespace Server.Bot
             decorator ??= new Decorator.BotDecorate(BotResources.Load(), BotItemCatalog.Shared, BotTypeManager.Output);
             decorator.ApplyAppearance(bot, Db);
         }
+
+        // 档案的等级/职业优先于外观模板：模板只提供脸/发型/衣服（共享纹理），
+        // 身份（等级、职业）来自账号 —— 和联机一致，也才能做到「每个职业每个等级都有人」。
+        // 老库/关掉覆盖模式的行 level=0，走模板自带身份（行为与改造前一致）。
+        static void ApplyIdentity(BotCharacter bot, BotProfile profile)
+        {
+            if (profile.level <= 0) return;
+            bot.level = Math.Max(1, Math.Min(200, profile.level));
+            bot.job = Math.Max(0, profile.job);
+            bot.tier = TierForLevel(bot.level);
+            AlignWeapon(bot);
+        }
+
+        // 等级段决定档位（源端 tier 是装饰用的稀有度，不影响战斗数值）。
+        static BotTier TierForLevel(int level)
+            => level >= 180 ? BotTier.S : level >= 160 ? BotTier.A : level >= 140 ? BotTier.B : level >= 120 ? BotTier.C : BotTier.D;
+
+        // 武器必须跟职业同系：BotAttack 的挥击姿势、GrindSkill 的技能回退都按武器类别分派，
+        // 战士拿着弓会做出弓的挥击动作。模板的武器是随机抽的，这里按职业纠正一次。
+        static void AlignWeapon(BotCharacter bot)
+        {
+            int want = WeaponStyleOfJob(bot.job);
+            if (want == 0) return;                       // 新手：沿用模板/默认武器
+            bot.equips.TryGetValue(-11, out int current);
+            if (StyleOfWeapon(current) == want) return;
+            int id = DefaultWeapon(want);
+            if (id <= 0) return;
+            try
+            {
+                var item = BotItemCatalog.Shared.CleanItem(id);
+                item.position = -11;
+                bot.equipment[-11] = item;
+                bot.equips[-11] = id;
+            }
+            catch (Exception) { /* 物品表缺这条就保留原武器，别让生成失败 */ }
+        }
+
+        static int StyleOfWeapon(int itemId) => (itemId / 10000) switch
+        {
+            130 or 131 or 140 or 141 or 143 or 144 => 100,
+            137 or 138 => 200,
+            145 or 146 => 300,
+            133 or 147 => 400,
+            148 or 149 => 500,
+            _ => 0,
+        };
+
+        static int WeaponStyleOfJob(int job) => (job / 100) switch
+        {
+            1 => 100, 2 => 200, 3 => 300, 4 => 400, 5 => 500, _ => 0,
+        };
+
+        // 同系各一把标准武器（v83 一转赠品那一批），保证纹理不因等级再翻倍。
+        static int DefaultWeapon(int style) => style switch
+        {
+            100 => 1302000,   // 剑
+            200 => 1372000,   // 短杖
+            300 => 1452000,   // 弓
+            400 => 1332000,   // 短刀
+            500 => 1482000,   // 指虎
+            _ => 0,
+        };
 
         public static void RemoveBotFromServer(BotCharacter bot)
         {

@@ -27,7 +27,8 @@ namespace Server.Bot.Environment
         public BotNavigationRuntime(BotMovementRuntime motion, BotNavigationGraph graph, Random random = null)
         {
             this.motion = motion; this.graph = graph; this.random = random ?? new Random();
-            var collision = new BotAirCollision(motion.map, motion.ground);
+            // 碰撞体只依赖地图，直接用移动运行时那份共享实例（见 MapGeometry.cs）。
+            var collision = motion.collision;
             trajectory = new BotTrajectory(motion.map, collision, motion.profile);
             groundMotion = new BotGroundMotion(motion.map, motion.ground, motion.regions, collision, motion.physics);
         }

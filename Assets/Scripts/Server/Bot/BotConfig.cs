@@ -31,6 +31,12 @@ public static class BotConfig
         return Server.Bot.BotDirectory.DefaultSize;
     }
 
+    // 覆盖模式：按「等级 1..max × 该等级可转职业」铺满档案册，保证每个职业每个等级都有人。
+    // 关掉就回到旧行为（DirectorySize 条随机等级/职业）。
+    public static bool DirectoryCoverageEnabled(DbStore db) => GetBool(db, "solo_mapling_directory_coverage", true);
+    // 覆盖模式的等级上界（源端四转 200 级封顶）。
+    public static int DirectoryMaxLevel(DbStore db) => Math.Max(10, Math.Min(200, GetInt(db, "solo_mapling_directory_max_level", 200)));
+
     // —— 自动地图 bot（氛围路人）——
     public static bool AutoMapBotsEnabled(DbStore db) => GetBool(db, "solo_mapling_auto_map_bots_enabled", true);
     public static int AutoMapBotsMin(DbStore db) => GetInt(db, "solo_mapling_auto_map_bots_min", 2);

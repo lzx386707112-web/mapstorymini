@@ -49,6 +49,9 @@ namespace Server.Bot
                 }
             }
             bot.wander = new BotWander { mapId = bot.mapId, banded = banded, bandLo = lo, bandHi = hi, state = State.Dwell, dwellUntilMs = 0, progressAtMs = BotScheduler.Now(), nextPollMs = BotScheduler.Now() + rng.Next(1500) };
+            // 只把真正在游荡的假人放进推进表：以前每帧遍历全服在册假人（市场商人、组队伴侣等
+            // 没有 wander 的也一起扫），在线人数越多这笔固定开销越大。
+            if (activeIds.Add(bot.id)) active.Add(bot);
         }
 
         public static void Stop(BotCharacter bot) { bot.wander = null; bot.moving = false; }
@@ -102,11 +105,26 @@ namespace Server.Bot
         }
 
         // 每帧推进所有带 wander 的 bot（后端驱动、前端渲染）。
+        // 只遍历游荡中的假人，并且顺手清理已下线/已停止的条目（swap-remove，O(1)）。
         public static void AdvanceAll(long nowMs)
         {
-            foreach (var c in BotRegistry.All().Values)
-                if (c.wander != null) Tick(c, nowMs);
+            for (int i = active.Count - 1; i >= 0; i--)
+            {
+                var bot = active[i];
+                // 换图由 Tick 内部 Stop（与原来一致）；这里只清理已停止/已下线的条目。
+                if (bot == null || bot.wander == null || !BotRegistry.Contains(bot.id))
+                {
+                    if (bot != null) activeIds.Remove(bot.id);
+                    active[i] = active[active.Count - 1];
+                    active.RemoveAt(active.Count - 1);
+                    continue;
+                }
+                Tick(bot, nowMs);
+            }
         }
+
+        static readonly List<BotCharacter> active = new List<BotCharacter>();
+        static readonly HashSet<int> activeIds = new HashSet<int>();
 
         static readonly Environment.BotGroundSpotPicker picker = new Environment.BotGroundSpotPicker(rng);
         static (float x, float y)? PickStroll(BotCharacter bot, MapRuntime rt, BotWander w)

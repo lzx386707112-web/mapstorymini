@@ -216,6 +216,24 @@ public static class PreviewShot
                 Step(now + 1.0, 25);
                 break;
             case 25:
+                SetupOptionMenu();
+                Step(now + 3.0, 26);
+                break;
+            case 26:
+                Note("拍图前当前项=" + (NpcSession.Active == null ? -99 : NpcSession.Active.Dialog.SelectedLink));
+                Shot("09-option-menu-idle.png");   // 未选中：全部浅灰点
+                Step(now + 3.0, 27);               // ScreenCapture 异步落盘，期间不能改状态
+                break;
+            case 27:
+                SelectOption(2);
+                Step(now + 3.0, 28);
+                break;
+            case 28:
+                Note("拍图前当前项=" + (NpcSession.Active == null ? -99 : NpcSession.Active.Dialog.SelectedLink));
+                Shot("10-option-menu-selected.png");   // 只有这一行是红三角
+                Step(now + 2.5, 29);
+                break;
+            case 29:
                 Finish(0);
                 break;
             default:
@@ -429,6 +447,33 @@ public static class PreviewShot
         var s = NpcSession.Talk(0, "装备制作/星级强化");
         Note("无 NPC 对照场景：Talk(0) 会话 NpcId=" + (s == null ? -1 : s.NpcId) +
              "，左侧应回落「冒险岛运营员」(" + NpcDialogUi.DefaultSpeaker + ") 立绘与名字条");
+    }
+
+    // ───────── 场景 5：选项菜单的「当前项」标记 ─────────
+    // 原端只有当前选中项的行首是红三角（dot1），其余是 dot0 的浅灰点；上下键移动选中项
+    // （0x9AC104/0x9AC347，两端夹取不循环）。这里用真实的「装备中心」菜单（多列 + 分区标题）。
+    static void SetupOptionMenu()
+    {
+        NpcSession.CloseActive();
+        EquipWindow.Visible = false;
+        InvenWindow.Visible = false;
+        SkillWindow.Visible = false;
+        // 指针钉到窗口外的空白处：否则鼠标真身停在哪一行，那一行就会被悬停点亮，
+        // 拍不出「未选中时全是浅灰点」的状态。
+        Pointer.TestPos = new Vector2(1100f, 40f);
+        var session = NpcSession.Talk(9900001, "装备中心");
+        if (session == null) { Note("装备中心菜单打开失败"); return; }
+        session.Dialog.SelectedLink = -1;
+        Note("选项菜单：Mode=" + session.Dialog.Mode + "，可选项=" + DialogFlow.Links(session.Dialog.Content).Count +
+             "，当前项=-1（未选中：全部是浅灰点）");
+    }
+
+    static void SelectOption(int steps)
+    {
+        for (int i = 0; i < steps; i++) NpcDialogUi.MoveSelection(1);
+        var session = NpcSession.Active;
+        Note("按 " + steps + " 次下键后当前项=" + (session == null ? -1 : session.Dialog.SelectedLink) +
+             "（这一行应是红三角，其余仍是浅灰点）");
     }
 
     // 悬浮框要看的是「强化后的星条」：回背包装备页，指针钉第 1 格。
