@@ -34,7 +34,8 @@ public static class Profile
     public static IReadOnlyCollection<string> OwnedWeapons => Data.owned.AsReadOnly();
     public static bool LastSaveSucceeded { get; private set; } = true;
 
-    // 升到新等级时广播（参数为新等级）。PlayerCtrl 用它刷新 HP/MP，HUD 用它显示提示。
+    // 升到新等级时广播（参数为新等级）。PlayerCtrl 用它回满 HP/MP 并播源端 BasicEff/LevelUp 特效。
+    // 源端升级只有「特效 + 音效」，HUD 不叠任何文字，所以这里不再给 HUD 供数据。
     public static event System.Action<int> LeveledUp;
 
     public static void Load()
@@ -141,20 +142,35 @@ public static class Profile
         if (GameSession.InGame && !SyncInventory(id, count)) return;
         if (Data.AddItem(id, count)) Save();
     }
-    public static bool RemoveItem(int id, int count)
+    public static bool RemoveItem(int id, int count, int sourcePosition=0)
     {
         if (Data.ItemCount(id) < count) return false;
-        if (GameSession.InGame && !SyncInventory(id, -count)) return false;
+        if (GameSession.InGame && !SyncInventory(id, -count, sourcePosition)) return false;
         if (!Data.RemoveItem(id, count)) return false;
         Save();
         return true;
     }
 
-    static bool SyncInventory(int id, int count)
+    static bool SyncInventory(int id, int count, int sourcePosition=0)
     {
-        var result = GameSession.Net.ChangeInventory(new InventoryChangeRequest { characterId = GameSession.CharacterId, itemId = id, quantity = count });
+        var result = GameSession.Net.ChangeInventory(new InventoryChangeRequest { characterId = GameSession.CharacterId, itemId = id, quantity = count,sourcePosition=sourcePosition });
         if (!result.ok) { BottomBar.Toast(result.error); return false; }
         GameSession.Character.inventory = result.inventory; return true;
+    }
+
+    public static bool ConsumeProjectile(int id,int count,int position)
+    {
+        if (count==0) return true;
+        if (count>0 && Data.ItemCount(id)<count) return false;
+        if (GameSession.InGame)
+        {
+            var result=GameSession.Net.ChangeInventory(new InventoryChangeRequest {
+                characterId=GameSession.CharacterId,itemId=id,quantity=-count,sourcePosition=position,projectile=true });
+            if (!result.ok) return false;
+            GameSession.Character.inventory=result.inventory;
+        }
+        if (count>0) Data.RemoveItem(id,count); else Data.AddItem(id,-count);
+        Save(); return true;
     }
 
     // —— 任务（原端 Character.getQuest / updateQuestStatus）——

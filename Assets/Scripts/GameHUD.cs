@@ -33,23 +33,11 @@ public class GameHUD : MonoBehaviour
         }
     }
 
-    static float levelUpAt;
-    static int levelUpLevel;
-
     void Awake()
     {
         castFeedback = null; feedbackUntil = 0;
         // 静态字段会被域重载清掉，所以用 PlayerPrefs 传（截图脚本会置 1）
         if (PlayerPrefs.GetInt("hide_tuning", 0) == 1) showTuning = false;
-        Profile.LeveledUp += OnLeveledUp;
-    }
-
-    void OnDestroy() => Profile.LeveledUp -= OnLeveledUp;
-
-    void OnLeveledUp(int level)
-    {
-        levelUpAt = Time.unscaledTime;
-        levelUpLevel = level;
     }
 
     void EnsureStyles()
@@ -105,6 +93,8 @@ public class GameHUD : MonoBehaviour
         // 原版底部栏：底板 → 左段状态条 → 右侧按钮 + 快捷格（都在 BottomBar 里按顺序画）
         NpcDialogUi.DrawField();
         BottomBar.Draw();
+        QuestAlarm.Draw();
+        TemporaryStatView.Draw();
 
         // 浮窗（技能窗/能力值/帮助…）
         GameWindows.DrawAll();
@@ -113,6 +103,7 @@ public class GameHUD : MonoBehaviour
         // NPC 对话（最上层）+ 靠近提示
         NpcDialogUi.Draw();
         NpcDialogUi.DrawHint();
+        QuestNotice.DrawReady();
         if (PlayerPrefs.GetInt("debug_keyconfig", 0) == 1)
         {
             PlayerPrefs.DeleteKey("debug_keyconfig");
@@ -364,32 +355,11 @@ public class GameHUD : MonoBehaviour
     }
 
     // —————————— 升级提示 ——————————
-    // 原版的升级是 Effect/BasicEff.img/LevelUp 动画 + 一声音效；
-    // 本阶段先把「升级了」这件事用文字确认掉，动画留到特效批次统一接。
-    void DrawLevelUp()
-    {
-        float age = Time.unscaledTime - levelUpAt;
-        if (age < 0f || age > 2.4f) return;
-
-        float k = age < 1.8f ? 1f : 1f - (age - 1.8f) / 0.6f;
-        var st = new GUIStyle(_small);
-        st.alignment = TextAnchor.MiddleCenter;
-        st.fontSize = Mathf.RoundToInt(30f + 6f * Mathf.Clamp01(1f - age * 2f));
-        st.fontStyle = FontStyle.Bold;
-        st.normal.textColor = new Color(1f, 0.9f, 0.45f, k);
-
-        float y = UiKit.H * 0.3f;
-        var shadow = new GUIStyle(st);
-        shadow.normal.textColor = new Color(0f, 0f, 0f, k * 0.7f);
-        GUI.Label(new Rect(0, y + 2, UiKit.W, 44), "LEVEL  UP", shadow);
-        GUI.Label(new Rect(0, y, UiKit.W, 44), "LEVEL  UP", st);
-
-        var sub = new GUIStyle(_small);
-        sub.alignment = TextAnchor.MiddleCenter;
-        sub.fontSize = 15;
-        sub.normal.textColor = new Color(0.95f, 0.97f, 1f, k);
-        GUI.Label(new Rect(0, y + 46, UiKit.W, 24), "Lv. " + levelUpLevel + "   HP/MP 已回满", sub);
-    }
+    // 源端升级只有两样东西：Effect/BasicEff.img/LevelUp 的 21 帧特效（字符串池 2310）
+    // 和 Game/LevelUp 音效（2317）。都不归 HUD 管：
+    //   特效 → PlayerCtrl.OnLevelUp 挂人物脚底播，音效 → LevelSystem.LevelUp。
+    // 这里曾经自绘过 "LEVEL UP" 白字 + "HP/MP 已回满" 副标题，与源端不一致，
+    // 且 DrawLevelUp 没有调用点（纯死代码），已整体删除，不要再加回来。
 
     // —————————— 手感调参面板 ——————————
     void DrawTuning()

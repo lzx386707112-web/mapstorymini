@@ -42,12 +42,42 @@ public static class AdminBots
         "solo_mapling_bot_deferred_decoration_enabled",
     };
 
+    // 组队伴侣（消耗品 2431159「基友集合」）。源端 BotControlConfigDTO 的 party 恒为 List.of()，
+    // 那几个参数写死在 PartyGrindCompat；本工程把它们落库成 solo_mapling_party_* 并由这个分组管理。
+    static readonly string[] PartyCodes =
+    {
+        "solo_mapling_party_companion_enabled",
+        "solo_mapling_party_companion_require_party",
+        "solo_mapling_party_companion_count",
+        "solo_mapling_party_companion_minutes",
+        "solo_mapling_party_companion_level_jitter",
+    };
+
+    /// <summary>一支正在生效的伴侣队伍（由 AdminHost 从 BotPartyGrindService 采集）。</summary>
+    public sealed class PartyTeamInfo
+    {
+        public long characterId;
+        public string name;
+        public int mapId, companions;
+        public long remainingSec;
+    }
+
+    // 与 ActiveBots 同理用钩子：AdminBots 不直接引用 Server.Bot，离线自检才编得过
+    public static Func<List<PartyTeamInfo>> PartyTeams;
+    /// <summary>召唤：返回 null 表示成功，否则是给前端看的失败原因。</summary>
+    public static Func<long, string> PartySummon;
+    public static Func<long, bool> PartyDismiss;
+
     public static void Register(AdminApi api)
     {
         api.Get("/bot-control/v1/state", ctx => State());
         api.Get("/bot-control/v1/config", ctx => Config());
         api.Put("/bot-control/v1/config", Update);
         api.Post("/bot-control/v1/market/start", StartMarket);
+        api.Get("/bot-control/v1/party", ctx => Party());
+        api.Put("/bot-control/v1/party", UpdateParty);
+        api.Post("/bot-control/v1/party/summon", SummonParty);
+        api.Post("/bot-control/v1/party/dismiss", DismissParty);
     }
 
     // ≡ BotControlService.startMarket：EnvironmentManager 三态状态机（already/running/started）。
@@ -103,12 +133,13 @@ public static class AdminBots
             var used = new HashSet<string>();
             var market = Fields(MarketCodes, rows, used);
             var appearance = Fields(AppearanceCodes, rows, used);
+            var party = Fields(PartyCodes, rows, used);
             var leftover = new List<string>(rows.Keys);
             foreach (var code in used) leftover.Remove(code);
             leftover.Sort(StringComparer.Ordinal);
             var environment = Fields(leftover, rows, null);
 
-            return AdminJson.Obj("market", market, "appearance", appearance, "environment", environment, "party", new List<object>());
+            return AdminJson.Obj("market", market, "appearance", appearance, "environment", environment, "party", party);
         });
     }
 
@@ -143,10 +174,13 @@ public static class AdminBots
 
     static string ClazzOf(string code)
     {
-        if (code.EndsWith("_enabled", StringComparison.Ordinal) || code.EndsWith("_auto_start", StringComparison.Ordinal))
+        if (code.EndsWith("_enabled", StringComparison.Ordinal) || code.EndsWith("_auto_start", StringComparison.Ordinal)
+            || code.EndsWith("_require_party", StringComparison.Ordinal))
             return "java.lang.Boolean";
         if (code.EndsWith("_max", StringComparison.Ordinal) || code.EndsWith("_ms", StringComparison.Ordinal)
-            || code.EndsWith("_per_tick", StringComparison.Ordinal) || code.EndsWith("_min", StringComparison.Ordinal))
+            || code.EndsWith("_per_tick", StringComparison.Ordinal) || code.EndsWith("_min", StringComparison.Ordinal)
+            || code.EndsWith("_count", StringComparison.Ordinal) || code.EndsWith("_minutes", StringComparison.Ordinal)
+            || code.EndsWith("_jitter", StringComparison.Ordinal))
             return "java.lang.Integer";
         return "java.lang.String";
     }
@@ -163,6 +197,11 @@ public static class AdminBots
             case "solo_mapling_market_speech_gap_ms": return "500";
             case "solo_mapling_market_pathfind_per_tick": return "3";
             case "solo_mapling_bot_deferred_decoration_enabled": return "false";
+            case "solo_mapling_party_companion_enabled": return "true";
+            case "solo_mapling_party_companion_require_party": return "true";
+            case "solo_mapling_party_companion_count": return "5";
+            case "solo_mapling_party_companion_minutes": return "30";
+            case "solo_mapling_party_companion_level_jitter": return "3";
             default: return code.EndsWith("_enabled", StringComparison.Ordinal) ? "true" : "";
         }
     }
@@ -212,6 +251,114 @@ public static class AdminBots
             // BotConfig 全部实时读库，无需刷新；调度 throttle 因子自适应，tick 间隔下一拍生效
             return (long)updated;
         });
+    }
+
+    // ——————————— 组队伴侣 ———————————
+    // 面板 = 配置（solo_mapling_party_*）+ 实时状态（正在生效的几支队、还剩多久）。
+    static object Party()
+    {
+        return AdminMainThread.Run(() =>
+        {
+            var db = AdminBackend.RequireDb();
+            var rows = new Dictionary<string, DbRow>();
+            foreach (var r in db.Table("game_config").rows)
+            {
+                string code = DbStore.Str(r, "config_code");
+                if (code.StartsWith("solo_mapling", StringComparison.Ordinal)) rows[code] = r;
+            }
+            return AdminJson.Obj("config", Fields(PartyCodes, rows, null), "state", PartyState());
+        });
+    }
+
+    static object PartyState()
+    {
+        var teams = new List<object>();
+        var list = PartyTeams != null ? PartyTeams() : null;
+        if (list != null)
+            foreach (var team in list)
+                teams.Add(AdminJson.Obj(
+                    "characterId", team.characterId,
+                    "name", team.name ?? "",
+                    "mapId", (long)team.mapId,
+                    "companions", (long)team.companions,
+                    "remainingSec", Math.Max(0L, team.remainingSec)));
+        long current = 0;
+        try { current = AdminBackend.CurrentCharacterId != null ? AdminBackend.CurrentCharacterId() : 0; } catch { }
+        return AdminJson.Obj("teams", teams, "activeTeams", (long)teams.Count, "characterId", current);
+    }
+
+    static object UpdateParty(AdminCtx ctx)
+    {
+        var fields = AdminJson.GetList(ctx.Body, "fields");
+        if (fields == null || fields.Count == 0) throw new AdminApiException("参数不能为空: fields");
+        return AdminMainThread.Run(() =>
+        {
+            var db = AdminBackend.RequireDb();
+            var table = db.Table("game_config");
+            var allowed = new HashSet<string>(PartyCodes);
+            int updated = 0;
+            foreach (var f in fields)
+            {
+                var field = AdminJson.AsDict(f);
+                string code = AdminJson.GetString(field, "code");
+                if (string.IsNullOrEmpty(code) || !allowed.Contains(code)) continue;
+                string value = AdminJson.GetString(field, "value");
+                var row = table.Find(r => DbStore.Str(r, "config_code") == code);
+                if (row != null)
+                    table.Update(r => ReferenceEquals(r, row), new DbRow
+                    {
+                        ["config_value"] = value,
+                        ["config_clazz"] = ClazzOf(code),
+                        ["update_time"] = Now(),
+                    });
+                else
+                    table.Insert(new DbRow
+                    {
+                        ["config_type"] = "server",
+                        ["config_sub_type"] = "SoloMapling",
+                        ["config_clazz"] = ClazzOf(code),
+                        ["config_code"] = code,
+                        ["config_value"] = value,
+                        ["config_desc"] = code,
+                        ["update_time"] = Now(),
+                    });
+                updated++;
+            }
+            return (long)updated;
+        });
+    }
+
+    // 召唤 / 解散：服务端没起来（还没进游戏）就没法调，直接给前端明确原因。
+    static object SummonParty(AdminCtx ctx)
+    {
+        long characterId = PartyTarget(ctx);
+        return AdminMainThread.Run(() =>
+        {
+            if (PartySummon == null) throw new AdminApiException("服务端未启动（请先进入游戏）");
+            string error = PartySummon(characterId);
+            if (!string.IsNullOrEmpty(error)) throw new AdminApiException(error);
+            return PartyState();
+        });
+    }
+
+    static object DismissParty(AdminCtx ctx)
+    {
+        long characterId = PartyTarget(ctx);
+        return AdminMainThread.Run(() =>
+        {
+            if (PartyDismiss == null) throw new AdminApiException("服务端未启动（请先进入游戏）");
+            PartyDismiss(characterId);
+            return PartyState();
+        });
+    }
+
+    static long PartyTarget(AdminCtx ctx)
+    {
+        long id = AdminJson.GetLong(ctx.Body, "characterId", 0);
+        if (id <= 0)
+            try { id = AdminBackend.CurrentCharacterId != null ? AdminBackend.CurrentCharacterId() : 0; } catch { }
+        if (id <= 0) throw new AdminApiException("没有在线角色（请先进入游戏）");
+        return id;
     }
 
     static string Now() => DateTimeOffset.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);

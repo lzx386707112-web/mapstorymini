@@ -52,21 +52,37 @@ public sealed class BotPreload : MonoBehaviour
         // 已经进图：驱动权交给 FieldDirector.TickBots（它每帧推同一个 Drive），这里退场。
         if (GameSession.InGame) { finished = true; Destroy(this); return; }
 
+        // 兜底的计时必须在这里累加，不能放到下面 Drive 之后：纸娃娃预合成一旦卡住
+        // （StandReady 永远不为真），下面那句 return 每帧都在原地打转，计时器永远走不到
+        // MaxWarmupSeconds，加载页就永久停在「正在加载AI假人系统」——这正是设备上
+        // 100% CPU、画面钉死在加载页、日志停在 [Art] ready 之前的那个死循环。
+        warmupSeconds += Time.unscaledDeltaTime;
+        bool timedOut = warmupSeconds >= MaxWarmupSeconds;
+
         // 等纸娃娃把 stand 帧铺完再建假人：顺序必须是「纹理先就绪 → 再建假人 → 进图摆视图」。
         // 反过来的话，假人先建好、纹理没就绪，进图那一刻 BotField.Create 会现场 CPU 合成，
         // 一帧连做十几次，正是要消灭的那种卡顿。
         // 模板关闭时不预合成，这里自然放行（回退到每次现合成的老路径）。
-        if (BotAppearanceTemplates.Enabled && !BotAppearancePrebake.StandReady) return;
+        if (BotAppearanceTemplates.Enabled && !BotAppearancePrebake.StandReady && !timedOut) return;
 
         // 登录/选角界面：把假人系统整个跑起来。用 realtime 时钟——与 FieldDirector
         // 注入的时钟同源，交接时不会跳变（两边都是 Time.realtimeSinceStartup*1000）。
-        BotWorkPump.BeginFrame();
-        server.Bots.Drive((long)(Time.realtimeSinceStartup * 1000f));
-        warmupSeconds += Time.unscaledDeltaTime;
-        if (Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete || warmupSeconds >= MaxWarmupSeconds)
+        try
+        {
+            BotWorkPump.BeginFrame();
+            server.Bots.Drive((long)(Time.realtimeSinceStartup * 1000f));
+        }
+        catch (System.Exception e)
+        {
+            // Drive 抛异常时原实现每帧都会抛一次、永不退场，加载页同样卡死。
+            Debug.LogError("[Bot] 假人预热异常，直接放行：" + e);
+            finished = true; Destroy(this); return;
+        }
+        if (timedOut || Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete)
         {
             finished = true;
-            Debug.Log("[Bot] 假人预热完成：在场 " + BotRegistry.Count() + " 个，进图不再生成");
+            Debug.Log("[Bot] 假人预热完成：在场 " + BotRegistry.Count() + " 个，进图不再生成" +
+                      (timedOut ? "（超时放行）" : ""));
             Destroy(this);
         }
     }

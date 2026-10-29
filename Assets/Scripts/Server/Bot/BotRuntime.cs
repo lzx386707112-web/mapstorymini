@@ -34,7 +34,7 @@ namespace Server.Bot
             trades.ChatOutput = (actor,text) => BotTypeManager.Output.Send(Social.BotOutput.Kind.TradeChat,actor,text,
                 targetId: actor.IsBot() ? actor.trade?.partner?.actor.id ?? 0 : actor.id);
             maps = BotNavigationMapLoader.Load();
-            partyGrind = new BotPartyGrindService(this.parties,GetMap);
+            partyGrind = new BotPartyGrindService(this.parties,GetMap,null,db);
             BotTypeManager.PartyGrind = partyGrind;
             observers = new BotObserverTracker(() => players.Values, GetMap, BotWorldGraph.Load());
             townSpawner = new BotTownSpawner(new BotTownPresenceConfig(BotResources.Load()), TryGetMap);
@@ -165,6 +165,7 @@ namespace Server.Bot
         {
             if (disposed) return;
             BotScheduler.Clock = nowMs; BotScheduler.Drive();
+            MapItemService.Tick(nowMs);
         }
         public void Dispose()
         {

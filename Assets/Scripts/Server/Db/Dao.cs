@@ -84,6 +84,22 @@ public static class AccountsDao
         var a = FindById(db, accountId);
         return a == null ? 3 : (int)Convert.ToInt64(a["characterslots"]);
     }
+
+    // 账号性别：源端 accounts.gender TINYINT(2) NOT NULL DEFAULT '10'
+    // （gms-server .../V1.0.0__create_accounts.sql:19）。10 = 还没选，客户端看到就弹性别框，
+    // 选完由 SET_GENDER 包写回 0/1。自动注册的 INSERT 不写这列，所以新号天然是 10。
+    public const int GenderUnset = 10;
+
+    public static int Gender(DbStore db, int accountId)
+        => DbStore.Int(FindById(db, accountId), "gender", GenderUnset);
+
+    public static void SetGender(DbStore db, int accountId, int gender)
+    {
+        // 只接受 0/1：10 是「未选」哨兵值，写回去等于没选（源端 SetGenderHandler 也只读一个字节）。
+        if (gender != 0 && gender != 1) return;
+        db.Table("accounts").Update(DbStore.Eq("id", (long)accountId),
+            new DbRow { ["gender"] = (long)gender });
+    }
 }
 
 public static class KeymapDao

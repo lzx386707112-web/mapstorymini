@@ -234,7 +234,10 @@ CREATE TABLE inventoryequipment
     vicious              INTEGER NOT NULL DEFAULT 0,
     itemlevel            INTEGER NOT NULL DEFAULT 1,
     itemexp              INTEGER NOT NULL DEFAULT 0,
-    ringid               INTEGER NOT NULL DEFAULT -1
+    ringid               INTEGER NOT NULL DEFAULT -1,
+    starLevel            INTEGER NOT NULL DEFAULT 0,
+    starCount            INTEGER NOT NULL DEFAULT 0,
+    maxStar              INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE queststatus

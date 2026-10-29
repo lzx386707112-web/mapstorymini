@@ -96,6 +96,23 @@ public static class BotConfig
     public static int MarketPathfindPerTick(DbStore db) => GetInt(db, "solo_mapling_market_pathfind_per_tick", 3);
     public static bool MarketAutoStartEnabled(DbStore db) => GetBool(db, "solo_mapling_market_auto_start", true);
 
+    // —— 组队伴侣（消耗品 2431159「基友集合」，后台「假人控制 → 组队」）——
+    // 源端这套参数是写死在 PartyGrindCompat 常量里的，后台 party 分组恒为空；
+    // 这里改成落库可配，玩法数值仍与原版一致（5 个 / 30 分钟 / 等级 ±3）。
+    public static bool PartyCompanionEnabled(DbStore db) => GetBool(db, "solo_mapling_party_companion_enabled", true);
+    // 是否必须先自己开组队（原版 canSummonFive 要求 partySize>=1）
+    public static bool PartyCompanionRequireParty(DbStore db) => GetBool(db, "solo_mapling_party_companion_require_party", true);
+    // 召唤数量：队伍上限 6 人，队长自己占 1，所以最多 5
+    public static int PartyCompanionCount(DbStore db) => Math.Max(1, Math.Min(5, GetInt(db, "solo_mapling_party_companion_count", 5)));
+    public static int PartyCompanionMinutes(DbStore db) => Math.Max(1, Math.Min(720, GetInt(db, "solo_mapling_party_companion_minutes", 30)));
+    // 伴侣等级 = 队长等级 + [-jitter, jitter]，0 是有效值（完全同等级），不能走 GetInt 的 >0 兜底
+    public static int PartyCompanionLevelJitter(DbStore db)
+    {
+        string value = db == null ? "" : GameConfigDao.Get(db, "solo_mapling_party_companion_level_jitter");
+        return int.TryParse(value, out int jitter) ? Math.Max(0, Math.Min(10, jitter)) : 3;
+    }
+    public static long PartyCompanionDurationMs(DbStore db) => PartyCompanionMinutes(db) * 60000L;
+
     static bool GetBool(DbStore db, string key, bool def)
     {
         string value = db == null ? "" : GameConfigDao.Get(db, key);

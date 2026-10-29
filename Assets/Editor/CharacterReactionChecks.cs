@@ -113,6 +113,48 @@ public static class CharacterReactionChecks
             contactMob.fieldMobId = 100100;
             Require((bool)touches.Invoke(contactMob, new object[] { p }),
                 "Ordinary field snail contact must still hit overlapping player");
+            var hidden=NativeBuffs.For(p);
+            var invincibleOracle=(Dictionary<string,object>)MiniJson.Parse(System.IO.File.ReadAllText("tools/native-invincible-oracle.json"));
+            foreach (Dictionary<string,object> row in (List<object>)invincibleOracle["cases"])
+                Require(Math.Abs(CombatRules.InvincibleDamage(Convert.ToDouble(row["damage"]),Convert.ToInt32(row["percent"]))-Convert.ToDouble(row["result"]))<1e-8,
+                    "Original INVINCIBLE floating-point multiplier mismatch");
+            Require(hidden.ApplySkill(2301003,1,NativeBuffs.Now),"INVINCIBLE buff registration");
+            int invinciblePercent=hidden.Value("INVINCIBLE");
+            Require(invinciblePercent>0,"INVINCIBLE state must read original x");
+            var attributes=p.Attributes;
+            int physical=CombatRules.Incoming(10000,attributes,false,attributes.level,.5).Amount;
+            int reduced=CombatRules.Incoming(10000,attributes,false,attributes.level,.5,invinciblePercent).Amount;
+            Require(reduced<physical,"INVINCIBLE must reduce physical incoming damage");
+            Require(CombatRules.Incoming(10000,attributes,true,attributes.level,.5).Amount==
+                CombatRules.Incoming(10000,attributes,true,attributes.level,.5,invinciblePercent).Amount,
+                "INVINCIBLE must not reduce magic incoming damage");
+            hidden.Clear();
+            var stanceOracle=(Dictionary<string,object>)MiniJson.Parse(System.IO.File.ReadAllText("tools/native-stance-oracle.json"));
+            foreach (Dictionary<string,object> row in (List<object>)stanceOracle["cases"])
+                Require(NativeBuffs.ResistsKnockback(Convert.ToInt32(row["stance"]),Convert.ToInt32(row["fieldLimit"]),Convert.ToInt32(row["roll"])) == (bool)row["resist"],
+                    "Original STANCE probability or field restriction mismatch");
+            p.ResetCombatState(); p.PlaceAt(0,0); p.invulnUntil=0;
+            Require(hidden.ApplySkill(1121002,30,NativeBuffs.Now),"STANCE buff registration");
+            Require(hidden.Value("STANCE")==Art.Int(SkillBook.Get(1121002).Level(30),"prop"),"STANCE must use original prop");
+            // Force the boundary value to exercise the actual received-hit path deterministically.
+            foreach (var effect in hidden.Visible) if (effect.Id==1121002) effect.Stats["STANCE"]=100;
+            p.hp=p.hpMax=100000;
+            hp=p.hp; p.TakeDamage(1000,1);
+            Require(p.hp<hp && p.grounded && p.invulnUntil>Time.unscaledTime+1.49f,
+                "Successful STANCE must retain damage/immunity without launching player");
+            hidden.Clear(); p.ResetCombatState(); p.PlaceAt(0,0); p.invulnUntil=0;
+            p.TakeDamage(1000,1);
+            Require(!p.grounded,"Cancelled STANCE must restore ordinary knockback");
+            p.PlaceAt(0,0);
+            foreach (int skill in new[]{4001003,13101006})
+            {
+                Require(hidden.ApplySkill(skill,1,NativeBuffs.Now),"Hidden buff registration "+skill);
+                Require(hidden.SuppressesContact(100100,0) && !hidden.SuppressesContact(9400594,0) && !hidden.SuppressesContact(100100,2),
+                    "Original hidden contact exceptions "+skill);
+                Require(!(bool)touches.Invoke(contactMob,new object[]{p}),"Hidden ordinary contact must be filtered "+skill);
+                hidden.Clear();
+                Require((bool)touches.Invoke(contactMob,new object[]{p}),"Cancelled hidden contact must resume "+skill);
+            }
             UnityEngine.Object.DestroyImmediate(contactMob.gameObject);
             UnityEngine.Object.DestroyImmediate(go);
             ClearNumbers();

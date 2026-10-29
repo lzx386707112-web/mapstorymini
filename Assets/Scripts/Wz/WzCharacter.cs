@@ -156,15 +156,25 @@ public static class WzCharacter
         {
             string key = action.Substring(6); bool prepare = key.EndsWith("_prepare", StringComparison.Ordinal);
             if (prepare) key = key.Substring(0, key.Length - 8);
+            int level = 1;
+            int separator = key.IndexOf('@');
+            if (separator >= 0)
+            {
+                if (!int.TryParse(key.Substring(separator + 1), out level)) return null;
+                key = key.Substring(0, separator);
+            }
             var skills = (Dictionary<string, object>)WzAssets.Index["skills"];
             int id;
             if (skills.TryGetValue(key, out var sid)) id=Convert.ToInt32(sid);
             else if(!int.TryParse(key,out id)) return null;
-            var skill = WzAssets.Node("Skill/" + (id / 10000).ToString("D3") + ".img/skill/" + id);
-            if (prepare) return skill.Get("prepare/action")?.Value as string;
-            var actions = skill.Get("action");
+            var skill = WzAssets.Node("Skill/" + (id / 10000).ToString("D3") + ".img/skill/" + id.ToString("D7"));
+            if (skill == null) return null;
+            var levelNode = skill.Get("level/" + level);
+            if (prepare) return (levelNode?.Get("prepare/action") ?? skill.Get("prepare/action"))?.Value as string;
+            var actions = levelNode?.Get("action") ?? skill.Get("action");
             if (actions == null) return null;
             var body = Equipment((string)ids[0]);
+            if (actions.Value is string single && body.Get(single) != null) return single;
             foreach (var n in actions.Children) if (n.Value is string pose && body.Get(pose) != null) return pose;
             return null;
         }

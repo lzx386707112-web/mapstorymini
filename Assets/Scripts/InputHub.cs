@@ -745,7 +745,9 @@ public class InputBridge : MonoBehaviour
 
         // 屏上虚拟按键垫最底，侧边栏（含整屏压暗蒙版）盖在它上面。
         // 悬浮球与按键层不会同时出现（球在面板收起时才画），所以球仍然在最上层。
-        if (!GameHUD.InterfaceHidden)
+        // 编辑器预览（UiPreviewHook.Draw 非空）时让位：虚拟按键在 GameHUD 之后绘制，
+        // 靠 GUI.depth 压不住，会把预览的深色底戳出一堆洞（截图右下角露出「跳跃/技能格」）。
+        if (!GameHUD.InterfaceHidden && UiPreviewHook.Draw == null)
         {
             VirtualControls.Draw();
             VirtualControls.DrawDropTargets();

@@ -541,3 +541,8 @@
 ### 2026-10-23 对话回归记录
 
 `QuestNpcChecks.Run`：24107 项通过、0 失败，含全地图任务关联扫描、按钮协议、希娜 1031 的 Say 翻页/拒绝及远程任务地图限制。脚本 harness 保持上表既有失败基线；compile-check Rebuild 为 0 error。最新布局的图形冒烟测试因已有 Unity 实例占用项目未完成，不能据此宣称视觉验收通过。截图中的两条自定义任务标题在本地后端/脚本及已扫描数据中仍未定位，未在 C# 中伪造标题或任务逻辑。
+
+
+### 截图重建例外（2026-10-28，用户明确授权）
+
+用户授权按截图编写透德/彼特两条独立任务。数据使用Resources/Quests/screenshot_training.json，本地ID900001/900002；JS在content/script-overrides/quest，随sync_npc_scripts.py打包且保留来源。其余源端脚本仍原样同步，原端WZ不改。两任务各杀5只不同怪物回各自NPC交付；未展示的奖励不猜填。详见reverse skill的quest-window-and-alarm记录。

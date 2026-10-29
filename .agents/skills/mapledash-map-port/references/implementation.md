@@ -81,3 +81,5 @@ GameLoop 切主题要设置 `PlayerCtrl.Climbs` 和 Terrain；无原地图模式
 ### 台阶墙脚接触（2026-10-28）
 
 `PlayerCtrl.MoveHorizontal` 为步行和现有受击位移共用的水平墙/支持求解。墙命中截在竖直 foothold 的 x，不能停在旧 x：墙脚连接的下层平台可能只从墙线开始，旧 x 会导致沿墙下降时下层永远漏接。接触方向支持墙线上继续阻挡、停步后反向脱离；出生/复位清接触。原端证据、验证边界及全图回归入口见 beidou-client-reverse 的 input-and-physics.md「台阶直角墙脚漏地」。
+
+绳梯方向跳已按EXE普通分支改为必须左右输入，竖速jumpSpeed×0.5、横速walkSpeed×1.3，切jump并设朝向；依据与特殊状态边界见 beidou-client-reverse/input-and-physics.md「绳梯左右＋跳跃」。

@@ -45,6 +45,11 @@ public sealed class LoginResult
     public bool justRegistered;
     /// <summary>封停到期时间（仅 Banned 用；null 表示永久封停）。源端 getTempBan 把时间一起发给客户端。</summary>
     public string banUntil;
+    /// <summary>
+    /// 账号性别：源端 LOGIN_STATUS 成功包里紧跟 accId 的那个 byte（PacketCreator.getAuthSuccess:716）。
+    /// 10 = 还没选（accounts.gender 默认值），客户端必须弹性别框，选完走 SET_GENDER。
+    /// </summary>
+    public int gender = AccountsDao.GenderUnset;
 }
 
 public static class LoginService
@@ -65,7 +70,11 @@ public static class LoginService
                 return new LoginResult { code = LoginResultCode.NotRegistered };
             int id = AccountsDao.AutoRegister(db, name, pwd);
             AccountsDao.UpdateLoginState(db, id, true);
-            return new LoginResult { code = LoginResultCode.Ok, accountId = id, accountName = name, justRegistered = true };
+            return new LoginResult
+            {
+                code = LoginResultCode.Ok, accountId = id, accountName = name, justRegistered = true,
+                gender = AccountsDao.Gender(db, id),   // 新号还没写 gender → 默认 10，等客户端弹性别
+            };
         }
 
         int accId = (int)System.Convert.ToInt64(acc["id"]);
@@ -85,7 +94,25 @@ public static class LoginService
             return new LoginResult { code = LoginResultCode.Banned, accountId = accId, accountName = name, banUntil = until };
 
         AccountsDao.UpdateLoginState(db, accId, true);
-        return new LoginResult { code = LoginResultCode.Ok, accountId = accId, accountName = name };
+        return new LoginResult
+        {
+            code = LoginResultCode.Ok, accountId = accId, accountName = name,
+            gender = AccountsDao.Gender(db, accId),
+        };
+    }
+
+    /// <summary>
+    /// 源端 SetGenderHandler：确认要建这个号（0x01）后写 accounts.gender，再回一个 LOGIN_STATUS 成功包。
+    /// 本地返回写库后的性别，客户端据此继续走选区。
+    /// </summary>
+    public static int SetGender(DbStore db, int accountId, int gender)
+    {
+        // 源端 SetGenderHandler 只在 c.getGender() == 10 时才处理这个包：性别定过一次就不可再改。
+        int current = AccountsDao.Gender(db, accountId);
+        if (current != AccountsDao.GenderUnset) return current;
+        if (gender != 0 && gender != 1) return current;
+        AccountsDao.SetGender(db, accountId, gender);
+        return AccountsDao.Gender(db, accountId);
     }
 
     // tempban 默认值 '2005-05-11 00:00:00' 表示「没有临时封禁」，晚于当前时间才算生效。

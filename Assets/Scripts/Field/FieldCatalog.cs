@@ -24,10 +24,10 @@ public sealed class FieldRope
 public sealed class FieldPortal
 {
     public string name, targetName, script;
-    public int type, tm;
+    public int type, tm = 999999999;
     public float x, y;
     public bool IsSpawn => type == 0;
-    public bool Warps => tm > 0 && tm < 999999999;
+    public bool Warps => tm >= 0 && tm < 999999999;
     public bool HasScript => !string.IsNullOrEmpty(script);
 
     // 原客户端触发方式（Portal.java 的类型常量 + 客户端 Portal 处理）：
@@ -80,6 +80,12 @@ public sealed class FieldChunk
 public sealed class FieldMap
 {
     public int id, returnMap, fieldLimit, fieldType;
+    public int createMobInterval = 5000;
+    public int decHp,protectItem,forcedReturn=999999999,timeLimit=-1;
+    public int timeMobId=-1;
+    public string timeMobMessage;
+    public string onUserEnter,onFirstUserEnter;
+    public bool everlast;
     public string name, street, bgm;
     public bool town;
     public float mobRate;

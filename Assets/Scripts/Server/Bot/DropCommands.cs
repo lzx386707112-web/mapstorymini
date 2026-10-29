@@ -279,7 +279,7 @@ namespace Server.Bot
         static void Pick(BotActor fakechar, MapItem mapItem)
         {
             if (mapItem == null || mapItem.pickedUp) return;
-            MapItemService.PickItemDrop(fakechar.mapId, mapItem, 2);
+            MapItemService.PickItemDrop(fakechar.mapId, mapItem, 2, fakechar.id);
         }
 
         /// <summary>
@@ -297,7 +297,7 @@ namespace Server.Bot
             {
                 if (queue.Count == 0) return;
                 var mapItem = queue.Dequeue();
-                if (mapItem != null && !mapItem.pickedUp) MapItemService.PickItemDrop(mapId, mapItem, 2);
+                if (mapItem != null && !mapItem.pickedUp) MapItemService.PickItemDrop(mapId, mapItem, 2, fakechar.id);
                 if (queue.Count > 0) chain = BotTasks.Schedule(Step, 100);
             }
             Step();

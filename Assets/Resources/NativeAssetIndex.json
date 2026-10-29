@@ -7424,6 +7424,411 @@
   },
   "ui/bar/VScrD_base": {
    "source": "UI/Basic.img/VScr/disabled/base"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/reqLEV": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/reqLEV"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/reqSTR": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/reqSTR"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/reqDEX": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/reqDEX"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/reqINT": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/reqINT"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/reqLUK": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/reqLUK"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/reqPOP": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/reqPOP"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/0": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/0"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/1": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/1"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/2": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/2"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/3": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/3"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/4": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/4"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/5": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/5"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/6": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/6"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/7": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/7"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/8": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/8"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/9": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/9"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/beginner": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/beginner"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/warrior": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/warrior"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/magician": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/magician"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/bowman": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/bowman"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/thief": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/thief"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/pirate": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/pirate"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/percent": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/percent"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/max": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/max"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Can/none": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Can/none"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/reqLEV": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/reqLEV"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/reqSTR": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/reqSTR"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/reqDEX": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/reqDEX"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/reqINT": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/reqINT"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/reqLUK": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/reqLUK"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/reqPOP": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/reqPOP"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/0": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/0"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/1": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/1"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/2": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/2"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/3": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/3"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/4": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/4"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/5": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/5"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/6": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/6"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/7": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/7"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/8": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/8"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/9": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/9"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/beginner": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/beginner"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/warrior": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/warrior"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/magician": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/magician"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/bowman": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/bowman"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/thief": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/thief"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/pirate": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/pirate"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Cannot/none": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Cannot/none"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Dot/0": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Dot/0"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Dot/1": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Dot/1"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Dot/2": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Dot/2"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/30": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/30"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/31": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/31"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/32": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/32"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/33": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/33"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/37": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/37"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/38": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/38"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/40": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/40"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/41": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/41"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/42": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/42"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/43": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/43"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/44": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/44"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/45": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/45"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/46": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/46"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/47": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/WeaponCategory/47"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/1": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/1"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/2": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/2"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/3": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/3"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/4": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/4"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/5": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/5"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/6": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/6"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/7": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/7"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/8": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/8"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/9": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/9"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/10": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/10"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/12": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/12"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/ItemCategory/21": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/ItemCategory/21"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Speed/0": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Speed/0"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Speed/1": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Speed/1"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Speed/2": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Speed/2"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Speed/3": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Speed/3"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Speed/4": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Speed/4"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Speed/5": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Speed/5"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Speed/6": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Speed/6"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/0": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/0"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/1": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/1"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/2": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/2"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/3": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/3"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/4": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/4"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/5": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/5"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/6": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/6"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/7": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/7"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/8": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/8"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/9": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/9"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/10": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/10"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/11": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/11"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/12": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/12"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/13": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/13"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/14": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/14"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/15": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/15"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/16": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/16"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/17": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/17"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/Property/18": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/Property/18"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/mesos": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/mesos"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/cash": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/cash"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/itemLEV": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/itemLEV"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/itemEXP": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/itemEXP"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/0": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/0"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/1": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/1"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/2": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/2"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/3": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/3"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/4": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/4"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/5": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/5"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/6": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/6"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/7": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/7"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/8": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/8"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/9": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/9"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/percent": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/percent"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/max": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/max"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/none": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthEnabled/none"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/itemLEV": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/itemLEV"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/itemEXP": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/itemEXP"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/0": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/0"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/1": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/1"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/2": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/2"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/3": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/3"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/4": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/4"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/5": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/5"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/6": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/6"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/7": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/7"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/8": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/8"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/9": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/9"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/percent": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/percent"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/max": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/max"
+  },
+  "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/none": {
+   "source": "UI/UIWindow.img/ToolTip/Equip/GrowthDisabled/none"
   }
  },
  "zOrder": [

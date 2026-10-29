@@ -79,6 +79,8 @@ public sealed class NpcSession
         return session;
     }
 
+    internal static NpcSession MapContext() => new NpcSession(0,0,false,false);
+
     NpcSession(int npcId, int questId, bool isQuest, bool questEnd)
     {
         NpcId = npcId;
@@ -204,6 +206,9 @@ public sealed class NpcSession
         var pages = QuestPages(say);
         if (pages.Count == 0) pages.Add(quest.info.Length > 0 ? quest.info[Math.Min(end ? 1 : 0, quest.info.Length - 1)] : quest.name);
         int page = 0;
+        // 交付对话开始前先按原端 restoreLostItem 补一次「接取时自己发过的任务道具」，
+        // 否则道具丢失后 Check/1 永远不满足，任务卡死再也交不了。
+        if (end) QuestLogic.RestoreLostItems(quest);
         bool branch = end && !QuestLogic.CanComplete(quest, npcId);
         if (branch)
         {
@@ -237,6 +242,16 @@ public sealed class NpcSession
                 if (end) QuestLogic.Complete(quest, npcId, true);
                 else QuestLogic.Start(quest, npcId, true);
                 NpcField.InvalidateMarkers();
+                // 任务链：原端 NextQuestAction 发 updateQuestFinish(questId, npc, nextQuest)，
+                // 客户端当场把后继任务的接取对话接在同一个 NPC 上（不是静默改状态）。
+                // 所以这里关掉当前对话、直接开下一条的接取，Act/0 的道具/经验在接取时才发放。
+                var next = end ? QuestLogic.ChainedNext(quest.completeAct, npcId) : null;
+                if (next != null)
+                {
+                    Close();
+                    TalkQuest(next, npcId, false);
+                    return;
+                }
             }
             pages = QuestPages(say?.Get(mode == 1 ? "yes" : "no"));
             page = 0;

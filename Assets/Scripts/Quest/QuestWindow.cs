@@ -1,184 +1,282 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using MapleDash.Wz;
 using UnityEngine;
 
-// 任务日志：左列进行中/已完成，右列任务说明与奖励。
-// 使用原版 UIWindow.img/Quest 的两张底图（245x396 + 305x396）。
+// BeiDou.exe 87EC3F / 883126 (list), 87BAE7 / 87C388 (detail).
 public static class QuestWindow
 {
     public static bool Visible;
-    static int tab;                 // 0 进行中 / 1 已完成
-    static int selectedId;
-    static Vector2 listScroll, detailScroll;
-    static GUIStyle title, row, body, small, section;
+    static int tab = 1, selectedId;
+    static float listScroll, bodyScroll, summaryScroll;
+    static bool detailVisible = true;
+    static readonly HashSet<int> collapsed = new HashSet<int>();
+    static readonly List<Entry> rows = new List<Entry>();
+    struct Entry { public int id, area, count; }
 
-    const float S = 1.25f;
-
-    public static void Toggle()
-    {
-        Visible = !Visible;
-        if (Visible) selectedId = 0;
-    }
+    public static void Toggle() { Visible = !Visible; }
+    public static void Select(int id) { selectedId = id; tab = Profile.QuestStatus(id); detailVisible = Visible = true; }
 
     public static void Draw()
     {
         if (!Visible) return;
-        EnsureStyles();
-
-        var quests = tab == 0 ? (IReadOnlyList<int>)Profile.StartedQuests : Profile.CompletedQuests;
-        if (selectedId == 0 && quests.Count > 0) selectedId = quests[0];
-
-        float w = (245 + 305) * S, h = 396 * S;
-        float x = (UiKit.W - w) * 0.5f;
-        float y = Mathf.Max(20f, (UiKit.H - BottomBar.Height) * 0.5f - h * 0.5f);
-
-        var left = new Rect(x, y, 245 * S, h);
-        var right = new Rect(x + 245 * S, y, 305 * S, h);
-        DrawTex("wz://UI/UIWindow.img/Quest/backgrnd", left);
-        DrawTex("wz://UI/UIWindow.img/Quest/backgrnd2", right);
-
-        // 标题 + 关闭
-        title.normal.textColor = new Color(0.95f, 0.88f, 0.55f);
-        GUI.Label(new Rect(left.x + 14, left.y + 8, 160, 22), "任务日志", title);
-        var close = new Rect(right.xMax - 40 * S, right.y + 8 * S, 28 * S, 22 * S);
-        if (NativeUi.Button(close, "UI/UIWindow.img/Quest/BtOK"))
+        bool showDetail = detailVisible && selectedId > 0;
+        float scale = Mathf.Min(BottomBar.S, (UiKit.W - 16f) / (showDetail ? 550f : 245f), (UiKit.H - BottomBar.Height - 16f) / 396f);
+        var origin = new Vector2((UiKit.W - (showDetail ? 550 : 245) * scale) / 2f,
+            Mathf.Max(0, (UiKit.H - BottomBar.Height - 396 * scale) / 2f));
+        QuestUi.Begin(origin, scale);
+        QuestUi.Image("Quest/backgrnd", 0, 0);
+        if (QuestUi.Button("UI/Basic.img/BtClose", 229, 6)) { Visible = false; return; }
+        DrawTabs();
+        BuildRows();
+        if (rows.Count == 0)
         {
-            Visible = false;
-            return;
+            var notice = Art.Tex("wz://UI/UIWindow.img/Quest/notice" + tab);
+            if (notice != null) QuestUi.Image("Quest/notice" + tab, (210 - notice.width) / 2 - 2, (309 - notice.height) / 2 + 50);
         }
-
-        // 页签
-        Tab(new Rect(left.x + 14, left.y + 34, 100, 24), "进行中", tab == 0, 0);
-        Tab(new Rect(left.x + 120, left.y + 34, 100, 24), "已完成", tab == 1, 1);
-
-        // 列表
-        var listRect = new Rect(left.x + 12, left.y + 66, left.width - 24, left.height - 90);
-        float rowH = 26f;
-        float contentH = Mathf.Max(listRect.height, quests.Count * rowH + 4);
-        listScroll = GUI.BeginScrollView(listRect, listScroll, new Rect(0, 0, listRect.width - 16, contentH));
-        for (int i = 0; i < quests.Count; i++)
+        listScroll = QuestUi.Scroll(new Rect(225, 50, 15, 309), new Rect(10, 50, 215, 309), listScroll, Mathf.Max(0, rows.Count - 14), 1);
+        int first = (int)listScroll;
+        for (int i = first; i < rows.Count && i < first + 14; i++)
         {
-            int id = quests[i];
-            var def = QuestCatalog.Get(id);
-            var r = new Rect(0, i * rowH, listRect.width - 20, rowH - 2);
-            bool hot = r.Contains(Pointer.Pos);
-            bool on = id == selectedId;
-            if (on || hot) UiKit.Fill(r, on ? new Color(0.25f, 0.35f, 0.5f, 0.55f) : new Color(0.2f, 0.25f, 0.35f, 0.35f));
-            row.normal.textColor = on ? new Color(1f, 0.92f, 0.6f) : new Color(0.9f, 0.92f, 0.96f);
-            GUI.Label(new Rect(r.x + 6, r.y + 2, r.width - 8, r.height), def != null ? def.name : ("任务 " + id), row);
-            if (Event.current.type == EventType.Repaint && Pointer.Released && hot) selectedId = id;
-        }
-        GUI.EndScrollView();
-
-        if (quests.Count == 0)
-        {
-            small.normal.textColor = new Color(0.72f, 0.74f, 0.8f);
-            GUI.Label(new Rect(left.x + 20, left.y + 90, left.width - 40, 60),
-                      tab == 0 ? "还没有进行中的任务。\n去和头顶带 ! 的 NPC 对话。" : "还没有已完成的任务。", small);
-        }
-
-        DrawDetail(right);
-    }
-
-    static void DrawDetail(Rect right)
-    {
-        var def = selectedId > 0 ? QuestCatalog.Get(selectedId) : null;
-        if (def == null) return;
-
-        float pad = 16 * S;
-        title.normal.textColor = new Color(0.95f, 0.88f, 0.55f);
-        GUI.Label(new Rect(right.x + pad, right.y + 12 * S, right.width - pad * 2, 26), def.name, title);
-
-        // 正文
-        var bodyRect = new Rect(right.x + pad, right.y + 44 * S, right.width - pad * 2, 150 * S);
-        string text = def.info.Length >= 1 ? def.info[0] : "";
-        float th = body.CalcHeight(new GUIContent(text), bodyRect.width);
-        detailScroll = GUI.BeginScrollView(bodyRect, detailScroll, new Rect(0, 0, bodyRect.width - 16, Mathf.Max(bodyRect.height, th)));
-        body.normal.textColor = new Color(0.12f, 0.12f, 0.14f);
-        GUI.Label(new Rect(0, 0, bodyRect.width - 18, th), text, body);
-        GUI.EndScrollView();
-
-        // 条件 / 奖励
-        float y = bodyRect.yMax + 6;
-        section.normal.textColor = new Color(0.35f, 0.25f, 0.12f);
-        GUI.Label(new Rect(right.x + pad, y, 200, 18), "条件", section);
-        y += 18;
-        small.normal.textColor = new Color(0.18f, 0.18f, 0.2f);
-        var req = tab == 0 ? def.completeReq : def.startReq;
-        if (req.level > 0) { GUI.Label(new Rect(right.x + pad, y, 240, 16), "等级 " + req.level, small); y += 16; }
-        for (int i = 0; i < req.items.Count; i++)
-        {
-            GUI.Label(new Rect(right.x + pad, y, 260, 16),
-                      WzNames.Item(req.items[i].item) + " x" + req.items[i].count +
-                      "（" + Profile.ItemCount(req.items[i].item) + "）", small);
-            y += 16;
-        }
-        for (int i = 0; i < req.mobs.Count; i++)
-        {
-            int have = Profile.QuestProgressInt(def.id, req.mobs[i].item.ToString());
-            GUI.Label(new Rect(right.x + pad, y, 260, 16),
-                      WzNames.Mob(req.mobs[i].item) + " " + have + "/" + req.mobs[i].count, small);
-            y += 16;
-        }
-
-        var act = tab == 0 ? def.completeAct : def.startAct;
-        y += 4;
-        section.normal.textColor = new Color(0.35f, 0.25f, 0.12f);
-        GUI.Label(new Rect(right.x + pad, y, 200, 18), "奖励", section);
-        y += 18;
-        small.normal.textColor = new Color(0.18f, 0.18f, 0.2f);
-        if (act.exp > 0) { GUI.Label(new Rect(right.x + pad, y, 240, 16), "经验 " + act.exp, small); y += 16; }
-        if (act.money != 0) { GUI.Label(new Rect(right.x + pad, y, 240, 16), "金币 " + act.money, small); y += 16; }
-        for (int i = 0; i < act.items.Count; i++)
-        {
-            if (act.items[i].count <= 0) continue;
-            GUI.Label(new Rect(right.x + pad, y, 260, 16), WzNames.Item(act.items[i].item) + " x" + act.items[i].count, small);
-            y += 16;
-        }
-
-        // 放弃任务
-        if (tab == 0 && Profile.IsQuestStarted(def.id))
-        {
-            var btn = new Rect(right.x + pad, right.yMax - 40 * S, 90, 24);
-            if (NativeUi.Button(btn, "UI/UIWindow.img/Quest/BtGiveup"))
+            var entry = rows[i]; float y = 50 + (i - first) * 22;
+            if (entry.id == 0)
             {
-                Profile.ResetQuest(def.id);
-                BottomBar.Toast("已放弃：" + def.name);
-                selectedId = 0;
-                NpcField.InvalidateMarkers();
+                QuestUi.Fill(new Rect(10, y - 1, 208, 19), new Color32(159, 181, 206, 255));
+                bool collapseClick = QuestUi.Button("UI/Basic.img/" + (collapsed.Contains(entry.area) ? "BtMax" : "BtMin"), 13, y + 2);
+                string category = WzAssets.FileRoot("Etc/QuestCategory.img")?.Text(entry.area.ToString(), "") ?? "";
+                QuestUi.Label(new Rect(30, y + 3, 188, 16), category + " (" + entry.count + ")", Color.white);
+                if (collapseClick || QuestUi.Click(QuestUi.Rect(10, y, 208, 19)))
+                { if (!collapsed.Add(entry.area)) collapsed.Remove(entry.area); }
             }
-            GUI.Label(new Rect(btn.xMax + 8, btn.y + 2, 120, 20), "放弃任务", small);
+            else
+            {
+                bool selected = selectedId == entry.id;
+                if (selected) QuestUi.Fill(new Rect(28, y, 192, 19), new Color32(57, 96, 147, 255));
+                QuestUi.Image("Quest/" + (tab == 0 ? "icon0" : tab == 2 ? "icon4" : QuestLogic.CanComplete(QuestCatalog.Get(entry.id), 0) ? "icon2/0" : "icon3/0"), 11, y + 2);
+                QuestUi.Label(new Rect(30, y + 2, 192, 16), QuestUi.Fit(QuestCatalog.Get(entry.id).name, 192), selected ? Color.white : Color.black);
+                if (QuestUi.Click(QuestUi.Rect(28, y, 192, 19)))
+                { selectedId = entry.id; detailVisible = true; bodyScroll = summaryScroll = 0; }
+            }
         }
+        if (detailVisible && selectedId > 0) DrawDetail();
     }
 
-    static void Tab(Rect r, string text, bool on, int index)
+    // CCtrlTab mode1: Basic/Tab2, fixed segment65 (87EC3F), leading/trailing4, middle8.
+    static void DrawTabs()
     {
-        bool hot = r.Contains(Pointer.Pos);
-        UiKit.Fill(r, on ? new Color(0.32f, 0.34f, 0.42f, 0.95f) : hot ? new Color(0.26f, 0.28f, 0.34f, 0.9f) : new Color(0.18f, 0.19f, 0.23f, 0.85f));
-        row.normal.textColor = on ? new Color(1f, 0.9f, 0.55f) : new Color(0.82f, 0.85f, 0.9f);
-        GUI.Label(r, text, row);
-        if (Event.current.type == EventType.Repaint && Pointer.Released && hot && !on)
+        TabPiece("left" + (tab == 0 ? 1 : 0), 3, 23);
+        for (int i = 0; i < 3; i++)
         {
-            tab = index;
-            selectedId = 0;
-            listScroll = Vector2.zero;
-            detailScroll = Vector2.zero;
+            float start = 7 + i * 65, end = start + 57;
+            var fill = Art.Tex("wz://UI/Basic.img/Tab2/fill" + (tab == i ? 1 : 0));
+            if (fill != null) GUI.DrawTexture(QuestUi.Rect(start, 23, 57, fill.height), fill);
+            TabPiece(i == 2 ? "right" + (tab == i ? 1 : 0) : "middle" + (tab == i ? 1 : tab == i + 1 ? 2 : 0), end, 23);
+            var label = Art.Tex("wz://UI/UIWindow.img/Quest/Tab/" + (tab == i ? "disabled/" : "enabled/") + i);
+            if (label != null) GUI.DrawTexture(QuestUi.Rect(start + 57 / 2 - label.width / 2, 23 + 19 / 2 - label.height / 2 + 2, label.width, label.height), label);
+            if (QuestUi.Click(QuestUi.Rect(start - 4, 23, 65, 19)) && tab != i)
+            { tab = i; selectedId = 0; listScroll = bodyScroll = summaryScroll = 0; }
         }
     }
 
-    static void DrawTex(string path, Rect r)
+    static void TabPiece(string piece, float x, float y)
     {
-        var tex = Art.Tex(path);
-        if (tex != null) GUI.DrawTexture(r, tex, ScaleMode.StretchToFill);
-        else UiKit.Fill(r, new Color(0.12f, 0.13f, 0.17f, 0.95f));
+        var image = Art.Tex("wz://UI/Basic.img/Tab2/" + piece);
+        if (image != null) GUI.DrawTexture(QuestUi.Rect(x, y, image.width, image.height), image);
     }
 
-    static void EnsureStyles()
+    static void BuildRows()
     {
-        if (title != null) return;
-        title = new GUIStyle { fontSize = 16, fontStyle = FontStyle.Bold };
-        row = new GUIStyle { fontSize = 12, alignment = TextAnchor.MiddleLeft };
-        body = new GUIStyle { fontSize = 12, wordWrap = true, richText = true, alignment = TextAnchor.UpperLeft };
-        small = new GUIStyle { fontSize = 11, wordWrap = true };
-        section = new GUIStyle { fontSize = 12, fontStyle = FontStyle.Bold };
+        var groups = new SortedDictionary<int, List<int>>();
+        foreach (int id in QuestCatalog.Ids)
+        {
+            var q = QuestCatalog.Get(id);
+            if (q == null || Profile.QuestStatus(id) != tab) continue;
+            if (tab == 0 && (!QuestLogic.CanStart(q, 0) || !QuestLogic.NotificationDateAvailable(q.startReq, System.DateTime.Now))) continue;
+            if (!groups.TryGetValue(q.area, out var list)) groups[q.area] = list = new List<int>();
+            list.Add(id);
+        }
+        rows.Clear();
+        foreach (var group in groups)
+        {
+            rows.Add(new Entry { area = group.Key, count = group.Value.Count });
+            if (collapsed.Contains(group.Key)) continue;
+            group.Value.Sort((a, b) => string.CompareOrdinal(QuestCatalog.Get(a).name, QuestCatalog.Get(b).name));
+            foreach (int id in group.Value) rows.Add(new Entry { id = id });
+        }
+    }
+
+    static void DrawDetail()
+    {
+        var q = QuestCatalog.Get(selectedId); if (q == null) return;
+        bool summary = !string.IsNullOrEmpty(q.demandSummary) || !string.IsNullOrEmpty(q.summary) || !string.IsNullOrEmpty(q.rewardSummary);
+        QuestUi.Image("Quest/" + (summary ? "backgrnd4" : "backgrnd2"), 245, 0);
+        if (QuestUi.Button("UI/Basic.img/BtHide", 245 + 285, 6)) { detailVisible = false; return; }
+        QuestUi.Label(new Rect(245 + 35, 40, 150, 18), QuestUi.Fit(q.name, 150), Color.white);
+        var level = q.startReq;
+        string levelText = level.maxLevel > 0 ? "等级 " + level.maxLevel + "以下" : level.level > 0 ? "等级 " + level.level + "以上" : "";
+        QuestUi.Label(new Rect(245 + 23, 60, 150, 18), levelText, Color.white);
+        DrawNpc(q.startReq.npc, 245 + 242, 110);
+        string text = q.stateInfo.TryGetValue(Profile.QuestStatus(q.id), out var state) ? state : "";
+        DrawContent(ExpandProgress(q, text), new Rect(245 + 17, 122, 265, summary ? 120 : 243), ref bodyScroll, 120);
+        if (summary)
+        {
+            var blocks = new List<string> { "#fUI/UIWindow.img/Quest/summary#" };
+            if (!string.IsNullOrEmpty(q.summary)) blocks.Add(q.summary);
+            if (!string.IsNullOrEmpty(q.demandSummary)) blocks.Add(q.demandSummary);
+            if (!string.IsNullOrEmpty(q.rewardSummary))
+            {
+                blocks.Add(" ");
+                blocks.Add("#fUI/UIWindow.img/Quest/reward#");
+                blocks.Add(q.rewardSummary);
+            }
+            for (int i = 0; i < blocks.Count; i++) blocks[i] = ExpandProgress(q, blocks[i]);
+            DrawContent(blocks, new Rect(245 + 17, 248, 265, 110), ref summaryScroll);
+        }
+        int status = Profile.QuestStatus(q.id);
+        if (status != PlayerProfileData.QuestStartedState && status != PlayerProfileData.QuestCompletedState) return;
+        bool old = GUI.enabled;
+        GUI.enabled = old && status == PlayerProfileData.QuestStartedState && (q.id < 1200 || q.id >= 1400);
+        if (QuestUi.Button("UI/UIWindow.img/UtilDlgEx/BtQGiveup", 245 + 242, 372))
+        { Profile.ResetQuest(q.id); selectedId = 0; NpcField.InvalidateMarkers(); }
+        GUI.enabled = old && status == PlayerProfileData.QuestStartedState && (q.id < 1200 || q.id >= 1400) && QuestAlarm.CanTrack(q);
+        if (QuestUi.Button("UI/UIWindow.img/Quest/BtAlert", 245 + 150, 372)) QuestAlarm.Track(q.id);
+        GUI.enabled = old;
+    }
+
+    public static string ExpandProgress(QuestDef q, string text)
+    {
+        return Regex.Replace(text ?? "", @"#a(\d+)#", match =>
+        {
+            string value = match.Groups[1].Value, prefix = q.id.ToString();
+            if (!value.StartsWith(prefix) || !int.TryParse(value.Substring(prefix.Length), out int index) || index < 1 || index > q.completeReq.mobs.Count) return "";
+            var need = q.completeReq.mobs[index - 1];
+            return Profile.QuestProgressInt(q.id, need.item.ToString()) + "/" + need.count;
+        }).Replace(@"\r\n", "\n").Replace(@"\n", "\n");
+    }
+
+    static void DrawContent(string text, Rect view, ref float scroll, float rangeHeight)
+        => DrawContent(new[] { text }, view, ref scroll, rangeHeight);
+
+    static void DrawContent(IList<string> blocks, Rect view, ref float scroll, float rangeHeight = 110)
+    {
+        // 882625/8827A0: text helper inset1, measure width265; each block is laid out separately.
+        // 87BAE7: clip at origin+(1,1), 263 wide; draw runs relative to the original origin.
+        var layouts = new List<DialogFlow.Layout>(blocks.Count);
+        float height = 0;
+        foreach (string block in blocks)
+        {
+            var layout = DialogFlow.Measure(DialogText.Parse(block), view.width, false, 1);
+            layouts.Add(layout); height += layout.Height;
+        }
+        // 87DCA9 reserves seven extra pixels per block in the original scroll range.
+        float maximum = Mathf.Max(0, Mathf.Floor((height + blocks.Count * 7 - rangeHeight) / 8f) * 8);
+        scroll = QuestUi.Scroll(new Rect(view.x + 266, view.y, 15, view.height), view, scroll, maximum, 8);
+        GUI.BeginClip(QuestUi.Rect(view.x + 1, view.y + 1, view.width - 2, view.height - 2));
+        float offset = 0;
+        foreach (var layout in layouts)
+        {
+            foreach (var span in layout.Spans)
+            {
+                var r = new Rect((span.Rect.x - 1) * QuestUi.Scale, (span.Rect.y + offset - scroll - 1) * QuestUi.Scale,
+                    span.Rect.width * QuestUi.Scale, span.Rect.height * QuestUi.Scale);
+                if (span.Tex != null) GUI.DrawTexture(r, span.Tex);
+                else QuestUi.LocalLabel(r, span.Text, span.Run.Color, span.Run.Bold);
+            }
+            offset += layout.Height;
+        }
+        GUI.EndClip();
+    }
+
+    static void DrawNpc(int id, float x, float y)
+    {
+        if (id <= 0) return;
+        var npc = WzAssets.FileRoot("Npc/" + id.ToString("D7") + ".img");
+        var seen = new HashSet<int>();
+        while (npc?.Get("info/link") != null && seen.Add(id)) { id = npc.Int("info/link"); npc = WzAssets.FileRoot("Npc/" + id.ToString("D7") + ".img"); }
+        var frames = WzAssets.Frames(npc?.Get("stand")); if (frames.Count == 0) return;
+        float total = 0; foreach (var frame in frames) total += Mathf.Max(1, Mathf.Abs(frame.Int("delay", 120)));
+        float age = Mathf.Repeat(Time.unscaledTime * 1000, total); var current = frames[0];
+        foreach (var frame in frames) { current = frame; age -= Mathf.Max(1, Mathf.Abs(frame.Int("delay", 120))); if (age < 0) break; }
+        var texture = WzAssets.Texture(current); var origin = WzAssets.Origin(current);
+        if (texture != null) GUI.DrawTexture(QuestUi.Rect(x - origin.x, y - origin.y, texture.width, texture.height), texture);
+    }
+}
+
+// Quest's original VScr4 controls; coordinates stay in native IMG pixels.
+public static class QuestUi
+{
+    public static float Scale { get; private set; }
+    static Vector2 origin;
+    static GUIStyle style, measureStyle;
+    static int dragging;
+    static float grab;
+    public static void Begin(Vector2 position, float scale) { origin = position; Scale = scale; }
+    public static Rect Rect(float x, float y, float w, float h) => new Rect(origin.x + x * Scale, origin.y + y * Scale, w * Scale, h * Scale);
+    public static void Image(string node, float x, float y)
+    {
+        var texture = Art.Tex("wz://UI/UIWindow.img/" + node);
+        if (texture != null) GUI.DrawTexture(Rect(x, y, texture.width, texture.height), texture);
+    }
+    public static bool Button(string path, float x, float y)
+    {
+        var texture = Art.Tex("wz://" + path + "/normal/0");
+        return texture != null && NativeUi.Button(Rect(x, y, texture.width, texture.height), path);
+    }
+    public static bool Click(Rect rect)
+    {
+        bool click = Event.current.type == EventType.Repaint && Pointer.Clicked && rect.Contains(Pointer.Pos);
+        if (click) Pointer.ConsumeClick(); return click;
+    }
+    public static void Fill(Rect rect, Color color) => UiKit.Fill(Rect(rect.x, rect.y, rect.width, rect.height), color);
+    public static void Label(Rect rect, string text, Color color) => LocalLabel(Rect(rect.x, rect.y, rect.width, rect.height), text, color);
+    // 988CF3: reserve string2192 ("..") before truncating to the native pixel width.
+    public static string Fit(string text, float width)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        if (measureStyle == null) measureStyle = new GUIStyle { font = UiKit.Font, fontSize = 12 };
+        if (measureStyle.CalcSize(new GUIContent(text)).x <= width) return text;
+        float available = width - measureStyle.CalcSize(new GUIContent("..")).x;
+        int count = text.Length;
+        while (count > 0 && measureStyle.CalcSize(new GUIContent(text.Substring(0, count))).x > available) count--;
+        return text.Substring(0, count) + "..";
+    }
+    public static void LocalLabel(Rect rect, string text, Color color, bool bold = false)
+    {
+        if (style == null) style = new GUIStyle { font = UiKit.Font, clipping = TextClipping.Clip };
+        style.fontSize = Mathf.RoundToInt(12 * Scale); style.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal; style.normal.textColor = color;
+        GUI.Label(rect, text, style);
+    }
+    public static float Scroll(Rect bar, Rect view, float value, float maximum, float step)
+    {
+        const string root = "wz://UI/Basic.img/VScr4/";
+        value = Mathf.Clamp(value, 0, maximum);
+        bool enabled = maximum > 0;
+        string state = enabled ? "enabled/" : "disabled/";
+        var track = new Rect(bar.x, bar.y + 13, 15, bar.height - 26);
+        for (float y = track.y; y < track.yMax; y += 13)
+        {
+            var texture = Art.Tex(root + state + "base"); float height = Mathf.Min(13, track.yMax - y);
+            if (texture != null) GUI.DrawTextureWithTexCoords(Rect(bar.x, y, 15, height), texture, new Rect(0, 1 - height / 13, 1, height / 13));
+        }
+        GUI.DrawTexture(Rect(bar.x, bar.y, 15, 13), Art.Tex(root + state + (enabled ? "prev0" : "prev")));
+        GUI.DrawTexture(Rect(bar.x, bar.yMax - 13, 15, 13), Art.Tex(root + state + (enabled ? "next0" : "next")));
+        if (!enabled) return 0;
+        float travel = Mathf.Max(1, track.height - 25);
+        var thumb = Rect(bar.x, track.y + travel * value / maximum, 15, 25);
+        int key = GUIUtility.GetControlID(FocusType.Passive);
+        if (Event.current.type == EventType.Repaint)
+        {
+            if (Rect(view.x, view.y, view.width + 15, view.height).Contains(Pointer.Pos)) value -= Input.mouseScrollDelta.y * step * 2;
+            if (Pointer.Pressed)
+            {
+                if (thumb.Contains(Pointer.Pos)) { dragging = key; grab = Pointer.Pos.y - thumb.y; Pointer.ConsumeClick(); }
+                else if (Rect(bar.x, bar.y, 15, 13).Contains(Pointer.Pos)) { value -= step; Pointer.ConsumeClick(); }
+                else if (Rect(bar.x, bar.yMax - 13, 15, 13).Contains(Pointer.Pos)) { value += step; Pointer.ConsumeClick(); }
+            }
+            if (dragging == key) { if (Pointer.Down) value = (Pointer.Pos.y - grab - origin.y - track.y * Scale) / (travel * Scale) * maximum; else dragging = 0; }
+        }
+        value = Mathf.Clamp(Mathf.Round(value / step) * step, 0, maximum);
+        GUI.DrawTexture(Rect(bar.x, track.y + travel * value / maximum, 15, 25), Art.Tex(root + "enabled/thumb0"));
+        return value;
     }
 }

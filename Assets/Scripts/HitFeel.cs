@@ -13,6 +13,7 @@ public static class HitFeel
     static float _stopUntil;
     static float _shakeUntil;
     static float _shakeNow;
+    static float _shakeDur = 0.14f;
 
     public static Vector2 CameraOffset { get; private set; }
 
@@ -26,8 +27,17 @@ public static class HitFeel
             if (end > _stopUntil) _stopUntil = end;
             Time.timeScale = 0f;
         }
-        _shakeNow = ShakeAmp * weight;
-        _shakeUntil = Time.unscaledTime + 0.14f;
+        Shake(ShakeAmp * weight, 0.14f);
+    }
+
+    // 只震屏、不带顿帧。怪物 attack<N>/info/tremble 走这里
+    // （BeiDou.exe 0x6671D3：非 0 时用常量 30.0 调一次震屏）。
+    public static void Shake(float worldAmplitude, float seconds)
+    {
+        if (worldAmplitude <= 0f) return;
+        _shakeNow = worldAmplitude;
+        _shakeDur = Mathf.Max(0.05f, seconds);
+        _shakeUntil = Time.unscaledTime + _shakeDur;
     }
 
     public static void Reset()
@@ -46,7 +56,7 @@ public static class HitFeel
         if (Time.unscaledTime < _shakeUntil && _shakeNow > 0f)
         {
             // 逐帧衰减，比固定振幅更有"余震"感
-            float k = Mathf.InverseLerp(_shakeUntil, _shakeUntil - 0.14f, Time.unscaledTime);
+            float k = Mathf.InverseLerp(_shakeUntil, _shakeUntil - _shakeDur, Time.unscaledTime);
             float a = _shakeNow * k;
             CameraOffset = new Vector2(Random.Range(-a, a), Random.Range(-a, a));
         }

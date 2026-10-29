@@ -6,6 +6,21 @@ using UnityEngine;
 public static class GameplayChecks
 {
     static int assertions;
+    public static void RunRewardBuffs()
+    {
+        try
+        {
+            Check(RewardRules.MesoAmount(11,150,1.5)==24,"MESOUP truncation order");
+            Check(RewardRules.MesoAmount(11,null,1.5)==16,"meso world rate truncation");
+            Check(RewardRules.MesoAmount(1,1,1)==int.MaxValue,"source zero meso fallback");
+            Check(RewardRules.MesoAmount(int.MaxValue,200,2)==int.MaxValue,"meso saturation");
+            Check(Math.Abs(RewardRules.HolySymbolMultiplier(50,false,false)-1.1f)<.00001f,"solo Holy Symbol");
+            Check(RewardRules.HolySymbolMultiplier(50,true,false)==1.5f && RewardRules.HolySymbolMultiplier(50,false,true)==1.5f,"full Holy Symbol");
+            Debug.Log("[RewardBuffChecks] PASS "+assertions+" original meso/status reward boundaries");
+            EditorApplication.Exit(0);
+        }
+        catch (Exception error) { Debug.LogException(error); EditorApplication.Exit(1); }
+    }
     static void Check(bool condition, string label)
     {
         assertions++;
@@ -52,6 +67,12 @@ public static class GameplayChecks
             Check(RewardRules.RollMeso(400000, 16, 24, 400000, 0) == 0, "drop chance fail boundary");
             Check(RewardRules.RollMeso(400000, 16, 24, 0, 8) == 0, "drop upper bound excluded");
             Check(RewardRules.RollMeso(400000, 0, 0, 0, 0) == 0, "absent meso entry");
+            Check(RewardRules.MesoAmount(11,150,1.5)==24,"MESOUP truncates before world rate");
+            Check(RewardRules.MesoAmount(11,null,1.5)==16,"meso rate truncates instead of rounds");
+            Check(RewardRules.MesoAmount(1,1,1)==int.MaxValue,"original nonpositive meso overflow fallback");
+            Check(RewardRules.MesoAmount(int.MaxValue,200,2)==int.MaxValue,"meso overflow saturation");
+            Check(Math.Abs(RewardRules.HolySymbolMultiplier(50,false,false)-1.1f)<.00001f,"solo Holy Symbol fifth strength");
+            Check(RewardRules.HolySymbolMultiplier(50,true,false)==1.5f && RewardRules.HolySymbolMultiplier(50,false,true)==1.5f,"party/config Holy Symbol full strength");
             for (int c = 0; c < ClassDefs.Count; c++)
                 foreach (var slot in ClassDefs.At(c).skills)
                 {

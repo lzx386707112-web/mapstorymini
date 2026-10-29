@@ -14,15 +14,29 @@ public sealed class NativeMobDebuffs : MonoBehaviour
         return result;
     }
     public bool Has(int id) => active.TryGetValue(id,out var d) && NativeMobController.Now < d.until;
-    public void Apply(int id, int x, int y, long duration)
+    public int ForcedWalkSpeed => Has(126) ? active[126].x : 0;
+    public void Apply(int id, int x, int y, long duration, bool region = false)
     {
         if (Has(id) || player.hp <= 0) return;
+        // Two source rules, deliberately not merged: MobSkill.applyDisease's region
+        // branch (:525) blocks EVERY disease behind HOLY_SHIELD, while
+        // Character.giveDebuff (:2823) lets STUN (123) and SEDUCE (128) through.
+        if (region && player.GetComponent<NativeBuffs>()?.HasSource(2321005)==true) return;
+        if (id!=123 && id!=128 && player.GetComponent<NativeBuffs>()?.HasSource(2321005)==true) return;
         int count = 0;
         foreach (var disease in active.Values) if (NativeMobController.Now < disease.until) count++;
         if (count >= 2) return; // Character.giveDebuff permits at most two diseases.
         active[id] = new Disease { x = x, y = y, until = NativeMobController.Now + duration, nextTick = NativeMobController.Now + 1000 };
     }
     public void Clear() => active.Clear();
+    public void Dispel()
+    {
+        foreach (int id in new[]{124,121,125,120,122,126}) active.Remove(id);
+    }
+    public void Purge()
+    {
+        Dispel(); active.Remove(128); active.Remove(133); active.Remove(132);
+    }
     public void Clear(int id) => active.Remove(id);
     public void Input(ref float horizontal, ref bool jump, ref float vertical)
     {
@@ -35,7 +49,6 @@ public sealed class NativeMobDebuffs : MonoBehaviour
             horizontal = mode == 1 ? -1 : mode == 2 ? 1 : 0;
             jump = mode == 3; vertical = 0;
         }
-        if (Has(126)) horizontal *= Mathf.Clamp01(active[126].x / 100f);
     }
     public bool BlocksAttack => Has(123) || Has(128);
     public bool BlocksSkill => Has(120) || BlocksAttack;

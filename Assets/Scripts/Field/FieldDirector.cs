@@ -64,6 +64,7 @@ public sealed class FieldDirector : MonoBehaviour
     int pendingWarpMap = -1;     // 脚本 cm.warp / 任务传送到指定地图
     string pendingWarpPortal;
     int pendingWarpPortalIndex = -1;   // cm.warp(map, portalId)：目标图 portal 下标（= 源端 Portal.getId）
+    int deferredWarpMap = -1;    // 过场图（0 号）进场后自动续跳的目标（注释见 Enter 里 view.Show 之后）
 
     bool Warping => warpState != WarpState.None;
 
@@ -110,6 +111,14 @@ public sealed class FieldDirector : MonoBehaviour
         // Resolve artwork before discarding the current scene; full Data can contain dangling links.
         try { view.Show(map); }
         catch (System.Exception e) { Debug.LogError("[Field] 无法进入地图 " + mapId + ": " + e.Message); return; }
+
+        // 0 号图（原版 Maple Road : Entrance）是「踏入旅途」开场演出的黑场舞台：
+        //   info/onUserEnter = goAdventure、背景 bS 为空、整屏 allblackTile，图里没有 NPC 也没有门，
+        //   唯一出路是 info/returnMap（10000 小蘑菇）。原版靠客户端播完
+        //   Effect/Direction3.img/goAdventure/Scene{gender} 之后自己跳走；本端演出系统还没做
+        //   （NpcApi 的 showIntro 是空实现），不续跳的话玩家就停在一片黑里出不来。
+        //   2101.js（番茄田的希娜「训练结束了就送你出训练营」）最后就是 cm.warp(0)，走的就是这条路。
+        deferredWarpMap = map.id == 0 && map.returnMap > 0 && map.returnMap != map.id ? map.returnMap : -1;
         // 换图打一条分隔线：看分享出来的日志时，能立刻知道掉帧发生在哪张图
         FileLog.Note("进入地图 " + mapId);
         ClearMobs();
@@ -129,10 +138,12 @@ public sealed class FieldDirector : MonoBehaviour
 
         bool appearanceChanged = (Map != null && Map.fieldType == 82) != (map.fieldType == 82);
         Map = map;
+        nextEnvironmentDamage=Time.realtimeSinceStartupAsDouble+EnvironmentInterval();
         NpcField.Bind(map);
         if (appearanceChanged) player?.RefreshFieldAppearance();
         ApplyGeometry(map);
         PlacePlayer(map, spawnPortalName, spawnPortalIndex);
+        player?.GetComponent<SkillSystem>()?.RestoreBuffSummons();
 
         // 原版每张图自带 bgm（FieldMaps.json 的 info/bgm，如 Bgm00/FloralLife）；
         // Sound/Weapon/Mob/Skill 等音效由各系统按需播放，这里只管地图音乐。
@@ -147,6 +158,7 @@ public sealed class FieldDirector : MonoBehaviour
         nearPortal = null;
         Profile.LastMapId = map.id;
         NativeSkillBackdrop.Enter(this);
+        NativeMapScripts.Enter(this);
 
         Debug.Log("[Field] 进入 " + map.id + " " + map.name + "：刷怪点 " + points.Count +
                   "，传送门 " + map.portals.Count);
@@ -220,7 +232,7 @@ public sealed class FieldDirector : MonoBehaviour
 
         spawner = new MapSpawner();
         spawner.Clock = NowMs;                 // 与帧时钟对齐（源端 Server.getCurrentTime）
-        spawner.SetMobInterval(5000);          // MapleMap 默认 mobInterval
+        spawner.SetMobInterval(Map.createMobInterval); // MapFactory info/createMobInterval (ms)
         spawner.SetRandomRefresh(true);        // use_monster_random_refresh_position（与原客户端一致）
 
         foreach (var s in map.spawns)
@@ -352,7 +364,7 @@ public sealed class FieldDirector : MonoBehaviour
 
     // WZ info/speed → 世界单位/秒。抽成静态方法，供自检与运行时共用同一套公式。
     public static float MobSpeed(float wzSpeed)
-        => Mathf.Max(0.25f, PlayerCtrl.BaseWalkPx * (100f + wzSpeed) / 100f / Art.PPU);
+        => (float)(PlayerCtrl.BaseWalkPx * NativeMobMotion.Multiplier((int)wzSpeed) / Art.PPU);
 
     // ——————————————————— 每帧 ———————————————————
 
@@ -366,6 +378,15 @@ public sealed class FieldDirector : MonoBehaviour
         // 渐变优先于一切：死亡时 GameLoop 可能已经 gameOver，但黑幕仍要走完
         if (Warping) { TickWarpFade(); return; }
 
+        // 过场图（0 号）已经站上去了，接着按它的 returnMap 走（见 Enter 里的 deferredWarpMap 注释）
+        if (deferredWarpMap >= 0)
+        {
+            int to = deferredWarpMap;
+            deferredWarpMap = -1;
+            WarpTo(to);
+            return;
+        }
+
         if (Map == null || GameLoop.I == null || GameLoop.I.state != GameLoop.GameState.Playing) return;
         var player = GameLoop.I.player;
         if (player == null) return;
@@ -376,12 +397,46 @@ public sealed class FieldDirector : MonoBehaviour
         CheckPortals(player, dt);
         CheckNpc(player);
         TickRespawn(dt);
+        TickEnvironment(player,Time.realtimeSinceStartupAsDouble);
 
         AliveCount = 0;
         foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead) AliveCount++;
 
         saveTimer += dt;
         if (saveTimer > 20f) { saveTimer = 0f; Profile.Save(); }
+    }
+
+    double nextEnvironmentDamage;
+    static double EnvironmentInterval()
+    {
+        int interval=GameServer.Local==null ? 2500 : GameConfigDao.GetInt(GameServer.Local.Db,"map_damage_overtime_interval",2500);
+        int count=GameServer.Local==null ? 2 : GameConfigDao.GetInt(GameServer.Local.Db,"map_damage_overtime_count",2);
+        return System.Math.Max(1,interval)*System.Math.Max(1,count)/1000.0;
+    }
+    public static bool FieldProtection(int mapId,int returnMap,int protection,bool coldEquipment)
+    {
+        bool cold=(returnMap==211000000 && mapId!=200082300) || returnMap==193000000;
+        // Character.buffMapProtection returns immediately for an existing protection stat.
+        if (protection!=0) return protection==1 ? cold : protection==2 && (returnMap==230000000 || mapId==200082300);
+        return coldEquipment && cold;
+    }
+    public static bool IsEnvironmentalEquipment(InventoryEntry item)
+        => item!=null && item.inventoryType==InventoryDao.Equipped && item.position<0;
+    public void TickEnvironment(PlayerCtrl player,double now)
+    {
+        if (Map==null || Map.decHp<=0 || player==null || player.hp<=0 || now<nextEnvironmentDamage) return;
+        nextEnvironmentDamage=now+EnvironmentInterval();
+        bool equipped=false,cold=false;
+        if (GameSession.InGame)
+            foreach (var item in GameSession.Character.inventory)
+                if (IsEnvironmentalEquipment(item))
+                { equipped|=Map.protectItem>0 && item.itemId==Map.protectItem; cold|=(item.flag&4)!=0; }
+        else for (int slot=-1;slot>=-59;slot--) equipped|=Map.protectItem>0 && Profile.EquipOfSlot(slot)==Map.protectItem;
+        int protection=player.GetComponent<NativeBuffs>()?.Value("MAP_PROTECTION") ?? 0;
+        if (equipped || FieldProtection(Map.id,Map.returnMap,protection,cold)) return;
+        // Character.doHurtHp -> addHP: independent of defense, contact i-frames and guard skills.
+        player.hp=Mathf.Max(0,player.hp-Map.decHp);
+        if (player.hp<=0) GameLoop.I?.OnPlayerDead();
     }
 
     // FieldMap坐标转换为WorldX=x/PPU、WorldY=-y/PPU；同步真实脚底位置。
@@ -573,7 +628,19 @@ public sealed class FieldDirector : MonoBehaviour
                     pendingWarpPortal = null;
                     int portalIndex = pendingWarpPortalIndex;
                     pendingWarpPortalIndex = -1;
-                    if (target <= 0) target = Map != null ? Map.returnMap : 1000000;
+                    // pendingWarpMap 的「无目标」哨兵是 -1；0 号图是合法目标（见 WarpTo 注释）
+                    if (target < 0) target = Map != null ? Map.returnMap : 1000000;
+                    // 0 号图是黑场过场舞台（见 Enter 里 deferredWarpMap 的注释）：本端没有开场演出，
+                    // 直接按它的 returnMap 送走，别让玩家先进黑图再跳一次。
+                    if (target == 0)
+                    {
+                        try
+                        {
+                            var pass = FieldCatalog.GetMap(0);
+                            if (pass != null && pass.returnMap > 0 && pass.returnMap != 0) target = pass.returnMap;
+                        }
+                        catch (System.Exception e) { Debug.LogWarning("[Field] 0 号过场图解析失败，仍按原目标进入：" + e.Message); }
+                    }
                     Enter(target, portalName, portalIndex);
                 }
                 else if (warpTarget.tm == Map.id) WarpInsideMap(warpTarget);
@@ -638,9 +705,12 @@ public sealed class FieldDirector : MonoBehaviour
         if (e.HasBotContribution && GameSession.InGame && GameServer.Local!=null)
         {
             var bots=GameServer.Local.Bots;
+            var buffs=GameLoop.I?.player?.GetComponent<NativeBuffs>();
             var award=Server.Bot.BotPartyExperience.Calculate(GameServer.Local.Db,bots.parties,bots.Player(GameSession.CharacterId),
                 (int)Art.Num(mob.stats,"level",1),exp,(e.NativeController!=null ? e.NativeController.MaximumHp : (long)e.hpMax)+e.TotalHealed,
-                e.DamageContributions,(float)rates.expRate,(float)rates.expRate);
+                e.DamageContributions,(float)rates.expRate,(float)rates.expRate,
+                buffs?.Value("HOLY_SYMBOL") ?? 0,GameConfigDao.GetBool(GameServer.Local.Db,"use_full_holy_symbol",false),
+                buffs?.Value("EXP_INCREASE") ?? 0,buffs?.HasStat("EXP_BUFF")==true,e.NativeController?.Showdown ?? 0);
             reputationCalls=award.reputationCalls;
             questCredit=award.eligible && GameLoop.I?.player!=null && GameLoop.I.player.hp>0;
             if (GameLoop.I?.player!=null && GameLoop.I.player.hp>0 && award.eligible)
@@ -652,7 +722,13 @@ public sealed class FieldDirector : MonoBehaviour
             // getExpRate = 个人倍率(×世界,×家族Buff) × (100+套装ExpRate)/100。
             // 源端另有 getMobExpRate（level_exp_rate/quick_level 等级练级倍率），本工程无对应配置键。
             var set = EquipLoadout.CurrentSetBonus();
-            Profile.GrantExperience((int)(exp * AdminSetItem.ApplyRate(set, "ExpRate", rates.expRate)));
+            var buffs=GameLoop.I?.player?.GetComponent<NativeBuffs>();
+            bool full=GameServer.Local!=null && GameConfigDao.GetBool(GameServer.Local.Db,"use_full_holy_symbol",false);
+            float personal=exp*Server.Bot.BotPartyExperience.StatusMultiplier(buffs?.Value("HOLY_SYMBOL") ?? 0,false,full,e.NativeController?.Showdown ?? 0);
+            personal*=(float)AdminSetItem.ApplyRate(set,"ExpRate",rates.expRate);
+            personal+=buffs?.Value("EXP_INCREASE") ?? 0;
+            if (buffs?.HasStat("EXP_BUFF")==true) personal*=2;
+            Profile.GrantExperience(personal>=int.MaxValue ? int.MaxValue : (int)System.Math.Floor((double)personal+.5));
         }
 
         for (int rep=0; GameSession.InGame && rep<reputationCalls; rep++)
@@ -669,10 +745,23 @@ public sealed class FieldDirector : MonoBehaviour
                       " 掉落 " + dropped + " 件 金币 " + mesos);
     }
 
+    // MapleMap.killMonster(monster, null, false): release spawn capacity without rewards/revive/quest credit.
+    public void OnEnemyExpired(EnemyUnit e)
+    {
+        if (e==null) return;
+        dynamicMobs.Remove(e);
+        if (byMob.TryGetValue(e.GetInstanceID(),out var point))
+        {
+            byMob.Remove(e.GetInstanceID()); point.mob=null;
+            point.sp.OnKilled((long)(DeathAnimSeconds(e)*1000),NowMs());
+        }
+    }
+
     // mobTime==0 表示等死亡动作播完再重生：用原 die 帧的总时延
     static float DeathAnimSeconds(EnemyUnit e)
     {
-        var clip = Art.GetClip("mobs", e.artKey, Art.Resolve("mobs", e.artKey, "die", "die1"));
+        if (e.NativeController!=null) return e.NativeController.ServerDeathMillis/1000f;
+        var clip = Art.GetClip("mobs", e.artKey, e.NativeController!=null ? "die"+e.NativeController.DeathAction : Art.Resolve("mobs", e.artKey, "die", "die1"));
         return clip != null ? clip.Duration : 0.6f;
     }
 
@@ -688,17 +777,24 @@ public sealed class FieldDirector : MonoBehaviour
             dropRate = rsp.familyDropRate * GameSession.Net.Boss(new BossRequest { characterId = GameSession.CharacterId }).dropRate;
         var set = EquipLoadout.CurrentSetBonus();
         dropRate = AdminSetItem.ApplyRate(set, "DropRate", dropRate);
+        int showdown=e.NativeController?.Showdown ?? 0;
+        if (showdown!=0) dropRate=(float)(dropRate*(1.0+showdown/100.0));
         // ≡ MapleMap.java:757 mesos × chr.getMesoRate()（世界 meso_rate × 套装 MesoRate%）
         mesoRate = AdminSetItem.ApplyRate(set, "MesoRate", mesoRate);
+        var buffs=GameLoop.I?.player?.GetComponent<NativeBuffs>();
+        int? mesoUp=buffs?.HasStat("MESOUP")==true ? (int?)buffs.Value("MESOUP") : null;
         FieldLoot.Roll(mob.id, (itemId, qty, d) =>
         {
             if (itemId == 0)
             {
-                qty = System.Math.Max(1, (int)System.Math.Round(qty * mesoRate));   // 源端 floatToInt(mesos × rate)
+                qty = RewardRules.MesoAmount(qty,mesoUp,mesoRate);
                 mesos += qty;
             }
             n++;
-            GroundItem.Spawn(itemId, qty, pos + Offset(d));
+            var landing = pos + Offset(d);
+            MapItemService.CalcDropPos(Map.id, landing.x * Art.PPU, -landing.y * Art.PPU,
+                pos.x * Art.PPU, -pos.y * Art.PPU, out float dropX, out float dropY);
+            GroundItem.Spawn(itemId, qty, new Vector3(dropX / Art.PPU, -dropY / Art.PPU, 0), from: pos);
         }, rng, dropRate);
         dropped += n;
         mesosTotal += mesos;
@@ -726,9 +822,11 @@ public sealed class FieldDirector : MonoBehaviour
     }
 
     // 脚本 cm.warp(mapId[, 名字|下标])：和传送门一样走黑场过渡，而不是瞬间切图。
+    // 注意地图 id 0 是合法地图（Data/Map/Map/Map0/000000000.img，原版 Maple Road : Entrance
+    // 的开场过场舞台），不能用 <=0 当「无效」的哨兵——2101.js 送新手出训练营就是 cm.warp(0)。
     public void WarpTo(int mapId, string portalName = null, int portalIndex = -1)
     {
-        if (Warping || mapId <= 0) return;
+        if (Warping || mapId < 0) return;
         if (Map != null && Map.id == mapId && string.IsNullOrEmpty(portalName) && portalIndex < 0) return;
         pendingWarpMap = mapId;
         pendingWarpPortal = portalName;
@@ -747,6 +845,7 @@ public sealed class FieldDirector : MonoBehaviour
     {
         warpState = WarpState.None;
         warpTarget = null;
+        deferredWarpMap = -1;
         warpClock = 0f;
         PlayerCtrl.InputLocked = false;
         ScreenFade.Dismiss();

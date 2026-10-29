@@ -2,98 +2,75 @@ using System.Collections.Generic;
 using UnityEngine;
 using MapleDash.Wz;
 
-// 原版地图上的地面掉落物：金币与道具共用一套拾取入口（关卡 MesoDrop 已合并到这里）。
-// 掉落内容、数量、概率全部来自 FieldDrops.json（原服 SQL 快照），这里不生成任何随机物品。
-//
-// 动画分三段：
-//   1. 出场（原版客户端行为）：掉出瞬间有初速度——上抛 220~300px/s + 左右散开，
-//      按 Map/Physics.img 的重力（2000px/s²）下落，落地按 0.34 恢复系数弹跳，最多两次；
-//   2. 地面：金币袋用 Item/Special/0900.img/iconRaw 的三帧轻微起伏（原版数据），
-//      道具图标原版静止，本地加了一点点呼吸缩放，移动端更好认出「这是可拾取的」；
-//   3. 拾取：原地炸一个白点，0.12s 缩放消失，HUD 出获得行。
+// Original drop state machine and raw IMG canvases; see drop-and-pickup.md.
 public sealed class GroundItem : MonoBehaviour
 {
     public static readonly List<GroundItem> All = new List<GroundItem>();
-
-    public int itemId;          // 0 = 金币
+    public int itemId; // 0 = mesos
     public int amount;
-    double expires;
-
-    // 权威地面物品绑定：非 null 时拾取走 MapItemPickup（归属/400ms/背包空间规则），
-    // 本组件只负责原IMG显示与拾取动画；null 时是本地玩法掉落（BattleRewards/FieldDirector 旧路径）。
     public Server.Field.MapItem bound;
-    /// <summary>由 GroundItemBridge 注入：返回 false 表示这次拾取被源端规则拒绝，物品留在地上。</summary>
     public static System.Func<Server.Field.MapItem, bool> AuthoritativePickup;
 
-    // —— 掉落物理 ——
-    float vx, vy;
-    int bounces;
-    bool resting;
-    float restGround;           // 落地时的地面高度（之后每帧不再扫 foothold）
-    float restT;
-    bool picking;               // 正在播放拾取消失动画
-
     SpriteRenderer sr;
-    Sprite[] idleFrames;        // 金币袋待机帧（无则 null）
-    int idleIdx;
-    float idleT;
-
-    static readonly Dictionary<string, Sprite> iconCache = new Dictionary<string, Sprite>();
+    Sprite[] frames;
+    Vector3 canvasOffset;
+    int sourceX, sourceY, targetX, targetY;
+    int landingTick = -1;
+    double born, removedAt = -1;
+    double expiresAt=double.PositiveInfinity;
+    bool resting, picking, removing;
+    System.Func<Vector2?> pickupTarget;
     static string lastPickup = "";
     static double lastPickupAt;
-    static double lastAutoPickupAt;
-    static float gravityCache = -1f;
+    static double lastDropSoundAt = -1;
+    static readonly Dictionary<int, Sprite[]> icons = new Dictionary<int, Sprite[]>();
 
-    public static string LastPickup
-    {
-        get { return Time.realtimeSinceStartupAsDouble - lastPickupAt < 2.5 ? lastPickup : ""; }
-    }
+    public static string LastPickup => Time.realtimeSinceStartupAsDouble - lastPickupAt < 2.5 ? lastPickup : "";
 
-    // 原版物理：Map/Physics.img 的 gravityAcc（像素/秒²）→ 世界单位/秒²
-    static float Gravity
-    {
-        get
-        {
-            if (gravityCache < 0f)
-            {
-                try { gravityCache = WzAssets.FileRoot("Map/Physics.img").Int("gravityAcc", 2000) / Art.PPU; }
-                catch { gravityCache = 50f; }
-                if (gravityCache <= 0f) gravityCache = 50f;
-            }
-            return gravityCache;
-        }
-    }
-
-    public static GroundItem Spawn(int itemId, int amount, Vector3 position, Server.Field.MapItem bound = null)
+    public static GroundItem Spawn(int itemId, int amount, Vector3 position,
+        Server.Field.MapItem bound = null, Vector3? from = null, bool alreadyOnGround = false)
     {
         if (amount <= 0) return null;
+        Sprite[] art = LoadIcons(itemId, amount);
+        if (art == null || art.Length == 0 || art[0] == null)
+        {
+            Debug.LogError("[GroundItem] Missing original iconRaw: " + itemId);
+            return null;
+        }
         var go = new GameObject(itemId == 0 ? "MesoDrop" : "ItemDrop_" + itemId);
-        var s = go.AddComponent<SpriteRenderer>();
-        go.transform.position = position + Vector3.up * 0.2f;
         var drop = go.AddComponent<GroundItem>();
+        drop.sr = go.AddComponent<SpriteRenderer>();
         drop.itemId = itemId;
         drop.amount = amount;
         drop.bound = bound;
-        // 权威掉落的生命周期由 MapItemService 管（NoExpire 可能长期在地），本地旧掉落才用 3 分钟。
-        drop.expires = bound != null ? double.MaxValue : Time.realtimeSinceStartupAsDouble + 180;   // 原版 3 分钟
-        drop.sr = s;
-        if (itemId == 0)
+        drop.frames = art;
+        drop.sr.sprite = art[0];
+        // Native layer is centered on its vector; frame origin deltas stay intact.
+        drop.canvasOffset = -art[0].bounds.center;
+        int halfHeight = (int)art[0].rect.height / 2;
+        drop.canvasOffset.y += (art[0].rect.height * 0.5f - halfHeight) / Art.PPU;
+        // Keep the original meso ground clearance (origin.y - canvas height).
+        // Items share the small-coin baseline instead of sinking below it.
+        Sprite baseline = itemId == 0 ? art[0] : LoadIcons(0, 1)[0];
+        int clearance = Mathf.RoundToInt(-baseline.pivot.y);
+        Vector3 start = from ?? position;
+        drop.sourceX = (int)(start.x * Art.PPU);
+        drop.sourceY = (int)(-start.y * Art.PPU) - halfHeight - clearance;
+        drop.targetX = (int)(position.x * Art.PPU);
+        drop.targetY = (int)(-position.y * Art.PPU) - halfHeight - clearance;
+        drop.born = Time.realtimeSinceStartupAsDouble;
+        if (bound==null && GameLoop.I?.field?.Map?.everlast!=true)
+            drop.expiresAt=drop.born+(GameServer.Local==null ? 180000 : GameConfigDao.GetInt(GameServer.Local.Db,"item_expire_time",180000))/1000.0;
+        drop.resting = alreadyOnGround;
+        if (alreadyOnGround) drop.landingTick = 0;
+        // Original drop z is K+9 (user K+2, mob K+1).
+        drop.sr.sortingOrder = 307;
+        drop.RenderAt(0);
+        if (!alreadyOnGround && drop.born - lastDropSoundAt > 0.3)
         {
-            drop.idleFrames = MesoBag(amount);
-            s.sprite = drop.idleFrames != null ? drop.idleFrames[0] : MesoSprite();
+            AudioManager.Play("Game/DropItem", pitchVary: false);
+            lastDropSoundAt = drop.born;
         }
-        else
-        {
-            s.sprite = ItemSprite(itemId);
-        }
-        s.sortingOrder = 290;
-
-        // 出场初速度：上抛 + 左右散开（原版掉落物就是这个手感）
-        drop.vy = Random.Range(5.5f, 7.5f);
-        drop.vx = Random.Range(-0.45f, 0.45f);
-        // 掉出瞬间的小白点：告诉玩家「东西出来了」
-        Fx.Sparkle(go.transform.position, new Color(1f, 1f, 1f, 0.9f), 0.5f, 0.16f);
-        AudioManager.Play("Game/DropItem", 0.55f);
         return drop;
     }
 
@@ -102,186 +79,123 @@ public sealed class GroundItem : MonoBehaviour
 
     void Update()
     {
-        if (picking) return;
-        if (Time.realtimeSinceStartupAsDouble >= expires) { Destroy(gameObject); return; }
-        float dt = Time.deltaTime;
-        if (dt <= 0f) return;
+        double now = Time.realtimeSinceStartupAsDouble;
+        if (!removing && bound == null && now>expiresAt) Remove(0, null);
+        RenderAt((int)((now - born) * 1000));
+    }
 
-        if (!resting)
+    void RenderAt(int ageMs)
+    {
+        sr.sprite = frames[itemId == 0 ? NativeDropMotion.MesoFrame(amount, ageMs) : 0];
+        int x, y;
+        if (removing)
         {
-            // 抛物线 + 弹跳（解析步进，避免落地判定随帧率抖）
-            vy -= Gravity * dt;
-            float nx = transform.position.x + vx * dt;
-            float ny = transform.position.y + vy * dt;
-            float ground = PlayerCtrl.GroundAt(nx, transform.position.y);
-            if (vy < 0f && ny <= ground)
+            int elapsed = (int)((Time.realtimeSinceStartupAsDouble - removedAt) * 1000);
+            if (picking)
             {
-                transform.position = new Vector3(nx, ground, 0f);
-                if (bounces < 2 && -vy > 2.5f)
+                var target = pickupTarget?.Invoke();
+                if (!target.HasValue) { Destroy(gameObject); return; }
+                if (!NativeDropMotion.Pickup(targetX, targetY, (int)(target.Value.x * Art.PPU),
+                    (int)(-target.Value.y * Art.PPU), elapsed, out x, out y, out int alpha))
+                { Destroy(gameObject); return; }
+                sr.color = new Color32(255, 255, 255, (byte)alpha);
+            }
+            else
+            {
+                if (elapsed >= 1000) { Destroy(gameObject); return; }
+                x = targetX; y = targetY;
+                sr.color = new Color(1, 1, 1, 1 - elapsed / 1000f);
+            }
+            transform.rotation = Quaternion.identity;
+        }
+        else
+        {
+            int tick = ageMs / 30;
+            if (!resting)
+            {
+                NativeDropMotion.Flight(sourceX, sourceY, targetX, targetY, ageMs, out x, out y, out resting);
+                if (resting)
                 {
-                    vy = -vy * 0.34f;          // 原版掉落物的弹性
-                    vx *= 0.55f;
-                    bounces++;
-                }
-                else
-                {
-                    resting = true;
-                    restGround = ground;
-                    vy = 0f; vx = 0f;
-                    restT = 0f;
+                    landingTick = NativeDropMotion.LandingTick(sourceY, targetY);
                 }
             }
-            else transform.position = new Vector3(nx, ny, 0f);
-            return;
-        }
-
-        // —— 地面闲置 ——
-        restT += dt;
-        // 金币袋：iconRaw 三帧轻微起伏（原版数据本身就这样）
-        if (idleFrames != null && idleFrames.Length > 1)
-        {
-            idleT += dt;
-            if (idleT >= 0.18f)
+            else { x = targetX; y = targetY; }
+            if (resting)
             {
-                idleT -= 0.18f;
-                idleIdx = (idleIdx + 1) % idleFrames.Length;
-                sr.sprite = idleFrames[idleIdx];
+                // Source converts the sine displacement with truncation, unlike flight rounding.
+                y = (int)(targetY + NativeDropMotion.Bob(tick - landingTick));
+                transform.rotation = Quaternion.identity;
+            }
+            else if (itemId != 0)
+                transform.rotation = Quaternion.Euler(0, 0, -(ageMs % 300) * 360f / 300f);
+        }
+        transform.position = new Vector3(x / Art.PPU, -y / Art.PPU, 0);
+        // Renderer is on this root: compensate raw canvas origin in the sprite's own rotated basis.
+        transform.position += transform.rotation * canvasOffset;
+    }
+
+    static Sprite[] LoadIcons(int id, int amount)
+    {
+        int key = id == 0 ? -1 - NativeDropMotion.MesoTier(amount) : id;
+        if (icons.TryGetValue(key, out var cached)) return cached;
+        var result = new List<Sprite>();
+        if (id == 0)
+        {
+            string path = "Item/Special/0900.img/0900000" + NativeDropMotion.MesoTier(amount) + "/iconRaw/";
+            for (int i = 0; i < 4; i++)
+            {
+                var node = WzAssets.Node(path + i);
+                if (node == null) return null;
+                result.Add(WzAssets.Sprite(node, path + i));
             }
         }
-        // 呼吸：±0.5px 上下浮动 + 1.5% 缩放（本地增量，原版地面物品静止）
-        float bob = Mathf.Sin(restT * 2.4f);
-        transform.position = new Vector3(transform.position.x, restGround + bob * 0.0125f, 0f);
-        float k = 1f + bob * 0.015f;
-        transform.localScale = new Vector3(k, k, 1f);
-    }
-
-    // ————————————— 图标 —————————————
-    static Sprite meso;
-
-    // 程序生成的小金币（0900.img 没打包时的兜底）
-    static Sprite MesoSprite()
-    {
-        if (meso == null)
+        else
         {
-            var tex = new Texture2D(16, 16, TextureFormat.RGBA32, false);
-            var px = new Color32[16 * 16];
-            for (int y = 0; y < 16; y++)
-                for (int x = 0; x < 16; x++)
-                {
-                    float dx = x - 7.5f, dy = y - 7.5f;
-                    bool inside = dx * dx + dy * dy <= 49f;
-                    px[y * 16 + x] = inside
-                        ? new Color32(255, 214, 64, 255)
-                        : new Color32(0, 0, 0, 0);
-                }
-            tex.SetPixels32(px);
-            tex.filterMode = FilterMode.Point;
-            tex.Apply();
-            meso = Sprite.Create(tex, new Rect(0, 0, 16, 16), new Vector2(0.5f, 0.5f), Art.PPU);
+            var node = NativeItemSource.Node(id);
+            var raw = node?.Get("info/iconRaw") ?? node?.Get("iconRaw") ?? NativeItemSource.IconNode(id);
+            if (raw == null) return null;
+            result.Add(WzAssets.Sprite(raw, "drop:" + id));
         }
-        return meso;
+        return icons[key] = result.ToArray();
     }
 
-    // 原版金币袋：Item/Special/0900.img/0900000<tier>/iconRaw/0..2。
-    // 分档按金额（小/中/大/特大四档袋子）；三帧是图标自带的轻微起伏。
-    static readonly Sprite[][] mesoBags = new Sprite[4][];
-
-    static Sprite[] MesoBag(int amount)
-    {
-        int tier = amount < 1000 ? 0 : amount < 10000 ? 1 : amount < 100000 ? 2 : 3;
-        if (mesoBags[tier] != null) return mesoBags[tier];
-        var frames = new List<Sprite>();
-        string path = "Item/Special/0900.img";
-        if (WzAssets.HasFile(path))
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                var node = WzAssets.Node(path + "/0900000" + tier + "/iconRaw/" + i);
-                if (node == null) continue;
-                frames.Add(WzAssets.Sprite(node, "mesobag:" + tier + ":" + i));
-            }
-        }
-        var result = frames.Count > 0 ? frames.ToArray() : null;
-        mesoBags[tier] = result;
-        return result;
-    }
-
-    static Sprite ItemSprite(int itemId)
-    {
-        FieldItemInfo info;
-        if (!FieldCatalog.Items.TryGetValue(itemId, out info) || string.IsNullOrEmpty(info.icon))
-            return Fallback();
-        Sprite sp;
-        if (iconCache.TryGetValue(info.icon, out sp) && sp != null) return sp;
-        var tex = Art.Tex(info.icon);
-        if (tex == null) return Fallback();
-        sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
-                           new Vector2(0.5f, 0.5f), Art.PPU);
-        sp.name = info.icon;
-        iconCache[info.icon] = sp;
-        return sp;
-    }
-
-    static Sprite fallback;
-
-    // 装备类掉落（1xxxxxx）图标在 Character.wz，本阶段未导出；用中性方块占位，
-    // 但数量与物品 ID 仍然是原服掉落表里的真实值。
-    static Sprite Fallback()
-    {
-        if (fallback == null)
-        {
-            var tex = new Texture2D(16, 16, TextureFormat.RGBA32, false);
-            var px = new Color32[16 * 16];
-            for (int i = 0; i < px.Length; i++) px[i] = new Color32(190, 205, 235, 255);
-            tex.SetPixels32(px);
-            tex.filterMode = FilterMode.Point;
-            tex.Apply();
-            fallback = Sprite.Create(tex, new Rect(0, 0, 16, 16), new Vector2(0.5f, 0.5f), Art.PPU);
-        }
-        return fallback;
-    }
-
-    // ————————————— 拾取 —————————————
-    // 按键拾取：半径 0.65u 内取最近的一个（原版也是走近了才吃）
     public static void TryPickupNearest()
     {
         var game = GameLoop.I;
         if (game == null || game.state != GameLoop.GameState.Playing || game.gameOver || game.player == null) return;
-        PickupInRange(game.player.FeetPos, 0.65f);
+        PickupInRange(game.player.FeetPos);
     }
 
-    // 走动自动拾取：原版走过就捡。加 0.12s 节流，一堆东西不会在一帧里全消失
-    public static void TryAutoPickup(Vector2 feet)
+    static bool PickupInRange(Vector2 feet)
     {
-        if (Time.realtimeSinceStartupAsDouble - lastAutoPickupAt < 0.12) return;
-        if (PickupInRange(feet, 0.55f)) lastAutoPickupAt = Time.realtimeSinceStartupAsDouble;
-    }
-
-    static bool PickupInRange(Vector2 feet, float radius)
-    {
-        GroundItem best = null;
-        float bestD = radius * radius;
+        int x = (int)(feet.x * Art.PPU), y = (int)(-feet.y * Art.PPU);
+        // CDropPool walks its list and requests the first eligible resting drop, not nearest visual sprite.
         foreach (var drop in All)
         {
-            if (drop == null || !drop.enabled || drop.amount <= 0 || drop.picking) continue;
-            float d = ((Vector2)drop.transform.position - feet).sqrMagnitude;
-            if (d <= bestD) { bestD = d; best = drop; }
+            if (drop == null || !drop.enabled || drop.removing || !drop.resting || drop.amount <= 0) continue;
+            var item = drop.bound;
+            if (item != null && item.dropperId != 0 && item.ownerCharacterId > 0 && item.type < 2 &&
+                item.AgeMs((long)(Time.realtimeSinceStartupAsDouble * 1000)) < 15000)
+            {
+                int party = Server.Field.MapItemService.PartyOf?.Invoke(GameSession.CharacterId) ?? -1;
+                if (item.ownerCharacterId != GameSession.CharacterId &&
+                    !(item.partyOwnerId >= 0 && item.partyOwnerId == party)) continue;
+            }
+            if (NativeDropMotion.InPickupRange(x, y, drop.targetX, drop.targetY)) return drop.Pickup();
         }
-        if (best == null) return false;
-        best.Pickup();
-        return true;
+        return false;
     }
 
-    void Pickup()
+    bool Pickup()
     {
         if (bound != null)
         {
-            // 权威路径：归属/400ms/背包空间由 MapItemPickup 判定，失败就留在地上（源端 enableActions 后返回）。
-            if (AuthoritativePickup == null || !AuthoritativePickup(bound)) return;
+            // Synchronous Removed event starts the visual; a refused request leaves it on the ground.
+            return AuthoritativePickup != null && AuthoritativePickup(bound);
         }
-        else if (itemId == 0)
+        if (itemId == 0)
         {
-            if ((long)Profile.gold + amount > int.MaxValue) return;
+            if ((long)Profile.gold + amount > int.MaxValue) return false;
             Profile.AddGold(amount);
             lastPickup = "+" + amount + " 金币";
         }
@@ -292,29 +206,38 @@ public sealed class GroundItem : MonoBehaviour
                 ? info.name : itemId.ToString();
             if (itemId / 10000 == 238)
             {
-                if (!NativeMonsterBook.Collect(itemId, amount)) return;
+                if (!NativeMonsterBook.Collect(itemId, amount)) return false;
             }
             else Profile.AddItem(itemId, amount);
             lastPickup = name + " x" + amount;
         }
-        if (bound == null) lastPickupAt = Time.realtimeSinceStartupAsDouble;
+        lastPickupAt = Time.realtimeSinceStartupAsDouble;
+        Remove(2, LocalPickupTarget, true);
+        return true;
+    }
 
-        // 拾取反馈：原地白点 + 缩放消失（0.12s）
-        All.Remove(this);
-        picking = true;
-        Fx.Sparkle(transform.position, new Color(1f, 1f, 1f, 0.95f), 0.55f, 0.14f);
-        AudioManager.Play("Game/PickUpItem", 0.8f);
-        var f = gameObject.AddComponent<FxLife>();
-        f.life = 0.12f;
-        f.grow = new Vector3(0.05f, 0.05f, 1f);
-        Destroy(gameObject, 0.13f);
+    internal static Vector2? LocalPickupTarget()
+    {
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        return player != null ? player.FeetPos + Vector2.up * (player.BodyHeight * 0.5f) : (Vector2?)null;
+    }
+
+    public void Remove(int reason, System.Func<Vector2?> target, bool playSound = false)
+    {
+        if (removing) return;
+        removing = true;
+        removedAt = Time.realtimeSinceStartupAsDouble;
+        picking = reason == 2 || reason == 3 || reason == 5;
+        pickupTarget = target;
+        if (reason == 1 || (picking && target == null)) { Destroy(gameObject); return; }
+        if (picking && playSound) AudioManager.Play("Game/PickUpItem", pitchVary: false);
     }
 
     public static int Count()
     {
-        int n = 0;
-        foreach (var d in All) if (d != null && d.enabled) n++;
-        return n;
+        int count = 0;
+        foreach (var drop in All) if (drop != null && drop.enabled && !drop.removing) count++;
+        return count;
     }
 
     public static void Clear()

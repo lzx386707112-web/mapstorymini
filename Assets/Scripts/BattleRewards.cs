@@ -12,6 +12,20 @@ public sealed class DeathSettlement
 
 public static class RewardRules
 {
+    // MapleMap.dropFromMonster: MESOUP truncates before the float rate product.
+    public static int MesoAmount(int quantity, int? mesoUp, double rate)
+    {
+        if (quantity<=0) return 0;
+        if (mesoUp.HasValue) quantity=(int)Math.Min(int.MaxValue,quantity*(mesoUp.Value/100.0));
+        float scaled=quantity*(float)rate;
+        int result=scaled>=int.MaxValue ? int.MaxValue : (int)scaled;
+        return result<=0 ? int.MaxValue : result;
+    }
+
+    // Monster.getStatusExpMultiplier; default config gives solo HS one fifth strength.
+    public static float HolySymbolMultiplier(int percent, bool partySharers, bool full)
+        => (float)(1.0+percent/(partySharers || full ? 100.0 : 500.0));
+
     // MapleMap 使用 nextInt(999999)，金币数量区间上界不包含。
     public static int RollMeso(int chance, int minimum, int maximum, int chanceRoll, int quantityRoll)
     {

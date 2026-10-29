@@ -604,5 +604,6 @@ public static class GameWindows
         NativeCommunityWindow.Draw();
         NativeMedalWindow.Draw();
         ItemTooltip.Flush();
+        UiPreviewHook.Emit();
     }
 }

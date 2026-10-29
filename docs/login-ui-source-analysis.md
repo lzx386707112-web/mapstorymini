@@ -298,9 +298,11 @@ screen = 1.2 × src + (186, -29)
 |---|---|---|---|
 | 性别 | 卷轴外框 | (906,192) 427×241 | (595,159) 354×200 |
 | 性别 | 确定 / 取消 | (1136,376) / (1223,376) | (785,310) / (857,310) |
-| 声明 | 外框 | (720,0) 约 487×500 | 素材 (435,0) 403×414，可见纸面约从 441 开始 |
-| 声明 | 确定 / 取消 | (1022,454) / (1111,454) | (691,377) / (766,377) |
-| 声明 | 右侧滚动条 | x≈1170..1185，止于按钮上方 | x≈814..826，y 37..357（`VScr6` 12 宽），不压“取消” |
+| 新账号确认 | 纸面 | — | (459,251) 362×219（`Notice/backgrnd/0`） |
+| 新账号确认 | 确定 / 取消 | — | (565,419) / (640,419) |
+| 声明 | 外框 | (720,0) 约 487×500 | `TOS/0` 431×426 @ (425,147)，屏幕正中 |
+| 声明 | 确定 / 取消 | (1022,454) / (1111,454) | (691,521) / (765,521)（卷轴自带橙色底板） |
+| 声明 | 右侧滚动条 | x≈1170..1185，止于按钮上方 | x 815..827，y 187..504（`VScr6` 12 宽），不压“取消” |
 
 数据来自服务端、因此不强行改 UI 去对齐截图的项：
 
@@ -310,20 +312,37 @@ screen = 1.2 × src + (186, -29)
 - 角色属性/排名：源端截图显示“排行不可用”，本地单机有角色排名数据。
 - 角色预览外观：随账号角色存档变化。
 
-### 5.1 登录弹窗（已实现）
+### 5.1 登录弹窗（已实现，2026-10-28 按源端重做）
+
+**源端顺序**：`连接` → 账号存在但 `accounts.gender = 10`（新注册）→ **Notice「可以使用的账号」** → 点确定 → **Gender 性别** → 点确定（`SET_GENDER` 写回 0/1）→ 选区。
+
+反汇编证据：`0x5fc170`（`loginok == 7` 跳 `0x60eb58`）、`0x60eb58`（Notice 显示函数，mode 0 = 是/否、1 = 单个确定）、`0x613993`（Gender 对话框构造，`Gender/scroll/0` 与 `Gender/text/1` 都在其中）。旧实现少了第一个弹窗，直接弹性别，本轮补上。
 
 | 弹窗 | 触发 | 素材与坐标（1280×720 设计稿） |
 |---|---|---|
-| 性别选择 | 点击“新的帐户” | `Gender/scroll/0/1` (595,159) 354×200；`Gender/text/0` (617,185)； `Gender/BtYes` (785,310) 75×32；`Gender/BtNo` (857,310)；下拉框值 男/女画在 text/0 的空框内 |
-| 《BeiDou》开源声明 | 首次启动（`PlayerPrefs.login_notice_ok=0`） | 素材外框 (435,0) 403×414（可见纸面约 441）：`NoticeScroll1/0` 卷轴头（左右各外扩 12），纸面用 `Gender/scroll/0/1` 的空白纸区做 9-slice 拉伸，滚动条用 `Basic.img/VScr6/enabled/{base,thumb0,prev0,next0}`，按钮用 `Gender/BtYes\|BtNo`；确定按钮初始 disabled，滚到底部才可用 |
+| 可以使用的账号 | `LoginResponse.gender == AccountsDao.GenderUnset(10)` | 纸面 `Notice/backgrnd/0` 362×219 @ (459,251)；正文图 `Notice/text/6` @ (578,272)（相对纸面 +119,+21）；`Notice/BtYes` (565,419) 75×32、`Notice/BtNo` (640,419) 75×32（相对纸面 +106 / +181, +168） |
+| 性别选择 | 新账号确认框点「确定」 | `Gender/scroll/0/1` (595,159) 354×200；`Gender/text/0` (617,185)；`Gender/BtYes` (785,310) 75×32；`Gender/BtNo` (857,310)；下拉框值 男/女画在 `text/0` 的空框内 |
+| 《BeiDou》开源声明 | 新账号/未完成注册账号连接成功（gender=10），确认后进入性别选择 | 整张卷轴 `TOS/0` 431×426 origin(215,213) → 左上 (425,147)，正好居中；正文视窗 (461,188) 353×308；滚动条 `Basic.img/VScr6` @ (815,187) 12×317；按钮 `Login.img/BtOk` (691,521) 75×32、`BtCancel` (765,521)，压在这张卷轴自带的橙色底板上（相对卷轴 +266 / +340, +374） |
 
-- 两个弹窗都是模态：底层按钮、输入框、回车登录全部被拦截；性别弹窗可用 Esc 关闭。
-- 声明正文按源端截图逐行排：标题、两行正文、GitHub 地址、空行、开发团队、日期；滚动范围与源端一致（初始只露出团队行，滚到底露出日期、确定变亮）。
-- 声明滚动：鼠标滚轮、PageUp/PageDown、方向键、点击滚动条箭头、点击滑轨跳转、鼠标拖动、手机上下滑动正文均可；滚到 98.5% 即视为到底，“确定”变亮。滚动条在按钮之后绘制且止于按钮上方，底部箭头/滑块不会压住“取消”的字。
-- 输入框：`GUI.skin.settings.cursorColor` 设为纯白、`cursorFlashSpeed=1`，点击账号/密码框可获得可见的闪烁光标；选中文本为淡蓝高亮。
-- 性别确认会写入 `PlayerPrefs.login_new_gender`，并作为之后 `ResetAppearance` 的默认性别；同时清空账号/密码输入并聚焦账号框。
-- 声明点“确定”写入 `PlayerPrefs.login_notice_ok=1`；点“取消”只关闭本次，下次启动仍会提示。
-- 验收：`LoginUiReview` 会先重置 `login_notice_ok` 截“声明顶部”，再用滚动条下箭头连点 6 次到底并截“声明底部”，然后点“确定”关闭；之后点“新的帐户”截“性别/女”。当前实测日志：`notice arrow scroll=1`、`notice confirm click=True`、`gender confirm click=True newGender=1 pref=1`、`account field focus=login_account`（输入框焦点与光标）、`channel locked click index=0 pick CH.2 index=1`。
+- **模态**：新账号、性别、声明、失败提示四个弹窗都拦底层按钮/输入框/回车登录（`modal = noticeOpen || genderOpen || alertOpen || newAccountOpen || slotToDelete >= 0`）。性别弹窗可 Esc 关闭；声明弹窗不响应 Esc，必须点按钮（源端如此）。
+- **新账号确认**：点「确定」→ `newGender = PlayerPrefs.login_new_gender` → 打开性别框；点「取消」只关弹窗、留在登录页，账号已经在服务端建好（`gender=10`），下次连接还会再走这一步，不会丢号。确认性别后才写库并 `EnterWorldSelect`；`autostart` 自动登录遇到 `gender == 10` 直接补写 0，避免自动化卡在弹窗上。
+- **SET_GENDER 必须带 accountId（2026-10-28 踩坑）**：性别框是在 `EnterWorldSelect` **之前**弹的，那时 `GameSession.BeginSession` 还没跑、`AccountId` 还是 0，所以 `GameSession.SetGender(newGender)` 的单参重载会 `return false` 静默失败——库里仍是 `gender=10`，下次连接又弹「可以使用的账号」，看起来像「选了性别没记住」。修法：`SetGender(int accountId, int gender)` 为主，调用方用 `LoginResponse/pendingNewAccount` 里带回来的 `accountId`；单参重载只给已进会话的地方用。
+- **性别只能定一次**：源端 `SetGenderHandler` 外层就判 `if (c.getGender() == 10)`，定过再发包直接忽略。`LoginService.SetGender` 同样先读库，非 10 直接返回原值（不写库）。
+- **「可以使用的账号」是两个按钮**：Notice 对话框对象构造（`0x60ec5e`）时就建了三个子控件（正文 + 两个同类按钮，`+0xe0/+0xe8` 走同一构造函数），所以 确定/取消 并排画：相对纸面 +106 / +181、y +168（75×32）；单按钮的失败提示才用居中的 +143。
+- **声明正文**：`String/EULA.img/EULA/Text00…` 顺序拼接。`#e` / `#n` 是粗体开关，换行在 WZ 里是**字面的 `\r\n` 四个字符**（不是控制字符）。折行按像素宽逐字算（`CalcSize` 结果按字符缓存），中文没有词边界，按字折才是原效果；行高固定 17。没有独立的粗体字库——`#e` 的串右移 0.8px 再画一遍，视觉上等于加粗。
+- **滚动按像素走**：`noticeScroll` 只是对外暴露的 0..1 状态，内部一律用 `scrollPx = noticeScroll * EulaMaxScroll`（`EulaMaxScroll = 行数 × 17 - 318`）。滚轮 60px/格、↑↓ 各一行、PageUp/Down 0.9 页、触摸按 `deltaPosition.y`、点箭头 2 行、点轨道空白 0.9 页、拖滑块记录按下时的抓取偏移（按指针绝对位置换算，累加 delta 会跟手不良）。
+- **输入只在 `Update` 里读**：`OnGUI` 每帧被调用多次（Layout/Repaint/输入事件），在里面读 `Input` 会把一次滚轮算成两三次。`Pointer` 那套是纯位置换算，留在绘制里没有副作用。
+- **滚动条**：`VScr6` 是 12×12 的拼块（`base`/`thumb0`/`thumb1`/`prev0`/`prev1`/`next0`/`next1`），**整块平铺、不拉伸**（拉伸会糊成一根小棍）；滑块是单张 12×12 原图，位置 = `轨道起点 + (轨道高-12) × 滚动比例`（原端 `0x4d7b74..0x4d7b96`；此前按内容比例平铺滑块的结论错误）；内容不需要滚动时整条换 `disabled` 贴图。
+- **按钮不再被压住**：绘制顺序是 卷轴 → 正文组（`GUI.BeginGroup` 裁剪）→ 滚动条 → 按钮，滚动条 x 固定在 815..827（正文视窗右侧、卷轴内），区域互不相交，所以“取消”的字任何时候都露得出来。
+- **确定按钮**：滚到底（`noticeScroll ≥ 0.995`）之前用 `BtOk/disabled` 贴图且点了不理；点确定写 `login_notice_ok = 1`，点取消只关本次、下次启动仍会提示。
+- 输入框：`GUI.skin.settings.cursorColor` 纯白、`cursorFlashSpeed = 1`，点击账号/密码框有可见闪烁光标，选中文本淡蓝高亮。
+- **无渲染回归（首选）**：`LoginFlowChecks.Run`
+  （`Unity -batchmode -quit -projectPath <proj> -executeMethod LoginFlowChecks.Run -logFile /tmp/login_flow.log`）
+  直接 `new` 一个 `LoginFlow` 走它自己的 `DoLogin → ConfirmNewAccount → ConfirmNewGender → EnterWorldSelect`，
+  核对弹窗顺序、库里 `accounts.gender`、性别不可二次修改、`autostart` 自动补 0，并验证 `Notice/text/6` 素材存在。
+  当前 23 项全过。**`LoginUiReview` 那套截图验收必须在带窗口的编辑器里跑**：batchmode 不渲染，
+  `WaitForEndOfFrame` 不回调，协程会停在第一次截图前（本次实测日志停在 `GameLoop.Start` 之后没有任何 `[LoginUiReview]` 输出）。
+- 验收：`LoginUiReview` 重置 `login_notice_ok=0` 截“声明顶部” → 点滚动条下箭头（`Design(821,498)`）8 次到底截“声明底部” → 点确定（`Design(728,537)`）→ 摆出新账号弹窗截“newaccount” → 点确定（`Design(602,435)`）截“gender” → 切女截“gender-female” → 点确定（`Design(822,326)`）。断言日志：`notice arrow scroll=1`、`notice confirm click=True`、`gender confirm click=True newGender=1 pref=1`、`account field focus=login_account`、`channel locked click index=0 pick CH.2 index=1`。
 
 ### 5.2 本轮回归结果（2026-10-23）
 
@@ -431,3 +450,5 @@ screen = 1.2 × src + (186, -29)
 ### 验证
 
 Unity `LoginUiReview.Run` 完整运行 PASS：声明确认、性别确认、登录、频道锁定/切换均通过；新增原始光束0.75s与2.25s采样断言，确认帧号与alpha=120/255。保存选角、建角相隔时间的截图，裁切区域存在像素变化。实际 Unity 截图确认外观面板全部恢复 normal 浅米色。字号最后调整后另行C#编译检查。未构建或安装Android包，未声称与源端整段动画逐帧一致。
+
+2026-10-28 纠正：声明仅在新账号流程显示，替代误接的 Notice/text/6；确认声明后选择性别，取消返回登录。删除全屏触摸位移滚正文；滚动条 thumb 单张绘制。原端地址、裁切区域和迁移边界统一见 beidou-client-reverse/references/login-flow.md 最新纠正节，旧验收不代表本次实现已通过视觉验收。

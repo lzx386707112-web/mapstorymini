@@ -61,12 +61,13 @@ namespace Server.Bot.Environment
         MapRuntime Build(int id, Dictionary<string, object> map)
         {
             var info = (Dictionary<string, object>)map["info"];
+            var ruleInfo=info;
             string link = info.TryGetValue("link", out var l) ? Convert.ToString(l) : "";
             if (!string.IsNullOrEmpty(link))
             {
                 map = ReadMap(int.Parse(link)); info = (Dictionary<string, object>)map["info"];
             }
-            var result = new MapRuntime { mapId = id, returnMap = Int(info, "returnMap", id), fieldLimit = Int(info, "fieldLimit"),
+            var result = new MapRuntime { mapId = id, returnMap = Int(ruleInfo, "returnMap", id), fieldLimit = Int(ruleInfo, "fieldLimit"),everlast=Int(ruleInfo,"everlast")!=0,
                 swim = Int(info, "swim") != 0, top = Int(info, "VRTop"), bottom = Int(info, "VRBottom"),
                 left = Int(info, "VRLeft"), right = Int(info, "VRRight"), minX = 0, maxX = 0, minY = 0, maxY = 0 };
             if (result.top == result.bottom)

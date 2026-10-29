@@ -73,7 +73,7 @@ public static class DialogFlow
     }
 
     // ——————————————— 排版 ———————————————
-    public static Layout Measure(DialogContent content, float width, bool input = false)
+    public static Layout Measure(DialogContent content, float width, bool input = false, float margin = 8f)
     {
         var layout = new Layout();
         EnsureStyles();
@@ -87,7 +87,7 @@ public static class DialogFlow
                 : "#d#L" + selection.Index + "# " + selection.Text + "#l#k\n";
             runs.AddRange(DialogText.Parse(raw).Runs);
         }
-        new Builder(layout, width, input ? 2f : 8f).Run(runs);
+        new Builder(layout, width, input ? 2f : margin).Run(runs);
         return layout;
     }
 
@@ -99,6 +99,7 @@ public static class DialogFlow
         float x, y;
         float lineH = LineH;     // 当前行高：行内出现更高的图标时按图标长高
         int lineFirst;           // 当前行第一个 Span 的下标
+        float measuredBottom;
 
         public Builder(Layout layout, float maxW, float margin)
         { this.layout = layout; this.margin = margin; this.maxW = maxW - margin; x = y = margin; }
@@ -110,7 +111,10 @@ public static class DialogFlow
                 if (runs[i].Kind == DialogRunKind.Icon) AddIcon(runs[i]);
                 else AddText(runs[i]);
             }
-            layout.Height = layout.Spans.Count == 0 ? LineH : y + lineH + margin + 2f;
+            // 9A249F..9A24B3 stops after the last populated line. A final \n
+            // does not add another empty 16px line to the window measurement.
+            layout.Height = layout.Spans.Count == 0 ? LineH :
+                (lineFirst < layout.Spans.Count ? y + lineH + 2f : measuredBottom) + margin;
         }
 
         void AddIcon(DialogRun run)
@@ -199,6 +203,7 @@ public static class DialogFlow
 
         void NewLine()
         {
+            if (lineFirst < layout.Spans.Count) measuredBottom = y + lineH + 2f;
             y += lineH + 2f;
             x = margin;
             lineH = LineH;

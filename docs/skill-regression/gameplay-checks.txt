@@ -1,0 +1,21 @@
+2026-10-29 Unity NativeSkillNodeChecks.Run; process exit 0
+[NativeGameplayNodeChecks] PASS 34 summon asset families, per-skill attack data, elements, map rules, map-zero portal, linked mob timing
+[NativeSkillNodeChecks] PASS 802 skills / 2119 level cases / 5749 clips / 61464 frame references against independent wzpy inventory
+[NativeSkillNodeChecks] PASS Three Snails levels 1/2/3: ID casts, rendered pixels, travelling empty casts, targeted hits, fixed damage, cancellation
+[NativeSkillNodeChecks] PASS four summon renders/stationary behavior and HP-cost cast transactions
+
+C# compile-check: Build succeeded. 0 Warning(s), 0 Error(s).
+Inventory: skills 76, maps 6337, mobs 2908; parse errors 0.
+Android APK/device: not tested.
+
+2026-10-29 priority gameplay continuation
+NativeGameplayNodeChecks.Run: exit 0 (/tmp/mapledash-priority-ai-nodes.log)
+- HP threshold <= configured percentage, float division then integer truncation
+- target geometry merged frames, origin fallback, excluded death frames, mirrored world bounds
+NativeBuffChecks.RunAll: exit 0 (/tmp/mapledash-priority-ai-runtime.log)
+- actual HitAt selects body-edge overlap with feet outside the skill rectangle
+- classic Flash Jump ground/falling rejection without MP use, native impulses, once-per-airtime and landing reset
+- actual mob controller at 50% HP selects a default hp=100 skill, consumes MP and becomes busy
+- existing buff lifecycle and original HUD rendering regression retained
+Final geometry runtime includes own-visual-before-link selection.
+No Android/APK verification; held/charge runtime, map script execution and complete AI movement remain open.

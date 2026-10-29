@@ -64,12 +64,18 @@
 
   // 顶部消息条（登录失败/接口报错）：默认 line-height:1 + inline-flex，长文案在窄屏会被
   // 挤成一条细缝。这里允许换行、放宽行高，宽度最多到屏宽。
+  // Arco 默认 top:40px 是按桌面高度定的；手机横屏（游戏内 WebView）可视高度只有 ~350px，
+  // 40px 起排 + 每条 16px 间距会直接压到登录页标题和输入框上，所以贴到 8px、间距收到 8px。
+  .arco-message-list-top {
+    top: 8px;
+  }
   .arco-message-list {
-    padding: 0 12px;
+    padding: 0 8px;
   }
   .arco-message {
     max-width: 100%;
-    padding: 8px 14px;
+    padding: 7px 12px;
+    margin-bottom: 8px;
   }
   .arco-message-content {
     white-space: normal;

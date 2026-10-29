@@ -286,3 +286,117 @@ BeiDou.exe身份沿用1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6d
 QuestNpcChecks.CheckTrainingQuestProgress使用level2/job0、真实8142条件和原文：验证原1042003门槛仍生效、人工设置STARTED后仅9101003有进行中标记、stop/item与stop/mob不发奖、两种9409000/9409001计数及上限、满足后切换可交、未接不累计。/tmp/training-quest-progress.log共24208项通过、0失败；编译0warning/0error；脚本包2777 parseFail0；全量NPC脚本769ok/47runFail/73JavaInterop，保持既有基线。这些公共修正不能解释用户尚未接8142时9101002无灯泡，也不能给9101001凭空绑定任务：原端限制与脚本/教程提示缺口仍保留。
 
 绘制验证：NativeViewportChecks.RunMarkers追加map2/9101003，STARTED8142条件不足时DrawField实际绘制QuestIcon1，共9项通过（/tmp/training-progress-marker-render.log）；/tmp/npc-marker-9101003.png已生成并目检。仍是隔离相机/GUI回归，无NPC外观或完整地图，不是Android实机验收。
+
+## 番茄田（map1/2/3）任务图标口径：以 721163 实证为准（2026-10-28 晚，推翻当天下午的放宽结论）
+
+**先纠错**：当天下午写的「客户端图标只判等级/职业/npc/前置任务/日期，物品判不了」是错的，据此加的 `QuestLogic.CanStartForMarker` 已删除。用户实机回归立刻暴露：妮娜菜单同时列出 `1003 珊想吃的是什么？`（Check/0 要 `1042003` 维泽特西装）和 `1032 妮娜弟弟珊`，等于把没到时候的任务一起放出来。
+
+**客户端实证**（BeiDou.exe，SHA256 1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2）：
+
+- `CNpc::Update`（`0x6D1779..0x6D1B10`）逐条遍历 NPC 任务列表 `[npc+0xC4]`；`0x6D1820` 把 `1200..1399` 段的任务直接跳过不画图标（`cmp ax,0x4B0` / `cmp ax,0x578`）。
+- 有 `CQuestMan` 状态记录的（已接/已交）走 `0x721D2C` 判「可交」→ 进 `[npc+0xD4]`；否则进 `[npc+0xD0]`（进行中）。
+- 未接的走 `0x721163`（`ret 0x18`，6 个参数：questId, npcId, CUserLocal, 时间×3）→ 命中进 `[npc+0xCC]`（可接），未命中进 `[npc+0xC8]`（不参与图标）。
+- `0x6D18D9..0x6D192B` 选图标类型：`[+D4]` 非空 → 2（可交）→ 否则 `[+CC]` 非空 → 0（灯泡）→ 否则 `[+D0]` 非空 → 1（进行中）→ 否则 3（不画）。顺序就是 complete > start > progress。
+- `0x721163` 的实际判定字段：`[req+0x00]=lvmin`、`[+0x04]=lvmax`、`[+0x18]=npc`、`[+0x38/0x3C]=起`、`[+0x40/0x44]=止`（经 `[0xBF03B4]` 比较）、`[+0x20]=job`、`[+0x54]=job 列表`、**`[+0x5C]=item 列表`**。物品那段在 `0x721487..0x721571`：`idiv 0xF4240` 拆出背包类型 → `[user+0x447+type*4]` 取格子 → `0x4282F7` 逐个取物品 → `[eax+0x20]` 虚函数取数量累加 → `0x5CA785` 判装备 → `0x4E7CD0` 查已装备再 +1 → 与 `[esi+4]` 的需求数量比较，不足跳 `0x721571` 失败。**客户端确实查物品，连穿戴中的也查。**
+- `0x7213E9..0x721407` 是起止日期双向比较；`0x7212A9` 那段是 interval（可重复任务冷却），用 `[req+0x30]×0x23C34600` 与当前时间比。
+- `0x72142C` 起对 `job` 有个 GM 例外（`job%1000%100==9` 时跳过 job 列表），与服务端 `ItemRequirement` 只给 GM 计「穿戴中的装备」是同一套 GM 特权口径。
+
+**服务端对照**：`Quest.canStart` = `canStartQuestByStatus` + 遍历 `startReqs` 全部 `check` + `canQuestByInfoProgress`；`ItemRequirement.check` 用 `chr.getInventory(type).listById(itemId)` 累加，只有 `chr.isGM()` 才把 `InventoryType.EQUIPPED` 也算进去。所以「背包里的物品」是硬条件，客户端与服务端一致，凭空放宽没有依据。
+
+**数据结论**：`1042003`（维泽特西装）在整套源端里没有任何产出途径（`grep` 全仓库只有 `npc/9110115.js` 的荣誉奖励里发过一件），所以 `1000/1001/1003/1004/8142` 这五条起始条件带 `1042003` 的任务，源端同样接不了、也不该亮灯泡。按 1 级新手（`1041002` 上衣）实算番茄田：map1/3 莎丽 `30001`、map2 罗杰 `1021`、希娜 `1031`、妮娜 `1032`；珊 `2001`、透德 `9101002`、彼特 `9101001` 无灯泡，这就是源端口径。
+
+**因此**：`NpcField.MarkerOf` 与 `NpcField.ChoicesFor` 全部回到严格 `QuestLogic.CanStart`，不再有「图标一套、接取一套」的双口径。要改图标行为，先回到 `0x721163` 的字段表核对，不要凭观感放宽。
+
+## 任务链 nextQuest 与「丢失任务道具」补齐（2026-10-28 晚，番茄田 1032→1033→1034 实证）
+
+**现象**：妮娜 `2102` 的 `1034 好吃的蘑菇棒棒糖` 接不到棒棒糖，交付给珊 `2001` 时永远提示「道具不足 4031792 x10」，任务卡死。存档里 `queststatus` 有 `1034 status=1`，背包没有任何 `4031792`。
+
+**数据（WZ，已核对）**：`Quest/Check.img`
+- `1032 妮娜弟弟珊`：0/ npc=2102、job 0、lvmax 10；1/ npc=2001；`Act/1` 只给 exp 7 + `nextQuest=1033`。
+- `1033 珊想吃的东西`：0/ npc=2001、需 1032=2；1/ npc=2102；`Act/1` 给 exp 7 + `nextQuest=1034`。
+- `1034 好吃的蘑菇棒棒糖`：0/ npc=2102、需 1033=2；**`Act/0` 给 `4031792`（蘑菇糖）×10**；1/ npc=2001，`Check/1` 要 `4031792`×10，`Act/1` 扣 10 件 + 给 `2022253`（蘑菇棒棒糖）×2 + exp 20。`Say/1034/0` 第 2 页原文就是「给，这是 10 块蘑菇棒棒糖」。
+
+**根因（代码）**：`QuestLogic.Apply` 以前对 `nextQuest` 只做 `Profile.StartQuest(next)`，跳过了 `Act/0` 的动作。1034 由 1033 的 `Act/1/nextQuest` 带出来，于是状态变 STARTED 但 10 块糖没发 → `Check/1/item` 永远不满足。
+
+**源端口径（为什么必须跑 `Act/0`）**：
+- `Quest.complete`（`Quest.java:336`）跑完 `completeActs` 后 `if (!hasNextQuestAction()) announceUpdateQuest(INFO)`——有后继任务时故意不发 INFO 刷新。
+- `NextQuestAction.run`（`NextQuestAction.java:48`）：`chr.sendPacket(PacketCreator.updateQuestFinish(questId, status.getNpc(), nextQuest))`——把「本任务完成 + 后继任务 id」推给客户端，**由客户端当场把后继任务的接取对话接在同一个 NPC 上**。所以 `Say/<id>/0` 那页一定会显示，接取走 `QuestActionHandler case 1 → Quest.start`，`startActs` 照常执行。
+- 因此正确实现不是「静默改状态」，而是交完任务后直接开下一环的**接取对话**：`QuestLogic.ChainedNext(act, npcId)` 取 `act.nextQuest`，要求 `next.startReq.npc` 等于当前 NPC 且 `CanStart` 通过；`NpcSession.BeginDataQuest` 在 `Complete` 之后 `Close()` + `TalkQuest(next, npcId, false)`。
+
+**「任务道具丢了」的补齐**：
+- `QuestActionHandler` 的 `case 0: // Restore lost item` 读 questId + itemId → `Quest.restoreLostItem`（`Quest.java:632`）→ 只在 `status == STARTED` 时取 **`startActs` 的 ItemAction** → `ItemAction.restoreLostItem`（`ItemAction.java:308`）：先判 `ItemInformationProvider.isQuestItem(itemid)`，再补 `item.getCount() - chr.countItem(itemid)` 的差额（只补缺口、不多给、背包放不下就报错）。
+- 客户端侧没有读 `Say/1/lost` 的代码（全量扫 `0x79e805` 取字符串的 8115 个调用点，只有 `stop`(3215)、`item`(3217)、`npc`(1389)、`nextQuest`(3262)），所以 `Say/1034/1/lost`「我再给你一次」是死数据，触发点在任务窗那类界面，本工程还没做。
+- 本工程的过渡实现：`QuestLogic.RestoreLostItems(q)` 在**交付对话开始前**补一次，条件收得很紧——`status == STARTED`、`Check/1/item` 有缺口、且该 item 出现在 `Act/0` 的发放列表里。没有「接取时就发过」这一层的物品不补，避免把打怪/采集任务也变成白送。
+
+**边界**：`unity-compile-check` 0 warning / 0 error。`ChainedNext` 只对 `completeAct` 生效（`startAct` 里的 nextQuest 不动）。同 NPC 才续链，跨 NPC 的链留待实证。
+
+**本次补充回归（2026-10-28）**：新增 `QuestNpcChecks.CheckNinaCandyChain`，用真实 WZ 与 `NpcSession` 连续执行1032→1033→1034，确认后继接取前状态仍为未开始、接受1034发4031792×10、移除6个后交付对白仅补6个、再次恢复不重复发放、交付扣10并奖励2022253×2、完成后不再补发。`QuestNpcChecks.Run`：24225通过、0失败，日志 `/tmp/nina-candy-check.log`；compile-check Rebuild 0错误/0警告；脚本包2777条parseFail=0/mangled=0。NPC harness为769通过、47运行失败、73 Java互操作，保持既有基线。当前运行时代码中已存在上述续链/补发修复，本次新增完整链路回归确认；未构建或安装Android APK，未修改玩家真实存档。
+
+## 同图透德与彼特：身份范围再次纠正（2026-10-28）
+
+用户反馈“同样的地图，透德和彼得没有绑定任务”，并补充双击和对话键均无反应、认为两者都应有击杀任务。本次最初继续按出口map3的9101001分析，属于范围错误；map2番茄田同时存在透德9101002和彼特9101003，后者才是8142交付NPC。不能以9101001的离开训练营脚本解释map2的彼特。
+
+已重新读取当前原IMG：`Map/Map/Map0/000000002.img/life/9`为9101002，`life/10`为9101003。`Quest/Check.img/8142/0`为npc9101002、job0、item1042003×1；`/1`为npc9101003，mob9409000/9409001各1、item4000300/4000301各1。`Act.img/8142/1`为exp10，两个item条目count均0。故当前资源定义的是一条由透德接、彼特交的训练任务，不是两个独立击杀任务。全量同名NPC索引仅找到1018/1035（2004→2002）及8142（9101002→9101003）。复现用`tools/imgdump.py`读取上述节点；本段无新增EXE任务规则结论。
+
+当前角色不满足1042003物品门槛时8142不进入可接列表；无数值/命名脚本的speak NPC被`NpcField.IsSilentNpc`静默处理，因此这对NPC在未接取8142时都可能没有对话。既有`CheckTrainingQuestProgress`人工设置STARTED仅证明击杀/交付判定，不能证明普通新角色可接取。用户记忆与源资源门槛存在差异，尚待用户决定是否解除8142的衣服门槛；未擅自修改任务绑定、数量、奖励或真实存档，亦未宣称本问题已经修复。
+
+### 用户授权解除8142衣服门槛（2026-10-28）
+
+用户随后明确回复“解除限制”，授权仅解除8142的1042003衣服门槛。`QuestCatalog.Build`读取原始Check后仅从8142的startReq.items移除此ID；原IMG与JS不改，职业、接交NPC、完成物品/击杀、Act奖励均保持原数据。此为用户授权的迁移差异，不代表原端没有衣服条件；上文关于该门槛的原端数据结论仍成立，当前迁移行为以本节为准。其他任务（包括1018）的1042003条件不放宽。
+
+`CheckTrainingQuestProgress`改走透德真实菜单→原Say接受页→STARTED，再验证原stop/item、stop/mob、两种怪物击杀封顶及彼特交付菜单→确认→原WZ经验奖励、完成后不能重接；不再用人工SetQuestStarted跳过接取。
+
+本次验证：`QuestNpcChecks.Run`24234通过、0失败（`/tmp/training-unlock-check.log`），compile-check Rebuild为0错误/0警告，脚本包2777条parseFail=0/mangled=0；NPC harness保持769通过/47运行失败/73 Java互操作既有基线。未构建安装Android APK，未改真实角色存档；Android实机仍待更新包体验证。
+
+
+### 2026-10-28 截图任务纠正
+
+8142不是截图中的两条独立狩猎任务。用户已授权根据截图重建900001/900002本地定义与JS，原端8142保留读取但不再绑定这两个NPC菜单。完整依据、实现及奖励未知边界见[任务窗口与告知](quest-window-and-alarm.md)。此前8142测试仅说明旧数据执行通路，不能作为截图任务内容正确的结论。
+
+
+## 截图对话框尺寸与 type4「下项」补核（2026-10-28）
+
+二进制身份：`BeiDou.exe` SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`、ImageBase `0x400000`。复用本记录已确认的529宽、正文120..240、窗口body+86、正文341宽与12号字体；不从截图尺寸反推新的原端宽高。
+
+新补核：
+- `0x6D3D77..0x6D3DAD`：NPC任务菜单用原生type4，调用`9AC552`排版，再`9AC8E0`收集链接/计算窗口。`0x9A64D4`的type4跳表项实际为`9A63C7 → 9A8FEF`，不是常规Next页的`9A7C8B`。
+- `0x9A90E4..0x9A91AA`：type4在flags+6E0 bit0未置位时创建关闭，坐标**(10,h-26)**。`0x9A91AD..0x9A9288`：左肖像type4始终创建BtNext(command0x2001)，左上为**(w-10-68-scroll*8,h-77)**，原图46×18。右肖像另减130，未迁移。`6D3DFC..6D3E29`接受command1或0x2001，按+F4当前选项索引查真实questId；故「下项」是确认选项，不是菜单分页。现有首项确认策略仍未替代原端上下键焦点状态机。
+- `0x9A2429..0x9A24B3`逐行取`9A2D01`首尾run，`9A249F..9A24AB`在当前尾run为最后run时停止，然后加尾margin；末尾换行后没有run的空行不能再加整行高度。旧Builder收尾无条件加16+2，导致短菜单窗口多出高度，现按最后有内容的行收尾。`9A247B..9A2492`对中间无run的空行用字体COM高度（`485A45`），当前Builder仍按16行高处理；此项未完成Windows字体高度的逐像素移植，不用截图猜值改写。
+
+移植：`NpcDialogUi.Draw`把整个窗口及Pointer.Pos临时转换到原IMG坐标，finally恢复GUI.matrix和指针；采用`BottomBar.S`，与背包/任务窗的现有视口适配一致。这是项目移动呈现规则，不是声称EXE存在此缩放公式。之前对话框直接以UiKit的720高坐标画529宽，比同屏其他原生窗口大。没有修改全局UiKit、IMG或NPC/任务数据。两张用户截图NPC为9101002透德与9101003彼特、任务状态也不同，不能为匹配截图强改问候语或list分组。String/Npc.img/9101003/d0确有「你应该在旅行前好好训练自己。」，9101002没有d0；当前不会擅自给透德补彼特的文案。
+
+复现入口：`tools/inspect_beidou_client.py <exe> --start 0x9a8fef --end 0x9a9290`、`--start 0x9a2429 --end 0x9a24b3`。`NativeViewportChecks.RunDialogLayout`创建隔离存档/场景，三个分辨率1280×720、2400×1080、800×600绘制真实IMG，对BtNext实际点击并断言返回非零selection7、GUI矩阵/指针恢复及尾换行测量一致；截图菜单仅为布局fixture，不代表真实玩家当前任务状态。
+
+
+本次实际验证：`/tmp/npc-layout-targeted.log` 定向7项PASS，三个PNG实际尺寸分别1280×720、2400×1080、800×600，已目检1280与2400图；裁切预览保存在`docs/hud-review/npc-dialog-layout-1280.png`。`/tmp/npc-layout-quest-check.log`为24249通过/0失败；dotnet Rebuild为0警告/0错误；脚本包2779条parseFail=0/mangled=0，全量NPC harness仍769ok/47runFail/73JavaInterop既有基线。另跑`NativeViewportChecks.RunNpc`在旧罗杰引导流程「last talk key must reach showInfo and dispose」断言失败（`/tmp/npc-layout-review.log`）；未定位该流程失败是否与现有其他改动有关，不能称整个GUI流程回归通过。独立布局检查明确绕开该流程，并非撤销该失败。未构建APK、未Android实机验收，中文字体与中间空行字体高度仍有上述边界。
+
+
+## 文案换行符字面转义（2026-10-28 修）
+
+原端文案的换行不是控制字符，而是**字面反斜杠序列**：`Quest/Say.img` 里存的是 `\r\n` 四个字符（`<string value="…？\r\n#b#L0#不可以。#l\r\n#L1#可以。#l" />`），`String/EULA.img` 用双反斜杠写法 `\\r\\n`。源端在文本排版层统一当换行，本工程此前只在 `DialogText` 里认真 `\n`，于是学者罗宾 SP 问答把 `\r\n` 直接印进正文，两个选项行被挤在问题行后面（用户截图 2026-10-28）。
+
+移植：`DialogText.NormalizeBreaks`（Parse / StripMarkup 入口）按 `\\r\\n → \n`、`\\n → \n`、`\r\n → \n`、`\r → \n`、`\t → tab` 归一化。脚本 `sendNext("…\r\n…")` 经 JS 词法已是真换行，重复归一化无副作用；`#L` 未闭合选项（如 `#b#L2#弓箭手\r\n#b#L3#飞侠`）换行后仍留在 link run 内，由 `DialogFlow.Builder` 的 `\n` 分支起新行。
+
+同一根因一并覆盖：任务窗口正文（`QuestWindow` 同样走 `DialogText.Parse`）、NPC 菜单选项（`DialogFlow.Measure` 的 Selection 拼 raw 后进 Parse）、`WelcomeTutorial` 欢迎弹窗（C# 源码里写的是 `"\\r\\n"` 字面）。
+
+验证：新增 `QuestNpcChecks.CheckDialogBreakEscapes`——断言字面 `\r\n`/`\\r\\n`/单独 `\r`/`\n`/`StripMarkup` 均归一化，并遍历真实 `Quest/Say.img` 全部含转义的文案，Parse 后 `Body` 不得残留反斜杠序列。`QuestNpcChecks.Run` 24259 通过 / 0 失败（`/tmp/quest-dialog-break.log`），unity-compile-check 0 warning / 0 error。未构建 APK、未 Android 实机截图验收。
+
+## 左侧立绘与「无 NPC 脚本」的默认形象（2026-10-29）
+
+现象：用户截图里的「强化成功！武器已提升至 12★」对话框左侧整块空白，既没有立绘也没有名字条；另有一些脚本同样没有。
+
+已核实的绘制口径（对应前文 `0x9A6DFD..0x9A7C76`）：左侧头像 = 会话 `NpcId` 对应 `Npc/<7位id>.img` 的 `stand` 帧包围盒，横向中心 x=80、组顶按 `body-H` 居中（放不下时 `h-H-62`）、普通 NPC 再 +7；名字条固定 121×19，左边 20、位于立绘脚下。**立绘与名字条都只取决于会话的 npcId**，窗口本身不另画占位。
+
+排查结论（三套入口决定 npcId）：
+- 地图 NPC / 任务：`NpcSession.Talk(npcId)`、`TalkQuest`，npcId 来自地图 life 或 `Quest/Check.img`，>0。
+- 脚本二级跳转：`cm.openNpc(npcId, name)` → `NpcSession.RequestOpenNpc` → `Talk(npcId, name)`。北斗特殊脚本统一写 `function openNpc(n){ cm.dispose(); cm.openNpc(9900001, n); }`（如 `npc/9900001.js`、`BeiDouSpecial/装备中心.js`），所以「昨日小睡」菜单下的装备中心→洗练→星级强化全程 npcId 都是 **9900001**，不是 0。
+- 无 NPC：`ItemScriptManager` 的物品脚本（`Item/Consume/*/spec/npc` 多数缺省=0）、`PortalScriptManager`（`NpcSession.RunPortal` 里固定 `new NpcSession(0,...)`）、本地数据对白（`NpcSession.Conversation(2104,...)`，2104 只有 `String/Npc.img` 条目、**没有** `Npc/2104.img`）。
+
+即：截图那两张是实拍脚本 `PreviewShot.SetupStar` 用 `NpcSession.Talk(0, "装备制作/星级强化")` 直接按脚本名进造成的，不是游戏内链路——GameView 里从「昨日小睡」点进去一直是有立绘的。
+
+迁移（`Assets/Scripts/Npc/NpcDialogUi.cs`）：
+- 新增 `PortraitNode(id)`：跟 `info/link` 链、要求 `Npc/<id>.img` 存在且 `stand` 帧非空，否则返回 null（2104 这类无素材 NPC 不再走 `FileRoot` 抛异常）。
+- `DrawPortrait`：npcId<=0 或素材缺失时回落到 `DefaultSpeaker = 9010000`「冒险岛运营员」——与 `0x95D260` 通知菜单固定 NPC 同一个形象，物品脚本 / 传送门脚本 / 本地对白不再留白。
+- 名字优先级：`session.SpeakerName` > `String/Npc.img/<id>/name`（新增 `WzNames.NpcOrNull`，避免把兜底名「NPC 2104」印到名字条）> 运营员名。
+
+验证：`tools/unity-compile-check` 0 warning / 0 error；`PreviewShot`（`-previewStart 17`）出图 `/tmp/mapledash-preview/06-star-result.png` 左侧为「昨日小睡」立绘+名字条，`08-no-npc-dialog.png`（`Talk(0)` 对照）左侧为「冒险岛运营员」立绘+名字条。未覆盖：`avatar`/`rightPortrait` 特殊模式仍未迁移（沿用 stand 帧包围盒）；未做 Android 实机验收。

@@ -849,7 +849,6 @@ public static class VirtualControls
                 var data = SkillBook.Get(e.skillId);
                 lastPress = (data != null ? data.name : "技能") + (ok ? "" : " ✗");
                 lastNote = ok ? "" : (why ?? "");
-                pressMsgUntil = Time.unscaledTime + 1.2f;
             }
             return;
         }
@@ -871,7 +870,6 @@ public static class VirtualControls
             lastNote = e.key == KeyCode.None
                 ? "按动作触发"
                 : !act.HasValue ? "请在键盘设定中给此键绑定功能" : "";
-            pressMsgUntil = Time.unscaledTime + 1.2f;
             Debug.Log("[Virtual] 按下 " + (e.key == KeyCode.None ? "无键" : e.key.ToString()) +
                       " → " + act + "（攻击键位=" + KeyMap.Of(GameAction.Attack) + "）");
         }
@@ -996,10 +994,12 @@ public static class VirtualControls
         // 此时 VirtualControls.Tick 拿到的 feed=false，按键只显示、不注入。
         float dim = KeyConfigWindow.Visible ? 0.42f : 1f;
 
-        foreach (var e in elems) DrawElement(e, dim);
+        // NPC 对话是整屏焦点：按键层压到很淡，并且不再画文字标签
+        // （曾经「跳跃 / 拾取 / 技能格」直接印在对话框正文上）。
+        dialogFade = NpcSession.Blocking;
+        foreach (var e in elems) DrawElement(e, dialogFade ? 0.22f : dim);
+        dialogFade = false;
         if (KeyConfigWindow.Visible) return;
-
-        DrawPressToast();
 
         if (Input.GetKeyDown(KeyCode.F9)) ShowDebug = !ShowDebug;
         if (ShowDebug) DrawDebug();
@@ -1033,27 +1033,6 @@ public static class VirtualControls
         float s = 32f;
         GUI.DrawTexture(new Rect(Pointer.Pos.x - s * 0.5f, Pointer.Pos.y - s * 0.5f, s, s),
             icon, ScaleMode.ScaleToFit);
-    }
-
-    // 按下虚拟键时在顶部提示 1.2 秒：能立刻区分"没收到按下"和"收到了但游戏没反应"
-    static float pressMsgUntil;
-
-    static void DrawPressToast()
-    {
-        if (Time.unscaledTime > pressMsgUntil) return;
-        bool twoLine = !string.IsNullOrEmpty(lastNote);
-        float w = 380f, h = twoLine ? 54f : 34f;
-        var r = new Rect(UiKit.W * 0.5f - w * 0.5f, 58f, w, h);
-        RoundedRect(r, Color.black, 0.72f);
-        var st = new GUIStyle { alignment = TextAnchor.MiddleCenter, fontSize = 17 };
-        st.normal.textColor = new Color(0.75f, 1f, 0.95f);
-        GUI.Label(new Rect(r.x, twoLine ? r.y + 6f : r.y, r.width, 24f), "虚拟键 → " + lastPress, st);
-        if (twoLine)
-        {
-            var sub = new GUIStyle { alignment = TextAnchor.MiddleCenter, fontSize = 12 };
-            sub.normal.textColor = new Color(0.85f, 0.85f, 0.85f);
-            GUI.Label(new Rect(r.x, r.y + 28f, r.width, 20f), lastNote, sub);
-        }
     }
 
     // F9：把每个虚拟键的真实状态摊在屏幕上（键名/映射动作/是否按下/游戏是否收到）
@@ -1091,6 +1070,9 @@ public static class VirtualControls
     }
 
     public static void DrawElement(VCElem e) => DrawElement(e, 1f);
+
+    // 对话打开期间按键层让位（只影响绘制，不影响命中：对话里仍可点的键照旧可点）
+    static bool dialogFade;
 
     public static void DrawElement(VCElem e, float dim)
     {
@@ -1137,14 +1119,17 @@ public static class VirtualControls
             {
                 var old = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, a);
-                GUI.DrawTexture(rect, icon, ScaleMode.ScaleToFit);
+                float iconScale = Mathf.Min(1f, Mathf.Min(rect.width / icon.width, rect.height / icon.height));
+                var iconRect = new Rect(-icon.width * iconScale * .5f, -icon.height * iconScale * .5f,
+                    icon.width * iconScale, icon.height * iconScale);
+                GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
                 GUI.color = old;
-                DrawCooldown(e, rect, a);
+                DrawCooldown(e, iconRect, a);
             }
             else
             {
                 string text = ElementText(e);
-                if (!string.IsNullOrEmpty(text))
+                if (!dialogFade && !string.IsNullOrEmpty(text))
                 {
                     // 字占直径约 30%，两个以上字符按长度回缩，避免顶到圆边上
                     float fs = r * 0.60f;

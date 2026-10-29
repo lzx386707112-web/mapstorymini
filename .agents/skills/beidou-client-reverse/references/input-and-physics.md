@@ -31,7 +31,7 @@ type5/action52 攻击到 `0x94E256`；action53 跳跃到 `0x94F52F`。
 `CUserLocal` 的 avatar vtable 为 `0xB3D1CC`，+0x14 指向 `0x92EF56`，最终调用 `0x453AD1`。
 `0x454776..0x4547E8`：普通攻击帧时长按 `delay_ms * (clamp(speed,2,10)+10) / 16` 整数除法逐帧截断。
 `0x40A845..0x40A88C` 从武器 `info/attackSpeed` 读取，缺失默认6。
-`0x765066` 合并基础攻速和两个属性增益，技能4001334另减2，最终限制2..10；当前只接入武器基础攻速，尚未接入这两个增益字段。
+`0x765066` 合并基础攻速和两个属性增益，技能4001334另减2，最终限制2..10；当前已接入武器基础攻速与BOOSTER/SPEED_INFUSION两个带符号增益字段；具体依据及回归见temporary-stat-view.md后续补线。其他技能动作的攻速分支仍未全量接入。
 `SpriteAnim.PlayNativeAttack` 创建独立时长数组，保持原帧、共享原始clip和其他技能时序不变。
 `PlayerCtrl.BeginSwing` 不再用攻击间隔的90%反推动画速度；第一帧结算时间同样采用整数公式。
 这不代表现有伤害结算点、攻击间隔和技能攻速状态机已全部还原。
@@ -167,3 +167,89 @@ Unity `NativeCombinationChecks.Run` 已通过攻速2/6/10的逐帧时长、90ms�
 回归入口 `MovementChecks.CheckStepCorners`：双向 30/60/120Hz 墙脚下落、墙线上起步/停步/反向离墙、步行不穿墙、跳上台阶和实际 `TakeDamage`；原有突进、绳梯检查；扫描资源全部地图的竖直段下端点接地情况。每条原地图墙脚调用实际 `MoveHorizontal`、`FindLanding` 和 `StepMovement`，验证接触与后续下落，而非仅重复几何公式。
 本次 Unity batchmode 实跑 PASS：6337 张地图、16652 个连接下层平台的竖直墙脚，双侧共 33304 个起点均调用实际移动子步接住平台；双向 30/60/120Hz 接触/停步/反向、真实受击、跳台、突进及绳梯检查也通过。相交平台可能高于墙脚，因此判定是落在起始脚底下方的有效支持，不强制吸到墙脚最低点。日志 `/tmp/mapledash-step-corners-final.log`，可由上述持久入口重跑。不代表所有地图路线、不同层相交选择、Android 实机和原端完整物理已验收。
 旧 `CheckAllFootholds` 全段静止半秒后必须留在原高度的检查，在当前工作区悬崖斜段 `(-22.93,13.05)→(-22.05,13.88)` 失败；该检查没有隔离落地后斜坡运动，未作为本次墙脚通过依据，后续需单独区分漏接与落地后滑移。
+
+
+## 绳梯左右＋跳跃（2026-10-28）
+
+身份：BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`、ImageBase0x400000。
+
+- `0x9B19E5..0x9B19F4` 消费 movement+0x168 请求，经 `0x9B2202` 调 `0x9B1D3D`。
+- `0x9B1D54..0x9B1D8A` 解码绳梯引用+0x124/+0x12C；若在绳梯上，水平输入（该路径+0x150/+0x158 secure int）为0则跳到尾部，不脱绳。旧本地注释“无需方向也跳离”错误，已纠正。
+- `0x9B1D90..0x9B1D97` 虚表+0x14脱离绳梯；`0x9B1D9A..0x9B1DF2` 设置原Y向下速度 `−Physics.jumpSpeed×角色jump属性/场景属性×factor`，普通factor为 `0xAF0D48=0.5`；`0x9B214A` 特殊游泳/飞行等条件为真时选 `0xAFE800=0.3`。当前仅迁普通路径。
+- `0x9B1DF5..0x9B1E3B` 水平初速 `输入方向×Physics.walkSpeed×角色walk属性×1.3`，常量 `0xAFE898=1.3`。普通默认125/555时即±162.5px/s及向上277.5px/s。后续由既有空中积分减速/落地，不是完整555竖直跳也不是从横速0缓慢起步。
+- `0x936E53..0x936EBA` 无foothold/无绳梯后普通空中move action为6或7（按左右输入决定朝向；无左右保留朝向），并非继续rope/ladder动作；特殊游泳/飞行另为12/13。原IMG仍是 `Character/00002000.img/jump`，无新绘制素材。
+
+复现：`rtk proxy python3 tools/inspect_beidou_client.py ../../Beidou-Server/clien/BeiDou.exe --start 0x9B1D3D --end 0x9B1E43`；常量用PE映射的上述VA读little-endian double。动作分派可读 `0x936D99..0x936EBE`。
+
+运行时只改 `PlayerCtrl.StepClimb`：要求方向、竖速0.5、横速1.3并设朝向。沿用已有jump动画切换，既有0.25秒再抓冷却未作为原端已核实参数。未调整抓取容差、攀爬速度或特殊状态属性。
+
+定向回归 `RopeJumpChecks.Run`：绳/梯×左/右×30/60/120Hz，检查单跳不脱绳、组合键脱绳、起跳初速、朝向、停帧攀爬切到正常速度jump、离绳轨迹与当帧不重抓。实际执行结果见本轮交付，不等于Android实机/特殊状态验收。
+
+## 普通移动属性接线（2026-10-29）
+
+身份：同本文EXE SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`、ImageBase0x400000。
+
+- `0x78074A..0x7807A8` 将基础Speed限制100..上限（默认140），Jump限制100..123；`0x78044F..0x780479`另加`0x765C5E`提供的THRUST，后者按job祖先311/321/1310读取3110000/3210000/13100004，返回等级对象+0x70的speed（当前WZ等级1=2）。不能将该字段误作x。
+- `0x8C457C..0x8C45E7`：基础speed + max(临时负值时直接用负值，否则比较临时值与持有者值)；`0x8C45E8..0x8C4632`：基础jump+max(临时值,持有者值)。当前本地仅实现已支持的装备、THRUST、SPEED/JUMP，特殊持有者/骑乘分支仍有缺口。
+- `0x94D3D9` 更新CLifeMoveParam，`0x94D411`取walk，`0x94D44E`取jump；`0x94D418..0x94D449`状态+0x504非零覆盖walk。此状态由`0x783B44..0x783B70`读取flag全局BEFFC0后调用`0x786F14`设置。`0x790C14..0x790C3E`构造该flag的bit32，对应Disease.SLOW第二个64位标记的低位1（源Disease.java）；不是在输入轴上相乘。
+- 普通无骑乘分支`0x94D8F1..0x94D9C3`将walk限制80..默认140、jump限制80..123，乘常量0xAF14F0=.01写CLifeMoveParam+0x6C/+0x60/+0x24（walk）及+0x48（jump）。骑乘分支可到190，尚未迁移，不能套普通上限。
+- 源`SetItemNativeStats.mergedValue`和`Character.setItemNativeStatValue:5308`：只遍历-100<position<0穿戴行，套装SPD/JMP在equipment+skill上apply后减equipment，夹short范围，再由客户端与装备基数相加。当前复用既有EquipLoadout支持的穿戴槽和AdminSetItem.ApplyStat；未声称所有饰品槽/实例强化字段已齐。
+
+迁移：CharacterAttributes保留equipmentSpeed/equipmentJump；EquipCatalog与武器原IMG读取incSpeed/incJump；PlayerCtrl.RefreshMovementAttributes在状态变更及Update消费Physics.img基速，取消/到期/装备更换沿用属性刷新。NativeMobDebuffs不再缩放输入轴（旧积分会取符号导致无效），SLOW直接覆盖walk。水中/飞行、骑乘、特殊移速上限来源、场景属性尚未完整接入。
+
+独立复现：`tools/native_movement_stat_oracle.py`校验原二进制SHA，Unicorn执行`0x78074A..0x7807A8`、两个原getter与`0x94D8F1..0x94D9C3`，仅替换secured存储包装/holder访问，原算术和分支不替换。fixture `tools/native-movement-stat-oracle.json`192组装备正负值、THRUST、增益/减益、jump上限与SLOW覆盖。Unity入口NativeBuffChecks.CheckMovementOracle（通过Run/RunAll或RunMovementOracle调用）。
+
+本批`/tmp/mapledash-completion-movement-buffs.log`退出0，192组原x86对照与实际4101004急速20级→walk140%/jump120%、SLOW→80%、取消恢复基速均PASS；未沿用此PASS覆盖后续THRUST字段纠正或新增魔力吸收测试，后者另记。
+
+## 二段跳/灵魂迅移冲量（2026-10-29，新核实算术，门控仍待补）
+
+身份：同本文EXE SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，ImageBase0x400000。
+
+- `0x96BE38`入口读取skill指针与等级；`0x96BEF3..0x96BF12`只接受4111006、11101005、14101004。`0x96BFCA..0x96C038`对4111006/14101004使用level，对11101005先level*2，然后有符号整数除4为q。原坐标水平速度为facing*(350+40*q)px/s，竖直速度为-250-20*q px/s（WZ向下为正）；不是按IMG范围或time决定飞行距离。`0x96C03C..0x96C04D`转double后调已知冲量入口0x7A6353，最终冲量保留较快同向速度的语义沿用角色受击记录。
+- `0x96BFB4..0x96BFC5`提交动作/技能，随后user+0x2B58置1；入口该字段非0拒绝。`0x96BF52..0x96BF91`的4111006/14101004分支要求movement+0x110为0并查询0x705343/0x705309/0x96C1D3/0x96C1AA。11101005走相反的+0x110条件，另外查询0x94C4D9以及user+0x3158技能时刻表；`0x96C16B..0x96C191`为其写入0x9535E3返回时长+当前时刻。不要将三技能套同一空中/冷却门控。
+- **待核实（落地重置现已补证，见下一段）**：此前未找到+0x2B58的落地重置调用链；0x705343/0x705309对应特殊移动模式；0x96C1D3/0x96C1AA支持段/垂直速度组合条件；11101005的独立地面/冷却语义。未将这些不完整门控接入PlayerCtrl，不声称二段跳已可用。
+
+复现：`tools/native_flash_jump_oracle.py`校验EXE身份，Unicorn执行原0x96BFCA..0x96C038，仅stub 0x52EF17移动事件记录，保留分支/除法/移位，输出`tools/native-flash-jump-oracle.json`。本轮180组（三技能×1..30级×双向）全部对照通过。fixture只证明初始冲量算术，不证明完整施放/重置状态机。
+
+
+### 二段跳重置子对象偏移纠正（2026-10-29）
+
+同页EXE身份/base。原构造948E33写[user+4]=B3D1E8，[user+88]=B3D1CC（948E41）；B3D1EC（二级接口vtable+4）为950555。该函数95056A保存ecx到edi，故edi是user+4，不是完整user。9506F6的[edi+2B54]对应完整user+2B58，**此前把它当作下跳user+2B54指针是错误的**。
+
+9506F6..95071F仅在该值非0时读取movement参数[ebp+14]：支持段movement+110非0，或705309、705343任一非0，写[edi+2B54]=0；纯空中无绳梯保留。705309/705343解码同一movement+124/+12C绳梯引用，并分别以对象+4非0/为0区别两类；不是未知游泳/飞行模式函数。950725..950731再转原基类936D99，后者avatar使用this+84，进一步印证二级接口+4偏移。
+
+复现tools/native_flash_jump_reset_oracle.py执行原9506F6..950725，只stub两个绳梯布尔getter，使用edi=user+4，16组used/支持段/绳/梯全部通过，fixture为tools/native-flash-jump-reset-oracle.json。直接搜索完整user+2B58会漏掉此reset，后续不再重复搜索。
+
+剩余准入：96BE38首先地图fieldLimit bit1（context+2030权限bit0可绕过）；96BEBE的95F914及94BE9C是角色状态门控。96BF52要求无支持段、无两种绳梯；96BF7D先查96C1D3，再按96C1AA拒绝：后者读movement+68 secured double与0比较（>0返回true），已由既有物理oracle确认+68为向下坐标竖速。96C1D3在无支持段、7046AC false、movement vtable+8 false、actor+78 secured值<=0时返回true。7046AC又查movement+1A0区域状态（704710、区域+3C包含角色位置），**不能简单把它全部归成游泳**。11101005仍有独立地面/技能时刻表门控，其完整迁移尚未完成；本次没有把半套准入接入可无限施放的通用攻击。
+
+
+### 2026-10-29：经典二段跳普通运动分支
+
+二进制身份沿用本文 BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`、ImageBase0x400000。
+`96BE38`：96BEB5检查full-user+2B58使用标记；96BE4F的context+2030权限位0可绕过fieldLimit位2。
+96BF52经典技能要求无支撑且不在绳梯；96BF7D调用96C1D3/96C1AA，后者读取WZ向下速度+68>0（下落）。
+451B6A检查avatar+88 one-shot动作；95F914另有临时状态/动作准入。
+`PlayerCtrl.CanFlashJump/ApplyFlashJump` 与 `SkillSystem.BeginCast` 现接4111006、14101004：
+普通空中非下落、无one-shot、不在绳梯、地图未禁跳、此次离地未使用才扣费；原冲量按等级/4整除计算。
+真实落地、重新放置、绳梯抓取清使用标记；二次空中施法拒绝不扣MP，不进入普通近战结算。
+`NativeBuffChecks.RunAll` 覆盖站地/下落拒绝、Lv20水平550/竖直350px/s、重复拒绝与真实StepMovement落地重置；
+`/tmp/mapledash-priority-flash-jump.log` 与 `/tmp/mapledash-priority-range.log` exit0。
+范围边界：尚未搬11101005地面Soul Rush、特殊区域/游泳/飞行/坐骑准入及权限绕过。
+57502E读取TemporaryStat+2DC、94BE9C读取+630/+638的状态身份仍未确定，不能猜成某种疾病。
+
+
+## 2026-10-29：Soul Rush 11101005 准入补记
+
+同版 BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，base0x400000。
+`96BF14` 要求 movement+110 地面支撑；`94C4D9` 读取 TemporaryStat+4BC。
+`783976..7839A2` 检查 BEFFD0 并经786E60写+4BC；`790BB4..790BDE` 构造此掩码。
+Unicorn执行原构造指令后BEFFD0四word为(0,0,0,0x40000000)，对应原服Disease.WEAKEN掩码
+0x4000000000000000 / MobSkillType.WEAKNESS=122。
+`9535E3→95365B→953694` 对11101005返回1500ms；`96C16B..96C191` 存入user+3158，
+`96BF2C..96BF4B` 在准入时检查截止时间。复现用 inspect_beidou_client.py --fn 对上述入口。
+PlayerCtrl.CanUseFlashJump/ApplyFlashJump 已接地面、WEAKEN122、独立1500ms、等级翻倍后的冲量与离地。
+NativeBuffRenderChecks.CheckFlashJump 检查拒绝不扣MP、落地后仍受1500ms限制与过期放行。
+57502E/94BE9C共同状态及特殊区域门控仍未全部核实，不宣称特殊移动准入完整迁移。
+
+本批 Soul Rush 新增准入/冲量/落地/1500ms 断言在隔离Unity
+NativeBuffChecks.RunAll（/tmp/mapledash-priority-four-runtime2.log）退出0；未作Android验证。

@@ -18,9 +18,12 @@ public sealed class BotAppearancePrebake : MonoBehaviour
     const double FrameBudgetMs = 6.0;
     // 进图后只在「本帧确实很空」时补一步，绝不和渲染抢时间。
     const float InGameBudgetMs = 8f;
+    // 等假人资源预热的最长时间；超时就用现有数据开工，绝不把加载页挂在等信号上。
+    const float WarmupWaitSeconds = 20f;
 
     int templateIndex, animIndex, frameIndex, frameCount;
     bool started, finished;
+    float waitSeconds;
     readonly System.Diagnostics.Stopwatch budget = new System.Diagnostics.Stopwatch();
 
     // 最近一次预算调整时间，用于「登录界面跑满、游戏内让路」。
@@ -41,7 +44,12 @@ public sealed class BotAppearancePrebake : MonoBehaviour
             var server = GameServer.Local;
             if (server == null) return;                 // GameSession.Boot 还没跑
             // 资源没解析完就别碰：这里会走 WzAssets 节点树，等后台线程解完更省事。
-            if (!BotWarmup.Ready("Bot/Items") || !BotWarmup.Ready("Bot/SoloMapling")) return;
+            // 但 BotWarmup 的解析线程一旦失败，Ready() 永远是 false，这个 return 会一直打转，
+            // 加载页（等本组件退场）就永久停住；所以等够时间就直接开工，别再等信号。
+            waitSeconds += Time.unscaledDeltaTime;
+            bool warm = BotWarmup.Ready("Bot/Items") && BotWarmup.Ready("Bot/SoloMapling");
+            if (!warm && waitSeconds < WarmupWaitSeconds) return;
+            if (!warm) Debug.LogWarning("[Bot] 假人资源预热超时，先按现有数据预合成");
             BotAppearanceTemplates.Ensure(server.Db);
             started = true;
             if (!BotAppearanceTemplates.Enabled) { Finish(); return; }
@@ -53,10 +61,20 @@ public sealed class BotAppearancePrebake : MonoBehaviour
         // 玩家可能登录没停几秒就进图，那就边玩边补，没补到的按需合成（模板共享，只合成一次）。
         bool inGame = GameSession.InGame;
         if (inGame && !Server.Bot.BotWorkPump.Has(InGameBudgetMs)) return;
-        do
+        try
         {
-            if (!Step()) { Finish(); return; }
-        } while (!inGame && budget.Elapsed.TotalMilliseconds < FrameBudgetMs);
+            do
+            {
+                if (!Step()) { Finish(); return; }
+            } while (!inGame && budget.Elapsed.TotalMilliseconds < FrameBudgetMs);
+        }
+        catch (System.Exception e)
+        {
+            // 合成抛异常时必须退场：留在场上会每帧重抛，StandReady 永远不置位，
+            // 加载页（等 StandReady 才放行假人）就永久停在「正在加载AI假人系统」。
+            Debug.LogError("[Bot] 纸娃娃预合成异常，跳过剩余模板：" + e);
+            Finish();
+        }
     }
 
     // 推进一帧合成；返回 false 表示全部铺完。

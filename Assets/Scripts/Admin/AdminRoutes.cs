@@ -77,11 +77,15 @@ public static class AdminRoutes
             return null;
         }, auth: false);
 
-        api.Get("/auth/v1/refreshToken", ctx =>
-        {
-            ctx.Api.DropSession(ctx.Token);
-            return AdminJson.Obj("token", ctx.Api.CreateSession(ctx.User));
-        });
+        // 续期：源端是 JWT（AuthService.refreshToken 只签发新 token，旧 token 在过期前
+        // 仍然有效，服务端没有吊销这回事）。这里对应做法 = 顺延同一个会话、token 不变。
+        //
+        // 千万不能 DropSession + CreateSession：前端 hooks/loading.ts 在**每次** setLoading(false)
+        // 都会打这个接口，登录表单的 finally 也走它，于是它和路由守卫里的 /account/v1/info
+        // 并发——旧 token 被自己吊销，info 立刻 401，表现为「刚提示欢迎使用就提示登录已过期、
+        // 界面停在登录页不动」（2026-10-28 用户报障，CDP 复现请求序列确认）。
+        // 鉴权阶段 AdminApi.Resolve 已经把会话顺延了 12 小时，这里把 token 原样回给前端即可。
+        api.Get("/auth/v1/refreshToken", ctx => AdminJson.Obj("token", ctx.Token));
 
         // 当前登录的后台账号。前端用 webadmin 决定角色（admin/user），必须是 true 才看得到菜单。
         api.Get("/account/v1/info", ctx =>

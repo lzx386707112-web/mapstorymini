@@ -4,7 +4,7 @@ using UnityEngine;
 // 原 WZ 的等级参数只读快照；不能把剩余冷却写到配置中。
 public sealed class NativeSkillDefinition
 {
-    public readonly int Id, Level, MpCost, HitCount, TargetCount;
+    public readonly int Id, Level, MpCost, HpCost, HitCount, TargetCount, FixedDamage;
     public readonly float Cooldown, DamagePercent, MagicAttack, Duration, Probability, AttackBuff, SummonInterval;
     public readonly Vector2 Min, Max;
     public readonly string Kind, Element;
@@ -17,6 +17,8 @@ public sealed class NativeSkillDefinition
         Kind = skill["kind"] as string; Magic = skill["magic"] is bool b && b;
         SummonInterval = Mathf.Max(0.1f, Art.Num(skill, "summonInterval", 1f));
         MpCost = (int)Art.Num(level, "mpCon"); Cooldown = Art.Num(level, "cooltime");
+        HpCost = (int)Art.Num(level, "hpCon");
+        FixedDamage = (int)Art.Num(level, "fixdamage", -1);
         HitCount = (int)Art.Num(level, "attackCount", 1);
         TargetCount = (int)Art.Num(level, "mobCount", 1);
         DamagePercent = Art.Num(level, "damage"); MagicAttack = Art.Num(level, "mad");

@@ -78,10 +78,11 @@ public class LoginUiReviewProbe : MonoBehaviour
 
         yield return Shot("notice");
 
-        // 用滚动条底部的下箭头滚到底（也验证箭头/滑轨的点击不被取消按钮吞掉）。
-        for (int i = 0; i < 6; i++)
+        // 用滚动条底部的下箭头滚到底（卷轴 431×426 居中 → 滚动条 x=815..827, y=187..504，
+        // 下箭头中心 = 425+390+6, 147+40+317-6）。
+        for (int i = 0; i < 8; i++)
         {
-            Pointer.TestPos = Design(820, 350);
+            Pointer.TestPos = Design(821, 498);
             Pointer.PressPosition = Pointer.TestPos.Value;
             Pointer.TestClick = true;
             yield return null; yield return null;
@@ -94,7 +95,7 @@ public class LoginUiReviewProbe : MonoBehaviour
         Debug.Log("[LoginUiReview] notice arrow scroll=" + scrolled);
         yield return Shot("notice-bottom");
 
-        Pointer.TestPos = Design(728, 393);   // 开源声明 确定
+        Pointer.TestPos = Design(728, 537);   // 开源声明 确定（卷轴右下橙色底板 266,374 + 75×32）
         Pointer.PressPosition = Pointer.TestPos.Value;
         Pointer.TestClick = true;
         yield return null; yield return null;
@@ -106,7 +107,13 @@ public class LoginUiReviewProbe : MonoBehaviour
         Debug.Log("[LoginUiReview] notice confirm click=" + noticeClosed);
         if (!noticeClosed) typeof(LoginFlow).GetField("noticeOpen", Priv).SetValue(flow, false);
 
-        Pointer.TestPos = Design(682, 429);   // 新的帐户
+        // 新账号流程：连接成功后先弹「可以使用的账号」，点确定才进性别选择。
+        // 这里直接摆出弹窗（真实路径要名字没注册过才会走到，会往库里塞测试账号）。
+        typeof(LoginFlow).GetField("newAccountOpen", Priv).SetValue(flow, true);
+        yield return new WaitForSecondsRealtime(0.3f);
+        yield return Shot("newaccount");
+
+        Pointer.TestPos = Design(602, 435);   // 可以使用的账号 确定
         Pointer.PressPosition = Pointer.TestPos.Value;
         Pointer.TestClick = true;
         yield return null; yield return null;

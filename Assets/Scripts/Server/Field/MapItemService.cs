@@ -16,6 +16,7 @@ namespace Server.Field
 
         /// <summary>源端 GameConfig item_limit_on_map 默认 200：地图掉落物上限，超出逐出最早的一个。</summary>
         public static int ItemLimitOnMap = 200;
+        public static long ExpireMilliseconds=180000;
 
         /// <summary>归属窗口：源端 MapItem.hasExpiredOwnershipTime 用 15 秒。</summary>
         public const long OwnershipWindowMs = 15_000;
@@ -195,6 +196,7 @@ namespace Server.Field
             if (!byMap.TryGetValue(mapId, out var list)) byMap[mapId] = list = new List<MapItem>();
             list.Add(mdrop);
             if (!evictable) return;
+            if (MapService.Get(mapId)?.everlast!=true) mdrop.expiresAt=Now()+ExpireMilliseconds;
 
             // 源端 instantiateItemDrop：满 item_limit_on_map 时从最早注册的逐出
             if (!registered.TryGetValue(mapId, out var reg)) registered[mapId] = reg = new List<MapItem>();
@@ -297,11 +299,13 @@ namespace Server.Field
         /// 注意源端这里**不入背包**；入背包在 Character.pickupItem（见 MapItemPickup）。
         /// 调用前必须已确认 !isPickedUp（源端注释：mdrop must be already locked and not-pickedup checked）。
         /// </summary>
-        public static void PickItemDrop(int mapId, MapItem mdrop, int reason)
+        public static void PickItemDrop(int mapId, MapItem mdrop, int reason, int pickerId = 0, int petIndex = -1)
         {
             if (mdrop == null) return;
             Detach(mapId, mdrop);
             mdrop.pickedUp = true;
+            mdrop.pickupCharacterId = pickerId;
+            mdrop.pickupPetIndex = petIndex;
             Removed?.Invoke(mdrop, reason);
         }
 
@@ -326,6 +330,14 @@ namespace Server.Field
             if (!byMap.TryGetValue(mapId, out var list)) return null;
             foreach (var item in list) if (item.objectId == objectId) return item;
             return null;
+        }
+
+        public static void Tick(long now)
+        {
+            var expired=new List<MapItem>();
+            foreach (var items in byMap.Values)
+                foreach (var item in items) if (item.expiresAt<now) expired.Add(item);
+            foreach (var item in expired) MakeDisappear(item.mapId,item);
         }
 
         // ——————————————————— 查询 ——————————————————

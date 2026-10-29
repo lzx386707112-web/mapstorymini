@@ -139,8 +139,8 @@ public static class EquipCatalog
         result.weaponDefense += info.Int("incPDD"); result.magicDefense += info.Int("incMDD");
         result.accuracy += info.Int("incACC"); result.avoidability += info.Int("incEVA");
         watk += info.Int("incPAD"); matk += info.Int("incMAD");
-        var speed = info.Int("incSpeed");
-        if (speed > 0) result.accuracy += 0;          // 移速/跳跃暂不参与本客户端
+        result.equipmentSpeed += info.Int("incSpeed");
+        result.equipmentJump += info.Int("incJump");
     }
 }
 
@@ -225,6 +225,13 @@ public static class EquipLoadout
         result.maxHp += NativeCombatData.Int(d, "incMHP"); result.maxMp += NativeCombatData.Int(d, "incMMP");
         result.weaponDefense += NativeCombatData.Int(d, "incPDD"); result.magicDefense += NativeCombatData.Int(d, "incMDD");
         result.accuracy += NativeCombatData.Int(d, "incACC"); result.avoidability += NativeCombatData.Int(d, "incEVA");
+        // The older combat export omits movement fields; read the original weapon IMG.
+        if (int.TryParse(weapon.id,out int movementWeapon))
+        {
+            var movementInfo=EquipCatalog.Info(movementWeapon);
+            result.equipmentSpeed+=movementInfo?.Int("incSpeed") ?? 0;
+            result.equipmentJump+=movementInfo?.Int("incJump") ?? 0;
+        }
         w += NativeCombatData.Int(d, "incPAD") + attackBuff;
         m += NativeCombatData.Int(d, "incMAD");
         foreach (var kv in WornSlots())
@@ -256,8 +263,7 @@ public static class EquipLoadout
         result.avoidability = AdminSetItem.ApplyStat(set, "EVA", result.avoidability);
         w = AdminSetItem.ApplyStat(set, "PAD", w);
         m = AdminSetItem.ApplyStat(set, "MAD", result.intelligence + m) - result.intelligence;
-        // SPD/JMP：CharacterAttributes 无对应字段（移动走 Physics.img 的 walkSpeed），
-        // 套装 SPD/JMP 暂无落点，接入移动系统时消费 set["SPD"]/set["JMP"]。
+        // SPD/JMP are merged with active temporary stats by PlayerCtrl, as SetItemNativeStats does.
 
         result.maxHp = Mathf.Max(50, result.maxHp);
         result.maxMp = Mathf.Max(5, result.maxMp);

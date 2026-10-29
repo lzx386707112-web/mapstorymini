@@ -17,26 +17,26 @@ public partial class SkillSystem
     }
     IEnumerator CastVisuals(SkillDef s,Vector2 origin,int facing)
     {
-        var prepare=NativeSkillVfx.Parts(s.art,"prepare");
-        foreach(var clip in prepare) Visual(s.art,clip.path,p.FeetPos,facing,p.transform);
+        var prepare=NativeSkillVfx.Parts(s.vfx,"prepare");
+        foreach(var clip in prepare) Visual(s.vfx,clip.path,p.FeetPos,facing,p.transform);
         float delay=Preparation(s);
         if(delay>0)yield return new WaitForSeconds(delay);
-        if(delay>0)p.PlaySkill(s.art);
+        if(delay>0)p.PlaySkill(s.action);
         // z<0 是施法者后层，不是全场景背景。
         foreach(string branch in new[]{"effect","effect0"})
-            foreach(var clip in NativeSkillVfx.Parts(s.art,branch))
+            foreach(var clip in NativeSkillVfx.Parts(s.vfx,branch))
             {
-                bool behind=NativeSkillVfx.Number(s.art,clip.path,"z")<0;
+                bool behind=NativeSkillVfx.Number(s.vfx,clip.path,"z")<0;
                 bool field=s.art=="doom" || s.art=="rupture";
-                Visual(s.art,clip.path,field ? (Vector3)origin : (Vector3)p.FeetPos,facing,field ? null : p.transform,false,behind ? p.SortingOrder-1 : 360);
+                Visual(s.vfx,clip.path,field ? (Vector3)origin : (Vector3)p.FeetPos,facing,field ? null : p.transform,false,behind ? p.SortingOrder-1 : 360);
             }
-        foreach(var clip in NativeSkillVfx.Parts(s.art,"affected")) Visual(s.art,clip.path,p.FeetPos,facing,p.transform);
+        foreach(var clip in NativeSkillVfx.Parts(s.vfx,"affected")) Visual(s.vfx,clip.path,p.FeetPos,facing,p.transform);
         foreach(string branch in new[]{"screen","screenEffect","effectScreen","background"})
-            foreach(var clip in NativeSkillVfx.Parts(s.art,branch))
+            foreach(var clip in NativeSkillVfx.Parts(s.vfx,branch))
             {
                 var camera=Camera.main;
                 Vector3 anchor=camera==null ? (Vector3)origin : new Vector3(camera.transform.position.x,camera.transform.position.y,0);
-                var fx=Visual(s.art,clip.path,anchor,-1,camera==null ? null : camera.transform,false,700);
+                var fx=Visual(s.vfx,clip.path,anchor,-1,camera==null ? null : camera.transform,false,700);
                 if(fx!=null && camera!=null)
                 {
                     var size=fx.CurrentSprite.bounds.size;
@@ -44,12 +44,12 @@ public partial class SkillSystem
                     fx.transform.localScale=Vector3.one*scale;
                 }
             }
-        if(NativeSkillVfx.Has(s.art,"tile"))
+        if(NativeSkillVfx.Has(s.vfx,"tile"))
         {
             if(s.art=="firebolt")StartCoroutine(GroundFire(s,origin,facing));
             else TileField(s,origin,facing);
         }
-        if(NativeSkillVfx.Has(s.art,"special") && s.art!="rupture")
+        if(NativeSkillVfx.Has(s.vfx,"special") && s.art!="rupture")
             yield return SpecialField(s,origin,facing);
     }
     IEnumerator GroundFire(SkillDef s,Vector2 origin,int facing)
@@ -57,7 +57,7 @@ public partial class SkillSystem
         yield return new WaitForSeconds(.45f);
         TileField(s,origin,facing);
     }
-    static bool UsesProjectile(SkillDef s) => s.art!="firebolt" && NativeSkillVfx.Has(s.art,"ball");
+    static bool UsesProjectile(SkillDef s) => s.art!="firebolt" && NativeSkillVfx.Has(s.vfx,"ball");
     // Old projectile skills have no level lt/rb. Do not reuse the 200px melee fallback.
     static float ProjectileRange(SkillDef s) => Mathf.Max(600/Art.PPU,Mathf.Max(-s.native.Min.x,s.native.Max.x));
     static bool InProjectileRange(Vector3 point,SkillDef s,Vector2 origin,int facing)
@@ -68,13 +68,13 @@ public partial class SkillSystem
     float Preparation(SkillDef s)
     {
         float duration=0;
-        foreach(var clip in NativeSkillVfx.Parts(s.art,"prepare"))duration=Mathf.Max(duration,clip.Duration);
+        foreach(var clip in NativeSkillVfx.Parts(s.vfx,"prepare"))duration=Mathf.Max(duration,clip.Duration);
         return duration;
     }
     void TileField(SkillDef s,Vector2 origin,int facing)
     {
-        var tiles=NativeSkillVfx.Parts(s.art,"tile");
-        float spacing=NativeSkillVfx.Number(s.art,"tile","effectDistance",180)/Art.PPU;
+        var tiles=NativeSkillVfx.Parts(s.vfx,"tile");
+        float spacing=NativeSkillVfx.Number(s.vfx,"tile","effectDistance",180)/Art.PPU;
         if(tiles.Count==0 || spacing<=0)return;
         // 大范围技能由多组原 tile 铺满可见攻击范围，不把一张爆点图拉伸成全屏。
         var camera=Camera.main;
@@ -85,19 +85,19 @@ public partial class SkillSystem
         for(float x=left;x<=right;x+=spacing)
         {
             float y=PlayerCtrl.GroundAt(x,origin.y);
-            Visual(s.art,tiles[n++%tiles.Count].path,new Vector3(x,y,0),facing);
+            Visual(s.vfx,tiles[n++%tiles.Count].path,new Vector3(x,y,0),facing);
         }
     }
     IEnumerator SpecialField(SkillDef s,Vector2 origin,int facing)
     {
-        var parts=NativeSkillVfx.Parts(s.art,"special");
-        float start=NativeSkillVfx.Number(s.art,"special","start")/1000;
+        var parts=NativeSkillVfx.Parts(s.vfx,"special");
+        float start=NativeSkillVfx.Number(s.vfx,"special","start")/1000;
         if(start>0)yield return new WaitForSeconds(start);
-        int count=(int)NativeSkillVfx.Number(s.art,"special","count",parts.Count);
-        float interval=NativeSkillVfx.Number(s.art,"special","interval",60)/1000;
-        float width=NativeSkillVfx.Number(s.art,"special","x",200)/Art.PPU;
-        float height=NativeSkillVfx.Number(s.art,"special","y")/Art.PPU;
-        float fall=height>0 ? NativeSkillVfx.Number(s.art,"special","duration",500)/1000 : 0;
+        int count=(int)NativeSkillVfx.Number(s.vfx,"special","count",parts.Count);
+        float interval=NativeSkillVfx.Number(s.vfx,"special","interval",60)/1000;
+        float width=NativeSkillVfx.Number(s.vfx,"special","x",200)/Art.PPU;
+        float height=NativeSkillVfx.Number(s.vfx,"special","y")/Art.PPU;
+        float fall=height>0 ? NativeSkillVfx.Number(s.vfx,"special","duration",500)/1000 : 0;
         for(int i=0;i<count;i++)
         {
             // y 是发射高度，不能拿 fall 当高度，否则烈火箭会从屏幕外落下。
@@ -110,7 +110,7 @@ public partial class SkillSystem
                 point.y=origin.y+(i%3)*45/Art.PPU;
             }
             var clip=parts[i%parts.Count];
-            var fx=Visual(s.art,clip.path,point,facing,null,fall>0);
+            var fx=Visual(s.vfx,clip.path,point,facing,null,fall>0);
             if(fall>0 && fx!=null) StartCoroutine(Fall(fx,point,new Vector3(x,PlayerCtrl.GroundAt(x,origin.y),0),fall));
             yield return new WaitForSeconds(Mathf.Max(.001f,interval));
         }
@@ -129,17 +129,7 @@ public partial class SkillSystem
     void Impact(SkillDef s,NativeSkillDefinition definition,Component target,int direction,bool successful)
     {
         if(!successful)return;
-        if(definition.Id!=s.native.Id || string.IsNullOrEmpty(s.art))
-        {
-            string path="Skill/"+(definition.Id/10000).ToString("D3")+".img/skill/"+definition.Id+"/hit/0";
-            var node=WzAssets.Node(path);
-            if(node!=null)
-            {
-                var effect=NativeImgAnimation.Spawn(path,target.transform,TargetAnchor(target,node.Int("pos")),360,direction>0);
-                if(effect!=null){nativeReplayEffects.RemoveAll(x=>x==null);nativeReplayEffects.Add(effect);return;}
-            }
-        }
-        string key=definition.Id==1121021 ? "illusion_slash" : definition.Id==1121022 ? "illusion_explosion" : s.art;
+        string key=definition.Id==s.native.Id ? s.vfx : NativeSkillVfx.Key(definition.Id,definition.Level);
         var hits=NativeSkillVfx.Parts(key,"hit");
         if(hits.Count>0)
         {
@@ -160,9 +150,9 @@ public partial class SkillSystem
         // 原 mob pos=2 表示头顶状态；普通 hit 使用怪物身体中心。
         return new Vector3(body.bounds.center.x,pos==2 ? body.bounds.max.y : body.bounds.center.y,0);
     }
-    IEnumerator ProjectileCast(SkillDef s,Vector2 origin,int facing)
+    IEnumerator ProjectileCast(SkillDef s,Vector2 origin,int facing,bool immediate=false)
     {
-        float launch=NativeSkillVfx.Number(s.art,"ball","delay",p.SkillActionDuration*500)/1000;
+        float launch=immediate ? 0 : NativeSkillVfx.Number(s.vfx,"ball","delay",p.SkillActionDuration*500)/1000;
         if(launch>0)yield return new WaitForSeconds(launch);
         var targets=SelectTargets(s,s.native,origin,facing);
         bool pierce=s.art=="dragon" || s.art=="ray";
@@ -179,7 +169,7 @@ public partial class SkillSystem
     const float ProjectileSpeed=800/Art.PPU;
     IEnumerator Fly(SkillDef s,Vector3 from,Vector3 to,Component target,int facing)
     {
-        var fx=Visual(s.art,"ball",from,facing,null,true);
+        var fx=Visual(s.vfx,"ball",from,facing,null,true);
         float duration=Vector3.Distance(from,to)/ProjectileSpeed,elapsed=0;
         while(elapsed<duration)
         {
@@ -195,7 +185,7 @@ public partial class SkillSystem
         targets.Sort((a,b)=>Mathf.Abs(a.transform.position.x-origin.x).CompareTo(Mathf.Abs(b.transform.position.x-origin.x)));
         Vector3 from=origin+Vector2.up*(30/Art.PPU);
         float distance=ProjectileRange(s);
-        var fx=Visual(s.art,"ball",from,facing,null,true);
+        var fx=Visual(s.vfx,"ball",from,facing,null,true);
         int next=0;float traveled=0;
         while(traveled<distance)
         {

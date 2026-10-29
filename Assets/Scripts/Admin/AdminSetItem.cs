@@ -647,6 +647,124 @@ public static class AdminSetItem
         return rate * (100 + v) / 100.0;
     }
 
+    // ——————————— 装备提示的套装面板 ———————————
+    // 源端是 BeiDouSetItemCompat.dll 自己建的 native layer（0x65C82F00 段）：解 0x17A 包后
+    // 按「套装名 (已穿/完整件数) + 每件装备(槽位名) + 套装效果 + [N件] 属性」排版，宽 236。
+    // 本工程不跑那个 DLL 的包，直接用同一份 catalog 现算，保证与后台改动一致。
+    public sealed class SetPanelAlt
+    {
+        public int ItemId;
+        public string Name;
+        public string SlotName;
+        public bool Equipped;
+    }
+
+    public sealed class SetPanelSlot
+    {
+        public readonly List<SetPanelAlt> Alts = new List<SetPanelAlt>();
+        public bool AnyWorn { get { foreach (var a in Alts) if (a.Equipped) return true; return false; } }
+    }
+
+    public sealed class SetPanelTier
+    {
+        public int Required;
+        public readonly List<KeyValuePair<string, int>> Stats = new List<KeyValuePair<string, int>>();
+    }
+
+    public sealed class SetPanel
+    {
+        public int Id;
+        public string Name;
+        public int CompleteCount;   // 套装完整件数（= 槽位数）
+        public int EquippedCount;   // 当前穿着的件数
+        public readonly List<SetPanelSlot> Slots = new List<SetPanelSlot>();
+        public readonly List<SetPanelTier> Tiers = new List<SetPanelTier>();
+    }
+
+    // 源端 PacketCreator.setItemSlotName
+    public static string SlotNameOf(int itemId)
+    {
+        switch (itemId / 10000)
+        {
+            case 100: return "帽子";
+            case 101: return "脸饰";
+            case 102: return "眼饰";
+            case 103: return "耳环";
+            case 109: return "盾牌";
+            case 104: return "上衣";
+            case 105: return "套服";
+            case 106: return "裤子";
+            case 107: return "鞋子";
+            case 108: return "手套";
+            case 110: return "披风";
+            case 111: return "戒指";
+            case 112: return "吊坠";
+            case 113: return "腰带";
+            case 114: return "勋章";
+            case 115: return "肩章";
+            default: return itemId / 1000000 == 1 ? "武器" : "装备";
+        }
+    }
+
+    // 悬停装备所属的套装（源端按已穿件数降序，同一件装备通常只落一个套装）
+    public static List<SetPanel> PanelsFor(int itemId, IEnumerable<int> wornIds)
+    {
+        var result = new List<SetPanel>();
+        if (itemId <= 0) return result;
+        try
+        {
+            EnsureLoaded();
+            var worn = new HashSet<int>();
+            if (wornIds != null) foreach (int id in wornIds) if (id > 0) worn.Add(id);
+
+            foreach (var def in AllDefs())
+            {
+                if (def.BuiltIn && disabledIds.Contains(def.Id)) continue;
+                var slots = slotOverrides.TryGetValue(def.Id, out var ov) ? ov : def.Slots;
+                bool belongs = false;
+                foreach (var slot in slots) if (slot.Contains(itemId)) { belongs = true; break; }
+                if (!belongs) continue;
+
+                var panel = new SetPanel
+                {
+                    Id = def.Id,
+                    Name = string.IsNullOrEmpty(def.Name) ? ("套装 " + def.Id) : def.Name,
+                    CompleteCount = slots.Count,
+                };
+                int wornCount = 0;
+                foreach (var slot in slots)
+                {
+                    var ps = new SetPanelSlot();
+                    foreach (int id in slot)
+                        ps.Alts.Add(new SetPanelAlt
+                        {
+                            ItemId = id,
+                            Name = ItemCatalog.Name(id),
+                            SlotName = SlotNameOf(id),
+                            Equipped = worn.Contains(id),
+                        });
+                    if (ps.AnyWorn) wornCount++;
+                    panel.Slots.Add(ps);
+                }
+                panel.EquippedCount = wornCount;
+                foreach (var t in def.Tiers)
+                {
+                    var pt = new SetPanelTier { Required = t.Required };
+                    // 与源端一致：按 STAT_KEYS 顺序输出（服务端也是这个顺序写包）
+                    foreach (var key in SupportedStats)
+                        if (t.Stats.TryGetValue(key, out int v) && v != 0)
+                            pt.Stats.Add(new KeyValuePair<string, int>(key, v));
+                    panel.Tiers.Add(pt);
+                }
+                result.Add(panel);
+            }
+            // 源端 setItemUpdate 按 equippedCount 降序
+            result.Sort((a, b) => b.EquippedCount.CompareTo(a.EquippedCount));
+        }
+        catch { /* 无库/缺 catalog：不显示套装块 */ }
+        return result;
+    }
+
     // 后台改配置后让玩法侧下一次结算重新装载（等价源端 refreshSetItemBonuses 的失效半边）
     public static void Invalidate() => builtins = null;
 }

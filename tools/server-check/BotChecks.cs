@@ -356,6 +356,14 @@ static class BotChecks
         var reward=BotPartyExperience.Calculate(db,runtime.parties,player,120,1000,1000,contributions);
         check(reward.eligible && reward.personal==133 && reward.party==40 && reward.reputationCalls==2,
             "假人击杀按六人等级分配经验与30%队伍加成，不把整份经验发给队长");
+        var blessed=BotPartyExperience.Calculate(db,runtime.parties,player,120,1000,1000,contributions,
+            holySymbol:50,expIncrease:7,expBuff:true);
+        check(blessed.personal==414 && blessed.party==60,
+            "神圣祈祷同时乘个人与队伍经验，平加和经验翻倍只作用个人部分");
+        var taunted=BotPartyExperience.Calculate(db,runtime.parties,player,120,1000,1000,contributions,
+            holySymbol:50,expIncrease:7,expBuff:true,showdown:50);
+        check(taunted.personal==614 && taunted.party==90,
+            "挑衅与祈祷共同乘个人和队伍经验，平加7点只在个人部分最后翻倍");
         player.level=1;
         check(!BotPartyExperience.Calculate(db,runtime.parties,player,120,1000,1000,contributions).eligible,
             "未攻击且低于怪物等级门槛的队员不蹭经验");

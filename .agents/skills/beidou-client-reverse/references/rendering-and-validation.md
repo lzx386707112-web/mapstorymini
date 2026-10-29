@@ -43,3 +43,36 @@ Direct3D8 的 `SetTextureStageState` vtable offset 为 `0xFC`（由本机 mingw 
   预览截图 `docs/hud-review/cash-preview-1002470.png` 正常戴帽；服务端 Buy→Withdraw→Read 不受影响。
   两个诊断脚本是临时工具，验证完已删除，需要时按本节重建。
 - 边界：只处理「UOL 解析不到」这一类；IMG 解析本身失败、Canvas 像素损坏仍按原样抛错。
+
+
+## 玩家/普通怪物重叠时换帧遮挡闪烁（2026-10-28）
+
+### 原端确定部分
+
+BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`、ImageBase `0x400000`。
+
+- 玩家 `0x92FD16..0x92FD59`：取 user+0x11A4 运动对象的实际this（减0xC），令 `K=10*(movement[0x130]*3000-movement[0x134])-0x3FFF8ADA`。根据 movement+0x18 是否非0选择末位+7/+2，通过 avatar=user+0x88 的 `0x452195` 写纸娃娃 layer z。
+- `0x452195..0x4521D1` 对 avatar+0x10C8 层调用 COM vtable+0xB4，参数是上面算出的完整 z。
+- 普通怪 `0x664E35..0x664EAA`：取 mob+0x118 运动对象this（减0xC）；普通分支 `0x664E5B..0x664E70` 计算 `10*(movement[0x130]*3000-movement[0x134])-0x3FFF8AD9 = K+1`，通过主图层 mob+0x4C0 的同一 vtable+0xB4 设置z。movement+0x248==3另走固定 `0xC0041F14`；这不是所有怪都可套普通公式的证明。
+- 结论：相同运动层级基准下，普通怪与人物z不相等（怪K+1，人物K+2或K+7），不应交给每帧IMG/纹理打破排序平局。普通人物应在普通怪物前。
+- 此次没有进一步给 movement+0x130/+0x134 全部状态赋予语义，完整地图遮挡/跳跃跨层仍属于已记载的迁移缺口。
+
+复现：
+
+```sh
+rtk proxy python3 tools/inspect_beidou_client.py ../../Beidou-Server/clien/BeiDou.exe --start 0x92FD16 --end 0x92FD59
+rtk proxy python3 tools/inspect_beidou_client.py ../../Beidou-Server/clien/BeiDou.exe --start 0x664E35 --end 0x664EAA
+rtk proxy python3 tools/inspect_beidou_client.py ../../Beidou-Server/clien/BeiDou.exe --start 0x452195 --end 0x4521D1
+```
+
+### 移植缺陷与最小修复
+
+原代码 PlayerCtrl.SortingOrder 与 EnemyUnit 初始化/SyncVisual 都用 `300-lane*12`。相同layer、order、z的透明精灵无明确角色/怪物先后，换动画贴图时可受到纹理/材质批次的平局顺序影响。初查时“Sprite中心随换帧变化”只是线索，未以它作为确定根因；没有通过改pivot或新增高度排序修复。
+
+EnemyUnit 统一用 `BodySortingOrder=299-lane*12`，人物保持既有 `300-lane*12`，让普通同lane主图层按已核实先后分开一档。Unity值是既有管线接入映射，不等于直接搬原EXE巨大z数值。没有改IMG、动画时延、透明度/受击灰白调制、血条/特效、NPC/假人排序或新增旧章节分支。
+
+### 定向验证
+
+持久入口 `ActorOverlapChecks.Run`：真实原IMG人物stand/alert/walk各3帧，与蜗牛stand/walk/hit交叉、lane0/2/4，共81组。每组分别渲染人物、怪物、重叠三张，比较双方不透明交叠像素，要求合成保持人物像素；检查order严格有序。使用有图形设备的Unity batchmode（不可加nographics），没有修改资源或启动游戏存档。实际执行结果见本次交付；该检查不代表全部特殊怪、完整地图层、Android GPU实机已验收。
+
+本轮Unity有图形batchmode实际PASS：81组、35835个不透明重叠像素全部保持角色在前；同一测试临时恢复旧equal-order后36组出现与正确前景不同的像素，45组没有，证实换帧会改变旧平局结果。退出码0；日志 `/tmp/mapledash-overlap.log` 仅作本轮记录，持久复现使用上述Editor入口。`git diff --check`通过。

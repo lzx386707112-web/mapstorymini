@@ -51,10 +51,26 @@ public static class DialogText
     public static readonly Color Purple = new Color(81f / 255f, 55f / 255f, 140f / 255f);
     public static readonly Color White = Color.white;
 
+    // 原端文案里的换行不是控制字符，而是**字面的反斜杠转义**：
+    // Quest/Say.img、QuestInfo、String/EULA.img 里写的都是 "\r\n" 四个字符（EULA 还是双反斜杠写法）。
+    // 源端在文本排版层统一把它当换行，所以这里在进入排版前先归一化；
+    // 脚本里 sendNext("...\r\n...") 经 JS 词法已是真换行，这里对真换行无副作用。
+    public static string NormalizeBreaks(string raw)
+    {
+        if (string.IsNullOrEmpty(raw) || raw.IndexOf('\\') < 0) return raw;
+        return raw.Replace(@"\\r\\n", "\n")   // 双反斜杠写法（String/EULA.img 等资源）
+                  .Replace(@"\\n", "\n")
+                  .Replace(@"\r\n", "\n")    // 单反斜杠写法（Quest/Say.img 等）
+                  .Replace(@"\r", "\n")
+                  .Replace(@"\n", "\n")
+                  .Replace(@"\t", "\t");
+    }
+
     public static DialogContent Parse(string raw)
     {
         var content = new DialogContent();
         if (string.IsNullOrEmpty(raw)) return content;
+        raw = NormalizeBreaks(raw);
 
         var buffer = new StringBuilder(raw.Length);
         var color = Ink;
@@ -190,6 +206,7 @@ public static class DialogText
     // 选项文字里的颜色/图标标记也要去掉（程序生成的列表行用不到标记，这里只兜底）
     public static string StripMarkup(string raw)
     {
+        raw = NormalizeBreaks(raw);
         var sb = new StringBuilder(raw.Length);
         int i = 0;
         while (i < raw.Length)

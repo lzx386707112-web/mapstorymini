@@ -15,11 +15,13 @@ namespace Server.Bot
     }
     public sealed class BotPartyGrindService : IDisposable
     {
-        public const int ItemId = 2431159, Count = 5;
+        // 原版数值（PartyGrindCompat），后台可配后仍是默认值
+        public const int ItemId = 2431159, Count = 5, PartyCap = 6;
         public const long Duration = 1800000;
         readonly BotPartyService parties;
         readonly Func<int,MapRuntime> maps;
         readonly Random random;
+        readonly DbStore db;
         readonly Decorator.BotDecorate decorator;
         readonly Dictionary<int,int> leaders = new Dictionary<int,int>();
         readonly Dictionary<int,List<int>> companions = new Dictionary<int,List<int>>();
@@ -34,15 +36,23 @@ namespace Server.Bot
         public Action<BotCharacter,BotGrindMob,int,BotAttack.Skill,int[]> Hit;
         public Action<int,string> Notice;
         public Action<int,bool> Effect;
-        public BotPartyGrindService(BotPartyService parties, Func<int,MapRuntime> maps, Random random = null)
+        public BotPartyGrindService(BotPartyService parties, Func<int,MapRuntime> maps, Random random = null, DbStore db = null)
         {
-            this.parties=parties; this.maps=maps; this.random=random ?? new Random();
+            this.parties=parties; this.maps=maps; this.random=random ?? new Random(); this.db=db;
             decorator = new Decorator.BotDecorate(BotResources.Load(),BotItemCatalog.Shared,BotTypeManager.Output,this.random);
         }
         public int LeaderId(int botId) => leaders.TryGetValue(botId,out int id) ? id : -1;
         public long Expiry(int id) => active.TryGetValue(id,out var state) ? state.expiry : 0;
         public bool IsActive(int id) => active.ContainsKey(id);
         public IReadOnlyList<int> Companions(int id) => companions.TryGetValue(id,out var ids) ? ids : (IReadOnlyList<int>)Array.Empty<int>();
+        /// <summary>当前在场的伴侣队长（后台「组队伴侣」面板用）。</summary>
+        public IReadOnlyCollection<int> ActiveLeaders => active.Keys;
+        /// <summary>队长下所有伴侣的 id（面板展示，Companions 同源）。</summary>
+        public int CompanionCountOf(int leaderId) => companions.TryGetValue(leaderId,out var ids) ? ids.Count : 0;
+        /// <summary>后台配置的召唤数量（队伍只剩自己时需要几个空位）。</summary>
+        public int ConfiguredCount => BotConfig.PartyCompanionCount(db);
+        public long ConfiguredDurationMs => BotConfig.PartyCompanionDurationMs(db);
+        public bool Enabled => BotConfig.PartyCompanionEnabled(db);
         public BotActor Leader(int botId)
         {
             var leader=parties.Get(LeaderId(botId));
@@ -50,24 +60,31 @@ namespace Server.Bot
             return leader != null && leader.online && !leader.IsBot() && bot != null &&
                 leader.world==bot.world && leader.channel==bot.channel ? leader : null;
         }
-        public static int CompanionLevel(int level,int offset) => Math.Max(1,Math.Min(255,level+Math.Max(-3,Math.Min(3,offset))));
+        public static int CompanionLevel(int level,int offset,int jitter=3)
+            => Math.Max(1,Math.Min(255,level+Math.Max(-jitter,Math.Min(jitter,offset))));
         public bool Start(BotActor leader)
         {
             if (leader == null || leader.IsBot() || !leader.online) return false;
+            if (!Enabled) { Notice?.Invoke(leader.id,"组队伴侣已被后台关闭。"); return false; }
+            int count = ConfiguredCount;
+            bool requireParty = BotConfig.PartyCompanionRequireParty(db);
+            var party = parties.For(leader.id);
+            if (party == null && !requireParty) { if (!parties.Create(leader)) { Notice?.Invoke(leader.id,"无法创建队伍，基友召唤失败。"); return false; } party = parties.For(leader.id); }
             string failure = IsActive(leader.id) ? "基友集合仍在生效中，无法重复使用。" :
-                parties.For(leader.id) == null ? "请先开启组队后再使用基友集合。未消耗道具。" :
-                parties.For(leader.id).members.Count != 1 ? "队伍空位不足，需要5个空位才能召唤基友。未消耗道具。" : null;
+                party == null ? "请先开启组队后再使用基友集合。未消耗道具。" :
+                party.members.Count + count > PartyCap ? "队伍空位不足，需要" + count + "个空位才能召唤基友。未消耗道具。" : null;
             if (failure != null) { Notice?.Invoke(leader.id,failure); return false; }
-            if (!Spawn(leader)) { Notice?.Invoke(leader.id,"基友召唤失败，未消耗道具。"); return false; }
-            long expiry=BotScheduler.Now()+Duration;
+            if (!Spawn(leader,count)) { Notice?.Invoke(leader.id,"基友召唤失败，未消耗道具。"); return false; }
+            long expiry=BotScheduler.Now()+ConfiguredDurationMs;
             var watch=BotTasks.ScheduleFixedRate(() => {
                 if (BotScheduler.Now() >= expiry) Stop(leader.id,"搬砖时间结束，基友已离开。");
                 else if (parties.For(leader.id) == null) Stop(leader.id,"组队已解散，基友集合结束。");
             },1000,1000);
             active[leader.id]=(expiry,watch);
-            Effect?.Invoke(leader.id,true); Notice?.Invoke(leader.id,"基友集合生效，持续30分钟。"); return true;
+            Effect?.Invoke(leader.id,true);
+            Notice?.Invoke(leader.id,"基友集合生效，持续" + BotConfig.PartyCompanionMinutes(db) + "分钟。"); return true;
         }
-        bool Spawn(BotActor leader)
+        bool Spawn(BotActor leader,int count)
         {
             Stop(leader.id);
             var map=maps(leader.mapId);
@@ -75,7 +92,7 @@ namespace Server.Bot
             var ids=new List<int>();
             try
             {
-                for (int i=0;i<Count;i++)
+                for (int i=0;i<count;i++)
                 {
                     var floor=available[BotPartyGrindFloors.IndexFor(i,available.Count)];
                     var at=BotPartyGrindFloors.Station(map,floor,(int)leader.x+((i%3)-1)*48);
@@ -83,7 +100,8 @@ namespace Server.Bot
                     if (bot == null) { Cleanup(ids); return false; }
                     ids.Add(bot.id);
                     bot.world=leader.world; bot.channel=leader.channel; bot.client.world=leader.world; bot.client.channel=leader.channel;
-                    bot.level=CompanionLevel(leader.level,random.Next(-3,4)); bot.job=decorator.SelectJob(bot.level);
+                    int jitter=BotConfig.PartyCompanionLevelJitter(db);
+                    bot.level=CompanionLevel(leader.level,random.Next(-jitter,jitter+1)); bot.job=decorator.SelectJob(bot.level);
                     int primary=Math.Min(999,4+Math.Max(0,bot.level-1)*5);
                     bot.str=bot.dex=bot.intelligence=bot.luk=primary; decorator.EquipWeapon(bot);
                     leaders[bot.id]=leader.id; floors[bot.id]=new BotPartyGrindFloors.Floor(at.y,floor.minX,floor.maxX);
@@ -92,7 +110,7 @@ namespace Server.Bot
                     BotMovementService.SetGrinding(bot,true); BotMovementService.Teleport(bot,at);
                     sm.StartScheduledTask(180+i*80);
                 }
-                companions[leader.id]=ids; floorMaps[leader.id]=leader.mapId; return ids.Count==Count;
+                companions[leader.id]=ids; floorMaps[leader.id]=leader.mapId; return ids.Count==count;
             }
             catch { Cleanup(ids); return false; }
         }

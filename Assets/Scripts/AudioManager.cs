@@ -22,6 +22,7 @@ public sealed class AudioManager : MonoBehaviour
     const string PrefSfx = "audio.sfx";
     const int SfxPool = 10;                 // 并发音效上限（再多也是杂音）
     const float BgmFade = 0.7f;             // 切歌淡入淡出秒数
+    const float BgmLoadTimeout = 15f;       // 首次解码最长等待（超时就不播，避免卡住切歌队列）
 
     public static float BgmVolume
     {
@@ -47,10 +48,13 @@ public sealed class AudioManager : MonoBehaviour
     int poolCursor;
     string bgmKey;
     Coroutine fadeCo;
+    Coroutine bgmCo;                        // 当前切歌流程（含首次解码等待）
 
     // ------------------------------------------------------------ 生命周期
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    // BeforeSceneLoad：进图（FieldDirector.Enter → PlayBgm）可能早于 AfterSceneLoad 的
+    // 场景回调，晚建实例会让第一次进图的 BGM 调用直接落空。
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Bootstrap()
     {
         if (I != null) return;
@@ -120,24 +124,55 @@ public sealed class AudioManager : MonoBehaviour
     /// 播放/切换到指定 BGM（key 如 "Bgm00/FloralLife"）。同一首重复调用无动作。
     public static void PlayBgm(string key)
     {
-        if (I == null || string.IsNullOrEmpty(key) || !Index.TryGetValue(key, out var e)) return;
+        if (I == null) { Debug.LogWarning("[Audio] PlayBgm 早于 AudioManager 初始化：" + key); return; }
+        if (string.IsNullOrEmpty(key)) return;
+        if (!Index.TryGetValue(key, out var e))
+        {
+            Debug.LogWarning("[Audio] BGM 未在 SoundIndex 登记：" + key);
+            return;
+        }
         if (I.bgmKey == key && (I.bgmA.isPlaying || I.bgmB.isPlaying)) return;
         I.bgmKey = key;
-        I.StartCoroutine(I.CrossFadeBgm(key, e));
+        if (I.bgmCo != null) { I.StopCoroutine(I.bgmCo); I.bgmCo = null; }
+        I.bgmCo = I.StartCoroutine(I.CrossFadeBgm(key, e));
     }
 
     public static void StopBgm(float fade = BgmFade)
     {
         if (I == null) return;
         I.bgmKey = null;
+        if (I.bgmCo != null) { I.StopCoroutine(I.bgmCo); I.bgmCo = null; }
         I.StopFade(fade);
     }
 
     IEnumerator CrossFadeBgm(string key, Entry e)
     {
-        var clip = LoadOrFetch(key, e);
-        if (clip == null) yield break;            // 加载失败：保持现状
-        if (bgmKey != key) { UnloadIfBgm(clip); yield break; }  // 期间又切了
+        // 一首歌第一次进图时还没解码完，必须等 Load 协程跑完再播。
+        // 旧实现在「加载中返回 null」时直接 yield break，于是每首歌第一次进图都是静音，
+        // 只有再次进入同一首 BGM 的地图才会出声——这就是「BGM 没生效」的根因。
+        var clip = Cached(key);
+        if (clip == null)
+        {
+            failedLoads.Remove(key);              // 换图重新给一次机会（上次可能是 Data 还没同步完）
+            if (!loading.Contains(key)) StartCoroutine(Load(key, e));
+            float waited = 0f;
+            while (loading.Contains(key) && waited < BgmLoadTimeout)
+            {
+                if (bgmKey != key) { bgmCo = null; yield break; }        // 期间又切了
+                waited += Time.unscaledDeltaTime;
+                yield return null;
+            }
+            if (bgmKey != key) { bgmCo = null; yield break; }
+            clip = Cached(key);
+            if (clip == null)
+            {
+                bgmKey = null;
+                bgmCo = null;
+                Debug.LogWarning("[Audio] BGM 无法播放 " + key + "（" +
+                    (failedLoads.Contains(key) ? "加载失败" : "加载超时") + "）");
+                yield break;                  // 保持现状：不打断正在播的曲目
+            }
+        }
 
         if (fadeCo != null) StopCoroutine(fadeCo);
         var from = bgmA.isPlaying ? bgmA : (bgmB.isPlaying ? bgmB : null);
@@ -149,6 +184,8 @@ public sealed class AudioManager : MonoBehaviour
         // 卸载除当前两首之外的 BGM，控制内存
         TrimBgmCache(clip);
 
+        Debug.Log("[Audio] BGM " + key + "（音量 " + BgmVolume.ToString("0.00") + "）");
+        bgmCo = null;
         fadeCo = StartCoroutine(Fade(from, to, BgmFade));
     }
 
@@ -243,6 +280,9 @@ public sealed class AudioManager : MonoBehaviour
         StartCoroutine(Load(key, e));
         return null;
     }
+
+    AudioClip Cached(string key)
+        => clips.TryGetValue(key, out var clip) && clip != null ? clip : null;
 
     IEnumerator Load(string key, Entry e)
     {

@@ -41,6 +41,12 @@ public static class NativeBossRules
         (mob == 8880301 || mob == 8880000 || mob == 8880140 || mob == 8880342) && skill >= 183 && skill <= 187;
     public static int ButterflyInterval(int hp) => hp >= 90 ? 5000 : hp >= 70 ? 4500 : hp >= 50 ? 4000 : hp >= 20 ? 3000 : 2000;
     public static int ButterflyCount(int hp) => hp >= 90 ? 5 : hp >= 70 ? 7 : hp >= 50 ? 10 : hp >= 20 ? 15 : 20;
+    // 0x670C99: [target+0x46C] holds the last moment a mob attack resolved against
+    // this target; 0x670CA3 compares (now - stamp) with 0x7D0 and returns early.
+    // 0 is the "never hit yet" sentinel.
+    public const long MobAttackGapMillis = 2000;
+    public static bool MobAttackAllowed(long now,long lastStamp) =>
+        lastStamp == 0 || now - lastStamp >= MobAttackGapMillis;
     public static int PercentDamage(int maximum, int percent) => (int)Math.Min(int.MaxValue, Math.Max(1L, (long)maximum * percent / 100));
 }
 
@@ -48,6 +54,9 @@ public sealed class NativeMobCastState
 {
     readonly Dictionary<string, long> ready = new Dictionary<string, long>();
     public int Mp { get; private set; }
+    // MoveLifeHandler: HP gate selects skills at or below the configured percentage.
+    public static bool HpAllows(long hp,long maximum,int threshold) =>
+        (int)((float)hp/maximum*100)<= (threshold<=0 ? 100 : threshold);
     public NativeMobCastState(int mp) { Mp = Math.Max(0, mp); }
     public bool CanUse(string key, long now, int mpCost, bool sealedSkills) =>
         !sealedSkills && Mp >= mpCost && (!ready.TryGetValue(key, out long at) || now >= at);

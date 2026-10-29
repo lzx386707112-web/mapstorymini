@@ -73,7 +73,31 @@ public static class GameSession
     // —————————————————— 登录态 ——————————————————
 
     public static LoginResponse Login(string name, string password)
-        => Net.Login(new LoginRequest { name = name, password = password });
+    {
+        var res = Net.Login(new LoginRequest { name = name, password = password });
+        if (res != null && res.code == LoginResultCode.Ok) AccountGender = res.gender;
+        return res;
+    }
+
+    /// <summary>
+    /// 账号性别（源端 LOGIN_STATUS 里的 gender 字节）。10 = 未选，选完走 SetGender。
+    /// </summary>
+    public static int AccountGender { get; private set; } = 10;
+
+    /// <summary>
+    /// 源端 SET_GENDER（SetGenderHandler）。**必须传 accountId**：性别弹窗是在进选区之前弹的，
+    /// 那时 BeginSession 还没跑、AccountId 仍是 0，用会话里的 id 会静默失败（性别永远写不进去，
+    /// 下次登录又弹「可以使用的账号」）。只有已进会话的地方才用单参重载。
+    /// </summary>
+    public static bool SetGender(int accountId, int gender)
+    {
+        if (accountId <= 0) return false;
+        var res = Net.SetGender(new SetGenderRequest { accountId = accountId, gender = gender });
+        if (res != null && res.ok) AccountGender = res.gender;
+        return res != null && res.ok;
+    }
+
+    public static bool SetGender(int gender) => SetGender(AccountId, gender);
 
     public static ServerListResponse ServerList()
         => Net.ServerList(new ServerListRequest { accountId = AccountId });

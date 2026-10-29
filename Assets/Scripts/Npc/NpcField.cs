@@ -95,6 +95,9 @@ public static class NpcField
         {
             var q = QuestCatalog.Get(ids[i]);
             if (q == null) continue;
+            // BeiDou.exe 6D1820：cmp ax,0x4B0 / cmp ax,0x578 —— 1200..1399 这一段
+            // （组队任务/嘉年华入口，共 11 条）客户端直接跳过，不在 NPC 头顶画任何图标。
+            if (q.id >= 1200 && q.id < 1400) continue;
             if (QuestLogic.CanComplete(q, npcId)) { m.complete = true; break; }
             if (QuestLogic.InProgressAt(q, npcId)) m.progress = true;
             if (m.start) continue;
@@ -126,8 +129,12 @@ public static class NpcField
         {
             var q = QuestCatalog.Get(id);
             if (q == null) continue;
+            // 与 MarkerOf 同一口径：BeiDou.exe 6D1820 在组任务列表时就把 1200..1399
+            // （组队任务/嘉年华入口）整段跳过，图标和 NPC 任务菜单都看不到它们。
+            if (q.id >= 1200 && q.id < 1400) continue;
             if (QuestLogic.CanComplete(q, npcId)) choices.Add(new QuestChoice { npcId = npcId, quest = q, complete = true });
-            else if (QuestLogic.CanStart(q, npcId)) choices.Add(new QuestChoice { npcId = npcId, quest = q });
+            else if (QuestLogic.CanStart(q, npcId))
+                choices.Add(new QuestChoice { npcId = npcId, quest = q });
             else if (QuestLogic.InProgressAt(q, npcId)) choices.Add(new QuestChoice { npcId = npcId, quest = q, progress = true });
         }
         choices.Sort((a, b) => a.complete == b.complete ? a.AlertId.CompareTo(b.AlertId) : a.complete ? -1 : 1);

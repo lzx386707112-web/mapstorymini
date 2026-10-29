@@ -587,7 +587,7 @@ public static class SkillWindow
     {
         if (!macroVisible) return false;
         var d = SkillBook.Get(id);
-        if (d == null || d.type == "passive" || SkillProgress.LevelOf(id) <= 0) return false;
+        if (d == null || d.IsPassive || SkillProgress.LevelOf(id) <= 0) return false;
         LoadMacros();
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++)
@@ -714,28 +714,37 @@ public static class SkillWindow
         DrawSkillData(d, Pointer.Pos);
     }
 
-    static void DrawSkillData(SkillData d, Vector2 mouse)
+    // —— 技能详情（原端 BeiDou.exe 0x8F25D0 / kind=7）——
+    // 尺寸 0x8E6E52：宽 0x140=320；高 = 0x72(114) + (行高16+4)×超出4行的描述行数 + 末块。
+    // 帧 0x8F3141：背景 0xA0000040，四角与内缩 1px 轮廓镂空 —— 与物品 tooltip 同一条源函数，直接复用。
+    // 分隔线 0x8F3BC3 在 y=114、左右各内缩 4。图标底 68×68 @(10,32)，0xA0FFFFFF，源图标 2 倍。
+    // 描述字体 12 号白、x=87、右界 320-20，行距 16；#c 段落走 0xFFFF9900。
+    // 末块：Dot/1(3×3 橙) + "[下一等级 n]"，下一行取 String/Skill.img/<7位id>/h{n}。
+    // 注意：源端这两行是 EXE 字符串池里的英文硬编码（0x2A3 "[Next Level %d]"、0xF0C "[Master Level : %d]"），
+    //      中文端素材不含翻译，这里按中文项目口径本地化："[下一等级 n]" / 满级 "[已达最高等级]"。
+    const int TipW = 320, TipHeader = 114, TipStep = 16, TipDescX = 87, TipRight = 20;
+    const int TipIconX = 10, TipIconY = 32, TipIconBox = 68;
+
+    public static void DrawSkillData(SkillData d, Vector2 mouse, int activeLevel = -1)
     {
-        int lv = SkillProgress.LevelOf(d.id);
-        var row = d.Level(Mathf.Max(1, lv));
-        string desc = CleanDesc(d.desc);
-        var stats = StatLines(row);
+        if (d == null) return;
+        int lv = Mathf.Clamp(activeLevel >= 0 ? activeLevel : SkillProgress.LevelOf(d.id), 0, Mathf.Max(0, d.maxLevel));
+        int fontSize = Mathf.Max(9, Mathf.RoundToInt(12f * S));
+        var textStyle = TipStyle(fontSize, Color.white);
 
-        float w = 176f * S;
-        float pad = 8f * S;
-        float inner = w - pad * 2f;
+        // 描述原样交给 TipWrap：源端的 #c...# 强调由它自己切段（不能先转成富文本标签）
+        var descLines = TipWrap(TipText(d.desc), (TipW - TipRight - TipDescX) * S, fontSize);
+        int extra = Mathf.Max(0, descLines.Count - 4);
+        float sepY = TipHeader + extra * (TipStep + 4);
 
-        var titleStyle = Style(12f, new Color(1f, 0.93f, 0.62f), TextAnchor.UpperLeft, false, false);
-        var levelStyle = Style(9f, new Color(0.62f, 0.78f, 1f), TextAnchor.UpperLeft);
-        var bodyStyle = Style(10f, new Color(0.84f, 0.87f, 0.94f), TextAnchor.UpperLeft, true);
-        var statStyle = Style(9f, new Color(0.76f, 0.82f, 0.92f), TextAnchor.UpperLeft);
+        bool hasNext = lv < d.maxLevel;
+        string head = hasNext ? "[下一等级 " + (lv + 1) + "]" : "[已达最高等级]";
+        var hLines = hasNext
+            ? TipWrap(SkillH(d.id, lv + 1), (TipW - TipRight - 10) * S, fontSize)
+            : new List<List<KeyValuePair<string, Color>>>();
 
-        float titleH = 16f * S;
-        float lvH = 13f * S;
-        float descH = string.IsNullOrEmpty(desc) ? 0f : bodyStyle.CalcHeight(new GUIContent(desc), inner);
-        float statH = stats.Count * 13f * S;
-        float h = pad + titleH + lvH + (descH > 0f ? 5f * S + descH : 0f) +
-                  (stats.Count > 0 ? 5f * S + statH : 0f) + pad;
+        float w = TipW * S;
+        float h = (sepY + 8f + (1 + hLines.Count) * TipStep + 4f) * S;
 
         float x = mouse.x + 16f * S;
         float y = mouse.y + 14f * S;
@@ -743,83 +752,171 @@ public static class SkillWindow
         if (y + h > UiKit.H - 4f) y = mouse.y - h - 12f * S;
         x = Mathf.Clamp(x, 4f, Mathf.Max(4f, UiKit.W - w - 4f));
         y = Mathf.Clamp(y, 4f, Mathf.Max(4f, UiKit.H - h - 4f));
+        var rect = new Rect(x, y, w, h);
 
+        ItemTooltip.DrawFrame(rect, S);
 
-        NativeUi.Panel(new Rect(x, y, w, h));
-        titleStyle.normal.textColor = levelStyle.normal.textColor = bodyStyle.normal.textColor = statStyle.normal.textColor = Color.black;
-        float cy = y + pad;
-        GUI.Label(new Rect(x + pad, cy, inner, titleH), d.name, titleStyle);
-        cy += titleH;
-        string lvLine = lv > 0 ? "技能等级 : " + lv + " / " + d.maxLevel : "最高等级 : " + d.maxLevel;
-        GUI.Label(new Rect(x + pad, cy, inner, lvH), lvLine, levelStyle);
-        cy += lvH;
+        // 标题行：Dot/0（5×5 天蓝）@(10,15)，名称 @(18,10)。0x8F4818 字 0xA
+        var dot0 = WzAssets.Texture("UI/UIWindow.img/ToolTip/Equip/Dot/0");
+        if (dot0 != null)
+            GUI.DrawTexture(new Rect(rect.x + 10f * S, rect.y + 15f * S, dot0.width * S, dot0.height * S), dot0);
+        GUI.Label(new Rect(rect.x + 18f * S, rect.y + 10f * S, (TipW - 28) * S, 20f * S),
+            string.IsNullOrEmpty(d.name) ? d.id.ToString() : d.name, textStyle);
 
-        if (descH > 0f)
+        // 图标：68×68 底 + 源图标 2 倍（32×32 落在 (12,34)）
+        Fill(new Rect(rect.x + TipIconX * S, rect.y + TipIconY * S, TipIconBox * S, TipIconBox * S),
+            new Color32(255, 255, 255, 160));
+        var icon = SkillIcon(d);
+        if (icon != null)
         {
-            cy += 5f * S;
-            GUI.Label(new Rect(x + pad, cy, inner, descH), desc, bodyStyle);
-            cy += descH;
+            float iw = icon.width * 2f * S, ih = icon.height * 2f * S;
+            GUI.DrawTexture(new Rect(rect.x + TipIconX * S + ((TipIconBox * S - iw) * 0.5f),
+                rect.y + TipIconY * S + ((TipIconBox * S - ih) * 0.5f), iw, ih), icon);
         }
 
-        if (stats.Count > 0)
+        TipDraw(descLines, rect.x + TipDescX * S, rect.y + 30f * S, TipStep * S, fontSize);
+
+        Fill(new Rect(rect.x + 4f * S, rect.y + sepY * S, (TipW - 8) * S, Mathf.Max(1f, S)),
+            new Color32(255, 255, 255, 216));
+
+        float by = sepY + 8f;
+        var dot1 = WzAssets.Texture("UI/UIWindow.img/ToolTip/Equip/Dot/1");
+        if (dot1 != null)
+            GUI.DrawTexture(new Rect(rect.x + 10f * S, rect.y + (by + 4f) * S, dot1.width * S, dot1.height * S), dot1);
+        GUI.Label(new Rect(rect.x + 15f * S, rect.y + (by - 1f) * S, (TipW - 25) * S, 20f * S), head, textStyle);
+        TipDraw(hLines, rect.x + 10f * S, rect.y + (by + 15f) * S, TipStep * S, fontSize);
+    }
+
+    // 技能 JSON 里的换行是字面量 \n（不是真实换行），不还原会把整段描述压成一行
+    static string TipText(string s)
+        => string.IsNullOrEmpty(s) ? "" : s.Replace("\\n", "\n");
+
+    // 下一级说明：String/Skill.img 的节点名是 7 位补零 id
+    static string SkillH(int id, int lv)
+    {
+        var node = WzAssets.Node("String/Skill.img/" + id.ToString("D7"));
+        return node == null ? "" : (node.Text("h" + lv) ?? "");
+    }
+
+    static GUIStyle TipStyle(int fontSize, Color color)
+    {
+        var st = new GUIStyle
         {
-            cy += 5f * S;
-            cy += 2f * S;
-            for (int k = 0; k < stats.Count; k++)
+            font = UiKit.Font,
+            fontSize = fontSize,
+            alignment = TextAnchor.UpperLeft,
+            wordWrap = false,
+            clipping = TextClipping.Overflow,
+            richText = false,
+            padding = new RectOffset(),
+            margin = new RectOffset(),
+        };
+        st.normal.textColor = color;
+        return st;
+    }
+
+    static Texture2D tipWhite;
+    static Texture2D TipWhite
+    {
+        get
+        {
+            if (tipWhite == null)
             {
-                GUI.Label(new Rect(x + pad, cy, inner, 13f * S), stats[k], statStyle);
-                cy += 13f * S;
+                tipWhite = new Texture2D(1, 1);
+                tipWhite.SetPixel(0, 0, Color.white);
+                tipWhite.Apply();
             }
+            return tipWhite;
         }
     }
 
-    static string CleanDesc(string s)
+    static void Fill(Rect r, Color color)
     {
-        if (string.IsNullOrEmpty(s)) return "";
-        // 技能 JSON 里的换行是字面量 \n，不是真实换行；不还原会把整段描述当成一行标题丢掉
-        s = s.Replace("\\n", "\n").Replace("#c", "").Replace("#", "");
-        var lines = s.Split('\n');
-        int start = 0;
-        while (start < lines.Length && lines[start].TrimStart().StartsWith("[最高等级"))
-            start++;
-        var kept = new List<string>();
-        for (int i = start; i < lines.Length; i++) kept.Add(lines[i]);
-        return string.Join("\n", kept).Trim();
+        var previous = GUI.color;
+        GUI.color = color;
+        GUI.DrawTexture(r, TipWhite);
+        GUI.color = previous;
     }
 
-    static List<string> StatLines(Dictionary<string, object> row)
+    // 逐字折行（对应源端 0x8E40E4 的断行测量）：结果是「每行若干 (文本, 颜色) 片段」，
+    // 行距不受 Unity 字体 metrics 影响，固定 TipStep。按 (字号|宽|文本) 缓存。
+    static readonly Dictionary<string, List<List<KeyValuePair<string, Color>>>> tipWrap
+        = new Dictionary<string, List<List<KeyValuePair<string, Color>>>>();
+
+    static List<List<KeyValuePair<string, Color>>> TipWrap(string text, float width, int fontSize)
     {
-        var lines = new List<string>();
-        if (row == null) return lines;
-        AddStat(lines, row, "mpCon", "消耗 MP", "");
-        AddStat(lines, row, "damage", "伤害", "%");
-        AddStat(lines, row, "attackCount", "攻击次数", " 次");
-        AddStat(lines, row, "mobCount", "对象数量", " 只");
-        AddStat(lines, row, "time", "持续时间", " 秒");
-        AddStat(lines, row, "cooltime", "冷却时间", " 秒");
-        AddStat(lines, row, "pad", "物理攻击力", "");
-        AddStat(lines, row, "mad", "魔法攻击力", "");
-        AddStat(lines, row, "pdd", "物理防御力", "");
-        AddStat(lines, row, "mdd", "魔法防御力", "");
-        AddStat(lines, row, "acc", "命中率", "");
-        AddStat(lines, row, "eva", "回避率", "");
-        AddStat(lines, row, "speed", "移动速度", "");
-        AddStat(lines, row, "jump", "跳跃力", "");
-        AddStat(lines, row, "hp", "HP", "");
-        AddStat(lines, row, "mp", "MP", "");
-        AddStat(lines, row, "prop", "发动概率", "%");
-        AddStat(lines, row, "mastery", "熟练度", "%");
+        var lines = new List<List<KeyValuePair<string, Color>>>();
+        if (string.IsNullOrEmpty(text)) return lines;
+        string key = fontSize + "|" + Mathf.RoundToInt(width) + "|" + text;
+        if (tipWrap.TryGetValue(key, out var cached)) return cached;
+
+        var probe = new GUIStyle { font = UiKit.Font, fontSize = fontSize };
+        var line = new List<KeyValuePair<string, Color>>();
+        var run = new System.Text.StringBuilder();
+        Color color = Color.white;
+        float x = 0f;
+
+        for (int i = 0; i < text.Length; i++)
+        {
+            char ch = text[i];
+            if (ch == '\r') continue;
+            if (ch == '#')
+            {
+                if (i + 1 < text.Length && text[i + 1] == 'c') i++;
+                FlushRun(line, run, color);
+                color = color == Color.white ? new Color32(255, 153, 0, 255) : Color.white;
+                continue;
+            }
+            if (ch == '\n')
+            {
+                FlushRun(line, run, color);
+                lines.Add(line);
+                line = new List<KeyValuePair<string, Color>>();
+                x = 0f;
+                continue;
+            }
+            float cw = probe.CalcSize(new GUIContent(ch.ToString())).x;
+            if (x > 0f && x + cw > width)
+            {
+                FlushRun(line, run, color);
+                lines.Add(line);
+                line = new List<KeyValuePair<string, Color>>();
+                x = 0f;
+            }
+            run.Append(ch);
+            x += cw;
+        }
+        FlushRun(line, run, color);
+        if (line.Count > 0) lines.Add(line);
+
+        tipWrap[key] = lines;
         return lines;
     }
 
-    static void AddStat(List<string> lines, Dictionary<string, object> row, string key, string label, string suffix)
+    static void FlushRun(List<KeyValuePair<string, Color>> line, System.Text.StringBuilder run, Color color)
     {
-        if (!row.TryGetValue(key, out var raw) || raw == null) return;
-        float n;
-        if (!float.TryParse(raw.ToString(), System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture, out n)) return;
-        string value = Mathf.Approximately(n, Mathf.Round(n)) ? Mathf.RoundToInt(n).ToString() : n.ToString("0.#");
-        lines.Add(label + " : " + value + suffix);
+        if (run.Length == 0) return;
+        line.Add(new KeyValuePair<string, Color>(run.ToString(), color));
+        run.Length = 0;
+    }
+
+    static void TipDraw(List<List<KeyValuePair<string, Color>>> lines, float x, float y, float step, int fontSize)
+    {
+        if (lines == null || lines.Count == 0) return;
+        var white = TipStyle(fontSize, Color.white);
+        var orange = TipStyle(fontSize, new Color32(255, 153, 0, 255));
+        for (int i = 0; i < lines.Count; i++)
+        {
+            float cx = x;
+            for (int k = 0; k < lines[i].Count; k++)
+            {
+                var part = lines[i][k];
+                var style = part.Value == Color.white ? white : orange;
+                var size = style.CalcSize(new GUIContent(part.Key));
+                GUI.Label(new Rect(cx, y + i * step, size.x + 4f, size.y), part.Key, style);
+                cx += size.x;
+            }
+        }
     }
 
     // —— 推荐技能（Etc.wz/RecommendSkill.img，按根职业与等级阈值取一条） ——

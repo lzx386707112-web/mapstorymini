@@ -11,8 +11,16 @@ export default {
   'botControl.tab.appearance': 'Appearance',
   'botControl.tab.environment': 'Other maps',
   'botControl.tab.party': 'Party',
-  'botControl.party.soon':
-    'Party grinding companions are not available yet. Use the Market tab to spawn shops and bots.',
+  'botControl.party.active': '{count} team(s) running',
+  'botControl.party.summon': 'Summon for current character',
+  'botControl.party.dismiss': 'Dismiss all',
+  'botControl.party.empty': 'No party companions running',
+  'botControl.party.map': 'Map {map}',
+  'botControl.party.companions': '{count} companion(s)',
+  'botControl.party.summoned': 'Party companions summoned',
+  'botControl.party.dismissed': 'Party companions dismissed',
+  'botControl.party.tip':
+    'Same logic as the original cash item "Party Grind Companions" (2431159): companions follow the character across maps and grind on the same floor, then leave on timeout or when the party disbands. Summoning here does not consume the item; it is for demo and troubleshooting.',
   'botControl.action.save': 'Save settings',
   'botControl.action.refresh': 'Refresh',
   'botControl.action.start': 'Spawn market now',
@@ -115,4 +123,14 @@ export default {
   'botControl.field.solo_mapling_feature_potion_shop_drop_game_enabled':
     'Potion Shop drop game',
   'botControl.field.solo_mapling_feature_scroll_bots_enabled': 'Scroll bots',
+  'botControl.field.solo_mapling_party_companion_enabled':
+    'Enable party companions (off also blocks the item)',
+  'botControl.field.solo_mapling_party_companion_require_party':
+    'Require an existing party (off = auto-create one)',
+  'botControl.field.solo_mapling_party_companion_count':
+    'Companions per summon (party cap is 6)',
+  'botControl.field.solo_mapling_party_companion_minutes':
+    'Duration (minutes)',
+  'botControl.field.solo_mapling_party_companion_level_jitter':
+    'Companion level offset from character (0 = same level)',
 };

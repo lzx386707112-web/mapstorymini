@@ -34,6 +34,9 @@ public sealed class WzAndroidLoader : MonoBehaviour
     volatile string workerPhase;
 
     bool permissionRequested, failed, starting, startInvoked;
+    float botWait;
+    // 假人预热的硬上限（秒）。BotPreload 自己有 45s 上限，这里给足余量再兜一层。
+    const float MaxBotWaitSeconds = 75f;
     int sdk;
     GUIStyle titleStyle, detailStyle, buttonStyle;
     float nextProgressUpdate, visibleProgress, pulse, nextPermissionCheck;
@@ -259,7 +262,18 @@ public sealed class WzAndroidLoader : MonoBehaviour
             yield break;
         }
         while (botPreload != null || botPrebake != null)
+        {
+            // 硬上限：假人系统自己会超时放行，这里再兜一层，任何异常路径都不该把
+            // 加载页钉死在这个循环里（真机上出现过 100% CPU、画面停在加载页、日志停在
+            // [Art] ready 的情况）。超时就带上现有假人继续，别拦着玩家进登录页。
+            botWait += Time.unscaledDeltaTime;
+            if (botWait >= MaxBotWaitSeconds)
+            {
+                Debug.LogWarning("[Bot] 预热超时 " + MaxBotWaitSeconds + "s，跳过剩余预热直接启动");
+                break;
+            }
             yield return null;
+        }
 
         phase = "资源就绪，正在启动游戏";
         yield return null;

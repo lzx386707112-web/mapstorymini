@@ -199,6 +199,24 @@ public static class WzAssets
         result.Sort((a, b) => int.Parse(a.Name).CompareTo(int.Parse(b.Name)));
         return result;
     }
+    public static ImgNode MobArtRoot(int id)
+    {
+        return MobArtRoot(id, out _);
+    }
+    static ImgNode MobArtRoot(int id, out string file)
+    {
+        file = "Mob/" + id.ToString("D7") + ".img";
+        var root = FileRoot(file);
+        var seen = new HashSet<int> { id };
+        while (root.Get("info/link") != null)
+        {
+            id = Convert.ToInt32(root.Get("info/link").Value);
+            if (!seen.Add(id)) throw new InvalidDataException("Mob link cycle");
+            file = "Mob/" + id.ToString("D7") + ".img";
+            root = FileRoot(file);
+        }
+        return root;
+    }
     public static Art.Clip MobClip(string key, string action)
     {
         string clipKey = key + "/" + action;
@@ -209,14 +227,7 @@ public static class WzAssets
             if (!int.TryParse(key, out var numericId)) return null;
             id = numericId;
         }
-        string file = "Mob/" + Convert.ToInt32(id).ToString("D7") + ".img";
-        var root = FileRoot(file);
-        for (int i = 0; root.Get("info/link") != null; i++)
-        {
-            if (i >= 64) throw new InvalidDataException("Mob link cycle");
-            file = "Mob/" + Convert.ToInt32(root.Get("info/link").Value).ToString("D7") + ".img";
-            root = FileRoot(file);
-        }
+        var root = MobArtRoot(Convert.ToInt32(id), out var file);
         var frames = Frames(root.Get(action)); if (frames.Count == 0) return null;
         var clip = new Art.Clip { frames = new string[frames.Count], delays = new float[frames.Count] };
         for (int i = 0; i < frames.Count; i++)

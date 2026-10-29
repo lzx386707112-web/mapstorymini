@@ -43,6 +43,7 @@ namespace Server.Field
         public int mapId;
         public int returnMap, fieldLimit, left, right, top, bottom;
         public bool swim;
+        public bool everlast;
         public float footholdSpeed = 1;
         public readonly List<MapRope> ropes = new List<MapRope>();
         public readonly List<MapPortal> portals = new List<MapPortal>();

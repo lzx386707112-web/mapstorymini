@@ -81,6 +81,14 @@ public sealed class NativeWeatherService
     readonly Func<double> random;
     long nextRoll, overrideUntil;
     int overrideSky=-1, overrideMinute=-1;
+    int revision;
+    /// <summary>
+    /// 后台（AdminWeather）改动版本号：强制天气/时段、区域强制、重掷风向、自然轮换都会自增。
+    /// 客户端每帧比对，变了就立刻 Sync —— 否则后台点完要等下一次 60s 周期同步才看得到。
+    /// </summary>
+    public int Revision => revision;
+    /// <summary>配置项（enabled/昼长等）被后台改过：让客户端下一帧重新 Sync。</summary>
+    public void Touch() => revision++;
     public NativeWeatherService(NativeWeatherRegion[] regions,long now,Func<double> random)
     {
         this.regions=regions; this.random=random;
@@ -93,13 +101,13 @@ public sealed class NativeWeatherService
     void Transition(int r,int previous,int next,long now)
     {
         if(previous==next)return;
-        since[r]=now; tokens[r]=NewToken();
+        since[r]=now; tokens[r]=NewToken(); revision++;
         rainbowUntil[r]=(previous==1||previous==4) && next!=1 && next!=4 ? now+RainbowDuration*1000L : 0;
     }
     public void ClearOverride(long now)
     {
         if(overrideSky>=0) for(int r=0;r<regions.Length;r++) Transition(r,overrideSky,Automatic(r),now);
-        overrideSky=overrideMinute=-1; overrideUntil=0; nextRoll=0;
+        overrideSky=overrideMinute=-1; overrideUntil=0; nextRoll=0; revision++;
     }
 
     // —————— 后台（AdminWeather）读写口 —————— ——————
@@ -117,16 +125,16 @@ public sealed class NativeWeatherService
     /// <summary>昼夜系数（与客户端 NativeWeatherState.Night 同公式）。</summary>
     public float NightLevel(long now) => NativeWeatherState.Night(MinuteOfDay(now));
     /// <summary>源端 rerollWind：只重掷阵风方向（token），不改天气类型。</summary>
-    public void RerollWind() { for (int r = 0; r < regions.Length; r++) tokens[r] = NewToken(); }
+    public void RerollWind() { for (int r = 0; r < regions.Length; r++) tokens[r] = NewToken(); revision++; }
     /// <summary>改 forced（强制天气）后调用，让该区域立即落到新值。</summary>
-    public void ApplyForced(int r, int previousEffective, long now) => Transition(r, previousEffective, Effective(r), now);
+    public void ApplyForced(int r, int previousEffective, long now) { Transition(r, previousEffective, Effective(r), now); revision++; }
     void Expire(long now) { if(overrideUntil>0 && overrideUntil<=now) ClearOverride(now); }
     public void Override(int? sky,int? minute,long duration,long now)
     {
         if(sky==null && minute==null) throw new ArgumentException("Weather or time required");
         Expire(now);
         for(int r=0;r<regions.Length;r++) Transition(r,Effective(r),sky??Automatic(r),now);
-        overrideSky=sky??-1; overrideMinute=minute??-1; overrideUntil=now+duration;
+        overrideSky=sky??-1; overrideMinute=minute??-1; overrideUntil=now+duration; revision++;
     }
     public bool Roll(long now,int month)
     {

@@ -66,6 +66,33 @@ public static class WeaponDefs
     {
         Ensure(); id = Canonical(id);
         foreach (var item in all) if (item.id == id) { weapon = item; return true; }
+        // Starter-town shop export is not a complete weapon catalog. Read the
+        // original IMG for other weapons (including guns used by Rapid Fire).
+        if (int.TryParse(id,out int itemId))
+        {
+            int category=itemId/10000;
+            var kinds=new Dictionary<int,(WeaponKind kind,double multiplier)> {
+                {130,(WeaponKind.sword,4)},{131,(WeaponKind.axe,4.4)},{132,(WeaponKind.mace,4.4)},
+                {133,(WeaponKind.dagger,4)},{137,(WeaponKind.wand,3.6)},{138,(WeaponKind.staff,3.6)},
+                {140,(WeaponKind.greatsword,4.6)},{141,(WeaponKind.greataxe,4.8)},{142,(WeaponKind.greatmace,4.8)},
+                {143,(WeaponKind.spear,5)},{144,(WeaponKind.polearm,5)},{145,(WeaponKind.bow,3.4)},
+                {146,(WeaponKind.crossbow,3.6)},{147,(WeaponKind.claw,3.6)},
+                {148,(WeaponKind.knuckle,4.8)},{149,(WeaponKind.gun,3.6)} };
+            if(kinds.TryGetValue(category,out var type))
+            {
+                var info=EquipCatalog.Info(itemId);
+                if(info!=null)
+                {
+                    var stats=new Dictionary<string,object>();
+                    foreach(var node in info.Children)
+                        if(node.Value is int || node.Value is long || node.Value is double || node.Value is float || node.Value is string)
+                            stats[node.Name]=node.Value;
+                    weapon=new WeaponDef {id=id,name=WzNames.Item(itemId),kind=type.kind,multiplier=type.multiplier,
+                        stats=stats,color=new Color(.6f,.8f,1f),price=-1};
+                    all.Add(weapon);return true;
+                }
+            }
+        }
         weapon = default; return false;
     }
     public static WeaponDef Get(string id) => TryGet(id, out var item) ? item : Get("1302000");

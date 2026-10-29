@@ -130,6 +130,16 @@ namespace AdminCheck
             var menu = await Get("/account/v1/menu");
             Check("菜单接口可访问", menu.Code == 20000, menu.Raw);
 
+            // 续期不能吊销旧 token：前端 hooks/loading 在每次 setLoading(false) 都会打
+            // refreshToken，登录按钮的 finally 正好和路由守卫的 /account/v1/info 并发。
+            // 旧实现在续期里 DropSession，旧 token 当场失效 → info 401 → 「欢迎使用」和
+            // 「登录已过期」同时弹出且停在登录页（2026-10-28 报障）。源端是 JWT，
+            // 旧 token 在过期前一直有效，这里必须等价。
+            var refresh = await Get("/auth/v1/refreshToken");
+            Check("续期返回成功后仍用同一个 token", refresh.Code == 20000 && refresh.Raw.Contains(token), refresh.Raw);
+            var infoAfterRefresh = await Get("/account/v1/info");
+            Check("续期不会吊销旧 token（旧 token 仍可访问 info）", infoAfterRefresh.Code == 20000, infoAfterRefresh.Raw);
+
             // —— 账号列表 ——
             var accounts = await Get("/account/v1?page=1&size=20");
             Check("账号列表分页", accounts.Code == 20000 && accounts.Raw.Contains("\"records\"") && accounts.Raw.Contains("tester"), accounts.Raw);
@@ -196,12 +206,58 @@ namespace AdminCheck
             var weatherRegions = await Get("/weather/v1/regions");
             Check("天气区域列表", weatherRegions.Code == 20000 && weatherRegions.Raw.Contains("currentProfile"), weatherRegions.Raw);
 
+            // 后台「强制天气」必须真的落到客户端能读到的那份状态上，而且要让客户端知道该重同步。
+            // 回归价值：以前后台改完只改了服务里一份实例、客户端要等 60s 周期，看着像没生效。
+            var svc = NativeWeatherHost.Service;
+            int revBefore = svc.Revision;
+            var over = await Post("/weather/v1/override", new { profile = "snow", durationMinutes = 5 }, true);
+            Check("强制天气接口", over.Code == 20000, over.Raw);
+            Check("强制天气让版本号自增（客户端立刻重同步）", svc.Revision != revBefore, "revision " + revBefore + " -> " + svc.Revision);
+            Check("强制天气真的改到服务有效天气", svc.OverrideSky == 2, "overrideSky=" + svc.OverrideSky);
+
+            var client = new NativeWeatherState();
+            svc.Sync(100000000, true, client, NativeWeatherHost.NowMs());
+            Check("同步包把强制天气带到客户端", client.Sky == 2, "client sky=" + client.Sky);
+
+            var cleared = await Send(HttpMethod.Delete, "/weather/v1/override", null, true);
+            Check("清除强制天气", cleared.Code == 20000, cleared.Raw);
+            Check("清除后回到自动天气", svc.OverrideSky < 0, "overrideSky=" + svc.OverrideSky);
+
             // —— 假人控制（solo_mapling_* 配置）——
             var botCfg = await Get("/bot-control/v1/config");
             Check("假人配置分组", botCfg.Code == 20000 && botCfg.Raw.Contains("solo_mapling_market_bot_max"), botCfg.Raw);
 
             var botState = await Get("/bot-control/v1/state");
             Check("假人状态", botState.Code == 20000 && botState.Raw.Contains("activeBots"), botState.Raw);
+
+            // —— 组队伴侣（消耗品 2431159「基友集合」）——
+            var partyCfg = await Get("/bot-control/v1/party");
+            Check("组队伴侣面板", partyCfg.Code == 20000 && partyCfg.Raw.Contains("solo_mapling_party_companion_count"), partyCfg.Raw);
+
+            // 离线环境没有游戏主线程，用钩子注入一支假队伍验证序列化
+            AdminBots.PartyTeams = () => new List<AdminBots.PartyTeamInfo>
+            {
+                new AdminBots.PartyTeamInfo { characterId = 1, name = "tester", mapId = 100000000, companions = 5, remainingSec = 1800 },
+            };
+            var partyTeams = await Get("/bot-control/v1/party");
+            Check("组队伴侣实时状态", partyTeams.Code == 20000 && partyTeams.Raw.Contains("\"activeTeams\":1"), partyTeams.Raw);
+            AdminBots.PartyTeams = null;
+
+            var partySave = await Send(HttpMethod.Put, "/bot-control/v1/party",
+                new { fields = new[] { new { code = "solo_mapling_party_companion_count", value = "3" } } }, true);
+            Check("组队伴侣配置可写", partySave.Code == 20000, partySave.Raw);
+            Check("组队伴侣配置读回生效",
+                GameConfigDao.Get(DbRef, "solo_mapling_party_companion_count") == "3",
+                "count=" + GameConfigDao.Get(DbRef, "solo_mapling_party_companion_count"));
+
+            var partyBad = await Send(HttpMethod.Put, "/bot-control/v1/party",
+                new { fields = new[] { new { code = "solo_mapling_market_bot_max", value = "99" } } }, true);
+            Check("组队接口拒绝写别的分组",
+                partyBad.Code == 20000 && GameConfigDao.Get(DbRef, "solo_mapling_market_bot_max") != "99",
+                "market max=" + GameConfigDao.Get(DbRef, "solo_mapling_market_bot_max"));
+
+            var summonNoGame = await Post("/bot-control/v1/party/summon", new { characterId = 1 });
+            Check("未进游戏时召唤给出明确失败", summonNoGame.Code != 20000, summonNoGame.Raw);
 
             var stub = await Post("/drop/v1/getDropList", new { pageNo = 1, pageSize = 10 });
             Check("未接入模块返回空数据而不是报错", stub.Code == 20000, stub.Raw);
@@ -223,6 +279,14 @@ namespace AdminCheck
             Check("解封接口返回成功", unban.Code == 20000, unban.Raw);
             var okLogin = LoginService.Login(DbRef, "tester", "tester123");
             Check("解封后可以登录", okLogin.code == LoginResultCode.Ok, okLogin.code.ToString());
+
+            // —— 改密必须真的生效（用户报障：提示修改成功，登录仍说密码错误）——
+            var pwdPut = await Send(HttpMethod.Put, "/account/v1/" + testerId, new { newPwd = "tester456" }, true);
+            Check("改密接口返回成功", pwdPut.Code == 20000, pwdPut.Raw);
+            var loginNew = LoginService.Login(DbRef, "tester", "tester456");
+            Check("改密后新密码可登录", loginNew.code == LoginResultCode.Ok, loginNew.code.ToString());
+            var loginOld = LoginService.Login(DbRef, "tester", "tester123");
+            Check("改密后旧密码被拒", loginOld.code == LoginResultCode.WrongPassword, loginOld.code.ToString());
 
             // —— 静态资源 ——
             if (File.Exists(Path.Combine("../../Assets/Resources/AdminUi/adminui.bytes")))

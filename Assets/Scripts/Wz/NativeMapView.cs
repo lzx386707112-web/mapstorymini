@@ -45,11 +45,20 @@ public sealed class NativeMapView : MonoBehaviour
 
     public static FieldMap LoadMap(FieldMap previous)
     {
-        var n = MapRoot(previous.id); var info = n.Get("info");
+        var n = MapRoot(previous.id);
+        // MapFactory retains the requested map's infoData when mapData follows
+        // info/link. Rules must not silently become the linked field's rules.
+        var info = WzAssets.FileRoot(MapPath(previous.id)).Get("info");
         if (info == null) throw new InvalidDataException("Missing map info " + previous.id);
         var m = new FieldMap { id = previous.id, name = previous.name, street = previous.street,
             town = info.Int("town") != 0, returnMap = info.Int("returnMap"),
-            fieldLimit = info.Int("fieldLimit"), fieldType = info.Int("fieldType"), bgm = info.Text("bgm"), mobRate = info.Get("mobRate")?.Value == null ? 1f : Convert.ToSingle(info.Get("mobRate").Value) };
+            fieldLimit = info.Int("fieldLimit"), fieldType = info.Int("fieldType"), bgm = info.Text("bgm"),
+            createMobInterval = info.Int("createMobInterval", 5000),
+            onUserEnter=info.Text("onUserEnter"),onFirstUserEnter=info.Text("onFirstUserEnter"),
+            decHp=info.Int("decHP"),protectItem=info.Int("protectItem"),everlast=info.Int("everlast")!=0,
+            forcedReturn=info.Int("forcedReturn",999999999),timeLimit=info.Int("timeLimit",-1),
+            timeMobId=info.Get("timeMob")?.Int("id",-1) ?? -1,timeMobMessage=info.Get("timeMob")?.Text("message"),
+            mobRate = info.Get("mobRate")?.Value == null ? 1f : Convert.ToSingle(info.Get("mobRate").Value) };
         foreach (var layer in Children(n.Get("foothold")))
             foreach (var group in layer.Children)
                 foreach (var f in group.Children)
@@ -61,7 +70,7 @@ public sealed class NativeMapView : MonoBehaviour
                 ladder = r.Int("l") != 0, upperExit = r.Int("uf") != 0 });
         foreach (var p in Children(n.Get("portal")))
             m.portals.Add(new FieldPortal { name = p.Text("pn"), targetName = p.Text("tn"), type = p.Int("pt"),
-                tm = p.Int("tm"), x = p.Int("x"), y = p.Int("y"), script = p.Text("script") });
+                tm = p.Int("tm", 999999999), x = p.Int("x"), y = p.Int("y"), script = p.Text("script") });
         foreach (var life in Children(n.Get("life")))
         {
             if (life.Text("type") == "m") m.spawns.Add(new FieldSpawn { mob = int.Parse(life.Text("id")),
@@ -79,8 +88,9 @@ public sealed class NativeMapView : MonoBehaviour
             minY = Math.Min(minY, (int)Math.Min(f.y1, f.y2)); maxY = Math.Max(maxY, (int)Math.Max(f.y1, f.y2));
         }
         if (m.footholds.Count == 0) { minX = -400; maxX = 400; minY = 0; maxY = 300; }
-        m.vr = new[] { info.Int("VRLeft", minX), info.Int("VRTop", minY - 300),
-            info.Int("VRRight", maxX), info.Int("VRBottom", maxY + 100) };
+        var geometryInfo = n.Get("info");
+        m.vr = new[] { geometryInfo.Int("VRLeft", minX), geometryInfo.Int("VRTop", minY - 300),
+            geometryInfo.Int("VRRight", maxX), geometryInfo.Int("VRBottom", maxY + 100) };
         return m;
     }
 

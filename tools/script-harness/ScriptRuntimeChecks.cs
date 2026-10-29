@@ -79,6 +79,41 @@ internal static class ScriptRuntimeChecks
             route.Resolve(1,0,"",out fn,out args);if(fn!="levelyes")throw new Exception("yes route");
             if(route.Resolve(-1,0,"",out fn,out args))throw new Exception("close route");
         });
+        Check("map entry scope cache, first-user gate and original start(ms) argument", () => {
+            var service=new NativeMapScriptService();
+            int loads=0,calls=0,last=0;
+            Func<string,string> load=key=>{loads++;return "var n=0;function start(ms){ms.hit(++n);}";};
+            var host=new JsHostObject(null);
+            host.Set("hit",JsFunction.FromNative("hit",c=>{calls++;last=JsConvert.ToInt32(c.Arg(0));return JsUndefined.Value;}));
+            if(!service.Run(1,100,"onFirstUserEnter/a",true,load,host) || calls!=1 || last!=1)throw new Exception("first entry");
+            if(service.Run(1,100,"onFirstUserEnter/a",true,load,host) || calls!=1)throw new Exception("duplicate first entry");
+            service.Run(1,101,"onFirstUserEnter/a",true,load,host);
+            service.Run(2,100,"onFirstUserEnter/a",true,load,host);
+            if(loads!=1 || calls!=3 || last!=3)throw new Exception("map/character key or cached globals");
+            service.Run(1,100,"onUserEnter/a",false,load,host);
+            service.Run(1,100,"onUserEnter/a",false,load,host);
+            if(loads!=2 || calls!=5 || last!=2)throw new Exception("ordinary entry/cache separation");
+            service.EndCharacter(1);
+            service.Run(1,100,"onFirstUserEnter/a",true,load,host);
+            if(loads!=2 || last!=4)throw new Exception("logout gate reset must retain script cache");
+        });
+        Check("missing map first-user source is marked before loading", () => {
+            var service=new NativeMapScriptService();int loads=0;
+            Func<string,string> missing=key=>{loads++;return null;};
+            service.Run(1,100,"onFirstUserEnter/missing",true,missing,JsNull.Value);
+            service.Run(1,100,"onFirstUserEnter/missing",true,missing,JsNull.Value);
+            if(loads!=1)throw new Exception("missing source retried first entry");
+        });
+        Check("map script exception preserves cached scope and entry marker", () => {
+            var service=new NativeMapScriptService();int loads=0;
+            Func<string,string> source=key=>{loads++;return "var n=0;function start(ms){if(++n==1)throw 'first';ms.hit(n);}";};
+            var host=new JsHostObject(null);int value=0;
+            host.Set("hit",JsFunction.FromNative("hit",c=>{value=JsConvert.ToInt32(c.Arg(0));return JsUndefined.Value;}));
+            Throws(()=>service.Run(1,100,"onFirstUserEnter/broken",true,source,host));
+            if(service.Run(1,100,"onFirstUserEnter/broken",true,source,host))throw new Exception("failed first reentered");
+            service.Run(2,100,"onFirstUserEnter/broken",true,source,host);
+            if(loads!=1 || value!=2)throw new Exception("failed invocation discarded global state");
+        });
         Check("server sessions isolated, owned and released", () => {
             var server = new NativeScriptService();
             string source="var n=0;function start(){return ++n;}function action(){return ++n;}";

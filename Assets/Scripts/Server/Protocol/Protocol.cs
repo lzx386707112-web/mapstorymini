@@ -22,7 +22,13 @@ public sealed class LoginResponse
     public bool justRegistered;
     /// <summary>封停到期时间（源端 getTempBan 把时间一起发下来）；空表示永久封停。</summary>
     public string banUntil;
+    /// <summary>账号性别：10 = 还没选（源端 accounts.gender 默认值），客户端要弹性别框。</summary>
+    public int gender = AccountsDao.GenderUnset;
 }
+
+// 与源端 SET_GENDER 包同义（SetGenderHandler）：confirmed 固定 0x01，后跟 0/1。
+public sealed class SetGenderRequest { public int accountId; public int gender; }
+public sealed class SetGenderResponse { public bool ok; public int gender; }
 
 public sealed class ServerListRequest { public int accountId; }
 public sealed class ServerListResponse { public List<WorldEntry> worlds = new List<WorldEntry>(); }
@@ -117,6 +123,7 @@ public sealed class SaveCharacterRequest
 public interface ITransport
 {
     LoginResponse Login(LoginRequest req);
+    SetGenderResponse SetGender(SetGenderRequest req);
     ServerListResponse ServerList(ServerListRequest req);
     CharListResponse CharList(CharListRequest req);
     CheckCharNameResponse CheckCharName(CheckCharNameRequest req);
@@ -136,6 +143,8 @@ public interface ITransport
     Server.Bot.PartyGrindResponse PartyGrind(Server.Bot.PartyGrindRequest req);
     Server.Bot.Trade.BotTradeResponse BotTrade(Server.Bot.Trade.BotTradeRequest req);
     InventoryChangeResponse ChangeInventory(InventoryChangeRequest req);
+    EquipPatchResponse UpdateEquip(EquipPatchRequest req);
+    SlotRemoveResponse RemoveSlot(SlotRemoveRequest req);
     void EndSocialSession(int characterId);
 }
 
@@ -155,6 +164,8 @@ public sealed class InProcessTransport : ITransport
     public CommunityResponse Community(CommunityRequest r) => server.Community.Handle(r);
     public BossResponse Boss(BossRequest r) => server.Bosses.Handle(r);
     public InventoryChangeResponse ChangeInventory(InventoryChangeRequest r) => NativeInventoryService.Handle(server.Db, r);
+    public EquipPatchResponse UpdateEquip(EquipPatchRequest r) => NativeEquipService.Patch(server.Db, r);
+    public SlotRemoveResponse RemoveSlot(SlotRemoveRequest r) => NativeEquipService.RemoveSlot(server.Db, r);
     public CashResponse Cash(CashRequest r) => server.Cash.Handle(r);
     public void EndSocialSession(int characterId) { server.EndBotSession(characterId); server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); }
 
@@ -162,7 +173,13 @@ public sealed class InProcessTransport : ITransport
     {
         var res = LoginService.Login(server.Db, r.name, r.password);
         return new LoginResponse { code = res.code, accountId = res.accountId, accountName = res.accountName,
-            justRegistered = res.justRegistered, banUntil = res.banUntil };
+            justRegistered = res.justRegistered, banUntil = res.banUntil, gender = res.gender };
+    }
+    public SetGenderResponse SetGender(SetGenderRequest r)
+    {
+        int g = LoginService.SetGender(server.Db, r.accountId, r.gender);
+        if (g == r.gender) server.Db.Save();
+        return new SetGenderResponse { ok = g == r.gender, gender = g };
     }
     public ServerListResponse ServerList(ServerListRequest r) => new ServerListResponse { worlds = WorldService.Worlds(server.Db) };
     public CharListResponse CharList(CharListRequest r) => new CharListResponse

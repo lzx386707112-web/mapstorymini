@@ -17,6 +17,7 @@ public class PlayerCtrl : MonoBehaviour
     // 基础属性（武器在此之上加成）。改数值只动这里，不要动面板上的默认字段。
     public const float BaseInterval = 0.55f, BaseReach = 2.3f;
     WeaponDef weapon;
+    public bool UsesRangedWeapon => weapon.kind==WeaponKind.bow || weapon.kind==WeaponKind.crossbow || weapon.kind==WeaponKind.gun || weapon.kind==WeaponKind.claw;
     CharacterAttributes baseAttributes;
     public CharacterAttributes Attributes { get; private set; }
     int weaponAttack, magicAttack;
@@ -205,6 +206,30 @@ public class PlayerCtrl : MonoBehaviour
     public float gravity   = -2000f / Art.PPU;
     NativeMovementPhysics movementPhysics;
     double horizontalVelocity; // px/s: preserved when leaving a foothold.
+    bool flashJumpUsed;
+    double soulRushUntil;
+    // 96BF52..96BF91, ordinary movement branch (96C1D3=true).
+    public bool CanFlashJump => !flashJumpUsed && !grounded && !IsClimbing && vy>=0 &&
+        (vis==null || !vis.IsOneShot) && (GameLoop.I?.field?.Map?.fieldLimit & 2 ?? 0)==0;
+    // 96BF14: Soul Rush needs a foothold, rejects WEAKEN (+4BC), and has its own 1500ms deadline.
+    public bool CanUseFlashJump(int skill) => skill==11101005
+        ? !flashJumpUsed && grounded && !IsClimbing && Time.realtimeSinceStartupAsDouble>=soulRushUntil &&
+            GetComponent<NativeMobDebuffs>()?.Has(122)!=true && (vis==null || !vis.IsOneShot) &&
+            (GameLoop.I?.field?.Map?.fieldLimit & 2 ?? 0)==0
+        : CanFlashJump;
+    public void ApplyFlashJump(int level,int skill=4111006)
+    {
+        int tier=(skill==11101005 ? level*2 : level)/4;
+        if(skill==11101005)
+        {
+            grounded=false;
+            soulRushUntil=Time.realtimeSinceStartupAsDouble+1.5;
+        }
+        horizontalVelocity=ContactImpulse(horizontalVelocity,facing*(350+40*tier));
+        vy=-(float)ContactImpulse(-vy*Art.PPU,-250-20*tier)/Art.PPU;
+        flashJumpUsed=true;
+        vis?.Play("jump",false);
+    }
     float contactWallX;
     int contactWallDirection;
 
@@ -217,6 +242,12 @@ public class PlayerCtrl : MonoBehaviour
     public float hpMax = 100f;
     public float hp    = 100f;
     public float invulnUntil;
+    // 0x670C99 lea ecx,[esi+0x46C] with esi = the target of a mob attack:
+    //   0x670CA1 sub edx,[ecx] / 0x670CA3 cmp edx,0x7D0 / jl <return>
+    //   0x670CB2 mov [ecx],eax        ; stamped BEFORE the damage is computed
+    // So a mob attack resolves against the same target at most once per 2000 ms,
+    // independent of which mob swung. 0 means "never hit yet".
+    public long lastMobAttackMs;
     float alertUntil;
     float contactTintStarted;
     int contactTintPhase;
@@ -249,6 +280,7 @@ public class PlayerCtrl : MonoBehaviour
         horizontalVelocity = 0;
         contactWallDirection = 0;
         grounded = true;
+        flashJumpUsed = false;
     }
 
     // 技能系统的施法动画入口。SpriteAnim 挂在 Art.Attach 建的子节点上，
@@ -264,6 +296,8 @@ public class PlayerCtrl : MonoBehaviour
         if(phaseDuration>0)SkillActionDuration=phaseDuration;
         vis.PlayOnce(action,playbackSpeed);
     }
+
+    public void FinishHeldSkill() { vis?.Play("stand",false,true); }
 
     public void PlayNativeSkill(int id) => PlaySkill(id.ToString());
 
@@ -377,7 +411,11 @@ public class PlayerCtrl : MonoBehaviour
 
     // 有 WZ 素材就用素材；没有就退回纯色方块（保证任何状态下都能跑）
     // 升级后按原端 Character.levelUp → changeHpMp(localMaxHp, localMaxMp) 直接回满。
-    void OnLevelUp(int level) => ApplyProgression();
+    void OnLevelUp(int level)
+    {
+        ApplyProgression();
+        NativeImgAnimation.Spawn("Effect/BasicEff.img/LevelUp", transform, FeetPos, SortingOrder + 1);
+    }
 
     public void ApplyProgression()
     {
@@ -524,6 +562,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         if (GameLoop.I != null && (GameLoop.I.state != GameLoop.GameState.Playing || GameLoop.I.gameOver)) return;
         if (InputLocked || ScriptUiLock > 0) { SyncTransform(); return; }   // 换图黑场/脚本锁UI：不读输入、不跑物理
+        RefreshMovementAttributes();
         float dt = Time.deltaTime;
         if (dt > 0f) Step(dt);   // 顿帧期间 dt==0，逻辑自动跳过
         TickRegen(Time.unscaledDeltaTime);
@@ -625,13 +664,13 @@ public class PlayerCtrl : MonoBehaviour
         TickTrail();
 
         // 走过就捡：原版自动拾取（按键 Pickup 是手动补拾，见 InputHub）
-        GroundItem.TryAutoPickup(FeetPos);
     }
 
     // 起一次挥砍：按原武器攻速逐帧换算 delay、挂残影帧表，返回前摇秒数。
     // 没有素材时返回 0，调用方立即结算。
     float BeginSwing()
     {
+        if (!UsesRangedWeapon) GetComponent<NativeBuffs>()?.OnCloseAttack();
         BeginNativeAlert();
         pending.active = false;      // 新挥砍开始，上一段前摇作废（理论上前摇必早于挥砍结束）
         swingSfxAt = -1f;            // 上一段空挥计时作废
@@ -646,6 +685,7 @@ public class PlayerCtrl : MonoBehaviour
         var clip = Art.GetClip(vis.kind, vis.key, swingAction);
         if (clip == null || clip.delays.Length == 0) return 0f;
         int weaponSpeed = WzCharacter.WeaponAttackSpeed(vis.key);
+        weaponSpeed = GetComponent<NativeBuffs>()?.AttackSpeed(weaponSpeed) ?? weaponSpeed;
         swingPlayback = 16f / (Mathf.Clamp(weaponSpeed, 2, 10) + 10);
         vis.PlayNativeAttack(swingAction, weaponSpeed);
 
@@ -663,6 +703,7 @@ public class PlayerCtrl : MonoBehaviour
     // 空挥：没有目标也要有完整动作和速度
     void SwingEmpty()
     {
+        if (!SpendBasicProjectile()) return;
         pending.active = false;
         float windup = BeginSwing();
         // 挥砍音效与伤害同帧：空挥没有 pending，用独立计时器到点播
@@ -806,6 +847,7 @@ public class PlayerCtrl : MonoBehaviour
             jumpY = 0f;
             vy = 0f;
             grounded = true;
+            flashJumpUsed = false;
             dropSegment = -1;      // 落到别的段上：忽略指针作废（0x9B4963）
         }
         else jumpY = nextY - terrainY;
@@ -883,6 +925,7 @@ public class PlayerCtrl : MonoBehaviour
         horizontalVelocity = 0;
         contactWallDirection = 0;
         grounded = true;
+        flashJumpUsed = false;
         climb = null;
         dropSegment = -1;
         grabCooldown = 0.3f;
@@ -913,6 +956,7 @@ public class PlayerCtrl : MonoBehaviour
             }
             if (climb != null)
             {
+                flashJumpUsed=false;
                 worldX = climb.x;
                 horizontalVelocity = 0;
                 grounded = false;
@@ -928,13 +972,15 @@ public class PlayerCtrl : MonoBehaviour
             }
         }
         if (climb == null) return false;
-        // 在绳上按跳跃 = 脱手（原端就是这样跳离的，不需要同时按方向）
-        if (jumpReq)
+        // 0x9B1D74: a rope/ladder jump requires horizontal input.
+        // Ordinary branch: half vertical jump speed, 1.3x horizontal walk speed.
+        if (jumpReq && Mathf.Abs(h) > 0.15f)
         {
             climb = null;
             grabCooldown = 0.25f;
-            vy = jumpSpeed;
-            if (Mathf.Abs(h) > 0.15f) facing = h > 0f ? 1 : -1;
+            vy = jumpSpeed * .5f;
+            facing = h > 0f ? 1 : -1;
+            horizontalVelocity = facing * moveSpeed * Art.PPU * 1.3;
             return false;
         }
         float nextY = y + climbInput * moveSpeed * dt;
@@ -1066,6 +1112,7 @@ public class PlayerCtrl : MonoBehaviour
 
     void StrikeBoss(BossUnit b)
     {
+        if (!SpendBasicProjectile()) return;
         var hit = RollAttack(b.CombatStats);
         float windup = BeginSwing();
         if (windup <= 0.001f)
@@ -1112,6 +1159,7 @@ public class PlayerCtrl : MonoBehaviour
 
     void Strike(EnemyUnit e)
     {
+        if (!SpendBasicProjectile()) return;
         var hit = RollAttack(e.CombatStats);
         float windup = BeginSwing();
         if (windup <= 0.001f)
@@ -1123,10 +1171,19 @@ public class PlayerCtrl : MonoBehaviour
         pending = new PendingHit { enemy = e, boss = null, hit = hit, timer = windup, facing = facing, active = true };
     }
 
+    bool SpendBasicProjectile()
+    {
+        if (!UsesRangedWeapon) return true;
+        if (NativeProjectiles.Spend(NativeProjectiles.For(this,0,1))) return true;
+        GetComponent<SkillSystem>()?.Report("缺少可用弹药");
+        return false;
+    }
+
     // 前摇到点：真正结算。原版近战的视觉就是角色挥砍帧本身（武器合成在帧里），
     // 没有额外的弧光贴片；伤害/顿帧/飘字都在这一下出去。
     void HitEnemy(EnemyUnit e, DamageResult hit, int dir)
     {
+        if (e!=null && !e.dead && UsesRangedWeapon) GetComponent<NativeBuffs>()?.OnRangedAttack(1);
         if(e!=null&&!e.dead&&(weapon.kind==WeaponKind.bow||weapon.kind==WeaponKind.crossbow))
             GetComponent<SkillSystem>()?.NativeBasicRangedHit(e,hit,dir);
         if (e == null || e.dead) return;
@@ -1136,6 +1193,7 @@ public class PlayerCtrl : MonoBehaviour
 
     void HitBoss(BossUnit b, DamageResult hit)
     {
+        if (b!=null && !b.dead && UsesRangedWeapon) GetComponent<NativeBuffs>()?.OnRangedAttack(1);
         if(b!=null&&!b.dead&&(weapon.kind==WeaponKind.bow||weapon.kind==WeaponKind.crossbow))
             GetComponent<SkillSystem>()?.NativeBasicRangedHit(b,hit,facing);
         if (b == null || b.dead) return;
@@ -1143,11 +1201,12 @@ public class PlayerCtrl : MonoBehaviour
         HitFeel.Punch(1f);
     }
 
-    public void TakeDamage(float dmg, int dir, bool magic = false, int attackerLevel = 1)
+    public void TakeDamage(float dmg, int dir, bool magic = false, int attackerLevel = 1, EnemyUnit attacker = null, int damageFrom = -1, int mpAttack = 0)
     {
         if (hp <= 0f || Time.unscaledTime < invulnUntil) return;
         RefreshAttributes();
-        dmg = CombatRules.Incoming(dmg, Attributes, magic, attackerLevel, Random.value).Amount;
+        dmg = CombatRules.Incoming(dmg, Attributes, magic, attackerLevel, Random.value,
+            GetComponent<NativeBuffs>()?.Value("INVINCIBLE") ?? 0).Amount;
         if (dmg <= 0)
         {
             // Native -1500 timer approaches zero by +30 each tick; it blocks
@@ -1156,7 +1215,46 @@ public class PlayerCtrl : MonoBehaviour
             DamageText.Miss(DamageAnchor, 1f, "violet");
             return;
         }
-        hp = Mathf.Max(0f, hp - dmg);
+        var buffs=GetComponent<NativeBuffs>();
+        if (attacker!=null && buffs!=null)
+        {
+            long maximum=attacker.NativeController?.MaximumHp ?? (long)attacker.hpMax;
+            if (damageFrom==-1 && buffs.HasStat("POWERGUARD"))
+            {
+                int reflected=NativeBuffs.PowerGuardDamage((int)dmg,buffs.Value("POWERGUARD"),maximum,attacker.IsBoss);
+                dmg-=reflected;
+                if (reflected>0) attacker.TakeReplayDot(reflected);
+            }
+            else if (damageFrom>=0 && !attacker.IsBoss && buffs.HasStat("MANA_REFLECTION"))
+            {
+                int source=Profile.JobId*10000+1002,level=SkillProgress.LevelOf(source);
+                if ((Profile.JobId==212 || Profile.JobId==222 || Profile.JobId==232) && level>0 && buffs.SourceOf("MANA_REFLECTION")==source)
+                {
+                    var row=SkillBook.Get(source)?.Level(level);
+                    if (Random.value<Art.Int(row,"prop",100)/100f)
+                        attacker.TakeReplayDot((int)System.Math.Min(maximum/5,(int)dmg*(long)Art.Int(row,"x")/100));
+                }
+            }
+        }
+        int achillesId=Profile.JobId<200 && Profile.JobId%10==2 ? Profile.JobId*10000+(Profile.JobId==112 ? 4 : 5) : 0;
+        int achillesLevel=achillesId==0 ? 0 : SkillProgress.LevelOf(achillesId);
+        int defenseLevel=SkillProgress.LevelOf(21120004);
+        dmg=NativeBuffs.PassiveIncoming((int)dmg,attacker!=null ? buffs?.Value("COMBO_BARRIER") ?? 0 : 0,
+            damageFrom!=-3 && damageFrom!=-4 && achillesLevel>0 ? Art.Int(SkillBook.Get(achillesId)?.Level(achillesLevel),"x") : 0,
+            damageFrom!=-3 && damageFrom!=-4 && defenseLevel>0 ? Art.Int(SkillBook.Get(21120004)?.Level(defenseLevel),"x") : 0);
+        if (buffs != null)
+        {
+            bool magicGuard=buffs.HasStat("MAGIC_GUARD"), mesoGuard=buffs.HasStat("MESOGUARD");
+            NativeBuffs.GuardLoss((int)dmg,(int)mp,Profile.gold,buffs.Value("MAGIC_GUARD"),buffs.Value("MESOGUARD"),
+                magicGuard,mesoGuard,mpAttack,
+                out int hpLoss,out int mpLoss,out int mesoLoss,out bool cancelMeso);
+            hp=Mathf.Max(0f,hp-hpLoss); mp=Mathf.Max(0f,mp-mpLoss);
+            if (mesoLoss>0) Profile.Spend(mesoLoss);
+            if (cancelMeso) buffs.CancelStat("MESOGUARD");
+            // Native damage packet retains incoming damage for Magic Guard, halves it for Meso Guard.
+            if (!magicGuard && mesoGuard) dmg=hpLoss;
+        }
+        else { hp = Mathf.Max(0f, hp - dmg); mp=Mathf.Max(0f,mp-mpAttack); }
         TickContactTint();
         contactTintStarted = Time.unscaledTime;
         contactTintActive = true;
@@ -1164,10 +1262,15 @@ public class PlayerCtrl : MonoBehaviour
         BeginNativeAlert();
         // Ordinary contact: 0x958686/0x958C94 -> 0x7A6353 -> 0x9B222A.
         // Apply signed 270px/s impulses; native air/terrain integration determines distance.
-        if (IsClimbing) { climb = null; grabCooldown = 0.25f; }
-        grounded = false;
-        horizontalVelocity = ContactImpulse(horizontalVelocity, System.Math.Sign(dir) * 270);
-        vy = -(float)ContactImpulse(-vy * Art.PPU, -270) / Art.PPU;
+        bool resistKnockback=NativeBuffs.ResistsKnockback(buffs?.Value("STANCE") ?? 0,
+            GameLoop.I?.field?.Map?.fieldLimit ?? 0,Random.Range(0,100));
+        if (!resistKnockback)
+        {
+            if (IsClimbing) { climb = null; grabCooldown = 0.25f; }
+            grounded = false;
+            horizontalVelocity = ContactImpulse(horizontalVelocity, System.Math.Sign(dir) * 270);
+            vy = -(float)ContactImpulse(-vy * Art.PPU, -270) / Art.PPU;
+        }
         vis?.ShowHitExpression();
         if (vis != null && hp <= 0f) vis.PlayOnce("die");
         DamageText.Show(DamageAnchor, dmg, "blue");
@@ -1196,6 +1299,7 @@ public class PlayerCtrl : MonoBehaviour
     }
     public void DispelNativeBuffs()
     {
+        GetComponent<NativeBuffs>()?.Dispel();
         attackBonus = 0; attackBonusUntil = 0; partyGrindDefense=0;
         GetComponent<SkillSystem>()?.CancelActions();
     }
@@ -1218,6 +1322,7 @@ public class PlayerCtrl : MonoBehaviour
         hp = Mathf.Clamp(hpValue, 1, hpMax);
         mp = Mathf.Clamp(mpValue, 0, mpMax);
         pending.active = false;
+        GetComponent<NativeBuffs>()?.Clear();
         attackBonus = 0f; attackBonusUntil = 0f;
         invulnUntil = Time.unscaledTime + 1.5f;
         GetComponent<SkillSystem>()?.CancelActions();
@@ -1248,9 +1353,61 @@ public class PlayerCtrl : MonoBehaviour
     void RefreshAttributes()
     {
         baseAttributes = Profile.Attributes;
-        Attributes = baseAttributes.WithWeapon(weapon, Time.unscaledTime < attackBonusUntil ? Mathf.RoundToInt(attackBonus) : 0,
+        var buffs = GetComponent<NativeBuffs>();
+        int attack = buffs != null ? buffs.Value("WATK") : 0;
+        Attributes = baseAttributes.WithWeapon(weapon, attack + (Time.unscaledTime < attackBonusUntil ? Mathf.RoundToInt(attackBonus) : 0),
             out weaponAttack, out magicAttack);
         Attributes.weaponDefense+=partyGrindDefense;
+        if (buffs != null)
+        {
+            Attributes.weaponDefense += buffs.Value("WDEF");
+            Attributes.magicDefense += buffs.Value("MDEF");
+            Attributes.accuracy += buffs.Value("ACC");
+            Attributes.avoidability += buffs.Value("AVOID");
+            magicAttack += buffs.Value("MATK");
+            int warrior=buffs.Value("MAPLE_WARRIOR");
+            Attributes.str += baseAttributes.str*warrior/100;
+            Attributes.dex += baseAttributes.dex*warrior/100;
+            Attributes.intelligence += baseAttributes.intelligence*warrior/100;
+            Attributes.luk += baseAttributes.luk*warrior/100;
+            int hpBuff=buffs.Value("HYPERBODYHP"),mpBuff=buffs.Value("HYPERBODYMP");
+            if (hpBuff!=0) Attributes.maxHp=(int)System.Math.Max(50,System.Math.Min(50000,Attributes.maxHp+(long)Attributes.maxHp*hpBuff/100));
+            if (mpBuff!=0) Attributes.maxMp=(int)System.Math.Max(5,System.Math.Min(50000,Attributes.maxMp+(long)Attributes.maxMp*mpBuff/100));
+        }
+    }
+    public void RefreshBuffAttributes()
+    {
+        float previousHpMax=hpMax,previousMpMax=mpMax;
+        RefreshAttributes();
+        hpMax=Attributes.maxHp; mpMax=Attributes.maxMp;
+        if (hpMax<previousHpMax) hp=Mathf.Min(hp,hpMax);
+        if (mpMax<previousMpMax) mp=Mathf.Min(mp,mpMax);
+        RefreshMovementAttributes();
+    }
+    // BeiDou 0x78074A / 0x8C457C / 0x94D8F1: equipment base first,
+    // then temporary stats, then ordinary walk/jump limits; slow overrides walk.
+    public static int MovementPercent(int equipment,int passive,int temporary,int maximum,int forced=0)
+    {
+        int basis=System.Math.Max(100,System.Math.Min(maximum,100+equipment+passive));
+        return System.Math.Max(80,System.Math.Min(maximum,forced!=0 ? forced : basis+temporary));
+    }
+    static int MovementSetBuff(System.Collections.Generic.Dictionary<string,int> set,string key,int equipment,int buff)
+    {
+        if (set==null || (!set.ContainsKey(key) && !set.ContainsKey(key+"Pct"))) return buff;
+        return System.Math.Max(short.MinValue,System.Math.Min(short.MaxValue,AdminSetItem.ApplyStat(set,key,equipment+buff)-equipment));
+    }
+    public void RefreshMovementAttributes()
+    {
+        if (Attributes==null || movementPhysics==null) return;
+        var buffs=GetComponent<NativeBuffs>();
+        int speed=MovementSetBuff(Attributes.setItemBonus,"SPD",Attributes.equipmentSpeed,buffs?.Value("SPEED") ?? 0);
+        int jump=MovementSetBuff(Attributes.setItemBonus,"JMP",Attributes.equipmentJump,buffs?.Value("JUMP") ?? 0);
+        int job=Profile.JobId;
+        int thrust=job==311 || job==312 ? 3110000 : job==321 || job==322 ? 3210000 : job>=1310 && job<=1312 ? 13100004 : 0;
+        int level=thrust==0 ? 0 : SkillProgress.LevelOf(thrust);
+        int passive=level>0 ? Art.Int(SkillBook.Get(thrust)?.Level(level),"speed") : 0;
+        moveSpeed=(float)(movementPhysics.WalkSpeed/Art.PPU)*MovementPercent(Attributes.equipmentSpeed,passive,speed,140,GetComponent<NativeMobDebuffs>()?.ForcedWalkSpeed ?? 0)/100;
+        jumpSpeed=(float)(movementPhysics.JumpSpeed/Art.PPU)*MovementPercent(Attributes.equipmentJump,0,jump,123)/100;
     }
     public DamageResult RollAttack(System.Collections.Generic.Dictionary<string, object> target, NativeSkillDefinition skill = null)
     {
@@ -1329,6 +1486,7 @@ public class PlayerCtrl : MonoBehaviour
         horizontalVelocity = 0;
         contactWallDirection = 0;
         grounded = true;
+        flashJumpUsed = false;
         laneVis = lane;
         SyncTransform();
     }
@@ -1340,6 +1498,7 @@ public class PlayerCtrl : MonoBehaviour
         if (sr != null) sr.color = Color.white;
         hp = hpMax; mp = mpMax;
         CancelRush();
+        GetComponent<NativeBuffs>()?.Clear();
         attackBonus = 0; attackBonusUntil = 0; partyGrindDefense=0;
         pending.active = false;
         GetComponent<SkillSystem>()?.CancelActions();

@@ -199,6 +199,48 @@ public sealed class AdminHost : MonoBehaviour
             AdminBots.MarketStartupRunning = () => Server.Bot.Environment.BotEnvironment.IsMarketStartupRunning;
             AdminBots.RequestMarketStartup = Server.Bot.Environment.BotEnvironment.RequestMarketStartup;
 
+            // 组队伴侣（道具 2431159「基友集合」）：面板读的是 BotPartyGrindService 的实时状态，
+            // 「召唤 / 解散」直接打同一份实例，跟玩家自己用道具完全同一条路。
+            AdminBots.PartyTeams = () =>
+            {
+                var teams = new System.Collections.Generic.List<AdminBots.PartyTeamInfo>();
+                var grind = Server.Bot.BotTypeManager.PartyGrind;
+                var runtime = GameSession.Server != null ? GameSession.Server.Bots : null;
+                if (grind == null || runtime == null) return teams;
+                long now = Server.Bot.BotScheduler.Now();
+                foreach (int leaderId in grind.ActiveLeaders)
+                {
+                    var actor = runtime.Player(leaderId);
+                    teams.Add(new AdminBots.PartyTeamInfo
+                    {
+                        characterId = leaderId,
+                        name = actor != null ? actor.name : "",
+                        mapId = actor != null ? actor.mapId : 0,
+                        companions = grind.CompanionCountOf(leaderId),
+                        remainingSec = System.Math.Max(0L, (grind.Expiry(leaderId) - now) / 1000L),
+                    });
+                }
+                return teams;
+            };
+            AdminBots.PartySummon = characterId =>
+            {
+                var grind = Server.Bot.BotTypeManager.PartyGrind;
+                var runtime = GameSession.Server != null ? GameSession.Server.Bots : null;
+                if (grind == null || runtime == null) return "服务端未启动（请先进入游戏）";
+                var actor = runtime.Player((int)characterId);
+                if (actor == null) return "角色不在线";
+                if (grind.Start(actor)) return null;
+                if (grind.IsActive((int)characterId)) return "基友集合仍在生效中，先解散再召唤";
+                return "召唤失败：检查后台开关、队伍空位（需要 " + grind.ConfiguredCount + " 个）";
+            };
+            AdminBots.PartyDismiss = characterId =>
+            {
+                var grind = Server.Bot.BotTypeManager.PartyGrind;
+                if (grind == null) return false;
+                grind.Stop((int)characterId, "管理员已解散基友集合。");
+                return true;
+            };
+
             server = AdminHttpServer.StartOn(DefaultPort, api.Handle, msg => Debug.Log("[Admin] " + msg));
             // 图鉴懒加载缓存的后台预热：装备 3.2 万 IMG 首建要数秒，别让后台页面首开卡住
             AdminCatalogData.Prewarm();

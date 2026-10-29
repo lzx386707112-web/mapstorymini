@@ -127,6 +127,19 @@ static class NativeSystemChecks {
             Check(inventory.ok && inventory.inventory.Exists(x => x.itemId == 1142000), "任务勋章奖励落入真实背包");
             Check(NativeInventoryService.Handle(db, new InventoryChangeRequest { characterId = leader, itemId = 1142000, equip = true, equipSlot = -49, quantity = 1 }).inventory.Exists(x => x.itemId == 1142000 && x.position == -49), "勋章装备保存至源端-49槽位");
             Check(!NativeInventoryService.Handle(db, new InventoryChangeRequest { characterId = junior, itemId = 1142000, equip = true, equipSlot = -49, quantity = 1 }).ok, "不能装备未持有的勋章");
+            InventoryDao.InsertItem(db,leader,2070000,2,20,100);
+            InventoryDao.InsertItem(db,leader,2070000,2,21,300);
+            Check(!NativeInventoryService.Handle(db,new InventoryChangeRequest { characterId=leader,itemId=2070000,quantity=-200,sourcePosition=20 }).ok,
+                "指定槽位消耗不能合并其他同ID飞镖绕过单组数量门槛");
+            var stars=NativeInventoryService.Handle(db,new InventoryChangeRequest { characterId=leader,itemId=2070000,quantity=-200,sourcePosition=21 });
+            Check(stars.ok && stars.inventory.Exists(x=>x.itemId==2070000 && x.position==20 && x.quantity==100) &&
+                stars.inventory.Exists(x=>x.itemId==2070000 && x.position==21 && x.quantity==100),"飞镖只扣指定组且失败消耗不改背包");
+            var emptyStars=NativeInventoryService.Handle(db,new InventoryChangeRequest { characterId=leader,itemId=2070000,quantity=-100,sourcePosition=20,projectile=true });
+            Check(emptyStars.ok && emptyStars.inventory.Exists(x=>x.itemId==2070000 && x.position==20 && x.quantity==0),"攻击耗尽飞镖保留零数量原槽位");
+            InventoryDao.InsertItem(db,leader,2060000,2,22,1);
+            var lastArrow=NativeInventoryService.Handle(db,new InventoryChangeRequest { characterId=leader,itemId=2060000,quantity=-1,sourcePosition=22,projectile=true });
+            Check(lastArrow.ok && !lastArrow.inventory.Exists(x=>x.itemId==2060000 && x.position==22),"最后一支箭消耗后删除槽位");
+            Check(!NativeInventoryService.Handle(db,new InventoryChangeRequest { characterId=leader,itemId=2070000,quantity=-1,sourcePosition=21+100,projectile=true }).ok,"不存在弹药槽位不得回退其他同ID组");
             db.Save(); var reopened = DbStore.Open(path); var reCash = new NativeCashService(reopened) { Catalog = new Catalog() };
             Check(reCash.Handle(new CashRequest { characterId = leader }).wishes.Count == 2 && new NativeCommunityService(reopened).Handle(new CommunityRequest { characterId = leader }).guild.Count == 6, "重开存档恢复商城清单与家族成员");
             Check(CharService.Load(reopened, leader).inventory.Exists(x => x.itemId == 1142000 && x.position == -49), "重开存档恢复已装备勋章");

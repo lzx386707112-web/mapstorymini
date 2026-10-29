@@ -48,7 +48,15 @@ HTTP 服务，同时供出前端静态资源和 REST 接口；游戏内从侧边
      被厂商冻结（nubia CpuFreezer）→ 本地 HTTP 服务停摆，外部浏览器里全部超时。
    - 前端 axios 拦截器 401 只做 SPA 内跳登录页（`router.push`），**禁止
      `window.location` 整页跳转**（同样会逃逸到外部浏览器）。会话只存在游戏进程内存，
-     每次重启游戏后第一次请求必 401，属预期行为：拦截器会清旧 token 并弹「登录已过期」。
+     每次重启游戏后第一次请求必 401，属预期行为：拦截器会清旧 token 并跳登录页
+     （已经在登录页时不弹「登录已过期」——此时没有东西过期，弹出来只会和上一条提示叠在一起）。
+   - `GET /auth/v1/refreshToken` 是**续期**，不是换发 token：源端 `AuthService.refreshToken`
+     签的是 JWT，旧 token 在过期前一直有效（服务端根本没有吊销能力）。这里等价实现为
+     「顺延同一会话、token 原样返回」。**绝不能 `DropSession` 再 `CreateSession`**：前端
+     `hooks/loading.ts` 在**每次** `setLoading(false)` 都会打续期，登录按钮的 `finally`
+     正好和路由守卫的 `/account/v1/info` 并发；旧 token 一旦被自己吊销，info 立刻 401，
+     表现为「刚弹『欢迎使用』就弹『登录已过期，请重新登录』、界面停在登录页不动」
+     （2026-10-28 报障，CDP 抓请求序列定位；`tools/admin-check` 已加回归断言）。
 5. **明文 HTTP 放行**：Android 9+ 默认禁 cleartext，系统 WebView 会直接报
    `net::ERR_CLEARTEXT_NOT_PERMITTED`（表现为一片黑底 + 错误页）。构建钩子
    `Assets/Editor/AndroidNativeDataBuild.cs`（`IPostGenerateGradleAndroidProject`）
@@ -144,7 +152,8 @@ Android 上 `runInBackground` 不生效：切到浏览器后 Activity onPause，
 | GM 命令库 | `POST /command/v1/getCommandListFromDB|updateCommand`、`GET /command/v1/reloadEventsByGMCommand|reloadPortalsByGMCommand|reloadMapsByGMCommand` |
 | 发放 | `POST /give/v1/resource`（type: item/equip/meso/exp 等） |
 | 天气 | `GET /weather/v1/state|config|regions`、`PUT /weather/v1/config|regions/{region}`、`POST/DELETE /weather/v1/override`、`POST /weather/v1/broadcast|wind` |
-| BOT 控制 | `GET /bot-control/v1/state|config`、`PUT /bot-control/v1/config`（market/appearance/environment 分组，party 空）、`POST /bot-control/v1/market/start`（≡ EnvironmentManager 三态） |
+| BOT 控制 | `GET /bot-control/v1/state|config`、`PUT /bot-control/v1/config`（market/appearance/environment 分组）、`POST /bot-control/v1/market/start`（≡ EnvironmentManager 三态） |
+| 组队伴侣 | `GET /bot-control/v1/party`、`PUT /bot-control/v1/party`（solo_mapling_party_* 五项）、`POST /bot-control/v1/party/summon|dismiss` |
 | 商城 | `GET /cashShop/v1/getAllCategoryList`、`POST /cashShop/v1/getCommodityByCategory|onSale|offSale|batchOnSale` |
 | 文件树 | `POST /file/v1/tree|tree/read|tree/write`（限 `Data/scripts` 子树，key 防逃逸） |
 | 图鉴 | `GET /setItem/v1/item/catalog|equipment/catalog`、`GET /mob/v1/catalog`、`GET /skill/v1/catalog|detail/{id}|jobs`、`POST /skill/v1/reload`、`GET /assets/{item,equipment,mob,skill}-icons/{id}.png` |
@@ -161,6 +170,50 @@ Android 上 `runInBackground` 不生效：切到浏览器后 Activity onPause，
 已删除的页面：**地图检测**（`views/game/mapDetect`、`api/mapDetect.ts`、路由与语言包条目）。
 它是 WZ 地图节点自检工具，单机版没有对应的服务端数据源，按要求整块移除，菜单里不再出现。
 
+## 6.1 天气：后台点了「没反应」的三个坑（2026-10-28 修）
+
+后台天气管理本身是好的，但客户端有三处断点，任何一处不修都会表现成「改了没变化」：
+
+1. **客户端天生关着。** `NativeWeather.json` 的 `clientEnabled` 是 `tools/export_weather.py`
+   从源端 `clien/config.ini` 的 `enableWeatherSystem=false` 导出来的，而
+   `NativeWeatherField.Bind` 第一行就是 `if(!ClientEnabled)return;` → 天空层、雨雪、地面
+   积水、粒子、音效**一样都不会挂**。现在 `ClientEnabled` 默认 `true`，是否真的显示改由
+   后台「启用视觉天气」（服务端 `Enabled`）经 Sync 的 `Disabled` 位控制。
+2. **客户端要等 60 秒才重新 Sync。** `NativeWeatherField.Tick` 原来只在
+   `now>=syncAt`（60s 一轮）或自然轮换时才 `Sync`；后台改的 `Override/forced/风` 全在服务
+   那份实例里，客户端不知道。现在 `NativeWeatherService.Revision` 在
+   `Override/ClearOverride/ApplyForced/RerollWind/Transition/配置更新(Touch)` 时自增，
+   客户端每帧比对，变了立刻 Sync 且带 `snap`（直接切画面，不走过渡）。
+3. **excluded 地图没有天空层就什么都不显示。** 源端「无天空地图」清单（草地/城镇等）
+   `HasSky=false`，进图时整块天气层都不挂，运营在这些图点「下雨」自然毫无反应。现在
+   判定改成 `HasSky || Forced`（服务端有 override 或该区域 forced），且这种地图只跳过
+   `sky` 组贴图（整屏天空会盖掉原画），夜色/云/雨/雪/雾/彩虹照常叠；**玩家先进图、后台
+   随后才点强制天气**时，`Tick` 里发现 `!mounted` 会补挂一次图层。
+
+另外 `NativeWeatherHost.Service` 的实例复用也修了：后台可能**先于**玩家进图访问天气
+（`Host.Service` 会自建一份），原来进图时 `NativeWeatherField` 又新建一份覆盖它，后台做过
+的强制天气全丢；现在客户端优先接管 `NativeWeatherHost.Shared`。
+
+## 6.2 组队伴侣（消耗品 2431159「基友集合」）
+
+服务端引擎早就搬好了（`BotPartyGrindService` + `CompanionGrindBot` + `BotPartyGrindFloors`），
+但原来三处没接：`Assets` 里没有任何地方 `new BotPartyGrindService` 之外去调 `Start`、
+后台 `party` 分组恒为空（源端 `BotControlService.config()` 也是 `List.of()`，数值写死在
+`PartyGrindCompat` 常量里）、前端「组队」标签页只是一句「尚未开放」。
+
+现在：
+
+- 参数落库成 `solo_mapling_party_companion_enabled / _require_party / _count / _minutes /
+  _level_jitter`，由 `BotConfig.PartyCompanion*` 每次实时读（改完下一次召唤生效）。
+  默认值与源端一致：5 个、30 分钟、等级 ±3、必须先自己开组队。
+- 后台「召唤到当前角色 / 全部解散」直接打 `BotPartyGrindService.Start/Stop`，
+  与玩家自己用道具完全同一条路径（后台召唤不消耗道具，用于演示与排查）。
+- 面板状态来自 `BotPartyGrindService.ActiveLeaders/Expiry/CompanionCountOf`，显示每支队的
+  地图、伴侣数、剩余时间。这些通过 `AdminHost` 注入的钩子传给 `AdminBots`——
+  `AdminBots` 不直接引用 `Server.Bot`，否则 `tools/admin-check` 得拖整条 Bot 链才能编译。
+- **道具入口仍未接**：本工程还没有「使用消耗品」这条链路（`UseItem` 全工程 0 处），
+  所以游戏内用 2431159 不会触发；要彻底还原得先做道具使用系统。
+
 ## 7. 改前端 / 重新打包
 
 ```bash
@@ -168,20 +221,27 @@ Android 上 `runInBackground` 不生效：切到浏览器后 Activity onPause，
 ./tools/build_admin_ui.sh --skip-install
 ```
 
-产物 `Assets/Resources/AdminUi/adminui.bytes`（当前 94 个文件，约 3.4 MB）。
+产物 `Assets/Resources/AdminUi/adminui.bytes`（当前 92 个文件，约 3.35 MB）。
 改完前端必须重新跑这一步，否则游戏里还是旧页面。
+
+手机适配的样式在 `src/assets/style/mobile.less`（不动 gms-ui 业务代码，只兜底布局）：
+弹窗限高、表格横滑、输入框最小宽；顶部提示条（`.arco-message-list-top`）从 Arco 默认的
+`top: 40px` 贴到 `8px`、间距收到 `8px`——游戏内 WebView 是手机横屏，可视高度只有 ~350px，
+40px 起排会把提示条压到登录页标题和输入框上。
 
 ## 8. 验证
 
 ```bash
-cd tools/admin-check && dotnet run          # 起临时库，跑 30 项接口断言
+cd tools/admin-check && dotnet run          # 起临时库，跑 41 项接口断言
 cd tools/admin-check && dotnet run -- --serve   # 只起服务，用浏览器人工看界面
 cd tools/unity-compile-check && dotnet build -t:Rebuild   # Unity 侧编译
 ```
 
-`admin-check` 覆盖：登录、token、账号信息、菜单、账号分页、角色列表、角色所在图、
-背包类型/列表、参数类型/分页/新增、在线状态、掉落/商店/扭蛋/封禁/命令库列表、
-天气状态/配置/区域、假人配置/状态、401 鉴权、封停后登录被拒、解封后可登录、首页 HTML。
+`admin-check` 覆盖：登录、token、续期不吊销旧 token、账号信息、菜单、账号分页、角色列表、
+角色所在图、背包类型/列表、参数类型/分页/新增、在线状态、掉落/商店/扭蛋/封禁/命令库列表、
+天气状态/配置/区域/强制天气(版本号自增 + Sync 带到客户端状态)/清除覆盖、
+假人配置/状态、组队伴侣面板/实时状态/配置读写/拒绝跨分组写入/未进游戏时召唤报错、
+401 鉴权、封停后登录被拒、解封后可登录、首页 HTML。
 
 注意：依赖 WZ 的模块（图鉴/任务浏览/商城/文件树/套装）由 `AdminRoutes.RegisterUnityOnly`
 在游戏进程里注册（`AdminHost` 调用），不进 admin-check 编译范围——它们的契约靠

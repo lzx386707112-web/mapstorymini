@@ -60,6 +60,18 @@ public class EnemyUnit : MonoBehaviour
     public void BindNative(FieldDirector field) => NativeController = NativeMobController.Attach(this, field);
     public void PlayNativeAction(string action) { if (vis != null) vis.PlayOnce(action, 1f); }
     public void DefeatNative() { if (!dead) { hp = 0; Die(); } }
+    public void ExpireNative(int action)
+    {
+        if (dead) return;
+        dead=true; All.Remove(this);
+        if (hpRoot!=null) hpRoot.gameObject.SetActive(false);
+        NativeController?.ReleaseExpired();
+        string clip="die"+action;
+        dieDur=Art.GetClip("mobs",artKey,clip)?.Duration ?? 0;
+        dieT=0;
+        if (vis!=null && dieDur>0) vis.PlayOnce(clip,1f);
+        Destroy(gameObject,dieDur+.05f);
+    }
 
     // 怪物音效 ID：原版图模式用 fieldMobId，章节模式把 artKey 翻成源端怪物 ID
     // （mushmom→6130101、slimeking→9300003…，见 NativeAssetIndex.mobs）。
@@ -112,7 +124,7 @@ public class EnemyUnit : MonoBehaviour
         vis = Art.Has("mobs", artKey) ? Art.Attach(transform, "mobs", artKey, "stand", 0f) : null;
         if (vis == null) throw new System.IO.InvalidDataException("Missing original monster IMG: " + artKey);
         body = vis.Renderer;
-        body.sortingOrder = 300 - lane * 12;
+        body.sortingOrder = BodySortingOrder;
         body.color = Color.white;
         visHeight = Mathf.Max(0.6f, body.bounds.size.y);
 
@@ -137,6 +149,11 @@ public class EnemyUnit : MonoBehaviour
         // 之前每个怪头顶都常驻血条，看起来像全场都在挨打（用户截图里所有平台的蜗牛都顶着一根）。
         hpRoot.gameObject.SetActive(hp < hpMax);
     }
+
+    // BeiDou 0x664E70 mob z ends in +1; ordinary user 0x92FD46 ends
+    // in +2 (or +7). Preserve that separation within the current lane mapping:
+    // animation texture/material changes must never decide who is in front.
+    public int BodySortingOrder => 299 - lane * 12;
 
     void Update()
     {
@@ -175,6 +192,7 @@ public class EnemyUnit : MonoBehaviour
             float dy = Mathf.Abs(p.FeetPos.y - transform.position.y);
             aggro = p.hp > 0f && Mathf.Abs(dx) <= aggroRange && dy <= 1.8f;
         }
+        float nativeSpeed=NativeController!=null ? NativeController.GroundMoveSpeed(aggro) : speed;
         if (!stunned && !nativeFloating && (NativeController == null || !NativeController.Busy))
         {
             if (fieldMode && !aggro)
@@ -185,7 +203,7 @@ public class EnemyUnit : MonoBehaviour
             {
                 int dir = dx > 0f ? 1 : -1;
                 faceDir = dir;
-                float nx = transform.position.x + dir * speed * dt;
+                float nx = transform.position.x + dir * nativeSpeed * dt;
                 // 贴地形走：高出台阶 0.6u 以上的墙挡住（和玩家同一套规则）
                 float gy = PlayerCtrl.GroundAt(nx, terrainY);
                 if (gy <= terrainY + 0.6f && (NativeController == null || NativeController.CanMove))
@@ -205,12 +223,12 @@ public class EnemyUnit : MonoBehaviour
         // Movement/attack cadence and mob action state do not schedule touch damage.
         if (TouchesPlayer(p))
             p.TakeDamage(NativeController != null ? NativeCombatData.Int(CombatStats,"PADamage") : damage,
-                p.worldX >= transform.position.x ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1));
+                p.worldX >= transform.position.x ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1),this);
 
         laneVis = Mathf.Lerp(laneVis, lane, 1f - Mathf.Exp(-12f * dt));
         if (vis != null)
         {
-            vis.SetBase(moving ? "move" : "stand");
+            vis.SetBase(moving ? (aggro && NativeController?.HasChase==true ? "chase" : "move") : "stand");
             vis.SetFacing(NativeController != null && NativeController.Busy ? NativeController.Direction : faceDir);
         }
         if (hpBar != null)
@@ -233,7 +251,7 @@ public class EnemyUnit : MonoBehaviour
     {
         faceDir = patrolDir;
         if (NativeController != null && !NativeController.CanMove) return false;
-        float nx = transform.position.x + patrolDir * speed * dt;
+        float nx = transform.position.x + patrolDir * (NativeController!=null ? NativeController.GroundMoveSpeed(false) : speed) * dt;
         if (nx < roamMin) { nx = roamMin; patrolDir = 1; }
         if (nx > roamMax) { nx = roamMax; patrolDir = -1; }
         float gy = PlayerCtrl.GroundAt(nx, terrainY);
@@ -264,7 +282,7 @@ public class EnemyUnit : MonoBehaviour
             terrainY = PlayerCtrl.GroundAt(transform.position.x, terrainY);
             transform.position = new Vector3(transform.position.x, terrainY + DepthOffset, 0f);
         }
-        if (body != null) body.sortingOrder = 300 - lane * 12;
+        if (body != null) body.sortingOrder = BodySortingOrder;
         // 接触判定框随当前动画帧更新（走路/攻击帧宽高不同）
         if (body != null && body.sprite != null)
         {
@@ -273,11 +291,14 @@ public class EnemyUnit : MonoBehaviour
         }
     }
 
+    public Rect? SelectionBounds => fieldMode ? NativeTargetGeometry.Bounds(this,body!=null && body.flipX) : null;
+
     // 真实接触判定：以双方脚底为原点的身体 AABB，X、Y 两个方向都要有实际重叠。
     // 以前只比脚底高度差（field 模式 dy<=1.8 即视作同层）+ 横向 attackRange，
     // 站在高低不同的平台上只要贴近就会被打——现在必须两个身体真的碰到。
     bool TouchesPlayer(PlayerCtrl p)
     {
+        if (p.GetComponent<NativeBuffs>()?.SuppressesContact(fieldMobId,GameLoop.I?.field?.Map?.fieldLimit ?? 0)==true) return false;
         // CMobPool::FindHitMob 678D47 -> 667569: notAttack templates cannot hit by contact.
         if (fieldMode && WzAssets.FileRoot("Mob/" + fieldMobId.ToString("D7") + ".img").Int("info/notAttack") != 0) return false;
         if (vis == null || vis.FrameUri == null) return false;
@@ -313,9 +334,9 @@ public class EnemyUnit : MonoBehaviour
         ApplyHit(hit, fromDir, nativeHit, true);
     }
 
-    public void TakeReplayHit(DamageResult[] hits, int direction, bool magic, bool indexed, int interval, bool total = false, int ordinarySkill = -1)
+    public long TakeReplayHit(DamageResult[] hits, int direction, bool magic, bool indexed, int interval, bool total = false, int ordinarySkill = -1)
     {
-        if (dead) return;
+        if (dead) return 0;
         var filtered = new DamageResult[hits.Length];
         long sum = 0; bool critical = false;
         for (int i = 0; i < hits.Length; i++)
@@ -325,6 +346,7 @@ public class EnemyUnit : MonoBehaviour
         }
         NativeDamageLines.Show(this, filtered, indexed, interval, total, ordinarySkill);
         ApplyHit(new DamageResult((int)System.Math.Min(int.MaxValue, sum), critical), direction, true, false);
+        return System.Math.Min(int.MaxValue,sum);
     }
 
     // Server-owned periodic damage is already resolved; do not re-roll mob filtering.
@@ -423,7 +445,7 @@ public class EnemyUnit : MonoBehaviour
         // 死亡动作只播了 1/3 就被抹掉。
         dieDur = DeathSeconds();
         dieT = 0f;
-        if (vis != null) vis.PlayOnce("die", 1f);
+        if (vis != null) vis.PlayOnce(NativeController!=null ? "die"+NativeController.DeathAction : "die", 1f);
         string mid = MobSoundId;
         if (mid != null) AudioManager.PlayAt("Mob/" + mid + "/Die", transform.position, 1f, 11f);
         Destroy(gameObject, dieDur + 0.05f);
@@ -432,7 +454,7 @@ public class EnemyUnit : MonoBehaviour
     // die clip 总时长；没有死亡动画时给一个「看得见」的下限
     public static float DeathSeconds(EnemyUnit e)
     {
-        var clip = Art.GetClip("mobs", e.artKey, Art.Resolve("mobs", e.artKey, "die", "die1"));
+        var clip = Art.GetClip("mobs", e.artKey, e.NativeController!=null ? "die"+e.NativeController.DeathAction : Art.Resolve("mobs", e.artKey, "die", "die1"));
         return clip != null ? clip.Duration : 0.45f;
     }
     float DeathSeconds() => DeathSeconds(this);

@@ -103,12 +103,14 @@ axios.interceptors.response.use(
         '登录已过期，请重新登录';
       const userStore = useUserStore();
       userStore.logoutCallBack();
-      Message.error({
-        content: msg,
-        duration: 5 * 1000,
-      });
       const current = router.currentRoute.value;
+      // 已经在登录页就不再弹「登录已过期」：此时没有任何东西"过期"，只会和上一条
+      // （比如登录成功的「欢迎使用」）叠在同一个位置，用户看到的是自相矛盾的两条提示。
       if (current.name !== 'login') {
+        Message.error({
+          content: msg,
+          duration: 5 * 1000,
+        });
         router.push({
           name: 'login',
           query: {

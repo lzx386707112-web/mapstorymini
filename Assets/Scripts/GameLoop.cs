@@ -46,7 +46,9 @@ public class GameLoop : MonoBehaviour
     static void Boot()
     {
 #if UNITY_EDITOR
-        if (UnityEditor.SessionState.GetBool("NativeCashSceneChecks", false) ||
+        if (UnityEditor.SessionState.GetBool("NativeBuffRenderChecks", false) ||
+            UnityEditor.SessionState.GetBool("NativeSkillNodeChecks", false) ||
+            UnityEditor.SessionState.GetBool("NativeCashSceneChecks", false) ||
             UnityEditor.SessionState.GetBool("NativeViewportChecks", false)) return;
 #endif
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -519,6 +521,7 @@ public class GameLoop : MonoBehaviour
     {
         if (gameOver) return;
         gameOver = true;
+        player?.GetComponent<NativeBuffs>()?.Clear();
         stage?.StopSession();
         player?.GetComponent<SkillSystem>()?.CancelActions();
         HitFeel.Reset();

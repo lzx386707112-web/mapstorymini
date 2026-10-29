@@ -11,8 +11,16 @@ export default {
   'botControl.tab.appearance': '外观',
   'botControl.tab.environment': '其他环境',
   'botControl.tab.party': '组队',
-  'botControl.party.soon':
-    '组队打怪伴侣尚未开放。市场机器人和店铺请在「市场」页开启并点击立即生成。',
+  'botControl.party.active': '当前生效 {count} 支队',
+  'botControl.party.summon': '召唤到当前角色',
+  'botControl.party.dismiss': '全部解散',
+  'botControl.party.empty': '当前没有生效中的组队伴侣',
+  'botControl.party.map': '地图 {map}',
+  'botControl.party.companions': '伴侣 {count} 个',
+  'botControl.party.summoned': '已召唤组队伴侣',
+  'botControl.party.dismissed': '已解散组队伴侣',
+  'botControl.party.tip':
+    '与原版消耗品「基友集合」（2431159）同一条逻辑：伴侣会跟着角色换图、在同一层打怪，到期或队伍解散时自动离场。后台召唤不消耗道具，用于演示与排查。',
   'botControl.action.save': '保存配置',
   'botControl.action.refresh': '刷新状态',
   'botControl.action.start': '立即生成市场',
@@ -94,4 +102,14 @@ export default {
   'botControl.field.solo_mapling_feature_potion_shop_drop_game_enabled':
     '药店丢物小游戏',
   'botControl.field.solo_mapling_feature_scroll_bots_enabled': '卷轴假人',
+  'botControl.field.solo_mapling_party_companion_enabled':
+    '启用组队伴侣（关掉后连道具也召不出来）',
+  'botControl.field.solo_mapling_party_companion_require_party':
+    '必须自己先开组队（关掉则召唤时自动建队）',
+  'botControl.field.solo_mapling_party_companion_count':
+    '一次召唤的伴侣数量（队伍上限 6 人）',
+  'botControl.field.solo_mapling_party_companion_minutes':
+    '持续时间（分钟）',
+  'botControl.field.solo_mapling_party_companion_level_jitter':
+    '伴侣等级相对角色等级浮动（0 = 同级）',
 };

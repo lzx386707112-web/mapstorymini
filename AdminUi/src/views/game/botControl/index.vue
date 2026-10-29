@@ -48,10 +48,53 @@
         <a-tab-pane key="party" :title="$t('botControl.tab.party')"></a-tab-pane>
       </a-tabs>
 
-      <a-alert v-if="activeTab === 'party'" type="info">
-        {{ $t('botControl.party.soon') }}
-      </a-alert>
-      <a-form v-else layout="vertical">
+      <div v-if="activeTab === 'party'" class="party-panel">
+        <div class="party-head">
+          <span>{{
+            $t('botControl.party.active', { count: party.state.activeTeams })
+          }}</span>
+          <a-space>
+            <a-button
+              type="primary"
+              size="small"
+              :loading="summoning"
+              @click="doSummon"
+            >
+              {{ $t('botControl.party.summon') }}
+            </a-button>
+            <a-button
+              size="small"
+              :loading="dismissing"
+              :disabled="!party.state.teams.length"
+              @click="doDismiss"
+            >
+              {{ $t('botControl.party.dismiss') }}
+            </a-button>
+          </a-space>
+        </div>
+        <div v-if="party.state.teams.length" class="party-list">
+          <div
+            v-for="team in party.state.teams"
+            :key="team.characterId"
+            class="party-row"
+          >
+            <strong>{{ team.name || team.characterId }}</strong>
+            <span>{{ $t('botControl.party.map', { map: team.mapId }) }}</span>
+            <span>
+              {{ $t('botControl.party.companions', { count: team.companions }) }}
+            </span>
+            <span class="party-remaining">{{
+              formatRemaining(team.remainingSec)
+            }}</span>
+          </div>
+        </div>
+        <a-empty v-else :description="$t('botControl.party.empty')" />
+        <a-alert type="info" class="party-tip">
+          {{ $t('botControl.party.tip') }}
+        </a-alert>
+      </div>
+
+      <a-form layout="vertical">
         <a-row :gutter="16">
           <a-col
             v-for="field in activeFields"
@@ -68,15 +111,17 @@
               <a-input-number
                 v-else
                 v-model="field.numberValue"
-                :min="1"
-                :max="60000"
+                :min="numberRange(field.code).min"
+                :max="numberRange(field.code).max"
                 hide-button
-                @change="(value: number) => (field.value = String(value ?? 1))"
+                @change="
+                  (value: number) => (field.value = String(value ?? 1))
+                "
               />
             </a-form-item>
           </a-col>
         </a-row>
-        <a-button type="primary" :loading="saving" @click="saveAll">
+        <a-button type="primary" :loading="saving" @click="saveActive">
           {{ $t('botControl.action.save') }}
         </a-button>
       </a-form>
@@ -93,8 +138,13 @@
     BotControlState,
     getBotControlConfig,
     getBotControlState,
+    getPartyConfig,
     startMarketBots,
     updateBotControlConfig,
+    updatePartyConfig,
+    summonParty,
+    dismissParty,
+    PartyConfig,
   } from '@/api/botControl';
 
   interface EditableField extends BotControlField {
@@ -105,14 +155,39 @@
   const loading = ref(false);
   const saving = ref(false);
   const starting = ref(false);
+  const summoning = ref(false);
+  const dismissing = ref(false);
   const activeTab = ref('market');
   const state = ref<BotControlState>();
   const marketFields = ref<EditableField[]>([]);
   const appearanceFields = ref<EditableField[]>([]);
   const environmentFields = ref<EditableField[]>([]);
+  const partyFields = ref<EditableField[]>([]);
+  const party = ref<PartyConfig>({
+    config: [],
+    state: { teams: [], activeTeams: 0, characterId: 0 },
+  });
 
   const isBoolean = (field: BotControlField) =>
     field.clazz === 'java.lang.Boolean';
+
+  // 组队伴侣的几个数字项范围不一样：数量最多 5（队伍上限 6），时长到 12 小时，等级浮动允许 0
+  const numberRange = (code: string) => {
+    if (code === 'solo_mapling_party_companion_count')
+      return { min: 1, max: 5 };
+    if (code === 'solo_mapling_party_companion_minutes')
+      return { min: 1, max: 720 };
+    if (code === 'solo_mapling_party_companion_level_jitter')
+      return { min: 0, max: 10 };
+    return { min: 1, max: 60000 };
+  };
+
+  const formatRemaining = (seconds: number) => {
+    const total = Math.max(0, Math.round(seconds || 0));
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
 
   const fieldLabel = (code: string) => {
     const key = `botControl.field.${code}`;
@@ -133,6 +208,9 @@
     if (activeTab.value === 'environment') {
       return environmentFields.value;
     }
+    if (activeTab.value === 'party') {
+      return partyFields.value;
+    }
     return marketFields.value;
   });
 
@@ -149,14 +227,26 @@
   const loadAll = async () => {
     loading.value = true;
     try {
-      const [stateRes, configRes] = await Promise.all([
+      const [stateRes, configRes, partyRes] = await Promise.all([
         getBotControlState(),
         getBotControlConfig(),
+        getPartyConfig(),
       ]);
       state.value = stateRes.data;
       marketFields.value = toEditable(configRes.data.market);
       appearanceFields.value = toEditable(configRes.data.appearance);
       environmentFields.value = toEditable(configRes.data.environment);
+      partyFields.value = toEditable(
+        partyRes.data.config?.length ? partyRes.data.config : configRes.data.party
+      );
+      party.value = {
+        config: partyRes.data.config || [],
+        state: partyRes.data.state || {
+          teams: [],
+          activeTeams: 0,
+          characterId: 0,
+        },
+      };
     } finally {
       loading.value = false;
     }
@@ -181,6 +271,53 @@
       await loadAll();
     } finally {
       saving.value = false;
+    }
+  };
+
+  // 组队的字段是另一组接口（solo_mapling_party_*），别混进 /config 的提交
+  const saveActive = async () => {
+    if (activeTab.value !== 'party') {
+      await saveAll();
+      return;
+    }
+    saving.value = true;
+    try {
+      const payload = partyFields.value.map((field) => ({
+        id: field.id,
+        code: field.code,
+        clazz: field.clazz,
+        value: field.value,
+        desc: field.desc,
+      }));
+      const { data } = await updatePartyConfig(payload);
+      Message.success(t('botControl.message.saved', { count: data }));
+      await loadAll();
+    } finally {
+      saving.value = false;
+    }
+  };
+
+  const doSummon = async () => {
+    summoning.value = true;
+    try {
+      const { data } = await summonParty();
+      party.value = { config: party.value.config, state: data };
+      Message.success(t('botControl.party.summoned'));
+      await loadAll();
+    } finally {
+      summoning.value = false;
+    }
+  };
+
+  const doDismiss = async () => {
+    dismissing.value = true;
+    try {
+      const { data } = await dismissParty();
+      party.value = { config: party.value.config, state: data };
+      Message.success(t('botControl.party.dismissed'));
+      await loadAll();
+    } finally {
+      dismissing.value = false;
     }
   };
 
@@ -220,5 +357,52 @@
       color: var(--color-text-3);
       font-size: 12px;
     }
+  }
+
+  .party-panel {
+    margin-bottom: 16px;
+  }
+
+  .party-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .party-list {
+    margin-bottom: 12px;
+    border-radius: 4px;
+    background: var(--color-fill-1);
+  }
+
+  .party-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 13px;
+
+    & + .party-row {
+      border-top: 1px solid var(--color-border-1);
+    }
+
+    span {
+      color: var(--color-text-3);
+    }
+  }
+
+  .party-remaining {
+    margin-left: auto;
+    color: var(--color-text-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .party-tip {
+    margin-top: 8px;
   }
 </style>

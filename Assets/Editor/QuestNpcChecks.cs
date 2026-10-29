@@ -39,6 +39,7 @@ public static class QuestNpcChecks
             CheckQuestCatalog();
             CheckScriptLookup();
             CheckDialogText();
+            CheckDialogBreakEscapes();
             CheckQuestRules();
             CheckBeginnerNpcBindings();
             CheckTrainingQuestProgress();
@@ -48,6 +49,8 @@ public static class QuestNpcChecks
             CheckNewCharacterMarkers();
             CheckRogerApplePresentation();
             CheckRestorativeItems();
+            CheckNinaCandyChain();
+            CheckQuestPresentation();
             CheckAllMapQuestLinks();
 
             Debug.Log("[QuestNpcCheck] 通过 " + pass + " 项，失败 " + fail + " 项");
@@ -61,6 +64,46 @@ public static class QuestNpcChecks
     }
 
     // 独立进程、临时数据库；验证真实 NpcApi，而非宽松 mock。
+    static void CheckQuestPresentation()
+    {
+        var previousLoop = GameLoop.I;
+        var host = new GameObject("QuestPresentationCheck"); host.SetActive(false);
+        string snapshot = JsonUtility.ToJson(Profile.Data);
+        try
+        {
+            var loop = host.AddComponent<GameLoop>(); loop.player = host.AddComponent<PlayerCtrl>(); GameLoop.I = loop;
+            var q = QuestCatalog.Get(8142);
+            Profile.ResetQuest(q.id);
+            QuestAlarm.Remove(q.id);
+            QuestLogic.OnMobKilled(9409000);
+            Check(!System.Linq.Enumerable.Contains(QuestAlarm.Tracked, q.id), "未接任务的击杀不得注册任务告知");
+            QuestLogic.Start(q, q.startReq.npc, false);
+            QuestLogic.OnMobKilled(9409000);
+            Check(System.Linq.Enumerable.Contains(QuestAlarm.Tracked, q.id), "真实任务击杀推进须注册任务告知");
+            Check(QuestWindow.ExpandProgress(q, "#a81421#/#a81422#") == "1/1/0/1", "任务正文须按WZ目标顺序显示实时进度");
+            Check(host.GetComponentInChildren<NativeImgAnimation>(true) == null, "击杀推进不得提前播放交付完成特效");
+            QuestLogic.Complete(q, q.completeReq.npc, false);
+            var effect = host.GetComponentInChildren<NativeImgAnimation>(true);
+            Check(effect != null && effect.name == "Effect/BasicEff.img/QuestClear" && effect.Image.sprite != null,
+                "交付完成须实际创建QuestClear原IMG动画");
+            Check(!System.Linq.Enumerable.Contains(QuestAlarm.Tracked, q.id), "交付完成须移除任务告知");
+            effect?.Tick(double.MaxValue);
+            Check(host.GetComponentInChildren<NativeImgAnimation>(true) == null, "QuestClear播完须释放，不能留下静态末帧");
+            var api = NpcApi.Build(null, 2000, 0, false);
+            var interpreter = new JsInterpreter();
+            interpreter.Call(interpreter.GetMember(api, "showQuestCompleteEffect"), api, Array.Empty<JsValue>());
+            Check(host.GetComponentInChildren<NativeImgAnimation>(true) != null, "原脚本showQuestCompleteEffect不能再是空接口");
+            var nina = QuestCatalog.Get(1033);
+            Check(!nina.stateInfo.ContainsKey(0) && nina.stateInfo.ContainsKey(1), "任务正文须保留状态编号，不得将缺少0页的1页当成0页");
+        }
+        finally
+        {
+            QuestAlarm.Remove(8142); NpcSession.CloseActive(); GameLoop.I = previousLoop;
+            UnityEngine.Object.DestroyImmediate(host); JsonUtility.FromJsonOverwrite(snapshot, Profile.Data);
+            NpcField.InvalidateMarkers();
+        }
+    }
+
     static void CheckRogerApplePresentation()
     {
         string description = ItemTooltip.FormatDescription(ItemCatalog.Desc(2010007));
@@ -558,6 +601,58 @@ public static class QuestNpcChecks
         }
     }
 
+    static void CheckNinaCandyChain()
+    {
+        var data = Profile.Data;
+        string snapshot = JsonUtility.ToJson(data);
+        try
+        {
+            data.level = 1;
+            data.SetJob(0);
+            data.questStarted.Clear();
+            data.questCompleted.Clear();
+            data.itemIds.Clear();
+            data.itemCounts.Clear();
+            int[] quests = { 1032, 1033, 1034 };
+            int[] starters = { 2102, 2001, 2102 };
+            int[] finishers = { 2001, 2102, 2001 };
+            for (int i = 0; i < quests.Length; i++)
+            {
+                var q = QuestCatalog.Get(quests[i]);
+                if (i == 0) NpcSession.TalkQuest(q, starters[i], false);
+                Check(NpcSession.Active != null && NpcSession.Active.QuestId == q.id,
+                    "任务链须续开接取对白 " + q.id);
+                Check(Profile.QuestStatus(q.id) == 0, "确认前不得静默接取 " + q.id);
+                for (int step = 0; step < 20 && Profile.QuestStatus(q.id) == 0; step++)
+                    NpcSession.Active?.Reply(1);
+                Check(Profile.QuestStatus(q.id) == PlayerProfileData.QuestStartedState, "确认须接取 " + q.id);
+                if (q.id == 1034)
+                {
+                    Check(Profile.ItemCount(4031792) == 10, "妮娜接取奖励须发放10个任务蘑菇糖");
+                    Profile.RemoveItem(4031792, 6);
+                }
+                NpcSession.TalkQuest(q, finishers[i], true);
+                if (q.id == 1034)
+                {
+                    Check(Profile.ItemCount(4031792) == 10, "已卡住任务须只补足缺少的蘑菇糖");
+                    Check(!QuestLogic.RestoreLostItems(q) && Profile.ItemCount(4031792) == 10,
+                        "重复恢复不得重复发糖");
+                }
+                for (int step = 0; step < 20 && Profile.QuestStatus(q.id) == PlayerProfileData.QuestStartedState; step++)
+                    NpcSession.Active?.Reply(1);
+                Check(Profile.IsQuestCompleted(q.id), "任务链须可完成 " + q.id);
+            }
+            Check(Profile.ItemCount(4031792) == 0 && Profile.ItemCount(2022253) == 2,
+                "交给珊须扣除10个任务糖并奖励2个蘑菇棒棒糖");
+            Check(!QuestLogic.RestoreLostItems(QuestCatalog.Get(1034)), "已完成任务不得再补糖");
+        }
+        finally
+        {
+            NpcSession.CloseActive();
+            JsonUtility.FromJsonOverwrite(snapshot, data);
+        }
+    }
+
     static void CheckNewCharacterMarkers()
     {
         var data = Profile.Data;
@@ -889,6 +984,38 @@ public static class QuestNpcChecks
         Check(!string.IsNullOrEmpty(icon.Runs[0].Art), "#i 的道具图标路径没有解析出来");
     }
 
+    // 原端文案的换行不是控制字符，而是字面反斜杠序列：Quest/Say.img 里存的就是 "\r\n" 四个字符
+    // （String/EULA.img 还是双反斜杠写法）。排版前必须归一化成真换行，
+    // 否则正文会直接印出 \r\n 并把后面的选项挤错位（学者罗宾问答就是这种）。
+    static void CheckDialogBreakEscapes()
+    {
+        Check(DialogText.Parse("甲\\r\\n乙").Body == "甲\n乙", "字面 \\r\\n 必须合成一个换行");
+        Check(DialogText.Parse("甲\\\\r\\\\n乙").Body == "甲\n乙", "双反斜杠 \\\\r\\\\n 也必须合成一个换行");
+        Check(DialogText.Parse("甲\\r乙").Body == "甲\n乙", "单独字面 \\r 也是换行");
+        Check(DialogText.Parse("甲\\n乙").Body == "甲\n乙", "字面 \\n 也是换行");
+        Check(DialogText.StripMarkup("甲\\r\\n乙") == "甲\n乙", "选项文字的字面换行也要归一化");
+
+        // 真实 Quest/Say.img：含字面换行的文案解析后不得残留反斜杠序列
+        int escaped = 0, leftover = 0;
+        var root = WzAssets.FileRoot("Quest/Say.img");
+        var stack = new Stack<MapleDash.Wz.ImgNode>();
+        foreach (var child in root.Children) stack.Push(child);
+        while (stack.Count > 0)
+        {
+            var node = stack.Pop();
+            foreach (var child in node.Children) stack.Push(child);
+            var text = node.Value as string;
+            if (text == null || (text.IndexOf("\\r", System.StringComparison.Ordinal) < 0 &&
+                                 text.IndexOf("\\n", System.StringComparison.Ordinal) < 0)) continue;
+            escaped++;
+            var body = DialogText.Parse(text).Body;
+            if (body.IndexOf("\\r", System.StringComparison.Ordinal) >= 0 ||
+                body.IndexOf("\\n", System.StringComparison.Ordinal) >= 0) leftover++;
+        }
+        Check(escaped > 0, "Quest/Say.img 里应该存在字面换行文案");
+        Check(leftover == 0, "真实任务文案解析后仍残留字面换行：" + leftover + "/" + escaped);
+    }
+
     // ————— 任务规则 —————
     static void CheckBeginnerNpcBindings()
     {
@@ -917,9 +1044,8 @@ public static class QuestNpcChecks
             data.questStarted.Clear(); data.questCompleted.Clear();
             data.questStarted.Add(1034);
             data.questCompleted.AddRange(new[] { 30001, 1021, 1032, 1033 });
-            Check(QuestCatalog.ForNpc(9101002).Contains(8142), "截图训练图透德索引必须包含原始8142");
-            Check(QuestCatalog.Get(8142).startReq.npc == 9101002 &&
-                  QuestCatalog.Get(8142).completeReq.npc == 9101003, "训练图8142必须保留原始接取和交付NPC");
+            Check(QuestCatalog.ForNpc(9101002).Contains(900001) && !QuestCatalog.ForNpc(9101002).Contains(8142), "透德须绑定截图重建的独立任务");
+            Check(QuestCatalog.ForNpc(9101003).Contains(900002) && !QuestCatalog.ForNpc(9101003).Contains(8142), "彼特须绑定截图重建的独立任务");
             Check(ScriptSource.Load("npc", 9101001) != null, "截图彼特原始训练结束脚本必须存在");
             data.level = 11;
             Check(!NpcField.ChoicesFor(2004).Exists(c => c.quest?.id == 1035), "透德1035遵循lvmax10");
@@ -934,41 +1060,63 @@ public static class QuestNpcChecks
         string snapshot = JsonUtility.ToJson(data);
         try
         {
-            data.level = 2; data.jobId = 0;
+            data.level = 7; data.jobId = 0; data.experience = 0;
             data.questStarted.Clear(); data.questCompleted.Clear(); data.questProgress.Clear();
             data.itemIds.Clear(); data.itemCounts.Clear();
-            var quest = QuestCatalog.Get(8142);
-            Check(!QuestLogic.CanStart(quest, 9101002), "训练图8142不得擅自绕过原始1042003条件");
-            data.SetQuestStarted(8142);
-            NpcField.InvalidateMarkers();
-            Check(NpcField.MarkerOf(9101003).progress, "训练图8142进行中须在交付NPC显示原图1");
-            Check(!NpcField.MarkerOf(9101002).progress && !NpcField.MarkerOf(9101001).progress,
-                "任务进行中提示不得串到接取NPC或同名脚本NPC");
-            var choice = NpcField.ChoicesFor(9101003).Find(c => c.quest?.id == 8142);
-            Check(choice != null && choice.progress && !choice.complete, "交付NPC须提供本NPC进行中的任务");
-            var session = NpcSession.TalkQuest(quest, 9101003, true);
-            Check(session != null && session.Dialog.Mode == NpcDialogMode.Ok &&
-                  session.Dialog.Content.Body.Contains("还没完成透德的请求"), "未收齐物品须读原端stop/item对白");
-            session.Reply(1);
-            Check(Profile.QuestStatus(8142) == PlayerProfileData.QuestStartedState, "未完成对白不能发奖或完成任务");
-            data.AddItem(4000300, 1); data.AddItem(4000301, 1);
-            session = NpcSession.TalkQuest(quest, 9101003, true);
-            Check(session != null && session.Dialog.Content.Body.Contains("先攻击(Ctrl)"),
-                "物品齐但击杀不足须读原端stop/mob对白");
+            var toad = QuestCatalog.Get(900001); var peter = QuestCatalog.Get(900002);
+            Check(WzNames.Mob(toad.completeReq.mobs[0].item) == "打鼓兔子" &&
+                WzNames.Mob(peter.completeReq.mobs[0].item) == "小白雪鬼", "任务目标必须核对实际IMG怪物名字");
+            foreach (var q in new[] { toad, peter })
+            {
+                Check(QuestLogic.CanStart(q, q.startReq.npc), "截图任务不能要求旧衣服或前置任务");
+                var session = NpcSession.TalkQuest(q, q.startReq.npc, false);
+                Check(session != null, "实际JS须打开对话");
+                if (q.id == peter.id)
+                {
+                    Check(session.Dialog.Mode == NpcDialogMode.Next, "彼特须先显示冰封雪域引言");
+                    session.Reply(1);
+                    Check(session.Dialog.Content.Body.Contains("8只手"), "彼特须保留截图中的故事页");
+                    session.Reply(1);
+                }
+                Check(session.Dialog.Mode == NpcDialogMode.AcceptDecline, "实际JS须显示接受页");
+                session.Reply(1);
+                Check(Profile.IsQuestStarted(q.id), "接受实际JS须开始任务");
+                NpcSession.CloseActive();
+            }
+            Check(Profile.IsQuestStarted(toad.id) && Profile.IsQuestStarted(peter.id), "两条任务须能同时进行");
+            Check(data.experience == 0, "接取训练任务不能提前发放经验");
+            var incomplete = NpcSession.TalkQuest(toad, 9101002, true);
+            Check(incomplete.Dialog.Content.Body.Contains("5只"), "未完成时须有过程提醒");
+            incomplete.Reply(1); NpcSession.CloseActive();
+            Check(!Profile.IsQuestCompleted(toad.id), "不足5只不能交付");
+            for (int i = 0; i < 4; i++) QuestLogic.OnMobKilled(9409001);
+            Check(!QuestLogic.CanComplete(toad, 9101002), "4只不能交付");
+            Check(!QuestNotice.HasReady(toad.id), "4/5不得弹出完成任务气泡");
+            Check(Profile.QuestProgressInt(peter.id, "9409000") == 0, "两种怪不能串计数");
+            QuestLogic.OnMobKilled(9409001); QuestLogic.OnMobKilled(9409001);
+            Check(Profile.QuestProgressInt(toad.id, "9409001") == 5, "击杀按5只封顶");
+            Check(QuestNotice.HasReady(toad.id) && !QuestNotice.HasReady(peter.id), "5/5须登记对应任务红色气泡，不能串到另一任务");
+            Check(!QuestLogic.CanComplete(toad, 9101003), "透德任务不能向彼特交付");
+            NpcSession.TalkQuest(toad, 9101002, true);
+            Check(Profile.IsQuestCompleted(toad.id) && Profile.IsQuestStarted(peter.id), "实际交付JS只能完成对应任务");
+            Check(!QuestNotice.HasReady(toad.id), "交付后须移除可交付气泡");
+            Check(data.experience == 50, "透德实际交付JS须准确发放50经验");
             NpcSession.CloseActive();
-            QuestLogic.OnMobKilled(9409000);
-            QuestLogic.OnMobKilled(9409000);
-            Check(Profile.QuestProgressInt(8142, "9409000") == 1, "完成条件里的击杀须计数且按原端封顶");
-            Check(!QuestLogic.CanComplete(quest, 9101003), "不能漏掉第二种怪物条件");
-            QuestLogic.OnMobKilled(9409001);
-            Check(QuestLogic.CanComplete(quest, 9101003) && NpcField.MarkerOf(9101003).complete,
-                "真实训练怪击杀完毕须进入可交付状态并立即刷新标记");
-            data.questStarted.Remove(8142);
-            data.questProgress.Clear();
-            QuestLogic.OnMobKilled(9409000);
-            Check(Profile.QuestProgressInt(8142, "9409000") == 0, "未接任务不得累计击杀");
+            for (int i = 0; i < 5; i++) QuestLogic.OnMobKilled(9409000);
+            Check(QuestNotice.HasReady(peter.id), "彼特独立达成5/5也须登记红色气泡");
+            NpcSession.TalkQuest(peter, 9101003, true);
+            Check(Profile.IsQuestCompleted(peter.id), "彼特实际交付JS须完成独立任务");
+            Check(data.experience == 100, "两条实际交付JS合计须发放100经验，不漏发或双发");
+            Check(!QuestLogic.CanStart(toad, 9101002) && !QuestLogic.CanStart(peter, 9101003), "完成后不能重复领取");
+            data.level = 11; data.questCompleted.Clear(); data.questStarted.Clear();
+            Check(!QuestLogic.CanStart(toad, 9101002) && !QuestLogic.CanStart(peter, 9101003), "截图等级10以下条件须生效");
         }
-        finally { NpcSession.CloseActive(); JsonUtility.FromJsonOverwrite(snapshot, data); NpcField.InvalidateMarkers(); }
+        finally
+        {
+            QuestAlarm.Remove(900001); QuestAlarm.Remove(900002);
+            QuestNotice.RemoveReady(900001); QuestNotice.RemoveReady(900002);
+            NpcSession.CloseActive(); JsonUtility.FromJsonOverwrite(snapshot, data); NpcField.InvalidateMarkers();
+        }
     }
 
     static void CheckQuestRules()

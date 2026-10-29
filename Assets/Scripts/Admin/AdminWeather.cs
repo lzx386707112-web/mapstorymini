@@ -124,6 +124,9 @@ public static class AdminWeather
             if (AdminJson.Get(body, "injectSky") != null) s.InjectSky = AdminJson.GetBool(body, "injectSky", s.InjectSky);
             if (AdminJson.Get(body, "seasonDrift") != null) s.SeasonDrift = AdminJson.GetBool(body, "seasonDrift", s.SeasonDrift);
 
+            // 立刻通知客户端重新 Sync（否则要等 60s 周期，看着像没生效）
+            s.Touch();
+
             var db = AdminBackend.RequireDb();
             Upsert(db, ConfigCode, AdminJson.Write(Config()), "server", "Weather", "weather");
             return (long)1;

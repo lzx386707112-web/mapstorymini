@@ -103,7 +103,7 @@ public static class NpcApi
         cm.Set("sendNoExit", Fn(c => session.SetDialog(NpcDialogMode.Ok, Str(c, 0))));
         cm.Set("sendDirectionInfo", Fn(c => { }));
         cm.Set("sendDimensionalMirror", Fn(c => { }));
-        cm.Set("dispose", Fn(c => session.DisposeFromScript()));
+        cm.Set("dispose", Fn(c => { FlushEquip(); session.DisposeFromScript(); }));
 
         // —— 北斗 nextLevel 回调，路由完全沿用 NPCScriptManager.nextLevel ——
         cm.Set("sendNextLevel", Fn(c => { session.SetDialog(NpcDialogMode.Next, Str(c, 1)); session.Route.Set(NativeScriptRouteType.Next, after: Str(c, 0)); }));
@@ -175,12 +175,23 @@ public static class NpcApi
         // —— 传送 ——
         // AbstractPlayerInteraction.warp(map[, portal])：第二参可以是门名（String）也可以是
         // WZ portal 下标（int，= 源端 Portal.getId）。FM 脚本 market00 用后者。
-        // mapId 非法时抛错（源端 MapleMapFactory.getMap(-1) 返回 null → NPE → 脚本 try/catch 回退），
-        // market00.js 的「取不到 savedLocation 就回射手村」分支靠这个触发。
+        // Character.changeMap(map, pt)（Character.java:1597）在 eim 为空时走 getMap(map, true)：
+        // 目标图取不到只发两条系统消息（type5 聊天窗 + type1 弹窗「你无法去到不存在的地图(x)」）
+        // 然后 return，脚本照常往下跑，**不会**抛异常。这里必须照做——2101.js（番茄田的希娜，
+        // 「结束训练就送你出训练营」）最后就是 cm.warp(0)，而 0 号图是真实存在的地图
+        // （Data/Map/Map/Map0/000000000.img，info/onUserEnter = goAdventure 的开场过场舞台）。
+        // 只有负数 id 仍抛错：portal/market00.js 靠 try/catch 回退到自由市场（本端保留的兜底）。
         cm.Set("warp", Fn(c =>
         {
             int target = Int(c, 0);
-            if (target <= 0) throw new JsRuntimeException("warp: 无效的地图 id " + target);
+            if (target < 0) throw new JsRuntimeException("warp: 无效的地图 id " + target);
+            if (!MapExists(target))
+            {
+                string msg = "[系统] 你无法去到不存在的\r\n地图(" + target + ")，请联系GM处理。";
+                NativeSystemMessage.Drop(5, msg);
+                NativeSystemMessage.Drop(1, msg);
+                return;
+            }
             session.RequestWarp(target, WarpName(c, 1), WarpIndex(c, 1));
         }));
         cm.Set("warpParty", Fn(c => session.RequestWarp(Int(c, 0), WarpName(c, 1), WarpIndex(c, 1))));
@@ -249,7 +260,7 @@ public static class NpcApi
         cm.Set("showVideo", Fn(c => { }));
         cm.Set("playSound", Fn(c => { }));
         cm.Set("guideHint", Fn(c => { }));
-        cm.Set("showQuestCompleteEffect", Fn(c => { }));
+        cm.Set("showQuestCompleteEffect", Fn(c => QuestNotice.ShowCompleteEffect()));
         cm.Set("showItemGain", Fn(c => { }));
         cm.Set("openNpc", Fn(c => session.RequestOpenNpc(Int(c, 0), c.ArgCount > 1 ? Str(c, 1, null) : null)));
         cm.Set("openShopNPC", Fn(c => BottomBar.Toast("商店系统尚未接入")));
@@ -713,6 +724,15 @@ public static class NpcApi
         return id >= 0 ? id : -1;
     }
 
+    // 目的地图是否存在：FieldCatalog.Maps 是从 WZ 索引里全量登记的（含北斗自定义的 0~4 号图），
+    // 只查表、不解析——GetMap 会把整张图的美术解出来，对一次存在性判断太重。
+    static bool MapExists(int mapId)
+    {
+        if (mapId < 0) return false;
+        FieldCatalog.Ensure();
+        return FieldCatalog.Maps.ContainsKey(mapId);
+    }
+
     static int MarketPortalId(int mapId)
     {
         var map = FieldCatalog.GetMap(mapId);
@@ -1040,7 +1060,7 @@ public static class NpcApi
         // —— 装备 / 背包同步 ——
         p.Set("gainEquip", Fn(c => Profile.AddItem(Int(c, 0), Math.Max(1, Int(c, 1, 1)))));
         p.Set("equipChanged", Fn(c => Pc?.ApplyProgression()));   // Character.equipChanged：重算 local stats
-        p.Set("forceUpdateItem", Fn(c => { }));   // 单机背包即改即存，无需补发包
+        p.Set("forceUpdateItem", Fn(c => FlushEquip()));   // 脚本改完内存装备 → 整行回写 DB 并刷新背包
         p.Set("setMarriageItemId", Fn(c => ScriptValueStore("marriageItemId", Int(c, 0).ToString(System.Globalization.CultureInfo.InvariantCulture), write: true)));
 
         // —— 放逐（Character.banishMap/banishSp/banishTime，怪物技能把玩家扔去别的图）——
@@ -1214,6 +1234,13 @@ public static class NpcApi
                 Lenient(provider, "ItemInformationProvider");
                 provider.Set("getInstance", Ret(_ => provider));
                 provider.Set("getName", Ret(args => S(WzNames.Item(Int(args, 0)))));
+                // ItemInformationProvider.getEquipLevelReq：星之力按「需求等级」查星级上限表，
+                // 读不到需求等级返回 -1（脚本据此报「无法读取这件武器的需求等级」）。
+                provider.Set("getEquipLevelReq", Ret(args =>
+                {
+                    var info = EquipCatalog.Info(Int(args, 0));
+                    return N(info == null ? -1 : info.Int("reqLevel"));
+                }));
                 return provider;
             }
             if (name == "org.gms.util.I18nUtil" || name == "org.gms.net.server.Server" || name == "org.gms.util.PacketCreator")
@@ -1276,8 +1303,11 @@ public static class NpcApi
                     if (id > 0 && count > 0) Profile.AddItem(id, count);
                     return B(true);
                 }));
-                manipulator.Set("removeFromSlot", Fn(args =>
-                    throw new JsRuntimeException("Unmigrated server API: InventoryManipulator.removeFromSlot（单机没有背包格位概念）")));
+                // removeFromSlot(Client, type, slot, quantity, fromDrop)：按格位删。
+                // 星之力强化要删「其他栏第 2 格的防爆卷」和「爆装时删装备栏第 1 格」，
+                // 单机 inventoryitems.position 就是格号，可以照源端实现。
+                manipulator.Set("removeFromSlot", Ret(args =>
+                    B(RemoveSlotItem(Int(args, 1), Int(args, 2), Math.Max(1, Int(args, 3, 1))))));
                 return manipulator;
             }
             // org.gms.constants.id.ItemId（ItemId.java）：npc/9330045.js 用它的 isChair 判断
@@ -1406,6 +1436,10 @@ public static class NpcApi
         Lenient(inv, "inventory");
         inv.Set("countById", Ret(c => N(Profile.ItemCount(Int(c, 0)))));
         inv.Set("getNumFreeSlot", Ret(_ => N(24)));
+        // Inventory.getItem(slot)（源端 Inventory.java）：星之力强化脚本用
+        // `getInventory(EQUIP).getItem(1)` 拿「装备栏第 1 格」。
+        inv.Set("getItem", Ret(c => BuildItemView(type, Int(c, 0))));
+        inv.Set("getItemBySlot", Ret(c => BuildItemView(type, Int(c, 0))));
         // Inventory.iterator()（源端 Inventory.java）：脚本拿它遍历某一栏的道具。
         // npc/9330045.js 的 hasChair() 就是扫 SETUP 栏找椅子，决定能不能进钓鱼场。
         // 栏位 = 道具 id 首位，与上面的 InventoryType 数值（EQUIP=1…SETUP=3…）同一套。
@@ -1449,5 +1483,125 @@ public static class NpcApi
             return item;
         }));
         return it;
+    }
+
+    // ————————————————————————————————————————————
+    // 装备实例的脚本视图（源端 Equip 的可写面）。
+    // 单机背包真源在 DB（inventoryitems + inventoryequipment），内存副本挂在
+    // GameSession.Character.inventory —— 就是装备窗读的那一份。
+    // 脚本 setXxx 改内存副本并登记脏行，forceUpdateItem / dispose 时整行回写。
+    // ————————————————————————————————————————————
+    static readonly Dictionary<long, InventoryEntry> dirtyEquip = new Dictionary<long, InventoryEntry>();
+
+    static void MarkDirty(InventoryEntry e)
+    {
+        if (e == null || e.itemRowId <= 0) return;
+        dirtyEquip[e.itemRowId] = e;
+    }
+
+    static InventoryEntry SlotEntry(int type, int slot)
+    {
+        var full = GameSession.Character;
+        if (full?.inventory == null) return null;
+        foreach (var it in full.inventory)
+            if (it.inventoryType == type && it.position == slot) return it;
+        return null;
+    }
+
+    static JsValue BuildItemView(int type, int slot)
+    {
+        var e = SlotEntry(type, slot);
+        if (e == null) return JsNull.Value;
+        var item = new JsHostObject(e);
+        Lenient(item, "item");
+        item.Set("getItemId", Ret(_ => N(e.itemId)));
+        item.Set("getId", Ret(_ => N(e.itemId)));
+        item.Set("getQuantity", Ret(_ => N(type == 1 ? 1 : e.quantity)));
+        item.Set("getPosition", Ret(_ => N(e.position)));
+        item.Set("getUpgradeSlots", Ret(_ => N(e.upgradeslots)));
+        item.Set("getOwner", Ret(_ => S(e.owner)));
+
+        // 星之力（源端 Equip.maxStar / starLevel / starCount）
+        item.Set("getStarLevel", Ret(_ => N(e.starLevel)));
+        item.Set("setStarLevel", Fn(c => { e.starLevel = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getStarCount", Ret(_ => N(e.starCount)));
+        item.Set("setStarCount", Fn(c => { e.starCount = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getMaxStar", Ret(_ => N(e.maxStar)));
+        item.Set("setMaxStar", Fn(c => { e.maxStar = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("setOwner", Fn(c => { e.owner = Str(c, 0); MarkDirty(e); }));
+
+        // 属性读写（脚本 addStarStats/removeStarStats 直接加减）
+        item.Set("getStr", Ret(_ => N(e.str)));
+        item.Set("setStr", Fn(c => { e.str = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getDex", Ret(_ => N(e.dex)));
+        item.Set("setDex", Fn(c => { e.dex = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getInt", Ret(_ => N(e.int_)));
+        item.Set("setInt", Fn(c => { e.int_ = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getLuk", Ret(_ => N(e.luk)));
+        item.Set("setLuk", Fn(c => { e.luk = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getWatk", Ret(_ => N(e.watk)));
+        item.Set("setWatk", Fn(c => { e.watk = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getMatk", Ret(_ => N(e.matk)));
+        item.Set("setMatk", Fn(c => { e.matk = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getWdef", Ret(_ => N(e.wdef)));
+        item.Set("setWdef", Fn(c => { e.wdef = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getMdef", Ret(_ => N(e.mdef)));
+        item.Set("setMdef", Fn(c => { e.mdef = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getAcc", Ret(_ => N(e.acc)));
+        item.Set("setAcc", Fn(c => { e.acc = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getAvoid", Ret(_ => N(e.avoid)));
+        item.Set("setAvoid", Fn(c => { e.avoid = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getHands", Ret(_ => N(e.hands)));
+        item.Set("setHands", Fn(c => { e.hands = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getSpeed", Ret(_ => N(e.speed)));
+        item.Set("setSpeed", Fn(c => { e.speed = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        item.Set("getJump", Ret(_ => N(e.jump)));
+        item.Set("setJump", Fn(c => { e.jump = Math.Max(0, Int(c, 0)); MarkDirty(e); }));
+        return item;
+    }
+
+    // 把脚本改过的装备行整行回写（源端 Character.forceUpdateItem）：
+    // 一次对话里可能改了不止一件，逐件补丁，最后一个快照回填内存背包。
+    static void FlushEquip()
+    {
+        if (dirtyEquip.Count == 0) return;
+        int cid = GameSession.CharacterId;
+        List<InventoryEntry> latest = null;
+        if (cid > 0)
+        {
+            foreach (var e in dirtyEquip.Values)
+            {
+                var res = GameSession.Net.UpdateEquip(new EquipPatchRequest
+                {
+                    characterId = cid,
+                    inventoryItemId = e.itemRowId,
+                    starLevel = e.starLevel, starCount = e.starCount, maxStar = e.maxStar,
+                    owner = e.owner,
+                    str = e.str, dex = e.dex, int_ = e.int_, luk = e.luk, hp = e.hp, mp = e.mp,
+                    watk = e.watk, matk = e.matk, wdef = e.wdef, mdef = e.mdef,
+                    acc = e.acc, avoid = e.avoid, hands = e.hands, speed = e.speed, jump = e.jump,
+                    upgradeslots = e.upgradeslots,
+                });
+                if (!res.ok) { Debug.LogError("[Script] 装备回写失败：" + res.error); continue; }
+                if (res.inventory != null) latest = res.inventory;
+            }
+        }
+        if (latest != null && GameSession.Character != null) GameSession.Character.inventory = latest;
+        dirtyEquip.Clear();
+        Pc?.ApplyProgression();
+    }
+
+    // InventoryManipulator.removeFromSlot 的单机实现：按 (栏位, 格号) 删。
+    static bool RemoveSlotItem(int type, int slot, int quantity)
+    {
+        int cid = GameSession.CharacterId;
+        if (cid <= 0) return false;
+        var res = GameSession.Net.RemoveSlot(new SlotRemoveRequest
+        {
+            characterId = cid, inventoryType = type, slot = slot, quantity = quantity,
+        });
+        if (!res.ok) { Debug.LogError("[Script] 删除格位失败：" + res.error); return false; }
+        if (res.inventory != null && GameSession.Character != null) GameSession.Character.inventory = res.inventory;
+        return true;
     }
 }

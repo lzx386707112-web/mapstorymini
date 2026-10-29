@@ -42,6 +42,10 @@ public class LoginFlow : MonoBehaviour
     int slotToDelete = -1;
     bool scrollOpen;
     bool noticeOpen, genderOpen;
+    // 新账号确认（源端 Notice/text/6「可以使用的账号」）：点「连接」后服务端自动注册的新号先弹它，
+    // 点确定才进性别选择——顺序不能反过来，性别是账号属性，得先确认要用这个账号。
+    bool newAccountOpen;
+    LoginResponse pendingNewAccount;
     // 登录失败提示框：源端收到 LOGIN_STATUS(reason != 0) 就弹 UI/Login.img/Notice，
     // 不能只写一行小字（浅色小字压在草地上基本看不见，玩家会以为「点了没反应」）。
     bool alertOpen;
@@ -49,6 +53,12 @@ public class LoginFlow : MonoBehaviour
     string alertImage;   // Notice/text/<n>；null 表示这个原因没有原图，退回文字
     string alertExtra;   // 追加一行（临时封停的解除时间）
     float noticeScroll;
+    // 开源声明正文：源端读 String/EULA.img/EULA/Text00…（#e/#n 粗体开关、字面 "\r\n" 换行），
+    // 折行/行高由客户端排版，所以这里也要自己排一遍才能算准滚动量。
+    List<EulaLine> eulaLines;
+    float eulaLayoutScale = -1f;
+    float eulaBarGrab = -1f;   // 正在拖滑块时，指针相对滑块顶的距离
+    readonly Dictionary<char, float> eulaCharWidths = new Dictionary<char, float>();
     int newGender;
     bool focusAccount;
     string focusedControl = "";
@@ -86,7 +96,7 @@ public class LoginFlow : MonoBehaviour
     float s = 1f, ox, oy, styleScale = -1f;
     bool modal;
     GUIStyle _label, _small, _tiny, _brown, _brownC, _error, _field, _linkShadow, _version, _hint, _row;
-    GUIStyle _noticeTitle, _noticeText, _noticeUrl;
+    GUIStyle _eula;   // 开源声明正文（#e 段落再叠一层当粗体）
     GUIStyle _alert, _alertSmall;
     GUIStyle _genderValue;
     sealed class UiAnimation
@@ -123,7 +133,7 @@ public class LoginFlow : MonoBehaviour
             if (ok) { GameLoop.I.EnterGameFromLogin(); return; }
         }
         newGender = Mathf.Clamp(PlayerPrefs.GetInt("login_new_gender", 0), 0, 1);
-        noticeOpen = PlayerPrefs.GetInt("login_notice_ok", 0) == 0;
+        noticeOpen = false; // 声明属于新账号流程，不是设备首次启动提示。
         stage = LoginStage.Login;
     }
 
@@ -139,6 +149,8 @@ public class LoginFlow : MonoBehaviour
     {
         var res = GameSession.Login("local", "local");
         if (res.code != LoginResultCode.Ok) { Debug.LogWarning("[LoginFlow] auto login code=" + res.code); return false; }
+        // 无人值守启动（autostart=1）没有玩家去点「确定/性别」，新号直接按男性落库，别卡在弹窗上。
+        if (res.gender == AccountsDao.GenderUnset) GameSession.SetGender(res.accountId, 0);
         GameSession.BeginSession(res.accountId, res.accountName, 0, 1);
         var server = GameSession.ServerList();
         int world = server.worlds.Count > 0 ? server.worlds[0].id : 0;
@@ -197,19 +209,14 @@ public class LoginFlow : MonoBehaviour
         if (GameSideMenu.Blocking || VirtualControlsEditor.Visible) return;
         if (noticeOpen)
         {
-            float wheel = Input.mouseScrollDelta.y;
-            if (wheel != 0f) noticeScroll = Mathf.Clamp01(noticeScroll - wheel * 0.22f);
-            if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.PageDown))
-                noticeScroll = Mathf.Clamp01(noticeScroll + 0.2f);
-            if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.PageUp))
-                noticeScroll = Mathf.Clamp01(noticeScroll - 0.2f);
-            // 手机上拖动声明正文即可滚动（Pointer 的触摸是相对光标，不能依赖 Down 才响应）。
-            if (Input.touchCount > 0)
-            {
-                var t = Input.GetTouch(0);
-                if (t.phase == TouchPhase.Moved)
-                    noticeScroll = Mathf.Clamp01(noticeScroll - t.deltaPosition.y / (200f * UiKit.Scale));
-            }
+            // 滚动/翻页输入统一在 Update 里按像素步进（OnGUI 每帧跑多趟，放那儿会滚两三次）。
+            // 源端声明弹窗不响应 Esc：滚到底点「确定」才算同意，Esc 直接关等于绕过同意。
+            HandleEulaScrollInput();
+            return;
+        }
+        if (newAccountOpen)
+        {
+            if (Input.GetKeyDown(KeyCode.Escape)) CancelNewAccount();
             return;
         }
         if (genderOpen)
@@ -257,7 +264,7 @@ public class LoginFlow : MonoBehaviour
         UiKit.Begin();
         Metrics();
         EnsureStyles();
-        modal = noticeOpen || genderOpen || alertOpen || slotToDelete >= 0;
+        modal = noticeOpen || genderOpen || alertOpen || newAccountOpen || slotToDelete >= 0;
         LogReleaseOnce();
         if (animationStage != stage)
         {
@@ -286,6 +293,7 @@ public class LoginFlow : MonoBehaviour
         if (stage == LoginStage.Login && !modal && !GameSideMenu.Blocking) HandleLoginKeys();
         DrawVersion();
         if (slotToDelete >= 0) DrawDeleteDialog();
+        if (newAccountOpen) DrawNewAccountDialog();
         if (genderOpen) DrawGenderDialog();
         if (alertOpen) DrawAlertDialog();
         if (noticeOpen) DrawNoticeDialog();
@@ -377,11 +385,9 @@ public class LoginFlow : MonoBehaviour
         _linkShadow = Style(12, TextAnchor.MiddleLeft, new Color(0f, 0f, 0f, 0.85f));
         _version = Style(9, TextAnchor.MiddleLeft, new Color(0.16f, 0.17f, 0.19f));
         _hint = Style(12, TextAnchor.MiddleLeft, new Color(0.29f, 0.31f, 0.35f));
-        _noticeTitle = Style(12, TextAnchor.UpperLeft, new Color(0.29f, 0.17f, 0.12f));
-        _noticeTitle.wordWrap = true;
-        _noticeText = Style(11, TextAnchor.UpperLeft, new Color(0.33f, 0.20f, 0.14f));
-        _noticeText.wordWrap = true;
-        _noticeUrl = Style(12, TextAnchor.UpperLeft, new Color(0.33f, 0.20f, 0.14f));
+        // 开源声明正文：12px、行高由 EulaLineH 统一定（排版是自己算的，style 不再 wordWrap）。
+        _eula = Style(12, TextAnchor.MiddleLeft, new Color(0.31f, 0.18f, 0.11f));
+        _eula.clipping = TextClipping.Overflow;
         _alert = Style(13, TextAnchor.MiddleCenter, new Color(0.30f, 0.15f, 0.06f));
         _alert.wordWrap = true;
         _alertSmall = Style(12, TextAnchor.MiddleLeft, new Color(0.30f, 0.15f, 0.06f));
@@ -485,13 +491,17 @@ public class LoginFlow : MonoBehaviour
         DrawTexUv(tex, new Rect(dst.x + dst.width - right, dst.y + dstBodyH, right, bottom), UvRect(tex, src.x + src.width - right, src.y + bodyH, right, bottom));
     }
 
+    // rect 是 R() 出来的虚拟坐标（设计稿 × s），瓦片贴图按设计稿像素，所以步进和 UV 都要换算。
+    // 早先直接拿 tex.height 当步进：s=1（720 高）时看不出问题，窄屏 s<1 会把整条压扁。
     void DrawTexTiledV(Texture2D tex, Rect rect, float alpha = 1f)
     {
         if (tex == null) return;
-        for (float y = 0; y < rect.height; y += tex.height)
+        float tile = Mathf.Max(1f, tex.height * s);
+        for (float y = 0; y < rect.height; y += tile)
         {
-            float h = Mathf.Min(tex.height, rect.height - y);
-            DrawTexUv(tex, new Rect(rect.x, rect.y + y, rect.width, h), UvRect(tex, 0, 0, tex.width, h), alpha);
+            float h = Mathf.Min(tile, rect.height - y);
+            DrawTexUv(tex, new Rect(rect.x, rect.y + y, rect.width, h),
+                UvRect(tex, 0, 0, tex.width, h / s), alpha);
         }
     }
 
@@ -569,7 +579,9 @@ public class LoginFlow : MonoBehaviour
         float total = 0f;
         var root = WzAssets.Node("wz://" + path);
         if (root != null)
-            for (int i = 0; ; i++)
+            // 帧号从 0 递增，缺号即结束；2048 只是「万一 Get 对越界仍返回非空」时的保险，
+            // 不能让它把登录页第一帧卡死（这类死循环在真机上表现为画面钉死 + 单核 100%）。
+            for (int i = 0; i < 2048; i++)
             {
                 var node = root.Get(i.ToString());
                 if (node == null) break;
@@ -843,10 +855,32 @@ public class LoginFlow : MonoBehaviour
         PlayerPrefs.Save();
     }
 
+    // 源端 UI/Login.img/Title/BtNew：GMS 原版是打开官网注册页（字符串池 0:
+    // http://passport.nexon.net/?PART=/Registration/AgeCheck）。北斗是登录即注册，
+    // 所以这里只提示正确入口，不能直接弹性别框——那时账号还不存在。
     void NewAccount()
     {
+        status = "输入想要的账号和密码，点“连接”会自动注册";
+        focusAccount = true;
+    }
+
+    // —————————————————— 新账号确认 → 性别 ——————————————————
+
+    const string NewAccountImage = "6";   // 可以使用的账号。确定要用这个账号，请按下“确定”按钮。
+
+    void ConfirmNewAccount()
+    {
+        newAccountOpen = false;
         newGender = Mathf.Clamp(PlayerPrefs.GetInt("login_new_gender", 0), 0, 1);
         genderOpen = true;
+    }
+
+    void CancelNewAccount()
+    {
+        // 账号已经在服务端建出来了（gender=10），下次连接还会走到这一步，不会丢号。
+        newAccountOpen = false;
+        pendingNewAccount = null;
+        status = "";
     }
 
     void ConfirmNewGender()
@@ -854,6 +888,18 @@ public class LoginFlow : MonoBehaviour
         PlayerPrefs.SetInt("login_new_gender", newGender);
         PlayerPrefs.Save();
         genderOpen = false;
+
+        var res = pendingNewAccount;
+        pendingNewAccount = null;
+        if (res != null)
+        {
+            // 源端 SetGenderHandler：写 accounts.gender 后重发 LOGIN_STATUS 成功包，客户端接着走选区。
+            // 这里会话还没 BeginSession，必须用包里带回来的 accountId（单参重载此时是 0，会静默失败）。
+            if (!GameSession.SetGender(res.accountId, newGender))
+                Debug.LogWarning("[Login] SetGender 失败；账号仍是未选性别");
+            EnterWorldSelect(res);
+            return;
+        }
         account = ""; password = ""; status = "输入新账号和密码，点“连接”将自动注册";
         focusAccount = true;
     }
@@ -873,7 +919,7 @@ public class LoginFlow : MonoBehaviour
         }
 
         var res = GameSession.Login(account.Trim(), password);
-        Debug.Log("[Login] account=" + account.Trim() + " code=" + res.code);
+        Debug.Log("[Login] account=" + account.Trim() + " code=" + res.code + " gender=" + res.gender);
         if (res.code != LoginResultCode.Ok)
         {
             ShowAlert(res);
@@ -887,6 +933,22 @@ public class LoginFlow : MonoBehaviour
             PlayerPrefs.Save();
         }
 
+        // 新账号（gender=10）先显示开源声明，确认后选择性别，再继续选区。
+        if (res.gender == AccountsDao.GenderUnset)
+        {
+            status = "";
+            pendingNewAccount = res;
+            noticeScroll = 0f;
+            eulaBarGrab = -1f;
+            noticeOpen = true;
+            return;
+        }
+
+        EnterWorldSelect(res);
+    }
+
+    void EnterWorldSelect(LoginResponse res)
+    {
         status = "";
         GameSession.BeginSession(res.accountId, res.accountName, 0, 1);
         worlds = GameSession.ServerList().worlds;
@@ -1279,62 +1341,234 @@ public class LoginFlow : MonoBehaviour
         if (Button(UI + "Gender/BtNo", R(857, 310, 75, 32), true, true)) genderOpen = false;
     }
 
-    const float NoticeX = 435f, NoticeY = 0f, NoticeW = 403f, NoticeH = 414f;
-    const float NoticeViewX = 469f, NoticeViewY = 44f, NoticeViewW = 322f, NoticeViewH = 308f;
-    const float NoticeContentH = 370f;
+    // 源端 Notice 对话框：362×219 纸面 + Notice/text/<n>（图片自带中文字）+ BtYes/BtNo。
+    // 新号第一次点「连接」会先弹这一张（text/6「可以使用的账号…」），点确定才进性别选择。
+    void DrawNewAccountDialog()
+    {
+        UiKit.Fill(new Rect(0, 0, UiKit.W, UiKit.H), new Color(0f, 0f, 0f, 0.45f));
+        float x = DW / 2 - 181, y = DH / 2 - 109;
+        DrawAt(UI + "Notice/backgrnd/0", x, y);
+        if (Has(UI + "Notice/text/" + NewAccountImage))
+            DrawAt(UI + "Notice/text/" + NewAccountImage, x + 119, y + 21);
+        else
+            Label(R(x + 121, y + 48, 219, 78),
+                "可以使用的账号。\n确定要用这个账号，请按下“确定”按钮。", _alert);
+        // 单按钮版本 x=143 正好居中；两个按钮并排时从 106 起才是居中。
+        if (Button(UI + "Notice/BtYes", R(x + 106, y + 168, 75, 32), true, true)) ConfirmNewAccount();
+        if (Button(UI + "Notice/BtNo", R(x + 181, y + 168, 75, 32), true, true)) CancelNewAccount();
+    }
+
+    // —————————————————— 弹窗：开源声明（源端 EULA） ——————————————————
+    //
+    // 素材：UI/Login.img/TOS/0 —— 431×426 的整张卷轴（origin 215,213，屏幕正中），
+    //       卷轴右下角本来就画好了两块橙色按钮底板，确定/取消直接压在上面（266/340, 374）。
+    // 文案：String/EULA.img/EULA/Text00…（#e/#n 开粗体，正文里的换行是字面 "\r\n" 四个字符）。
+    // 滚动条：UI/Basic.img/VScr6 —— 12×12 箭头与单张滑块，只有底纹平铺。
+    const float EulaX = 425f, EulaY = 147f;      // 640-215, 360-213
+    const float EulaViewX = 36f, EulaViewY = 41f, EulaViewW = 353f, EulaViewH = 308f;
+    const float EulaBarX = 390f, EulaBarY = 40f, EulaBarH = 317f;
+    const float EulaLineH = 17f;
+
+    sealed class EulaRun { public string text = ""; public bool bold; public float width; }
+    sealed class EulaLine { public readonly List<EulaRun> runs = new List<EulaRun>(); public float width; }
+
+    float EulaMaxScroll => Mathf.Max(0f, (eulaLines != null ? eulaLines.Count : 0) * EulaLineH - EulaViewH);
+
+    float EulaCharWidth(char c)
+    {
+        if (c == ' ') return 4f;
+        if (eulaCharWidths.TryGetValue(c, out float w)) return w;
+        w = _eula.CalcSize(new GUIContent(c.ToString())).x / Mathf.Max(0.001f, s);
+        eulaCharWidths[c] = w;
+        return w;
+    }
+
+    // 源端正文是按像素宽折行的：中文没有词边界，按字折才是原效果。
+    void BuildEulaLayout()
+    {
+        if (eulaLines != null && Mathf.Approximately(eulaLayoutScale, s)) return;
+        eulaLayoutScale = s;
+        eulaCharWidths.Clear();
+        eulaLines = new List<EulaLine>();
+
+        var sb = new System.Text.StringBuilder();
+        var root = WzAssets.Node("wz://String/EULA.img/EULA");
+        if (root != null)
+            // 上限只是保险：Text 必须用 null 判缺失（默认空串会让循环永远读不完，
+            // 首次进登录页就 100% CPU、画面钉在加载页）。节点编号是 Text00/Text01…
+            for (int i = 0; i < 2048; i++)
+            {
+                // Text 默认回退为空串；这里必须用 null 区分缺失节点，否则读完后会无限循环。
+                var t = root.Text("Text" + i.ToString("00"), null);
+                if (t == null) break;
+                sb.Append(t);
+            }
+        string text = sb.ToString().Replace(@"\\r\\n", "\n").Replace(@"\r\n", "\n");
+
+        var line = new EulaLine();
+        var run = new EulaRun();
+        float runW = 0f;
+        bool bold = false;
+
+        void FlushRun()
+        {
+            if (run.text.Length == 0) return;
+            run.width = runW;
+            line.runs.Add(run);
+            line.width += runW;
+            run = new EulaRun { bold = bold };
+            runW = 0f;
+        }
+        void NewLine()
+        {
+            FlushRun();
+            eulaLines.Add(line);
+            line = new EulaLine();
+        }
+
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            // 换行在 WZ 里是字面的反斜杠+r、反斜杠+n 四个字符，不是控制字符。
+            if (c == '\\' && i + 3 < text.Length && text[i + 1] == 'r' && text[i + 2] == '\\' && text[i + 3] == 'n')
+            { NewLine(); i += 3; continue; }
+            if (c == '\r' || c == '\n') { NewLine(); continue; }
+            if (c == '#')
+            {
+                char m = i + 1 < text.Length ? text[i + 1] : ' ';
+                if (m == 'e' || m == 'n') { FlushRun(); bold = m == 'e'; i++; continue; }
+            }
+            float w = EulaCharWidth(c);
+            if (line.width + runW + w > EulaViewW && line.width + runW > 0f) NewLine();
+            // run.bold 只在「这一串字还没开始写」时改：中途变粗要先把前一段收掉。
+            if (run.text.Length == 0) run.bold = bold;
+            else if (run.bold != bold) FlushRun();
+            run.text += c;
+            runW += w;
+        }
+        FlushRun();
+        if (line.runs.Count > 0) eulaLines.Add(line);
+    }
 
     void DrawNoticeDialog()
     {
-        // 源端是客户端自绘的长卷，这里只用 IMG 像素拼：Gender 卷轴的空纸面 + NoticeScroll1 的卷轴头
-        // + Basic.img 的滚动条 + Gender 的确定/取消按钮。
-        DrawSliced(Tex(UI + "Gender/scroll/0/1"), R(NoticeX, NoticeY + 34, NoticeW, NoticeH - 34),
-            new Rect(8, 24, 338, 170), 6, 6, 10);
-        DrawTex(Tex(UI + "NoticeScroll1/0"), R(NoticeX - 6, NoticeY, NoticeW + 24, 38));
+        BuildEulaLayout();
+        float max = EulaMaxScroll;
+        noticeScroll = max <= 0f ? 0f : Mathf.Clamp01(noticeScroll);
+        float scrollPx = noticeScroll * max;
 
-        Rect view = R(NoticeViewX, NoticeViewY, NoticeViewW, NoticeViewH);
+        UiKit.Fill(new Rect(0, 0, UiKit.W, UiKit.H), new Color(0f, 0f, 0f, 0.45f));
+        // TOS/0 的 origin 是 (215,213)：按中心贴图，卷轴正好落在 1280×720 正中。
+        DrawAt(UI + "TOS/0", DW / 2f, DH / 2f, true);
+
+        Rect view = R(EulaX + EulaViewX, EulaY + EulaViewY, EulaViewW, EulaViewH);
         GUI.BeginGroup(view);
-        float top = -noticeScroll * (NoticeContentH - NoticeViewH) * s;
-        Label(new Rect(0, top + 9 * s, view.width, 22 * s), "《BeiDou》开源声明", _noticeTitle);
-        Label(new Rect(0, top + 44 * s, view.width, 44 * s),
-            "本项目为开源项目，所有商业行为与BeiDou团队无关，非商业用途均可免费下载使用，请谨防受骗。", _noticeText);
-        Label(new Rect(0, top + 104 * s, view.width, 22 * s),
-            "开源项目地址：https://github.com/BeiDouMS/BeiDou-Server", _noticeUrl);
-        Label(new Rect(0, top + 278 * s, view.width, 22 * s), "- BeiDouMS开发团队", _noticeText);
-        Label(new Rect(0, top + 299 * s, view.width, 22 * s), "- 2024年05月22日", _noticeText);
+        float y = -scrollPx * s;
+        foreach (var ln in eulaLines)
+        {
+            float x = 0f;
+            foreach (var run in ln.runs)
+            {
+                var rect = new Rect(x * s, y, run.width * s + 2f * s, EulaLineH * s);
+                GUI.Label(rect, run.text, _eula);
+                // 没有独立的粗体字库：#e 同一串字右移 0.8px 再画一遍，视觉上等于加粗。
+                if (run.bold) GUI.Label(new Rect(rect.x + 0.8f * s, rect.y, rect.width, rect.height), run.text, _eula);
+                x += run.width;
+            }
+            y += EulaLineH * s;
+        }
         GUI.EndGroup();
 
-        // 滚动条在源端止于按钮上方；拉到底也不能压住“取消”的字。
-        float barX = NoticeX + NoticeW - 24, barY = NoticeY + 37, barH = 320;
-        bool onBar = R(barX, barY, 12, barH).Contains(Pointer.Pos);
+        // 输入只在 Update 里读（见 HandleEulaScrollInput 的注释）；这里只画。
+        DrawEulaScrollBar(scrollPx, max);
 
-        bool read = noticeScroll >= 0.985f;
-        if (!onBar && Button(UI + "Gender/BtYes", R(691, 377, 75, 32), read, true))
+        // 源端要求「下滑页面到底部方可点击确认」：没到底时确定是 disabled 贴图，点了也不理。
+        bool read = max <= 0.5f || noticeScroll >= 0.995f;
+        if (Button(UI + "BtOk", R(EulaX + 266, EulaY + 374, 75, 32), read, true))
         {
-            PlayerPrefs.SetInt("login_notice_ok", 1);
-            PlayerPrefs.Save();
-            noticeOpen = false;
+            AcceptNotice();
         }
-        if (!onBar && Button(UI + "Gender/BtNo", R(766, 377, 75, 32), true, true)) noticeOpen = false;
-
-        // 源端滚动条压在取消按钮上，后画才能露出底部的滑块/箭头。
-        DrawNoticeBar(barX, barY, barH);
+        if (Button(UI + "BtCancel", R(EulaX + 340, EulaY + 374, 75, 32), true, true)) CancelNotice();
     }
 
-    void DrawNoticeBar(float x, float y, float h)
+    void AcceptNotice()
     {
-        const string root = "UI/Basic.img/VScr6/enabled/";
-        const float w = 12f, thumbH = 20f;
-        DrawTexTiledV(Tex(root + "base"), R(x, y + 12, w, h - 24));
-        DrawTex(Tex(root + "prev0"), R(x, y, 12, 12));
-        DrawTex(Tex(root + "next0"), R(x, y + h - 12, 12, 12));
-        DrawTex(Tex(root + "thumb0"), R(x, y + 12 + noticeScroll * (h - 24 - thumbH), w, thumbH));
+        noticeOpen = false;
+        eulaBarGrab = -1f;
+        ConfirmNewAccount();
+    }
+
+    void CancelNotice()
+    {
+        noticeOpen = false;
+        eulaBarGrab = -1f;
+        CancelNewAccount();
+    }
+
+    // 滚轮/键盘只在 Update 处理；触摸负责移动虚拟鼠标，不额外驱动正文滚动。
+    void HandleEulaScrollInput()
+    {
+        float max = EulaMaxScroll;
+        if (max <= 0f) { noticeScroll = 0f; return; }
+        float scrollPx = Mathf.Clamp01(noticeScroll) * max;
+        float delta = 0f;
+        float wheel = Input.mouseScrollDelta.y;
+        if (wheel != 0f) delta -= wheel * 60f;
+        if (Input.GetKeyDown(KeyCode.DownArrow)) delta += EulaLineH;
+        if (Input.GetKeyDown(KeyCode.UpArrow)) delta -= EulaLineH;
+        if (Input.GetKeyDown(KeyCode.PageDown)) delta += EulaViewH * 0.9f;
+        if (Input.GetKeyDown(KeyCode.PageUp)) delta -= EulaViewH * 0.9f;
+        if (delta != 0f) noticeScroll = Mathf.Clamp01((scrollPx + delta) / max);
+    }
+
+    void DrawEulaScrollBar(float scrollPx, float max)
+    {
+        const float w = 12f;
+        bool enabled = max > 0.5f;
+        string root = "UI/Basic.img/VScr6/" + (enabled ? "enabled/" : "disabled/");
+        float x = EulaX + EulaBarX, y = EulaY + EulaBarY, h = EulaBarH;
+        Rect up = R(x, y, w, 12), down = R(x, y + h - 12, w, 12);
         Rect track = R(x, y + 12, w, h - 24);
-        if (Pointer.Down && track.Contains(Pointer.Pos))
-            noticeScroll = Mathf.Clamp01(Mathf.InverseLerp(track.y, track.yMax, Pointer.Pos.y));
-        if (Clicked(track, true, true))
-            noticeScroll = Mathf.Clamp01(Mathf.InverseLerp(track.y, track.yMax, Pointer.Pos.y));
-        if (Clicked(R(x - 4, y, w + 8, 14), true, true)) noticeScroll = Mathf.Clamp01(noticeScroll - 0.2f);
-        if (Clicked(R(x - 4, y + h - 14, w + 8, 14), true, true)) noticeScroll = Mathf.Clamp01(noticeScroll + 0.2f);
+
+        DrawTexTiledV(Tex(root + "base"), track);
+        if (!enabled)
+        {
+            DrawTex(Tex(root + "prev"), R(x, y, w, 12));
+            DrawTex(Tex(root + "next"), R(x, y + h - 12, w, 12));
+            return;
+        }
+
+        bool upHot = up.Contains(Pointer.Pos), downHot = down.Contains(Pointer.Pos);
+        DrawTex(Tex(root + (upHot ? "prev1" : "prev0")), R(x, y, w, 12));
+        DrawTex(Tex(root + (downHot ? "next1" : "next0")), R(x, y + h - 12, w, 12));
+
+        // 原端 0x4d7b74：轨道行程减去 thumb 原图高度，单张绘制，不按正文比例平铺。
+        float thumbH = 12f * s;
+        float thumbY = track.y + (track.height - thumbH) * (max <= 0f ? 0f : Mathf.Clamp01(scrollPx / max));
+        Rect thumb = new Rect(track.x, thumbY, track.width, thumbH);
+
+        DrawTex(Tex(root + (eulaBarGrab >= 0f ? "thumb1" : "thumb0")), thumb);
+
+        if (Clicked(up, true, true)) noticeScroll = Mathf.Clamp01((scrollPx - 5f) / max);
+        if (Clicked(down, true, true)) noticeScroll = Mathf.Clamp01((scrollPx + 5f) / max);
+
+        if (Event.current.type == EventType.Repaint) HandleEulaThumbDrag(thumb, track);
+
+        // 原端 0x4d8189：轨道翻页步长 max(16, range/16)，正文每单位滚动 5px。
+        if (Clicked(track, true, true) && !thumb.Contains(Pointer.Pos))
+        {
+            float page = Mathf.Max(16, (Mathf.CeilToInt(max / 5f) + 1) / 16) * 5f;
+            noticeScroll = Mathf.Clamp01((scrollPx + (Pointer.Pos.y < thumb.y ? -page : page)) / max);
+        }
+    }
+
+    void HandleEulaThumbDrag(Rect thumb, Rect track)
+    {
+        if (eulaBarGrab < 0f && Pointer.Pressed && thumb.Contains(Pointer.PressPosition))
+            eulaBarGrab = Pointer.PressPosition.y - thumb.y;
+        if (!Pointer.Down) eulaBarGrab = -1f;
+        if (eulaBarGrab >= 0f && track.height > thumb.height)
+            noticeScroll = Mathf.Clamp01((Pointer.Pos.y - eulaBarGrab - track.y) / (track.height - thumb.height));
     }
 
     // —————————————————— 建号：职业 ——————————————————

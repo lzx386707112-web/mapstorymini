@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 // Source UseItemHandler and dedicated equipment / chair / cash handlers use distinct routes.
 public static class NativeInventoryActions
@@ -7,6 +8,39 @@ public static class NativeInventoryActions
     {
         string error = TryUse(itemId, inventoryPosition);
         if (!string.IsNullOrEmpty(error)) BottomBar.Toast(error);
+    }
+
+    // StatEffect: item time is milliseconds; Alchemist scales duration by y.
+    static bool UseStatPotion(int id,PlayerCtrl player)
+    {
+        var spec=NativeItemSource.Node(id)?.Get("spec");
+        if (spec==null || spec.Int("time")<=0) return false;
+        string[] fields={"pad","pdd","mad","mdd","acc","eva","speed","jump","expBuff","barrier"};
+        string[] keys={"WATK","WDEF","MATK","MDEF","ACC","AVOID","SPEED","JUMP","EXP_BUFF","AURA"};
+        var allowed=new HashSet<string>(fields) { "time","hp","mp","hpR","mpR" };
+        foreach (var child in spec.Children) if (!allowed.Contains(child.Name)) return false;
+        var stats=new Dictionary<string,int>();
+        if (id==2022001 || id==2022186) stats["MAP_PROTECTION"]=1;
+        else if (id==2022040) stats["MAP_PROTECTION"]=2;
+        for (int i=0;i<fields.Length;i++) { int value=i<8 ? (short)spec.Int(fields[i]) : spec.Int(fields[i]); if (value!=0) stats[keys[i]]=value; }
+        if (stats.Count==0) return false;
+        int duration=spec.Int("time"),hp=(short)spec.Int("hp"),mp=(short)spec.Int("mp");
+        int job=Profile.JobId;
+        int alchemist=job/10==41 ? 4110000 : job/10==141 ? 14110003 : 0;
+        int level=alchemist==0 ? 0 : SkillProgress.LevelOf(alchemist);
+        if (level>0)
+        {
+            var row=SkillBook.Get(alchemist)?.Level(level);
+            duration=(int)(duration*(Art.Int(row,"y")/100.0));
+            hp=(int)(hp*(Art.Int(row,"x")/100.0)); mp=(int)(mp*(Art.Int(row,"x")/100.0));
+        }
+        int hpRate=(int)(player.hpMax*(spec.Int("hpR")/100.0));
+        if (player.GetComponent<NativeMobDebuffs>()?.Has(133)==true) { hp/=2; hpRate/=2; }
+        if (!Profile.RemoveItem(id,1)) return false;
+        player.hp=Mathf.Clamp(player.hp+hp+hpRate,0,player.hpMax);
+        player.mp=Mathf.Clamp(player.mp+mp+(int)(player.mpMax*(spec.Int("mpR")/100.0)),0,player.mpMax);
+        NativeBuffs.For(player).ApplyItem(id,stats,duration,NativeBuffs.Now);
+        GameSession.SaveToDb(); return true;
     }
 
     // null means handled; unsupported routes retain the item.
@@ -35,6 +69,7 @@ public static class NativeInventoryActions
             if (!string.IsNullOrEmpty(spec?.Text("script")))
                 return NpcSession.UseItem(itemId) != null ? null : "物品脚本尚未接入";
             if (NpcSession.UseRestorative(itemId)) return null;
+            if (UseStatPotion(itemId,player)) return null;
             return "该消耗品的特殊使用功能尚未接入";
         }
         if (itemId / 10000 == 301) return "椅子使用功能尚未接入";

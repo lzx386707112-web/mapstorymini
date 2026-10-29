@@ -24,6 +24,12 @@ public static class NativeViewportChecks
         Run();
     }
 
+    public static void RunDialogLayout()
+    {
+        SessionState.SetBool("DialogLayoutChecks", true);
+        Run();
+    }
+
     public static void RunMarkers()
     {
         SessionState.SetBool("NpcMarkerChecks", true);
@@ -246,6 +252,46 @@ public class NativeViewportProbe : MonoBehaviour
         Debug.Log("[NpcMarkerChecks] PASS " + passed + " checks; original markers rendered for 2004, 12100 and training delivery NPC 9101003");
     }
 
+    IEnumerator DialogLayoutFlow()
+    {
+        foreach (var size in new[] { new Vector2Int(1280, 720), new Vector2Int(2400, 1080), new Vector2Int(800, 600) })
+        {
+            HudChecks.SetGameViewSize(size.x, size.y);
+            yield return new WaitForSecondsRealtime(.5f);
+            int selected = -1;
+            var menu = NpcSession.Choose(9101003, NpcField.DefaultTalk(9101003), index => selected = index);
+            menu.Dialog.Content.Selections.Add(new DialogSelection { Index = -1, HeaderArt = "list1" });
+            menu.Dialog.Content.Selections.Add(new DialogSelection { Index = 7, Text = "彼特的打猎法。" });
+            npcOverview = true;
+            yield return Step(() => PointerAt(new Vector2(-100, -100)));
+            yield return new WaitForEndOfFrame();
+            var menuShot = ScreenCapture.CaptureScreenshotAsTexture();
+            File.WriteAllBytes("/tmp/npc-layout-" + size.x + ".png", menuShot.EncodeToPNG()); Destroy(menuShot);
+            yield return Step(() => {
+                float scale = NpcDialogUi.WindowScale;
+                float contentH = DialogFlow.ContentHeight(menu.Dialog.Content, 529) + 24;
+                float height = DialogFlow.BodyHeight(contentH) + 86;
+                var bottomRight = new Vector2((UiKit.W + 529 * scale) / 2, (UiKit.H + height * scale) / 2);
+                var pointer = bottomRight - new Vector2(55, 68) * scale;
+                PointerAt(pointer, clicked: true);
+                var matrix = GUI.matrix;
+                NpcDialogUi.Draw();
+                Check(selected == 7, "scaled menu Next confirms actual nonzero selection " + size);
+                Check(Pointer.Pos == pointer && GUI.matrix == matrix, "dialog restores pointer and GUI matrix " + size);
+            });
+            NpcSession.CloseActive(); npcOverview = false;
+        }
+        HudChecks.SetGameViewSize(1280, 720);
+        yield return new WaitForSecondsRealtime(.5f);
+        yield return Step(() => {
+            var content = DialogText.Parse("#L7#选项#l");
+            float height = DialogFlow.ContentHeight(content, 529);
+            Check(height == DialogFlow.ContentHeight(DialogText.Parse("#L7#选项#l\r\n"), 529),
+                "trailing newline must not inflate native content height");
+        });
+        Debug.Log("[DialogLayoutChecks] PASS " + passed + " checks; 3 viewport screenshots /tmp/npc-layout-*.png");
+    }
+
     IEnumerator NpcFlow()
     {
         var player = GameLoop.I.player;
@@ -366,8 +412,9 @@ public class NativeViewportProbe : MonoBehaviour
             var dialog = NpcSession.Active.Dialog;
             float contentHeight = DialogFlow.ContentHeight(dialog.Content, 529, false) + 18;
             float height = DialogFlow.BodyHeight(contentHeight) + 86;
-            var bottomRight = new Vector2((UiKit.W + 529) / 2, (UiKit.H + height) / 2);
-            PointerAt(bottomRight - new Vector2(31,17), clicked:true);
+            float scale = NpcDialogUi.WindowScale;
+            var bottomRight = new Vector2((UiKit.W + 529 * scale) / 2, (UiKit.H + height * scale) / 2);
+            PointerAt(bottomRight - new Vector2(31,17) * scale, clicked:true);
             NpcDialogUi.Draw();
         });
         npcOverview = false;
@@ -398,6 +445,13 @@ public class NativeViewportProbe : MonoBehaviour
         camera.backgroundColor = new Color32(75, 90, 100, 255);
         try
         {
+            if (SessionState.GetBool("DialogLayoutChecks", false))
+            {
+                SessionState.SetBool("DialogLayoutChecks", false);
+                yield return DialogLayoutFlow();
+                EditorApplication.Exit(0);
+                yield break;
+            }
             if (SessionState.GetBool("NpcMarkerChecks", false))
             {
                 SessionState.SetBool("NpcMarkerChecks", false);

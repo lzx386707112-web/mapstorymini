@@ -74,13 +74,16 @@
   import { ValidatedError } from '@arco-design/web-vue/es/form/interface';
   import { useStorage } from '@vueuse/core';
   import { useUserStore } from '@/store';
-  import useLoading from '@/hooks/loading';
   import type { LoginData } from '@/api/user';
   import { useI18n } from 'vue-i18n';
 
   const router = useRouter();
   const errorMessage = ref('');
-  const { loading, setLoading } = useLoading();
+  // 刻意不用 hooks/loading：那个 hook 在 setLoading(false) 时会顺手调一次
+  // /auth/v1/refreshToken。登录按钮的 finally 正好在路由守卫取 /account/v1/info 的同一
+  // 时刻触发续期，两个请求带着同一个 token 并发，一旦续期先落地就会把 info 打成 401
+  // （「欢迎使用」和「登录已过期」同时弹出、停在登录页）。登录页不需要续期。
+  const loading = ref(false);
   const userStore = useUserStore();
   const { t } = useI18n();
 
@@ -115,7 +118,7 @@
   }) => {
     if (loading.value) return;
     if (!errors) {
-      setLoading(true);
+      loading.value = true;
       try {
         await userStore.login(values as LoginData);
         const { redirect, ...othersQuery } = router.currentRoute.value.query;
@@ -137,7 +140,7 @@
         if ((err as Error).name === 'TypeError')
           errorMessage.value = '错误的请求';
       } finally {
-        setLoading(false);
+        loading.value = false;
       }
     }
   };

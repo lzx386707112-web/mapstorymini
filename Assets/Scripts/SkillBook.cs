@@ -35,13 +35,17 @@ public sealed class SkillData
     }
 
     public bool IsAttack => type == "attack";
-    public bool IsBuff => type == "buff";
+    public bool IsBuff => type == "buff" && SkillBook.SpecialKind(id)==null;
     public bool IsSummon => type == "summon";
-    public bool IsPassive => type == "passive";
+    public bool IsPassive => type == "passive" && !SkillSystem.InstantSelfSkill(id) && SkillBook.SpecialKind(id)==null;
 }
 
 public static class SkillBook
 {
+    // StatEffect.isCrash/loadFromData: all three share SEAL_SKILL + debuffMob.
+    public static string SpecialKind(int id) => id==1111007 || id==1211009 || id==1311007 ? "Dispel" :
+        id==4121003 || id==4221003 ? "Attack" :
+        id==4111006 || id==14101004 || id==11101005 ? "FlashJump" : null;
     public static bool Ready { get; private set; }
 
     static readonly Dictionary<int, SkillData> byId = new Dictionary<int, SkillData>();
@@ -123,7 +127,37 @@ public static class SkillBook
     public static SkillData Get(int id)
     {
         Ensure();
-        return byId.TryGetValue(id, out var d) ? d : null;
+        if (byId.TryGetValue(id,out var d)) return d;
+        // JobTree only includes its exported job list. Hidden/Aran/GM source
+        // skills still need their original level rows for combat/event consumers.
+        var node=WzAssets.FileRoot("Skill/"+(id/10000).ToString("D3")+".img")?.Get("skill/"+id.ToString("D7"));
+        var levels=node?.Get("level");
+        if (levels==null) return null;
+        var text=WzAssets.FileRoot("String/Skill.img")?.Get(id.ToString("D7"));
+        d=new SkillData { id=id,job=id/10000,name=text?.Text("name") ?? "",desc=text?.Text("desc") ?? "",
+            masterLevel=node.Int("masterLevel"),icon=node.Get("icon")!=null ? "wz://Skill/"+(id/10000).ToString("D3")+".img/skill/"+id.ToString("D7")+"/icon" : "",type="passive" };
+        foreach (var level in levels.Children)
+        {
+            if (!int.TryParse(level.Name,out int number)) continue;
+            var row=new Dictionary<string,object>();
+            foreach (var field in level.Children)
+            {
+                var value=field.TryResolve();
+                if (value==null) continue;
+                if (value.Kind=="Shape2D#Vector2D") row[field.Name]=new List<object>{value.X,value.Y};
+                else if (value.Value!=null && value.Kind!="Canvas") row[field.Name]=value.Value;
+            }
+            d.levels[number.ToString()]=row;d.maxLevel=Mathf.Max(d.maxLevel,number);
+            if (row.ContainsKey("mad")) d.magic=true;
+        }
+        if (d.maxLevel==0) return null;
+        var first=d.Level(1);
+        if (node.Get("summon")!=null) d.type="summon";
+        else if (first.ContainsKey("damage") || first.ContainsKey("fixdamage") || first.ContainsKey("mad") || first.ContainsKey("attackCount")) d.type="attack";
+        else if (first.ContainsKey("time") || first.ContainsKey("prop")) d.type="buff";
+        d.noName=string.IsNullOrEmpty(d.name);if(d.noName)d.name=id.ToString();
+        byId[id]=d;
+        return d;
     }
 
     public static int MaxLevelOf(int id)
@@ -190,11 +224,12 @@ public static class SkillBook
         var d = Get(id);
         var row = d?.Level(level);
         if (row == null) return null;
-        string kind = d.IsSummon ? "Summon" : d.IsBuff ? "Buff" : d.IsPassive ? "Passive" : "Attack";
+        string kind = SpecialKind(id) ?? (d.IsSummon ? "Summon" : d.IsBuff ? "Buff" : d.IsPassive ? "Passive" : "Attack");
         var skill = new Dictionary<string, object>
         {
             { "id", d.id }, { "kind", kind }, { "magic", d.magic },
-            { "element", "" }, { "summonInterval", 1f },
+            { "element", WzAssets.FileRoot("Skill/" + (id / 10000).ToString("D3") + ".img")
+                .Get("skill/" + id.ToString("D7"))?.Text("elemAttr") ?? "" }, { "summonInterval", 1f },
         };
         var data = new Dictionary<string, object>(row);
         data["level"] = level;
@@ -451,7 +486,7 @@ public static class QuickSlots
         var sys = player.GetComponent<SkillSystem>();
         if (sys == null) return;
         if (id == 0) { sys.Report("快捷格 " + (slot + 1) + " 是空的（技能窗里拖技能上去）"); return; }
-        bool ok = sys.TryCastSkill(id);
+        bool ok = sys.TryCastBoundSkill(id,Action(slot));
         if (!ok) sys.Report(sys.LastFailure);
     }
 }

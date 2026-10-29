@@ -81,6 +81,12 @@ public partial class SkillSystem
             for (int i = 0; i < hits.Length; i++) hits[i] = p.RollAttack(stats, cast.native);
             captured.Add(new CapturedReplayHit { Target = target, Hits = hits });
         }
+        if (!cast.native.Magic)
+        {
+            var buffs=p.GetComponent<NativeBuffs>();
+            if (IsRangedReplay(cast.native.Id)) buffs?.OnRangedAttack(captured.Count);
+            else buffs?.OnCloseAttack();
+        }
         DamageResult[] template = captured.Count > 0 ? captured[0].Hits : Array.Empty<DamageResult>();
         var field = FindObjectOfType<FieldDirector>();
         var map = field != null ? field.Map : null;
@@ -220,13 +226,9 @@ public partial class SkillSystem
 
     void PlayNativeReplayEffect(int id,Vector2 origin,int facing)
     {
-        string path="Skill/"+(id/10000).ToString("D3")+".img/skill/"+id+"/effect";
-        var node=WzAssets.Node(path);
-        if(node==null)return;
-        bool fixedPosition=node.Int("fix")!=0;
-        nativeReplayEffects.RemoveAll(x=>x==null);
-        var effect=NativeImgAnimation.Spawn(path,fixedPosition?transform.parent:p.transform,origin,
-            p.SortingOrder+(node.Int("z")<0?-1:1),facing>0);
-        if(effect!=null)nativeReplayEffects.Add(effect);
+        string key=NativeSkillVfx.Key(id,Mathf.Max(1,SkillProgress.LevelOf(id)));
+        foreach(var clip in NativeSkillVfx.Parts(key,"effect"))
+            Visual(key,clip.path,origin,facing,NativeSkillVfx.Number(key,clip.path,"fix")!=0?null:p.transform,
+                false,p.SortingOrder+(NativeSkillVfx.Number(key,clip.path,"z")<0?-1:1));
     }
 }

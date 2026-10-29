@@ -42,6 +42,9 @@ public static class CombatRules
         double required = (1.84 + .07 * diff) * NativeCombatData.Int(target,"eva");
         double hitChance = required <= 0 ? 1 : Math.Max(0, Math.Min(1, accuracy / required));
         if (hitRoll >= hitChance) return new DamageResult(0, false);
+        // StatEffect.fixdamage / AbstractDealDamageHandler.getFixDamage:
+        // these skills do not use the absent percentage-damage field.
+        if (skill != null && skill.FixedDamage >= 0) return Resolve(skill.FixedDamage);
         bool dexWeapon = w.kind == WeaponKind.bow || w.kind == WeaponKind.crossbow || w.kind == WeaponKind.gun;
         int main = w.kind == WeaponKind.claw ? a.luk : dexWeapon ? a.dex : a.str;
         int secondary = w.kind == WeaponKind.claw ? a.dex + a.str : dexWeapon ? a.str : a.dex;
@@ -73,13 +76,18 @@ public static class CombatRules
         return 1;
     }
 
-    public static DamageResult Incoming(double attack, CharacterAttributes a, bool magic, int attackerLevel, double roll)
+    public static DamageResult Incoming(double attack, CharacterAttributes a, bool magic, int attackerLevel, double roll,int invincible=0)
     {
         if (double.IsNaN(attack) || attack <= 0) return new DamageResult(0,false);
         double defense = magic ? a.magicDefense : a.weaponDefense;
         double value = attack * System.Math.Max(0,1-.01*System.Math.Max(0,a.level-attackerLevel)) * (.85 + .3 * Math.Max(0,Math.Min(1,roll))) - defense * (magic ? .6 : .5);
+        // 0x7933B2..0x7933E6: physical damage, after defense, before minimum/integer conversion.
+        if (!magic) value=InvincibleDamage(value,invincible);
         return Resolve(Math.Max(1,value),false,int.MaxValue);
     }
+
+    public static double InvincibleDamage(double damage,int percent)
+        => damage-percent*damage*.01;
 
 }
 
@@ -88,6 +96,7 @@ public sealed class SkillRuntimeState
 {
     public double ReadyAt { get; private set; }
     public double Remaining(double now) => Math.Max(0, ReadyAt - now);
+    public void Reset() => ReadyAt=0;
     public bool TryStart(double now, double duration)
     {
         if (double.IsNaN(now) || double.IsNaN(duration) || duration < 0 || Remaining(now) > 0) return false;

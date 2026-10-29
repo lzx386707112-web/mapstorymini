@@ -47,6 +47,13 @@ def collect(server):
             originals[record["source"]] = (raw, record)
             # 与 AbstractScriptManager 一致：中文文件存在就优先，包括空文件。
             effective[relative[:-3]] = (text, record)
+    # 用户授权的截图重建脚本，独立于原端原件，避免同步清理时丢失。
+    for path in sorted((ROOT / "content/script-overrides").rglob("*.js")):
+        relative = path.relative_to(ROOT / "content/script-overrides").as_posix()
+        raw = path.read_bytes()
+        text, encoding = decode(raw)
+        effective[relative[:-3]] = (text, {"source": "screenshot-overrides/" + relative,
+            "sha256": digest(raw), "encoding": encoding, "bytes": len(raw)})
     return originals, effective
 
 

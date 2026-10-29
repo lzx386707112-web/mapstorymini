@@ -14,7 +14,8 @@ namespace Server.Bot
         }
         static int Rounded(float value) => value >= int.MaxValue ? int.MaxValue : value <= int.MinValue ? int.MinValue : (int)Math.Floor((double)value+.5);
         public static Award Calculate(DbStore db,BotPartyService parties,BotActor player,int mobLevel,int mobExp,long totalHp,
-            IReadOnlyDictionary<int,long> damage,float personalRate=1,float partyRate=1)
+            IReadOnlyDictionary<int,long> damage,float personalRate=1,float partyRate=1,
+            int holySymbol=0,bool fullHolySymbol=false,int expIncrease=0,bool expBuff=false,int showdown=0)
         {
             if (player==null || totalHp<=0) return default;
             var party=parties.For(player.id);
@@ -22,7 +23,10 @@ namespace Server.Bot
             if (party==null)
             {
                 damage.TryGetValue(player.id,out dealt);
-                return new Award(Rounded(dealt*((float)mobExp/totalHp)*personalRate),0,dealt>0);
+                float solo=dealt*((float)mobExp/totalHp);
+                solo*=StatusMultiplier(holySymbol,false,fullHolySymbol,showdown); solo*=personalRate;
+                solo+=expIncrease; if (expBuff) solo*=2;
+                return new Award(Rounded(solo),0,dealt>0);
             }
             foreach (var entry in damage)
             {
@@ -46,7 +50,17 @@ namespace Server.Bot
             if (mvp==player.id) share+=(float)GameConfigDao.GetFloat(db,"exp_split_mvp_mod",.2);
             float personal=share*(dealt*((float)mobExp/totalHp));
             float bonus=count>1 ? .05f*count*personal : 0;
-            return new Award(Rounded(personal*personalRate),Rounded(bonus*partyRate*(float)GameConfigDao.GetFloat(db,"party_bonus_exp_rate",1)),true,2);
+            float status=StatusMultiplier(holySymbol,count>1,fullHolySymbol,showdown);
+            personal*=status; personal*=personalRate; personal+=expIncrease;
+            if (expBuff) personal*=2;
+            bonus*=status; bonus*=partyRate; bonus*=(float)GameConfigDao.GetFloat(db,"party_bonus_exp_rate",1);
+            return new Award(Rounded(personal),Rounded(bonus),true,2);
         }
+        public static float StatusMultiplier(int percent,bool sharers,bool full,int showdown)
+        {
+            float status=Symbol(percent,sharers,full);
+            return (float)(status*(1.0+showdown/100.0));
+        }
+        static float Symbol(int percent,bool sharers,bool full) => (float)(1.0+percent/(sharers || full ? 100.0 : 500.0));
     }
 }

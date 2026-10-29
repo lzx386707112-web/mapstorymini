@@ -46,6 +46,11 @@ public static class QuestLogic
     public static bool CanStart(QuestDef q, int npcId) { string _; return CanStart(q, npcId, out _); }
     public static bool CanComplete(QuestDef q, int npcId) { string _; return CanComplete(q, npcId, out _); }
 
+    // NPC 头顶图标与 NPC 任务菜单都用这一套严格口径 —— 已核对原端客户端 CNpc::Update
+    // （BeiDou.exe 6D1779..6D1B10）：它把任务逐个丢给 721163，721163 除了等级上下限/职业/
+    // npc/起止日期，还会在 0x721487 起遍历 Check.img/0/item 并统计背包 + 已装备数量
+    // （0x4282f7 取格子、0x4e7cd0 查已装备、0x5ca785 判装备 id）。源端客户端与服务端
+    // Quest.canStart 的口径是同一套，不存在「客户端只看等级」的捷径。
     public static bool InProgressAt(QuestDef q, int npcId) =>
         q.completeReq.npc == npcId && Profile.QuestStatus(q.id) == PlayerProfileData.QuestStartedState;
 
@@ -178,7 +183,10 @@ public static class QuestLogic
             string key = mobId.ToString();
             int current = Profile.QuestProgressInt(q.id, key);
             if (current >= needed) continue;
+            bool wasReady = CanComplete(q, 0);
             Profile.SetQuestProgress(q.id, key, (current + 1).ToString(), false);
+            QuestAlarm.Progress(q.id);
+            if (!wasReady && CanComplete(q, 0)) QuestNotice.Ready(q.id);
             changed = true;
         }
         if (changed) { Profile.Save(); NpcField.InvalidateMarkers(); }
@@ -187,6 +195,7 @@ public static class QuestLogic
     // 接任务：与 Quest.start 一致 —— 先校验动作，再全部执行，最后置状态。
     public static bool Start(QuestDef q, int npcId, bool applyActions)
     {
+        if (q == null) return false;
         if (applyActions) Apply(q.startAct, q.id);
         Profile.StartQuest(q.id);
         Debug.Log("[Quest] 接取 " + q.id + " " + q.name + " (NPC " + npcId + ")");
@@ -195,11 +204,56 @@ public static class QuestLogic
 
     public static bool Complete(QuestDef q, int npcId, bool applyActions)
     {
+        if (q == null) return false;
         if (applyActions) Apply(q.completeAct, q.id);
         Profile.CompleteQuest(q.id);
+        QuestAlarm.Remove(q.id);
+        QuestNotice.RemoveReady(q.id);
         QuestNotice.Push(q.name);
         Debug.Log("[Quest] 完成 " + q.id + " " + q.name + " (NPC " + npcId + ")");
         return true;
+    }
+
+    // —— Act/1/nextQuest：交完任务后客户端把后继任务的接取对话接在同一个 NPC 上 ——
+    // Quest.complete（Quest.java:336）跑完 completeActs 后，`if (!hasNextQuestAction()) announceUpdateQuest(INFO)`：
+    // 有后继任务时不发 INFO 刷新，因为 NextQuestAction.run（NextQuestAction.java:48）已经发了
+    // PacketCreator.updateQuestFinish(questId, npc, nextQuest)，由客户端当场续开下一条。
+    // 续开的还是「接取对话」，所以 Act/0 的 item 动作一定会跑到——不能像以前那样只改状态，
+    // 否则 1034「好吃的蘑菇棒棒糖」就拿不到妮娜在 Act/0 发的 10 块蘑菇棒棒糖（4031792），
+    // 交付条件（Check/1/item）永远凑不齐。
+    public static QuestDef ChainedNext(QuestActions act, int npcId)
+    {
+        if (act == null || act.nextQuest <= 0) return null;
+        var next = QuestCatalog.Get(act.nextQuest);
+        if (next == null) return null;
+        if (next.startReq.npc > 0 && next.startReq.npc != npcId) return null;   // 同一个 NPC 才续
+        string reason;
+        return CanStart(next, npcId, out reason) ? next : null;                  // 对应 Quest.start 的 canStart
+    }
+
+    // Quest.restoreLostItem（Quest.java:632）→ ItemAction.restoreLostItem（ItemAction.java:308）：
+    // 任务进行中、Act/0 发的任务道具已经不在身上时，按 Check/1 需求数量补足缺口（只补差额，不多给）。
+    // 原端由客户端发 QuestActionHandler case 0（Restore lost item）触发；本工程还没有任务窗的「找回」按钮，
+    // 所以在交付对话开始时补一次，避免任务永久卡死（1034 少了妮娜那 10 块蘑菇棒棒糖就是这种情况）。
+    public static bool RestoreLostItems(QuestDef q)
+    {
+        if (q == null || Profile.QuestStatus(q.id) != PlayerProfileData.QuestStartedState) return false;
+        bool restored = false;
+        for (int i = 0; i < q.completeReq.items.Count; i++)
+        {
+            var need = q.completeReq.items[i];
+            if (need.count <= 0) continue;                       // 「必须没有」那类条件不补
+            int have = Profile.ItemCount(need.item);
+            if (have >= need.count) continue;
+            bool fromStart = false;
+            for (int k = 0; k < q.startAct.items.Count; k++)
+                if (q.startAct.items[k].item == need.item && q.startAct.items[k].count > 0) { fromStart = true; break; }
+            if (!fromStart) continue;                            // 只有「接取时自己发过」的道具才补
+            Profile.AddItem(need.item, need.count - have);
+            Debug.Log("[Quest] 补发任务道具 " + q.id + " 道具 " + need.item + " x" + (need.count - have));
+            restored = true;
+        }
+        return restored;
     }
 
     public static void Apply(QuestActions a, int questId)
@@ -236,14 +290,59 @@ public static class QuestLogic
             var s = a.skills[i];
             if (s.skill > 0 && s.level > 0) SkillProgress.SetLevel(s.skill, s.level);
         }
-
-        if (a.nextQuest > 0) Profile.StartQuest(a.nextQuest);
+        // nextQuest 不在动作层直接改状态：原端是发 updateQuestFinish 让客户端续开接取对话，
+        // 由 NpcSession.BeginDataQuest 收尾时用 ChainedNext 接上，接取仍走完整 Start。
     }
 }
 
 // 任务完成提示（原端 showSpecialEffect(9) + 提示语）
 public static class QuestNotice
 {
+    sealed class ReadyEntry { public int id; public float time; }
+    static readonly List<ReadyEntry> ready = new List<ReadyEntry>();
+    static GUIStyle readyStyle;
+    public static bool HasReady(int id) => ready.Exists(entry => entry.id == id && Time.unscaledTime - entry.time < 31);
+
+    // FadeYesNo type7 (523408): target requirements met, before NPC turn-in.
+    public static void Ready(int id)
+    {
+        RemoveReady(id);
+        ready.Add(new ReadyEntry { id = id, time = Time.unscaledTime });
+    }
+    public static void RemoveReady(int id) => ready.RemoveAll(entry => entry.id == id);
+
+    public static void DrawReady()
+    {
+        ready.RemoveAll(entry => Time.unscaledTime - entry.time >= 31 || !Profile.IsQuestStarted(entry.id));
+        if (ready.Count == 0) return;
+        float scale = BottomBar.S;
+        if (readyStyle == null) readyStyle = new GUIStyle { font = UiKit.Font, clipping = TextClipping.Clip };
+        readyStyle.fontSize = Mathf.RoundToInt(12 * scale);
+        readyStyle.normal.textColor = Color.white;
+        for (int i = 0; i < ready.Count; i++)
+        {
+            var entry = ready[i];
+            float age = Time.unscaledTime - entry.time;
+            var oldColor = GUI.color;
+            GUI.color = new Color(oldColor.r, oldColor.g, oldColor.b, oldColor.a * Mathf.Clamp01(age) * Mathf.Clamp01(31 - age));
+            // Native 800x600: (464,508-5*windowCount), 155x44; retain right/bottom offsets.
+            QuestUi.Begin(new Vector2(UiKit.W - 336 * scale, UiKit.H - (92 + (ready.Count - i) * 5) * scale), scale);
+            QuestUi.Image("FadeYesNo/backgrnd4", 0, 0);
+            QuestUi.Image("FadeYesNo/icon7", 6, (37 - 12) / 2);
+            GUI.Label(QuestUi.Rect(27, 7, 100, 16), "任务完成！", readyStyle);
+            GUI.Label(QuestUi.Rect(27, 20, 100, 16), QuestUi.Fit(QuestCatalog.Get(entry.id)?.name ?? "", 100), readyStyle);
+            bool accept = QuestUi.Button("UI/UIWindow.img/FadeYesNo/BtOK", 136, 7);
+            bool dismiss = QuestUi.Button("UI/UIWindow.img/FadeYesNo/BtCancel", 136, 20);
+            GUI.color = oldColor;
+            if (accept || dismiss)
+            {
+                if (accept) QuestWindow.Select(entry.id);
+                ready.RemoveAt(i);
+                break;
+            }
+        }
+    }
+
     public static string Text { get; private set; }
     static float until;
 
@@ -251,6 +350,14 @@ public static class QuestNotice
     {
         Text = "完成任务：" + questName;
         until = Time.unscaledTime + 2.5f;
+        ShowCompleteEffect();
+    }
+
+    // CUser effect 9 (93806E..938111): player-origin QuestClear, then Game/QuestClear.
+    public static void ShowCompleteEffect()
+    {
+        NativeImgAnimation.ShowInfo("Effect/BasicEff.img/QuestClear");
+        AudioManager.Play("Game/QuestClear", 1f, false);
     }
 
     public static string Active => Time.unscaledTime < until ? Text : null;

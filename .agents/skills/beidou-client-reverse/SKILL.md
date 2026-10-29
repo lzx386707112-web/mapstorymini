@@ -14,22 +14,29 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 当前问题 | 读取记录 |
 | --- | --- |
 | 建号中文名字、长度规则、重名与错误提示 | [角色命名](references/character-name.md) |
+| 登录包序、新账号声明→性别、Notice/TOS/VScr6 素材与坐标、单张滑块与鼠标捕获纠正 | [登录链路与弹窗](references/login-flow.md) |
 | SoloMapling 假人生成、调度、地图索引、迁移缺口、地面掉落权威服务（MapItem/pickupItem/pickItemDrop） | [假人系统](references/solomapling.md) |
-| 文件版本、地址、字符串池、复现工具、反编译陷阱 | [二进制与工具](references/binary-and-tools.md) |
+| 文件版本、地址、字符串池、复现工具（递归下降 `--fn` / 字段映射 `--fields` / 任意 DLL 的 `pe_module.py`）、**先翻 Compat DLL 拿 exe 入口**、反编译陷阱（线性 sweep 会失步） | [二进制与工具](references/binary-and-tools.md) |
 | ijl15/2ijl15 职责、手机用版本差异、分辨率补丁与 Android 适配价值 | [DLL 与手机适配](references/ijl15-mobile-adaptation.md) |
 | 自定义DLL身份、V/VI视频表版本差异、MCV双流/Android解码、Boss标记选片、数字首位/后续位与Miss、伤害皮肤、V/VI回放/雷枪12按、追击/雷枪numeric动作、天气粒子/地面/声音、skillback合同与迁移边界 | [自定义功能 DLL](references/custom-dll-systems.md) |
-| 按键组合、重复权、普通跳/下跳、foothold传送带force/drag、地空积分/x86对照、台阶直角墙脚碰撞、普攻攻速 | [输入与物理](references/input-and-physics.md) |
-| 站立/警戒计时、notAttack训练怪接触豁免、接触受击/冲量/免疫、身体框、多段飘字与尚未对齐的边界 | [角色受击与飘字](references/character-reactions-and-damage.md) |
+| 按键组合、重复权、普通跳/下跳、foothold传送带force/drag、地空积分/x86对照、台阶直角墙脚碰撞、普攻攻速、绳梯左右跳初速/方向门控、二段跳三ID原始冲量与待核门控 | [输入与物理](references/input-and-physics.md) |
+| 站立/警戒计时、notAttack训练怪接触豁免、接触受击/冲量/免疫、身体框、隐身接触过滤、STANCE概率/地图限制、INVINCIBLE物理减伤、多段飘字与尚未对齐的边界 | [角色受击与飘字](references/character-reactions-and-damage.md) |
+| 怪物模板字段与移动分类、攻击info字段与偏移（含按 `type` 分派的 `+0x28` union 布局）、**四种攻击形态的执行内核（矩形持续检测/圆 r+10/弹道逐点/多波位掩码）**、MobSkill.img类型表、放技能触发链/冷却/HP门槛、疾病与反伤、全屏/场景技能节点、召唤与治疗公式 | [怪物技能与攻击](references/monster-skills.md) |
+| 怪物掉落抛物线/悬浮/旋转、金币四档四帧、拾取键范围、700ms弧线拾取与同步移除桥 | [掉落与主动拾取](references/drop-and-pickup.md) |
 | 小地图模式、视口、标记、大地图边框与定位 | [地图窗口](references/map-windows.md) |
 | 商城子窗口、商品列表、坐标与素材 | [现金商城](references/cash-shop.md) |
 | 家族列表、按钮分派、职位、对话框、公告板、Tab | [家族与 Tab](references/guild-and-tabs.md) |
-| Point/Linear 采样、虚拟控制层、已有验证范围 | [渲染与验证](references/rendering-and-validation.md) |
+| Point/Linear 采样、玩家/怪物重叠z顺序与闪烁、虚拟控制层、已有验证范围 | [渲染与验证](references/rendering-and-validation.md) |
 | 哪些 UI 尚未替换、原端与移动适配的区别 | [UI 迁移审计](references/ui-audit.md) |
 | 底栏 71 高分组、11 个按钮坐标、通知槽、客户区 578 | [底栏布局](references/statusbar-layout.md) |
-| 相机 VR、分辨率补丁、背景滚动；技能窗已定位函数 | [地图与技能窗入口](references/map-and-skill-window.md) |
+| 相机 VR、分辨率补丁、背景滚动；技能窗、ID施放表现与升级动画迁移 | [地图与技能窗入口](references/map-and-skill-window.md) |
+| 蜗牛投掷术level下ball/hit、全技能节点/UOL/等级缓存、scalar动作、固定伤害、按住/蓄力原端分类与松键/持续射击时序及迁移缺口 | [技能视觉节点与公共解析](references/skill-visual-nodes.md) |
+| 全技能/地图/怪物节点枚举、召唤自身帧与攻击框、HP消耗/元素、链接图规则/刷怪间隔、选敌身体框、地图进场脚本合同与未迁移边界 | [玩法节点覆盖](references/gameplay-node-coverage.md) |
+| 右上角辅助技能状态栏、32px 布局、剩余时间遮罩与迁移缺口 | [临时状态栏](references/temporary-stat-view.md) |
 | 鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义 | [UI 拖动语义](references/ui-drag-and-drop.md) |
 | NPC 对话窗口精确布局/字体/按钮、VScr4、`#L` 图文、sendPrev 上一页+确定/对话键任务菜单与接受页推进、灯泡 autoStart/日期筛选、NPC进行中QuestIcon1/stop对白与完成条件击杀计数、截图问候入口/交付奖励10000→4→1、fieldType82青苹果外观、建号路线与远程任务脚本 | [NPC 对话窗口](references/npc-dialog.md) |
-| 传送门 pt 触发方式、NPC 头顶名字锚点、聊天气泡九宫格与时长 | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |
+| 任务三页签/详情summary/原端Tab2布局、任务告知、达成目标FadeYesNo红气泡、QuestClear及用户授权截图重建训练任务 | [任务窗口与告知](references/quest-window-and-alarm.md) |
+| 传送门 pt 触发方式、NPC 头顶名字锚点、聊天气泡九宫格与时长、新手训练营 0~4 图、`cm.warp` 目标图不存在的语义 | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |
 | 背包/装备窗物品悬浮详情：ToolTip 图集、名称/描述来源、属性/需求字段、配色与帧绘制 | [背包与悬浮详情](references/inventory-and-tooltip.md) |
 
 地图坐标/脚底/平台/绳梯的运行时约定另见 [mapledash-map-port](../mapledash-map-port/SKILL.md)。服务端和脚本语义仍以源端服务端/脚本为依据，不能用 EXE 的显示行为替代服务端规则。

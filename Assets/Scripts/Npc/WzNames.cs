@@ -16,11 +16,23 @@ public static class WzNames
     public static string Npc(int id)
     {
         if (npc.TryGetValue(id, out var v)) return v;
-        v = WzAssets.FileRoot("String/Npc.img").Get(id.ToString())?.Text("name");
-        if (string.IsNullOrEmpty(v)) v = "NPC " + id;
+        v = NpcOrNull(id) ?? "NPC " + id;
         npc[id] = v;
         return v;
     }
+
+    // 只认 String/Npc.img 里真有的 name 字段。Npc() 会兜底成「NPC xxxxxxx」，
+    // 名字条这种面向玩家的地方要用这个判断「这个 NPC 到底有没有名字」。
+    public static string NpcOrNull(int id)
+    {
+        if (npcNamed.TryGetValue(id, out var v)) return v;
+        try { v = WzAssets.FileRoot("String/Npc.img").Get(id.ToString())?.Text("name"); }
+        catch (Exception) { v = null; }
+        if (string.IsNullOrEmpty(v)) v = null;
+        npcNamed[id] = v;
+        return v;
+    }
+    static readonly Dictionary<int, string> npcNamed = new Dictionary<int, string>();
 
     public static string Mob(int id)
     {

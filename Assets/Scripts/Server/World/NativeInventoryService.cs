@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-public sealed class InventoryChangeRequest { public int characterId, itemId, quantity, equipSlot, sourcePosition; public bool equip; }
+public sealed class InventoryChangeRequest { public int characterId, itemId, quantity, equipSlot, sourcePosition; public bool equip, projectile; }
 public sealed class InventoryChangeResponse { public bool ok = true; public string error = ""; public List<InventoryEntry> inventory; }
 public static class NativeInventoryService {
     // Existing gameplay is client-authoritative; persistence still runs inside transport.
@@ -33,6 +33,16 @@ public static class NativeInventoryService {
                 if (prior != null) { prior["position"] = (long)oldPos; prior["inventorytype"] = 1L; }
                 source["position"] = (long)slot; source["inventorytype"] = (long)InventoryDao.Equipped;
             }
+        } else if (r.projectile) {
+            bool rechargeable=r.itemId/10000==207 || r.itemId/10000==233;
+            bool arrow=r.itemId/1000==2060 || r.itemId/1000==2061;
+            var source=items.Find(x=>DbStore.Int(x,"characterid")==r.characterId && DbStore.Int(x,"itemid")==r.itemId &&
+                DbStore.Int(x,"inventorytype")==2 && DbStore.Int(x,"position")==r.sourcePosition && r.sourcePosition>0);
+            if ((!rechargeable && !arrow) || source==null || r.quantity<short.MinValue || r.quantity>short.MaxValue)
+                return new InventoryChangeResponse { ok=false,error="弹药槽位或数量无效" };
+            long remaining=Math.Max(0,(int)unchecked((short)(DbStore.Int(source,"quantity")+r.quantity)));
+            if (remaining>0 || rechargeable) source["quantity"]=remaining;
+            else { long id=DbStore.Long(source,"inventoryitemid"); items.Delete(x=>DbStore.Long(x,"inventoryitemid")==id); }
         } else if (r.quantity > 0) {
             int type = r.itemId / 1000000;
             var existing = type == 1 ? null : items.Find(x => DbStore.Int(x, "characterid") == r.characterId && DbStore.Int(x, "itemid") == r.itemId && DbStore.Int(x, "position") > 0 && DbStore.Long(x, "expiration") < 0);
@@ -43,8 +53,19 @@ public static class NativeInventoryService {
                 if (type == 1) InventoryDao.InsertEquipment(db, id);
             }
         } else if (r.quantity < 0) {
+            if (r.sourcePosition!=0) {
+                var source=items.Find(x=>DbStore.Int(x,"characterid")==r.characterId && DbStore.Int(x,"itemid")==r.itemId &&
+                    DbStore.Int(x,"inventorytype")==r.itemId/1000000 && DbStore.Int(x,"position")==r.sourcePosition && r.sourcePosition>0);
+                if (source==null || r.quantity==int.MinValue || DbStore.Int(source,"quantity") < -r.quantity)
+                    return new InventoryChangeResponse { ok=false,error="指定槽位数量不足" };
+                int remaining=DbStore.Int(source,"quantity")+r.quantity;
+                if (remaining>0) source["quantity"]=(long)remaining;
+                else { long id=DbStore.Long(source,"inventoryitemid"); items.Delete(x=>DbStore.Long(x,"inventoryitemid")==id);
+                    db.Table("inventoryequipment").Delete(x=>DbStore.Long(x,"inventoryitemid")==id); }
+            } else {
             int total = InventoryDao.CountOf(db, r.characterId, r.itemId); if (total < -r.quantity) return new InventoryChangeResponse { ok = false, error = "持有数量不足" };
             InventoryDao.ConsumeItem(db, r.characterId, r.itemId, -r.quantity);
+            }
         }
         db.Save(); return new InventoryChangeResponse { inventory = CharService.Load(db, r.characterId).inventory };
     }

@@ -120,3 +120,54 @@
   `BotWarmup.Root` 的 `Thread.Join()` 把整段解析搬到主线程——这就是「进游戏后卡一段时间才能动」。
   跳过期间玩家可以正常移动，假人稍后补上。
 - 这不改变源端业务顺序（仍是一次性启动、配额与波次不变），只是把同一份工作摊到多帧。
+
+## 新手训练营地图（0~4）与 cm.warp 的地图不存在语义
+
+核实快照：2026-10-28。依据：`MapleDashResources/Data/Map/Map/Map0/*.img`（imgdump 读出的 info/life/portal）、
+`String/Map.img` 的 `maple` 组、源端 `scripts-zh-CN/npc/2100.js`、`2101.js`、`2104.js`、
+`gms-server/src/main/java/org/gms/client/Character.java`。
+
+### 地图身份（北斗把原版 Maple Road 编号重做成了自定义新手区）
+
+| id | mapName（String/Map.img `maple/x`） | 关键事实 |
+| --- | --- | --- |
+| 0 | 蘑菇村西入口 | **黑场过场舞台**：`info/onUserEnter = goAdventure`、`returnMap`/`forcedReturn = 10000`、`back/0/bS` 为空串 + `tile 1` 是 `allblackTile`、`life` 空、只有一个 `sp` 出生点、无任何门 |
+| 1 | 番茄田 | `portal 3 = next00`（pt 2）→ tm 2；NPC 2100（塞拉） |
+| 2 | 番茄田 | 玩家最多 NPC 的一张：2000/2001/2102/**2101（希娜）**/9101002/9101003；`portal 1 = front00` → tm 1 |
+| 3 | 番茄田 | town（`returnMap = 3`）、NPC 2100；`portal 2 = st00`(pt 1, tm 999999999) 是装饰点 |
+| 4 | 踏入旅途 | NPC 2104 → `cm.warp(1)`，即从这张图进训练营 |
+
+`2100.js` 头注释还写着 OdinMS 时代的「Training Camp (0), (1), (3)」，是**旧编号的遗留注释**，
+不能当作现在 0 号图是训练营入口的证据；现版本 0 号图 `life` 里没有塞拉。
+
+### NPC 2101（希娜）的送别与 `cm.warp(0)`
+
+`npc/2101.js`：`start()` 里 `getMapId() === 10000` → `sendOk` 讲操作说明（10000 小蘑菇也有这个 NPC）；
+其余地图 → `sendYesNo("你的训练完成了吗？…我会让你离开这个训练营。")`，确认两次后 `cm.warp(0); cm.dispose();`
+（脚本第 45 行 `// cm.warp(40000, 0);` 是被注释掉的原版目标）。
+
+`warp(0)` 的意图 = 走 0 号过场的 `returnMap` 回到 10000 小蘑菇（原版靠客户端播完
+`Effect/Direction3.img/goAdventure/Scene{gender}` 自己跳走）。
+
+### 源端 `warp` 到不存在地图：提示，不抛错
+
+- `AbstractPlayerInteraction.warp(int[, Object])` → `Character.changeMap(map, pt)`（Character.java:1597）
+  → `getMap(map, true)`（Character.java:10893）：`getMapFactory().getMap(mapid)` 抛的异常被吞掉、返回 null 时
+  只做 `dropMessage(5, msg)` + `dropMessage(1, msg)` + `enableActions()`，然后 `changeMap` 直接 `return`。
+- 文案（`gms-server/src/main/resources/i18n/message_zh_CN.properties`
+  `Character.Map.Change.message1`）：`[系统] 你无法去到不存在的\r\n地图({0})，请联系GM处理。`
+- 结论：**脚本里 `warp` 无效地图不会中断脚本**，所以「对话脚本出错」不可能来自这条路。
+  只有 Java 层真的抛异常（如 `getSavedLocation` 之外的空对象）才会打断脚本。
+
+### MapleDash 修复（2026-10-28）
+
+- `Npc/NpcApi.cs` 原来 `if (target <= 0) throw ...`：把**合法的 0 号图**当无效 id，
+  于是 2101.js 末尾 `cm.warp(0)` 直接抛错 → 玩家看到「对话脚本出错（详见日志）」。
+  现改为 `target < 0` 才抛（保留 portal/market00.js 的 try/catch 兜底），
+  非负但 `FieldCatalog.Maps` 里没有的 id 按源端发 `NativeSystemMessage.Drop(5)` + `Drop(1)` 两条提示后返回。
+- `Field/FieldDirector.cs`：`WarpTo` 的 `mapId <= 0` 与 `TickWarpFade` 里 `pendingWarpMap` 的
+  `target <= 0` 同样把 0 当哨兵，一并改成 `< 0`（哨兵只有 -1）。
+- 0 号图没有演出系统可播（本端 `showIntro` 是空实现），停进去就是一片黑且无门出不来：
+  现在目标为 0 时在 `TickWarpFade` 里直接换成它的 `returnMap`（10000），`Enter` 里另有
+  `deferredWarpMap` 兜住「真的站上 0 号图」的情况（如存档 `LastMapId = 0`）。
+  以后若补上 `Effect/Direction3.img/goAdventure` 开场演出，这两处应改为「播完再跳」。

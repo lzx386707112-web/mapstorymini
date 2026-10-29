@@ -71,3 +71,37 @@ oracle 依赖 pefile/unicorn（本机 `/tmp/mapledash-reverse-venv/bin/python`�
 截图实际map2中的9409000、9409001均为info/notAttack=1（bodyAttack=1、PADamage=20）。同一FindHitMob豁免适用两者，不能仅测试map40000的9300018就声称覆盖截图。CharacterReactionChecks补充三个模板在相同重叠身体框下不触发接触，普通100100仍触发的回归；不改变普通怪伤害公式。
 
 补充验证：/tmp/training-actual-mobs.log CharacterReactionChecks PASS，包含9409000/9409001/9300018豁免与普通100100接触对照；编译0warning/0error。未安装新APK，不等于Android实机验收。
+
+## 隐身/风影漫步的接触候选过滤（2026-10-29）
+
+身份：BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`、ImageBase0x400000。
+
+- `0x94B38D`调用`0x4F0D45`读取TemporaryStat+0x1D4 secured值；随后`0x4F0D64`读取+0xA54；任一非0将hidden参数1传给`0x678C77`的第二参数。不能按状态“存在”替代值非零。
+- +0x1D4由`0x7826CE..0x7826FE`在BEFEC0标记下读取short；其构造`0x78DD55..0x78DD7F`产生128bit词`[0,0,0,1024]`（native bit10，对应原BuffStat.DARKSIGHT网络标记）。+0xA54经`0x785824..0x785850`/`0x787B44`在BEFBD0标记下写；其构造`0x791274..0x79129E`产生`[0,4,0,0]`（native bit66，对应WIND_WALK）。不是无依据按字段偏移命名。
+- `0x678CBA..0x678CF3`先读当前CField+0x144 bit1（fieldLimit的CANNOTMOVESKILLS=2；普通禁跳0x94C3DF..0x94C3EB消费同字段bit0），该位非0绕过hidden过滤；否则hidden非0只保留怪ID9400594，其他候选跳到0x678EA0。后续仍经过notAttack/bodyAttack/状态与身体框等过滤。
+
+迁移：NativeBuffs.SuppressesContact保存值非零、地图bit1及9400594例外；EnemyUnit.TouchesPlayer在身体检测前接入。只影响接触候选，不擅自给所有怪物远程/魔法攻击加隐身免伤，不含GM隐藏权限绕过。
+
+复现：`tools/native_hidden_contact_oracle.py`运行原两个标记构造及0x678CBA分支，只有field getter与secured mobID读取被stub；`tools/native-hidden-contact-oracle.json`8种怪ID×隐身×地图标记组合全部原x86执行对照PASS。`/tmp/mapledash-completion-hidden-contact2.log`退出0，实际普通怪重叠时隐身拒绝/取消恢复、两类状态与例外条件以及原x86冲量/飘字回归PASS；首日志测试误写风影技能ID13001006，已改原13101006，不能算PASS。
+
+
+## STANCE 概率与普通受击冲量（2026-10-29）
+
+身份沿用本页 BeiDou.exe SHA256/base。0x790CD4..0x790CFE 构造 BEFD70，128bit 词为[0,0,16,0]（native bit36；BuffStat.STANCE第一64bit的bit4）。0x783FC7..0x78401A在此标记下读取short，调用0x7870D6将值写TemporaryStat+5B8；该setter明确lea+5B8并写+5C0校验。受击0x958268保存全局BE7918的CharacterContext，0x958B8D..0x958BC3从context+26EC（temporary stat base2134+5B8）读取同一状态。
+
+原受击0x958ADD..0x958AF1取随机数%100；0x958AF1..0x958B0D先检查CField+144的bit1，非零强制判定失败；否则状态限制到[0,100]，roll<value命中，严格小于。命中分支0x958C52调用75C755/936528播放技能反馈并跳到958CCA，跳过普通270px/s冲量计算；不会因此把伤害改成零。基础四职业技能选择来自958AA1..958ADD，其他技能/被动另有分支，不能把所有成功反馈都固定为英雄动画。
+
+迁移：NativeBuffs.ResistsKnockback保存严格概率与地图限制；PlayerCtrl.TakeDamage只对普通击退冲量及脱离绳梯/地面的操作做门控，保留扣血、1500ms免疫、受伤脸与数字。暂未迁移此处分职业成功反馈动画、特殊powerHit与反伤冲量、原端其他被动抗击退分支。原端INVINCIBLE已定位BEFE70（native bit15）/TemporaryStat+294，消费线索7933B2..7933E6为double伤害乘(1-value*0.01)，但所属伤害入口和完整运算阶段仍待核实，尚未据此擅自修改全部伤害。
+
+复现：tools/native_stance_oracle.py执行原标记构造及958AF1..958BC3分支；field getter与secured值读取stub，tools/native-stance-oracle.json共84组负值/零/1/50/99/100/超100、地图bit1及边界roll全部通过。CharacterReactionChecks.Run消费此oracle并检查真实受击扣血/免疫保留、成功不离地、取消恢复冲量；/tmp/mapledash-completion-stance2.log退出0，真实受击及既有冲量84组/飘字54组通过。首轮stance.log因测试ResetCombatState清掉新施加状态失败，已改先reset再施加，不能记为PASS。
+
+
+### INVINCIBLE 物理百分比减伤（2026-10-29）
+
+身份沿用本页SHA/base。0x78DF2C..0x78DF56构造BEFE70，128bit词[0,0,0,32768]（native bit15；BuffStat.INVINCIBLE第一64bit的bit47）。0x782BAA..0x782BE2在该标记下读取short写TemporaryStat+294及+29C校验。
+
+补齐上一段待核线索：0x958346..0x958365查怪物攻击info，info为空或info+1C为零走0x958436，传context+2134为TemporaryStat参数给0x79309F（调用958471）；info+1C非零走95836B/79345E（调用9583AF）。前者物理公式在7933B2读TemporaryStat+294，经7933C2 secured getter后于7933D0..7933E6计算damage - percent*damage*0.01，保留double到后续运算；79342F..793452才进行最小1/上限及整数转换。魔法入口79345E..793680没有这次INVINCIBLE读取/乘法。不得先把物理伤害取整再乘，也不应把此状态当作全类型免伤。
+
+迁移CombatRules.Incoming在既有物理防御扣除之后、Resolve整数化之前调用InvincibleDamage；PlayerCtrl.TakeDamage传入真实INVINCIBLE状态，魔法伤害不参与。**这次仅对齐该状态的作用阶段与公式，既有Incoming的基础随机、防御、等级公式仍是单机近似，不能宣称整套受伤公式已与EXE一致**。原公式还有额外状态与伤害入口，仍需逐项核实。
+
+复现tools/native_invincible_oracle.py执行原标记构造与7933B2..7933E9，只stub secured getter，native-invincible-oracle.json的20组含小数伤害与百分比边界PASS；CharacterReactionChecks消费该oracle，验证真实2301003状态、物理减伤及魔法不变。/tmp/mapledash-completion-invincible.log退出0，包含INVINCIBLE20组、STANCE84组与真实受击/取消、既有冲量84组及飘字54组回归。未进行Android实机验证。

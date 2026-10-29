@@ -35,6 +35,21 @@ public static class FieldChecks
         Check(maps.Count == 37, "地图数量 " + maps.Count + " != 37");
         Check(FieldCatalog.Mobs.Count == 11, "怪物数量 " + FieldCatalog.Mobs.Count + " != 11");
 
+        // 0 号图是「踏入旅途」开场演出的黑场过场舞台（原版 Maple Road : Entrance）：
+        // 背景 bS 为空 + allblackTile、没有 NPC 也没有门，唯一出路是 returnMap（10000 小蘑菇）。
+        // 关键：2101.js（番茄田的希娜「训练结束了就送你出训练营」）最后就是 cm.warp(0)，
+        // 所以它必须被当成**合法地图**——曾经用 id<=0 当「无效」哨兵，玩家一确认就报「对话脚本出错」。
+        var pass0 = FieldCatalog.GetMap(0);
+        Check(pass0 != null, "0 号过场图不存在");
+        if (pass0 != null)
+        {
+            Check(pass0.returnMap == 10000, "0 号过场图 returnMap=" + pass0.returnMap + " != 10000");
+            Check(pass0.npcs.Count == 0, "0 号过场图不该有 NPC（" + pass0.npcs.Count + "）");
+            int armed = 0;
+            foreach (var p in pass0.portals) if (!p.IsSpawn) armed++;
+            Check(armed == 0, "0 号过场图不该有可触发的传送门（" + armed + "）");
+        }
+
         int totalSpawns = 0, totalPortals = 0, totalFootholds = 0, totalRopes = 0, totalNpcs = 0;
         int danglingTargets = 0, hiddenNpcs = 0;
         foreach (var kv in maps)

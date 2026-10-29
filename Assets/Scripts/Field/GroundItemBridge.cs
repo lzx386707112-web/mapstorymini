@@ -20,6 +20,7 @@ public sealed class GroundItemBridge : MonoBehaviour
     public void Bind(FieldDirector field, BotRuntime bots)
     {
         owner = field; runtime = bots;
+        MapItemService.ExpireMilliseconds=GameServer.Local==null ? 180000 : GameConfigDao.GetInt(GameServer.Local.Db,"item_expire_time",180000);
         if (subscribed) return;
         pickupHandler = TryPickup;
         MapItemService.Spawned += OnSpawned;
@@ -64,7 +65,11 @@ public sealed class GroundItemBridge : MonoBehaviour
         foreach (var view in GroundItem.All)
             if (view != null && view.bound != null && view.bound.objectId == item.objectId) return;   // 已有显示
         // 金币：GroundItem 用 itemId==0 表示，amount 为金额
-        GroundItem.Spawn(item.IsMeso ? 0 : item.ItemId, item.IsMeso ? item.meso : item.Quantity, ToUnity(item), item);
+        var actor = BotRegistry.Get(item.dropperId);
+        Vector3 from = actor != null && actor.mapId == item.mapId
+            ? new Vector3(actor.x / Art.PPU, -actor.y / Art.PPU, 0) : ToUnity(item);
+        GroundItem.Spawn(item.IsMeso ? 0 : item.ItemId, item.IsMeso ? item.meso : item.Quantity,
+            ToUnity(item), item, from);
     }
 
     void OnRemoved(MapItem item, int reason)
@@ -74,8 +79,15 @@ public sealed class GroundItemBridge : MonoBehaviour
         foreach (var view in GroundItem.All.ToArray())
             if (view != null && view.bound != null && view.bound.objectId == item.objectId)
             {
-                view.gameObject.SetActive(false);
-                Destroy(view.gameObject, 0.2f);
+                System.Func<Vector2?> target = null;
+                if (item.pickupCharacterId == GameSession.CharacterId && item.pickupPetIndex < 0)
+                    target = GroundItem.LocalPickupTarget;
+                else if (item.pickupCharacterId != 0 && item.pickupPetIndex < 0)
+                {
+                    int picker = item.pickupCharacterId;
+                    target = () => owner != null ? owner.GetComponent<BotField>()?.PickupTarget(picker) : null;
+                }
+                view.Remove(reason, target, item.pickupCharacterId == GameSession.CharacterId);
             }
     }
 

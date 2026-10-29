@@ -124,16 +124,16 @@ namespace Server.Field
                         if (mapitem.meso > 0)
                         {
                             GrantMeso(mapitem, looter, mpcs);
-                            MapItemService.PickItemDrop(mapId, mapitem, pickupReason);
+                            MapItemService.PickItemDrop(mapId, mapitem, pickupReason, looter.CharacterId, petIndex);
                         }
                         else if (IsNxCard(mapitem.ItemId))
                         {
                             GrantNx(mapitem, looter);
-                            MapItemService.PickItemDrop(mapId, mapitem, pickupReason);
+                            MapItemService.PickItemDrop(mapId, mapitem, pickupReason, looter.CharacterId, petIndex);
                         }
                         else if (looter.AddFromDrop(mItem))
                         {
-                            MapItemService.PickItemDrop(mapId, mapitem, pickupReason);
+                            MapItemService.PickItemDrop(mapId, mapitem, pickupReason, looter.CharacterId, petIndex);
                         }
                         else
                         {
@@ -189,7 +189,7 @@ namespace Server.Field
                     return false;
                 }
 
-                MapItemService.PickItemDrop(mapId, mapitem, pickupReason);
+                MapItemService.PickItemDrop(mapId, mapitem, pickupReason, looter.CharacterId, petIndex);
             }
             else if (!hasSpaceInventory)
             {

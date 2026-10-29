@@ -25,8 +25,12 @@ namespace Server.Field
         public byte type;
         public bool pickedUp, playerDrop, partyDrop, permanentOwner;
         public long dropTime;
+        public long expiresAt=long.MaxValue;
 
         public float x, y;
+        // REMOVE_ITEM_FROM_MAP carries the picker, independently of the drop owner/dropper.
+        public int pickupCharacterId;
+        public int pickupPetIndex = -1;
 
         // 所在地图：源端 MapItem 通过 getMap() 拿，这里在生成时写定，避免跨图误捡。
         public int mapId;

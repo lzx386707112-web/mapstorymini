@@ -1,0 +1,25 @@
+2026-10-29 priority-four checkpoint
+NativeBuffChecks.RunAll: /tmp/mapledash-held-soulrush-final3.log exit 0
+  CheckContinuousSkills: 3121004 / 5221004 / 13111002
+  No start cost, one MP/ammo spend per >100ms shot, no immediate extra shot,
+  key release ends without attack, insufficient MP ends continuous state.
+  CheckFlashJump: ordinary two IDs plus 11101005 ground/WEAKEN/1500ms/impulse/landing.
+NativeGameplayNodeChecks.Run: /tmp/mapledash-gameplay-final2.log exit 0
+  Original karing_first.js delayed warp, map departure guard, isolated NPC context.
+  Speed template/runtime clamp order, signed extreme values, held elapsed limits.
+Compile check: dotnet build -t:Rebuild, 0 warnings / 0 errors including chase branch assertions.
+Script harness: self-test 26 pass; pack 2779 scripts, parseFail=0, mangled=0.
+Broad NPC run is NOT PASS: 889 files, 769 ok, 47 run failures, 73 Java interop.
+Still missing: 13 charge release/formula branches, full held character pose,
+map cinematic/remote/event host, special common/area jump gates,
+firstAttack/full pursuit decisions/acceleration/path/flight AI.
+Android not tested.
+
+2220000 HP cast assertion corrected: its 200/78 summon costs zero MP.
+Selection is random, so Busy proves cast admission; a mandatory MP decrease was a flaky assertion.
+
+Final runtime: /tmp/mapledash-priority-four-runtime2.log exit 0.
+Includes real NativeMobController.GroundMoveSpeed selection with distinct speed/chaseSpeed,
+chase animation absent fallback, full held/SoulRush checks and corrected HP admission assertion.
+Final script self-test rerun: passed=26 failed=0, exit 0.
+Final compile: 0 warning / 0 error. git diff --check exit 0.

@@ -21,10 +21,15 @@ public sealed class NativeImgAnimation : MonoBehaviour
     }
     public static NativeImgAnimation Spawn(string path, Transform parent, Vector3 position, int order,
         bool flip=false, bool repeat=false, float lifetime=0)
+        => SpawnAt(WzAssets.Node(path), parent, position, order, flip, repeat, lifetime);
+    // Same player, but the caller already holds the canvas node (mob attack
+    // info/effect, MobSkill effect/tile) instead of a resolvable path string.
+    public static NativeImgAnimation SpawnAt(ImgNode action, Transform parent, Vector3 position, int order,
+        bool flip=false, bool repeat=false, float lifetime=0)
     {
-        var root=WzAssets.Node(path);if(root==null)return null;
-        var frames=WzAssets.Frames(root);if(frames.Count==0)return null;
-        var go=new GameObject(path);go.transform.SetParent(parent,false);go.transform.position=position;
+        if (action == null) return null;
+        var frames=WzAssets.Frames(action);if(frames.Count==0)return null;
+        var go=new GameObject("imgfx");go.transform.SetParent(parent,false);go.transform.position=position;
         var a=go.AddComponent<NativeImgAnimation>();a.frames=frames;a.repeat=repeat;
         a.started=Time.realtimeSinceStartupAsDouble;a.expires=lifetime>0?a.started+lifetime:double.PositiveInfinity;
         if(lifetime<=0 && !repeat && frames.Count>1)

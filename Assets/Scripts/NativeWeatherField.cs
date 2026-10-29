@@ -9,9 +9,15 @@ public sealed class NativeWeatherField : MonoBehaviour
     static Dictionary<string,object> data;
     static NativeWeatherService detached;
     static NativeWeatherField current;
-    public static bool ClientEnabled { get; set; }
+    // 客户端天气表现默认开启，运行期由服务端 Enabled（后台「天气总开关」）决定是否真的生效：
+    // 关掉时 Sync 带 Disabled 位，客户端 State 归零，只剩原图。源端 config.ini 的
+    // enableWeatherSystem=false 只是原版默认不显示天气，这里改由后台控，否则后台点了没反应。
+    public static bool ClientEnabled { get; set; } = true;
     public readonly NativeWeatherState State = new NativeWeatherState();
     public bool HasSky { get; private set; }
+    // 该地图本没有天空贴图基准（见 NativeWeather.json 的 excluded），但后台强制了天气 /
+    // 该区域被 forced：这时仍要挂雨雪雾云层，否则在城镇里点「下雨」什么都看不到。
+    public bool Forced { get; private set; }
     public bool Active { get; private set; }
     public bool WaterBase { get; private set; }
     readonly Dictionary<string,float> levels = new Dictionary<string,float>();
@@ -19,7 +25,9 @@ public sealed class NativeWeatherField : MonoBehaviour
     readonly Dictionary<SpriteRenderer,Color> scenery = new Dictionary<SpriteRenderer,Color>();
     NativeMapView view;
     NativeWeatherService server;
-    int mapId, revision=-1;
+    ImgNode mapNode;
+    bool mounted;
+    int mapId, revision=-1, syncedRevision;
     long syncAt, tickAt;
     float night, boost;
     Vector3 tint=Vector3.one*255;
@@ -36,7 +44,8 @@ public sealed class NativeWeatherField : MonoBehaviour
             if(data==null)
             {
                 data=(Dictionary<string,object>)MiniJson.Parse(Resources.Load<TextAsset>("NativeWeather").text);
-                ClientEnabled=(bool)data["clientEnabled"];
+                // 不再用 data["clientEnabled"] 关掉整个模块：那是源端 config.ini 的出厂值，
+                // 后台「天气总开关」才是本工程的准绳（关掉走 Sync 的 Disabled 位）。
             }
             return data;
         }
@@ -48,6 +57,14 @@ public sealed class NativeWeatherField : MonoBehaviour
     static NativeWeatherService Service()
     {
         if(GameSession.Server?.Weather!=null){NativeWeatherHost.Shared=GameSession.Server.Weather;return GameSession.Server.Weather;}
+        // 后台（AdminWeather）可能先进图之前就建好了实例（Host.Service 的兜底）。
+        // 直接接管那份，别另建一个新的 —— 否则后台点过的强制天气会随旧实例一起被丢掉。
+        if(NativeWeatherHost.Shared!=null)
+        {
+            if(GameSession.Server!=null)GameSession.Server.Weather=NativeWeatherHost.Shared;
+            else detached=NativeWeatherHost.Shared;
+            return NativeWeatherHost.Shared;
+        }
         if(GameSession.Server==null && detached!=null){NativeWeatherHost.Shared=detached;return detached;}
         var rows=(List<object>)Data["regions"];
         var regions=new NativeWeatherRegion[rows.Count];
@@ -75,35 +92,54 @@ public sealed class NativeWeatherField : MonoBehaviour
     }
     public void Bind(NativeMapView view,int id,ImgNode map)
     {
-        var config=Data;this.view=view;mapId=id;
+        var config=Data;this.view=view;mapId=id;mapNode=map;
         if(!ClientEnabled)return;
-        current=this; HasSky=SkyForMap(id,map); Active=HasSky || id/1000000==230;
+        current=this; HasSky=SkyForMap(id,map);
+        server=Service();
+        // 「后台强制了这个区域的天气」= 运营正在演示，本图即使默认无天空基准也要表现
+        Forced=IsForcedByServer();
+        Active=HasSky || id/1000000==230 || Forced;
         WaterBase=string.Equals(map.Get("back/0")?.Text("bS"),"nautilusPort",StringComparison.OrdinalIgnoreCase);
-        server=Service();server.Roll(Now,DateTime.Now.Month);server.Sync(id,true,State,Now);
+        server.Roll(Now,DateTime.Now.Month);server.Sync(id,true,State,Now);
         // Client ages are monotonic; server's Unix clock is only used in sync payloads.
         RebaseSync();
         foreach(var image in view.GetComponentsInChildren<SpriteRenderer>())scenery[image]=image.color;
-        if(HasSky)
-        {
-            int index=0;
-            foreach(Dictionary<string,object> row in (List<object>)Data["layers"])
-            {
-                var image=view.AddWeatherBack(row,((bool)row["front"]?700:-1100)+index++);
-                if(image!=null)sheets.Add(new Sheet {Image=image,Group=(string)row["group"]});
-            }
-            view.PromoteWeatherBacks(map);
-            ground=gameObject.AddComponent<NativeWeatherGround>();
-            ground.Bind(NativeMapView.LoadMap(new FieldMap{id=id}));
-            sound=gameObject.AddComponent<NativeWeatherSound>();
-            particles=gameObject.AddComponent<NativeWeatherParticles>();
-        }
+        if(HasSky || Forced) MountLayers();
         Tick();
+    }
+    bool IsForcedByServer()
+    {
+        if(server==null) return false;
+        if(server.OverrideSky>=0) return true;
+        int region=NativeWeatherService.RegionForMap(mapId);
+        return region>=0 && region<server.RegionCount && server.Region(region).Forced>=0;
+    }
+    // 天气图层：本来每个地图进图时挂一次；后台中途强制天气也要能补挂（见 Tick）。
+    void MountLayers()
+    {
+        if(mounted || view==null || Data==null) return;
+        mounted=true;
+        int index=0;
+        foreach(Dictionary<string,object> row in (List<object>)Data["layers"])
+        {
+            // 本图没有天空基准时跳过 sky 组：那几张是整屏天空贴图，盖在原图上会毁掉原画。
+            // 夜色/云/雨/雪/雾/彩虹都能直接叠，运营要的「看得见变化」靠它们。
+            if(!HasSky && (string)row["group"]=="sky") { index++; continue; }
+            var image=view.AddWeatherBack(row,((bool)row["front"]?700:-1100)+index++);
+            if(image!=null)sheets.Add(new Sheet {Image=image,Group=(string)row["group"]});
+        }
+        if(HasSky) view.PromoteWeatherBacks(mapNode);
+        ground=gameObject.AddComponent<NativeWeatherGround>();
+        ground.Bind(NativeMapView.LoadMap(new FieldMap{id=mapId}));
+        sound=gameObject.AddComponent<NativeWeatherSound>();
+        particles=gameObject.AddComponent<NativeWeatherParticles>();
     }
     void RebaseSync()
     {
         int age=State.Age(Now), rainbow=State.Rainbow(Now);
         State.Set((int)State.Minute,State.MsPerMinute,State.Sky,(State.Snap?1:0)|(State.Frozen?2:0)|(State.BareSky?4:0)|(State.Disabled?8:0),age/1000,State.Tint,rainbow,State.Palette,age,State.Token,LocalNow);
         syncAt=LocalNow+60000;
+        if(server!=null) syncedRevision=server.Revision;
     }
     public static bool HandlePacket(byte[] packet,int offset=0)
         => current!=null && current.State.Read(packet,offset,LocalNow);
@@ -112,12 +148,19 @@ public sealed class NativeWeatherField : MonoBehaviour
         if(!ClientEnabled || server==null)return;
         long now=LocalNow;
         bool rolled=server.Roll(Now,DateTime.Now.Month);
-        if(now>=syncAt || rolled) {server.Sync(mapId,false,State,Now);RebaseSync();}
+        // 后台（AdminWeather）改过天气/时段/区域 → Revision 变了立刻推一份，而且带 snap，
+        // 画面直接切过去而不是慢慢过渡。只靠 syncAt 的 60s 周期会让人以为「点了没反应」。
+        bool changed=server.Revision!=syncedRevision;
+        if(now>=syncAt || rolled || changed) {server.Sync(mapId,changed,State,Now);RebaseSync();}
+        // 玩家先进图、后台随后点「强制天气」时补挂图层（本图原来没有天空基准，进图时没挂）。
+        Forced=IsForcedByServer();
+        if(!mounted && (HasSky || Forced)) { Active=true; MountLayers(); }
         State.Tick(now);
         if(now<tickAt)return; tickAt=now+30; // source CMapLoadable logic tick
         bool snap=State.Revision!=revision && State.Snap;
         if(State.Revision!=revision){revision=State.Revision;if(snap)primed=false;}
-        var row=(Dictionary<string,object>)((List<object>)Data["profiles"])[HasSky?State.Sky:0];
+        bool renders=HasSky || Forced;
+        var row=(Dictionary<string,object>)((List<object>)Data["profiles"])[renders?State.Sky:0];
         var p=(List<object>)row["values"];
         float step=(float)Number(p[7]);
         float targetNight=NativeWeatherState.Night(State.Minute);
@@ -132,7 +175,7 @@ public sealed class NativeWeatherField : MonoBehaviour
         SetLevel("snow",State.Sky==2?1:0,step,snap);SetLevel("rainbow",State.Rainbow(now)>0?.22f*(1-night):0,step,snap);
         if(!Active)return;
         int age=State.Age(now);
-        float lightning=HasSky && State.Sky==4 && levels["rain"]>=.70f && age>0 ? NativeWeatherLightning.Evaluate((uint)age,State.Token,State.Palette) : 0;
+        float lightning=renders && State.Sky==4 && levels["rain"]>=.70f && age>0 ? NativeWeatherLightning.Evaluate((uint)age,State.Token,State.Palette) : 0;
         float darkness=Mathf.Max(night,boost)*(1-.697f*lightning);
         Color sceneryColor=TintColor(1,darkness);
         groundTint=sceneryColor;rainTint=TintColor(levels["rain"],darkness*.55f);
@@ -167,7 +210,8 @@ public sealed class NativeWeatherField : MonoBehaviour
     static float Golden(double minute,int start,int end)=>minute<start||minute>=end?0:Mathf.Sin((float)(minute-start)/(end-start)*Mathf.PI);
     void LateUpdate()
     {
-        if(!ClientEnabled || !HasSky || !Active)return;
+        // 没天空基准但被后台强制天气时同样要跑地面/音效/粒子（HasSky 只是「原图自带天空」）。
+        if(!ClientEnabled || !Active)return;
         levels.TryGetValue("rain",out float rain);
         ground?.Tick(State.Sky,State.Age(LocalNow),rain,LocalNow,groundTint,rainTint);
         var profile=(Dictionary<string,object>)((List<object>)Data["profiles"])[State.Sky];

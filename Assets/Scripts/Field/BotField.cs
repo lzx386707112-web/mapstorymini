@@ -244,6 +244,14 @@ public sealed class BotField : MonoBehaviour
         else view.animation.Express(expression);
     }
 
+    public Vector2? PickupTarget(int actorId)
+    {
+        if (!views.TryGetValue(actorId, out var view)) return null;
+        var sprite = view.animation.Renderer;
+        float height = sprite != null && sprite.sprite != null ? sprite.bounds.size.y : 0;
+        return (Vector2)view.root.transform.position + Vector2.up * (height * 0.5f);
+    }
+
     public void Clear()
     {
         foreach (var view in views.Values) RemoveView(view);

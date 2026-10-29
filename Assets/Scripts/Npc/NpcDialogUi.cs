@@ -21,26 +21,45 @@ public static class NpcDialogUi
         if (session == null || !session.Dialog.Visible) return false;
         var dialog = session.Dialog;
         if (dialog.Mode == NpcDialogMode.Simple)
-        {
-            // Native type4 confirms the selected entry; section headers are not choices.
-            foreach (var run in dialog.Content.Runs)
-                if (run.SelectionMarker && run.Link >= 0) { session.Reply(1, run.Link); return true; }
-            foreach (var choice in dialog.Selections)
-                if (choice.HeaderArt == null && choice.Index >= 0) { session.Reply(1, choice.Index); return true; }
-            return false;
-        }
+            return ConfirmSelection(session);
         if (!dialog.CanConfirmWithTalkKey && dialog.Mode != NpcDialogMode.YesNo &&
             dialog.Mode != NpcDialogMode.AcceptDecline) return false;
         session.Reply(1);
         return true;
     }
 
+    static bool ConfirmSelection(NpcSession session)
+    {
+        // Native type4 confirms the selected entry; section headers are not choices.
+        foreach (var run in session.Dialog.Content.Runs)
+            if (run.SelectionMarker && run.Link >= 0) { session.Reply(1, run.Link); return true; }
+        foreach (var choice in session.Dialog.Selections)
+            if (choice.HeaderArt == null && choice.Index >= 0) { session.Reply(1, choice.Index); return true; }
+        return false;
+    }
+
+    // Use the same native-pixel presentation as inventory/quest windows, rather
+    // than treating IMG pixels as the larger 720-high mobile HUD coordinates.
+    public static float WindowScale => BottomBar.S;
+
     public static void Draw()
     {
         NpcSession.Tick();
         OnlineTime.Tick();
         var session = NpcSession.Active;
-        if (session != null && session.Dialog.Visible) DrawDialog(session);
+        if (session != null && session.Dialog.Visible)
+        {
+            var matrix = GUI.matrix;
+            var pointer = Pointer.Pos;
+            float scale = WindowScale;
+            try
+            {
+                GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(scale, scale, 1f));
+                Pointer.Pos = pointer / scale;
+                DrawDialog(session);
+            }
+            finally { GUI.matrix = matrix; Pointer.Pos = pointer; }
+        }
     }
 
     // 场景名牌/任务标记在浮窗下面，对话框仍在浮窗上面。
@@ -258,12 +277,13 @@ public static class NpcDialogUi
         bool input = session.Dialog.Mode == NpcDialogMode.GetText || session.Dialog.Mode == NpcDialogMode.GetNumber;
         float contentH = DialogFlow.ContentHeight(content, w, input) + reservedHeight;
         float h = (input ? Mathf.Max(120f, contentH) : DialogFlow.BodyHeight(contentH)) + 86f;
-        var rect = new Rect((UiKit.W - w) * .5f, (UiKit.H - h) * .5f, w, h);
+        var rect = new Rect((UiKit.W / WindowScale - w) * .5f, (UiKit.H / WindowScale - h) * .5f, w, h);
         NativeUi.DialogPanel(rect);
         DrawPortrait(session.NpcId, rect, session.SpeakerName);
 
         var closeSize = BtnSize("BtClose");
-        if (NativeUi.Button(new Rect(rect.x + 9f, rect.yMax - 26f, closeSize.x, closeSize.y), BtnRoot + "BtClose"))
+        float closeX = session.Dialog.Mode == NpcDialogMode.Simple ? 10f : 9f;
+        if (NativeUi.Button(new Rect(rect.x + closeX, rect.yMax - 26f, closeSize.x, closeSize.y), BtnRoot + "BtClose"))
         { session.Cancel(); return; }
 
         int picked = DialogFlow.DrawPane(rect, content, ref scrollY, reservedHeight, input);
@@ -311,21 +331,49 @@ public static class NpcDialogUi
                 break;
 
             case NpcDialogMode.Simple:
+                // Type4 OnCreate 9A91AD..9A9288: BtNext at w-78, h-77.
+                if (PageButton(rect, contentH, "BtNext", 68f)) ConfirmSelection(session);
                 break;
         }
     }
 
+    // 没有专属 NPC 的脚本（物品脚本、传送门脚本、本地数据对白）用「冒险岛运营员」出面，
+    // 和源端固定 NPC 9010000 的通知菜单同一个形象。否则对话框左侧整块（立绘 + 名字条）
+    // 全是空白，玩家看不出是谁在说话。
+    public const int DefaultSpeaker = 9010000;
+
+    // 取一个真的能画出立绘的 NPC：跟着 info/link 链，且必须有 stand 帧。
+    // 文件不存在（如 2104「北斗冒险岛萌新指引」只有字符串没有素材）、没有 stand、
+    // link 成环都返回 null，交给调用方兜底。
+    static ImgNode PortraitNode(int id)
+    {
+        if (id <= 0) return null;
+        if (portraitCache.TryGetValue(id, out var cached)) return cached;
+        int requested = id;
+        ImgNode result = null;
+        var seen = new System.Collections.Generic.HashSet<int>();
+        while (id > 0 && seen.Add(id))
+        {
+            string path = "Npc/" + id.ToString("D7") + ".img";
+            if (!WzAssets.HasFile(path)) break;
+            var npc = WzAssets.FileRoot(path);
+            var link = npc.Get("info/link");
+            if (link != null) { id = npc.Int("info/link"); continue; }
+            result = WzAssets.Frames(npc.Get("stand")).Count > 0 ? npc : null;
+            break;
+        }
+        portraitCache[requested] = result;
+        return result;
+    }
+    static readonly Dictionary<int, ImgNode> portraitCache = new Dictionary<int, ImgNode>();
+
     static void DrawPortrait(int npcId, Rect rect, string speakerName = null)
     {
-        if (npcId <= 0) return;
         int speakerId = npcId;
-        var npc = WzAssets.FileRoot("Npc/" + npcId.ToString("D7") + ".img");
-        var seen = new System.Collections.Generic.HashSet<int>();
-        while (npc.Get("info/link") != null && seen.Add(npcId))
-        {
-            npcId = npc.Int("info/link");
-            npc = WzAssets.FileRoot("Npc/" + npcId.ToString("D7") + ".img");
-        }
+        var npc = PortraitNode(npcId);
+        bool fallback = npc == null;
+        if (fallback) npc = PortraitNode(DefaultSpeaker);
+        if (npc == null) return;
         var frames = WzAssets.Frames(npc.Get("stand"));
         float minX = 0f, minY = 0f, maxX = 0f, maxY = 0f;
         bool first = true;
@@ -362,7 +410,12 @@ public static class NpcDialogUi
         title.fontSize = 12;
         title.alignment = TextAnchor.MiddleCenter;
         title.normal.textColor = Color.white;
-        GUI.Label(nameRect, speakerName ?? WzNames.Npc(speakerId), title);
+        // 名字：脚本指定的 > 该 NPC 在 String/Npc.img 的真名 > 运营员。
+        // 用了运营员立绘、或名字只是「NPC 2104」这种占位名时，名字条也统一成运营员。
+        string caption = speakerName;
+        if (string.IsNullOrEmpty(caption) && !fallback) caption = WzNames.NpcOrNull(speakerId);
+        if (string.IsNullOrEmpty(caption)) caption = WzNames.Npc(DefaultSpeaker);
+        GUI.Label(nameRect, caption, title);
     }
 
     static void DrawInput(NpcSession session, Rect rect, float contentH)

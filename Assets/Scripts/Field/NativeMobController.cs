@@ -11,7 +11,18 @@ public sealed class NativeMobController : MonoBehaviour
     {
         public int id, level, action, mp, hp, x, y, count, limit, probability;
         public long duration, cooldown;
-        public int delay;
+        // LifeFactory:601-604 sums Mob/<id>.img/skill<action> frame delays with a 0
+        // default and no abs(). That single number is both the server's apply delay
+        // (MoveLifeHandler:135-141) and its animation lock (Monster:349-351), so one
+        // field drives both; AnimationMillis() stays for playback only.
+        public int serverDelay;
+        // Parsed for completeness only: MobSkill/applyEffect never reads effectAfter,
+        // so there is nothing source-backed to do with it yet.
+        public int effectAfter;
+        // True only for rows loaded from the mob's own info/skill, i.e. something the
+        // mob really cast. Attack-borne diseases reuse this struct with level taken
+        // from attack<N>/info, and must not pull a MobSkill canvas by accident.
+        public bool cast;
         public Rect? range;
         public readonly List<int> summons = new List<int>();
         public string Key => id + ":" + level;
@@ -25,15 +36,41 @@ public sealed class NativeMobController : MonoBehaviour
     NativeBossEncounter encounter;
     NativeMobCastState state;
     NativeMobHealth health;
-    ImgNode root;
+    ImgNode root, artRoot;
+    NativeMovementPhysics motionPhysics;
     long blockedUntil, busyUntil, nextDecision;
+    // specialAttack (0x667600) rewrites the mob-wide attack interval; this is the
+    // local equivalent of [mob+0xA0] + [mob+0x9C] being in the future.
+    long attackGapUntil;
+    // 0x6671D3 loads the constant double at 0xAF46E0 (= 30.0) and hands it to the
+    // screen-shake call 0x43DA05. The unit is not documented; it is applied here as
+    // client pixels, the same 1:1 mapping Art.PPU uses everywhere else.
+    static readonly float TrembleAmplitude = 30f / Art.PPU;
+    long removeAt=long.MaxValue,nextMpRecovery;
+    int destructionHp=-1,deathAction=1,destructionAction=1;
+    public int DeathAction => deathAction;
+    // LifeFactory records own-file delays; Monster.killBy/listener always request die1.
+    public int ServerDeathMillis => ServerMillis(root?.Get("die1"));
+    public void Expire(int action)
+    {
+        deathAction=action;
+        mob.ExpireNative(action);
+    }
+    public void ReleaseExpired() => field?.OnEnemyExpired(mob);
     readonly List<int> revives = new List<int>();
     readonly string killId = Guid.NewGuid().ToString("N");
     public static long Now => (long)(Time.timeAsDouble * 1000);
     public long CurrentHp => health?.Current ?? 0;
     public long MaximumHp => health?.Maximum ?? 1;
     public bool Busy => Now < busyUntil;
-    public bool CanMove => root != null && root.Get("move") != null;
+    public bool CanMove => artRoot != null && artRoot.Get("move") != null;
+    public bool HasChase => artRoot?.Get("chase")!=null;
+    public float GroundMoveSpeed(bool chasing)
+    {
+        int value=root.Int("info/"+(chasing && HasChase ? "chaseSpeed" : "speed"));
+        // 9B2187: field Physics.walkSpeed * CLifeMoveParam+24 (ground limit).
+        return (float)((motionPhysics ?? (motionPhysics=NativeMovementPhysics.Load())).WalkSpeed*NativeMobMotion.Multiplier(value)/Art.PPU);
+    }
     public int Direction { get; private set; } = 1;
 
     public static NativeMobController Attach(EnemyUnit mob, FieldDirector field)
@@ -49,9 +86,16 @@ public sealed class NativeMobController : MonoBehaviour
     void Load()
     {
         root = WzAssets.FileRoot("Mob/" + mob.fieldMobId.ToString("D7") + ".img");
+        artRoot = WzAssets.MobArtRoot(mob.fieldMobId);
         var info = root.Get("info");
         state = new NativeMobCastState(info.Int("maxMP"));
         health = new NativeMobHealth(Convert.ToInt64(info.Get("maxHP")?.Value ?? 1));
+        var destruction=info.Get("selfDestruction");
+        destructionHp=destruction?.Int("hp",-1) ?? -1;
+        if (destruction!=null) destructionAction=unchecked((sbyte)destruction.Int("action",1));
+        int removeSeconds=destruction!=null ? destruction.Int("removeAfter",-1) : info.Int("removeAfter",-1);
+        if (info.Int("removeAfter")>0 || destruction!=null && destructionHp<0) removeAt=Now+removeSeconds*1000L;
+        nextMpRecovery=Now+RecoveryInterval();
         blockedUntil = Now + NativeBossRules.RegenMillis(mob.fieldMobId);
         busyUntil = blockedUntil;
         var revive = info.Get("revive");
@@ -65,9 +109,12 @@ public sealed class NativeMobController : MonoBehaviour
             var c = new Cast { id = id, level = level, action = entry.Int("action", skills.Count + 1),
                 mp = data.Int("mpCon"), hp = data.Int("hp", 100), x = data.Int("x", 1), y = data.Int("y", 1),
                 count = data.Int("count", 1), limit = data.Int("limit"), probability = data.Int("prop", 100),
-                duration = data.Int("time") * 1000L, cooldown = data.Int("interval") * 1000L, range = Range(data) };
+                duration = data.Int("time") * 1000L, cooldown = data.Int("interval") * 1000L, range = Range(data),
+                effectAfter = entry.Int("effectAfter"), cast = true };
             if (c.hp <= 0) c.hp = 100;
-            c.delay = AnimationMillis(root.Get("skill" + c.action));
+            // LifeFactory:599 reads skill<action> from the mob's own file (monsterData,
+            // link is not followed here), so a link-only mob really has animationTime 0.
+            c.serverDelay = ServerMillis(root.Get("skill" + c.action));
             foreach (var child in data.Children)
                 if (int.TryParse(child.Name, out _) && child.Value != null) c.summons.Add(Convert.ToInt32(child.Value));
             skills.Add(c);
@@ -78,7 +125,23 @@ public sealed class NativeMobController : MonoBehaviour
     public static int AnimationMillis(ImgNode frames)
     {
         int result = 0;
-        if (frames != null) foreach (var frame in frames.Resolve().Children) result += frame.Int("delay");
+        foreach (var frame in WzAssets.Frames(frames))
+            result += Math.Max(1, Math.Abs(frame.Resolve().Int("delay", 100)));
+        return result;
+    }
+    // LifeFactory:601-604 / 618-621: animationTime is the plain sum of every child's
+    // "delay" with a 0 default and no abs(). A negative sum (or a missing container)
+    // makes the source apply the effect immediately. Do not reuse AnimationMillis here.
+    public static int ServerMillis(ImgNode frames)
+    {
+        int result = 0;
+        if (frames == null) return 0;
+        foreach (var child in frames.Children)
+        {
+            var node = child.TryResolve();
+            if (node == null) continue;
+            result += node.Int("delay");
+        }
         return result;
     }
     public static Rect? Range(ImgNode node)
@@ -87,6 +150,10 @@ public sealed class NativeMobController : MonoBehaviour
         var lt = node?.Get("lt"); var rb = node?.Get("rb");
         return lt == null || rb == null ? (Rect?)null : new Rect(lt.X, lt.Y, rb.X - lt.X, rb.Y - lt.Y);
     }
+    // Attack areas can also be a point+radius (range/sp + range/r, 399 rows). See
+    // MobAttackArea for the evidence; AttackInArea handles both shapes.
+    public static MobAttackArea? Area(ImgNode node) =>
+        MobAttackArea.TryParse(node, out var area) ? area : (MobAttackArea?)null;
     public static Vector2 Pixels(Vector3 world) => new Vector2(world.x * Art.PPU, -world.y * Art.PPU);
     public bool InRange(Rect? relative, PlayerCtrl player)
     {
@@ -96,10 +163,48 @@ public sealed class NativeMobController : MonoBehaviour
     bool Buffed(int id) => buffs.TryGetValue(id, out var b) && Now < b.until;
     void Buff(int id, int value, long duration) => buffs[id] = new BuffValue { value = value, until = Now + duration };
 
+    int showdown;
+    long showdownUntil;
+    public int Showdown => Now < showdownUntil ? showdown : 0;
+    // StatEffect:806-810 / Monster.applyStatus:1173-1342. Defense status
+    // interpretation is tracked separately; this stores the authoritative reward status.
+    public bool ApplyShowdown(int skill, int value, long duration, bool boss)
+    {
+        if ((skill!=4121003 && skill!=4221003) || boss) return false;
+        var node=WzAssets.FileRoot("Skill/"+(skill/10000).ToString("D3")+".img").Get("skill/"+skill.ToString("D7"));
+        int animation=ServerMillis(node?.Get("effect"));
+        showdown=value;
+        showdownUntil=Now+duration+animation-100;
+        return true;
+    }
+
+    // Monster.debuffMob: cancel all source variants of the same monster status.
+    public void Dispel(int skill)
+    {
+        void Remove(params int[] ids) { foreach (int id in ids) buffs.Remove(id); }
+        if (skill==4111004) { Remove(102,112,152);Remove(103,113,153);return; }
+        if (skill==2311001) { Remove(100,110,150);Remove(101,111,151);Remove(102,112,152);Remove(103,113,153);return; }
+        if (skill!=1111007 && skill!=1211009 && skill!=1311007) return;
+        if (skill==1111007) Remove(102,112,152);
+        else if (skill==1211009) Remove(101,111,151);
+        else Remove(100,110,150);
+        bool anti=GameServer.Local!=null && GameConfigDao.GetBool(GameServer.Local.Db,"use_anti_immunity_crash",false);
+        if (!anti) return;
+        if (skill!=1211009 && !Buffed(143) && !Buffed(145)) Remove(140);
+        if (skill!=1311007 && !Buffed(144) && !Buffed(145)) Remove(141);
+    }
+
     void Update()
     {
         if (mob == null || mob.dead || field.Map == null || GameLoop.I == null || GameLoop.I.gameOver ||
             GameLoop.I.state != GameLoop.GameState.Playing || PlayerCtrl.InputLocked || Time.deltaTime <= 0) return;
+        if (Now>=removeAt) { Expire(destructionAction); return; }
+        if (Now>=nextMpRecovery)
+        {
+            nextMpRecovery=Now+RecoveryInterval();
+            // MapleMap.mobMpRecovery uses mob level, not the unused WZ mpRecovery value.
+            state.HealMp(NativeCombatData.Int(mob.CombatStats,"level",1),NativeCombatData.Int(mob.CombatStats,"maxMP"));
+        }
         if (Now < blockedUntil || Busy || Now < nextDecision) return;
         var player = GameLoop.I.player;
         if (player == null || player.hp <= 0) return;
@@ -111,14 +216,17 @@ public sealed class NativeMobController : MonoBehaviour
         choices.Sort((a, b) => NativeBossRules.Priority(mob.fieldMobId, b.id).CompareTo(NativeBossRules.Priority(mob.fieldMobId, a.id)));
         foreach (var c in choices)
         {
-            if (mob.hp / mob.hpMax * 100 > c.hp ||
+            // MoveLifeHandler:172-177 truncates HP% to int before comparing with MobSkill.hp.
+            if (!NativeMobCastState.HpAllows(health.Current,health.Maximum,c.hp) ||
                 ((c.id >= 143 && c.id <= 145) && (Buffed(143) || Buffed(144) || Buffed(145)))) continue;
             if (!state.TryUse(c.Key, Now, c.mp, NativeBossRules.SkillCooldown(mob.fieldMobId, c.id, c.level, c.cooldown),
                 Time.unscaledTime < mob.SkillsSealedUntil || Buffed(157))) continue;
-            busyUntil = Now + Math.Max(1, c.delay);
+            busyUntil = Now + Math.Max(1, Math.Max(0, c.serverDelay));
             mob.PlayNativeAction("skill" + c.action);
             if (Projected(c)) return;
-            encounter.Schedule(mob, c.id == 129 ? 0 : c.delay, () => Apply(c));
+            // MoveLifeHandler:136-141 — BANISH always applies immediately; everything
+            // else waits for the whole skill<action> animation (0 => immediate).
+            encounter.Schedule(mob, c.id == 129 ? 0 : Math.Max(0, c.serverDelay), () => Apply(c));
             return;
         }
         TryAttack(player);
@@ -126,30 +234,61 @@ public sealed class NativeMobController : MonoBehaviour
 
     void TryAttack(PlayerCtrl player)
     {
+        if (Now < attackGapUntil) return;
         for (int i = 0; ; i++)
         {
-            var attack = root.Get("attack" + (i + 1));
+            var attack = root.Get("attack" + (i + 1)) ?? artRoot.Get("attack" + (i + 1));
             if (attack == null) return;
             var data = attack.Get("info");
-            if (data == null || !AttackInRange(Range(data), player)) continue;
+            if (data == null || !AttackInArea(Area(data), player)) continue;
             int cooldown = NativeBossRules.AttackCooldown(mob.fieldMobId, i, data.Int("attackAfter"));
             if (!state.TryUse("attack:" + i, Now, data.Int("conMP"), cooldown, false)) continue;
-            int delay = data.Int("attackAfter", AnimationMillis(attack));
-            busyUntil = Now + Math.Max(1, AnimationMillis(attack));
+            // 0x667600: specialAttack turns this row's attackAfter into the mob-wide
+            // attack interval ([mob+0x9C], read by 0x670A3F as
+            // now >= [mob+0xA0] + [mob+0x9C]). Only 9400633/attack4 opens it.
+            int attackAfter = Math.Max(0, data.Int("attackAfter"));
+            if (data.Int("specialAttack") != 0) attackGapUntil = Now + attackAfter;
+            // attackAfter is the real impact delay: the attack-area object created by
+            // 0x66DE88 stores "A+0x8C(attackAfter) + base time" in its +0 trigger slot,
+            // and the executor fires it from there. The server never sees this value
+            // except as the Karing/Lucid cooldown fallback (LifeFactory:624-626).
+            // busyUntil is the source animation lock: LifeFactory:618-621 sums every
+            // child's delay of attack<N>.
+            int delay = attackAfter;
+            busyUntil = Now + Math.Max(1, Math.Max(0, ServerMillis(attack)));
             mob.PlayNativeAction("attack" + (i + 1));
             encounter.Schedule(mob, delay, () => {
+                // 0x6671D3: `if (A->[+0x70]) shake(30.0)`. Fired when the attack
+                // executes, before any target is collected, so it does not depend on
+                // actually hitting something.
+                if (data.Int("tremble") != 0) HitFeel.Shake(TrembleAmplitude, 0.25f);
+                // Mob/<id>.img/attack<N>/info/effect + hit are live canvases (331 and
+                // 2211 authored rows; the loader paths are documented in §6.1).
+                // `effect` belongs to the attacker, `hit` to the struck body.
+                PlayCanvas(data, "effect", mob.transform, mob.transform.position, mob.BodySortingOrder + 1);
                 var p = GameLoop.I?.player;
-                if (p == null || !AttackInRange(Range(data), p)) return;
+                if (p == null || !AttackInArea(Area(data), p)) return;
+                // 0x670C99..0x670CB2: one resolution per target per 0x7D0 (2000) ms.
+                // The stamp is written before the damage is computed, so an attack
+                // that lands during the victim's i-frames still starts the next
+                // 2000 ms window -- that is the source order, not a shortcut.
+                long stamp = Now;
+                if (!NativeBossRules.MobAttackAllowed(stamp, p.lastMobAttackMs)) return;
+                p.lastMobAttackMs = stamp;
                 if (p.hp <= 0 || Time.unscaledTime < p.invulnUntil) return;
+                PlayCanvas(data, "hit", null, p.FeetPos, p.SortingOrder + 1);
                 float before = p.hp;
-                int percent = data.Int("fixDamR"), fixedDamage = data.Int("fixedDamage");
+                int percent = data.Int("fixDamR");
                 if (data.Get("deadlyAttack") != null)
                 { p.TakeBossDamage(Mathf.Max(0,p.hp-1)); p.mp = Mathf.Min(p.mp,1); }
                 else if (percent > 0) p.TakeBossDamage(NativeBossRules.PercentDamage((int)p.hpMax, percent));
-                else if (fixedDamage > 0) p.TakeBossDamage(fixedDamage);
+                // MobAttackInfoFactory reads only mpBurn/disease/level/conMP/fixDamR/
+                // deadlyAttack. There is no absolute `fixedDamage` on attack info, and
+                // none of the 2219 attack rows author one, so base damage falls back to
+                // PADamage exactly like the client-computed packet would.
                 else p.TakeDamage(data.Int("PADamage", NativeCombatData.Int(mob.CombatStats, "PADamage")), Direction,
-                    data.Int("magic") != 0, NativeCombatData.Int(mob.CombatStats, "level", 1));
-                p.mp = Mathf.Max(0,p.mp-data.Int("mpBurn"));
+                    data.Int("magic") != 0, NativeCombatData.Int(mob.CombatStats, "level", 1),mob,i,data.Int("mpBurn"));
+                if (data.Get("deadlyAttack")!=null || percent>0) p.mp = Mathf.Max(0,p.mp-data.Int("mpBurn"));
                 int disease = data.Int("disease"), level = data.Int("level");
                 if (p.hp < before && disease > 0)
                 {
@@ -162,12 +301,46 @@ public sealed class NativeMobController : MonoBehaviour
         }
     }
 
-    bool AttackInRange(Rect? range, PlayerCtrl player)
+    // Player hit box used for the attack test. The source tests the target's whole
+    // bounding rect against the attack area (rect: 0x95B734 + 0x7A38D6 + [0xBF04A8];
+    // circle: 0x66DB68 + 0x66DBDC..0x66DC21), and the exact numbers come from the
+    // character's body frames, which are not traced, so this is a deliberate
+    // approximation centred on the feet point.
+    const float PlayerHitHalfWidth = 14f;
+    const float PlayerHitHeight = 48f;
+    bool AttackInArea(MobAttackArea? area, PlayerCtrl player)
     {
-        if (!range.HasValue) return false; // No verified hit area: do not fabricate a map-wide attack.
+        if (!area.HasValue) return false; // No verified hit area: do not fabricate a map-wide attack.
         var delta = Pixels(player.FeetPos) - Pixels(mob.transform.position);
         if (Direction > 0 && root.Int("info/noFlip") == 0) delta.x = -delta.x;
-        return range.Value.Contains(delta);
+        // Both shapes are body tests, so both go through Overlaps: a rectangle is an
+        // AABB intersection, a circle is the distance from its centre to the nearest
+        // point of the body compared with r+10. Do not route circles through the
+        // point probe -- that under-reaches by the body height.
+        return area.Value.Overlaps(delta.x - PlayerHitHalfWidth, delta.y - PlayerHitHeight,
+            delta.x + PlayerHitHalfWidth, delta.y);
+    }
+
+    // Mob/<id>.img/<action>/info/{effect,hit,...}: the client builds these paths with
+    // the same %07d/%s pattern as the attack parser (monster-skills.md §6.1), and
+    // most attack rows really author them (hit 2211, effect 331). No-op when the
+    // container is missing, which is the normal case for the rest.
+    static void PlayCanvas(ImgNode info, string node, Transform parent, Vector3 at, int order)
+    {
+        var frames = info?.Get(node);
+        if (frames == null) return;
+        NativeImgAnimation.SpawnAt(frames, parent, at, order);
+    }
+    // Skill/MobSkill.img/<type>/level/<n>/{effect,tile}: `effect` and `tile` are in
+    // the client's read whitelist (§3.5). Only genuine casts have a MobSkill row,
+    // so attack-borne diseases stay silent here.
+    void PlaySkillCanvas(Cast c, string node, bool follow, bool repeat, float lifetime)
+    {
+        if (!c.cast || c.level <= 0) return;
+        var frames = WzAssets.FileRoot("Skill/MobSkill.img").Get(c.id + "/level/" + c.level + "/" + node);
+        if (frames == null) return;
+        NativeImgAnimation.SpawnAt(frames, follow ? mob.transform : null, mob.transform.position,
+            mob.BodySortingOrder + 1, false, repeat, lifetime);
     }
 
     bool Projected(Cast c)
@@ -193,6 +366,7 @@ public sealed class NativeMobController : MonoBehaviour
     void Apply(Cast c)
     {
         if (UnityEngine.Random.value * 100 >= c.probability) return;
+        PlaySkillCanvas(c, "effect", true, false, 0);
         var p = GameLoop.I?.player;
         switch (c.id)
         {
@@ -203,10 +377,11 @@ public sealed class NativeMobController : MonoBehaviour
             case 141: if (!Buffed(140)) ApplyBuff(c); return;
             case 143: case 144: case 145: ApplyBuff(c); return;
             case 114:
+                // MobSkill.applyHealEffect: hps = (x/1000) * (int)(950 + 1050*rand).
                 if (c.range.HasValue) foreach (var e in new List<EnemyUnit>(EnemyUnit.All))
                 {
                     if (!e.fieldMode || e.dead || !c.range.Value.Contains(Pixels(e.transform.position) - Pixels(mob.transform.position))) continue;
-                    e.NativeController?.Heal(c.x / 1000 * UnityEngine.Random.Range(950, 2000));
+                    e.NativeController?.Heal(c.x / 1000 * (int)(950 + 1050 * UnityEngine.Random.value));
                     e.NativeController?.state.HealMp(c.y, NativeCombatData.Int(e.CombatStats,"maxMP"));
                 }
                 else { Heal(c.x); state.HealMp(c.y, NativeCombatData.Int(mob.CombatStats,"maxMP")); }
@@ -233,28 +408,46 @@ public sealed class NativeMobController : MonoBehaviour
                     }
                 }); return;
             case 174: case 177: case 214: case 215: return; // Visual-only in the source server too.
+            // MobSkill.applyEffect has no branch for these, even though the enum lists
+            // them: the source really does nothing. 105/169 are not even in MobSkillType,
+            // which makes the source throw while loading the mob's stats.
+            case 105: case 115: case 134: case 135: case 136: case 142: case 169: return;
+            // CYGNUS_UNSUPPORTED_138/146/171/172 are in the enum but also have no
+            // applyEffect branch, so the source really does nothing for them.
+            case 138: case 146: case 171: case 172: return;
             case 127: if (p != null && InRange(c.range,p)) p.DispelNativeBuffs(); return;
             case 129:
                 if (p != null && InRange(c.range,p))
                 {
+                    // LifeFactory:633 defaults banMap/0/field to -1, so -1 is the
+                    // "no destination" sentinel and map 0 is a real destination.
                     int map = root.Int("info/ban/banMap/0/field", -1);
-                    if (map > 0) field.WarpTo(map,root.Text("info/ban/banMap/0/portal","sp"));
+                    // LifeFactory:633 also reads banMsg; Character.changeMapBanish:1563
+                    // drops it as message type 5 before the warp ("As the Pentacle
+                    // swayed in the shadows, you were brought to ...").
+                    string msg = root.Text("info/ban/banMsg");
+                    if (map >= 0 && !string.IsNullOrEmpty(msg)) NativeSystemMessage.Drop(5, msg);
+                    if (map >= 0) field.WarpTo(map,root.Text("info/ban/banMap/0/portal","sp"));
                 }
                 return;
             case 131:
-                var area = c.range;
-                if (!area.HasValue) return;
-                Vector2 center = Pixels(mob.transform.position);
-                for (int i = 0; i < c.x * 100; i += 1000)
-                    encounter.Schedule(mob, i, () => {
-                        var player = GameLoop.I?.player;
-                        if (player != null && area.Value.Contains(Pixels(player.FeetPos) - center))
-                            NativeMobDebuffs.For(player).Apply(125,c.x,c.y,1000);
-                    });
+                // MobSkill.spawnMonsterMist -> MapleMap.spawnMist(mist, x*100, false, false, false).
+                // The third argument is `poison`, and it is false: the source server only
+                // creates a mob-type mist object that lives x*100 ms. No damage, no disease.
+                // `131/level/<n>/tile` is the ground canvas the client draws for it (§6.3);
+                // lifetime follows the same x*100 ms, so the two cannot drift apart.
+                PlaySkillCanvas(c, "tile", false, true, Math.Max(0, c.x) * 0.1f);
                 return;
             case 120: case 121: case 122: case 123: case 124: case 125: case 126: case 128: case 132: case 133:
-                if (p != null && InRange(c.range,p) && (c.id != 128 || c.count > 0))
-                    NativeMobDebuffs.For(p).Apply(c.id,c.x,c.y,c.duration);
+                // MobSkill.applyDisease: the range branch caps SEDUCE by `count` and
+                // additionally blocks every disease behind HOLY_SHIELD, SEDUCE and
+                // STUN included (:525). The single-target branch goes straight to
+                // Character.giveDebuff, which does let SEDUCE/STUN through (:2823).
+                // Both branches only exist for a real cast (`lt/rb && skill`).
+                if (p == null || !InRange(c.range,p)) return;
+                bool region = c.cast && c.range.HasValue;
+                if (region && c.id == 128 && c.count <= 0) return;
+                NativeMobDebuffs.For(p).Apply(c.id,c.x,c.y,c.duration,region);
                 return;
             default: Debug.LogWarning("[MobSkill] Source-unsupported skill " + c.Key); return;
         }
@@ -272,18 +465,35 @@ public sealed class NativeMobController : MonoBehaviour
     void Summon(Cast c)
     {
         summoned.RemoveAll(e => e == null || e.dead);
-        if (EnemyUnit.All.Count >= 80) return;
-        int limit = field.Map.id >= 925020000 && field.Map.id < 925040000 ? int.MaxValue : c.limit;
+        if (EnemyUnit.All.Count >= 80) return; // MobSkill.summonMonsters: map mobs < 80
+        // MapId.isDojo: DOJO_SOLO_BASE..925033804 -> unlimited summons.
+        int limit = field.Map.id >= 925020000 && field.Map.id <= 925033804 ? int.MaxValue : c.limit;
         int count = Math.Min(c.summons.Count, Math.Max(0,limit - summoned.Count));
         var ids = new List<int>(c.summons);
         for (int i = ids.Count - 1; i > 0; i--) { int j = UnityEngine.Random.Range(0,i+1); int v = ids[i]; ids[i] = ids[j]; ids[j] = v; }
         for (int i = 0; i < count; i++)
         {
             Vector3 pos = mob.transform.position;
-            if (ids[i] == 8500003) pos.y = 590 / Art.PPU;
-            if (ids[i] == 8500004 || ids[i] == 8510100) pos.x += UnityEngine.Random.Range(-500,500) / Art.PPU;
-            if (field.Map.id == 220080001) pos.x = Mathf.Clamp(pos.x,-890 / Art.PPU,230 / Art.PPU);
-            if (field.Map.id == 230040420) pos.x = Mathf.Clamp(pos.x,-239 / Art.PPU,371 / Art.PPU);
+            if (ids[i] == 8500003) pos.y = 590 / Art.PPU;                       // HIGH_DARKSTAR: ypos = -590
+            if (ids[i] == 8500004) pos.x += UnityEngine.Random.Range(-500,500) / Art.PPU;  // LOW_DARKSTAR
+            if (ids[i] == 8510100)                                              // BLOODY_BOOM
+            {
+                // Source sets an absolute map-pixel xpos here, so it is not an offset.
+                if (UnityEngine.Random.Range(0,5) == 0)
+                    pos = new Vector3((UnityEngine.Random.Range(0,5) + (UnityEngine.Random.Range(0,2) == 1 ? 180 : 0)) / Art.PPU, -78 / Art.PPU, pos.z);
+                else pos.x += UnityEngine.Random.Range(-500,500) / Art.PPU;
+            }
+            // MobSkill.summonMonsters re-rolls toward the map centre instead of clamping.
+            if (field.Map.id == 220080001)
+            {
+                if (pos.x < -890 / Art.PPU) pos.x = (Mathf.Ceil(UnityEngine.Random.value * 150) - 890) / Art.PPU;
+                else if (pos.x > 230 / Art.PPU) pos.x = (230 - Mathf.Ceil(UnityEngine.Random.value * 150)) / Art.PPU;
+            }
+            if (field.Map.id == 230040420)
+            {
+                if (pos.x < -239 / Art.PPU) pos.x = (Mathf.Ceil(UnityEngine.Random.value * 150) - 239) / Art.PPU;
+                else if (pos.x > 371 / Art.PPU) pos.x = (371 - Mathf.Ceil(UnityEngine.Random.value * 150)) / Art.PPU;
+            }
             var e = field.SpawnNativeMob(ids[i],pos);
             if (e != null) summoned.Add(e);
         }
@@ -328,8 +538,17 @@ public sealed class NativeMobController : MonoBehaviour
     {
         long applied = health.Damage(damage); mob.hp = health.Current;
         encounter.OnDamaged(mob,(int)applied);
+        if (destructionHp>=0 && health.Current<=destructionHp) { deathAction=destructionAction; health.Damage(health.Current); mob.hp=0; }
     }
+    static int RecoveryInterval() => GameServer.Local==null ? 10000 : Math.Max(1,GameConfigDao.GetInt(GameServer.Local.Db,"respawn_interval",10000));
     public void Heal(long amount) { long before=health.Current; health.Heal(amount); mob.TotalHealed+=Math.Max(0,health.Current-before); mob.hp = health.Current; }
+    public int AbsorbMp(int percent)
+    {
+        if (mob.dead || mob.IsBoss) return 0;
+        int amount=Math.Min(state.Mp,(int)(NativeCombatData.Int(mob.CombatStats,"maxMP")*(percent/100.0)));
+        if (amount>0) state.TryUse("mp-eater",Now,amount,0,false);
+        return amount;
+    }
     public void SetHpPercent(int percent) { health.SetPercent(percent); mob.hp = health.Current; }
     public void FakeDamage(int damage) { health.Damage(Math.Min(damage,Math.Max(0,health.Current-1))); mob.hp = health.Current; }
     public void OnKilled()
@@ -339,8 +558,12 @@ public sealed class NativeMobController : MonoBehaviour
                 operation=BossOperation.RecordKill,encounter=killId });
         encounter.OnKilled(mob);
         if (revives.Count == 0) return;
+        // Monster.killBy broadcasts before the delayed revive; timeMob hours are
+        // not read by MapFactory and must not become an invented spawn restriction.
+        if (field.Map!=null && revives.Contains(field.Map.timeMobId))
+            NativeSystemMessage.DropMap(6,field.Map.timeMobMessage);
         Vector3 pos = mob.transform.position;
-        encounter.Schedule(mob, AnimationMillis(root.Get("die1")), () => {
+        encounter.Schedule(mob, Math.Max(0,ServerDeathMillis), () => {
             foreach (int id in revives) field.SpawnNativeMob(id,pos);
         }, true);
     }
