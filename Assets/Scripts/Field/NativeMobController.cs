@@ -38,6 +38,65 @@ public sealed class NativeMobController : MonoBehaviour
     NativeMobHealth health;
     ImgNode root, artRoot;
     NativeMovementPhysics motionPhysics;
+    readonly NativeMobPursuit pursuit=new NativeMobPursuit();
+    long pursuitTick;
+    bool flightWaypoint;
+    Vector2 waypoint;
+    int flightPoints;
+    double flightVx,flightVy;
+    public bool Flying => artRoot?.Get("fly")!=null;
+    public bool Pursuing => pursuit.Active;
+    public void OnPlayerDamage()
+    {
+        if (pursuit.Active) return;
+        pursuit.Acquire(UnityEngine.Random.Range(0,60000));
+        flightWaypoint=false;flightPoints=0;
+    }
+    public bool UpdatePursuit(PlayerCtrl player)
+    {
+        long now=Now;
+        pursuit.Tick(Math.Max(0,now-pursuitTick),player!=null && player.hp>0);
+        pursuitTick=now;
+        if (!pursuit.Active && player!=null && player.hp>0 && root.Int("info/firstAttack")!=0 && root.Int("info/notAttack")==0)
+        {
+            Vector2 delta=Pixels(player.FeetPos)-Pixels(mob.transform.position);
+            if (NativeMobMotion.AcquisitionRange((int)delta.x,(int)delta.y)) OnPlayerDamage();
+        }
+        return pursuit.Active;
+    }
+    // Pursued-target flight branch 0x9BD799..0x9BDA9A. Idle region selection is
+    // deliberately separate: it requires CPhysicalSpace2D's region topology.
+    public bool MoveFlight(PlayerCtrl player,float dt,bool blocked,out int direction)
+    {
+        direction=Direction;
+        if (!pursuit.Active || blocked) return false;
+        var physics=motionPhysics ?? (motionPhysics=NativeMovementPhysics.Load());
+        double fly=NativeMobMotion.Multiplier(root.Int("info/flySpeed"));
+        Vector2 position=Pixels(mob.transform.position),target=Pixels(player.FeetPos);
+        if (!flightWaypoint)
+        {
+            if (flightPoints==0) flightPoints=UnityEngine.Random.Range(60,120);
+            waypoint=new Vector2((int)target.x+UnityEngine.Random.Range(-120,120),(int)target.y+UnityEngine.Random.Range(-40,40));
+            flightWaypoint=true;
+            if (--flightPoints<=0) pursuit.Clear();
+        }
+        float dx=waypoint.x-position.x,dy=waypoint.y-position.y;
+        int horizontal=Math.Abs((int)dx)<10 ? 0 : dx<0 ? -1 : 1;
+        int vertical=Math.Abs((int)dy)<10 ? -1 : 0;
+        // 9BD836 keeps vertical input zero below and calls jump/flap above.
+        if (Math.Abs((int)dy)>=10 && dy<0) flightVy=physics.Flap(fly);
+        double oldVx=flightVx,oldVy=flightVy;
+        physics.Flight(ref flightVx,ref flightVy,horizontal,vertical,fly,dt);
+        position.x+=(float)((oldVx+flightVx)*.5*dt);
+        position.y+=(float)((oldVy+flightVy)*.5*dt);
+        mob.transform.position=new Vector3(position.x/Art.PPU,-position.y/Art.PPU,mob.transform.position.z);
+        // Win32 PtInRect excludes the right and bottom edges and truncates coordinates.
+        bool Inside(Vector2 p,int radius) => (int)p.x>=waypoint.x-radius && (int)p.x<waypoint.x+radius &&
+            (int)p.y>=waypoint.y-radius && (int)p.y<waypoint.y+radius;
+        if (Inside(position,11) || !Inside(target,150)) flightWaypoint=false;
+        if (horizontal!=0) direction=horizontal;
+        return flightVx!=0 || flightVy!=0;
+    }
     long blockedUntil, busyUntil, nextDecision;
     // specialAttack (0x667600) rewrites the mob-wide attack interval; this is the
     // local equivalent of [mob+0xA0] + [mob+0x9C] being in the future.
@@ -88,6 +147,8 @@ public sealed class NativeMobController : MonoBehaviour
         root = WzAssets.FileRoot("Mob/" + mob.fieldMobId.ToString("D7") + ".img");
         artRoot = WzAssets.MobArtRoot(mob.fieldMobId);
         var info = root.Get("info");
+        pursuitTick=Now;
+        mob.nativeFloating=mob.nativeFloating || Flying;
         state = new NativeMobCastState(info.Int("maxMP"));
         health = new NativeMobHealth(Convert.ToInt64(info.Get("maxHP")?.Value ?? 1));
         var destruction=info.Get("selfDestruction");

@@ -176,3 +176,11 @@ NativeMapScripts，使用独立NpcSession.MapContext，不占用NPC对话。原J
 NativeGameplayNodeChecks.CheckMapScripts实测通过（/tmp/mapledash-map-entry-nodes.log退出0）。
 这不等于322地图脚本完整迁移：远端场景、过场、事件实例/副本、Karing出生死亡联动、勋章探索仍有缺口。
 脚本harness self-test为26通过；全量NPC执行769成功/47运行失败/73 Java互操作（889文件），不得写全量通过。
+
+
+### 2026-10-29 过场、事件宿主与飞行追击增量
+
+参见[地图过场与事件实例](map-intro-and-events.md)及[怪物技能与攻击](monster-skills.md)末节。
+原goAdventure/goLith type0/2/5已执行；事件实例生命周期已接，但运行时私有map/clockUI/怪物与掉线回调仍缺。
+firstAttack消费与整数距离、目标寿命、飞行追击及540组EXE物理对照已接；空闲区域飞行与完整地面决策未完成。
+旧“showIntro空实现/firstAttack未定位/飞行不移动”描述以这两篇新记录为准，不能扩大为全事件/全AI完成。

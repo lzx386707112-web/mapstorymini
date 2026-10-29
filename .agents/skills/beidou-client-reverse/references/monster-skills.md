@@ -57,7 +57,7 @@ ban(4028) banType(4029) damagedBySelectedSkill(4274)
 - `chase`/`jump`/`move`/`fly`/`regen` 是**根节点下的动画容器**，不是 `info` 子节点。
 - `bodyAttack`、`boss`、`hideHP`、`hideName`、`hideLevel` 等布尔写入模板的一个标志集合
   （`0x67D67F` / `0x67D6F2` 之后 `mov [edi+0x60], eax`、`[edi+0x6C]` 是集合计数）。
-- `firstAttack` 单独写入模板 `+0x17C`（`0x67E43E..0x67E44B`），**消费者尚未定位**；
+- `firstAttack` 单独写入模板 `+0x17C`（`0x67E43E..0x67E44B`），消费者已定位 `66E32D..66E635`（详见本文末追击补记）；
   源服 Java 全仓 0 处引用 `firstAttack`（只有 `LifeFactory` 写入 `stats.firstAttack`），
   即「是否主动攻击」由客户端 AI 决定，服务端不参与。
 - `notAttack` 写模板 `+0x1A4`/`+0x1AC`（与既有记录一致，`CMobPool::FindHitMob 0x678D47` 消费）。
@@ -1259,9 +1259,8 @@ AOE 分支 `0x956372` 是**玩家**技能，但它揭示了客户端的范围构
   （2400040：15 节点/areaCount 15 ✓；8143000：6 节点/areaCount 9 ✗；7220005：23 节点/areaCount 9 ✗），
   所以「谁决定打哪几个落点」仍未定死。
 
-1. **主动/被动判定**：`firstAttack` 写到模板 `+0x17C` 后没有找到读取点；
-   `chase` 只影响移动动作码。源服不消费 `firstAttack`。在找到 EXE 读取点之前，
-   本地 `aggroRange`/高度差阈值只能记为「本地策略」。
+1. **主动/被动判定**：消费者与整数选敌距离已核实，见本文末追击补记。
+   旧固定 aggroRange/高度差阈值已替换；完整攻击可用性旁路、指定怪及队伍过滤仍未迁移。
 2. ~~**`range/start`**~~：**已结案（§2.8.5）**。`start` = 最左波次的带号（负数），
    消费公式 `centreX += ((start+i)*spacing + spacing/2) * dir`（`0x66DF4F..0x66DF76`）。
    `areaCount = 2|start|+1` 只是这个「中心对称展开」在多数样本上的副产物，
@@ -1360,9 +1359,9 @@ AOE 分支 `0x956372` 是**玩家**技能，但它揭示了客户端的范围构
 运行时 NativeMobMotion 保留先模板后运行时的两次限幅；NativeMobController.GroundMoveSpeed 使用 own-file info，
 有根chase动画且有目标才选chaseSpeed，地面巡逻选speed；EnemyUnit改用该速度与chase动画。
 NativeGameplayNodeChecks 包含负数、极值、修正在模板限幅之后的断言。
-仍不是完整AI：本地选敌/恒速/平台寻路未还原原端加速度与决策，firstAttack及mob+228修正来源未解决。
+当时仍不是完整AI：地面恒速/平台寻路及mob+228修正来源未解决；firstAttack 后续已定位，见下文。
 `6643FB..66449F` 确认飞行把fly倍率写入CLifeMoveParam+84/+6C/+60，+78/+54置1；
-飞行力、阻力、限速与目标决策的后续消费未核，当前飞行怪仍不移动，不能按地面125px/s硬套。
+该阶段飞行力、阻力、限速与目标决策未核；后续飞行追击已接通，见下文，不能按地面125px/s硬套。
 此前 §8“地面基准未定位”条目由本补记取代，疾病修正/飞行基准仍是缺口。
 
 
@@ -1374,3 +1373,44 @@ NativeGameplayNodeChecks 包含负数、极值、修正在模板限幅之后的�
 最终验证：NativeGameplayNodeChecks.Run（/tmp/mapledash-gameplay-final2.log）退出0；
 NativeBuffChecks.RunAll（/tmp/mapledash-priority-four-runtime2.log）退出0，包含真实控制器的speed/chaseSpeed选择、
 无chase容器回退与半血施法。compile-check 0 warning/0 error。持久摘要 docs/skill-regression/priority-four-checks.txt。
+
+### 2026-10-29：firstAttack 消费者、追击寿命与飞行追击/物理
+
+二进制身份沿用上文 SHA256/base。本节纠正旧“firstAttack 消费者未定位”“飞行不移动”状态。
+
+- `667A04` 在 notAttack (`667569`) 和 mob+38C 过滤之后调用 `66E32D..66E635`。
+  模板+17C 包装/+184 缓存对应 firstAttack。若 !firstAttack 且 !`670C54` 则不选敌。
+  `670C54` 比较 `[BEBFA4+68]==mob`，是特殊指定怪条件，不能解释成普通受击反击。
+  要求移动对象+18本地控制、+250尚无目标；fieldType10/15还有 mob+3B0 与玩家+1E94队伍过滤。
+- 非特殊指定怪分支：`66A517(mode0)` 攻击可用时旁路距离；否则整数
+  `abs(dx)/10 + abs(dy)/3 <= 40`（x86 idiv 截断）。赋值链 `66B562→9BBD88→6642B0`。
+- `9BBD88..9BBDFA`：空目标清+250/+254；新目标+258寿命为 random%60000+180000毫秒，
+  并清 movement+4E4..4F7 共20字节。`9BCA2A→9BD487` 按 dtms 减寿命，严格小于0才释放。
+  原服 Monster.java 实际玩家伤害更新仇恨/DPS leader；bot只更新controller然后return。
+- `9BD799..9BDCB0` 飞行追击：waypoint=target+(rand%240-120,rand%80-40)，计数rand%60+60。
+  abs(trunc(dx))<10时水平输入0，否则取方向；abs(trunc(dy))<10时垂直输入-1，其他为0。
+  目标在上方调用 `9B2202→9B1D3D` flap；下方不是+1（纠正此前临时推测）。
+  waypoint 的±11矩形、目标相对waypoint的±150矩形使用 Win32 PtInRect，右/下边界排除。
+  计数递减到<=0释放目标。
+- 空闲飞行 `9BDAEE..9BDC96` 使用 CPhysicalSpace2D 区域数组 BEBFA0+34/+38/+3C，
+  区域计数 ((end-start)+rand%200+40)>>3，按原 foothold/长度选点，y=footholdY+rand%60-30。
+  当前尚未迁移区域拓扑，不得用屏幕随机巡逻代替。
+
+飞行物理 `9B313D..9B3421`，位置梯形积分 `9B3421..9B34BE`；构造函数9BBC33的
+vtable B3E678/+8→9B1087返回0。Physics.img 原值：flyForce120000、flySpeed200、
+floatDrag1100000、floatDrag210000、walkForce140000、walkSpeed125、gravityAcc2000、fall670、jump555。
+令 limit=flySpeed*fly*abs(gravity)，超限vx/vy按 floatDrag1/Mass*dt 回收；
+水平输入力为 input*flyForce*gravity，零输入刹车；竖直加速度 flyForce/Mass/gravity。
+垂直输入<0：以limit*.3为目标，上侧减全量加速度，下侧加半量；>0直接设limit*1.5；
+等于0向下加速到limit。flap (`9B20FD..9B2131`) 直接替换 vy=-flySpeed*fly*abs(gravity)，不是叠加。
+
+复现：`tools/native_movement_oracle.py` 新增 flight 模式，patch 96C1D3 返回0、
+伪vtable+8→9B1087返回0，actor+78=1/+84=fly；540组原EXE结果持久化于
+`tools/native-flight-oracle.json`。原945地空案例入口保留。其他地址用
+`tools/inspect_beidou_client.py <EXE> --fn 0x9BD799` 等递归解码。
+
+运行时：NativeMovementPhysics.Flight/Flap、NativeMobMotion.AcquisitionRange/NativeMobPursuit、
+NativeMobController.UpdatePursuit/MoveFlight、EnemyUnit受击选敌接线。
+Unity NativeGameplayNodeChecks 已通过540组速度/梯形位置对照（容差.0001）、整数距离/寿命边界。
+未完成：空闲区域飞行、忙碌状态继续物理、特殊地图重力因子（目前调用默认1）、完整地面路径/加速度、攻击可用性旁路、特殊指定怪/队伍过滤、
+多玩家DPS/puppet控制权；不是“完整追击AI”验收，未跑APK。

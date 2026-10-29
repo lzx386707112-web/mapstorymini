@@ -188,11 +188,11 @@ public class EnemyUnit : MonoBehaviour
         bool aggro = true;
         if (fieldMode)
         {
-            // 只有同一高度附近、且在视野内的玩家才追；否则留在刷怪点的台子上巡逻
-            float dy = Mathf.Abs(p.FeetPos.y - transform.position.y);
-            aggro = p.hp > 0f && Mathf.Abs(dx) <= aggroRange && dy <= 1.8f;
+            aggro = NativeController!=null && NativeController.UpdatePursuit(p);
         }
         float nativeSpeed=NativeController!=null ? NativeController.GroundMoveSpeed(aggro) : speed;
+        if (fieldMode && NativeController?.Flying==true)
+            moving=NativeController.MoveFlight(p,dt,stunned || NativeController.Busy,out faceDir);
         if (!stunned && !nativeFloating && (NativeController == null || !NativeController.Busy))
         {
             if (fieldMode && !aggro)
@@ -228,7 +228,7 @@ public class EnemyUnit : MonoBehaviour
         laneVis = Mathf.Lerp(laneVis, lane, 1f - Mathf.Exp(-12f * dt));
         if (vis != null)
         {
-            vis.SetBase(moving ? (aggro && NativeController?.HasChase==true ? "chase" : "move") : "stand");
+            vis.SetBase(NativeController?.Flying==true ? "fly" : moving ? (aggro && NativeController?.HasChase==true ? "chase" : "move") : "stand");
             vis.SetFacing(NativeController != null && NativeController.Busy ? NativeController.Direction : faceDir);
         }
         if (hpBar != null)
@@ -373,6 +373,7 @@ public class EnemyUnit : MonoBehaviour
         }
         if (NativeController != null) NativeController.ApplyDamage(hit.Amount);
         else hp = Mathf.Max(0f, hp - real);
+        if (attackerId==0) NativeController?.OnPlayerDamage();
 
         if (react)
         {

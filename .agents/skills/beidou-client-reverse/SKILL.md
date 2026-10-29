@@ -32,6 +32,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 相机 VR、分辨率补丁、背景滚动；技能窗、ID施放表现与升级动画迁移 | [地图与技能窗入口](references/map-and-skill-window.md) |
 | 蜗牛投掷术level下ball/hit、全技能节点/UOL/等级缓存、scalar动作、固定伤害、按住/蓄力原端分类与松键/持续射击时序及迁移缺口 | [技能视觉节点与公共解析](references/skill-visual-nodes.md) |
 | 全技能/地图/怪物节点枚举、召唤自身帧与攻击框、HP消耗/元素、链接图规则/刷怪间隔、选敌身体框、地图进场脚本合同与未迁移边界 | [玩法节点覆盖](references/gameplay-node-coverage.md) |
+| showIntro/goAdventure/goLith 世界坐标过场、Shape2D位移、原始声音、事件宿主生命周期与独立副本缺口 | [地图过场与事件实例](references/map-intro-and-events.md) |
 | 右上角辅助技能状态栏、32px 布局、剩余时间遮罩与迁移缺口 | [临时状态栏](references/temporary-stat-view.md) |
 | 鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义 | [UI 拖动语义](references/ui-drag-and-drop.md) |
 | NPC 对话窗口精确布局/字体/按钮、VScr4、`#L` 图文、sendPrev 上一页+确定/对话键任务菜单与接受页推进、灯泡 autoStart/日期筛选、NPC进行中QuestIcon1/stop对白与完成条件击杀计数、截图问候入口/交付奖励10000→4→1、fieldType82青苹果外观、建号路线与远程任务脚本 | [NPC 对话窗口](references/npc-dialog.md) |

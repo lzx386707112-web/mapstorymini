@@ -12,6 +12,7 @@ public sealed class NativeMapScripts : MonoBehaviour
     FieldDirector field;
     public static void Enter(FieldDirector field)
     {
+        NativeMapIntro.Enter(field);
         var host=field.GetComponent<NativeMapScripts>() ?? field.gameObject.AddComponent<NativeMapScripts>();
         host.field=field;
         if (!ReferenceEquals(host.character,GameSession.Character))
@@ -32,13 +33,23 @@ public sealed class NativeMapScripts : MonoBehaviour
             var context=NpcSession.MapContext();
             var ms=NpcApi.Build(context,0,0,false);
             // Reject still-empty presentation methods rather than reporting a successful event.
-            foreach (string method in new[]{"showIntro","showEffect","mapEffect","showWZEffect","openUI",
+            foreach (string method in new[]{"showEffect","mapEffect","showWZEffect","openUI",
                 "setDirectionStatus","spawnGuide","removeGuide","talkGuide","resetDojoEnergy",
-                "goAdventure","goLith","displayCygnusIntro","displayAranIntro","startExplorerExperience"})
+                "displayCygnusIntro","displayAranIntro","startExplorerExperience"})
             {
                 string missing=method;
                 ms.Set(method,JsFunction.FromNative(method,_=>throw new JsRuntimeException("Unmigrated map API: "+missing)));
             }
+            ms.Set("goAdventure",JsFunction.FromNative("goAdventure",c=>
+            {
+                NativeMapIntro.Show("Effect/Direction3.img/goAdventure/Scene"+(GameSession.Character?.record.gender ?? 0),true);
+                return JsUndefined.Value;
+            }));
+            ms.Set("goLith",JsFunction.FromNative("goLith",c=>
+            {
+                NativeMapIntro.Show("Effect/Direction3.img/goLith/Scene"+(GameSession.Character?.record.gender ?? 0),true);
+                return JsUndefined.Value;
+            }));
             ms.Set("playSound",JsFunction.FromNative("playSound",c=>{AudioManager.Play(JsConvert.ToString(c.Arg(0)));return JsUndefined.Value;}));
             ms.Set("changeMusic",JsFunction.FromNative("changeMusic",c=>{AudioManager.PlayBgm(JsConvert.ToString(c.Arg(0)));return JsUndefined.Value;}));
             var mapGetter=ms.Get("getMap");

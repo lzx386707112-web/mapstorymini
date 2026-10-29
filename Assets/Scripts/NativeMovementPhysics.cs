@@ -8,6 +8,7 @@ public sealed class NativeMovementPhysics
     public double WalkForce, WalkSpeed, WalkDrag, SlipForce, SlipSpeed;
     public double FloatDrag1, FloatDrag2, FloatCoefficient, Gravity, FallSpeed, JumpSpeed;
     public double MaxFriction, MinFriction;
+    public double FlyForce, FlySpeed;
     public const double Mass = 100; // CLifeMoveParam ctor 0x4FE8B3, constant 0xAF29E0.
     public const double SlipThreshold = .9; // ctor 0x4FE8FB, constant 0xAF32D8.
 
@@ -21,7 +22,8 @@ public sealed class NativeMovementPhysics
             FloatDrag2 = Convert.ToDouble(n.Get("floatDrag2").Value), FloatCoefficient = Convert.ToDouble(n.Get("floatCoefficient").Value),
             Gravity = Convert.ToDouble(n.Get("gravityAcc").Value), FallSpeed = Convert.ToDouble(n.Get("fallSpeed").Value),
             JumpSpeed = Convert.ToDouble(n.Get("jumpSpeed").Value), MaxFriction = Convert.ToDouble(n.Get("maxFriction").Value),
-            MinFriction = Convert.ToDouble(n.Get("minFriction").Value)
+            MinFriction = Convert.ToDouble(n.Get("minFriction").Value),
+            FlyForce = Convert.ToDouble(n.Get("flyForce").Value), FlySpeed = Convert.ToDouble(n.Get("flySpeed").Value)
         };
     }
     static double Approach(double v, double target, double step)
@@ -83,4 +85,27 @@ public sealed class NativeMovementPhysics
         if (input == 0) return Approach(velocity, 0, downwardVelocity < FallSpeed ? drag * FloatCoefficient : drag);
         return Accelerate(velocity, input * FloatDrag2 * 2, limit, dt);
     }
+
+    // CMobMove (virtual +8 == 0), 0x9B313D..0x9B3421. Y is positive downward.
+    // Upward movement comes from flap(), not a negative vertical input force.
+    public void Flight(ref double vx, ref double vy, int horizontal, int vertical, double fly, double dt, double gravity = 1)
+    {
+        gravity = Math.Abs(gravity);
+        double limit = FlySpeed * fly * gravity;
+        double brake = FloatDrag1 / Mass * dt;
+        vx = Restrict(vx, limit, brake);
+        vx = horizontal == 0 ? Approach(vx, 0, brake) : Accelerate(vx, horizontal * FlyForce * gravity, limit, dt);
+        vy = Restrict(vy, limit, brake);
+        double acceleration = FlyForce / Mass / gravity;
+        if (vertical < 0) {
+            double target = limit * .3;
+            vy = vy > target ? Math.Max(target, vy - acceleration * dt) : Math.Min(target, vy + acceleration * dt * .5);
+        }
+        // Preserve the original positive-input branch, including its immediate
+        // target assignment (0x9B339E..0x9B33EC); do not replace it with smoothing.
+        else if (vertical > 0) vy = limit * 1.5;
+        else vy = Accelerate(vy, acceleration * Mass, limit, dt);
+    }
+    // 0x9B20FD..0x9B2131, airborne mob flap replaces, rather than adds to, vy.
+    public double Flap(double fly, double gravity = 1) => -FlySpeed * fly * Math.Abs(gravity);
 }

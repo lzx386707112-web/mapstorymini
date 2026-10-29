@@ -23,6 +23,86 @@
   "ms": 376947,
   "path": "Sound/Bgm/BgmUI_Title.mp3"
  },
+ "Effect/Direction.img/sound/bgm": {
+  "ms": 43885,
+  "path": "Sound/Direction/Direction/sound/bgm.mp3"
+ },
+ "Effect/Direction.img/sound/cygnus": {
+  "ms": 8493,
+  "path": "Sound/Direction/Direction/sound/cygnus.mp3"
+ },
+ "Effect/Direction.img/sound/final": {
+  "ms": 2419,
+  "path": "Sound/Direction/Direction/sound/final.mp3"
+ },
+ "Effect/Direction.img/sound/heart1": {
+  "ms": 1963,
+  "path": "Sound/Direction/Direction/sound/heart1.mp3"
+ },
+ "Effect/Direction.img/sound/heart2": {
+  "ms": 2489,
+  "path": "Sound/Direction/Direction/sound/heart2.mp3"
+ },
+ "Effect/Direction.img/sound/heart3": {
+  "ms": 2395,
+  "path": "Sound/Direction/Direction/sound/heart3.mp3"
+ },
+ "Effect/Direction.img/sound/heart4": {
+  "ms": 2405,
+  "path": "Sound/Direction/Direction/sound/heart4.mp3"
+ },
+ "Effect/Direction.img/sound/heart5": {
+  "ms": 1860,
+  "path": "Sound/Direction/Direction/sound/heart5.mp3"
+ },
+ "Effect/Direction.img/sound/start": {
+  "ms": 2324,
+  "path": "Sound/Direction/Direction/sound/start.mp3"
+ },
+ "Effect/Direction.img/sound/text1": {
+  "ms": 5195,
+  "path": "Sound/Direction/Direction/sound/text1.mp3"
+ },
+ "Effect/Direction.img/sound/text2": {
+  "ms": 3980,
+  "path": "Sound/Direction/Direction/sound/text2.mp3"
+ },
+ "Effect/Direction.img/sound/text3": {
+  "ms": 2541,
+  "path": "Sound/Direction/Direction/sound/text3.mp3"
+ },
+ "Effect/Direction.img/sound/text4": {
+  "ms": 2475,
+  "path": "Sound/Direction/Direction/sound/text4.mp3"
+ },
+ "Effect/Direction.img/sound/text5": {
+  "ms": 2504,
+  "path": "Sound/Direction/Direction/sound/text5.mp3"
+ },
+ "Effect/Direction.img/sound/text6": {
+  "ms": 2109,
+  "path": "Sound/Direction/Direction/sound/text6.mp3"
+ },
+ "Effect/Direction.img/sound/title": {
+  "ms": 3330,
+  "path": "Sound/Direction/Direction/sound/title.mp3"
+ },
+ "Effect/Direction1.img/sound/FinalFight": {
+  "ms": 59167,
+  "path": "Sound/Direction/Direction1/sound/FinalFight.mp3"
+ },
+ "Effect/Direction2.img/sound/FinalFight": {
+  "ms": 59167,
+  "path": "Sound/Direction/Direction2/sound/FinalFight.mp3"
+ },
+ "Effect/Direction3.img/sound/Whistle": {
+  "ms": 4084,
+  "path": "Sound/Direction/Direction3/sound/Whistle.mp3"
+ },
+ "Effect/Direction3.img/sound/title": {
+  "ms": 3330,
+  "path": "Sound/Direction/Direction3/sound/title.mp3"
+ },
  "Game/Buff": {
   "ms": 3039,
   "path": "Sound/Game/Buff.mp3"

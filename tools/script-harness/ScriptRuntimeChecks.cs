@@ -28,6 +28,75 @@ internal static class ScriptRuntimeChecks
     }
     public static int Run()
     {
+        Check("event original warrior setup/entry/timeout and isolated instance map handles",()=>
+        {
+            long now=1000;int warped=0,reset=0,clocks=0;
+            string path=System.IO.Path.GetFullPath("../../../MapleDashResources/Data/scripts/event/3rdJob_warrior.js");
+            var events=new NativeEventScriptService(key=>key=="event/warrior"?System.IO.File.ReadAllText(path):null,()=>now,engine=>
+            {
+                engine.Interp.ResolveHostType=type=>
+                {
+                    if(type!="org.gms.util.PacketCreator")throw new Exception(type);
+                    var packets=new JsHostObject(null);
+                    packets.Set("getClock",JsFunction.FromNative("getClock",c=>c.Arg(0)));return packets;
+                };
+            });
+            var maps=new HashSet<JsValue>();
+            events.InstanceMap=(instance,id)=>
+            {
+                if(id!=108010301)throw new Exception("original map id");
+                var map=new JsHostObject(instance);maps.Add(map);
+                map.Set("resetPQ",JsFunction.FromNative("resetPQ",c=>{reset++;return JsUndefined.Value;}));return map;
+            };
+            events.Clock=(instance,seconds)=>{if(seconds==1200)clocks++;};
+            JsValue Player(int id)
+            {
+                var player=new JsHostObject(id);
+                player.Set("getId",JsFunction.FromNative("getId",c=>new JsNumber(id)));
+                player.Set("changeMap",JsFunction.FromNative("changeMap",c=>{warped=JsConvert.ToInt32(c.Arg(0));return JsUndefined.Value;}));
+                player.Set("sendPacket",JsFunction.FromNative("sendPacket",c=>JsUndefined.Value));return player;
+            }
+            var manager=events.GetManager("warrior");var one=manager.Start(Player(1));
+            if(one==null || !one.Started || one.PlayerCount!=1 || events.GetInstance(1)!=one || warped!=108010300 || reset!=1 || clocks!=1)
+                throw new Exception("original player entry");
+            var two=manager.Start(Player(2));
+            if(two==null || two==one || maps.Count!=2 || events.GetInstance(2)!=two)throw new Exception("instance alias");
+            now+=1199999;events.Tick();if(one.Disposed || two.Disposed)throw new Exception("premature timeout");
+            now++;events.Tick();
+            if(!one.Disposed || !two.Disposed || events.GetInstance(1)!=null || events.GetInstance(2)!=null || warped!=105070001)
+                throw new Exception("original timeout/unregister/dispose/exit warp");
+            if(events.GetManager("absent")!=null)throw new Exception("missing script invented");
+            events.Clear();
+        });
+        Check("event lifecycle ordering, cancellation and strict unsupported API",()=>
+        {
+            long now=1000;var events=new NativeEventScriptService(key=>
+                "var entries=0;function init(){}function playerEntry(e,p){e.setProperty('entryCount',e.getPlayerCount());entries++;}"+
+                "function playerUnregistered(e,p){e.setProperty('unregisterCount',e.getPlayerCount());}"+
+                "function dispose(e){e.setProperty('disposeCalled',1);em.setProperty('disposed',1);}"+
+                "function late(e){em.setProperty('late',1);}",()=>now);
+            var manager=events.GetManager("lifecycle");var instance=manager.NewInstance("one");
+            var player=new JsHostObject(7);player.Set("getId",JsFunction.FromNative("getId",c=>new JsNumber(7)));
+            var interp=new JsInterpreter();
+            JsValue Call(JsHostObject host,string method,params JsValue[] args)=>interp.Call(host.Get(method),host,args);
+            instance.Register(player);instance.Register(player);
+            Equal("1",Call(instance.Host,"getProperty",new JsString("entryCount")));
+            instance.Unregister(player);Equal("1",Call(instance.Host,"getProperty",new JsString("unregisterCount")));
+            if(instance.PlayerCount!=0 || events.GetInstance(7)!=null)throw new Exception("unregister membership");
+            Throws(()=>manager.NewInstance("one"));
+            Throws(()=>Call(instance.Host,"getInstanceMap",new JsNumber(100)));
+            Throws(()=>instance.Host.Get("inventedMethod"));
+            Call(instance.Host,"schedule",new JsString("late"),new JsNumber(10));
+            instance.Dispose();now+=10;events.Tick();
+            Equal("1",Call(manager.Host,"getProperty",new JsString("disposed")));
+            Equal("null",Call(manager.Host,"getProperty",new JsString("late")));
+            if(!instance.Disposed)throw new Exception("dispose flag");
+            Throws(()=>manager.NewInstance("one"));
+            now+=events.LobbyDelayMillis;events.Tick();
+            var replacement=manager.NewInstance("one");
+            Equal("null",Call(replacement.Host,"getProperty",new JsString("entryCount")));
+            events.Clear();
+        });
         Check("arrow block/expression, reduce and lexical capture", () => Equal("14", Execute(
             "function test(){var bonus=2; return [1,2,3].map(x=>{return x+bonus;}).reduce((a,x)=>a+x,2);}")));
         Check("nested destructuring and Object.entries", () => Equal("a=5,b=7", Execute(

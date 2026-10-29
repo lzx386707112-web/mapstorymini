@@ -111,6 +111,27 @@ def main():
     if INDEX.is_file():
         index = json.loads(INDEX.read_text())
 
+    # Direction scenes reference Sound properties outside Sound.wz by their full
+    # IMG UOL. Keep that key and export the original MPEG payload without changes.
+    if "--direction-only" in sys.argv:
+        def visit(node, key):
+            data, ms = sound_bytes(node)
+            if data:
+                relative = "Direction/" + key.removeprefix("Effect/").replace(".img/", "/") + ".mp3"
+                out = RES / relative
+                out.parent.mkdir(parents=True, exist_ok=True)
+                out.write_bytes(data)
+                index[key] = {"path": "Sound/" + relative, "ms": ms}
+                print(key, len(data), ms)
+                return
+            for child in node.children():
+                visit(child, key + "/" + child.name)
+        for file in sorted((BEIDOU.parent / "Effect").glob("Direction*.img")):
+            img = WzImage.from_bytes(file.read_bytes(), key=WzKey.for_region("GMS"))
+            visit(img.root, "Effect/" + file.name)
+        INDEX.write_text(json.dumps(index, ensure_ascii=False, indent=1, sort_keys=True))
+        return
+
     # ---- BGM：全量地图目录里出现过的每一首 + 大厅/关卡主题 ----
     # FieldIndex.json 覆盖资源包里全部 6337 张地图（tools/export_field_index.py 生成）；
     # 旧版只读 FieldMaps.json 的 37 张彩虹岛图，出岛后全是静音。

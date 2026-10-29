@@ -1,0 +1,21 @@
+2026-10-29 地图过场 / 事件宿主 / 飞行追击增量验证
+
+身份、原端地址、公式、IMG数据和剩余缺口：
+.agents/skills/beidou-client-reverse/references/map-intro-and-events.md
+.agents/skills/beidou-client-reverse/references/monster-skills.md 末节
+
+tools/script-harness --selftest: runtime checks passed=28 failed=0
+- 原3rdJob_warrior.js不改写：两个独立map fixture、入口、1200秒超时、退出、销毁。
+- 回调先后、重复注册、调度取消、未知API严格报错、10秒延迟释放实例名字。
+注意：fixture不是运行时副本地图实现；InstanceMap运行时未配置，明确报缺口。
+
+NPC全量 --run ../../../MapleDashResources/Data/scripts/npc:
+889 total / 769 OK / 47 Runtime / 73 JavaInterop（既有基线，非全通过）。
+--pack ../../Assets/Resources/Scripts/npc_scripts.json:
+2779 entries / npc889 / quest470 / parseFail0 / mangled0。
+
+tools/unity-compile-check dotnet build -t:Rebuild: 0 warning / 0 error。
+隔离Unity工程 /tmp/mapledash-gap-check/MapleDash，NativeGameplayNodeChecks.Run:
+男女goAdventure/goLith原图/节点时序/位移/换图/锁清理；540组原EXE飞行oracle，
+追击距离与寿命边界。新增Shape2D整数插值断言也已通过，最终Unity exit0，日志/tmp/mapledash-intro-flight-check3.log。
+未构建APK、未声称完整事件/完整AI完成。

@@ -115,8 +115,8 @@ public sealed class FieldDirector : MonoBehaviour
         // 0 号图（原版 Maple Road : Entrance）是「踏入旅途」开场演出的黑场舞台：
         //   info/onUserEnter = goAdventure、背景 bS 为空、整屏 allblackTile，图里没有 NPC 也没有门，
         //   唯一出路是 info/returnMap（10000 小蘑菇）。原版靠客户端播完
-        //   Effect/Direction3.img/goAdventure/Scene{gender} 之后自己跳走；本端演出系统还没做
-        //   （NpcApi 的 showIntro 是空实现），不续跳的话玩家就停在一片黑里出不来。
+        //   Effect/Direction3.img/goAdventure/Scene{gender} 之后自己跳走。
+        //   仅在原始过场未成功启动时保留 returnMap 兜底；启动后由过场的 type 2 指令换图。
         //   2101.js（番茄田的希娜「训练结束了就送你出训练营」）最后就是 cm.warp(0)，走的就是这条路。
         deferredWarpMap = map.id == 0 && map.returnMap > 0 && map.returnMap != map.id ? map.returnMap : -1;
         // 换图打一条分隔线：看分享出来的日志时，能立刻知道掉帧发生在哪张图
@@ -138,6 +138,7 @@ public sealed class FieldDirector : MonoBehaviour
 
         bool appearanceChanged = (Map != null && Map.fieldType == 82) != (map.fieldType == 82);
         Map = map;
+        NativeEventScripts.ChangedMap(map.id,false);
         nextEnvironmentDamage=Time.realtimeSinceStartupAsDouble+EnvironmentInterval();
         NpcField.Bind(map);
         if (appearanceChanged) player?.RefreshFieldAppearance();
@@ -159,6 +160,8 @@ public sealed class FieldDirector : MonoBehaviour
         Profile.LastMapId = map.id;
         NativeSkillBackdrop.Enter(this);
         NativeMapScripts.Enter(this);
+        if(NativeMapIntro.Active(this))deferredWarpMap=-1;
+        NativeEventScripts.ChangedMap(map.id,true);
 
         Debug.Log("[Field] 进入 " + map.id + " " + map.name + "：刷怪点 " + points.Count +
                   "，传送门 " + map.portals.Count);

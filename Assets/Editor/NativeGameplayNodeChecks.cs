@@ -40,8 +40,71 @@ public static class NativeGameplayNodeChecks
         }
         finally { UnityEngine.Object.DestroyImmediate(go);PlayerCtrl.InputLocked=inputLock;ScreenFade.Dismiss(); }
     }
+    static void CheckMapIntro()
+    {
+        var timed=new NativeIntroTimeline.Command {Duration=10000};
+        Require(timed.Displacement(722,5001)==361 && timed.Displacement(-722,5001)==-361,
+            "Shape2D timed displacement must truncate signed pixel coordinates toward zero");
+        Require(timed.Displacement(722,10001)==722 && timed.Displacement(722,-1)==0,
+            "Shape2D timed displacement endpoints");
+        var go=new GameObject("OriginalIntroCheck");int before=PlayerCtrl.ScriptUiLock;
+        try
+        {
+            var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+            var field=go.AddComponent<FieldDirector>();field.enabled=false;
+            typeof(FieldDirector).GetField("<Map>k__BackingField",flags).SetValue(field,new FieldMap {id=0});
+            var pending=typeof(FieldDirector).GetField("pendingWarpMap",flags);
+            var intro=go.AddComponent<NativeMapIntro>();intro.enabled=false;
+            for(int gender=0;gender<2;gender++)
+            {
+                intro.Begin(field,"Effect/Direction3.img/goAdventure/Scene"+gender,true,1000);
+                Require(PlayerCtrl.ScriptUiLock==before+1,"Intro must acquire UI lock only after validation");
+                intro.Tick(1000);Require(go.GetComponentsInChildren<NativeImgAnimation>().Length==0,"Intro start equality must wait");
+                intro.Tick(1001);var image=go.GetComponentInChildren<NativeImgAnimation>();
+                Require(image!=null && image.Image.sprite!=null && image.Image.sprite.texture.width==800,"Original boy/girl intro canvas");
+                intro.Tick(6001);
+                Require(Math.Abs(image.transform.position.y-150/Art.PPU)<.001,"Intro displacement must add y1 to y, not use y1 as endpoint");
+                intro.Tick(15200);Require((int)pending.GetValue(field)==-1,"Intro map command equality must wait");
+                intro.Tick(15201);Require((int)pending.GetValue(field)==10000,"Intro original field warp");
+                pending.SetValue(field,-1);
+                var warp=typeof(FieldDirector).GetField("warpState",flags);
+                warp.SetValue(field,Enum.ToObject(warp.FieldType,0));
+                NativeMapIntro.Enter(field);
+                Require(!NativeMapIntro.Active(field) && PlayerCtrl.ScriptUiLock==before && go.GetComponentsInChildren<NativeImgAnimation>().Length==0,
+                    "Changing fields must clear intro sprites and its UI lock");
+            }
+            for(int gender=0;gender<2;gender++)
+            {
+                intro.Begin(field,"Effect/Direction3.img/goLith/Scene"+gender,true,1000);
+                intro.Tick(1001);Require(go.GetComponentsInChildren<NativeImgAnimation>().Length==3,"goLith initial parallel visual commands");
+                intro.Clear();
+            }
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go);PlayerCtrl.ScriptUiLock=before;ScreenFade.Dismiss(); }
+    }
     public static void Check()
     {
+        var physics=NativeMovementPhysics.Load();
+        var flightFixture=(Dictionary<string,object>)MiniJson.Parse(File.ReadAllText("tools/native-flight-oracle.json"));
+        int flightCases=0;
+        foreach (Dictionary<string,object> entry in (List<object>)flightFixture["cases"])
+        {
+            var input=(Dictionary<string,object>)entry["input"];var output=(Dictionary<string,object>)entry["output"];
+            double vx=Convert.ToDouble(input["vx"]),vy=Convert.ToDouble(input["vy"]),oldX=vx,oldY=vy;
+            double dt=Convert.ToDouble(input["ms"])*.001;
+            physics.Flight(ref vx,ref vy,Convert.ToInt32(input["h"]),Convert.ToInt32(input["vertical_input"]),Convert.ToDouble(input["fly"]),dt);
+            Require(Math.Abs(vx-Convert.ToDouble(output["velocity"]))<.0001 && Math.Abs(vy-Convert.ToDouble(output["vertical"]))<.0001 &&
+                Math.Abs((oldX+vx)*dt*.5-Convert.ToDouble(output["position"]))<.0001 &&
+                Math.Abs((oldY+vy)*dt*.5-Convert.ToDouble(output["y"]))<.0001,"Original x86 flight integrator case "+flightCases);
+            flightCases++;
+        }
+        Require(flightCases==540,"Flight oracle coverage");
+        Require(NativeMobMotion.AcquisitionRange(409,2) && !NativeMobMotion.AcquisitionRange(410,0) &&
+            NativeMobMotion.AcquisitionRange(-10,-117) && !NativeMobMotion.AcquisitionRange(10,120),"Native integer acquisition geometry");
+        var pursuit=new NativeMobPursuit();pursuit.Acquire(0);pursuit.Tick(180000,true);
+        Require(pursuit.Active,"Target expiry must be strictly negative");pursuit.Acquire(59999);pursuit.Tick(1,true);
+        Require(!pursuit.Active,"Repeated acquisition must not refresh target lifetime");
+        pursuit.Acquire(59999);pursuit.Tick(1,false);Require(!pursuit.Active,"Dead target must release pursuit");
         var fixture = (Dictionary<string, object>)MiniJson.Parse(File.ReadAllText("tools/native_skill_nodes.json"));
         var branches = (Dictionary<string, object>)fixture["visualBranches"];
         var allSkills=new HashSet<int>();
@@ -114,6 +177,7 @@ public static class NativeGameplayNodeChecks
         Require(NativeHeldSkill.ReleaseElapsed(3121004,5000)==2000 && NativeHeldSkill.ReleaseElapsed(2121001,5000)==1000 &&
             NativeHeldSkill.ReleaseElapsed(2121001,0)==30 && NativeHeldSkill.ReleaseElapsed(1000,100)==0,"Native charge elapsed clamps/classification");
         CheckMapScripts();
+        CheckMapIntro();
         int summons = 0;
         foreach (var raw in (List<object>)branches["summon"])
         {

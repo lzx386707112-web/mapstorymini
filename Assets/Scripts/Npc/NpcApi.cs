@@ -256,7 +256,7 @@ public static class NpcApi
         cm.Set("topMessage", Fn(c => ToastIfAny(Str(c, 0))));
         cm.Set("numberWithCommas", Ret(c => S(Int(c, 0).ToString("N0"))));
         cm.Set("showInfo", Fn(c => NativeImgAnimation.ShowInfo(Str(c, 0))));
-        cm.Set("showIntro", Fn(c => { }));
+        cm.Set("showIntro", Fn(c => NativeMapIntro.Show(Str(c,0))));
         cm.Set("showVideo", Fn(c => { }));
         cm.Set("playSound", Fn(c => { }));
         cm.Set("guideHint", Fn(c => { }));
@@ -280,8 +280,8 @@ public static class NpcApi
         BindCommonCm(cm, session);
 
         // 单机没有的系统：返回 null，脚本里的 `if (x != null)` 分支会自然跳过。
-        cm.Set("getEventManager", Ret(_ => JsNull.Value));
-        cm.Set("getEventInstance", Ret(_ => JsNull.Value));
+        cm.Set("getEventManager", Ret(c => NativeEventScripts.Manager(Str(c,0))));
+        cm.Set("getEventInstance", Ret(_ => NativeEventScripts.Instance()));
         cm.Set("getParty", Ret(_ => BuildParty(session)));
         cm.Set("getExpedition", Ret(_ => JsNull.Value));
         cm.Set("getFamilyEntry", Ret(_ => JsNull.Value));
@@ -912,6 +912,7 @@ public static class NpcApi
         p.Set("getMap", Ret(_ => BuildMap()));
         p.Set("getPosition", Ret(_ => BuildPosition()));
         p.Set("getClient", Ret(_ => BuildClient(p)));
+        p.Set("getEventInstance", Ret(_ => NativeEventScripts.Instance()));
         p.Set("getAbstractPlayerInteraction", Ret(_ => NpcSession.Active != null
             ? Build(NpcSession.Active, session.NpcId, session.QuestId, session.IsQuest) : JsNull.Value));
         p.Set("haveItem", Ret(c => B(Profile.ItemCount(Int(c, 0)) >= Math.Max(1, Int(c, 1, 1)))));
@@ -931,7 +932,7 @@ public static class NpcApi
         p.Set("addHP", Fn(c => { if (Pc != null) Pc.hp = Mathf.Clamp(Pc.hp + Int(c, 0), 0, Pc.hpMax); }));
         p.Set("addMP", Fn(c => { if (Pc != null) Pc.mp = Mathf.Clamp(Pc.mp + Int(c, 0), 0, Pc.mpMax); }));
         p.Set("dropMessage", Fn(c => ToastIfAny(c.ArgCount > 1 ? Str(c, 1) : Str(c, 0))));
-        p.Set("changeMap", Fn(c => { if (NpcSession.Active != null) NpcSession.Active.RequestWarp(Int(c, 0)); }));
+        p.Set("changeMap", Fn(c => session.RequestWarp(Int(c,0),null,c.ArgCount>1 ? Int(c,1) : -1)));
         p.Set("setMap", Fn(c => { if (NpcSession.Active != null) NpcSession.Active.RequestWarp(Int(c, 0)); }));
         p.Set("isAlive", Ret(_ => B(Pc != null && Pc.hp > 0)));
         p.Set("getEvents", Ret(_ => new JsArray()));
@@ -1401,6 +1402,7 @@ public static class NpcApi
         c.Set("getChannel", Ret(_ => N(GameSession.Channel)));
         c.Set("getWorld", Ret(_ => N(GameSession.World)));
         c.Set("getChannelServer", Ret(_ => BuildChannelServer(player)));
+        c.Set("getEventManager", Ret(args => NativeEventScripts.Manager(Str(args,0))));
         return c;
     }
 
