@@ -32,6 +32,15 @@ public static class GameSession
         Server.Cash.CanEnter = NativeCommunityMaps.CanEnterCash;
         Net = Server.Transport;
         Server.TradeInventoryCommitted += ApplyTradeInventory;
+        global::Server.Field.MapReactorService.ScriptSource = global::ScriptSource.LoadKey;
+        global::Server.Field.MapReactorService.ScriptMessage = (map,type,text)=>
+        {
+            if(GameLoop.I?.field?.Map?.id==map) NativeSystemMessage.Drop(type,text);
+        };
+        global::Server.Field.MapReactorService.EventInstance = map=>GameLoop.I?.field?.Map?.id==map ? NativeEventScripts.Instance() : MapleDash.Js.JsNull.Value;
+        global::Server.Field.MapReactorService.ScriptError = error=>UnityEngine.Debug.LogError("[ReactorScript] "+error.Message);
+        global::Server.Bot.BotTypeManager.GrantTutorialAdmin = GrantTutorialAdmin;
+        global::Server.Bot.BotTypeManager.ApplySkillEffect = ApplyBotSkillEffect;
         MigrateLegacyProfile();
     }
 
@@ -282,6 +291,8 @@ public static class GameSession
 
     public static void ApplyInventoryToProfile()
     {
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        string previousAppearance = player != null ? WzCharacter.CurrentAppearanceKey() : null;
         var d=Profile.Data;
         // 共享 Profile 只是当前角色的镜像，切角时必须清掉上一人的装备。
         foreach (int slot in EquipSlot.Worn) d.SetEquipSlot(slot, 0);
@@ -305,6 +316,9 @@ public static class GameSession
             else d.AddItem(it.itemId, it.quantity);
         }
 
+        // 装备窗读 Profile，场景精灵则缓存合成配方；同步后必须刷新变化的外观。
+        if (player != null && previousAppearance != WzCharacter.CurrentAppearanceKey())
+            player.RefreshFieldAppearance();
     }
     static void ApplyTradeInventory(Server.Bot.BotActor actor,int mesoDelta)
     {
@@ -316,6 +330,34 @@ public static class GameSession
         Character.inventory=inventory;
         Character.tradeRevision=actor.character.tradeRevision;
         ApplyInventoryToProfile(); Profile.Save();
+    }
+
+    static bool GrantTutorialAdmin(global::Server.Bot.BotActor actor)
+    {
+        if (!InGame || actor.id != CharacterId || Character == null) return false;
+        var d = Profile.Data;
+        // TutorialBot.grantAdmin: setLevel(149), one levelUp, then changeJob(412).
+        d.level = 149;
+        LevelSystem.SetLevel(d, 150);
+        if (!JobSystem.ChangeJobById(412)) return false;
+        Character.record.gm = 6;
+        d.ap += 750; d.sp += 450;
+        d.baseMaxHp = 10000; d.baseMaxMp = 10000;
+        d.attributes.maxHp = 10000; d.attributes.maxMp = 10000;
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        player?.ApplyProgression();
+        if (player != null) { player.hp = 10000; player.mp = 10000; }
+        actor.level = 150; actor.job = 412;
+        Profile.Save(); SaveToDb();
+        return true;
+    }
+
+    static void ApplyBotSkillEffect(global::Server.Bot.BotActor actor, int skillId)
+    {
+        if (!InGame || actor.id != CharacterId) return;
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        if (player != null)
+            NativeBuffs.For(player).ApplySkill(skillId, SkillBook.MaxLevelOf(skillId), NativeBuffs.Now);
     }
 
     // —————————————————— 现有玩法数据 → DB ——————————————————

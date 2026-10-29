@@ -945,15 +945,21 @@
       "source": "ArtificialPlayer/BotTypes/DropGameBot.java",
       "sha256": "644247e3741d32239a66308935ea23d9fe3d005196480db147528f6eb2d6c501",
       "lines": 611,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/DropGameBot.cs"
+      ],
+      "integration": "2026-10-29: concrete factory/runtime services and cancellation wired; server-check 607/0, Unity compile 0 errors; Play/Android and original trade/invitation frontend pending. See reverse skill solomapling second-step record."
     },
     {
       "source": "ArtificialPlayer/BotTypes/DropGameLootPool.java",
       "sha256": "f33055a3ad0207c517e1e777739f0580d28bd7e0cd6130cb8294b13759099176",
       "lines": 117,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/DropGameLootPool.cs"
+      ],
+      "integration": "2026-10-29: concrete factory/runtime services and cancellation wired; server-check 607/0, Unity compile 0 errors; Play/Android and original trade/invitation frontend pending. See reverse skill solomapling second-step record."
     },
     {
       "source": "ArtificialPlayer/BotTypes/DropGameSpectatorSystem.java",
@@ -997,8 +1003,11 @@
       "source": "ArtificialPlayer/BotTypes/HenesysJQBot.java",
       "sha256": "47fef01a21dcb40e208ae1474fa8a2f02c3dec22d745e2eef02449338e57e20f",
       "lines": 308,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/HenesysJQBot.cs"
+      ],
+      "integration": "2026-10-29: concrete factory/runtime services and cancellation wired; server-check 607/0, Unity compile 0 errors; Play/Android and original trade/invitation frontend pending. See reverse skill solomapling second-step record."
     },
     {
       "source": "ArtificialPlayer/BotTypes/NXMerchantBot.java",
@@ -1089,8 +1098,11 @@
       "source": "ArtificialPlayer/BotTypes/TutorialBot.java",
       "sha256": "3fbc6d77724552ea64a39d6721b00ff1de26e000db9762bb8d890c17a9e53b95",
       "lines": 599,
-      "status": "not_ported",
-      "targets": []
+      "status": "partial",
+      "targets": [
+        "Assets/Scripts/Server/Bot/Types/TutorialBot.cs"
+      ],
+      "integration": "2026-10-29: concrete factory/runtime services and cancellation wired; server-check 607/0, Unity compile 0 errors; Play/Android and original trade/invitation frontend pending. See reverse skill solomapling second-step record."
     },
     {
       "source": "ArtificialPlayer/BotWanderSystem/BotWanderSystem.java",

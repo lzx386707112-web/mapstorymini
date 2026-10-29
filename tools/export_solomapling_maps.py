@@ -27,7 +27,7 @@ def main():
             continue
         raw = path.read_bytes()
         img = WzImage.from_bytes(raw, key=key, name=path.name)
-        tree = img.parse_partial(only=frozenset({'info', 'miniMap', 'foothold', 'portal', 'ladderRope', 'life'}))
+        tree = img.parse_partial(only=frozenset({'info', 'miniMap', 'foothold', 'portal', 'ladderRope', 'life', 'reactor'}))
         if img.truncated or img.parse_warnings:
             raise ValueError(f'Incomplete map geometry: {path}: {img.parse_warnings}')
         footholds = []
@@ -40,9 +40,21 @@ def main():
         def entries(name):
             node = tree.get(name)
             return [] if node is None else [dict({'id': int(c.name)}, **scalars(c)) for c in node.children()]
+        # reactor 节点下每个子节点的名字只是序号（0/1/2…），真正的模板 id 在属性 id 里（字符串），
+        # 所以这里用 entries() 取出后再把 id 归一成 int，只留 OPQ 要用的四个字段。
+        def reactors():
+            node = tree.get('reactor')
+            out = []
+            for entry in entries('reactor'):
+                if not str(entry.get('id', '')).lstrip('-').isdigit():
+                    continue
+                out.append(dict(id=int(entry['id']), x=int(entry.get('x', 0)), y=int(entry.get('y', 0)),
+                                reactorTime=int(entry.get('reactorTime', -1)), name=str(entry.get('name', ''))))
+            return out
         maps[str(int(path.stem))] = dict(info=scalars(tree.get('info')), miniMap=scalars(tree.get('miniMap')),
                                         footholds=footholds, portals=entries('portal'), ropes=entries('ladderRope'),
                                         npcs=[n for n in entries('life') if n.get('type') == 'n'],
+                                        reactors=reactors(),
                                         source=path.relative_to(args.data).as_posix(), sha256=hashlib.sha256(raw).hexdigest())
         if index % 500 == 0:
             print(f'Map geometry scanned: {index}/{len(paths)}', flush=True)

@@ -107,6 +107,14 @@ rtk proxy /tmp/mapledash-reverse-venv/bin/python tools/inspect_beidou_client.py 
 
 ## 天气：源码事实与剩余工作
 
+### 2026-10-29 用户指定的背景天气显示策略（迁移差异）
+
+- 本节仅记录 Android/Unity 显示策略变更，不修改下面原 DLL 的身份、地址、公式或原端结论。用户要求天气不再使房屋、路面、NPC 整体变暗。
+- `NativeMapView.WeatherTintBacks` 按地图 `back` 节点的 `front=0` 收集原后景；`NativeWeatherField.Bind` 不再收集全地图 SpriteRenderer。tile/obj、NPC、portal 和 `front!=0` 原前景均不参与天气染色；后景平铺副本仍由 `UpdateBackgrounds` 复制原 renderer 颜色。
+- 原21张天气 IMG、布局/滚动参数和 profile 保留；天气背景统一 sorting `-1100+index`（替代部分 `700+index` 前景层），原生天气粒子从 `710` 改为 `-700`，位于普通后景 `-800+index` 之上、地图地形 SortingGroup `-400` 之下。既有天空提升 `-1200+index` 不变。天气粒子因地形遮挡而不可见是该显示策略的预期。
+- 地面附着保留原素材/生成逻辑，颜色白色，溅水仅保留雨量 alpha，不再继承夜间染色。并非关闭全部地面天气，也不声称与原端整场景调色一致。
+- 验证：本次代码差异静态检查及 `git diff --check`；未启动 Unity、未构建 APK、未做实机画面验收。
+
 - 完整模块入口在 `tool/client-debug/weather-compat/src/WeatherCompat.cpp`：通过 `BeiDouSetItemCompat.dll::BDS_RegisterPacketHandler` 接 `0x373D` 天气与 **`0x373F` skillback**，不是天气一个包；每次app tick推进天气、skillback及落地附着/水洼/摆动。
 - 服务端 `WeatherPackets.java` 当前负载26字节：minute ushort、msPerMinute int、sky byte、flags byte、elapsedSeconds int、tintRGB3字节、rainbowSeconds ushort、palette byte、elapsedMs int、skyToken int。客户端 `Weather_HandleWorldState` 最低8字节，后面各尾字段按剩余长度依次可选解码；包offset从进入位置相对跳过opcode2字节，不能假定offset=0。
 - `SetWorldState`：disabled强制720分钟/clear/frozen/无彩虹；分钟越界归0，msPerMinute最少100，未知sky归clear；elapsedSeconds非负，旧包无elapsedMs时以seconds×1000饱和到INT_MAX回退。

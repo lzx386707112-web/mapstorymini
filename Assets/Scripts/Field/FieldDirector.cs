@@ -461,6 +461,7 @@ public sealed class FieldDirector : MonoBehaviour
         groundLoot.Bind(this, bots);
         // Drive 内部：BotTasks 的分帧泵 + 受预算约束的状态机分发，不会一次跑完全部假人。
         bots.Drive((long)(Time.realtimeSinceStartup * 1000));
+        view.SyncDynamicNpcs();
         if (botField == null) botField = GetComponent<BotField>() ?? gameObject.AddComponent<BotField>();
         // 假人视图的增删本身也降到 10Hz（BotField 内部节流），纸娃娃合成改在 BotField.Update 里按预算出队。
         botField.Synchronize(Map.id, GameSession.World, GameSession.Channel);

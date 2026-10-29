@@ -103,7 +103,8 @@ public sealed class NativeWeatherField : MonoBehaviour
         server.Roll(Now,DateTime.Now.Month);server.Sync(id,true,State,Now);
         // Client ages are monotonic; server's Unix clock is only used in sync payloads.
         RebaseSync();
-        foreach(var image in view.GetComponentsInChildren<SpriteRenderer>())scenery[image]=image.color;
+        // 用户指定的背景天气模式：只染原图 back/front=0，不染 tile/obj、NPC 或前景。
+        foreach(var image in view.WeatherTintBacks())scenery[image]=image.color;
         if(HasSky || Forced) MountLayers();
         Tick();
     }
@@ -125,7 +126,7 @@ public sealed class NativeWeatherField : MonoBehaviour
             // 本图没有天空基准时跳过 sky 组：那几张是整屏天空贴图，盖在原图上会毁掉原画。
             // 夜色/云/雨/雪/雾/彩虹都能直接叠，运营要的「看得见变化」靠它们。
             if(!HasSky && (string)row["group"]=="sky") { index++; continue; }
-            var image=view.AddWeatherBack(row,((bool)row["front"]?700:-1100)+index++);
+            var image=view.AddWeatherBack(row,-1100+index++);
             if(image!=null)sheets.Add(new Sheet {Image=image,Group=(string)row["group"]});
         }
         if(HasSky) view.PromoteWeatherBacks(mapNode);
@@ -178,7 +179,7 @@ public sealed class NativeWeatherField : MonoBehaviour
         float lightning=renders && State.Sky==4 && levels["rain"]>=.70f && age>0 ? NativeWeatherLightning.Evaluate((uint)age,State.Token,State.Palette) : 0;
         float darkness=Mathf.Max(night,boost)*(1-.697f*lightning);
         Color sceneryColor=TintColor(1,darkness);
-        groundTint=sceneryColor;rainTint=TintColor(levels["rain"],darkness*.55f);
+        groundTint=Color.white;rainTint=new Color(1,1,1,levels["rain"]);
         foreach(var pair in scenery)if(pair.Key!=null)pair.Key.color=pair.Value*sceneryColor;
         view.SetWeatherSkyVisibility(State.BareSky);
         foreach(var sheet in sheets)

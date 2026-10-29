@@ -1,5 +1,20 @@
 # 纹理采样与移动端输入验证
 
+## 2026-10-29：穿戴后地图角色外观未刷新
+
+本节仅记录移植代码缺陷，无新增 EXE 地址或布局推断。`EquipLoadout.MoveEquipment` 成功后通过
+`GameSession.ApplyInventoryToProfile` 更新装备镜像；装备窗直接读取镜像，所以能显示帽子。
+但 `PlayerCtrl.BuildArt` 仅在生成角色或 `RefreshFieldAppearance` 时取
+`WzCharacter.CurrentAppearanceKey`，库存同步原先没有触发后者，场景仍用旧配方。
+
+修复在 `ApplyInventoryToProfile` 同步前后比较当前外观 key，仅变化时调用现有
+`RefreshFieldAppearance`。涵盖穿戴、脱下及其他共用库存同步的入口；不因普通消耗品数量变化重建角色。
+继续使用 `Character/Cap/<8位ID>.img` 的原画、锚点、z 与既有遮发解析，不改 UI 布局或素材。
+fieldType82 仍通过 `TutorialAppearance` 决定显示覆盖，不强制展示被该地图规则隐藏的装备。
+
+验证：静态核对穿戴/脱下→库存镜像→外观 key→精灵重建调用链，`git diff --check` 通过。
+尚未运行 Unity 或 Android 实机穿脱验收；旧合成器测试不作为本次刷新行为已通过的证据。
+
 核实快照：2026-10-26。原端身份见 [binary-and-tools.md](binary-and-tools.md)。
 原端逻辑的确定程度与运行时迁移状态分开记录；“尚未迁移”不代表需要重新逆向已确认部分。
 

@@ -438,3 +438,21 @@ QuestNpcChecks.CheckTrainingQuestProgress使用level2/job0、真实8142条件和
 按两次下键后只有「装备洗练」是红三角。
 **截图注意**：编辑器 `ScreenCapture` 落盘比调用晚（低帧率时 >1.5s），两个状态要在相邻 phase 里各停留 3s 再拍，
 否则两张图会拍到同一个状态（第一次拍的两张就是这样，误判成「状态没变」）。未做 Android 实机验收。
+
+### 默认选中首项（2026-10-29 追加，用户要求）
+
+原端 `SetDialog`（`0x9AC566`）把 `+0xF4/+0xF8/+0x6DC` 一起 `or -1`，即**打开菜单时没有任何选中项**，
+靠鼠标悬停（`0x9ABEBD` 命中测试 → `0x9AC040` 写 `[+0xF4]`）点亮当前行。这条在 Android 上不成立：
+没有 hover 就无法产生焦点，屏幕上是「全是浅灰点、看不出选的是谁」，所以用户要求**打开即选中第一项**。
+
+实现：`NpcDialog.SelectFirst()`（取 `DialogFlow.Links(content)[0]`，没有可选项仍是 -1），在两处调用：
+1. `NpcDialog.Set()` 里 `mode == Simple` 时（覆盖 `#L` 菜单）；
+2. **程序化菜单必须在 `Selections` 追加完之后再调一次** —— `NpcField` 的任务/提示菜单是
+   `NpcSession.Choose()`（内部已 Set）之后才 `FillQuestMenu` / 追加 script 条目，`Set()` 里算早了会选到空。
+另外 `DialogFlow.DrawPane` 的失效兜底改成「旧选中项不在新页里 → 回落首项」（原来回落 -1），保证任何
+改写路径都不会停在无焦点状态。**注意 `SelectedLink` 存的是 link 号码而不是下标**：
+装备中心真实菜单的 links 是 `[3,1,0,2,4,5,7]`，link 号不连续也不升序，`Links()` 按显示顺序收集，
+默认 `SelectedLink=3`（首项），下两次到 `0`（第三项）——只看号码会以为出错。
+
+`QuestNpcChecks.CheckDialogSelection` 已改为断言「默认选中首项」「分组标题不算首项」「非选项页不得有焦点」
+「换页后重新默认选中新页首项」。实拍：`docs/hud-review/npc-option-menu-{idle,selected}.png`。

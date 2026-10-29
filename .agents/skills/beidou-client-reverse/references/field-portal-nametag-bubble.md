@@ -36,18 +36,69 @@
 - `CPortal` 类型分派的精确汇编位置未定位（`.text` 内 switch 未对上）；上述类型语义来自客户端 Portal 类型常量与用户实测，未做逐分支反汇编。
 - 触发距离判定（当前 MapleDash 用 ±30px 横向 / ±80px 纵向）没有源端数值依据，属待核实。
 
-## NPC 名字牌（在脚下，与图高无关）
+## NPC 名字牌（脚下紧贴文字的背景，2026-10-29 逆向纠正）
 
-- **锚点 = NPC 脚点（`life/y` 经 foothold 吸附后的位置），所有 NPC 名字在同一条水平线上，名字排在脚点下方。**
-  这是用户在源端实测的行为，也和「名字不跟着图高走」的排版一致。
-- 走过两次弯路，别再犯：
-  1. 固定「脚点上方 82px」——矮 NPC 飘在空中，570 高的雕像贴在脚踝；
-  2. 按 stand 首帧 `origin.y` 贴头顶——变成每个 NPC 名字高度都不一样。
-  两者都不是源端行为。`Npc/NpcDialogUi.cs` 现在直接用 `map.WorldY(npc.y)`（脚点）+ `NameGapPx=3` 起排，
-  `TextAnchor.UpperCenter`。
-- `FieldNpc.head`（`Wz/NativeMapView.cs` 的 `NpcHeadHeight()`）现在**只**给头顶任务图标（!/?）用，
-  不再参与名字定位。任务图标仍在头顶上方 26px。
-- 待核实：任务图标相对头顶的精确间距（当前 +26px）没有汇编依据。
+### 二进制与调用链
+
+- `BeiDou.exe` 身份同本文开头（完整 SHA256 见 binary-and-tools）；`Canvas.dll` ImageBase `0x50000000`，
+  SHA256 `4383567405edb80427585cc8b62613fd807333761b11d08777d828894a871ae0`。
+- NPC 场景初始化函数 `0x6D21CD` 内 `0x6D2251..0x6D2297`：从 NPC 模板 `+4` 取名称，
+  `push 0x3E9`，传 NPC 图层 `+0xE4`、位置对象 `+0x90`，`ECX=NPC`，调用共用名牌函数 `0x5F0334`。
+  `0x6D229C..0x6D22EC` 仅模板 `+8` 非空时另建 type=1002 的附加名称行；该附加行尚未迁移。
+- type=1001 在 `0x5F0E20..0x5F0E2C` 跳到 `0x5F1174`，不用 `UI/NameTag.img` 装饰牌分支。
+  原端确实由 Canvas API 创建画布、填色、绘字；原 IMG 中的玩家饰牌不能代替这条分支。
+
+### 确定的尺寸、绘制与原点（单位均为原端地图像素）
+
+| 项目 | 汇编依据与参数 |
+| --- | --- |
+| 字体 | `0x5F119A..0x5F11CB`：`Arial`（字符串池5527）、12、ARGB `0xFFFFFF00`（黄字）、`BA`（池1411）；调用 `0x46341A` → font vtable `+0x0C` Create |
+| BA | Canvas `0x500045C5`：B→flag1，A→flag0x10；`0x50004FDC..0x5000500A`：weight700、抗锯齿，不含描边 |
+| 文字宽 | `0x5F11F4..0x5F1226` → `0x42782E` 调字体宽度接口；使用原字体实际整数宽度 |
+| 字体高度 | `0x5F1250..0x5F1258` → `0x485A45` → font vtable `+0x14`；Canvas vtable `0x50014294` / `0x50014420` 的 getter `0x5000319C` 读取字体资源 `+0x14` |
+| 高度为何是12 | Canvas `0x5000309D` Create → `0x50005907`：size传入key `+4`，`0x50005A05` 复制到资源 `+0x14`；`0x50004FC8` 以负size建 LOGFONT，`0x50004E00..0x50004E0D` 再以abs(lfHeight)写回资源 `+0x14`。返回的是请求高度12，不是TextMetrics行高 |
+| 背景宽高 | `0x5F12E5..0x5F12EF`：type1001没有额外图标宽，**width=文字宽+5，height=12+4=16**；`0x5F1348` 调 canvas Create |
+| 背景填色 | `0x5F0E25` 初始化 ARGB `0xA0000000`；type1001不覆盖该值；`0x5F139E..0x5F13AF` 填整个背景，黑色alpha160/255 |
+| 边缘 | `0x5F1445..0x5F150A` 用 `0x00FFFFFF` 各清掉四角1×1像素；**没有绿色边框**。`0x5F1522` 的另一种填充受玩家牌状态门控，NPC1001不进入 |
+| 绘字 | `0x5F15EC..0x5F1603`：无图标时 **DrawText(2,0)**；没有额外上下padding，没有四向文字描边 |
+| 水平原点 | `0x5F1654..0x5F1669`：`origin.x=width/2`（整数向零截断，正宽即floor） |
+| 竖直原点 | `0x5F1691..0x5F1694`：`origin.y=-2`；第一行名牌在脚点下2px。非首行会在 `0x5F1979..0x5F1AAA` 按已有行高+1继续叠放 |
+
+名字锚点使用 NPC 脚点（`life/y` 吸附地面后的位置），不使用图片高度。
+`FieldNpc.head` 只给任务标记用；任务标记当前头顶+26px仍未获原端汇编确认。
+
+### 复现与纠正范围
+
+工作目录 MapleDash，按 RTK 规则运行：
+
+```sh
+rtk proxy /tmp/mapledash-reverse-venv/bin/python tools/inspect_beidou_client.py ../../Beidou-Server/clien/BeiDou.exe --fn 0x5F0334
+rtk proxy /tmp/mapledash-reverse-venv/bin/python tools/inspect_beidou_client.py ../../Beidou-Server/clien/BeiDou.exe --fn 0x485A45
+```
+
+Canvas 以现有 `tools/pe_module.py` 的 `Mod` 读取，调用 `dump(0x5000309D)`、`dump(0x5000319C)`、
+`dump(0x50005907)`、`dump(0x50005A05)`、`dump(0x50004D84)`、`dump(0x50004F6B)`、`dump(0x500045C5)`。
+原端用户截图归档于 `docs/npc-nameplate-source.png`，仅用于对照，不以裁剪图推导尺寸。
+本次扫描 clien 各 DLL 的代码节对本 EXE 函数范围的绝对地址引用，未发现改写上述尺寸常量的直接补丁；
+这不等于已穷尽所有间接/运行时hook。
+
+**旧结论作废**：早期 `docs/NPC名字牌绘制.md` 的绿色底色、绿色边框、左右3px/上下2px与四向描边均来自截图估算，
+不是EXE依据。绿底可以来自半透明黑底与地图底色混合，不能据截图把混合后的颜色当固定绘制色。
+旧记录 `NameGapPx=3` 后来代码为1，本次以canvas origin.y=-2纠正为2。
+
+### MapleDash迁移与验证边界
+
+`Npc/NpcDialogUi.cs` 采用宽+5/固定高16、文字(2,0)、黄色粗体、半透明黑底与四角透明；
+明确清掉 `GUI.skin.label` 的padding/margin，背景不再使用Unity的行盒高度。
+GUI按相机的地图像素尺度换算（`UiKit.H/(2*orthographicSize*Art.PPU)`），名牌随地图统一缩放。
+`UiIssueChecks.NpcNamePlate` 用异常大的24px行盒验证背景仍16px，以及整数水平原点和(2,0)绘字落点。
+仍使用项目内 `UiKit.Font`（含中文），没有移植Windows Arial及其中文fallback的GDI字形栅格器；
+故文字实际宽度、字形和抗锯齿不声称与Windows逐像素相同。
+本次验证：`tools/unity-compile-check` 的 `dotnet build -t:Rebuild` 为0 warning/0 error；
+Unity batch `UiIssueChecks.Run` 48项通过/0失败（含5项名牌几何检查）；脚本pack检查2779条、parseFail=0/mangled=0。
+目录脚本run检查889条：parseFail=0、runFail=47、javaInterop=73，失败包括缺少getCapacity/getId等宿主接口；
+该harness不编译本次修改的NpcDialogUi/UiIssueChecks，不能将其失败归因于这次绘制变更，也不声称全脚本通过。
+未完成Android实机与原端同场景逐像素对照。
 
 ## 头顶聊天气泡
 

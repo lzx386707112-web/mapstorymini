@@ -57,5 +57,23 @@ namespace Server.Bot
             int dx = x1 - x2, dy = y1 - y2;
             return Math.Sqrt(dx * dx + dy * dy);
         }
+
+        // 源端 adjustCenterPositionXAxis（BotHelpers.java:60）：把一堆掉落物以 center 为中心
+        // 左右交替铺开。currIndex < initialIncrement 时统一往右，之后按 subsequentIncrement
+        // 分组、奇偶轮换左右，每组间距 offset。
+        public static (int x, int y) AdjustCenterPositionXAxis(
+            int centerX, int centerY, int currIndex, int initialIncrement, int subsequentIncrement, int offset)
+        {
+            int x = centerX;
+            if (currIndex < initialIncrement) x += offset;
+            else
+            {
+                int adjustedIndex = currIndex - initialIncrement;
+                int cycle = adjustedIndex / subsequentIncrement % 2;
+                if (adjustedIndex % subsequentIncrement < subsequentIncrement)
+                    x += cycle == 0 ? -offset : offset;
+            }
+            return (x, centerY);
+        }
     }
 }

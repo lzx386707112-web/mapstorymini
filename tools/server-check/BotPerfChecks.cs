@@ -13,7 +13,8 @@ static class BotPerfChecks
 {
     const int Frames = 300;         // 压测帧数（60fps ≈ 5 秒）
     const int OnlineBots = 1000;    // 全服在线（只统计在册、不在当前图）
-    static readonly int[] BotsPerMapCases = { 60, 120 };
+    // 60/120 = 现状（市场 30 + 城镇 14 的 4~8 倍）；200/400 = 「所有场景全开」后的量级。
+    static readonly int[] BotsPerMapCases = { 60, 120, 200, 400 };
 
     static MapRuntime heavyMap;     // foothold 最多的图（建卡最贵）
     static MapRuntime walkMap;      // 有最长平台的图（测稳态移动）
@@ -213,6 +214,7 @@ static class BotPerfChecks
             " avg_ms=" + (sum / samples.Count).ToString("F3") +
             " p50_ms=" + samples[samples.Count / 2].ToString("F3") +
             " p95_ms=" + samples[(int)(samples.Count * 0.95)].ToString("F3") +
+            " p99_ms=" + samples[Math.Min(samples.Count - 1, (int)(samples.Count * 0.99))].ToString("F3") +
             " max_ms=" + samples[samples.Count - 1].ToString("F3"));
     }
 

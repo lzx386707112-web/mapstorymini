@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Server.Bot;
 using Server.Field;
 using Server.Bot.Social;
@@ -178,9 +179,15 @@ static class BotChecks
         CheckOriginalGeometryAndGroundPhysics(check);
         CheckWorldObservationAndGround(check);
         CheckRuntimeSession(check);
+        CheckSecondStepBots(check);
         CheckTownWanderer(check);
         CheckAmbientMap(check);
         CheckTownPresence(check);
+        CheckHenesysBot(check);
+        CheckBlackjack(check);
+        CheckBlackjackRound(check);
+        CheckOpqLobby(check);
+        CheckOpqReactors(check);
         CheckMarketAmbient(check);
         CheckMerchantRuntime(check);
         CheckPartyGrindRuntime(check);
@@ -758,6 +765,43 @@ static class BotChecks
                 BotItemCatalog.Int(info,"cash") == 0 && BotItemCatalog.Int(info,"tradeBlock") == 0 && e.Price >= 0;
         }
         check(validCached,"市场缓存备货遵循职业/可交易/等级窗口，15次尝试最多四件");
+        CheckMarketShops(check, db, pool, equipment);
+    }
+
+    static void CheckMarketShops(Action<bool, string> check, DbStore db, MarketItemPool pool, MarketEquipmentPool equipment)
+    {
+        var rng = new Random(29457);
+        var descriptions = new MarketShopDescriptions(BotResources.Load(), BotItemCatalog.Shared, rng);
+        var generator = new MarketShopGenerator(pool, equipment, new MarketEconomy(rng), rng) {Description = descriptions.Generate};
+        bool stockValid = true, titlesValid = true;
+        for (int room = 1; room <= 12; room++)
+        {
+            var shop = new MarketShop {mapId = 910000000 + room, ownerName = "小枫"}; generator.Generate(shop);
+            stockValid &= shop.items.Count > 0 && shop.items.TrueForAll(i => i.item.quantity == 1 && i.item.inventoryType == i.item.itemId / 1000000);
+            titlesValid &= shop.description.EndsWith("          <" + room + ">") && !MarketShopTitles.HasLatin(shop.description);
+        }
+        check(stockValid, "十二房间实际生成原商品池，普通商品单件一捆且保留库存分离");
+        check(titlesValid, "十二房间中文策略店名保留原十空格房号后缀");
+        check(MarketShopSpots.ForRoom(910000001).Length == 23 && MarketShopSpots.ForRoom(910000007).Length == 28,
+            "市场原坐标实际23与28，注释中的24不覆盖数据");
+        var fallback = new MarketShop(); MarketShopGenerator.EnsureItems(fallback);
+        check(fallback.items.Count == 2 && fallback.items[0].item.itemId == 2000002 && fallback.items[0].item.quantity == 100
+            && fallback.items[0].bundles == 20 && fallback.items[0].price == 1, "仅空店追加原100件一捆的药水兜底");
+        fallback.items[0].bundles = 0; fallback.items[0].exists = false; MarketShopGenerator.EnsureItems(fallback);
+        check(fallback.items.Count == 2 && fallback.items[0].bundles == 0, "售罄并非空列表，不擅自重新补货");
+        fallback.items[0].price = 101; MarketShopGenerator.ApplySale(fallback, 99);
+        check(fallback.items[0].price == 70 && fallback.description == "清仓", "清仓折扣按Java整数截断");
+        MarketShopGenerator.ApplySale(fallback, 0);
+        check(fallback.items.TrueForAll(i => i.price == 1) && fallback.description == "一金币店", "一金币店覆盖标题与全部商品价格");
+        var buyer = new BotCharacter {id = 810009, meso = 1000};
+        var trade = new BotTradeService(db, BotItemCatalog.Shared);
+        var potion = new InventoryEntry {itemId = 2000002, inventoryType = 2, quantity = 2};
+        check(trade.Purchase(buyer, potion, 7) && buyer.meso == 993 && buyer.inventory.Exists(i => i.itemId == 2000002 && i.quantity == 2),
+            "商店购买实际入背包且只扣成交价");
+        check(!trade.Purchase(buyer, potion, 994) && buyer.meso == 993 && buyer.inventory[0].quantity == 2,
+            "金币不足不修改背包和余额");
+        buyer.trade = new TradeProbe {actor = buyer};
+        check(!trade.Purchase(buyer, potion, 1) && buyer.meso == 993, "交易托管期间拒绝商店购买"); buyer.trade = null;
     }
 
     static void CheckOriginalGeometryAndGroundPhysics(Action<bool, string> check)
@@ -1647,6 +1691,85 @@ static class BotChecks
         Server.Bot.Environment.BotEnvironment.Reset();
     }
 
+    static void CheckSecondStepBots(Action<bool, string> check)
+    {
+        BotTasks.Stop(); BotScheduler.Stop(); BotScheduler.Clock = 1000;
+        var db = DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mapledash_second_step.json"));
+        db.Table("game_config").Insert(new DbRow { ["config_code"] = "solo_mapling_market_auto_start", ["config_value"] = "false" });
+        using var runtime = new BotRuntime(db);
+        var record = new CharRecord { name = "SecondStepPlayer", level = 30, map = 100000000, meso = 60000000 };
+        record.id = CharactersDao.Insert(db, record);
+        var player = runtime.SynchronizePlayer(new FullCharacter { record = record }, record.map, 0, 0);
+        BotCharacter Actor(int id) { var c = new BotCharacter { id = id, name = "StepBot" + id, level = 120, mapId = record.map }; BotRegistry.Add(c); return c; }
+        var jqActor = Actor(28901);
+        var jq = BotTypeManager.CreateAndSetBot(jqActor, BotType.HENESYS_JQ_BOT) as HenesysJQBot;
+        check(jq != null, "JQ枚举创建实际录制状态机");
+        jq.running = true;
+        typeof(HenesysJQBot).GetField("hasReachedTop", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(jq, true);
+        var roll = typeof(HenesysJQBot).GetMethod("RollNextTier", BindingFlags.Instance | BindingFlags.NonPublic);
+        bool experienced = true;
+        for (int n = 0; n < 100; n++) experienced &= (int)roll.Invoke(jq, null) >= 5;
+        check(experienced, "JQ登顶后仅使用5/6/7级原老手权重");
+        jq.StopScheduledTask();
+        check(!jq.running && !BotScheduler.IsRegistered(jqActor.id), "JQ停止释放调度与录制状态");
+
+        var dropActor = Actor(28902);
+        var drop = BotTypeManager.CreateAndSetBot(dropActor, BotType.DROP_GAME_BOT) as DropGameBot;
+        check(drop != null, "DROP_GAME枚举创建实际掉落游戏状态机");
+        drop.running = true; drop.UpdateState();
+        check(runtime.trades.Invite(player, dropActor), "掉落游戏接受真实玩家交易邀请");
+        drop.UpdateState(); drop.UpdateState();
+        check(drop.GameState == DropGameBot.DropGameState.TradeValidate && dropActor.trade != null,
+            "掉落游戏自己接管交易，不进入通用交易FSM");
+        var payment = (BotTradeService.Session)player.trade;
+        payment.SetMeso(10000000); payment.Confirm(); drop.UpdateState();
+        At(2100); At(4200);
+        check(drop.SelectedTier == "medium" && drop.LootPool?.IsEmpty == false && player.trade == null,
+            "掉落游戏10m锁定后真实结算并加载原medium奖池");
+        drop.UpdateState();
+        check(runtime.parties.For(dropActor.id) != null && drop.GameState == DropGameBot.DropGameState.PartyWait,
+            "掉落游戏使用runtime队伍服务发起邀请");
+        drop.StopScheduledTask();
+        check(runtime.parties.For(dropActor.id) == null && dropActor.trade == null,
+            "掉落游戏停止清理队伍和交易");
+
+        var tutorialActor = Actor(28903);
+        var tutorial = BotTypeManager.CreateAndSetBot(tutorialActor, BotType.TUTORIAL_BOT) as TutorialBot;
+        check(tutorial != null, "TUTORIAL枚举创建实际教学状态机");
+        tutorial.running = true;
+        tutorial.interactors.SetRespondant(player);
+        var setTutorial = typeof(TutorialBot).GetMethod("SetState", BindingFlags.Instance | BindingFlags.NonPublic);
+        setTutorial.Invoke(tutorial, new object[] { TutorialBot.TutorialState.GiftTrade });
+        tutorial.UpdateState();
+        for (long now = 5000; now <= 120000 && tutorialActor.trade == null; now += 1000) At(now);
+        check(tutorialActor.trade != null && player.trade != null,
+            "教程送礼使用runtime真实交易服务，不跳过赠礼");
+        tutorial.StopScheduledTask();
+        check(player.trade == null && tutorialActor.trade == null,
+            "教程停止取消未完成的赠礼邀请");
+        var teaching = (TutorialBot)BotTypeManager.CreateAndSetBot(tutorialActor, BotType.TUTORIAL_BOT);
+        teaching.running = true; teaching.interactors.SetRespondant(player);
+        var weapon = BotLogic.GenerateCleanItemEquip(1302000);
+        weapon.upgradeslots = 7;
+        int attack = weapon.watk, strength = weapon.str;
+        typeof(TutorialBot).GetField("playersWep", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(teaching, weapon);
+        bool upgraded = (bool)typeof(TutorialBot).GetMethod("ScrollPlayersDroppedWeapon", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(teaching, null);
+        var improved = (InventoryEntry)typeof(TutorialBot).GetField("playersWep", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(teaching);
+        check(upgraded && improved.watk == attack + 5 && improved.str == strength + 3 && improved.upgradeslots == 6 && improved.owner == player.name,
+            "教程武器按原2043003加属性、扣一次槽位并写玩家签名");
+        teaching.StopScheduledTask();
+        var recordings = BotResources.Load();
+        bool validRecordings = true;
+        foreach (string name in new[] { "jq1fail", "jq1afail", "jq2fail", "jq2afail", "jq3fail", "jq3afail", "jq4fail", "jq4afail", "jq5fail", "jq5afail", "jq6fail", "jq6afail", "jq6bfail", "jq6cfail", "jq6dfail", "jq6efail", "jq7top" })
+        {
+            var bytes = recordings.ReadBytes(BotMovementRecording.ResourcePath(100000202, name, "bin"));
+            validRecordings &= bytes != null && BotMovementRecording.ReadBinary(bytes).Count > 0;
+        }
+        check(validRecordings, "JQ十七条原难度录制均已打包且可读取");
+        check(!DropGameLootPool.Load("elite", new FirstChoiceRandom()).IsEmpty,
+            "掉落游戏elite奖池原资源可解析");
+    }
+
     static void CheckRuntimeSession(Action<bool, string> check)
     {
         BotTasks.Stop(); BotScheduler.Stop(); BotScheduler.Clock = 1000;
@@ -1671,6 +1794,16 @@ static class BotChecks
         runtime.Drive(3100); runtime.Drive(3150);
         check(entered && bot.mapId == -889 && BotRegistry.OnMap(-889).Contains(bot) && BotMovementService.Get(bot)?.map.mapId == -889,
             "假人传送门按源端回退portal0并重建目标地图移动执行器");
+        bot.level=55;bot.world=actor.world;bot.channel=actor.channel;
+        check(runtime.parties.Invite(actor,bot),"OPQ 真实会话队长向假人发出队伍邀请");
+        var opqBot=BotTypeManager.CreateAndSetBot(bot,BotType.OPQ_BOT);
+        opqBot.running=true;opqBot.UpdateState();opqBot.UpdateState();
+        check(runtime.parties.For(bot.id)?.leader==actor.id && MapItemService.PartyOf(bot.id)>0 &&
+            Server.Bot.Types.Opq.OpqOrchestrator.LeaderMap(bot)==actor.mapId,
+            "OPQ 招募FSM接受真实邀请，默认runtime队伍钩子不捕获null构造参数，并读取真实队长地图");
+        bot.channel=2;
+        check(Server.Bot.Types.Opq.OpqOrchestrator.LeaderMap(bot)==-1,"OPQ 队长跨频道时不跟随错误地图");
+        bot.channel=actor.channel;runtime.parties.Leave(actor.id);opqBot.StopScheduledTask();
         var chatBot = new BotCharacter { id = 20886, name = "RuntimeChatBot" };
         BotRegistry.Add(chatBot); BotRegistry.EnterMap(chatBot, 101000000);
         chatBot.x = 100; chatBot.y = 100;
@@ -1772,6 +1905,277 @@ static class BotChecks
         check(BotMovementService.Get(actor) == null, "环境路人停用清理移动执行器");
         BotGeneration.RemoveBotFromServer(actor); MapService.Unregister(-887);
         BotMovementService.Shutdown(); BotTasks.Stop(); BotMovementService.IsObserved = null;
+    }
+
+    // 射手村假人（HenesysBot 首移植）：门连接表是它唯一的跨图路由依据，
+    // 表写错就会「走到底图」或原地卡住，所以逐条对源端 initPortalConnections 的值。
+    static void CheckHenesysBot(Action<bool, string> check)
+    {
+        BotTasks.Stop(); BotScheduler.Clock = 1000;
+        var method = typeof(Server.Bot.Types.HenesysBot).GetMethod("PortalForRoute",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        check(method != null, "HenesysBot 有跨图选门逻辑");
+        if (method == null) return;
+        int Route(int from, int to) => (int)method.Invoke(null, new object[] { from, to });
+
+        check(Route(100000000, 100000100) == 23 && Route(100000100, 100000000) == 14,
+            "射手村 <-> 自由市场 双向门号 23/14");
+        check(Route(100000000, 100000200) == 24 && Route(100000200, 100000000) == 18,
+            "射手村 <-> 公园 双向门号 24/18");
+        check(Route(100000200, 100000100) == 19 && Route(100000100, 100000200) == 15,
+            "公园 <-> 自由市场 双向门号 19/15");
+        check(Route(100000200, 100000202) == 13 && Route(100000202, 100000200) == 5,
+            "公园 <-> 宠物公园 双向门号 13/5");
+        check(Route(100000100, 100000202) == -1 && Route(100000000, 100000202) == -1,
+            "不相邻地图不编造直达门（回 -1）");
+
+        // 生成路径必须真的落到 HenesysBot，而不是 GenericBot 站桩
+        var map = new MapRuntime { mapId = -100000000 }; map.AddFoothold(-300, 0, 300, 0);
+        MapService.Register(map);
+        var bot = new BotCharacter { id = 77001, mapId = map.mapId, x = 0, y = 0, facing = 1 };
+        BotRegistry.Add(bot);
+        var sm = BotTypeManager.CreateAndSetBot(bot, BotType.HENESYS_BOT);
+        check(sm is Server.Bot.Types.HenesysBot, "HENESYS_BOT 落到 HenesysBot 实现（不是 GenericBot）");
+        bool threw = false;
+        try { sm.UpdateState(); } catch (Exception) { threw = true; }
+        check(!threw, "HenesysBot 首个 tick 在没有真实地图时也不抛异常");
+        BotRegistry.Remove(bot); BotTypeManager.Output.Clear();
+        MapService.Unregister(map.mapId);
+        BotTasks.Stop();
+    }
+
+    // 21 点桌：规则表 + 牌堆 + 发牌顺序 + 座位下标 + 类型落地。
+    // 这一块没有任何外部依赖（纯规则计算 + 一张内存地图），所以出错必然是移植写错。
+    static void CheckBlackjack(Action<bool, string> check)
+    {
+        BotTasks.Stop(); BotScheduler.Clock = 1000;
+        var rules = typeof(Server.Bot.Types.Blackjack.BlackjackRules);
+
+        var hand = new List<string> { "AH", "KS" };
+        check(Server.Bot.Types.Blackjack.BlackjackRules.CalculateHandValue(hand) == 21, "A+K 手牌值 21");
+        check(Server.Bot.Types.Blackjack.BlackjackRules.IsBlackjack(hand), "两张牌 21 判为 blackjack");
+        check(Server.Bot.Types.Blackjack.BlackjackRules.CalculateHandValue(
+                new List<string> { "AH", "AD", "9S" }) == 21, "A+A+9 = 21（A 自动降为 1）");
+        check(Server.Bot.Types.Blackjack.BlackjackRules.IsBust(
+                new List<string> { "KH", "QS", "2D" }), "K+Q+2 爆牌");
+        check(Server.Bot.Types.Blackjack.BlackjackRules.ShouldDealerHit(16) &&
+              !Server.Bot.Types.Blackjack.BlackjackRules.ShouldDealerHit(17), "荷官 17 点停牌（16 要牌）");
+
+        check(Server.Bot.Types.Blackjack.BlackjackRules.DetermineOutcome(
+                new List<string> { "TH", "9S" }, new List<string> { "KH", "QS", "2D" })
+              == Server.Bot.Types.Blackjack.BlackjackOutcome.WIN, "庄家爆牌闲家赢");
+        check(Server.Bot.Types.Blackjack.BlackjackRules.DetermineOutcome(
+                new List<string> { "TH", "QS" }, new List<string> { "KH", "QD" })
+              == Server.Bot.Types.Blackjack.BlackjackOutcome.PUSH, "同点判和局");
+        check(Server.Bot.Types.Blackjack.BlackjackRules.CalculatePayout(10,
+                Server.Bot.Types.Blackjack.BlackjackOutcome.BLACKJACK_WIN) == 15, "blackjack 赔付 1.5 倍");
+        check(rules != null, "BlackjackRules 已装载");
+
+        var deck = new Server.Bot.Types.Blackjack.Deck(new Random(7));
+        var seen = new HashSet<string>();
+        for (int i = 0; i < 52; i++) seen.Add(deck.Draw());
+        check(seen.Count == 52, "牌堆发 52 张无重复");
+        check(!string.IsNullOrEmpty(deck.Draw()), "牌堆抽空后自动重洗");
+
+        check(Server.Bot.Types.Blackjack.BlackjackTable.GetDealSequenceIndex(2, 3) == 0 &&
+              Server.Bot.Types.Blackjack.BlackjackTable.GetDealSequenceIndex(0, 3) == 1,
+            "发牌顺序：先玩家后荷官");
+
+        // 座位几何：≡ calculateTablePositions，荷官在上方中点（-31）且不加抖动
+        var seatMap = new MapRuntime { mapId = -910000002 }; seatMap.AddFoothold(-500, 0, 500, 0);
+        MapService.Register(seatMap);
+        var seatMethod = typeof(Server.Bot.Environment.BotEnvironment).GetMethod("TableSeats",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        check(seatMethod != null, "21 点桌有座位计算（TableSeats）");
+        if (seatMethod != null)
+        {
+            var seats = (List<Server.Bot.Environment.BotPoint>)seatMethod.Invoke(null, new object[]
+            {
+                seatMap.mapId,
+                new Server.Bot.Environment.BotPoint(-320, -266), new Server.Bot.Environment.BotPoint(260, -266),
+                new Server.Bot.Environment.BotPoint(-320, 4), new Server.Bot.Environment.BotPoint(260, 4),
+            });
+            check(seats.Count == 6, "21 点桌 6 个座位（1 荷官 + 5 闲家位）");
+            check(seats[0].x == -31, "荷官坐上方中点且不抖动（x=" + seats[0].x + "）");
+        }
+        MapService.Unregister(seatMap.mapId);
+
+        var dealerActor = new BotCharacter { id = 88001, name = "荷官" };
+        var table = new Server.Bot.Types.Blackjack.BlackjackTable(dealerActor, new Random(3));
+        check(!table.HasEnoughPlayers, "只有荷官时不开局");
+        table.AddPlayer(new BotCharacter { id = 88002, name = "闲家1" });
+        check(table.HasEnoughPlayers && table.PlayerCount == 2, "加入一名闲家后可开局");
+        check(table.AddPlayer(new BotCharacter { id = 88003 }), "桌上未满 8 人可继续加入");
+        table.IncrementToNextPlayer(); table.IncrementToNextPlayer();
+        check(table.IsCurrentPlayerDealer, "走完所有闲家回到荷官（下标回绕 0）");
+
+        // FM 入口名额必须覆盖 Wave1 + Wave2 的全部计划量，否则后生成的（社交/扭蛋/21点/OPQ）
+        // 会被静默拒绝 —— 源端默认 market_bot_max=10 时就是这样。
+        int capacity = Server.Bot.Environment.BotEnvironment.FmEntranceCapacity();
+        check(capacity >= 20, "FM 入口名额覆盖 Wave1+Wave2 计划量（capacity=" + capacity + "）");
+
+        var map = new MapRuntime { mapId = -910000000 }; map.AddFoothold(-400, 0, 400, 0);
+        MapService.Register(map);
+        var bot = new BotCharacter { id = 88010, mapId = map.mapId, x = 0, y = 0, facing = 1 };
+        BotRegistry.Add(bot);
+        var sm = BotTypeManager.CreateAndSetBot(bot, BotType.BLACKJACK_DEALER);
+        check(sm is Server.Bot.Types.Blackjack.BlackjackDealerBot,
+            "BLACKJACK_DEALER 落到 BlackjackDealerBot 实现（不是 GenericBot）");
+        check(sm is Server.Bot.Types.Blackjack.BlackjackDealerBot dealer && dealer.Table != null,
+            "荷官自带一张牌桌");
+        bool threw = false;
+        try { sm.UpdateState(); } catch (Exception) { threw = true; }
+        check(!threw, "BlackjackDealerBot 首个 tick 在没有真实地图时不抛异常");
+        BotRegistry.Remove(bot); BotTypeManager.Output.Clear();
+        MapService.Unregister(map.mapId);
+        BotTasks.Stop();
+    }
+
+    // OPQ 大厅段：招募喊话 + 副本图判定 + 类型落地。
+    static void CheckOpqLobby(Action<bool, string> check)
+    {
+        BotTasks.Stop(); BotScheduler.Clock = 1000;
+        var speaker = new BotCharacter { id = 88100, name = "OPQ假人", level = 55, job = 212 };
+        string line = Server.Bot.Types.OpqRecruitMessages.Generate(speaker, new Random(11));
+        check(!string.IsNullOrEmpty(line), "OPQ 招募喊话非空：" + line);
+        check(line.Length <= 80, "OPQ 招募喊话长度可控（" + line.Length + " 字）");
+
+        check(Server.Bot.Types.OpqBot.IsInsidePq(920010000) && Server.Bot.Types.OpqBot.IsInsidePq(920011200) &&
+              !Server.Bot.Types.OpqBot.IsInsidePq(910000000),
+            "OPQ 副本图判定只认 920010000/100/400/920011200");
+
+        var map = new MapRuntime { mapId = -910000001 }; map.AddFoothold(-300, 0, 300, 0);
+        MapService.Register(map);
+        var actor = new BotCharacter { id = 88101, mapId = map.mapId, x = 0, y = 0 };
+        BotRegistry.Add(actor);
+        var sm = BotTypeManager.CreateAndSetBot(actor, BotType.OPQ_BOT);
+        check(sm is Server.Bot.Types.OpqBot, "OPQ_BOT 落到 OpqBot 实现（不是 GenericBot）");
+        bool threw = false;
+        long start = BotScheduler.Now();
+        for (int i = 0; i < 20; i++)
+        {
+            BotScheduler.Clock = start + i * 1000;
+            try { sm.UpdateState(); } catch (Exception) { threw = true; }
+        }
+        check(!threw, "OpqBot 连续 tick 20 次不抛异常");
+        BotRegistry.Remove(actor); BotTypeManager.Output.Clear();
+        MapService.Unregister(map.mapId);
+        BotTasks.Stop();
+    }
+
+    static void CheckOpqReactors(Action<bool,string> check)
+    {
+        BotTasks.Stop(); MapReactorService.ClearAll();
+        var map = new MapRuntime { mapId = 920010000, left=-1000, right=1000, top=-2000, bottom=500 };
+        map.AddFoothold(-1000,100,1000,100);
+        map.reactors.Add(new MapReactorSpawn { id=2002001, x=0, y=100, reactorTime=2 });
+        map.reactors.Add(new MapReactorSpawn { id=2002001, x=300, y=100 });
+        MapService.Register(map);
+        var one=new BotCharacter { id=88111,mapId=map.mapId };
+        var two=new BotCharacter { id=88112,mapId=map.mapId };
+        BotRegistry.Add(one);BotRegistry.Add(two);
+        var opq=Server.Bot.Types.Opq.OpqOrchestrator.Context;
+        opq.Reset();
+        int? first=Server.Bot.Types.Opq.OpqOrchestrator.AssignCloudReactor(one);
+        int? second=Server.Bot.Types.Opq.OpqOrchestrator.AssignCloudReactor(two);
+        check(first.HasValue && second.HasValue && first!=second,"OPQ 云朵独占分配，不抢其他假人的目标");
+        check(Server.Bot.Types.Opq.OpqOrchestrator.LeaderMap(one)==-1,"OPQ 未接真实队长时不以假人地图冒充队长");
+        long now=1000;MapReactorService.Clock=()=>now;
+        var drops=new List<InventoryEntry> { BotLogic.GenerateCleanItem(4001063) };
+        for(int i=0;i<3;i++)MapReactorService.Hit(map.mapId,first.Value,drops,one.id);
+        check(MapItemService.DroppedItems(map.mapId).Count==0,"OPQ 前三次挥击不提前掉落云片");
+        MapReactorService.Hit(map.mapId,first.Value,drops,one.id);
+        MapReactorService.Hit(map.mapId,first.Value,drops,one.id);
+        check(MapItemService.DroppedItems(map.mapId).Count==1,"OPQ 第四击只投放一次，重复命中不复制奖励");
+        MapReactorService.Destroy(map.mapId,MapReactorService.Find(map.mapId,second.Value));
+        check(!Server.Bot.Types.Opq.OpqOrchestrator.IsChamberlainSpawned(),"OPQ 云朵全部击破仍需真实祭坛交付，不能提前通关");
+        map.npcs.Add(new MapNpcPosition { id=2013001 });
+        check(Server.Bot.Types.Opq.OpqOrchestrator.IsChamberlainSpawned(),"OPQ 仅在管家 NPC 实际出现后确认关卡一完成");
+        now=2999;MapReactorService.Tick(now);
+        check(!MapReactorService.Find(map.mapId,first.Value).Hittable,"反应堆重生截止前保持破坏状态");
+        now=3000;MapReactorService.Tick(now);
+        check(MapReactorService.Find(map.mapId,first.Value).Hittable,"反应堆共用毫秒时钟，到 reactorTime 秒才重生");
+        MapReactorService.Templates=MapReactorTemplate.Parse(BotWarmup.Root("Bot/ReactorTemplates"));
+        MapReactorService.ClearAll();
+        map.reactors.Add(new MapReactorSpawn { id=2006000,x=0,y=100 });
+        var packed=(Dictionary<string,object>)MiniJsonDb.Parse(PlatformRes.LoadText("Scripts/npc_scripts"));
+        var scripts=new NativeReactorScriptService(key=>packed.TryGetValue(key,out var text) ? text as string : null);
+        int messages=0;bool scriptFailed=false;
+        scripts.Message=(id,type,text)=> { if(id==map.mapId && type==5 && text.Contains("现身"))messages++; };
+        scripts.Error=error=>scriptFailed=true;
+        MapReactorService.Act=(reactor,owner)=>scripts.Act(reactor,owner);
+        map.npcs.Clear();
+        MapItemService.ClearMap(map.mapId);
+        var wrong=MapItemService.SpawnItemDrop(map.mapId,one.id,one.id,-1,
+            new InventoryEntry { itemId=4001063,quantity=19 },0,100,false,true);
+        MapReactorService.ActivateItemReactors(wrong);
+        now+=5000;MapReactorService.Tick(now);
+        check(map.npcs.Count==0 && !wrong.pickedUp,"OPQ 祭坛拒绝19片，不能用多堆或不足数量凑交付");
+        var handin=MapItemService.SpawnItemDrop(map.mapId,one.id,one.id,-1,
+            new InventoryEntry { itemId=4001063,quantity=20 },0,100,false,true);
+        MapReactorService.ActivateItemReactors(handin);
+        now+=4999;MapReactorService.Tick(now);
+        check(!handin.pickedUp && map.npcs.Count==0,"OPQ 20片交付保持原5000ms延时");
+        now++;MapReactorService.Tick(now);
+        check(handin.pickedUp && !scriptFailed && messages==1 &&
+            map.npcs.Exists(n=>n.id==2013001 && n.dynamic),"OPQ 原2006000.js实际执行：移除云片、广播、生成可查询管家");
+        MapReactorService.Tick(now+5000);
+        check(messages==1 && map.npcs.Count==1,"OPQ 已消费云片不能重复触发脚本复制NPC");
+        scripts.Dispose();
+        check(map.npcs.Count==0,"反应堆会话释放仅移除自身生成的动态NPC");
+        MapReactorService.Act=null;
+        MapItemService.ClearMap(map.mapId); MapReactorService.ClearAll();MapReactorService.Clock=()=>0;
+        opq.Reset(); BotRegistry.Remove(one);BotRegistry.Remove(two);MapService.Unregister(map.mapId);BotTasks.Stop();
+    }
+
+    // 一整局 21 点端到端：荷官 + 2 个 AI 闲家，从下注、发牌、闲家决策、荷官补牌、
+    // 结算一路走到派彩再回 WAITING。规则单测只能证明算得对，这条才能证明台子会自己玩。
+    static void CheckBlackjackRound(Action<bool, string> check)
+    {
+        BotTasks.Stop(); BotScheduler.Stop(); BotScheduler.Clock = 0;
+        var map = new MapRuntime { mapId = -910000003 };
+        map.AddFoothold(-500, 0, 500, 0);
+        MapService.Register(map);
+
+        var dealer = new BotCharacter { id = 88201, name = "荷官", mapId = map.mapId, x = -31, y = 0, facing = 1 };
+        var p1 = new BotCharacter { id = 88202, name = "闲家甲", mapId = map.mapId, x = -224, y = 0 };
+        var p2 = new BotCharacter { id = 88203, name = "闲家乙", mapId = map.mapId, x = 162, y = 0 };
+        BotRegistry.Add(dealer); BotRegistry.Add(p1); BotRegistry.Add(p2);
+
+        var sm = (Server.Bot.Types.Blackjack.BlackjackDealerBot)
+            BotTypeManager.CreateAndSetBot(dealer, BotType.BLACKJACK_DEALER);
+        sm.Table.AddPlayer(p1);
+        sm.Table.AddPlayer(p2);
+        sm.StartScheduledTask(0);   // 跳过出生编排的初始延迟
+
+        var phases = new HashSet<Server.Bot.Types.Blackjack.BlackjackTable.Phase>();
+        int maxHand = 0;
+        long now = 0;
+        // 225 秒模拟：2s 一个 tick，足够跑完一局（下注 10s + 若干次要牌 + 派彩）
+        for (int frame = 0; frame < 900; frame++)
+        {
+            now += 250;
+            BotScheduler.Clock = now;
+            BotTasks.Drive(now);
+            BotScheduler.Drive();
+            phases.Add(sm.Table.phase);
+            foreach (var player in sm.Table.Players)
+                if (player.hand.Count > maxHand) maxHand = player.hand.Count;
+        }
+
+        check(phases.Contains(Server.Bot.Types.Blackjack.BlackjackTable.Phase.BETTING), "一局里走过下注阶段");
+        check(phases.Contains(Server.Bot.Types.Blackjack.BlackjackTable.Phase.DEALING), "一局里走过发牌阶段");
+        check(phases.Contains(Server.Bot.Types.Blackjack.BlackjackTable.Phase.PLAYER_TURNS), "一局里走过闲家回合");
+        check(phases.Contains(Server.Bot.Types.Blackjack.BlackjackTable.Phase.RESOLVING), "一局里走过结算");
+        check(phases.Contains(Server.Bot.Types.Blackjack.BlackjackTable.Phase.PAYOUT), "一局里走过派彩");
+        check(maxHand >= 2, "AI 闲家真的拿到了牌（最多 " + maxHand + " 张）");
+        check(sm.Table.phase == Server.Bot.Types.Blackjack.BlackjackTable.Phase.WAITING,
+            "一局结束后回到 WAITING 等下一局（当前 " + sm.Table.phase + "）");
+
+        BotScheduler.Stop(); BotTasks.Stop();
+        BotRegistry.Remove(dealer); BotRegistry.Remove(p1); BotRegistry.Remove(p2);
+        BotTypeManager.Output.Clear();
+        MapService.Unregister(map.mapId);
     }
 
     static void CheckTownPresence(Action<bool, string> check)

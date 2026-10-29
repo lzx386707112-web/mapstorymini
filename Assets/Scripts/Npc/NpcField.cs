@@ -186,6 +186,7 @@ public static class NpcField
                 session.Dialog.Content.Selections.Add(new DialogSelection { Index = choices.Count + i,
                     Text = string.IsNullOrEmpty(scripts[i]) ? "与 " + WzNames.Npc(npcId) + " 对话" : scripts[i] });
         }
+        session.Dialog.SelectFirst();
     }
 
     static readonly List<QuestChoice> alerts = new List<QuestChoice>();
@@ -307,6 +308,7 @@ public static class NpcField
         });
         session.SpeakerName = "冒险岛运营员";
         FillQuestMenu(session.Dialog.Content, choices);
+        session.Dialog.SelectFirst();
     }
 
     public static void OpenQuest(QuestChoice choice)

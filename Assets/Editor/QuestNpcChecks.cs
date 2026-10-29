@@ -519,7 +519,14 @@ public static class QuestNpcChecks
         Check(session.Dialog.Mode == NpcDialogMode.Simple, "选项菜单必须是 type4");
         var links = DialogFlow.Links(session.Dialog.Content);
         Check(links.Count == 3 && links[0] == 0 && links[1] == 1 && links[2] == 2, "选项链接号须按显示顺序收集");
-        Check(session.Dialog.SelectedLink == -1, "刚打开的菜单不得预选任何一项");
+        // 移动端没有鼠标悬停：原端打开时是 -1（没有焦点），这里要求默认选中首项。
+        Check(session.Dialog.SelectedLink == 0, "菜单打开须默认选中首项");
+        // 程序化菜单（Selections 在 Set() 之后才追加）也要有默认焦点。
+        var delayed = ScriptSession("function start(){cm.sendSimple('选:');} function action(m,t,s){cm.dispose();}");
+        delayed.Dialog.Content.Selections.Add(new DialogSelection { Index = -1, HeaderArt = "list1" });
+        delayed.Dialog.Content.Selections.Add(new DialogSelection { Index = 3, Text = "A" });
+        delayed.Dialog.SelectFirst();
+        Check(delayed.Dialog.SelectedLink == 3, "分组标题不算选项，默认焦点须落在首个真实选项");
 
         // 贴图取向：未选中 dot0（浅灰），选中 dot1（红）——旧实现反了，全部选项都是红的。
         const string dot0 = "wz://UI/UIWindow.img/UtilDlgEx/dot0";
@@ -528,8 +535,11 @@ public static class QuestNpcChecks
         Check(DialogFlow.DotArt(1, 1) == dot1, "当前选中项的行首标记必须是 dot1");
         Check(DialogFlow.DotArt(1, 0) == dot0 && DialogFlow.DotArt(1, 2) == dot0, "非当前项的标记必须保持 dot0");
 
-        Check(NpcDialogUi.MoveSelection(-1) && session.Dialog.SelectedLink == 0, "未选中时按上键须落到首项");
         Check(NpcDialogUi.MoveSelection(-1) && session.Dialog.SelectedLink == 0, "首项再按上键须夹取在首项，不能循环到末项");
+        // 普通对白页没有可选项，不得凭空多出一个焦点。
+        var plain = ScriptSession("function start(){cm.sendNext('普通对白');} function action(m,t,s){cm.dispose();}");
+        Check(plain.Dialog.SelectedLink == -1, "非选项对话框不得有选中项");
+
         Check(NpcDialogUi.MoveSelection(1) && session.Dialog.SelectedLink == 1, "下键须移到下一项");
         Check(NpcDialogUi.MoveSelection(1) && session.Dialog.SelectedLink == 2, "下键须移到末项");
         Check(NpcDialogUi.MoveSelection(1) && session.Dialog.SelectedLink == 2, "末项再按下键须夹取在末项");
@@ -558,7 +568,7 @@ public static class QuestNpcChecks
             System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).SetValue(null, session);
         NpcDialogUi.MoveSelection(1);
         session.Reply(1, 0);
-        Check(session.Dialog.SelectedLink == -1, "换页后选中项须复位成未选中");
+        Check(session.Dialog.SelectedLink == 0, "换页后须重新默认选中新页首项");
     }
 
     static void CheckBirthRoutes()

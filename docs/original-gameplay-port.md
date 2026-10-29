@@ -536,7 +536,7 @@
 - `startscript/endscript` 的字段名（`q1021s`）与脚本文件名（`1021.js`）不一致：源端
   `QuestScriptManager` 实际按 `quest/<questid>.js` 加载，本实现跟着按 id 取，不按字段名取
 - 商店交易、仓库、宠物、公会、远征队这些被脚本调用的系统，客户端只给「空集合」语义
-- 反应堆脚本（`reactor/`）尚未接入
+- 反应堆脚本（`reactor/`）已有原JS act入口，当前宿主覆盖mapMessage/spawnNpc/getEventInstance，OPQ祭坛交付已回归；完整反应堆API、事件私有地图与前端受击动画仍未完成（详见逆向skill的假人系统记录）。
 
 ### 2026-10-23 对话回归记录
 

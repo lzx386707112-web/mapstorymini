@@ -12,7 +12,7 @@
 - **待逐项复核**：旧清单的映射尚未按当前代码核对；不能据此断言完全没有实现，也不能据此关闭任务。
 - **源端本身无行为/异常**：保留原端行为，不擅自发明实现；需要与真正未迁移区分。
 
-当前 `BotTypeManager.CreateAndSetBot` 的17种枚举中，8种已映射具体行为，9种仍落入 `GenericBot.UpdateState()` 的站桩占位。**8/17是类型映射数，不是系统完成率，也不代表8种已全部验收。** 8种中买卖商人共用一个 `MerchantBot`，不可按类文件数重新计算。
+当前 `BotTypeManager.CreateAndSetBot` 的17种枚举中，14种已映射具体行为（新增 HENESYS_JQ/DROP_GAME/TUTORIAL）；DICE/GACHA/GAME_ZONE_HOST 仍未在工厂映射，虽然工作区已有其实现草稿。**14/17 是入口映射数，不是系统完成率。** 第二步后端入口与生命周期已补齐，原交易/邀请UI仍属于后续前端任务，尚未做 Android 全流程验收。
 
 相关资料职责：
 
@@ -47,14 +47,14 @@
 | SCROLL_BOT | ScrollingBot.java | Types/ScrollingBot.cs | 物品喇叭UI、原商品交互；卷轴动画和音效已接，不再列为完全缺失 |
 | COMPANION_GRIND_BOT | CompanionGrindBot.java | Types/CompanionGrindBot.cs | 完整角色属性、远程/魔法动作、状态倍率、掉落归属、实际游戏全流程 |
 | DICE_BOT | DiceBot.java | **GenericBot占位** | 押注消息、原地面赌注识别、双骰、输赢、派彩、盗回赌注处罚及显示 |
-| TUTORIAL_BOT | TutorialBot.java | **GenericBot占位** | 新人识别、原对白、分支、赠礼交易、帽子选择、武器掉落/强化/归还、送行 |
+| TUTORIAL_BOT | TutorialBot.java | Types/TutorialBot.cs【2026-10-29 接线】 | 原对白/帽子/武器/送行状态机、真实赠礼交易及成长宿主已接；需游戏内完整教学与Android验收，原交易UI仍待后续前端任务 |
 | GACHA_BOT | GachaBot.java | **GenericBot占位** | 原反应堆轮盘、奖池、事件反应、掉落回收、录制移动与显示 |
-| HENESYS_BOT | HenesysBot.java | **GenericBot占位** | 原城镇FSM、概率/冷却、地图连接、拥挤权重选图、JQ转换 |
-| HENESYS_JQ_BOT | HenesysJQBot.java | **GenericBot占位** | 原录制路线、失败层级/成功权重、恢复休息、离图及类型转换 |
+| HENESYS_BOT | HenesysBot.java | Types/HenesysBot.cs【2026-10-29 移植】 | 原城镇FSM、概率/冷却、地图连接、拥挤权重选图已接；JQ转换已接具体类型与冷却回写；未观察分支的平台选点未搬（AOI整图级走不到） |
+| HENESYS_JQ_BOT | HenesysJQBot.java | Types/HenesysJQBot.cs【2026-10-29 接线】 | 17条原录制、老手权重、休息/离图/类型转换已接；需游戏内路线及Android验收 |
 | GAME_ZONE_HOST_BOT | GameZoneHostBot.java | **GenericBot占位** | 入图欢迎、点名交互、饮料选择/掉落、超时、告别 |
-| BLACKJACK_DEALER | Blackjack/BlackjackDealerBot.java等 | **GenericBot占位** | 牌组/规则/AI/桌位、赌注、发牌决策、结算及牌面显示 |
-| DROP_GAME_BOT | DropGameBot.java等 | **GenericBot占位** | 掉落小游戏FSM、奖池、围观者、物品所有权/回收/清理及显示 |
-| OPQ_BOT | OPQ/OPQBot.java等 | **GenericBot占位** | 招募、组队队列、共享上下文、流程编排、消息、地图阶段和退出清理 |
+| BLACKJACK_DEALER | Blackjack/BlackjackDealerBot.java等 | Types/Blackjack/*.cs【2026-10-29 移植】 | 牌组/规则/AI/桌位、赌注扫描、发牌决策、结算派彩、牌面（怪物卡掉落）已接；**仍缺**：荷官对话包 BlackjackDealerBotDialogue.yaml（缺失时退化只说 hit/stand）、真人聊天驱动的加入/要牌快路径验收 |
+| DROP_GAME_BOT | DropGameBot.java等 | Types/DropGameBot.cs + DropGameLootPool.cs【2026-10-29 接线】 | 真实收款/组队、原奖池/录制/围观/限时掉落已接；真人Haste接现有NativeBuffs；假人尚无完整临时状态容器，原交易UI与Android全流程待验收 |
+| OPQ_BOT | OPQ/OPQBot.java等 | Types/OpqBot.cs【2026-10-29 大厅段】 | **大厅招募段已接**（RESET/RECRUITMENT/IN_PARTY_IDLE + 12s 喊话 + 随机走位）；**关卡 1/2 未接**：云堆/箱子是反应堆（2002001、2002004-2002010），本工程 Server 层没有反应堆实体，砸/捡/交全部无法落地 |
 
 `Types/AmbientMapBot.cs`已存在，但不是上述17枚举中的第18种已接入类型。此前源树核查未发现构造调用者；不能为增加数量而擅自自动生成。
 

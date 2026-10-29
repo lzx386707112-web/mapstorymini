@@ -554,6 +554,8 @@ CREATE TABLE command_info (
 -- template 指向 BotAppearanceTemplates 的模板下标 —— 外观模板被同模板假人共享，
 -- 纸娃娃纹理才能一份多用（这才是联机客户端同屏几十人也不爆显存的原因）。
 -- map_id 是「档案归属地图」：0 表示自由分配，>0 表示这只只会出现在该图。
+-- level/job 是身份的一部分（对齐联机：账号的角色有自己的等级职业），生成时优先于模板。
+-- 覆盖模式下按「等级 1..N × 该等级可转职业」铺满，保证每个职业每个等级都有人。
 CREATE TABLE bot_profile (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     name         TEXT NOT NULL,
@@ -561,7 +563,9 @@ CREATE TABLE bot_profile (
     map_id       INTEGER NOT NULL DEFAULT 0,
     channel      INTEGER NOT NULL DEFAULT 1,
     bound        INTEGER NOT NULL DEFAULT 0,
-    enabled      INTEGER NOT NULL DEFAULT 1
+    enabled      INTEGER NOT NULL DEFAULT 1,
+    level        INTEGER NOT NULL DEFAULT 0,
+    job          INTEGER NOT NULL DEFAULT 0
 );
 
 -- 钓鱼系统物品配置表 ← 源端 V1.9.9__insert_fishing_items.sql + V2.0.2__update_fishing_items.sql。

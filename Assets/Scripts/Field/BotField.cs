@@ -10,9 +10,15 @@ public sealed class BotField : MonoBehaviour
 {
     // 同图内新增（假人从别的图走进来）每帧最多建几个；仓促抬高会在正常游戏时掉帧。
     const int MaxCreatePerFrame = 1;
-    // 换图那一帧最多一次建几个。换图本来就有黑幕，且纸娃娃已预合成，
-    // 一次性建档等价于联机「进图接收全部 spawn 包」——这是有意为之，不是遗漏。
-    const int MaxCreateOnMapEnter = 40;
+    // 换图那一批最多花多少毫秒建视图。换图有黑幕遮挡，可以比常规 4ms 预算宽，
+    // 但必须按「毫秒」封顶而不是按「人头数」：一个人头 0.1~0.3ms（预合成就绪时）到
+    // 3~10ms（缓存没命中、现场合成）之间浮动，人头上限在快机上太松、在慢机上太紧。
+    // 秒数才是帧率的直接约束，人头数不是。
+    const float MapEnterBudgetMs = 6f;
+    // 进图补建窗口：这段时间内继续按上面的毫秒预算续建，窗口过后退回每帧一个。
+    // 没有这个窗口，超过预算的假人就是「每帧冒一个」——39 只要 0.65 秒才站齐，
+    // 玩家看到的是排队出场，和联机「进图时周围的人已经在场」完全不像。
+    const float CatchUpSeconds = 1f;
     // 视图增删（进图/假人换图）与姿势同步不需要每帧重算：100ms 一次足够
     // （假人位移包本身是 160ms 一步），省掉每帧一次 BotRegistry.OnMap 的列表分配与全量遍历。
     const float SyncSeconds = 0.1f;
@@ -51,6 +57,8 @@ public sealed class BotField : MonoBehaviour
     Server.Bot.Social.BotOutput output;
     int currentMap, currentWorld, currentChannel;
     float lastSync = -10f;
+    // 进图补建窗口的截止时间（unscaledTime）；-1 表示不在窗口内。
+    float catchUpUntil = -1f;
     bool synchronized;
 
     void OnEnable()
@@ -113,21 +121,38 @@ public sealed class BotField : MonoBehaviour
         // 换图：假人一次性站好（对齐联机 —— 进图那一刻周边玩家就已经在场上，不是一个个冒出来）。
         // 前提是纸娃娃已经在启动期间预合成完（BotAppearancePrebake.Finished）：
         // 那时建视图只是查表 + new GameObject，一个人 0.1~0.3ms。
+        // 预算按毫秒给（MapEnterBudgetMs），不按人头给：快机上 39 个也只要 6ms，
+        // 慢机上自动少建几个人，剩下的在 CatchUpSeconds 窗口内续建，不会把一帧撑爆。
         // 预合成没赶完就退回增量排队——宁可晚出现，也不能在进图那一帧连做十几次 CPU 合成。
-        if (mapChanged && BotAppearancePrebake.Finished) CreateQueued(MaxCreateOnMapEnter, false);
+        if (mapChanged)
+        {
+            catchUpUntil = Time.unscaledTime + CatchUpSeconds;
+            if (BotAppearancePrebake.Finished) CreateQueued(int.MaxValue, MapEnterBudgetMs);
+            else CreateQueued(MaxCreatePerFrame);
+            if (pending.Count > 0)
+                Debug.Log("[Bot] 进图建视图：本图 " + present.Count + " 个，"
+                          + MapEnterBudgetMs + "ms 预算内没建完，剩 " + pending.Count + " 个分帧续建");
+        }
         else CreateQueued(MaxCreatePerFrame);
     }
 
     // 每帧按预算补建假人视图：单个纸娃娃要混合几十张 IMG 部件，一件就可能吃掉几毫秒，
     // 所以本帧预算用完就先让位给渲染，剩下的下一帧继续。
-    // limit = 本批最多建几个；respectBudget = 是否受每帧毫秒预算约束
-    // （换图那一帧有黑幕遮挡，可以不受约束一次建完）。
-    void CreateQueued(int limit, bool respectBudget = true)
+    // limit = 本批最多建几个；budgetMs > 0 表示这一批最多花多少毫秒（进图批次用），
+    // budgetMs <= 0 表示只管人头数（常规增量，仍受 BotWorkPump 的共享 4ms 预算约束）。
+    void CreateQueued(int limit, float budgetMs = -1f)
     {
         int created = 0;
+        long begin = budgetMs > 0f ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
         while (created < limit && pending.Count > 0)
         {
-            if (respectBudget && created > 0 && !Server.Bot.BotWorkPump.Has(1f)) break;
+            if (budgetMs > 0f)
+            {
+                // 至少建一个：一个都建不出来就是「假人永远不出现」，宁可多花一帧。
+                if (created > 0 && (System.Diagnostics.Stopwatch.GetTimestamp() - begin) *
+                    1000.0 / System.Diagnostics.Stopwatch.Frequency >= budgetMs) break;
+            }
+            else if (created > 0 && !Server.Bot.BotWorkPump.Has(1f)) break;
             int id = pending.Dequeue();
             if (!present.Contains(id) || views.ContainsKey(id)) continue;
             var actor = BotRegistry.Get(id);
@@ -191,7 +216,9 @@ public sealed class BotField : MonoBehaviour
 
     void Update()
     {
-        CreateQueued(MaxCreatePerFrame);
+        // 进图补建窗口内继续用进图预算（否则超过预算的假人会「每帧冒一个」）；窗口过后退回增量。
+        if (Time.unscaledTime < catchUpUntil) CreateQueued(int.MaxValue, MapEnterBudgetMs);
+        else CreateQueued(MaxCreatePerFrame);
         float step = Time.deltaTime;
         foreach (var view in views.Values)
         {

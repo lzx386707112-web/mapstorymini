@@ -117,6 +117,24 @@ namespace Server.Bot.Trade
             try { InventoryCommitted?.Invoke(actor,mesoDelta); }
             catch (Exception e) { OnError?.Invoke(e); }
         }
+        // 商店复用同一背包持久化与UI修订通知；不建立虚假的交易会话。
+        public bool Purchase(BotActor actor, InventoryEntry item, int price)
+        {
+            if (actor == null || actor.trade != null || price < 0 || Balance(actor) < price) return false;
+            var before = Clone(Inventory(actor)); var after = Clone(before); int balance = Balance(actor);
+            if (!rules.Receive(actor, after, item)) return false;
+            db.BeginTransaction();
+            try
+            {
+                Inventory(actor).Clear(); Inventory(actor).AddRange(after); Balance(actor, balance - price); Persist(actor);
+                db.Commit();
+            }
+            catch
+            {
+                db.Rollback(); Inventory(actor).Clear(); Inventory(actor).AddRange(before); Balance(actor, balance); throw;
+            }
+            PublishInventory(actor, -price); return true;
+        }
         public sealed class Session : IBotTradeSession
         {
             readonly BotTradeService service;

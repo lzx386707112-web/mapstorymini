@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using Server.Bot.Social;
 using Server.Bot.Types;
+using Server.Bot.Types.Blackjack;
 using Server.Bot.Decorator;
 using Server.Bot.Trade;
 
@@ -42,6 +43,8 @@ namespace Server.Bot
         public static readonly MarketBotFlavor MarketFlavor = new MarketBotFlavor();
         public static readonly MarketBotDirector Market = new MarketBotDirector(() => BotClient.GetBotClient()?.db);
         static BotDialogue dialogue;
+        /// <summary>共享对话资源（各类型按需取同一份，避免重复解析 YAML 包）。</summary>
+        public static BotDialogue Dialogue => dialogue ??= new BotDialogue(BotResources.Load());
         static MarketItemPool items;
         static MarketEconomy economy;
         static ScrollingBot CreateScrollingBot(BotCharacter actor)
@@ -53,6 +56,10 @@ namespace Server.Bot
                 economy ??= new MarketEconomy(),dialogue ??= new BotDialogue(BotResources.Load()));
         }
         public static BotPartyGrindService PartyGrind;
+        public static BotPartyService Parties;
+        public static BotTradeService TradeService;
+        public static Func<BotActor, bool> GrantTutorialAdmin;
+        public static Action<BotActor, int> ApplySkillEffect;
         public static BotMessenger Messenger = new BotMessenger();
         static MarketBotAmbient ambient;
         public static MarketBotAmbient Ambient => ambient ??= new MarketBotAmbient(BotResources.Load(), () => BotClient.GetBotClient()?.db);
@@ -73,6 +80,13 @@ namespace Server.Bot
                 BotType.SOCIAL_BOT => new SocialBot(c, dialogue ??= new BotDialogue(BotResources.Load()),
                     Output, Messages, () => BotFurniture.RandomChair(rng)),
                 BotType.TOWN_WANDERER_BOT => new TownWandererBot(c, dialogue ??= new BotDialogue(BotResources.Load()), Flavor, Events),
+                BotType.HENESYS_BOT => new HenesysBot(c, dialogue ??= new BotDialogue(BotResources.Load()), Flavor,
+                    BotConfig.HenesysBotsChangeMapsEnabled(BotClient.GetBotClient()?.db)),
+                BotType.BLACKJACK_DEALER => new BlackjackDealerBot(c, Messages),
+                BotType.OPQ_BOT => new OpqBot(c),
+                BotType.HENESYS_JQ_BOT => new HenesysJQBot(c),
+                BotType.DROP_GAME_BOT => new DropGameBot(c, Parties),
+                BotType.TUTORIAL_BOT => new TutorialBot(c, TradeService),
                 _ => new GenericBot(c),
             };
             if (sm is GenericBot) sm.botType = t.ToString();

@@ -15,6 +15,8 @@ public sealed class FieldView : MonoBehaviour
         catch { next.gameObject.SetActive(false); Destroy(next.gameObject); throw; }
         Clear(); map = value; root = next;
     }
+    public void SyncDynamicNpcs()
+    { if(root!=null && map!=null)root.GetComponent<NativeMapView>().SyncDynamicNpcs(map); }
     public void Clear()
     {
         if (root != null) { root.gameObject.SetActive(false); Destroy(root.gameObject); }

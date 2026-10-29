@@ -97,7 +97,8 @@
 服务端已经不像瓶颈了，剩下的开销在 Unity 侧，只有进游戏才量得到：
 
 1. 打开 `debug_bot_perf=1`，跑一次「同图 120 假人」，读 `Bot/Frame` 日志的 P50/P95/P99。
-2. 如果 `BotField.Create`（建视图 + 纸娃娃）占比高 → 做阶段4（View 池化 + 事件化），
-   并把 `MaxCreateOnMapEnter`（当前 40）按实测帧耗调低。
+2. 如果 `BotField.Create`（建视图 + 纸娃娃）占比高 → 做阶段4（View 池化 + 事件化）。
+   进图批次已经改成按毫秒封顶（`BotField.MapEnterBudgetMs=6`）而不是按人头（原 `MaxCreateOnMapEnter=40`），
+   所以慢机不会再被 39 个人头一次性撑爆；日志里会打出「没建完，剩 N 个分帧续建」。
 3. 如果 `WzCharacter.Compose` 占比高 → 说明预合成没盖住实际动作集合，扩 `BotAppearancePrebake` 的动作范围。
 4. 只有在 1~3 做完之后 P99 仍 > 4ms，才考虑阶段5（模拟移出主线程）。

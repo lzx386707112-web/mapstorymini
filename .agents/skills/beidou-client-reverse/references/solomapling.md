@@ -1,8 +1,8 @@
 # SoloMapling 假人：源端依据与迁移边界
 
-## 当前接续入口（2026-10-27）
+## 当前接续入口（2026-10-29）
 
-当前未完成说明见 [详细缺口与验收清单](../../../../docs/solomapling-unfinished.md)。17枚举中8种具体、9种Generic占位，整体incomplete；最近后端478通过/0失败，全Unity编译0警告/0错误，原IMG Editor检查PASS，未完成Play全流程及Android验收。下文按时间保留早期333/368等记录及其当时缺口，不能将早期状态当作最新状态。本文后半已包含EXE调查，开头“没有新增EXE结论”仅指最初服务端调查。
+当前未完成说明见 [详细缺口与验收清单](../../../../docs/solomapling-unfinished.md)。17枚举中14种具体、3种Generic占位，整体incomplete；最近后端607通过/0失败，全Unity编译0警告/0错误，原IMG Editor检查PASS，未完成Play全流程及Android验收。下文按时间保留早期333/368等记录及其当时缺口，不能将早期状态当作最新状态。本文后半已包含EXE调查，开头“没有新增EXE结论”仅指最初服务端调查。
 
 本次仅整理说明和校正明确的源文件映射，没有新增业务代码或重新运行构建。BotLogic、BotHelpers、PartyGrindService及三项交易组件的旧not_ported标签改为partial；其他旧映射仍须逐项复核，禁止按文件数计算完成率。
 
@@ -310,3 +310,89 @@
   `Client.createMock()` 的 `ioChannel=null`，`sendPacket` 首行 return ⇒ **发往假人的包在编码前丢弃**。
   `MapleMap.addPlayer` 用 `BotHelpers.isBot(chr)` 把 `onFirstUserEnter/onUserEnter` 只跑给真人（2816-2834）。
 - 我们的移植对照：`BotRegistry` + `BotField`（每 100ms 轮询）与 `MapRuntime` 是两套并行世界，缺「地图对象 + 每观察者 visible 集合 + spawn/destroy 事件」。
+
+## 第二步：JQ / DROP_GAME / TUTORIAL 运行接续（2026-10-29）
+
+本轮复用现有未提交类型实现，核对以下 Java 源文件（相对 `soloMapling/ArtificialPlayer/BotTypes/`）。无新增 EXE/UI 布局结论，不新增 UI 绘制。
+
+| 源文件 | SHA256 |
+| --- | --- |
+| `HenesysJQBot.java` | `47fef01a21dcb40e208ae1474fa8a2f02c3dec22d745e2eef02449338e57e20f` |
+| `DropGameBot.java` | `644247e3741d32239a66308935ea23d9fe3d005196480db147528f6eb2d6c501` |
+| `DropGameLootPool.java` | `f33055a3ad0207c517e1e777739f0580d28bd7e0cd6130cb8294b13759099176` |
+| `TutorialBot.java` | `3fbc6d77724552ea64a39d6721b00ff1de26e000db9762bb8d890c17a9e53b95` |
+
+- `BotTypeManager` 新增三类实际映射；`BotRuntime` 注入自身的交易/队伍服务并在退出清空，避免教程跳过送礼、DropGame 收款后因服务缺失退出。
+- JQ：17条原 BIN，未登顶权重20/18/16/14/12/8/4且排除已完成层；登顶权重0/0/0/0/15/25/60，继续概率0.75。宠物公园100000202起点(-1005,274)，出口5→射手公园100000200门13。冷却经 `HenesysBot.SetLastJqConversionTime` 直接写回，移除反射，停止取消录制、导航与延时副作用。
+- DropGame：medium10m/elite50m，真实双边交易成功才进入组队；120000ms游戏、4..6秒掉落与原奖池沿用。录制读取失败按源端仅记日志，删除额外游荡行为。世界/频道/地图同时匹配，停止清交易和队伍。真人4101004最大级效果通过宿主接 `NativeBuffs`；假人原录制移动不依赖玩家buff计算，但**仍没有完整假人临时状态容器**，不得声称所有buff系统已迁移。
+- Tutorial：通过 `GameSession.GrantTutorialAdmin` 调现有 LevelSystem/JobSystem执行149→150/412/GM6/+750AP/+450SP/10000HPMP，并保存；不再只输出成功对白。赠礼经真实交易服务。武器2043003按原数据加属性，仅有槽时扣1槽及强化level+1，签玩家名；LootDialogue之后保留原6000ms等待。等待分析对白完成才推进，送行等待导航完成，返程等待原录制完成再重置。延时、对白及送礼链用活动代数守卫，停用后不再继续旧流程。
+- Gacha原草稿常量在另一类中被直接引用导致全项目编译失败，本轮只修复作用域；未将其入口算作本轮完成。GachaFillerSystem原默认10位/0.30概率未改。
+- 验证：`rtk dotnet run --project tools/server-check --no-restore` **607通过/0失败**；新增15项覆盖类型工厂、JQ老手范围和17条真实录制、DropGame收款到组队、教程真实送礼与停止取消、原卷轴属性及elite奖池。`rtk dotnet build tools/unity-compile-check -t:Rebuild --no-restore` **0警告/0错误**。角色成长与真人Haste宿主通过全脚本编译，尚未完成Play/Android实际效果验收；后续原交易、邀请、选项前端任务保留。
+
+
+## 第三步续迁移：反应堆与 OPQ 权威接线（2026-10-29）
+
+本轮核对服务端源码和原 IMG，无新增 EXE 布局结论。**此节不是整个第三至第五步完成声明**。
+
+源身份（`gms-server/src/main/java`，类名可按文件名检索）：
+
+| 源文件 | SHA256 |
+| --- | --- |
+| `MapleMap.java` | `435c938a6e387e9c060339631c9fd0e7d8dd8d71547b3d21ca9f0e90ffccabe4` |
+| `Reactor.java` | `204d12f0fe694085dd8b8cb55098b6e6eb39e868e14f5f322221c6f7222cf66d` |
+| `ReactorFactory.java` | `6106630053ce2d8f540e00592b073537544684c9da9b2f8b4648c5ce43bf9f38` |
+| `ReactorStats.java` | `bafc05f495c7e4a558588bdd809a546602977e9a0c12550310eca4becd680963` |
+| `ReactorScriptManager.java` | `58e26cd42ccdfe2a872c4eaf103482a64a2baa178fd24e4c3962bfd984350604` |
+| `ReactorActionManager.java` | `fb9eaeccc3f9eef66b5cf9638d3143fad1beb84ad093914a4b051af799187d0c` |
+| `AbstractPlayerInteraction.java` | `223abe10c79e6e20002ac4b8782890ad5d928d74219a38ebb1fc95dfb7fcdbfc` |
+| `CustomReactor.java` | `6e1003352ed780b1a99e9d53c255e7ff329f6af7d8533c5b66ea5da9bf994f51` |
+| `OPQOrchestrator.java` | `f795c619b871302acd7467feac27c4fa3d36c8ae77d43afb67fbe87e047f215e` |
+| `scripts-zh-CN/reactor/2006000.js` | `e6491045d364a064faa09175bd4fe0b56e9a2d725b92bf8a4db2e9f71edd8f97` |
+| `scripts-zh-CN/reactor/2008006.js` | `03cc3387a76534144a7fef7deabd0e5fac4f1125fbd460b1bffeba4222194398` |
+
+已确定逻辑：
+
+- `CustomReactor.hitReactor` **仅 state+1 并广播**，没有通用「四击自动掉落/销毁」；OPQ 自己四击后调用 `dropItemAtReactor` 补掉落。`MapReactorService.Hit` 目前是这条假人四击路径适配，不应声称完整 `Reactor.hitReactor` 状态机已迁移。掉落 dropper 使用实例 objectId，不能用模板 id。
+- `ReactorFactory.getReactor` 读取每个状态的所有 event；第一个 type100 设置物品触发区域（非 activateByTouch 情况），`eventState` 选择要求的物品/数量。`MapleMap.activateItemReactors` 要求 **单堆 itemId 与 quantity 精确相等**，Java Rectangle 含左上不含右下，安排5000ms回调，只取首个匹配反应堆。不是凑多堆总量，也不是 >=数量。
+- 回调 `ActivateItemReactor.run` 再确认物品仍在图上、未拾取、反应堆当前type100且shouldCollect，移除整堆后 hitReactor。当前北斗 `Reactor.hitReactor` 先赋 `state=stats.getNextState(state,b)`，**再以新state查一次nextState** 作结束/循环判断；这是当前源码真实行为，不能直接用上游Odin常见逻辑替换。本轮物品触发保留这一顺序，完整武器/技能过滤和timeout分支未移植。
+- `ReactorScriptManager.initializeInvocable` 选 **`reactor/<id>.js`**，不使用 IMG 顶层 action 文本（如fgodNPC0）。2006000原脚本广播type5并`spawnNpc(2013001)`；API默认位置是反应堆原坐标，后端不额外snap。`MapReactorTemplate` 保存原事件/区域，`NativeReactorScriptService`实际解释执行原JS，当前宿主仅覆盖mapMessage/spawnNpc/getEventInstance三项，不假装其他反应堆脚本API已完成。
+- OPQ第一关仅 `isNpcPresent(resolveLeader().getMap(),2013001)` 才通关，**云朵全破不等于已交付**。删除旧草稿的全破fallback。招募先checkPartyQueue，BotRuntime现注入真实party服务，离线/跨世界/跨频道队长返回未知；不再用其他假人的最前进地图冒充队长。修正默认BotRuntime构造参数parties为null时，掉落party委托错误捕获参数的缺陷。
+- 时钟由BotRuntime绑定BotScheduler.Clock，Drive驱动重生/物品触发，Dispose摘掉Spawned订阅、清实体和激活回调、清队长委托/OPQ黑板；停止OPQ同时取消挥击、移动和录制。
+- 动态NPC加入MapRuntime.npcs供权威查询；NativeMapView沿用静态NPC同一NpcRoot/stand/origin/PPU/排序100入口，并加入FieldMap.npcs供既有NPC点击/任务标记/名牌使用，不新增自绘素材。
+
+资源与复现：`rtk proxy python3 tools/patch_solomapling_reactors.py` 读取四图reactor，额外导出`Assets/Resources/Bot/ReactorTemplates.json`，保留模板各状态全部event和首个物品area。数据解析使用源tool/wz-python GMS key。
+
+- `Reactor/2002001.img` SHA256 `6f496216c527b491637aba75583280a7f23d5a67c8812de1c238945e61d718e7`。
+- `Reactor/2006000.img` SHA256 `02d14dc31319bec14e8beb332c35cabad77a86b05a9a44b7f889ecc91b0cd012`。
+- `Reactor/2008006.img` SHA256 `2de42f4b632d12f31ad990233f1eca7985ab82846da3095660c5525e0d430d41`。
+
+- 2006000/0/event/0：type100，云片4001063×20，next1，area(-100,-100)..(100,100)；0动画8帧delay120ms，首帧64×65/origin(32,32)。
+- 2008006/0/event/0..6：4001056..4001062各1，next1..7，area(-52,-64)..(40,79)；0首帧112×147/origin(56,73)。OrbisPQ.js:169在原事件setup对music执行setEventState(Date.getDay())，**事件私有地图宿主未迁，不能擅自用系统日期代替原脚本setup**。
+- 2002001：0..3各type0→state+1，4为1×1透明Canvas；默认首帧106×72/origin(53,36)，受击帧在旧state/hit，不是任意自绘闪光。
+
+剩余边界：原反应堆Canvas/受击动画前端尚未接；音乐盒依赖真实事件实例、星期eventState和私有地图生命周期，现有NativeEventScripts仅能把当前图事件对象交给原脚本，不代表OrbisPQ副本setup已实现。12房间商店与交易/信使/组队/椅子/坐骑完整前端仍待迁移，不能算入本轮通过项。
+
+验证：`rtk dotnet run --project tools/server-check --no-restore` **623通过/0失败**，包含真实默认runtime的邀请接受/队长地图/频道隔离、四击独占掉落、全破不提前通关、2秒重生、19片拒绝、20片5000ms后原脚本生成管家及动态NPC释放。`rtk dotnet build tools/unity-compile-check -t:Rebuild --no-restore` **0警告/0错误**。尚未执行Unity Play画面或Android实机验收。
+
+前端继续逆向入口（同一EXE身份，区分已核实与待核实）：`0x73A649`以字符串3078格式化`Reactor/%07d.img`并调用模板解析`0x739A92`；`0x73A865`读取同一模板，取info/link并用字符串3076=`Reactor/%s.img`解析链接。`0x7348A0`调用0x73A649、0x73A865后创建层。`0x73B206..0x73B22A`实际格式化字符串3079=`%d/hit`，参数来自函数arg+0xC；**该参数与旧/新状态的对应关系以及完整层坐标/z顺序尚待核实，未据此新增反应堆绘制**。复现用inspect工具的`--callers 0x73a649`、`--fn 0x73a865`、`--start 0x73b200 --end 0x73b2b9`，不要把字节xref伪命中当调用证据。
+
+## 第四步续迁移：原市场商品与权威商店集合（2026-10-29）
+
+本节记录本次新增后端，尚不代表商店前端或全部剩余步骤完成。
+
+源身份：
+
+- `ArtificialFreeMarket.java` SHA256 `59fc0de08f810ee917576b5055bee185d30258cdab732b610258bf1afc601308`。
+- `ArtificialShopGenerator.java` SHA256 `dd772d749fb15fd9accbf8c58aef0497e23a1a6178c187eb00fa9d7e6bd69ea9`。
+- `FMShopTypeManager.java` SHA256 `2f285c76f9bd5a8dbdab1196939964cbf4d50ccc60651ba25d26c5588481dc21`。
+- `FMShopInfoManager.java` SHA256 `cfef759c8b7bc835434d8bc497a939371615d3156bd1089b1c4572b35d5cf77d`。
+- `FMShopDescriptionManager.java` SHA256 `96a276107aa0fe71257cf4be7dd26a5b0c970157cb61d834c17c9c104db19ae9`。
+- `FMShopDescGen.java` SHA256 `c37fa4d1566f695202a64e2c472923f8689b096c1ce9acea4143549bc1b9ea5a`。
+- `MarketShopTitles.java` SHA256 `6c052b744694df3e9c3bdf02fac88f3170a1d24e9e4f58f934171053ebcceebe`。
+
+- `MarketShopGenerator`：原常规/热门主类别权重；二级1/2类去重权重；职业装备与盗贼飞镖概率；Pirate仍用BEGINNER；热门额外装备+两批副商品+最多3轮补到10条；普通不足5条追加前5类别。每条商品保留单捆数量与bundles，价格/库存使用既有MarketEconomy。热门USE/ETC加量5..8倍，9%售罄后不自动补货；一金币/0.7/0.85折扣与空列表100件×20捆药水兜底。
+- `MarketShopDescriptions/Titles`：源中文池、过滤Latin、原文件、7商会缓存、主副策略及兼容概率、最高价格商品/装备与强化差值标签、十空格房号。不从截图编造店名。
+- `MarketShopSpots` 的23/28点由原FMShopInfoManager移除注释后提取；原注释“24”不是实际数量。`MarketShopService`每房容量max(config,24)，先雇佣商人再尝试2可见摊主，共享额度；原坐标地面修正、可见摊主1200ms开店、50%转向、40%在500ms后坐原椅子。店主800001起不混入BotRegistry。通过BotEnvironment启动分帧队列执行，退出取消待执行任务和集合。
+- 访问/购买限世界频道地图和有效访问会话；3访客上限，离图应关闭访问。`BotTradeService.Purchase`复用原背包/金币持久化事务和tradeRevision通知，不建立伪交易会话，拒绝托管中消费。商品按原float乘法算总价，转移karma，成功才减库存。
+- 验证：server-check最新633通过/0失败（新增10项），全Unity脚本编译0错误/0警告。第一次全回归632/1，未改代码第二次633/0，需留意既有随机/压测断言，不宣称首次全绿。**地图商店美术/点击前端、主人销售款记录、可见摊主椅子绘制仍待接续，不等于第四步完成。**
+- 前端定位：同既有EXE身份，TradingRoom构造0x7C1C76取串1817背景565×474；vtable0xB37448的OnCreate=0x7C23D0，递归454指令完整到0x7C2958。PersonalShop购买按钮串2613真实push=0x6FA705。UIWindow/PersonalShop原backgrnd525×553、backgrnd2 233×143、backgrnd3 233×276、select162×35、soldout199×35。尚未完成所有坐标合同核对，不据此自行设计界面。

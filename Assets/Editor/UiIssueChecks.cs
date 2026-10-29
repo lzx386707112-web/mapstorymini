@@ -353,28 +353,27 @@ public static class UiIssueChecks
         return s.Length > 150 ? s.Substring(0, 150) + "…" : s;
     }
     static string Trim(string s) => (s ?? "").Length > 24 ? s.Substring(0, 24) + "…" : (s ?? "");
-    // ───────── 3. NPC 名字牌：源端是小字 + 半透明绿底 ─────────
+    // ───────── 3. NPC 名字牌：EXE type=1001 ─────────
     static void NpcNamePlate()
     {
-        Log("════════ NPC 名字牌（源端：小字 + 半透明绿底 + 亮绿边框） ════════");
-        Log("  当前：字号 " + NpcDialogUi.NameFontSize + " 逻辑像素，内边距 "
-            + NpcDialogUi.NamePadX + "x" + NpcDialogUi.NamePadY + "，脚点下 " + NpcDialogUi.NameGapPx + "px"
+        Log("════════ NPC 名字牌（EXE：文字宽+5，固定高16，无额外边框） ════════");
+        Log("  当前：字号 " + NpcDialogUi.NameFontSize + " 逻辑像素，脚点下 " + NpcDialogUi.NameGapPx + "px"
             + "；UiKit.Scale=" + UiKit.Scale.ToString("0.00") + " Screen.height=" + Screen.height);
         // 字号是逻辑像素，不该再被 Screen.height 放大：GUI 已经按 UiKit.Scale 缩放过。
-        Check(NpcDialogUi.NameFontSize <= 13,
+        Check(NpcDialogUi.NameFontSize == 12,
               "名字字号按逻辑像素（旧写法 13*Screen.height/768 在 1080p 上会变成 18）",
               "NameFontSize=" + NpcDialogUi.NameFontSize);
 
-        var textSize = new Vector2(40f, 14f);
+        // 故意传入远高于字体的 Unity 行盒，背景仍须固定16px。
+        var textSize = new Vector2(40f, 24f);
         NpcDialogUi.NamePlateRects(new Vector2(100f, 200f), textSize, out var plate, out var text);
-        Check(Mathf.Abs(plate.width - (textSize.x + NpcDialogUi.NamePadX * 2f)) < .01f &&
-              Mathf.Abs(plate.height - (textSize.y + NpcDialogUi.NamePadY * 2f)) < .01f,
-              "牌尺寸 = 文字尺寸 + 内边距", "牌 " + plate.width + "x" + plate.height + " 字 " + textSize.x + "x" + textSize.y);
-        Check(Mathf.Abs(plate.center.x - 100f) < .01f, "牌水平居中于脚点", "中心 x=" + plate.center.x.ToString("0.0"));
+        Check(plate.width == 45f && plate.height == 16f,
+              "EXE背景尺寸不受Unity行盒高度影响", "牌 " + plate.width + "x" + plate.height);
+        Check(plate.x == 78f, "EXE横向原点按整数除2截断", "左边 x=" + plate.x);
         Check(Mathf.Abs(plate.y - (200f + NpcDialogUi.NameGapPx)) < .01f,
               "牌顶边贴在脚点下方 " + NpcDialogUi.NameGapPx + "px", "牌顶 y=" + plate.y.ToString("0.0"));
-        Check(text.x > plate.x && text.y > plate.y && text.xMax < plate.xMax && text.yMax < plate.yMax,
-              "文字完全落在牌内，四周留出边框", "文字 " + text.x + "," + text.y);
+        Check(text.x == plate.x + 2f && text.y == plate.y && text.width == 40f,
+              "EXE文字从(2,0)开始，无额外纵向内边距", "文字 " + text.x + "," + text.y);
     }
 
     static string Short(string s)

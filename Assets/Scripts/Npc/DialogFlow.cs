@@ -260,7 +260,8 @@ public static class DialogFlow
         if (content == null) return -1;
 
         var links = Links(content);
-        if (selected >= 0 && !links.Contains(selected)) selected = -1;   // 换页后旧选中项已不存在
+        // 换页/追加条目后旧选中项已不存在时回落到首项（移动端没有悬停，不能停在「无焦点」）。
+        selected = links.Count == 0 ? -1 : links.Contains(selected) ? selected : links[0];
 
         float width = ContentWidth(window.width);
         var layout = Measure(content, width, input);

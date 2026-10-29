@@ -36,6 +36,7 @@ namespace Server.Field
     public sealed class MapNpcPosition
     {
         public int id, x, y;
+        public bool dynamic;
     }
 
     public sealed class MapRuntime
@@ -48,6 +49,8 @@ namespace Server.Field
         public readonly List<MapRope> ropes = new List<MapRope>();
         public readonly List<MapPortal> portals = new List<MapPortal>();
         public readonly List<MapNpcPosition> npcs = new List<MapNpcPosition>();
+        /// <summary>WZ reactor 节点的静态描述；运行时实例由 MapReactorService 惰性生成（本文件不持逻辑）。</summary>
+        public readonly List<MapReactorSpawn> reactors = new List<MapReactorSpawn>();
         public readonly List<FootholdSegment> footholds = new List<FootholdSegment>();
         public float minX = float.MaxValue, maxX = float.MinValue;
         public float minY = float.MaxValue, maxY = float.MinValue;

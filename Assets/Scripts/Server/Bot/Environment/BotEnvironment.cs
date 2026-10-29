@@ -15,17 +15,20 @@ namespace Server.Bot.Environment
     //   · createBotWithRetry：环境限额 + FM 入口槽位上限（marketBotMax）+ 失败重试。
     //   · spawnBotsOnMapOnPlatform：PlatformParser 平台 CSV + PlatformSpawner 找空位 + snapToGround。
     // 有意的端口差异（源端依赖未搬系统，宁缺不占位）：
-    //   · ArtificialFreeMarket.populateMarketRooms 依赖 hired-merchant 商店系统（阶段 F 余量）→ 跳过；
-    //   · Blackjack/OPQ/21点桌的行为类（BlackjackDealerBot/OPQ 逻辑）未搬 → 不生成无行为假人；
+    //   · ArtificialFreeMarket.populateMarketRooms 通过权威商店服务逐店排队；
     //   · 椅子/技能/换装周期刷新：源端是外挂定时循环，本端口已由 MarketBotAmbient 在各
     //     状态机内建周期行为，不再重复挂调度；
     //   · 多线程 latch/CompletableFuture → 主线程时钟续接（BotTasks），波次顺序执行。
+    //   · FM 入口名额上限不再直接用 market_bot_max：源端该值（默认 10）比 Wave1 自己的计划量还小，
+    //     默认配置下会静默丢掉 3 只社交假人，Wave2 的扭蛋/21点/OPQ 全部生成失败。这里按「计划量」
+    //     算名额（见 FmEntranceCapacity），保证计划多少就能生成多少。
     //
     // 分帧（本端口新增，不改源端语义）：源端整段跑在后台线程里，主线程不卡；
     // 本端口在主线程跑，所以把每一波再拆成「算座位 → 一个一个生成假人」的步骤队列，
     // 由 BotWorkPump 的每帧毫秒预算驱动。波次顺序、限额、重试全部保持原样。
     public static class BotEnvironment
     {
+        public static Action PopulateMarketRooms;
         const int FMEntrance = 910000000;
         const int Henesys = 100000000;
         const int HenesysMarket = 100000100;
@@ -37,6 +40,8 @@ namespace Server.Bot.Environment
         static readonly object gate = new object();
         static bool startupStarted, startupComplete, limitDisableScheduled;
         static int marketEntranceBotCount;
+        static int fmEntranceCapacity = -1;
+        static readonly Random rng = new Random();
         static PlatformParser platforms;
 
         // BotRuntime 注入（按需加载地图几何）；城镇游荡走 BotTownSpawner（BotRuntime 实例资产）
@@ -166,6 +171,7 @@ namespace Server.Bot.Environment
             }
             BotGeneration.EnableEnvironmentBotLimit();
             lock (steps) steps.Clear();
+            Post(() => PopulateMarketRooms?.Invoke());
             Post(PlanWave1);
         }
 
@@ -219,14 +225,180 @@ namespace Server.Bot.Environment
         static void PlanSocialSeats()
             => EnqueueBotSpawns(FillerSeats(3, FMEntrance, new BotPoint(-260, 34), new BotPoint(330, 34)), FMEntrance, BotType.SOCIAL_BOT);
 
-        // ——————————— Wave 2：扭蛋 ———————————
+        // ——————————— Wave 2：扭蛋 + 21 点桌 + OPQ 大厅 ———————————
+        // ≡ runWave(2, "Free Market specialty", [spawnGachaBotsHenesys, spawnBlackjackTables, spawnOPQBotsInLobby])
         static void PlanWave2() => EnsureMapThen(FMEntrance, () =>
         {
             // ≡ spawnGachaBotsHenesys：FM m5 平台 (40,34) 半径 250 内 2 只 GACHA_BOT
             if (BotConfig.GachaBotsEnabled(Db))
                 EnqueueBotSpawns(RadiusSeats(2, FMEntrance, "m5", new BotPoint(40, 34), 250), FMEntrance, BotType.GACHA_BOT);
-            Post(PlanWave3);
+            PlanBlackjackTable();
+            PlanOpqLobbyBots();
+            Post(PlanHenesys);
         });
+
+        // ≡ spawnBlackjackTables：FM 入口一张 21 点桌（荷官 1 + AI 玩家 2）。
+        // 座位按源端 calculateTablePositions 的矩形等分算：上边 y=-266、下边 y=4，x 从 -320 到 260。
+        static void PlanBlackjackTable()
+        {
+            if (!BotConfig.BlackjackTablesEnabled(Db)) return;
+            var seats = TableSeats(FMEntrance,
+                new BotPoint(-320, -266), new BotPoint(260, -266),
+                new BotPoint(-320, 4), new BotPoint(260, 4));
+            Post(() => SpawnBlackjackTable(seats));
+        }
+
+        // ≡ calculateTablePositions + jitter：6 个座位，[0] 是荷官（上方中点，无抖动）。
+        static List<BotPoint> TableSeats(int mapId, BotPoint topP1, BotPoint topP2, BotPoint botP1, BotPoint botP2)
+        {
+            int topMinX = Math.Min(topP1.x, topP2.x), topMaxX = Math.Max(topP1.x, topP2.x), topY = topP1.y;
+            int topThird = (topMaxX - topMinX) / 3;
+            int botMinX = Math.Min(botP1.x, botP2.x), botMaxX = Math.Max(botP1.x, botP2.x), botY = botP1.y;
+            int botThird = (botMaxX - botMinX) / 3;
+            int Jitter() => rng.Next(125) - 50;
+
+            var raw = new List<BotPoint>
+            {
+                new BotPoint(topMinX + topThird + topThird / 2, topY),                  // [0] 荷官
+                new BotPoint(topMinX + topThird / 2 + Jitter(), topY),                  // [1] 上左
+                new BotPoint(topMinX + topThird * 2 + topThird / 2 + Jitter(), topY),   // [2] 上右
+                new BotPoint(botMinX + botThird / 2 + Jitter(), botY),                  // [3] 下左
+                new BotPoint(botMinX + botThird + botThird / 2 + Jitter(), botY),       // [4] 下中
+                new BotPoint(botMinX + botThird * 2 + botThird / 2 + Jitter(), botY),   // [5] 下右
+            };
+            for (int i = 0; i < raw.Count; i++) raw[i] = PlatformSpawner.SnapToGround(mapId, raw[i]);
+            return raw;
+        }
+
+        // ≡ spawnBlackjackTable：荷官单独 setAndStartBots(BLACKJACK_DEALER)，AI 玩家不挂状态机
+        // （源端也是如此 —— 它们的下注和要牌/停牌全由荷官驱动）。
+        // 生成拆成三步排队，避免一帧里连建 3 只假人。
+        static void SpawnBlackjackTable(List<BotPoint> seats)
+        {
+            if (seats == null || seats.Count < 6) return;
+            var playerSeatOrder = new List<int> { 1, 2, 3, 4, 5 };
+            Shuffle(playerSeatOrder);
+
+            BotCharacter dealer = null;
+            var players = new List<BotCharacter>();
+            int stage = 0;
+
+            void Step()
+            {
+                switch (stage++)
+                {
+                    case 0:
+                        dealer = CreateBotWithRetry(seats[0], FMEntrance, 5);
+                        if (dealer == null) return;
+                        Post(Step);
+                        break;
+                    case 1:
+                    case 2:
+                    {
+                        var seat = seats[playerSeatOrder[stage - 2]];
+                        var player = CreateBotWithRetry(seat, FMEntrance, 5);
+                        if (player != null) players.Add(player);
+                        Post(Step);
+                        break;
+                    }
+                    default:
+                        WireTable(dealer, players, seats[0]);
+                        break;
+                }
+            }
+            Post(Step);
+        }
+
+        static void WireTable(BotCharacter dealer, List<BotCharacter> players, BotPoint dealerSeat)
+        {
+            if (dealer == null) return;
+            BotTypeManager.SetAndStartBots(new List<int> { dealer.id }, BotType.BLACKJACK_DEALER);
+            if (BotStore.GetBotById(dealer.id) is not Types.Blackjack.BlackjackDealerBot table) return;
+
+            // 玩家先入桌（牌局逻辑），朝向等出生编排播完再摆（否则会被编舞覆盖）
+            foreach (var player in players)
+            {
+                table.Table.AddPlayer(player);
+                table.interactors.SetRespondant(player);
+            }
+            BotTasks.Schedule(() =>
+            {
+                foreach (var player in players)
+                    player.facing = dealerSeat.x >= player.x ? 1 : -1;
+            }, BotGeneration.SpawnChoreographyMaxMs + 500);
+        }
+
+        // ≡ spawnOPQBotsInLobby：FM 入口 m3/m4 上共 3 只，等级 50~70。
+        static void PlanOpqLobbyBots()
+        {
+            if (!BotConfig.OpqLobbyBotsEnabled(Db)) return;
+            var platformIds = new[] { "m3", "m4" };      // ≡ List.of("m3", "m4")
+            const int totalBots = 3;
+            int perPlatform = totalBots / platformIds.Length;
+            int remainder = totalBots % platformIds.Length;
+            for (int i = 0; i < platformIds.Length; i++)
+            {
+                int count = perPlatform + (i < remainder ? 1 : 0);
+                if (count <= 0) continue;
+                string platformId = platformIds[i];
+                Post(() => EnqueueBotSpawns(PlatformSeats(FMEntrance, platformId, count), FMEntrance, BotType.OPQ_BOT, 50, 70));
+            }
+        }
+
+        static void Shuffle(List<int> list)
+        {
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
+        }
+
+        // ——————————— Henesys 人群 ———————————
+        // ≡ spawnHenesysBots。源端只挂在 GM 命令（EnvironmentCommand）上，不在启动流程里；
+        // 本工程按「全部打开」并入启动流程，仍受三个 feature 开关控制。
+        // 注：源端 m4/m5/m6_social 三组只创建不 setAndStartBots（漏了），这里按意图启动。
+        static void PlanHenesys()
+        {
+            if (!BotConfig.HenesysCrowdEnabled(Db) && !BotConfig.HenesysMarketCrowdEnabled(Db)
+                && !BotConfig.HenesysParkCrowdEnabled(Db))
+            { Post(PlanWave3); return; }
+
+            EnsureMapThen(Henesys, () =>
+            {
+                if (BotConfig.HenesysCrowdEnabled(Db))
+                {
+                    PlanPlatformSeats(Henesys, "m1", 30, BotType.HENESYS_BOT);
+                    PlanPlatformSeats(Henesys, "m4_social", 3, BotType.HENESYS_BOT);
+                    PlanPlatformSeats(Henesys, "m5_social", 3, BotType.HENESYS_BOT);
+                    PlanPlatformSeats(Henesys, "m6_social", 3, BotType.HENESYS_BOT);
+                }
+                PlanHenesysMarket();
+            });
+        }
+        static void PlanHenesysMarket()
+        {
+            if (!BotConfig.HenesysMarketCrowdEnabled(Db) && !BotConfig.HenesysParkCrowdEnabled(Db))
+            { Post(PlanWave3); return; }
+            EnsureMapThen(HenesysMarket, () =>
+            {
+                if (BotConfig.HenesysMarketCrowdEnabled(Db))
+                {
+                    PlanPlatformSeats(HenesysMarket, "m1", 10, BotType.HENESYS_BOT);
+                    PlanPlatformSeats(HenesysMarket, "m2", 10, BotType.HENESYS_BOT);
+                }
+                PlanHenesysPark();
+            });
+        }
+        static void PlanHenesysPark()
+        {
+            if (!BotConfig.HenesysParkCrowdEnabled(Db)) { Post(PlanWave3); return; }
+            EnsureMapThen(HenesysPark, () =>
+            {
+                PlanPlatformSeats(HenesysPark, "m1", 10, BotType.HENESYS_BOT);
+                Post(PlanWave3);
+            });
+        }
 
         // ——————————— Wave 3：城镇游荡 ———————————
         // ≡ spawnTownWanderers：城镇配置驱动，具体实现已在 BotTownSpawner（BotRuntime 持有，
@@ -245,7 +417,8 @@ namespace Server.Bot.Environment
 
         // 一次只生成一个假人，剩下的排到队尾；全部生成完才启动这一批的状态机。
         // 第一条也排队（不在这里直接跑），这样「算座位」全部走完才开始逐个生成，波次顺序不乱。
-        static void EnqueueBotSpawns(List<BotPoint> seats, int mapId, BotType type)
+        static void EnqueueBotSpawns(List<BotPoint> seats, int mapId, BotType type,
+            int minLevel = 0, int maxLevel = 0)
         {
             var ids = new List<int>();
             int index = 0;
@@ -253,7 +426,13 @@ namespace Server.Bot.Environment
             {
                 if (index >= seats.Count) { BotTypeManager.SetAndStartBots(ids, type); return; }
                 var bot = CreateBotWithRetry(seats[index++], mapId, 5);
-                if (bot != null) ids.Add(bot.id);
+                if (bot != null)
+                {
+                    // ≡ setBotsLevelRange：OPQ 大厅要求 50~70 级
+                    if (maxLevel >= minLevel && minLevel > 0)
+                        bot.level = minLevel + rng.Next(maxLevel - minLevel + 1);
+                    ids.Add(bot.id);
+                }
                 Post(NextBot);
             }
             Post(NextBot);
@@ -350,17 +529,40 @@ namespace Server.Bot.Environment
             return null;
         }
 
-        // ≡ reserveMarketEntranceBotSlot：FM 入口 bot 总量受 market_bot_max 限制
+        // ≡ reserveMarketEntranceBotSlot：FM 入口 bot 总量上限。
+        // 源端直接用 market_bot_max（默认 10），但 Wave1 自己的计划量就已经是
+        //   闲逛 2/3 + 商人 1/6 + 1/8 + 1/15 + 社交 3 ≈ 13 只
+        // 于是一到 10 就拒绝，社交剩一半、Wave2 的扭蛋/21点/OPQ 全部生成失败（源端同样如此）。
+        // 「全部打开」要求计划多少就能生成多少，所以名额按计划量算，market_bot_max 仍然决定市场规模。
         static bool ReserveMarketEntranceBotSlot(int mapId)
         {
             if (mapId != FMEntrance) return false;
+            int capacity = FmEntranceCapacity();
             while (true)
             {
                 int current = marketEntranceBotCount;
-                if (current >= BotConfig.MarketBotMax(Db)) return false;
+                if (current >= capacity) return false;
                 if (System.Threading.Interlocked.CompareExchange(ref marketEntranceBotCount, current + 1, current) == current)
                     return true;
             }
+        }
+
+        public static int FmEntranceCapacity()
+        {
+            if (fmEntranceCapacity > 0) return fmEntranceCapacity;
+            int cap = BotConfig.MarketBotMax(Db);
+            var parts = DistributeMarketEntranceWanderers(cap);
+            int wanderers = parts[0] + parts[1] + parts[2];
+            // 商人：selling 拆两批各 max(1, ·)，所以实际落地量可能比 selling 多 1
+            int selling = Math.Max(2, cap / 6), buying = Math.Max(1, cap / 8), nx = Math.Max(1, cap / 15);
+            int merchants = Math.Max(1, selling / 2) + (selling - selling / 2)
+                          + Math.Max(1, buying / 2) + (buying - buying / 2) + nx;
+            int social = 3;
+            int gacha = BotConfig.GachaBotsEnabled(Db) ? 2 : 0;
+            int blackjack = BotConfig.BlackjackTablesEnabled(Db) ? 3 : 0;   // 1 荷官 + 2 AI 玩家
+            int opq = BotConfig.OpqLobbyBotsEnabled(Db) ? 3 : 0;
+            fmEntranceCapacity = wanderers + merchants + social + gacha + blackjack + opq;
+            return fmEntranceCapacity;
         }
 
         static void ReleaseMarketEntranceBotSlot(int mapId, bool reserved)

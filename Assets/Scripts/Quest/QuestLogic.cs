@@ -325,8 +325,10 @@ public static class QuestNotice
             float age = Time.unscaledTime - entry.time;
             var oldColor = GUI.color;
             GUI.color = new Color(oldColor.r, oldColor.g, oldColor.b, oldColor.a * Mathf.Clamp01(age) * Mathf.Clamp01(31 - age));
-            // Native 800x600: (464,508-5*windowCount), 155x44; retain right/bottom offsets.
-            QuestUi.Begin(new Vector2(UiKit.W - 336 * scale, UiKit.H - (92 + (ready.Count - i) * 5) * scale), scale);
+            // backgrnd4 tail tip is (140,43); point it at the memo slot left of EquipKey.
+            var notifyBox = BottomBar.NotifyBoxRect();
+            QuestUi.Begin(new Vector2(notifyBox.x + (33 - 140) * scale,
+                notifyBox.y - (43 + (ready.Count - i) * 5) * scale), scale);
             QuestUi.Image("FadeYesNo/backgrnd4", 0, 0);
             QuestUi.Image("FadeYesNo/icon7", 6, (37 - 12) / 2);
             GUI.Label(QuestUi.Rect(27, 7, 100, 16), "任务完成！", readyStyle);

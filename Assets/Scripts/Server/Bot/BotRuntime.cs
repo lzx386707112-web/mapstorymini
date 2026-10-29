@@ -19,6 +19,7 @@ namespace Server.Bot
         public readonly Trade.BotTradeProtocol tradeProtocol;
         public readonly BotPartyService parties;
         public readonly BotPartyGrindService partyGrind;
+        public readonly MarketShopService shops;
         // 移动事件：**只有真的有人订阅时才把包发出来**。单机宿主没有网络出口，
         // 没人订阅时整条「构包 → 转发」链都是白做（每秒几千次分配），
         // 所以这里用自定义访问器把「有没有消费者」同步给下游，而不是无条件接上。
@@ -36,6 +37,7 @@ namespace Server.Bot
         }
         bool disposed;
         readonly BotTasks.Handle invitationWatch;
+        readonly NativeReactorScriptService reactorScripts;
         public BotRuntime(DbStore db, Social.BotMessenger messenger = null, BotPartyService parties = null)
         {
             var perf = BotPerf.Timer("BotRuntime.Ctor");
@@ -44,10 +46,14 @@ namespace Server.Bot
             this.parties = parties ?? new BotPartyService(db);
             invitationWatch=BotTasks.ScheduleFixedRate(()=> { this.parties.TickInvitationTimeouts(); BotTypeManager.Messenger.TickInvitationTimeouts(); trades?.TickInvitationTimeouts(); },30000,30000);
             trades = new Trade.BotTradeService(db,BotItemCatalog.Shared);
+            BotTypeManager.Parties = this.parties;
+            BotTypeManager.TradeService = trades;
             tradeProtocol = new Trade.BotTradeProtocol(trades, id => players.TryGetValue(id,out var player) ? player : null);
             trades.ChatOutput = (actor,text) => BotTypeManager.Output.Send(Social.BotOutput.Kind.TradeChat,actor,text,
                 targetId: actor.IsBot() ? actor.trade?.partner?.actor.id ?? 0 : actor.id);
             maps = BotNavigationMapLoader.Load();
+            shops = new MarketShopService(db, trades, GetMap);
+            BotEnvironment.PopulateMarketRooms = shops.PopulateRooms;
             partyGrind = new BotPartyGrindService(this.parties,GetMap,null,db);
             BotTypeManager.PartyGrind = partyGrind;
             observers = new BotObserverTracker(() => players.Values, GetMap, BotWorldGraph.Load());
@@ -68,10 +74,26 @@ namespace Server.Bot
                 (map.fieldLimit & 2) != 0,this.parties.Members(actor.id),BotMovementService.HasSnowShoes(actor));
             BotTypeManager.RealPlayersOnMap = observers.HasRealPlayerNow;
             BotLogic.OnlinePlayers = () => players.Values;
-            MapItemService.PartyOf = id => parties.For(id)?.id ?? -1;
-            MapItemService.IsPartyMember = (ownerId, characterId) => parties.For(ownerId)?.members.Contains(characterId) ?? false;
+            MapItemService.PartyOf = id => this.parties.For(id)?.id ?? -1;
+            MapItemService.IsPartyMember = (ownerId, characterId) => this.parties.For(ownerId)?.members.Contains(characterId) ?? false;
             // 地面掉落与假人调度共用同一毫秒时钟（源端 TimerManager / System.currentTimeMillis 同源）
             MapItemService.Clock = () => BotScheduler.Clock;
+            MapReactorService.Clock = () => BotScheduler.Clock;
+            MapReactorService.Templates = MapReactorTemplate.Parse(BotWarmup.Root("Bot/ReactorTemplates"));
+            MapItemService.Spawned += MapReactorService.ActivateItemReactors;
+            reactorScripts = new NativeReactorScriptService(key=>MapReactorService.ScriptSource?.Invoke(key));
+            reactorScripts.Message = (map,type,text)=>MapReactorService.ScriptMessage?.Invoke(map,type,text);
+            reactorScripts.EventInstance = map=>MapReactorService.EventInstance?.Invoke(map);
+            reactorScripts.Error = error=>MapReactorService.ScriptError?.Invoke(error);
+            MapReactorService.Act = (reactor,owner)=>reactorScripts.Act(reactor,owner);
+            Types.Opq.OpqOrchestrator.LeaderMapOf = id =>
+            {
+                var member = this.parties.Get(id);
+                var party = this.parties.For(id);
+                var leader = party == null ? null : this.parties.Get(party.leader);
+                return member != null && leader != null && leader.online &&
+                    leader.world == member.world && leader.channel == member.channel ? leader.mapId : -1;
+            };
             observers.Start();
             // ≡ 源端经 BotControlController→BotControlService.requestMarketStartup 后台触发；
             //   本端口增加游戏内自动启动（solo_mapling_market_auto_start，默认 true），
@@ -144,7 +166,7 @@ namespace Server.Bot
             if (character?.record == null) throw new ArgumentNullException(nameof(character));
             var record = character.record; int id = checked((int)record.id);
             bool changedMap = !players.TryGetValue(id, out var actor) || actor.mapId != mapId || actor.channel != channel || actor.world != record.world;
-            if (changedMap) actor?.trade?.Decline();
+            if (changedMap) { actor?.trade?.Decline(); shops.Leave(id); }
             if (actor == null) { actor = new BotActor { id = id }; players.Add(id, actor); }
             int previousLevel = actor.level;
             bool knownPlayer = actor.character != null;
@@ -179,14 +201,17 @@ namespace Server.Bot
             if (disposed) return;
             BotScheduler.Clock = nowMs; BotScheduler.Drive();
             MapItemService.Tick(nowMs);
+            MapReactorService.Tick(nowMs);
         }
         public void Dispose()
         {
             if (disposed) return; disposed = true;
             foreach (var player in new List<BotActor>(players.Values)) player.trade?.Decline();
             invitationWatch.Cancel();
+            shops.Dispose(); BotEnvironment.PopulateMarketRooms = null;
             partyGrind.Dispose(); BotTypeManager.PartyGrind = null;
             parties.Clear();
+            BotTypeManager.Parties = null; BotTypeManager.TradeService = null;
             dispatcher.Dispose(); mapEntryResponder.Dispose(); townSpawner.Dispose(); observers.Dispose();
             foreach (var bot in new List<BotCharacter>(BotRegistry.All().Values)) BotGeneration.RemoveBotFromServer(bot);
             BotMovementService.Shutdown(); BotTypeManager.Market.Stop(); BotTasks.Stop(); BotScheduler.Stop();
@@ -195,6 +220,13 @@ namespace Server.Bot
             MapItemService.PartyOf = null; MapItemService.IsPartyMember = null;
             MapItemService.Clock = () => 0;
             MapItemService.ClearAll();
+            MapItemService.Spawned -= MapReactorService.ActivateItemReactors;
+            MapReactorService.Clock = () => 0;
+            MapReactorService.ClearAll();
+            MapReactorService.Act = null;
+            reactorScripts.Dispose();
+            Types.Opq.OpqOrchestrator.LeaderMapOf = null;
+            Types.Opq.OpqOrchestrator.ShutdownRun();
             BotMovementService.EnterPortal = null; BotMovementService.ResolveProfile = null;
             BotMovementService.IsObserved = null; BotMovementService.Broadcast = null; BotMovementPlayback.Broadcast = null;
             BotTypeManager.Output.Clear(); players.Clear();

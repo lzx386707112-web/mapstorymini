@@ -251,5 +251,10 @@ namespace Server.Bot
             names ??= new Social.BotNamePool(BotResources.Load(), rng);
             return names.CharacterName();
         }
+        public static string GetRandomShopOwnerIGN()
+        {
+            names ??= new Social.BotNamePool(BotResources.Load(), rng);
+            return names.ShopOwnerName();
+        }
     }
 }

@@ -223,8 +223,26 @@ public sealed class NativeMapView : MonoBehaviour
         }
         catch (Exception) { return 80f; }
     }
+    readonly Dictionary<Server.Field.MapNpcPosition,FieldNpc> dynamicNpcs = new Dictionary<Server.Field.MapNpcPosition,FieldNpc>();
+    public void SyncDynamicNpcs(FieldMap field)
+    {
+        var runtime=Server.Field.MapService.Get(field.id);
+        if(runtime==null)return;
+        foreach(var spawn in runtime.npcs)
+        {
+            if(!spawn.dynamic || dynamicNpcs.ContainsKey(spawn))continue;
+            string id=spawn.id.ToString("D7");var npc=NpcRoot(id);
+            if(!Drawable(npc?.Get("stand")))continue;
+            // Identical stand node, origin and coordinate conversion to static map NPCs.
+            Draw(npc.Get("stand"),"Npc_"+id,spawn.x,spawn.y,100);
+            var model=new FieldNpc { id=spawn.id,x=spawn.x,y=spawn.y,head=NpcHeadHeight(spawn.id) };
+            field.npcs.Add(model);dynamicNpcs.Add(spawn,model);
+        }
+    }
+
     public void Show(int id)
     {
+        gameObject.AddComponent<NativeReactorView>().Bind(id);
         var map = MapRoot(id);
         var body = new GameObject("MapLayers"); body.transform.SetParent(transform, false);
         body.AddComponent<UnityEngine.Rendering.SortingGroup>().sortingOrder = -400;
@@ -297,6 +315,12 @@ public sealed class NativeMapView : MonoBehaviour
         foreach (var a in animations) a.Tick(Time.timeSinceLevelLoad);
         weather?.Tick();
         if (Camera.main != null) UpdateBackgrounds(Camera.main, Time.timeSinceLevelLoad);
+    }
+    public IEnumerable<SpriteRenderer> WeatherTintBacks()
+    {
+        foreach (var back in backgrounds)
+            if (back.Definition.Name != "weather" && back.Definition.Int("front") == 0)
+                yield return back.Art.Renderer;
     }
     public SpriteRenderer AddWeatherBack(Dictionary<string,object> row, int order)
     {

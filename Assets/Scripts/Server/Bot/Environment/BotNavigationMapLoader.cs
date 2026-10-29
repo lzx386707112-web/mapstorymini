@@ -97,6 +97,14 @@ namespace Server.Bot.Environment
             if (map.TryGetValue("npcs", out var npcs) && npcs is List<object> entries)
                 foreach (Dictionary<string, object> n in entries)
                     result.npcs.Add(new MapNpcPosition { id = Int(n, "id"), x = Int(n, "x"), y = Int(n, "y") });
+            // 反应堆：老分片没有这个字段，按「这张图没有反应堆」处理（导出脚本补丁见 tools/patch_solomapling_reactors.py）。
+            if (map.TryGetValue("reactors", out var reactors) && reactors is List<object> reactorEntries)
+                foreach (Dictionary<string, object> r in reactorEntries)
+                    result.reactors.Add(new MapReactorSpawn
+                    {
+                        id = Int(r, "id"), x = Int(r, "x"), y = Int(r, "y"),
+                        reactorTime = Int(r, "reactorTime", -1), name = Str(r, "name")
+                    });
             return result;
         }
 

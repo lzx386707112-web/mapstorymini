@@ -56,11 +56,11 @@ namespace Server.Bot.Social
             var d = Get(pack, type, node);
             return d == null ? -1 : d.emotes[random.Next(d.emotes.Count)];
         }
-        public void Run(BotCharacter bot, Dialogue dialogue, BotOutput output, bool flavor, Action then = null)
+        public void Run(BotCharacter bot, Dialogue dialogue, BotOutput output, bool flavor, Action then = null, Func<bool> keepGoing = null)
         {
             if (dialogue == null) { then?.Invoke(); return; }
             var lines = flavor ? new List<string> { dialogue.text[random.Next(dialogue.text.Count)] } : dialogue.text;
-            var chain = BotTiming.CreateChain().StopUnless(() => BotRegistry.Contains(bot.id));
+            var chain = BotTiming.CreateChain().StopUnless(() => BotRegistry.Contains(bot.id) && (keepGoing == null || keepGoing()));
             for (int i = 0; i < lines.Count; i++)
             {
                 string text = lines[i];

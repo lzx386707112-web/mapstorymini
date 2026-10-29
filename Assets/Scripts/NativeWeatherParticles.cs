@@ -58,7 +58,8 @@ public sealed class NativeWeatherParticles : MonoBehaviour
             int x=Rand()%w-w/2,y=Rand()%h-h/2;
             Rand(); // stock horizontal spread is replaced by the independent wind PRNG
             var go=new GameObject("NativeWeatherParticle");go.transform.SetParent(transform,false);
-            var image=go.AddComponent<SpriteRenderer>();image.sprite=variants[variant];image.sortingOrder=710;
+            // 背景天气模式：原地图后景(-800)之上、地形 SortingGroup(-400)之下。
+            var image=go.AddComponent<SpriteRenderer>();image.sprite=variants[variant];image.sortingOrder=-700;
             particles.Add(new Particle{Image=image,X=x,Y=y,Amplitude=amplitude,Angle=angle,Fade=fade,
                 Alpha=node.Get(variant.ToString()).Int("a0",255),Drift=Drift(weather,skyToken,h/2),
                 Duration=(50000-info.Int("speed")*8000)/amplitude});

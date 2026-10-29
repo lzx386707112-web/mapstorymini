@@ -37,7 +37,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义 | [UI 拖动语义](references/ui-drag-and-drop.md) |
 | NPC 对话窗口精确布局/字体/按钮、VScr4、`#L` 图文、sendPrev 上一页+确定/对话键任务菜单与接受页推进、灯泡 autoStart/日期筛选、NPC进行中QuestIcon1/stop对白与完成条件击杀计数、截图问候入口/交付奖励10000→4→1、fieldType82青苹果外观、建号路线与远程任务脚本 | [NPC 对话窗口](references/npc-dialog.md) |
 | 任务三页签/详情summary/原端Tab2布局、任务告知、达成目标FadeYesNo红气泡、QuestClear及用户授权截图重建训练任务 | [任务窗口与告知](references/quest-window-and-alarm.md) |
-| 传送门 pt 触发方式、NPC 头顶名字锚点、聊天气泡九宫格与时长、新手训练营 0~4 图、`cm.warp` 目标图不存在的语义 | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |
+| 传送门 pt 触发方式、NPC 脚下名牌宽+5/高16与Canvas字体高度/透明四角、聊天气泡九宫格与时长、新手训练营 0~4 图、`cm.warp` 目标图不存在的语义 | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |
 | 背包/装备窗物品悬浮详情：ToolTip 图集、名称/描述来源、属性/需求字段、配色与帧绘制 | [背包与悬浮详情](references/inventory-and-tooltip.md) |
 
 地图坐标/脚底/平台/绳梯的运行时约定另见 [mapledash-map-port](../mapledash-map-port/SKILL.md)。服务端和脚本语义仍以源端服务端/脚本为依据，不能用 EXE 的显示行为替代服务端规则。

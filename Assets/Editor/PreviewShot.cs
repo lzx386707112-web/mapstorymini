@@ -459,21 +459,22 @@ public static class PreviewShot
         InvenWindow.Visible = false;
         SkillWindow.Visible = false;
         // 指针钉到窗口外的空白处：否则鼠标真身停在哪一行，那一行就会被悬停点亮，
-        // 拍不出「未选中时全是浅灰点」的状态。
+        // 拍不出「默认只有首项是红三角」的初始态。
         Pointer.TestPos = new Vector2(1100f, 40f);
         var session = NpcSession.Talk(9900001, "装备中心");
         if (session == null) { Note("装备中心菜单打开失败"); return; }
-        session.Dialog.SelectedLink = -1;
         Note("选项菜单：Mode=" + session.Dialog.Mode + "，可选项=" + DialogFlow.Links(session.Dialog.Content).Count +
-             "，当前项=-1（未选中：全部是浅灰点）");
+             "，当前项=" + session.Dialog.SelectedLink + "（默认选中首项，只有它是红三角）");
     }
 
     static void SelectOption(int steps)
     {
+        var before = NpcSession.Active == null ? null : NpcSession.Active.Dialog;
+        string pre = before == null ? "无会话" : before.SelectedLink + " / links[" +
+            string.Join(",", DialogFlow.Links(before.Content).ConvertAll(x => x.ToString()).ToArray()) + "]";
         for (int i = 0; i < steps; i++) NpcDialogUi.MoveSelection(1);
         var session = NpcSession.Active;
-        Note("按 " + steps + " 次下键后当前项=" + (session == null ? -1 : session.Dialog.SelectedLink) +
-             "（这一行应是红三角，其余仍是浅灰点）");
+        Note("移动前=" + pre + "，按 " + steps + " 次下键后当前项=" + (session == null ? -1 : session.Dialog.SelectedLink));
     }
 
     // 悬浮框要看的是「强化后的星条」：回背包装备页，指针钉第 1 格。
