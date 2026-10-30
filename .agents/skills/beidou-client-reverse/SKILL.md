@@ -31,6 +31,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | Point/Linear 采样、玩家/怪物重叠z顺序与闪烁、虚拟控制层、已有验证范围 | [渲染与验证](references/rendering-and-validation.md) |
 | 哪些 UI 尚未替换、原端与移动适配的区别 | [UI 迁移审计](references/ui-audit.md) |
 | 底栏 71 高分组、11 个按钮坐标、通知槽、客户区 578、HP/MP 700ms向量位移、EXP即时更新及tempExp暂存经验语义 | [底栏布局](references/statusbar-layout.md) |
+| 聊天窗（Messenger）三模式尺寸、标题栏三键 x=276/248/262 与 y=6、滚动条 273/148/154、11 行×13、输入框 9/318/207/15、ENTER 249/317、三座位 94 间距与 NameBar | [聊天窗](references/messenger-window.md) |
 | 相机 VR、分辨率补丁、背景滚动；技能窗、ID施放表现与升级动画迁移 | [地图与技能窗入口](references/map-and-skill-window.md) |
 | 蜗牛投掷术level下ball/hit、全技能节点/UOL/等级缓存、scalar动作、固定伤害、按住/蓄力原端分类与松键/持续射击时序及迁移缺口 | [技能视觉节点与公共解析](references/skill-visual-nodes.md) |
 | 全技能/地图/怪物节点枚举、召唤自身帧与攻击框、HP消耗/元素、链接图规则/刷怪间隔、选敌身体框、地图进场脚本合同与未迁移边界 | [玩法节点覆盖](references/gameplay-node-coverage.md) |
@@ -43,8 +44,11 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 传送门 pt 触发方式、NPC 脚下名牌宽+5/高16与Canvas字体高度/透明四角、聊天气泡九宫格与时长、新手训练营 0~4 图、`cm.warp` 目标图不存在的语义 | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |
 | 装备槽位/吊坠/轮回图腾、NPC物品/原item脚本、怪物吸星大法与全物品入口审计 | [物品使用与装备槽位](references/inventory-use-and-equipment.md) |
 | 背包/装备窗物品悬浮详情：ToolTip 图集、名称/描述来源、属性/需求字段、配色与帧绘制 | [背包与悬浮详情](references/inventory-and-tooltip.md) |
+| 怪物手册：窗口 475x349、子控件表（两对翻页箭头 48/185 与 270/407、搜索框 49/30/120/15、两条书签栏 -7/25 与 439/506）、卡槽 5x5 命中框 8/31/33/45/27x38、战利品 4x5 网格 38/60/36/32、LeftTab 九套配色、infoPage 170x231 | [怪物手册](references/monster-book.md) |
 
 地图坐标/脚底/平台/绳梯的运行时约定另见 [mapledash-map-port](../mapledash-map-port/SKILL.md)。服务端和脚本语义仍以源端服务端/脚本为依据，不能用 EXE 的显示行为替代服务端规则。
+
+物品功能本次停止扩展，后续从 [续接清单](../../../docs/inventory-functions-next-session.md) 与物品reference继续，勿将静态分类当作已验证完成。
 
 ## 结论使用边界
 

@@ -96,6 +96,8 @@ public sealed class PlayerDeadResponse
 public sealed class ChangeMapRequest
 {
     public int characterId;
+    public bool wheel;
+    public int deathX,deathY;
     public bool fromDying;    // 源端 ChangeMapHandler:85  p.readByte()==1
     public bool usedSafetyCharm;   // 本次死亡是否消耗了护符（决定复活血量 30%）
     public int targetMapId;
@@ -109,6 +111,8 @@ public sealed class ChangeMapResponse
     public int spawnPoint;
     // 复活后的血量（源端 respawn 写在 Character 上，随 PLAYER_LOGGEDIN/换图包下发）
     public int hp, mp;
+    public bool wheelUsed;
+    public System.Collections.Generic.List<InventoryEntry> inventory;
     public bool respawned;      // true = 本次是死亡复活，客户端要播落地/无敌帧
 }
 
@@ -173,7 +177,7 @@ public sealed class InProcessTransport : ITransport
     public bool HasNpcShop(int npcId) => server.NpcShops.HasNpc(npcId);
     public NpcShopResponse NpcShop(NpcShopRequest r) => server.NpcShops.Handle(r);
     public CashResponse Cash(CashRequest r) => server.Cash.Handle(r);
-    public void EndSocialSession(int characterId) { server.EndBotSession(characterId); server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); server.NpcShops.EndSession(characterId); }
+    public void EndSocialSession(int characterId) { NativePetItems.EndSession(server.Db,characterId); server.EndBotSession(characterId); server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); server.NpcShops.EndSession(characterId); }
 
     public LoginResponse Login(LoginRequest r)
     {
@@ -257,6 +261,15 @@ public sealed class InProcessTransport : ITransport
         int target = r.targetMapId;
         if (r.fromDying)
         {
+            if(rec.hp<=0 && r.wheel && InventoryDao.CountOf(server.Db,r.characterId,DeathService.WheelOfFortune)>0)
+            {
+                InventoryDao.ConsumeItem(server.Db,r.characterId,DeathService.WheelOfFortune,1);
+                rec.hp=50;
+                rec.spawnpoint=(server.MapInfo as IRespawnMapInfo)?.ClosestSpawn(rec.map,r.deathX,r.deathY) ?? 0;
+                CharactersDao.Save(server.Db,rec);server.Db.Save();
+                return new ChangeMapResponse {ok=true,mapId=rec.map,spawnPoint=rec.spawnpoint,hp=rec.hp,mp=rec.mp,respawned=true,wheelUsed=true,
+                    inventory=CharService.Load(server.Db,r.characterId).inventory};
+            }
             // 源端 ChangeMapHandler:99-118：死亡确认 → respawn(returnMap)
             target = DeathService.RespawnTargetMap(rec.map, server.MapInfo);
             int maxHp = rec.maxhp, maxMp = rec.maxmp;

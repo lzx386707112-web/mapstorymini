@@ -15,6 +15,11 @@ public interface IMapInfo
     bool NoExpDecrease(int mapId);     // fieldLimit NO_EXP_DECREASE
 }
 
+public interface IRespawnMapInfo
+{
+    int ClosestSpawn(int mapId,int x,int y);
+}
+
 public sealed class DeathResult
 {
     public int expLost;

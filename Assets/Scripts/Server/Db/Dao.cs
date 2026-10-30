@@ -189,8 +189,10 @@ public static class InventoryDao
     public const int Etc = 4;
     public const int Cash = 5;
 
-    public static long InsertItem(DbStore db, int characterId, int itemId, int inventoryType, int position, int quantity)
+    public static long InsertItem(DbStore db, int characterId, int itemId, int inventoryType, int position, int quantity, int petId=-1)
     {
+        if(itemId/1000==5000 && petId<0)
+            petId=(int)db.Table("pets").Insert(new DbRow { ["name"]=Server.Bot.BotItemCatalog.Shared.Name(itemId),["level"]=1L,["closeness"]=0L,["fullness"]=100L,["summoned"]=0L,["flag"]=0L });
         return db.Table("inventoryitems").Insert(new DbRow
         {
             ["type"] = (long)(itemId / 1000000),
@@ -200,7 +202,7 @@ public static class InventoryDao
             ["position"] = (long)position,
             ["quantity"] = (long)quantity,
             ["owner"] = "",
-            ["petid"] = -1L,
+            ["petid"] = (long)petId,
             ["flag"] = 0L,
             ["expiration"] = -1L,
             ["giftFrom"] = "",
@@ -224,6 +226,36 @@ public static class InventoryDao
 
     public static List<DbRow> ItemsByCharacter(DbStore db, int characterId)
         => db.Table("inventoryitems").Select(DbStore.Eq("characterid", (long)characterId));
+
+    public static bool ExpireItems(DbStore db, int characterId, long now)
+    {
+        var expired=db.Table("inventoryitems").Select(x=>DbStore.Int(x,"characterid")==characterId && DbStore.Long(x,"expiration")>0 && DbStore.Long(x,"expiration")<=now);
+        foreach(var row in expired)
+        {
+            // Character.expirationTask: a timed sealing lock expires, not its item.
+            int flag=DbStore.Int(row,"flag");
+            if((flag&1)!=0)
+            {
+                row["flag"]=(long)(flag&~1);
+                row["expiration"]=-1L;
+                continue;
+            }
+            int petId=DbStore.Int(row,"petid",-1),itemId=DbStore.Int(row,"itemid");
+            if(itemId/1000==5000)
+            {
+                var pet=db.Table("pets").Find(x=>DbStore.Int(x,"petid")==petId);
+                if(pet!=null) pet["summoned"]=0L;
+                if(itemId!=5000054 && !GameConfigDao.GetBool(db,"use_erase_pet_on_expiration",false))
+                { row["expiration"]=-1L;continue; }
+                db.Table("petignores").Delete(x=>DbStore.Int(x,"petid")==petId);
+                db.Table("pets").Delete(x=>DbStore.Int(x,"petid")==petId);
+            }
+            long id=DbStore.Long(row,"inventoryitemid");
+            db.Table("inventoryequipment").Delete(x=>DbStore.Long(x,"inventoryitemid")==id);
+            db.Table("inventoryitems").Delete(x=>DbStore.Long(x,"inventoryitemid")==id);
+        }
+        return expired.Count>0;
+    }
 
     public static DbRow EquipmentOf(DbStore db, long inventoryItemId)
         => db.Table("inventoryequipment").Find(DbStore.Eq("inventoryitemid", inventoryItemId));

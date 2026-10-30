@@ -21,6 +21,12 @@ public sealed class ChannelEntry
 {
     public int worldId;
     public int channel;              // 1..channelSize（源端 p.readByte()+1）
+    // 源端 getServerList 每频道发一个 load = ceil(在线人数 / channel_capacity * 800)
+    // （Channel.getChannelCapacity，PacketCreator.getServerList 里 writeInt 出去）。
+    // 客户端拿它算频道按钮上的 chgauge 负载条（level = clamp(load/60+1,1,14)）。
+    // 本工程没有频道维度的在线集合（characters 表没有 channel 列），选区时玩家也还没进频道，
+    // 所以这里恒为 0；接入真实人数时只改这一处，客户端公式不用动。
+    public int load;
 }
 
 public static class WorldService
@@ -75,7 +81,11 @@ public static class WorldService
         var row = db.Table("world_prop").Find(DbStore.Eq("id", (long)worldId));
         if (row != null) size = Math.Max(1, (int)DbStore.Long(row, "channel_size", 3));
         else size = Math.Max(1, GameConfigDao.GetInt(db, "channel_size", 3));
-        for (int i = 1; i <= size; i++) outp.Add(new ChannelEntry { worldId = worldId, channel = i });
+        for (int i = 1; i <= size; i++) outp.Add(new ChannelEntry { worldId = worldId, channel = i, load = ChannelLoad(i) });
         return outp;
     }
+
+    // 源端 Channel.getChannelCapacity()：ceil(在线人数 / channel_capacity * 800)。
+    // 单机没有频道级在线集合，取 0（空频道 → 客户端 level 1 → chgauge 只露蓝色短段）。
+    public static int ChannelLoad(int channel) => 0;
 }

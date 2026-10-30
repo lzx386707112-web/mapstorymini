@@ -35,7 +35,7 @@ public sealed class QuestRequirement
 
 public sealed class QuestActions
 {
-    public int exp, money, fame, nextQuest;
+    public int exp, money, fame, nextQuest, petTameness;
     public readonly List<QuestItemReward> items = new List<QuestItemReward>();
     public readonly List<QuestSkillReward> skills = new List<QuestSkillReward>();
 }
@@ -260,6 +260,7 @@ public static class QuestCatalog
         if (node.Get("exp") != null) a.exp = node.Int("exp");
         if (node.Get("money") != null) a.money = node.Int("money");
         if (node.Get("fame") != null) a.fame = node.Int("fame");
+        a.petTameness=node.Int("pettameness");
         if (node.Get("nextQuest") != null) a.nextQuest = node.Int("nextQuest");
 
         var items = node.Get("item");

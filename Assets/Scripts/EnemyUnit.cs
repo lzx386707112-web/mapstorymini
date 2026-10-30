@@ -71,7 +71,8 @@ public class EnemyUnit : MonoBehaviour
         dieDur=Art.GetClip("mobs",artKey,clip)?.Duration ?? 0;
         dieT=0;
         if (vis!=null && dieDur>0) vis.PlayOnce(clip,1f);
-        Destroy(gameObject,dieDur+.05f);
+        if (Application.isPlaying) Destroy(gameObject,dieDur+.05f);
+        else DestroyImmediate(gameObject);
     }
 
     // 怪物音效 ID：原版图模式用 fieldMobId，章节模式把 artKey 翻成源端怪物 ID

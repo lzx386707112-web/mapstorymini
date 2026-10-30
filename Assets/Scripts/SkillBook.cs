@@ -272,15 +272,10 @@ public static class SkillBookItems
         }
     }
 
-    /// <summary>该技能被「已持有」的技能册抬到的上限；没有对应册子返回 0。</summary>
+    /// <summary>Only a successfully consumed book raises the persisted master level.</summary>
     public static int MasterLevelFor(int skillId)
     {
-        Ensure();
-        if (!bySkill.TryGetValue(skillId, out var list)) return 0;
-        int best = 0;
-        foreach (var kv in list)
-            if (Profile.ItemCount(kv.Key) > 0 && kv.Value > best) best = kv.Value;
-        return best;
+        return GameSession.Character?.skills.Find(s=>s.skillId==skillId)?.masterLevel ?? 0;
     }
 }
 
@@ -423,7 +418,7 @@ public static class SkillCast
 
         var data = SkillBook.Get(skillId);
         if (data == null) { fail = "缺少技能数据"; return false; }
-        if (data.IsPassive) { fail = "被动技能无需施放"; sys.Report(fail); return false; }
+        if (data.IsPassive && skillId!=1016) { fail = "被动技能无需施放"; sys.Report(fail); return false; }
         if (SkillProgress.LevelOf(skillId) <= 0) { fail = "技能尚未学习（技能窗里加点）"; sys.Report(fail); return false; }
 
         if (sys.TryCastSkill(skillId)) return true;

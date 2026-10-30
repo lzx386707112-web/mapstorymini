@@ -20,6 +20,8 @@ public sealed class AudioManager : MonoBehaviour
 
     const string PrefBgm = "audio.bgm";
     const string PrefSfx = "audio.sfx";
+    const string PrefBgmMute = "audio.bgm.mute";
+    const string PrefSfxMute = "audio.sfx.mute";
     const int SfxPool = 10;                 // 并发音效上限（再多也是杂音）
     const float BgmFade = 0.7f;             // 切歌淡入淡出秒数
     const float BgmLoadTimeout = 15f;       // 首次解码最长等待（超时就不播，避免卡住切歌队列）
@@ -33,6 +35,19 @@ public sealed class AudioManager : MonoBehaviour
     {
         get => PlayerPrefs.GetFloat(PrefSfx, 0.8f);
         set { PlayerPrefs.SetFloat(PrefSfx, Mathf.Clamp01(value)); }
+    }
+
+    // 系统设置里的「静音」复选框：音量值单独保存，静音只是把它乘 0，
+    // 取消静音能回到原音量（直接把音量写成 0 会丢掉用户的设定）。
+    public static bool BgmMuted
+    {
+        get => PlayerPrefs.GetInt(PrefBgmMute, 0) != 0;
+        set { PlayerPrefs.SetInt(PrefBgmMute, value ? 1 : 0); PlayerPrefs.Save(); if (I != null) I.ApplyBgmVolume(); }
+    }
+    public static bool SfxMuted
+    {
+        get => PlayerPrefs.GetInt(PrefSfxMute, 0) != 0;
+        set { PlayerPrefs.SetInt(PrefSfxMute, value ? 1 : 0); PlayerPrefs.Save(); }
     }
 
     // key → {相对路径, 时长ms}
@@ -82,8 +97,9 @@ public sealed class AudioManager : MonoBehaviour
 
     void ApplyBgmVolume()
     {
-        if (bgmA != null) bgmA.volume = BgmVolume;
-        if (bgmB != null) bgmB.volume = BgmVolume;
+        float volume = BgmMuted ? 0f : BgmVolume;
+        if (bgmA != null) bgmA.volume = volume;
+        if (bgmB != null) bgmB.volume = volume;
     }
 
     // ------------------------------------------------------------ 索引
@@ -237,7 +253,7 @@ public sealed class AudioManager : MonoBehaviour
     {
         if (I == null || string.IsNullOrEmpty(key)) return;
         if (!Index.TryGetValue(key, out var e)) return;
-        if (SfxVolume <= 0.001f) return;
+        if (SfxMuted || SfxVolume <= 0.001f) return;
         var clip = I.LoadOrFetch(key, e);
         if (clip == null) return;
         I.Spawn(clip, vol, pitchVary);

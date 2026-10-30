@@ -126,9 +126,30 @@ public sealed class NativeCashService {
         foreach (var owned in db.Table("cash_items").Select(x => DbStore.Int(x, "characterid") > 0)) {
             var inventory = db.Table("inventoryitems").Find(x => DbStore.Long(x, "inventoryitemid") == DbStore.Long(owned, "inventoryitemid"));
             if (inventory == null) db.Table("cash_items").Delete(x => DbStore.Long(x, "id") == DbStore.Long(owned, "id"));
-            else owned["quantity"] = (long)DbStore.Int(inventory, "quantity");
+            else
+            {
+                owned["quantity"] = (long)DbStore.Int(inventory, "quantity");
+                owned["expiration"]=DbStore.Long(inventory,"expiration",-1);
+                owned["petid"]=DbStore.Long(inventory,"petid",-1);
+            }
         }
         foreach (var row in db.Table("cash_items").Select(x => DbStore.Long(x, "expiration") > 0 && DbStore.Long(x, "expiration") <= Now)) {
+            int itemId=DbStore.Int(row,"itemid"),petId=DbStore.Int(row,"petid",-1);
+            if(itemId/1000==5000)
+            {
+                var pet=db.Table("pets").Find(x=>DbStore.Int(x,"petid")==petId);
+                if(pet!=null) pet["summoned"]=0L;
+                if(itemId!=5000054 && !GameConfigDao.GetBool(db,"use_erase_pet_on_expiration",false))
+                {
+                    row["expiration"]=-1L;
+                    long heldId=DbStore.Long(row,"inventoryitemid");
+                    var held=db.Table("inventoryitems").Find(x=>DbStore.Long(x,"inventoryitemid")==heldId);
+                    if(held!=null) held["expiration"]=-1L;
+                    continue;
+                }
+                db.Table("petignores").Delete(x=>DbStore.Int(x,"petid")==petId);
+                db.Table("pets").Delete(x=>DbStore.Int(x,"petid")==petId);
+            }
             long inv = DbStore.Long(row, "inventoryitemid"); if (inv > 0) CharService.RemoveItem(db, inv);
             db.Table("cash_items").Delete(x => DbStore.Long(x, "id") == DbStore.Long(row, "id"));
         }
@@ -182,9 +203,10 @@ public sealed class NativeCashService {
                 if (row == null) return "现金道具不存在或不属于此账号职业仓库";
                 int id = DbStore.Int(row, "itemid"), type = id / 1000000; if (type == 1) type = 1;
                 int limit = Limit(c, type), slot = FreeSlot(cid, type, limit); if (slot < 1) return "对应道具栏已满";
-                long inventoryId = InventoryDao.InsertItem(db, cid, id, type, slot, DbStore.Int(row, "quantity"));
+                long inventoryId = InventoryDao.InsertItem(db, cid, id, type, slot, DbStore.Int(row, "quantity"),DbStore.Int(row,"petid",-1));
                 var inventory = db.Table("inventoryitems").Find(x => DbStore.Long(x, "inventoryitemid") == inventoryId);
                 inventory["expiration"] = DbStore.Long(row, "expiration"); inventory["giftFrom"] = DbStore.Str(row, "giftFrom"); inventory["accountid"] = (long)c.accountid;
+                row["petid"]=DbStore.Long(inventory,"petid",-1);
                 if (type == 1) { var stats = Catalog.Equipment(id) ?? new DbRow(); stats["inventoryitemid"] = inventoryId; db.Table("inventoryequipment").Insert(stats); }
                 row["characterid"] = c.id; row["inventoryitemid"] = inventoryId; return null;
             case CashOperation.Deposit:
@@ -193,7 +215,8 @@ public sealed class NativeCashService {
                 var held = db.Table("inventoryitems").Find(x => DbStore.Long(x, "inventoryitemid") == DbStore.Long(row, "inventoryitemid") && DbStore.Int(x, "characterid") == cid);
                 if (held == null || DbStore.Int(held, "position") <= 0) return "请先卸下该现金装备或宠物";
                 if (Stock(c).Count >= 1000) return "现金仓库已满";
-                row["quantity"] = (long)DbStore.Int(held, "quantity"); CharService.RemoveItem(db, DbStore.Long(row, "inventoryitemid")); row["inventoryitemid"] = 0L; row["characterid"] = 0L; return null;
+                row["quantity"] = (long)DbStore.Int(held, "quantity");row["petid"]=DbStore.Long(held,"petid",-1);row["expiration"]=DbStore.Long(held,"expiration",-1);
+                CharService.RemoveItem(db, DbStore.Long(row, "inventoryitemid")); row["inventoryitemid"] = 0L; row["characterid"] = 0L; return null;
             case CashOperation.Equip:
             case CashOperation.Unequip:
                 row = db.Table("cash_items").Find(x => DbStore.Long(x, "id") == r.itemId && Own(x, c) && DbStore.Int(x, "characterid") == cid);

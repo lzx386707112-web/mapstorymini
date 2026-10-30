@@ -488,7 +488,7 @@ public sealed class NativeMobController : MonoBehaviour
                     // swayed in the shadows, you were brought to ...").
                     string msg = root.Text("info/ban/banMsg");
                     if (map >= 0 && !string.IsNullOrEmpty(msg)) NativeSystemMessage.Drop(5, msg);
-                    if (map >= 0) field.WarpTo(map,root.Text("info/ban/banMap/0/portal","sp"));
+                    if (map >= 0) { NativeItemUseEffects.RememberBanish(); field.WarpTo(map,root.Text("info/ban/banMap/0/portal","sp")); }
                 }
                 return;
             case 131:

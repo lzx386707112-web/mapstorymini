@@ -21,6 +21,7 @@ public sealed class NpcSession
     public bool Closed;
     public string LastError;
     public string ScriptName { get; private set; }
+    public int ItemId { get; private set; }
     public string SpeakerName;
 
     int scriptSessionId;
@@ -101,7 +102,7 @@ public sealed class NpcSession
         string source=ScriptSource.LoadKey(key);
         if (string.IsNullOrEmpty(source)) return null;
         CloseActive();
-        var session=new NpcSession(spec.Int("npc"),0,false,false);
+        var session=new NpcSession(spec.Int("npc"),0,false,false) {ItemId=itemId};
         Active=session; session.Begin(source,key); session.FinishInvocation(); return session;
     }
 

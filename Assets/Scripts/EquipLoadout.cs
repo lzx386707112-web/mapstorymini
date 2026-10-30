@@ -130,18 +130,25 @@ public static class EquipCatalog
     }
 
     /// <summary>把一件装备的 inc* 叠加到属性上（源端 Character.reapplyLocalStats 的装备段）。</summary>
-    public static void Apply(int itemId, CharacterAttributes result, ref int watk, ref int matk)
+    public static void Apply(int itemId, CharacterAttributes result, ref int watk, ref int matk, int slot=0)
     {
         var info = Info(itemId);
         if (info == null) return;
-        result.str += info.Int("incSTR"); result.dex += info.Int("incDEX");
-        result.intelligence += info.Int("incINT"); result.luk += info.Int("incLUK");
-        result.maxHp += info.Int("incMHP"); result.maxMp += info.Int("incMMP");
-        result.weaponDefense += info.Int("incPDD"); result.magicDefense += info.Int("incMDD");
-        result.accuracy += info.Int("incACC"); result.avoidability += info.Int("incEVA");
-        watk += info.Int("incPAD"); matk += info.Int("incMAD");
-        result.equipmentSpeed += info.Int("incSpeed");
-        result.equipmentJump += info.Int("incJump");
+        var instance=GameSession.Character?.inventory.Find(i=>i.itemId==itemId && i.position<0 && (slot==0 || i.position==slot));
+        bool native=NativeScrollService.HasStats(instance);
+        int Value(string key)=>!native ? info.Int(key) : key switch {
+            "incSTR"=>instance.str,"incDEX"=>instance.dex,"incINT"=>instance.int_,"incLUK"=>instance.luk,
+            "incMHP"=>instance.hp,"incMMP"=>instance.mp,"incPDD"=>instance.wdef,"incMDD"=>instance.mdef,
+            "incACC"=>instance.acc,"incEVA"=>instance.avoid,"incPAD"=>instance.watk,"incMAD"=>instance.matk,
+            "incSpeed"=>instance.speed,"incJump"=>instance.jump,_=>info.Int(key) };
+        result.str += Value("incSTR"); result.dex += Value("incDEX");
+        result.intelligence += Value("incINT"); result.luk += Value("incLUK");
+        result.maxHp += Value("incMHP"); result.maxMp += Value("incMMP");
+        result.weaponDefense += Value("incPDD"); result.magicDefense += Value("incMDD");
+        result.accuracy += Value("incACC"); result.avoidability += Value("incEVA");
+        watk += Value("incPAD"); matk += Value("incMAD");
+        result.equipmentSpeed += Value("incSpeed");
+        result.equipmentJump += Value("incJump");
     }
 }
 
@@ -219,28 +226,13 @@ public static class EquipLoadout
     /// <summary>基础属性 + 武器 + 全部防具 + 套装加成的最终面板（出战与能力值窗共用同一条路）。</summary>
     public static CharacterAttributes Apply(CharacterAttributes baseAttrs, WeaponDef weapon, int attackBuff, out int watk, out int matk)
     {
-        int w = 0, m = 0;
+        int w = attackBuff, m = 0;
         var result = baseAttrs.Copy();
-        // 武器走原有 WeaponDefs（含攻击倍率/种类判定），防具走 Character WZ 的 inc*。
-        var d = weapon.stats;
-        result.str += NativeCombatData.Int(d, "incSTR"); result.dex += NativeCombatData.Int(d, "incDEX");
-        result.intelligence += NativeCombatData.Int(d, "incINT"); result.luk += NativeCombatData.Int(d, "incLUK");
-        result.maxHp += NativeCombatData.Int(d, "incMHP"); result.maxMp += NativeCombatData.Int(d, "incMMP");
-        result.weaponDefense += NativeCombatData.Int(d, "incPDD"); result.magicDefense += NativeCombatData.Int(d, "incMDD");
-        result.accuracy += NativeCombatData.Int(d, "incACC"); result.avoidability += NativeCombatData.Int(d, "incEVA");
-        // The older combat export omits movement fields; read the original weapon IMG.
-        if (int.TryParse(weapon.id,out int movementWeapon))
-        {
-            var movementInfo=EquipCatalog.Info(movementWeapon);
-            result.equipmentSpeed+=movementInfo?.Int("incSpeed") ?? 0;
-            result.equipmentJump+=movementInfo?.Int("incJump") ?? 0;
-        }
-        w += NativeCombatData.Int(d, "incPAD") + attackBuff;
-        m += NativeCombatData.Int(d, "incMAD");
+        if(int.TryParse(weapon.id,out int weaponId)) EquipCatalog.Apply(weaponId,result,ref w,ref m,EquipSlot.Weapon);
         foreach (var kv in WornSlots())
         {
             if (kv.Key == EquipSlot.Weapon) continue;         // 武器已单独叠加
-            EquipCatalog.Apply(kv.Value, result, ref w, ref m);
+            EquipCatalog.Apply(kv.Value, result, ref w, ref m,kv.Key);
         }
 
         // —— 套装加成（≡ Character.reapplyLocalStats 的 setItemBonus 段）——

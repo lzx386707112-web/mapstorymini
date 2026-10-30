@@ -20,6 +20,7 @@ namespace Server.Field
         public Func<long> Clock = () => (long)(DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds;
 
         readonly List<SpawnPoint> monsterSpawn = new List<SpawnPoint>();
+        readonly List<SpawnPoint> frenzySpawn = new List<SpawnPoint>();
         int mobInterval = 5000;
         bool mIsRandomRefresh = true;     // use_monster_random_refresh_position（默认开，与原客户端一致）
         bool allowSummons = true;
@@ -59,6 +60,26 @@ namespace Server.Field
         }
 
         public int SpawnPointCount => monsterSpawn.Count;
+
+        public List<SpawnPoint> StartFrenzy()
+        {
+            if(FrenzyTotemActive) return new List<SpawnPoint>();
+            foreach(var original in monsterSpawn)
+            {
+                if(original.MobTime<0) continue;
+                original.SetRespawnTimeMultiplier(.5);
+                frenzySpawn.Add(original.Duplicate(Clock()));
+            }
+            monsterSpawn.AddRange(frenzySpawn); FrenzyTotemActive=true;
+            return new List<SpawnPoint>(frenzySpawn);
+        }
+        public void StopFrenzy()
+        {
+            foreach(var extra in frenzySpawn) monsterSpawn.Remove(extra);
+            frenzySpawn.Clear();
+            foreach(var original in monsterSpawn) original.SetRespawnTimeMultiplier(1);
+            FrenzyTotemActive=false;
+        }
 
         int GetSpawnedOnMap()
         {

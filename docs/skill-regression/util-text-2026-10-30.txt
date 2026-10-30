@@ -1,0 +1,23 @@
+SHA256 1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2
+# function 0x9ac7cb: 21 instructions, 0x9ac7cb..0x9ac80e
+009ac7cb push     ebp
+009ac7cc mov      ebp, esp
+009ac7ce push     esi
+009ac7cf push     -1
+009ac7d1 push     dword ptr [ebp + 8]
+009ac7d4 mov      esi, ecx
+009ac7d6 lea      ecx, [esi + 0xc8]
+009ac7dc call     0x414617
+009ac7e1 mov      eax, dword ptr [ebp + 0x10]
+009ac7e4 mov      dword ptr [esi + 0xcc], eax
+009ac7ea mov      eax, dword ptr [ebp + 0xc]
+009ac7ed mov      dword ptr [esi + 0xdc], eax
+009ac7f3 mov      eax, dword ptr [ebp + 0x14]
+009ac7f6 mov      dword ptr [esi + 0xec], eax
+009ac7fc mov      eax, dword ptr [ebp + 0x18]
+009ac7ff mov      ecx, esi
+009ac801 mov      dword ptr [esi + 0xf0], eax
+009ac807 call     0x9acd54
+009ac80c pop      esi
+009ac80d pop      ebp
+009ac80e ret      0x14

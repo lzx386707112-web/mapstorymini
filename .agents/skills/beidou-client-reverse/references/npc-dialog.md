@@ -677,3 +677,14 @@ InteractionRegressionChecks.Run通过真实NpcSession+InputBridge.Update注入Me
 NativeGameplayFixChecks.Run退出0：包括原IMG墓碑600px起点、880ms落地、land保持和2.2秒确认阶段。
 compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0。全量NPC Mock运行889条790通过，27 runFail及72 Java interop缺口与此前基线一致，不能称全量脚本验证通过。
 死亡层叠尚无EXE逐帧画面oracle；未打包APK、未做Android实机验收。EXP主条方案仍待用户选择，不以HP/MP通过代替EXP验证。
+
+
+## NPC样式选择（2026-10-30，正在实现、未视觉验收）
+
+同SHA256 1b91cf5b…134b2。原PacketCreator.getNPCTalkStyle3387..3398发NPC_TALK type7、原styles int数组；CUtilDlgEx内部对应type5，不是内部type7。9A6370跳表type5→9A92C9、type6→9A9B25（后者为另一种预览，不能混用）。9A3CAE宽419；9A3CED高306；9A3D07正文280、9A3D71正文高100，9ACC20(force1)正文x110/滚动时108、y28+trunc((100-contentHeight-6)/2)。原素材UI/UIWindow.img/UtilDlgEx_Avatar/backgrnd419×306；shadow(174,239)。
+
+9A92C9控件：BtPrev(15,195,id8192)、BtNext(341,195,id8193)，Basic/BtOK2(314,281,id1)、Basic/BtCancel2(363,281,id2)、Avatar/BtExit(9,281,id2)，BtOff与BtOn重叠(172,281,id8194/8195)，nameTag(123,246,173×19)。9AC92C保留数组与默认index0，首ID/10000==2选face，>=3选hair，其余skin；9AA69E写实际appearanceID。9AB92A在前后越界时循环回另一端，BtOff清预览装备、BtOn恢复角色穿戴（同时清weapon相关特殊层）。9AA708合成avatar原锚(207,245)，样式名按原ID查String/Eqp，居中宽173。可复现汇编集中在docs/skill-regression/npc-style-client-2026-10-30.txt。
+
+迁移NativeNpcStyleWindow使用原IMG及WzCharacter合成，NpcDialog.Style保留ID数组/索引、回复MessageType7，原脚本不改。正在运行1012103原脚本两阶段款式/颜色、wrap与精确ID持久化断言；尚无新PASS或窗口截图。样式名未知时为空，不捏造通用发型名；中文字体仍是Unity替代。长正文滚动与所有预览装备特殊层尚待核对，不能称逐像素完成。
+
+样式选择业务回归更新：隔离15 PASS166（docs/skill-regression/inventory-items-isolated15-2026-10-30.txt）含原1012103款式→颜色→精确40083保存、前后循环与预览真实ID，原JS未改；未做窗口截图与Android验收。

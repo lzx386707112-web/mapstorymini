@@ -1,33 +1,72 @@
-# 物品使用入口审计（2026-10-30）
+# 物品使用入口审计（2026-10-30，继续接入中）
 
-运行 `rtk proxy python3 tools/audit_inventory_functions.py` 复现。扫描当前复制的原 IMG；这是静态入口覆盖，不代表每条脚本或每个菜单选项已经运行通过。明细见 `inventory-function-audit.json`。
+运行 `rtk proxy python3 tools/audit_inventory_functions.py` 复现。扫描复制的原IMG，静态入口与实际验证分别记录，不能据分类数量声称全功能完成。明细在 inventory-function-audit.json。
 
-## 本轮修复
+用户已决定：26件源端服务端也不存在引用脚本的道具，保持源端不可用，归为“源端缺失”，不编写替代业务。
 
-- 装备沿用源端 `ItemConstants.getEquipSlotType` 的既有 C# 移植 `BotCustomization.EquipSlotType`，补齐吊坠、四枚戒指、腰带、肩饰、徽章、纹章、副手、心脏与轮回图腾特例。角色镜像、属性累加、装备窗、卸装一并接线。
-- 1189999 轮回碑石使用 -53 图腾槽，不能按 118 前缀当作 -55 徽章。源端 `Character.equippedItem` 穿戴时授予 1016 Lv1；卸装不删除这条技能。
-- 背包可使用物品点击携带，点击键位或底栏放下；物品以 keymap type=2 保存，技能仍为 type=1。装备和其他材料没有被改成可直接使用的快捷物品。
-- 2029001 快捷菜单和 2029006 五转技能按 `spec/isNpc` 调 NPC；2431158 原始物品 JS 的吸怪宿主已接入。
+## 当前静态分类
 
-## 当前仍缺少直接使用入口的类别
+| 状态与路由 | IMG条目数 |
+| --- | ---: |
+| implemented-controls-partial:morph | 31 |
+| implemented-needs-runtime-check:cash-equipment | 13 |
+| implemented-needs-runtime-check:extended-disease | 4 |
+| implemented-needs-runtime-check:face-expression | 15 |
+| implemented-needs-runtime-check:jukebox | 1 |
+| implemented-needs-runtime-check:monster-capture | 13 |
+| implemented-needs-runtime-check:mount-fatigue | 1 |
+| implemented-needs-runtime-check:pet-food | 24 |
+| implemented-needs-runtime-check:reward-box | 60 |
+| implemented-needs-runtime-check:stat-potion | 110 |
+| implemented-needs-runtime-check:world-quest-draw | 1 |
+| implemented-passive:scheduled-rate-coupon | 44 |
+| implemented-service-ui-partial:equipment-scroll | 775 |
+| implemented-ui-validation-pending:death-wheel | 1 |
+| implemented-ui-validation-pending:vega-scroll | 2 |
+| implemented:banked-experience | 13 |
+| implemented:chair | 427 |
+| implemented:cure | 4 |
+| implemented:experience-potion | 1 |
+| implemented:money-bag | 3 |
+| implemented:monster-card | 343 |
+| implemented:remote-npc-shop | 2 |
+| implemented:restorative | 190 |
+| implemented:return-scroll | 26 |
+| implemented:skill-book | 178 |
+| implemented:stat-potion | 215 |
+| implemented:summon-bag | 284 |
+| implemented:timed-item-grant | 4 |
+| not-double-click:ammunition | 45 |
+| not-double-click:etc | 2823 |
+| not-double-click:install | 257 |
+| npc-route-needs-runtime-check:cash-npc-or-quest-ticket | 158 |
+| npc-route:npc-menu | 2 |
+| script-route-needs-runtime-check:item-script | 39 |
+| script-route-needs-runtime-check:pet-water-of-life | 1 |
+| source-disabled:cash-client-no-op | 14 |
+| source-disabled:cash-source-disabled | 10 |
+| source-missing-script:item-script | 26 |
+| unsupported:cash-item | 225 |
+| unsupported:special-consumable | 82 |
 
-| 类别 | IMG 条目数 | 示例 ID / 名称 |
-| --- | ---: | --- |
-| item-script | 26 | 2430000 破烂的冒险骑士团之书第1卷；2430001 破烂的冒险骑士团之书第2卷；2430002 破烂的冒险骑士团之书第3卷 |
-| cash-item | 514 | 5010000 太阳效果；5010001 星月效果；5010002 彩虹效果 |
-| equipment-scroll | 775 | 2040000 头盔防御卷轴；2040001 头盔防御卷轴；2040002 头盔防御卷轴 |
-| monster-card | 343 | 2380000 蜗牛卡片；2380001 蓝蜗牛卡片；2380002 蘑菇仔卡片 |
-| return-scroll | 26 | 2030000 回城卷轴；2030001 明珠港回城卷；2030002 魔法密林回城卷 |
-| special-consumable | 776 | 2000024 管理员的分身；2000025 真·影分身之术；2000026 真·影分身之术(段数提升) |
-| timed-item-grant | 4 | 2029002 双倍爆率；2029003 三倍爆率；2029004 双倍经验 |
+统计包含历史活动、拾取触发、NPC兑换券、被动携带与无效果占位，尚未逐类完成源端用途核对。不能将所有现金物品视为普通双击消耗品，也不能将未知条目默认消费。
 
-统计含原数据中的活动、旧版本与无效果占位条目，不能把条目数直接当作当前可获得的可用道具数。现金道具的双击使用和商城购买/穿戴是不同入口；这里统计的是背包直接使用。
+## 已验证范围
 
-26 条缺失脚本指当前同步包的 `item/<spec.script>.js` 不存在；40 条有脚本仅表示路由存在，仍需正式宿主跑全部选项。
+原入口35项，加物品功能扩展后最新隔离Unity `InventoryPortalChecks.Run` PASS215，日志 docs/skill-regression/inventory-items-isolated33-2026-10-30.txt（临时隔离工程排除共享 PreviewShot 编译错误；音乐盒/表情/宠物切换新增覆盖，宠物视觉仍缺）；包含装备/图腾槽/拖放键位、隐藏传送门、吸怪、限时券、卡片、技能书master持久化、卷轴属性实例、吊坠、轮回刷怪点生命周期、回城、突破石脚本、倍率券时段、容量查询、金锤、WorldQuest/北斗之星/偷学技能点/兵法书。
 
-## 进一步边界
+脚本pack2779/npc889/quest470、parseFail0/mangled0。NPC全量mock基线仍为files889/ok790/runFail27/javaInterop72，不能报告全通过。
 
-- 精灵吊坠穿戴已经修复；`Character.equipPendantOfSpirit` 的每小时经验加成计时没有迁移，本轮不把穿戴成功等同于特殊效果已完成。
-- 轮回碑石穿戴与 1016 技能授予已经接线；`MapSpawner.FrenzyTotemActive` 尚未和 1016 施放连接，轮回刷怪效果仍需另行迁移。
-- 饰品属性参与面板；脸饰、眼饰、耳环的纸娃娃图层仍未迁移，未将无纸娃娃层的吊坠/戒指/图腾送入衣帽合成器。
-- 宠物装备、骑兽与现金外观使用专用系统，不因这次槽位修复自动完成。
+## 仍需完成
+
+- 变身原Morph动画/捕捉已接线，仍需控制和实际运行验证；宠物已接基础行、到期玩偶、原生命之水脚本与212/524食品规则，召唤与饥饿已接服务规则，宠物进化原NPC脚本及亲密度已验证；跟随与技能仍缺。
+- 现金物品的独立专用处理、NPC/被动/源端禁用分类与真实运行验证。
+- 白卷确认已按EXE接线待运行；织女星与匠人之魂的原窗口交互、原成功/失败动画。
+- 暂存经验领取原输入入口、倍率券状态图已接线待运行；药品尚未覆盖全部特殊效果与可见表现。
+- 39条原item脚本中其余地图条件/事件分支验证；源端缺失26条保持缺失。
+- 原资源视觉与Android实机验证。Unity通过不等于APK完成验收。
+
+精灵吊坠计时加成、1016轮回施放和地图生命周期已接线；轮回原IMG视觉与实际场景仍需验证。相关源端函数、公式和边界统一维护于 .agents/skills/beidou-client-reverse/references/inventory-use-and-equipment.md。
+
+
+本次已按用户要求停止扩展，下一次从 [续接记录](inventory-functions-next-session.md) 继续。该文档保留当前批收尾范围、未接307件、158件NPC/任务券验证范围、26件源端缺失决策和全部迁移边界。

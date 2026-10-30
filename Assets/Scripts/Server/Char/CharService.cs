@@ -20,6 +20,7 @@ public sealed class InventoryEntry
     public int flag;
     public string owner = "", giftFrom = "";
     public int petId = -1;
+    public Dictionary<string, object> petData;
     // 保留原背包行的扩展列，交易转移不丢失强化、潜能等未显示字段。
     public Dictionary<string, object> itemData, equipmentData;
     public InventoryEntry Copy()
@@ -27,6 +28,7 @@ public sealed class InventoryEntry
         var copy = (InventoryEntry)MemberwiseClone();
         if (itemData != null) copy.itemData = new Dictionary<string, object>(itemData);
         if (equipmentData != null) copy.equipmentData = new Dictionary<string, object>(equipmentData);
+        if (petData != null) copy.petData = new Dictionary<string, object>(petData);
         return copy;
     }
     public bool isEquip;
@@ -70,6 +72,7 @@ public static class CharService
     {
         var rec = CharactersDao.FindById(db, characterId);
         if (rec == null) return null;
+        if(InventoryDao.ExpireItems(db,characterId,System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())) db.Save();
         var full = new FullCharacter { record = rec };
 
         foreach (var r in SkillsDao.ByCharacter(db, characterId))
@@ -118,6 +121,11 @@ public static class CharService
             owner = DbStore.Str(r, "owner"), giftFrom = DbStore.Str(r, "giftFrom"),
             petId = DbStore.Int(r, "petid", -1), itemData = new Dictionary<string, object>(r),
         };
+        if(e.petId>=0 && db.HasTable("pets"))
+        {
+            var pet=db.Table("pets").Find(x=>DbStore.Int(x,"petid")==e.petId);
+            if(pet!=null) e.petData=new Dictionary<string,object>(pet);
+        }
         var eq = InventoryDao.EquipmentOf(db, e.itemRowId);
         if (eq != null)
         {

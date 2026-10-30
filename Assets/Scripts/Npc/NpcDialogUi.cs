@@ -20,6 +20,8 @@ public static class NpcDialogUi
         var session = NpcSession.Active;
         if (session == null || !session.Dialog.Visible) return false;
         var dialog = session.Dialog;
+        if (dialog.Mode == NpcDialogMode.Style)
+        { if(dialog.Styles.Length==0) return false; session.Reply(1,dialog.StyleIndex); return true; }
         if (dialog.Mode == NpcDialogMode.Simple)
             return ConfirmSelection(session);
         if (!dialog.CanConfirmWithTalkKey && dialog.Mode != NpcDialogMode.YesNo &&
@@ -296,6 +298,7 @@ public static class NpcDialogUi
             ContinueWithTalkKey())
         { e.Use(); return; }
 
+        if(session.Dialog.Mode==NpcDialogMode.Style) { NativeNpcStyleWindow.Draw(session); return; }
         float w = 529f;
         var content = session.Dialog.Content;
         float reservedHeight = session.Dialog.Mode == NpcDialogMode.Simple ? 24f :

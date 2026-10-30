@@ -92,7 +92,8 @@ public static class NativeKeyActions
                 NpcField.TryInteractNearest(); return;
             case GameAction.Chat: BottomBar.FocusChat(); return;
             case GameAction.ChatAll: BottomBar.FocusChat(NativeChatChannel.All); return;
-            case GameAction.Family: case GameAction.School: case GameAction.ChatRoom:
+            case GameAction.Family: NativeGuildWindow.Toggle(); return;
+            case GameAction.School: case GameAction.ChatRoom:
                 NativeCommunityWindow.Toggle(action); return;
             case GameAction.Medal: NativeMedalWindow.Toggle(); return;
             case GameAction.MonsterBook: NativeMonsterBook.Toggle(); return;

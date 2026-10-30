@@ -12,6 +12,7 @@ public enum NpcDialogMode
     Simple,        // #L 列表
     GetText,
     GetNumber,
+    Style,         // 原 NPC_TALK type7，原样返回 styles 的下标
 }
 
 public sealed class NpcDialog
@@ -21,6 +22,9 @@ public sealed class NpcDialog
     public DialogContent Content = new DialogContent();
     public int NumberDef, NumberMin, NumberMax;
     public string Input = "";
+    public int[] Styles = System.Array.Empty<int>();
+    public int StyleIndex;
+    public bool StyleClothed = true;
     public bool ScrollReset;
     public bool IsMenu;
 
@@ -52,10 +56,11 @@ public sealed class NpcDialog
     // NPCMoreTalkHandler forwards the last server message type verbatim.
     public int MessageType => Mode == NpcDialogMode.YesNo ? 1 :
         Mode == NpcDialogMode.GetText ? 2 : Mode == NpcDialogMode.GetNumber ? 3 :
-        Mode == NpcDialogMode.Simple ? 4 : Mode == NpcDialogMode.AcceptDecline ? 12 : 0;
+        Mode == NpcDialogMode.Simple ? 4 : Mode == NpcDialogMode.Style ? 7 : Mode == NpcDialogMode.AcceptDecline ? 12 : 0;
 
     public void Set(NpcDialogMode mode, string text)
     {
+        Styles = System.Array.Empty<int>(); StyleIndex = 0; StyleClothed = true;
         Mode = mode;
         RawText = text ?? "";
         Content = DialogText.Parse(RawText);

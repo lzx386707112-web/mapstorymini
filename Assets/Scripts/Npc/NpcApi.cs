@@ -19,6 +19,20 @@ public static class NpcApi
     static int Int(JsCall c, int i, int def = 0) => i < c.ArgCount ? JsConvert.ToInt32(c.Arg(i)) : def;
     static string Str(JsCall c, int i, string def = "") => i < c.ArgCount ? JsConvert.ToString(c.Arg(i)) : def;
 
+    static void SetNativeAppearance(string part,int id)
+    {
+        var record=GameSession.Character?.record;if(record==null) return;
+        if(part=="hair") record.hair=id;
+        else if(part=="face") record.face=id;
+        else record.skincolor=id;
+        Pc?.RefreshFieldAppearance();GameSession.SaveToDb();
+    }
+
+    static bool CanHold(int[] items,int[] quantities,int removeItem=0,int removeQuantity=0)
+        => GameSession.InGame && GameSession.Net.ChangeInventory(new InventoryChangeRequest {
+            characterId=GameSession.CharacterId,checkItems=items,checkQuantities=quantities,
+            removeCheckItem=removeItem,removeCheckQuantity=removeQuantity }).ok;
+
     static PlayerCtrl Pc => GameLoop.I != null ? GameLoop.I.player : null;
     static int MapId => Profile.LastMapId;
 
@@ -52,6 +66,16 @@ public static class NpcApi
         cm.Set("getPlayer", Ret(_ => player));
         cm.Set("getChar", Ret(_ => player));
         cm.Set("getNpc", Ret(_ => N(npcId)));
+        cm.Set("getItemId", Ret(_ => N(session.ItemId)));
+        cm.Set("isItemScript", Ret(_ => B(session.ItemId>0)));
+        cm.Set("useDamageCapBreakthroughStone", Ret(_ =>
+        {
+            var response=GameSession.Net.ChangeInventory(new InventoryChangeRequest {characterId=GameSession.CharacterId,itemId=session.ItemId,breakthrough=true});
+            if(!response.ok) return S(response.error);
+            GameSession.Character.record.damageCap=response.damageCap;
+            GameSession.Character.inventory=response.inventory; GameSession.ApplyInventoryToProfile(); Profile.Save();
+            return S(response.message);
+        }));
         cm.Set("getNpcObjectId", Ret(_ => N(npcId)));
         cm.Set("getMap", Ret(_ => map));
         cm.Set("getMapId", Ret(_ => N(MapId)));
@@ -95,10 +119,10 @@ public static class NpcApi
         cm.Set("sendStyle", Fn(c =>
         {
             var styles = c.Arg(1) as JsArray;
-            var text = Str(c, 0);
-            for (int i = 0; i < (styles?.Items.Count ?? 0); i++)
-                text += "\r\n#L" + i + "#" + HairStyles.NameOf(HairStyles.KeyOf(i)) + "#l";
-            session.SetDialog(NpcDialogMode.Simple, text);
+            var ids = new List<int>();
+            if(styles!=null) foreach(var value in styles.Items) ids.Add(JsConvert.ToInt32(value));
+            session.SetDialog(NpcDialogMode.Style, Str(c,0));
+            session.Dialog.Styles=ids.ToArray();
         }));
         cm.Set("sendDefault", Fn(c => session.SetDialog(NpcDialogMode.Ok,
             WzAssets.FileRoot("String/Npc.img").Get(npcId.ToString())?.Text("d0", "(...)") ?? "(...)")));
@@ -107,6 +131,9 @@ public static class NpcApi
         cm.Set("sendDirectionInfo", Fn(c => { }));
         cm.Set("sendDimensionalMirror", Fn(c => { }));
         cm.Set("dispose", Fn(c => { FlushEquip(); session.DisposeFromScript(); }));
+        // AbstractPlayerInteraction.enableActions sends only the action-unlock
+        // packet. Local item execution has no network action lock to release.
+        cm.Set("enableActions", Fn(c => { }));
 
         // —— 北斗 nextLevel 回调，路由完全沿用 NPCScriptManager.nextLevel ——
         cm.Set("sendNextLevel", Fn(c => { session.SetDialog(NpcDialogMode.Next, Str(c, 1)); session.Route.Set(NativeScriptRouteType.Next, after: Str(c, 0)); }));
@@ -163,15 +190,38 @@ public static class NpcApi
             int id = Int(c, 0), count = Int(c, 1, 1);
             if (id <= 0 || count == 0) return JsNull.Value;
             if (count < 0) { Profile.RemoveItem(id, -count); return JsNull.Value; }
+            int before = Profile.ItemCount(id);
             Profile.AddItem(id, count);
-            return NewItemRef(id, count);
+            return Profile.ItemCount(id) - before == count ? NewItemRef(id, count) : JsNull.Value;
         }));
-        cm.Set("canHold", Ret(_ => B(true)));
-        cm.Set("canHoldAll", Ret(_ => B(true)));
-        cm.Set("canGenerateItem", Ret(_ => B(true)));
-        // NPCConversationManager.isNotCanHold(type[, count])：源端在背包满时**自己**发 sendOk
-        // 再 dispose，返回 true 表示脚本该 return。单机背包不限格数，与 canHold 恒真保持一致。
-        cm.Set("isNotCanHold", Ret(_ => B(false)));
+        cm.Set("canHold", Ret(c => B(CanHold(new[] {Int(c,0)},new[] {Int(c,1,1)},Int(c,2),Int(c,3)))));
+        cm.Set("canHoldAll", Ret(c =>
+        {
+            var ids=c.Arg(0) as JsArray; var amounts=c.Arg(1) as JsArray;
+            if(ids==null) return B(false);
+            var items=new List<int>(); var quantities=new List<int>();
+            for(int i=0;i<ids.Items.Count;i++)
+            { items.Add(JsConvert.ToInt32(ids.Items[i])); quantities.Add(amounts!=null && i<amounts.Items.Count ? JsConvert.ToInt32(amounts.Items[i]) : 1); }
+            return B(CanHold(items.ToArray(),quantities.ToArray()));
+        }));
+        cm.Set("canGenerateItem", Ret(c => B(WzNames.HasItem(Int(c, 0)))));
+        cm.Set("isNotCanHold", Ret(c =>
+        {
+            int type=Int(c,0), needed=Int(c,1,2);
+            if(type<1 || type>5) return B(true);
+            var used=new HashSet<int>();
+            if(GameSession.Character?.inventory!=null)
+                foreach(var item in GameSession.Character.inventory)
+                    if(item.inventoryType==type && item.position>0) used.Add(item.position);
+            bool full=Profile.InventoryCapacity(type-1)-used.Count<needed;
+            if(full)
+            {
+                string[] names={"装备","消耗","设置","其他","特殊"};
+                session.SetDialog(NpcDialogMode.Ok,"#r背包空间不足，请确保#b"+names[type-1]+"栏#r至少有#b"+needed+"#r个空格！");
+                session.DisposeFromScript();
+            }
+            return B(full);
+        }));
         // ItemInformationProvider.getName / itemDataExists 的等价判断：WZ 里有没有这件道具。
         cm.Set("getCosmeticItem", Ret(c =>
         {
@@ -189,7 +239,14 @@ public static class NpcApi
         cm.Set("itemExists", Ret(c => B(WzNames.HasItem(Int(c, 0)))));
         cm.Set("hasItemData", Ret(c => B(!string.IsNullOrEmpty(WzNames.Item(Int(c, 0))))));
         cm.Set("getInventory", Ret(c => BuildInventory(Int(c, 0))));
-        cm.Set("removeAll", Fn(c => { }));
+        cm.Set("removeAll", Fn(c =>
+        {
+            int id=Int(c,0);
+            if(!GameSession.InGame) { int count=Profile.ItemCount(id);if(count>0) Profile.RemoveItem(id,count);return; }
+            var result=GameSession.Net.ChangeInventory(new InventoryChangeRequest {characterId=GameSession.CharacterId,itemId=id,removeAll=true});
+            if(!result.ok) throw new JsRuntimeException(result.error);
+            GameSession.Character.inventory=result.inventory;GameSession.ApplyInventoryToProfile();Profile.Save();
+        }));
         cm.Set("removeAllByInventory", Fn(c => RemoveInventory(Int(c, 0))));
         // 单机没有「格位」概念（inventoryitems 一行一道具），拿到 slot 也无法定位，明确不装作成功。
         cm.Set("removeAllByInventorySlot", Fn(c => throw new JsRuntimeException("单机没有背包格位概念：removeAllByInventorySlot")));
@@ -280,9 +337,9 @@ public static class NpcApi
         // 旧实现把它映射回 6 个玩具职业字符串，四转（112/212…）会被压成「战士」。
         cm.Set("changeJobById", Fn(c => ChangeJob(Int(c, 0))));
         cm.Set("getJobName", Ret(c => S(SkillBook.JobName(Int(c, 0)))));
-        cm.Set("setHair", Fn(c => Profile.SetHair(HairStyles.KeyOf(Math.Abs(Int(c, 0)) % HairStyles.Count))));
-        cm.Set("setFace", Fn(c => { }));
-        cm.Set("setSkin", Fn(c => { }));
+        cm.Set("setHair", Fn(c => SetNativeAppearance("hair",Int(c,0))));
+        cm.Set("setFace", Fn(c => SetNativeAppearance("face",Int(c,0))));
+        cm.Set("setSkin", Fn(c => SetNativeAppearance("skin",Int(c,0))));
         // 一转后脚本紧跟 resetStats()：源端 Character.resetStats 按「当前职业」重排四维
         // 并把新手期自动配的点数退回 AP，同时按等级补算 SP。
         cm.Set("resetStats", Fn(c => JobSystem.ResetStats(Profile.JobId)));
@@ -660,10 +717,35 @@ public static class NpcApi
         cm.Set("goDojoUp", Fn(c => { }));    // 武陵道场爬塔未迁移
         cm.Set("startAriantBattle", Ret(_ => NotAvailable("阿里安特竞技场")));
         cm.Set("createPyramid", Ret(_ => NotAvailable("金字塔")));
-        cm.Set("gainTameness", Fn(c => { }));   // 宠物系统未迁移
-        cm.Set("getDriedPets", Ret(_ => BuildJavaList(new JsArray())));
-        cm.Set("getPet", Ret(_ => JsNull.Value));
-        cm.Set("evolvePet", Ret(_ => JsNull.Value));   // 源端无宠物时同样返回 null + message
+        cm.Set("gainTameness", Fn(c => {
+            var response=GameSession.Net.ChangeInventory(new InventoryChangeRequest {characterId=GameSession.CharacterId,
+                itemId=5000000,petTameness=Int(c,0)});
+            if(response.inventory!=null) {GameSession.Character.inventory=response.inventory;GameSession.ApplyInventoryToProfile();Profile.Save();}
+        }));
+        cm.Set("getDriedPets", Ret(_ => {
+            var list=new JsArray();
+            long now=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if(GameSession.Character!=null) foreach(var pet in GameSession.Character.inventory)
+                if(pet.itemId/1000==5000 && pet.position>0 && pet.expiration<now && pet.petData!=null)
+                {
+                    var view=new JsHostObject(pet);
+                    view.Set("getName",Ret(args=>S(pet.petData.TryGetValue("name",out var name) ? name.ToString() : WzNames.Item(pet.itemId))));
+                    view.Set("getLevel",Ret(args=>N(Convert.ToInt32(pet.petData["level"]))));
+                    view.Set("getTameness",Ret(args=>N(Convert.ToInt32(pet.petData["closeness"]))));
+                    view.Set("getPosition",Ret(args=>N(pet.position)));
+                    list.Items.Add(view);
+                }
+            return BuildJavaList(list);
+        }));
+        cm.Set("getPet", Ret(c => PetView(Int(c,0))));
+        cm.Set("evolvePet", Ret(c => {
+            var response=GameSession.Net.ChangeInventory(new InventoryChangeRequest {characterId=GameSession.CharacterId,
+                itemId=Int(c,1),evolvePetId=Int(c,1),petSlot=Int(c,0)});
+            if(!response.ok) {BottomBar.Toast(response.error);return JsNull.Value;}
+            GameSession.Character.inventory=response.inventory;GameSession.ApplyInventoryToProfile();Profile.Save();
+            // The source method's evolved return variable remains null.
+            return JsNull.Value;
+        }));
     }
 
     static JsValue NotAvailable(string system)
@@ -896,15 +978,35 @@ public static class NpcApi
         Debug.Log("[Script] changeJobById(" + jobId + ") → " + JobDefs.NameOf(jobId));
     }
 
+    static JsValue PetView(int slot)
+    {
+        if(!GameSession.InGame) return JsNull.Value;
+        var pet=GameSession.Net.ChangeInventory(new InventoryChangeRequest {characterId=GameSession.CharacterId,
+            itemId=5000000,getPet=true,petSlot=slot}).pet;
+        if(pet==null) return JsNull.Value;
+        var view=new JsHostObject(pet);
+        view.Set("getItemId",Ret(_=>N(pet.itemId)));
+        view.Set("getPosition",Ret(_=>N(pet.position)));
+        view.Set("getName",Ret(_=>S(pet.petData["name"].ToString())));
+        view.Set("getLevel",Ret(_=>N(Convert.ToInt32(pet.petData["level"]))));
+        view.Set("getTameness",Ret(_=>N(Convert.ToInt32(pet.petData["closeness"]))));
+        view.Set("getCloseness",Ret(_=>N(Convert.ToInt32(pet.petData["closeness"]))));
+        view.Set("getFullness",Ret(_=>N(Convert.ToInt32(pet.petData["fullness"]))));
+        return view;
+    }
     public static JsHostObject BuildPlayer(NpcSession session)
     {
         var p = new JsHostObject(session);
         Lenient(p, "player");
+        p.Set("getPet",Ret(c=>PetView(Int(c,0))));
         p.Set("getHp", Ret(_ => N(Pc != null ? Pc.hp : 0)));
         p.Set("getMp", Ret(_ => N(Pc != null ? Pc.mp : 0)));
         p.Set("getMaxHp", Ret(_ => N(Pc != null ? Pc.hpMax : 0)));
         p.Set("getMaxMp", Ret(_ => N(Pc != null ? Pc.mpMax : 0)));
         p.Set("getLevel", Ret(_ => N(Profile.level)));
+        p.Set("getWorld", Ret(_ => N(GameSession.World)));
+        p.Set("gainExp", Fn(c => Profile.GrantExperience(Int(c,0))));
+        p.Set("gainMeso", Fn(c => Profile.AddGold(Int(c,0))));
         p.Set("getJobId", Ret(_ => N(QuestLogic.PlayerJob)));
         p.Set("getJob", Ret(_ => BuildJob(QuestLogic.PlayerJob)));
         // Character.isCygnus()（Character.java:6118）→ getJobType()==1，
@@ -1004,7 +1106,7 @@ public static class NpcApi
         p.Set("getAbstractPlayerInteraction", Ret(_ => NpcSession.Active != null
             ? Build(NpcSession.Active, session.NpcId, session.QuestId, session.IsQuest) : JsNull.Value));
         p.Set("haveItem", Ret(c => B(Profile.ItemCount(Int(c, 0)) >= Math.Max(1, Int(c, 1, 1)))));
-        p.Set("canHold", Ret(_ => B(true)));
+        p.Set("canHold", Ret(c => B(CanHold(new[] {Int(c,0)},new[] {Int(c,1,1)}))));
         p.Set("getInventory", Ret(c => BuildInventory(Int(c, 0))));
         p.Set("getQuestStatus", Ret(c => N(Profile.QuestStatus(Int(c, 0)))));
         p.Set("updateHp", Fn(c =>
@@ -1305,10 +1407,21 @@ public static class NpcApi
         m.Set("getAllCharacters", m.Get("getCharacters"));
         m.Set("getPortal", Ret(c =>
         {
+            var map=FieldCatalog.GetMap(MapId);
+            FieldPortal portal=null;
+            int index=-1;
+            if(map!=null)
+            {
+                if(c.Arg(0) is JsString) index=map.portals.FindIndex(x=>x.name==Str(c,0));
+                else index=Int(c,0,-1);
+                if(index>=0 && index<map.portals.Count) portal=map.portals[index];
+            }
+            if(portal==null) return JsNull.Value;
             var p = new JsHostObject(null);
-            p.Set("getPosition", Ret(_ => BuildPosition()));
+            p.Set("getPosition", Ret(_ => BuildPoint(portal.x,portal.y)));
             p.Set("getMapId", Ret(_ => N(MapId)));
-            p.Set("getName", Ret(_ => S(Str(c, 0))));
+            p.Set("getName", Ret(_ => S(portal.name)));
+            p.Set("getId",Ret(_=>N(index)));
             return p;
         }));
         m.Set("getMobs", Ret(_ => {
@@ -1365,10 +1478,13 @@ public static class NpcApi
     }
 
     sealed class ScriptSound { public string path; public bool music; }
+    sealed class ScriptNotice { public int type; public string text; }
     static void ApplyScriptPacket(JsValue packet)
     {
         if (packet is JsHostObject host && host.Host is ScriptSound sound)
         { if (sound.music) AudioManager.PlayBgm(sound.path); else AudioManager.Play(sound.path, pitchVary: false); return; }
+        if(packet is JsHostObject noticeHost && noticeHost.Host is ScriptNotice notice)
+        { NativeSystemMessage.Drop(notice.type,notice.text); return; }
         throw new JsRuntimeException("Unmigrated script packet effect");
     }
 
@@ -1469,10 +1585,15 @@ public static class NpcApi
                 Lenient(type, name);
                 if (name == "org.gms.util.PacketCreator")
                 {
+                    type.Set("serverNotice", Ret(args => new JsHostObject(new ScriptNotice {type=Int(args,0),text=Str(args,args.ArgCount>=3 ? 2 : 1)})));
                     type.Set("musicChange", Ret(args => new JsHostObject(new ScriptSound { path = Str(args, 0), music = true })));
                     type.Set("playSound", Ret(args => new JsHostObject(new ScriptSound { path = Str(args, 0) })));
                 }
-                if (name == "org.gms.net.server.Server") type.Set("getInstance", Ret(_ => type));
+                if (name == "org.gms.net.server.Server")
+                {
+                    type.Set("getInstance", Ret(_ => type));
+                    type.Set("broadcastMessage", Fn(args => ApplyScriptPacket(args.Arg(args.ArgCount-1))));
+                }
                 return type;
             }
             if (name == "org.gms.constants.id.MapId")
@@ -1698,10 +1819,18 @@ public static class NpcApi
     }
 
     static JsHostObject BuildPosition()
+        => BuildPoint(Pc!=null ? Pc.worldX*Art.PPU : 0,Pc!=null ? -Pc.FeetPos.y*Art.PPU : 0);
+    static JsHostObject BuildPoint(double x,double y)
     {
         var p = new JsHostObject(null);
-        p.Set("getX", Ret(_ => N(Pc != null ? Pc.worldX * Art.PPU : 0)));
-        p.Set("getY", Ret(_ => N(Pc != null ? -Pc.FeetPos.y * Art.PPU : 0)));
+        p.Set("x",N(x));p.Set("y",N(y));
+        p.Set("getX", Ret(_ => N(x)));
+        p.Set("getY", Ret(_ => N(y)));
+        p.Set("distance",Ret(c=> {
+            if(!(c.Arg(0) is JsHostObject other)) return N(double.PositiveInfinity);
+            double dx=x-JsConvert.ToNumber(other.Get("x")),dy=y-JsConvert.ToNumber(other.Get("y"));
+            return N(Math.Sqrt(dx*dx+dy*dy));
+        }));
         return p;
     }
 
@@ -1866,6 +1995,8 @@ public static class NpcApi
         item.Set("getPosition", Ret(_ => N(e.position)));
         item.Set("getUpgradeSlots", Ret(_ => N(e.upgradeslots)));
         item.Set("getOwner", Ret(_ => S(e.owner)));
+        item.Set("getExpiration",Ret(_=>N(e.expiration)));
+        item.Set("setExpiration",Fn(c=>{ e.expiration=(long)JsConvert.ToNumber(c.Arg(0));MarkDirty(e); }));
 
         // 星之力（源端 Equip.maxStar / starLevel / starCount）
         item.Set("getStarLevel", Ret(_ => N(e.starLevel)));
@@ -1921,6 +2052,7 @@ public static class NpcApi
                 {
                     characterId = cid,
                     inventoryItemId = e.itemRowId,
+                    expiration = e.itemId/1000000==1 ? null : (long?)e.expiration,
                     starLevel = e.starLevel, starCount = e.starCount, maxStar = e.maxStar,
                     owner = e.owner,
                     str = e.str, dex = e.dex, int_ = e.int_, luk = e.luk, hp = e.hp, mp = e.mp,

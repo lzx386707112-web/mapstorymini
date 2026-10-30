@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -80,6 +81,7 @@ public static class PreviewShot
 
         EditorPrefs.SetBool(K_HAD, PlayerPrefs.HasKey(SnapKey));
         EditorPrefs.SetString(K_SNAP, PlayerPrefs.GetString(SnapKey, ""));
+        SnapshotSettings();
         EditorPrefs.SetString(K_DIR, dir);
         EditorPrefs.SetInt(K_W, width);
         EditorPrefs.SetInt(K_H, height);
@@ -236,10 +238,469 @@ public static class PreviewShot
             case 29:
                 Finish(0);
                 break;
+
+            // ── 底部菜单 / 设置窗（-previewStart 30） ──
+            case 30:
+                if (!Ready()) { if (now - t0 > 120) { Note("等待游戏就绪超时"); Finish(1); } return; }
+                SetupCatalog();
+                Step(now + 2.5, 31);
+                break;
+            case 31:
+                PinMenu(0, 2);
+                Step(now + 1.2, 32);
+                break;
+            case 32:
+                Shot("11-menu-catalog.png");
+                Step(now + 3.0, 33);
+                break;
+            case 33:
+                OpenInterface();
+                Step(now + 2.0, 34);
+                break;
+            case 34:
+                PinMenu(1, 4);
+                Step(now + 1.2, 35);
+                break;
+            case 35:
+                Shot("12-menu-interface.png");
+                Step(now + 3.0, 36);
+                break;
+            case 36:
+                SetupGameOpt();
+                Step(now + 2.5, 37);
+                break;
+            case 37:
+                Shot("13-game-options.png");
+                Step(now + 3.0, 38);
+                break;
+            case 38:
+                SetupSysOpt();
+                Step(now + 2.5, 39);
+                break;
+            case 39:
+                Shot("14-system-options.png");
+                Step(now + 3.0, 40);
+                break;
+            case 40:
+                SetupChannel();
+                Step(now + 2.5, 41);
+                break;
+            case 41:
+                Shot("15-channel.png");
+                Step(now + 3.0, 42);
+                break;
+            case 42:
+                Note("菜单截图收尾：Open=" + BottomMenu.Open + "（-1 表示已收起），设置窗 " +
+                     GameOptWindow.Visible + "/" + SysOptWindow.Visible + "/" + ChannelWindow.Visible);
+                Finish(0);
+                break;
+
+            // ── 怪物手册（-previewStart 43 单独跑这一段） ──
+            case 43:
+                if (!Ready()) { if (now - t0 > 120) { Note("等待游戏就绪超时"); Finish(1); } return; }
+                SetupBook();
+                Step(now + 3.0, 44);
+                break;
+            case 44:
+                Shot("16-book-info.png");            // 开窗默认页 = 手册信息（infoPage）
+                Step(now + 3.0, 45);
+                break;
+            case 45:
+                SetupBookCards();
+                Step(now + 2.5, 46);
+                break;
+            case 46:
+                Shot("17-book-cards.png");           // 25 格卡槽 + 两对箭头 + 顶部搜索框
+                Step(now + 2.5, 47);
+                break;
+            case 47:
+                SetupBookDrops();
+                Step(now + 2.5, 48);
+                break;
+            case 48:
+                Shot("18-book-drops.png");           // 右页 4x5 战利品网格
+                Step(now + 2.5, 49);
+                break;
+            case 49:
+                Finish(0);
+                break;
+
+            // ── 家族面板（-previewStart 50 单独跑这一段） ──
+            case 50:
+                if (!Ready()) { if (now - t0 > 120) { Note("等待游戏就绪超时"); Finish(1); } return; }
+                SetupGuild();
+                Step(now + 3.0, 51);
+                break;
+            case 51:
+                Shot("19-guild-empty.png");          // 未入家族：源端字符串 350「没有参加的家族」居中
+                Step(now + 2.0, 52);
+                break;
+            case 52:
+                SeedGuild();
+                Step(now + 2.5, 53);
+                break;
+            case 53:
+                Shot("20-guild-list.png");           // 组标题 / 列头 / 名字|职业|等级|地位 / 选中行
+                Step(now + 2.5, 54);
+                break;
+            case 54:
+                GuildWhere();
+                Step(now + 2.5, 55);
+                break;
+            case 55:
+                Shot("21-guild-where.png");          // 聊天窗多一行「XXX 目前在 <地图名>」
+                Step(now + 1.5, 56);
+                break;
+            case 56:
+                NativeGuildGradeWindow.Toggle();
+                Step(now + 3.0, 57);
+                break;
+            case 57:
+                Shot("22-guild-grade.png");          // BtInfo 的资料子窗（233×304）
+                Step(now + 2.0, 58);
+                break;
+            case 58:
+                Finish(0);
+                break;
+
+            // ── 能力值洗点窗 5050000（-previewStart 60 单独跑这一段） ──
+            // 三页都要拍：来源页(backgrnd/▼) → 目标页(backgrnd2/▲) → 确认页(backgrnd3)。
+            case 60:
+                if (!Ready()) { if (now - t0 > 120) { Note("等待游戏就绪超时"); Finish(1); } return; }
+                if (Mathf.Abs(UiKit.W - 1280f) > 8f)
+                {
+                    if (now - t0 > 120) { Note("等待画布尺寸超时：UiKit=" + UiKit.W + "x" + UiKit.H); Finish(1); }
+                    else Step(now + 0.5, 60);
+                    return;
+                }
+                ClearWindows();
+                Profile.Data.AddItem(5050000, 1);
+                Note("种子 5050000 数量=" + Profile.ItemCount(5050000));
+                NativeResetWindow.Open(5050000, 0);
+                Step(now + 0.8, 61);
+                break;
+            case 61:
+                // 指针压在「力量」行的下箭头（x=153..165、y=116..128）：验证 BtDown 的 mouseOver 皮肤
+                Pin(typeof(NativeResetWindow), 159f, 122f);
+                Shot("36-reset-ap-from.png");
+                Step(now + 3.0, 62);
+                break;
+            case 62:
+                SetResetStage(2, 64, 0);
+                Pin(typeof(NativeResetWindow), 159f, 140f);   // 敏捷行（y=134）的上箭头
+                Shot("37-reset-ap-to.png");
+                Step(now + 3.0, 63);
+                break;
+            case 63:
+                SetResetStage(3, 64, 128);
+                Shot("38-reset-ap-confirm.png");
+                Step(now + 3.0, 64);
+                break;
+            case 64:
+            {
+                // 真实结算：STR 64 → DEX 128 各一点；AP 总数不变
+                var before = Profile.Attributes;
+                int apBefore = Profile.ap, beforeItems = Profile.ItemCount(5050000);
+                string error = Profile.ResetAp(64, 128);
+                var after = Profile.Attributes;
+                Note("洗点结算 error=" + (error ?? "null") + " STR " + before.str + "→" + after.str +
+                     " DEX " + before.dex + "→" + after.dex + " AP " + apBefore + "→" + Profile.ap +
+                     " 5050000 " + beforeItems + "→" + Profile.ItemCount(5050000));
+                Step(now + 1.0, 65);
+                break;
+            }
+            case 65:
+                Finish(0);
+                break;
+
+            // ── 底栏菜单第二轮：把控件调到「非默认值」再拍（-previewStart 90） ──
+            //    默认值看不出问题：邀请全是「同意」、滑块全在中位、静音全关。
+            case 90:
+                if (!Ready()) { if (now - t0 > 120) { Note("等待游戏就绪超时"); Finish(1); } return; }
+                // 等 GameView 真正切到 1280×720 再摆场景：早几帧画布还是旧尺寸（曾出现 693×720），
+                // 那时算出来的菜单几何和最终画面差一倍，指针会钉到面板外。
+                if (Mathf.Abs(UiKit.W - 1280f) > 8f)
+                {
+                    if (now - t0 > 120) { Note("等待画布尺寸超时：UiKit=" + UiKit.W + "x" + UiKit.H); Finish(1); }
+                    else Step(now + 0.5, 90);
+                    return;
+                }
+                ClearWindows();
+                BottomMenu.Show(BottomMenu.Catalog);
+                Step(now + 2.0, 91);
+                break;
+            case 91:
+                Step(now + 1.2, 92);
+                break;
+            case 92:
+                // 钉指针放到拍照同一步：Tick 与 OnGUI 拿到的度量不一定同步，
+                // 隔两秒再拍会让 hover 落空（上一轮就钉偏到了面板外）。
+                PinMenu(0, 1);                        // 1 = 游戏设置（正常项，验证 mouseOver 皮肤）
+                Shot("34-menu-item-hover.png");
+                Step(now + 2.0, 93);
+                break;
+            case 93:
+                // 目录里已经没有「场景变更」了（源端没这一项，是死素材）；禁灰项只剩界面→我的排行，
+                // 拍这张证「指针压在禁用项上也保持灰」。
+                BottomMenu.Show(BottomMenu.Interface);
+                PinMenu(1, 10);
+                Shot("35-menu-disabled-hover.png");
+                Step(now + 2.0, 94);
+                break;
+            case 94:
+                SetupGameOptMixed();
+                Step(now + 2.5, 95);
+                break;
+            case 95:
+                Shot("31-game-options-mixed.png");    // 同意/拒绝 交替，验证抹字对齐
+                Step(now + 2.0, 96);
+                break;
+            case 96:
+                SetupSysOptAdjusted();
+                Step(now + 2.5, 97);
+                break;
+            case 97:
+                Shot("32-system-options-adjusted.png");   // 滑块拉偏 + 静音勾选 + 警报 30/20
+                Step(now + 2.0, 98);
+                break;
+            case 98:
+                SetupChannel();
+                Step(now + 2.5, 99);
+                break;
+            case 99:
+                Shot("33-channel-row.png");           // 列表区 CH.1 条目 + 变更恒灰
+                Step(now + 2.0, 100);
+                break;
+            case 100:
+                RestoreSettings();
+                Note("设置存档已还原（audio.bgm/sfx/mute、client.invite/hpalarm/mpalarm/screenfx）");
+                Finish(0);
+                break;
+
             default:
                 Finish(0);
                 break;
         }
+    }
+
+    // ───────── 公共：把所有窗关掉（各场景起手都先回到干净状态） ─────────
+    static void ClearWindows()
+    {
+        NpcSession.CloseActive();
+        EquipWindow.Visible = false;
+        InvenWindow.Visible = false;
+        SkillWindow.Visible = false;
+        GameOptWindow.Close();
+        SysOptWindow.Close();
+        ChannelWindow.Close();
+    }
+
+    // ───────── 场景 11/12：底部菜单「目录」「界面」 ─────────
+    static void SetupCatalog()
+    {
+        ClearWindows();
+        GameMenuWindow.Toggle();
+        Pointer.TestPos = new Vector2(1100f, 40f);
+        Note("目录菜单：Open=" + BottomMenu.Open + "（0=目录），项数=" + BottomMenu.ItemCount(0) +
+             "，S=" + BottomBar.S.ToString("0.000"));
+        DumpMenu(0);
+    }
+
+    static void OpenInterface()
+    {
+        ShortcutWindow.Toggle();
+        Pointer.TestPos = new Vector2(1100f, 40f);
+        Note("互斥验证：点「界面」后 Open=" + BottomMenu.Open + "（1=界面），目录=" + BottomMenu.IsOpen(0) +
+             " 界面=" + BottomMenu.IsOpen(1));
+        DumpMenu(1);
+    }
+
+    static void DumpMenu(int kind)
+    {
+        var panel = BottomMenu.PanelRect(kind);
+        Note("  面板 x=" + panel.x.ToString("0.0") + " y=" + panel.y.ToString("0.0") + " " +
+             panel.width.ToString("0.0") + "x" + panel.height.ToString("0.0") +
+             "，可视区 " + UiKit.W + "x" + UiKit.H);
+        for (int i = 0; i < BottomMenu.ItemCount(kind); i++)
+        {
+            var r = BottomMenu.ItemRect(kind, i);
+            Note("  项" + i + " " + BottomMenu.NameOf(kind, i) + " x=" + r.x.ToString("0.0") +
+                 " y=" + r.y.ToString("0.0") + " " + r.width.ToString("0.0") + "x" + r.height.ToString("0.0") +
+                 " 可用=" + BottomMenu.ItemEnabled(kind, i));
+        }
+    }
+
+    static void PinMenu(int kind, int index)
+    {
+        // UiKit 的度量只在 OnGUI 里刷新；本方法跑在 editor update 里，不刷就会拿到上一帧的
+        // Scale，BottomBar.S 随之偏掉（实测偏 8%），指针钉到面板外还以为是 hover 没生效。
+        UiKit.RefreshMetrics();
+        var r = BottomMenu.ItemRect(kind, index);
+        ClearPin();
+        Pointer.TestPos = new Vector2(r.center.x, r.center.y);
+        // Screen/UiKit 在 OnGUI 之外读到的值不一定和绘制时一致，把原始数一起打出来，
+        // 钉歪时能一眼看出是哪一项（曾经因此把指针钉到面板外，误以为 hover 皮肤没问题）。
+        Note("指针钉在「" + BottomMenu.NameOf(kind, index) + "」中心 " + Pointer.TestPos +
+             "（S=" + BottomBar.S.ToString("0.000") + " Screen=" + Screen.width + "x" + Screen.height +
+             " UiKit=" + UiKit.W.ToString("0") + "x" + UiKit.H.ToString("0") +
+             " scale=" + UiKit.Scale.ToString("0.000") + "）");
+    }
+
+    // ───────── 场景 13/14/15：游戏设置 / 系统设置 / 频道 ─────────
+    static void SetupGameOpt()
+    {
+        ClearWindows();
+        BottomMenu.Close();
+        GameOptWindow.Visible = true;
+        Pointer.TestPos = new Vector2(1100f, 40f);
+        var on = new System.Text.StringBuilder();
+        for (int i = 0; i < 12; i++) on.Append(ClientSettings.Invite(i) ? '1' : '0');
+        Note("游戏设置窗 158x284：邀请权限 12 位=" + on);
+    }
+
+    static void SetupSysOpt()
+    {
+        ClearWindows();
+        BottomMenu.Close();
+        SysOptWindow.Visible = true;
+        Pointer.TestPos = new Vector2(1100f, 40f);
+        Note("系统设置窗 299x365：BGM " + AudioManager.BgmVolume.ToString("0.00") + "（静音 " + AudioManager.BgmMuted +
+             "），音效 " + AudioManager.SfxVolume.ToString("0.00") + "（静音 " + AudioManager.SfxMuted +
+             "），HP 警报 " + ClientSettings.HpAlarm + "，MP 警报 " + ClientSettings.MpAlarm +
+             "，画面效果 " + ClientSettings.ScreenEffects);
+    }
+
+    static void SetupChannel()
+    {
+        ClearWindows();
+        BottomMenu.Close();
+        ChannelWindow.Visible = true;
+        Pointer.TestPos = new Vector2(1100f, 40f);
+        Note("频道窗 436x143（t 67 / c 4×10 / s 36），本地单频道 → 变更按钮恒 disabled");
+    }
+
+    // ───────── 第二轮：非默认值（默认值看不出抹字/滑块/勾选的对齐问题） ─────────
+    static void SetupGameOptMixed()
+    {
+        ClearWindows();
+        BottomMenu.Close();
+        // 隔一个翻成「拒绝」，让 12 行出现交替状态：能直接看出抹字有没有抹干净、
+        // 状态字是不是压在底图印死的旧字上。
+        for (int i = 0; i < ClientSettings.InviteCount; i++)
+            ClientSettings.SetInvite(i, i % 2 == 0);
+        GameOptWindow.Visible = true;
+        Pointer.TestPos = new Vector2(1100f, 40f);
+        var on = new System.Text.StringBuilder();
+        for (int i = 0; i < ClientSettings.InviteCount; i++) on.Append(ClientSettings.Invite(i) ? '1' : '0');
+        Note("游戏设置（交替）：邀请权限 12 位=" + on);
+    }
+
+    static void SetupSysOptAdjusted()
+    {
+        ClearWindows();
+        BottomMenu.Close();
+        AudioManager.BgmVolume = 0.25f;
+        AudioManager.SfxVolume = 0.85f;
+        AudioManager.BgmMuted = true;
+        AudioManager.SfxMuted = false;
+        ClientSettings.HpAlarm = 30;
+        ClientSettings.MpAlarm = 20;
+        ClientSettings.ScreenEffects = false;
+        SysOptWindow.Visible = true;
+        Pointer.TestPos = new Vector2(1100f, 40f);
+        Note("系统设置（非默认）：BGM 0.25 静音、音效 0.85、HP 30%、MP 20%、画面效果关");
+    }
+
+    // 实拍会改「游戏设置 / 系统设置 / 音量」的存档；开跑前记一份，收尾原样写回。
+    // 全是 PlayerPrefs 键，但类型不统一（音量 float、其余 int），所以按类型逐个记。
+    static readonly string[] FloatKeys = { "audio.bgm", "audio.sfx" };
+    static readonly string[] IntKeys =
+    {
+        "audio.bgm.mute", "audio.sfx.mute",
+        "client.invite", "client.hpalarm", "client.mpalarm", "client.screenfx",
+    };
+    const string K_SETTINGS = "PreviewShot.settings";
+
+    static void SnapshotSettings()
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var k in FloatKeys)
+            sb.Append("F\u0001").Append(k).Append('\u0001')
+              .Append(PlayerPrefs.HasKey(k) ? PlayerPrefs.GetFloat(k).ToString("R") : "\u0002").Append('\n');
+        foreach (var k in IntKeys)
+            sb.Append("I\u0001").Append(k).Append('\u0001')
+              .Append(PlayerPrefs.HasKey(k) ? PlayerPrefs.GetInt(k).ToString() : "\u0002").Append('\n');
+        EditorPrefs.SetString(K_SETTINGS, sb.ToString());
+    }
+
+    static void RestoreSettings()
+    {
+        string raw = EditorPrefs.GetString(K_SETTINGS, "");
+        if (string.IsNullOrEmpty(raw)) return;
+        foreach (var line in raw.Split('\n'))
+        {
+            var p = line.Split('\u0001');
+            if (p.Length < 3) continue;
+            string key = p[1], val = p[2];
+            if (val == "\u0002") { PlayerPrefs.DeleteKey(key); continue; }   // 原来没有这个键
+            if (p[0] == "F")
+                PlayerPrefs.SetFloat(key, float.Parse(val, CultureInfo.InvariantCulture));
+            else
+                PlayerPrefs.SetInt(key, int.Parse(val, CultureInfo.InvariantCulture));
+        }
+        PlayerPrefs.Save();
+        EditorPrefs.SetString(K_SETTINGS, "");
+    }
+
+    // ───────── 场景 16/17/18：怪物手册 ─────────
+    // 手册的 ids / state / page / rightTab / selected 都是私有静态字段，实拍用反射直取（不改产品代码）
+    static object BookField(string name)
+        => typeof(NativeMonsterBook).GetField(name, BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null);
+
+    static void BookSet(string name, object value)
+        => typeof(NativeMonsterBook).GetField(name, BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, value);
+
+    static void SetupBook()
+    {
+        ClearWindows();
+        BottomMenu.Close();
+        if (!NativeMonsterBook.Visible) NativeMonsterBook.Toggle();
+
+        var ids = BookField("ids") as List<int>;
+        int added = 0;
+        if (ids != null) for (int i = 0; i < ids.Count && i < 40; i++)
+            if (NativeMonsterBook.Collect(ids[i], 1 + i % 5)) added++;
+        Note("手册卡表 " + (ids?.Count ?? -1) + " 张，本次登记 " + added + " 张");
+
+        // 重开一次让 page 回到 9（手册信息页，原端开窗默认页）
+        NativeMonsterBook.Visible = false;
+        NativeMonsterBook.Toggle();
+        BookSet("rightTab", 0);
+        Pointer.TestPos = new Vector2(1180f, 40f);
+
+        var state = BookField("state") as SocialResponse;
+        Note("手册信息页：page=" + BookField("page") + " 等级=" + (state?.bookLevel ?? -1) +
+             " 已收录=" + (state?.cards.Count ?? -1) + " 封面=" + (state?.bookCover ?? -1) +
+             " S=" + BottomBar.S.ToString("0.000"));
+    }
+
+    static void SetupBookCards()
+    {
+        var state = BookField("state") as SocialResponse;
+        var ids = BookField("ids") as List<int>;
+        if (state != null && ids != null)
+            for (int i = 0; i < ids.Count; i++)
+                if (state.cards.ContainsKey(ids[i])) { BookSet("selected", ids[i]); BookSet("page", i / 25); break; }
+        BookSet("rightTab", 0);
+        Pointer.TestPos = new Vector2(1180f, 40f);
+        Note("卡槽页：page=" + BookField("page") + " selected=" + BookField("selected"));
+    }
+
+    static void SetupBookDrops()
+    {
+        BookSet("rightTab", 2);          // 0 基本情报 / 1 怪物情报 / 2 战利品 / 3 出现地图
+        Pointer.TestPos = new Vector2(1180f, 40f);
+        Note("右页战利品：rightTab=" + BookField("rightTab"));
     }
 
     static bool Ready() => GameLoop.I != null && GameLoop.I.player != null && GameLoop.I.state == GameLoop.GameState.Playing;
@@ -491,6 +952,116 @@ public static class PreviewShot
         Note("星力场景：背包装备页第 1 格应是刚才那把武器；指针已钉在格上");
     }
 
+    // ───────── 场景 19~22：家族面板（UserList 主窗 tab2） ─────────
+    // 种进存档的家族必须在结束时回滚，否则下轮的「未入家族」截图里还挂着上次的家族。
+    const string K_SEEDGUILD = "PreviewShot.seedGuild";
+
+    static void SetupGuild()
+    {
+        ClearWindows();
+        BottomMenu.Close();
+        NativeGuildGradeWindow.Reset();
+        // 上一轮（或修复前的旧版本）留下的种子家族：名字/族长都符合就当自己的清掉
+        int cid = GameSession.CharacterId;
+        var db = cid > 0 ? GameSession.Server.Db : null;
+        var stale = db?.Table("guilds").Find(r =>
+            DbStore.Str(r, "name") == SeedGuildName && DbStore.Int(r, "leader") == cid);
+        if (stale != null)
+        {
+            EditorPrefs.SetInt(K_SEEDGUILD, DbStore.Int(stale, "guildid"));
+            RevertSeededGuild();
+            Note("清掉上一轮遗留的种子家族");
+        }
+        if (!NativeGuildWindow.Visible) NativeGuildWindow.Toggle();
+        Pointer.TestPos = new Vector2(1100f, 40f);
+        var st = NativeCommunityWindow.State;
+        Note("家族窗已开：Visible=" + NativeGuildWindow.Visible + " guildId=" + (st?.guildId ?? -1) +
+             " 成员=" + (st?.guild?.Count ?? -1));
+    }
+
+    // 种子的家族名；同时是旧数据自查的标记（族长必须是当前角色）
+    const string SeedGuildName = "未来岛";
+
+    // 把本脚本插进存档的家族整个撤回：成员归属清 0、guilds 行删掉。
+    static void RevertSeededGuild()
+    {
+        int gid = EditorPrefs.GetInt(K_SEEDGUILD, 0);
+        if (gid <= 0) return;
+        try
+        {
+            var db = GameSession.Server.Db;
+            foreach (var row in db.Table("characters").Select(x => DbStore.Int(x, "guildid") == gid))
+            {
+                row["guildid"] = 0L;
+                row["guildrank"] = 5L;
+            }
+            db.Table("guilds").Delete(x => DbStore.Int(x, "guildid") == gid);
+            db.Save();
+            if (GameSession.CharacterId > 0)
+                GameSession.Character.inventory = CharService.Load(db, GameSession.CharacterId).inventory;
+            Note("已回滚种子家族 guildid=" + gid);
+        }
+        catch (Exception e) { Note("回滚种子家族失败：" + e.Message); }
+        EditorPrefs.DeleteKey(K_SEEDGUILD);
+    }
+
+    // 走和游戏内一模一样的落库路径（guilds 一行 + characters.guildid/guildrank），
+    // 然后再走一次真实的 Read，面板看到的每个字节都来自 DB，不摆 mock。
+    static void SeedGuild()
+    {
+        int cid = GameSession.CharacterId;
+        if (cid <= 0) { Note("不在游戏内，无法建家族"); return; }
+        var db = GameSession.Server.Db;
+        var me = db.Table("characters").Find(r => DbStore.Int(r, "id", 0) == cid);
+        if (me == null) { Note("存档里找不到角色 " + cid); return; }
+
+        int gid = DbStore.Int(me, "guildid", 0);
+        if (gid <= 0)
+        {
+            gid = (int)db.Table("guilds").Insert(new DbRow {
+                ["leader"] = (long)cid,
+                ["GP"] = 12000L,
+                ["name"] = "未来岛",
+                ["rank1title"] = "族长", ["rank2title"] = "副族长", ["rank3title"] = "优秀族员",
+                ["rank4title"] = "正式族员", ["rank5title"] = "实习生",
+                ["capacity"] = 30L,
+                ["logo"] = 1L, ["logoColor"] = 3L, ["logoBG"] = 2L, ["logoBGColor"] = 5L,
+                ["notice"] = "欢迎加入未来岛，每日晚 8 点组队打 BOSS。",
+                ["signature"] = 1L,
+            });
+            me["guildid"] = (long)gid;
+            me["guildrank"] = 1L;
+            db.Save();
+            EditorPrefs.SetInt(K_SEEDGUILD, gid);      // Finish 时按这个 id 回滚
+            Note("落库：guilds 新增 guildid=" + gid + "，角色 " + cid + " 设为 rank1");
+        }
+
+        var st = NativeCommunityWindow.Request(CommunityOperation.Read);
+        Note("家族：guildId=" + (st?.guildId ?? -1) + " 名=" + (st?.guildName ?? "") +
+             " 成员=" + (st?.guild?.Count ?? -1) + " GP=" + (st?.gp ?? -1) + " 上限=" + (st?.capacity ?? -1));
+        if (st?.guild != null && st.guild.Count > 0)
+        {
+            int id = st.guild[0].id;
+            typeof(NativeGuildWindow).GetField("selectedId", BindingFlags.Static | BindingFlags.NonPublic)
+                ?.SetValue(null, id);
+            var m = st.guild[0];
+            Note("选中成员：" + m.name + "（id " + m.id + "，rank " + m.rank + "，job " + m.job +
+                 " lv " + m.level + "，map " + m.map + " " + NativeMapNames.Of(m.map) + "）");
+        }
+    }
+
+    // BtWhere（按钮表下标 2）：源端是纯本地行为 —— 拿成员所在地图拼一句话打到聊天窗，不发包。
+    static void GuildWhere()
+    {
+        var st = NativeCommunityWindow.State;
+        var f = typeof(NativeGuildWindow);
+        int sel = (int)(f.GetField("selectedId", BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null) ?? 0);
+        CommunityMember target = st?.guild?.Find(m => m.id == sel);
+        if (target == null) { Note("没有选中成员，跳过成员位置"); return; }
+        f.GetMethod("Act", BindingFlags.Static | BindingFlags.NonPublic)?.Invoke(null, new object[] { 2, st, target });
+        Note("BtWhere → " + target.name + " 目前在 " + NativeMapNames.Of(target.map) + "（map " + target.map + "）");
+    }
+
     static string Join(AdminSetItem.SetPanelTier t)    {
         var parts = new System.Collections.Generic.List<string>();
         foreach (var kv in t.Stats) parts.Add(kv.Key + "+" + kv.Value);
@@ -556,6 +1127,17 @@ public static class PreviewShot
     }
 
     // 指针钉在「窗口内逻辑坐标」上（窗口 rect = pos*S，格子也是 (pos+逻辑)*S）
+    // 洗点窗的分页状态是私有的：截第 2/3 页时按原端字段（stage/from/to）直接拨过去。
+    static void SetResetStage(int stage, int from, int to)
+    {
+        var t = typeof(NativeResetWindow);
+        const BindingFlags F = BindingFlags.NonPublic | BindingFlags.Static;
+        t.GetField("stage", F)?.SetValue(null, stage);
+        t.GetField("from", F)?.SetValue(null, from);
+        t.GetField("to", F)?.SetValue(null, to);
+        Note("洗点窗 stage=" + stage + " from=" + from + " to=" + to);
+    }
+
     static void Pin(Type window, float lx, float ly)
     {
         EditorPrefs.SetString(K_PINW, window.Name);
@@ -575,7 +1157,8 @@ public static class PreviewShot
         if (string.IsNullOrEmpty(name)) return;
         var type = name == "EquipWindow" ? typeof(EquipWindow)
                  : name == "InvenWindow" ? typeof(InvenWindow)
-                 : name == "SkillWindow" ? typeof(SkillWindow) : null;
+                 : name == "SkillWindow" ? typeof(SkillWindow)
+                 : name == "NativeResetWindow" ? typeof(NativeResetWindow) : null;
         if (type == null) return;
         float S = BottomBar.S;
         if (S < 0.3f) return;                 // 尺寸没准备好，等下一帧
@@ -617,6 +1200,10 @@ public static class PreviewShot
 
     static void Finish(int code)
     {
+        // 种子家族要撤回：这套数据是给截图造的，不能留在玩家存档里
+        try { RevertSeededGuild(); }
+        catch (Exception e) { Debug.LogWarning("[PreviewShot] 种子家族回滚失败：" + e.Message); }
+
         // 存档原样写回：这套数据是给截图用的，不能留在玩家的存档里
         try
         {
@@ -625,6 +1212,7 @@ public static class PreviewShot
             else
                 PlayerPrefs.DeleteKey(SnapKey);
             PlayerPrefs.DeleteKey("autostart");
+            RestoreSettings();          // 设置窗实拍改过的音量/邀请位/警报值也一起还原
             PlayerPrefs.Save();
         }
         catch (Exception e) { Debug.LogWarning("[PreviewShot] 存档恢复失败：" + e.Message); }
@@ -635,7 +1223,7 @@ public static class PreviewShot
         InvenWindow.Visible = false;
         SkillWindow.Visible = false;
 
-        foreach (var k in new[] { K_RUN, K_DIR, K_T0, K_PHASE, K_NEXT, K_SNAP, K_HAD, K_PINW, K_PINX, K_PINY })
+        foreach (var k in new[] { K_RUN, K_DIR, K_T0, K_PHASE, K_NEXT, K_SNAP, K_HAD, K_PINW, K_PINX, K_PINY, K_SETTINGS })
             EditorPrefs.DeleteKey(k);
         EditorApplication.update -= Tick;
         EditorApplication.playModeStateChanged -= OnPlayMode;

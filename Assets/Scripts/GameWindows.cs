@@ -139,6 +139,18 @@ public static class StatWindow
 // BtPetEquipShow 67×18 于 (102,280)（0x7FE0F3 push 0x118 / 0x66），宠物装备本项目未实现。
 public static class EquipWindow
 {
+    public static InventoryEntry EquipmentAt(Vector2 pointer)
+    {
+        if(!Visible || GameSession.Character==null) return null;
+        int w=expanded ? FullW : SmallW,h=expanded ? FullH : SmallH;
+        var origin=NativeUi.ClampWindowPosition(pos,new Vector2(w,h),S)*S;
+        var r=new Rect(origin.x,origin.y,w*S,h*S);
+        var cells=expanded ? FullCells : SmallCells;
+        for(int row=0;row<cells.GetLength(0);row++) for(int col=0;col<cells.GetLength(1);col++)
+            if(cells[row,col]!=0 && At(r,GridX+col*Step,GridY+row*Step,Cell,Cell).Contains(pointer))
+                return GameSession.Character.inventory.Find(i=>i.position==cells[row,col] && i.inventoryType==1);
+        return null;
+    }
     public static bool Visible;
     static Vector2 pos = new Vector2(200, 100);
     static bool expanded, dragging;
@@ -252,6 +264,13 @@ public static class EquipWindow
 // 格子实测：小窗起 (8,50)、步长 36×34、格 32、4 列×6 行；展开态 4 组，组距 149、起 x=7。
 public static class InvenWindow
 {
+    static readonly List<KeyValuePair<Rect,InventoryEntry>> equipmentTargets=new List<KeyValuePair<Rect,InventoryEntry>>();
+    public static InventoryEntry EquipmentAt(Vector2 pointer)
+    {
+        if(!Visible || tab!=0) return null;
+        foreach(var target in equipmentTargets) if(target.Key.Contains(pointer)) return target.Value;
+        return null;
+    }
     public static bool Visible;
     static Vector2 pos = new Vector2(30, 90);
     static bool expanded, dragging, sorted;
@@ -342,6 +361,7 @@ public static class InvenWindow
             if (Mathf.Abs(wheel) > .01f) scroll = Mathf.Clamp(scroll - (int)Mathf.Sign(wheel), 0, maxScroll);
         }
 
+        if(Event.current.type==EventType.Repaint) equipmentTargets.Clear();
         for (int cell = 0; cell < (expanded ? 96 : 24); cell++)
         {
             int index = expanded ? cell : scroll * 4 + cell;
@@ -353,6 +373,7 @@ public static class InvenWindow
             if (index >= capacity) { Image(r, "disabled", x, y); continue; }
             if (index >= entries.Count) continue;
             int id = entries[index];
+            if(Event.current.type==EventType.Repaint && equipment!=null) equipmentTargets.Add(new KeyValuePair<Rect,InventoryEntry>(slot,equipment[index]));
             var icon = NativeItemSource.Icon(id);
             if (icon != null) GUI.DrawTexture(slot, icon, ScaleMode.ScaleToFit);
             if (tab != 0) Text(At(r, x, y + 20, 31, 12), Profile.ItemCount(id).ToString(), true, 9);
@@ -362,7 +383,7 @@ public static class InvenWindow
                 var offered = equipment == null ? GameSession.Character.inventory.Find(item => item.itemId == id && item.inventoryType == tab + 1 && item.position > 0) : equipment[index];
                 NativeTradeWindow.BeginItemDrag(offered);
             }
-            if (press && !NativeTradeWindow.CanOffer && slot.Contains(Pointer.Pos)) NativeInventoryActions.Pick(id);
+            if (press && !NativeTradeWindow.CanOffer && slot.Contains(Pointer.Pos)) NativeInventoryActions.Pick(id,equipment==null ? 0 : equipment[index].position);
             if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && slot.Contains(Pointer.Pos))
             {
                 Pointer.ConsumeClick();
@@ -415,51 +436,177 @@ public static class ShopWindow
     public static void Draw() => NativeCashWindow.Draw();
 }
 
-public static class ShortcutWindow
+// ——————————————— 底栏两个弹出菜单（目录 / 界面） ———————————————
+// 几何全部来自源端：面板 93 宽，右缘与大按钮右缘对齐，底边贴按钮顶边（y=543）。
+//   目录（BtMenu，第 3 枚大按钮）  backgrnd 93×140 + 4 个 81×25 按钮，行距 26（y=24+26i）
+//   界面（BtShort，第 4 枚大按钮） backgrnd 93×245 + 11 个 81×25 按钮，行距 21（y=5+21i）
+// 首行 y=24 不是随手取的：源端 GameMenu 构建函数（0x849F3E）里的控件坐标就是 24/50/76/102，
+// 空出来的 24px 正好是底图上印死的标题（「主菜单」/「界面」）。
+// 两个菜单互斥：开一个自动收起另一个；同一下标按钮再点一次收起。
+// 两者都是浮层，点到面板外就收起——唯独点在两个菜单按钮上时交给 BottomBar.PressBig 决定，
+// 否则会出现「外点收起 + 同一下点击又把它打开」的抖动。
+public static class BottomMenu
 {
-    public static bool Visible { get => BottomBar.InterfaceVisible; set => BottomBar.InterfaceVisible = value; }
-    public static void Toggle() { Visible = !Visible; }
-    public static void Draw()
+    public const int None = -1, Catalog = 0, Interface = 1;
+
+    public static int Open { get; private set; } = None;
+    public static bool IsOpen(int kind) { return Open == kind; }
+    public static bool AnyOpen { get { return Open != None; } }
+    public static void Toggle(int kind) { Open = Open == kind ? None : kind; }
+    public static void Show(int kind) { Open = kind; }
+    public static void Close() { Open = None; }
+
+    // 源端 0x849F3E 只建这 4 个按钮（y=24/50/76/102、id 1000..1003）。
+    // BtSkin（「场景变更 / SKIN CHANGE」）的 4 态素材在 WZ 里齐全，但 exe 里**没有任何代码引用**它
+    // （字符串池 id 2207，8115 个 GetString 调用点零命中），也没有配套窗口底图 —— 是上游留下的死素材，
+    // 源端菜单里根本没有这一项，所以这里也不摆。
+    static readonly string[] CatalogButtons = { "BtChannel", "BtGameOpt", "BtSysOpt", "BtQuit" };
+    static readonly string[] InterfaceButtons =
     {
-        if (!Visible) return;
-        var anchor = BottomBar.BigButtonRect(3);
-        NativeMenu.Draw("shortcut", new Vector2(anchor.xMax - 93 * BottomBar.S, anchor.y - 245 * BottomBar.S),
-            new[] { "BtItem", "BtEquip", "BtStat", "BtSkill", "BtParty", "BtQuest", "BtMessenger", "BtGuild", "BtComm", "BtMobbook", "BtRanking" },
-            245, i => i < 10, i => {
-                if (i == 0) InvenWindow.Toggle();
-                if (i == 1) EquipWindow.Toggle();
-                if (i == 2) StatWindow.Toggle();
-                if (i == 3) SkillWindow.Toggle();
-                if (i == 4) NativeSocialWindow.Toggle(GameAction.Party);
-                if (i == 5) QuestWindow.Toggle();
-                if (i == 6) NativeSocialWindow.Toggle(GameAction.Messenger);
-                if (i == 7) NativeCommunityWindow.Toggle(GameAction.Family);
-                if (i == 8) NativeSocialWindow.Toggle(GameAction.Buddy);
-                if (i == 9) NativeMonsterBook.Toggle();
-                Visible = false;
-            });
+        "BtItem", "BtEquip", "BtStat", "BtSkill", "BtParty", "BtQuest",
+        "BtMessenger", "BtGuild", "BtComm", "BtMobbook", "BtRanking",
+    };
+
+    static string[] Buttons(int kind) { return kind == Catalog ? CatalogButtons : InterfaceButtons; }
+    static int Height(int kind) { return kind == Catalog ? 140 : 245; }
+    static int Pitch(int kind) { return kind == Catalog ? 26 : 21; }
+    static int AnchorButton(int kind) { return kind == Catalog ? 2 : 3; }
+    static string MenuArt(int kind, string node)
+    {
+        return "ui/" + (kind == Catalog ? "gamemenu" : "shortcut") + "/" + node + ".bytes";
+    }
+
+    // 首行：目录 24（让开底图标题），界面 5（11 项要填满 245，源端那 8 项的排法塞不下）
+    static int FirstRow(int kind) { return kind == Catalog ? 24 : 5; }
+
+    // 源端只有「我的排行」（BtRanking）没做，其余界面项都在；目录 4 项全可用。
+    static bool Enabled(int kind, int index)
+    {
+        return kind == Catalog ? true : index < InterfaceButtons.Length - 1;
+    }
+
+    static string DisabledHint(int kind, int index)
+    {
+        return "我的排行：源端未实现，手机端未开放";
+    }
+
+    static void Click(int kind, int index)
+    {
+        if (kind == Interface) { ClickInterface(index); return; }
+        switch (index)
+        {
+            case 0: ChannelWindow.Toggle(); break;
+            case 1: GameOptWindow.Toggle(); break;
+            case 2: SysOptWindow.Toggle(); break;
+            case 3: ConfirmQuit(); break;
+        }
+    }
+
+    static void ClickInterface(int index)
+    {
+        if (index == 0) InvenWindow.Toggle();
+        if (index == 1) EquipWindow.Toggle();
+        if (index == 2) StatWindow.Toggle();
+        if (index == 3) SkillWindow.Toggle();
+        if (index == 4) NativeSocialWindow.Toggle(GameAction.Party);
+        if (index == 5) QuestWindow.Toggle();
+        if (index == 6) NativeSocialWindow.Toggle(GameAction.Messenger);
+        if (index == 7) NativeGuildWindow.Toggle();
+        if (index == 8) NativeSocialWindow.Toggle(GameAction.Buddy);
+        if (index == 9) NativeMonsterBook.Toggle();
+    }
+
+    // 源端「游戏结束」直接退客户端；手机端退出就是杀进程，加一道 YesNo 确认免得误触。
+    static void ConfirmQuit()
+    {
+        NativeUtilPrompt.Confirm("确定要结束游戏吗？", ok => { if (ok) Application.Quit(); });
+    }
+
+    // —— 几何：面板/条目矩形对外公开，绘制与无渲染断言（MenuLayoutChecks）共用同一份算法 ——
+    // 面板 93 宽；右缘与大按钮右缘对齐、底边贴按钮顶边；窄屏/竖屏时夹回可视区。
+    public static Rect PanelRect(int kind)
+    {
+        float s = BottomBar.S;
+        var anchor = BottomBar.BigButtonRect(AnchorButton(kind));
+        float w = 93f * s, h = Height(kind) * s;
+        float x = Mathf.Clamp(anchor.xMax - w, 0f, Mathf.Max(0f, UiKit.W - w));
+        float y = Mathf.Clamp(anchor.y - h, 0f, Mathf.Max(0f, UiKit.H - h));
+        return new Rect(x, y, w, h);
+    }
+
+    public static Rect ItemRect(int kind, int index)
+    {
+        var panel = PanelRect(kind);
+        float s = BottomBar.S;
+        return new Rect(panel.x + 6f * s, panel.y + (FirstRow(kind) + index * Pitch(kind)) * s, 81f * s, 25f * s);
+    }
+
+    public static int ItemCount(int kind) { return Buttons(kind).Length; }
+    public static bool ItemEnabled(int kind, int index) { return Enabled(kind, index); }
+
+    // 按钮文字是源端 IMG 里烤死的，这两份名字只给日志/断言读，别拿去画界面。
+    static readonly string[] CatalogNames = { "频道变更", "游戏设置", "系统设置", "游戏结束" };
+    static readonly string[] InterfaceNames =
+    {
+        "物品", "装备", "能力值", "技能", "组队", "任务", "好友", "公会", "社区", "怪物图鉴", "我的排行",
+    };
+    public static string NameOf(int kind, int index)
+    {
+        var names = kind == Catalog ? CatalogNames : InterfaceNames;
+        return index >= 0 && index < names.Length ? names[index] : "?";
+    }
+
+    public static void Draw(int kind)
+    {
+        if (!IsOpen(kind)) return;
+        var panel = PanelRect(kind);
+
+        var bg = Art.Tex(MenuArt(kind, "backgrnd"));
+        if (bg != null) GUI.DrawTexture(panel, bg, ScaleMode.StretchToFill);
+
+        var buttons = Buttons(kind);
+        bool blocking = NpcSession.Blocking || KeyConfigWindow.Visible || VirtualControlsEditor.Visible;
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            var rect = ItemRect(kind, i);
+            bool enabled = Enabled(kind, i);
+            bool hover = rect.Contains(Pointer.Pos) && !blocking;
+            string state = !enabled ? "disabled" : hover ? (Pointer.Down ? "pressed" : "mouseOver") : "normal";
+            var tex = Art.Tex(MenuArt(kind, buttons[i] + "_" + state)) ?? Art.Tex(MenuArt(kind, buttons[i] + "_normal"));
+            if (tex != null) GUI.DrawTexture(rect, tex, ScaleMode.StretchToFill);
+
+            if (!hover || Event.current.type != EventType.Repaint || !Pointer.Released) continue;
+            Pointer.ConsumeClick();
+            if (!enabled) { BottomBar.Toast(DisabledHint(kind, i)); continue; }
+            AudioManager.Play("UI/BtMouseClick", 0.7f, false);
+            Close();
+            Click(kind, i);
+            return;
+        }
+
+        if (blocking || Event.current.type != EventType.Repaint || !Pointer.Clicked) return;
+        if (panel.Contains(Pointer.Pos)) return;
+        // 点到底栏两个菜单按钮时不在这里关：那一下由 PressBig 去 Toggle，避免同一点击先关后开
+        if (BottomBar.BigButtonRect(2).Contains(Pointer.Pos) ||
+            BottomBar.BigButtonRect(3).Contains(Pointer.Pos)) return;
+        Close();
     }
 }
 
-public static class NativeMenu
+public static class ShortcutWindow
 {
-    public static void Draw(string folder, Vector2 pos, string[] buttons, int height,
-                            System.Func<int, bool> enabled, System.Action<int> click)
+    public static bool Visible
     {
-        float s = BottomBar.S;
-        var bg = Art.Tex("ui/" + folder + "/backgrnd.bytes");
-        if (bg != null) GUI.DrawTexture(new Rect(pos.x, pos.y, 93 * s, height * s), bg);
-        float step = (height - 10f) / buttons.Length;
-        for (int i = 0; i < buttons.Length; i++)
+        get { return BottomMenu.IsOpen(BottomMenu.Interface); }
+        set
         {
-            var r = new Rect(pos.x + 6 * s, pos.y + (5 + i * step) * s, 81 * s, 25 * s);
-            bool hover = r.Contains(Pointer.Pos);
-            string state = !enabled(i) ? "disabled" : hover ? Pointer.Down ? "pressed" : "mouseOver" : "normal";
-            var tex = Art.Tex("ui/" + folder + "/" + buttons[i] + "_" + state + ".bytes");
-            if (tex != null) GUI.DrawTexture(r, tex);
-            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && enabled(i) && Event.current.type == EventType.Repaint && Pointer.Released && hover) click(i);
+            if (value) BottomMenu.Show(BottomMenu.Interface);
+            else if (Visible) BottomMenu.Close();
         }
     }
+    public static void Toggle() { BottomMenu.Toggle(BottomMenu.Interface); }
+    public static void Draw() { BottomMenu.Draw(BottomMenu.Interface); }
 }
 
 public static class HelpWindow
@@ -478,21 +625,17 @@ public static class HelpWindow
 
 public static class GameMenuWindow
 {
-    public static bool Visible;
-    public static void Toggle() { Visible = !Visible; }
-    public static void Draw()
+    public static bool Visible
     {
-        if (!Visible) return;
-        var anchor = BottomBar.BigButtonRect(2);
-        NativeMenu.Draw("gamemenu", new Vector2(anchor.xMax - 93 * BottomBar.S, anchor.y - 140 * BottomBar.S),
-            new[] { "BtChannel", "BtSkin", "BtGameOpt", "BtSysOpt", "BtQuit" }, 140,
-            i => i == 4, i => {
-                Visible = false;
-                if (i == 2) KeyConfigWindow.Toggle();
-                if (i == 3) HelpWindow.Toggle();
-                if (i == 4) Application.Quit();
-            });
+        get { return BottomMenu.IsOpen(BottomMenu.Catalog); }
+        set
+        {
+            if (value) BottomMenu.Show(BottomMenu.Catalog);
+            else if (Visible) BottomMenu.Close();
+        }
     }
+    public static void Toggle() { BottomMenu.Toggle(BottomMenu.Catalog); }
+    public static void Draw() { BottomMenu.Draw(BottomMenu.Catalog); }
 }
 
 // 所有浮窗的统一绘制顺序（技能窗在最后，压在虚拟键盘之上）
@@ -503,8 +646,10 @@ public static class GameWindows
         ShortcutWindow.Visible || HelpWindow.Visible || GameMenuWindow.Visible ||
         SkillWindow.Visible || QuestWindow.Visible || KeyConfigWindow.Visible ||
         NativeMapWindows.WorldVisible || NativeSocialWindow.Visible || NativeMonsterBook.Visible ||
-        NativeCommunityWindow.Visible || NativeMedalWindow.Visible || ShopWindow.Visible ||
-        NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible || NativeNpcShopWindow.Visible;
+        NativeCommunityWindow.Visible || NativeGuildWindow.Visible || NativeGuildGradeWindow.Visible ||
+        NativeMedalWindow.Visible || ShopWindow.Visible || GameOptWindow.Visible ||
+        SysOptWindow.Visible || ChannelWindow.Visible ||
+        NativeVegaWindow.Visible || NativeResetWindow.Visible || NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible || NativeNpcShopWindow.Visible;
 
     // ——————————————— Esc 分层关闭 ———————————————
     // 原版 Esc 是「系统菜单」键，但用户要求：只要有面板开着，Esc 先关面板。
@@ -514,7 +659,8 @@ public static class GameWindows
     enum Panel
     {
         Stat, Equip, Inven, Shop, Quest, Shortcut, Help, GameMenu, Skill,
-        World, Social, MonsterBook, Community, Medal, NpcShop,
+        World, Social, MonsterBook, Community, Guild, Medal, NpcShop,
+        GameOpt, SysOpt, Channel,
     }
     static readonly Panel[] panels = (Panel[])System.Enum.GetValues(typeof(Panel));
     static readonly List<Panel> openOrder = new List<Panel>();
@@ -538,7 +684,11 @@ public static class GameWindows
             case Panel.Social: return NativeSocialWindow.Visible;
             case Panel.MonsterBook: return NativeMonsterBook.Visible;
             case Panel.Community: return NativeCommunityWindow.Visible;
+            case Panel.Guild: return NativeGuildWindow.Visible || NativeGuildGradeWindow.Visible;
             case Panel.Medal: return NativeMedalWindow.Visible;
+            case Panel.GameOpt: return GameOptWindow.Visible;
+            case Panel.SysOpt: return SysOptWindow.Visible;
+            case Panel.Channel: return ChannelWindow.Visible;
         }
         return false;
     }
@@ -562,7 +712,11 @@ public static class GameWindows
             case Panel.Social: NativeSocialWindow.Close(); return;
             case Panel.MonsterBook: NativeMonsterBook.Visible = false; return;
             case Panel.Community: NativeCommunityWindow.Reset(); return;
+            case Panel.Guild: NativeGuildWindow.Reset(); return;
             case Panel.Medal: NativeMedalWindow.Visible = false; return;
+            case Panel.GameOpt: GameOptWindow.Close(); return;
+            case Panel.SysOpt: SysOptWindow.Close(); return;
+            case Panel.Channel: ChannelWindow.Close(); return;
         }
     }
 
@@ -583,6 +737,8 @@ public static class GameWindows
     public static bool CloseTop()
     {
         if (NativeUtilPrompt.Visible) { NativeUtilPrompt.Cancel(); return true; }
+        if (NativeVegaWindow.Visible) { if(!NativeVegaWindow.Busy) NativeVegaWindow.Close(); return true; }
+        if (NativeResetWindow.Visible) { NativeResetWindow.Close(); return true; }
         if (NativeCharacterMenu.Visible) { NativeCharacterMenu.Close(); return true; }
         if (NativeTradeWindow.Visible) { NativeTradeWindow.Close(); return true; }
         if (NativeMarketWindow.Visible) { NativeMarketWindow.Close(); return true; }
@@ -610,20 +766,29 @@ public static class GameWindows
         InvenWindow.Draw();
         ShopWindow.Draw();
         QuestWindow.Draw();
-        ShortcutWindow.Draw();
         HelpWindow.Draw();
-        GameMenuWindow.Draw();
         SkillWindow.Draw();
         NativeMapWindows.DrawWorld();
         NativeSocialWindow.Draw();
         NativeMonsterBook.Draw();
         NativeCommunityWindow.DrawBoard();
         NativeCommunityWindow.Draw();
+        NativeGuildWindow.Draw();
+        NativeGuildGradeWindow.Draw();   // BtInfo 的附属窗，必须跟着主窗一起进绘制链
         NativeMedalWindow.Draw();
         NativeTradeWindow.Draw();
         NativeMarketWindow.Draw();
         NativeNpcShopWindow.Draw();
         NativeCharacterMenu.Draw();
+        // 目录菜单里开出来的三个窗（源端只有底图，实现见 NativeSettingsWindows.cs）
+        GameOptWindow.Draw();
+        SysOptWindow.Draw();
+        ChannelWindow.Draw();
+        // 底栏两个弹出菜单画在最后：它是贴着底栏的浮层，要压在其它窗口之上
+        GameMenuWindow.Draw();
+        ShortcutWindow.Draw();
+        NativeVegaWindow.Draw();
+        NativeResetWindow.Draw();
         ItemTooltip.Flush();
         }
         finally { GUI.enabled = enabled; }

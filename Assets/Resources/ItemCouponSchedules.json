@@ -1,0 +1,316 @@
+{
+  "sources": {
+    "V1.0.54__nxcoupons_insert_data.sql": "c84598b313a92c917c445750fc92fb1ecb0e69ca8507be691b951ff77a5d7041",
+    "V1.8.8__update_nxcoupons.sql": "e950f8fe4899821d3370f9873a0d0663a49256035222f99d1692da21e919f28e"
+  },
+  "rules": [
+    {
+      "item": 5211000,
+      "rate": 2,
+      "days": 254,
+      "start": 18,
+      "end": 20
+    },
+    {
+      "item": 5211004,
+      "rate": 2,
+      "days": 124,
+      "start": 7,
+      "end": 11
+    },
+    {
+      "item": 5211005,
+      "rate": 2,
+      "days": 124,
+      "start": 10,
+      "end": 14
+    },
+    {
+      "item": 5211006,
+      "rate": 2,
+      "days": 124,
+      "start": 13,
+      "end": 17
+    },
+    {
+      "item": 5211007,
+      "rate": 2,
+      "days": 124,
+      "start": 16,
+      "end": 20
+    },
+    {
+      "item": 5211008,
+      "rate": 2,
+      "days": 124,
+      "start": 19,
+      "end": 23
+    },
+    {
+      "item": 5211009,
+      "rate": 2,
+      "days": 130,
+      "start": 7,
+      "end": 11
+    },
+    {
+      "item": 5211010,
+      "rate": 2,
+      "days": 130,
+      "start": 10,
+      "end": 14
+    },
+    {
+      "item": 5211011,
+      "rate": 2,
+      "days": 130,
+      "start": 13,
+      "end": 17
+    },
+    {
+      "item": 5211012,
+      "rate": 2,
+      "days": 130,
+      "start": 16,
+      "end": 20
+    },
+    {
+      "item": 5211013,
+      "rate": 2,
+      "days": 130,
+      "start": 19,
+      "end": 23
+    },
+    {
+      "item": 5211014,
+      "rate": 2,
+      "days": 254,
+      "start": 7,
+      "end": 11
+    },
+    {
+      "item": 5211015,
+      "rate": 2,
+      "days": 254,
+      "start": 10,
+      "end": 14
+    },
+    {
+      "item": 5211016,
+      "rate": 2,
+      "days": 254,
+      "start": 13,
+      "end": 17
+    },
+    {
+      "item": 5211017,
+      "rate": 2,
+      "days": 254,
+      "start": 16,
+      "end": 20
+    },
+    {
+      "item": 5211018,
+      "rate": 2,
+      "days": 254,
+      "start": 19,
+      "end": 23
+    },
+    {
+      "item": 5211037,
+      "rate": 2,
+      "days": 124,
+      "start": 0,
+      "end": 4
+    },
+    {
+      "item": 5211038,
+      "rate": 2,
+      "days": 130,
+      "start": 0,
+      "end": 4
+    },
+    {
+      "item": 5211039,
+      "rate": 2,
+      "days": 254,
+      "start": 0,
+      "end": 4
+    },
+    {
+      "item": 5211040,
+      "rate": 2,
+      "days": 124,
+      "start": 3,
+      "end": 7
+    },
+    {
+      "item": 5211041,
+      "rate": 2,
+      "days": 130,
+      "start": 3,
+      "end": 7
+    },
+    {
+      "item": 5211042,
+      "rate": 2,
+      "days": 254,
+      "start": 3,
+      "end": 7
+    },
+    {
+      "item": 5211043,
+      "rate": 2,
+      "days": 124,
+      "start": 6,
+      "end": 10
+    },
+    {
+      "item": 5211044,
+      "rate": 2,
+      "days": 130,
+      "start": 6,
+      "end": 10
+    },
+    {
+      "item": 5211045,
+      "rate": 2,
+      "days": 254,
+      "start": 6,
+      "end": 10
+    },
+    {
+      "item": 5211046,
+      "rate": 2,
+      "days": 254,
+      "start": 0,
+      "end": 24
+    },
+    {
+      "item": 5211048,
+      "rate": 2,
+      "days": 254,
+      "start": 0,
+      "end": 24
+    },
+    {
+      "item": 5211049,
+      "rate": 2,
+      "days": 254,
+      "start": 0,
+      "end": 24
+    },
+    {
+      "item": 5211052,
+      "rate": 3,
+      "days": 255,
+      "start": 0,
+      "end": 24
+    },
+    {
+      "item": 5211060,
+      "rate": 3,
+      "days": 255,
+      "start": 0,
+      "end": 24
+    },
+    {
+      "item": 5360000,
+      "rate": 2,
+      "days": 254,
+      "start": 0,
+      "end": 24
+    },
+    {
+      "item": 5360001,
+      "rate": 2,
+      "days": 254,
+      "start": 7,
+      "end": 11
+    },
+    {
+      "item": 5360002,
+      "rate": 2,
+      "days": 254,
+      "start": 10,
+      "end": 14
+    },
+    {
+      "item": 5360003,
+      "rate": 2,
+      "days": 254,
+      "start": 13,
+      "end": 17
+    },
+    {
+      "item": 5360004,
+      "rate": 2,
+      "days": 254,
+      "start": 16,
+      "end": 20
+    },
+    {
+      "item": 5360005,
+      "rate": 2,
+      "days": 254,
+      "start": 19,
+      "end": 23
+    },
+    {
+      "item": 5360006,
+      "rate": 2,
+      "days": 254,
+      "start": 0,
+      "end": 4
+    },
+    {
+      "item": 5360007,
+      "rate": 2,
+      "days": 254,
+      "start": 3,
+      "end": 7
+    },
+    {
+      "item": 5360008,
+      "rate": 2,
+      "days": 254,
+      "start": 6,
+      "end": 10
+    },
+    {
+      "item": 5360042,
+      "rate": 2,
+      "days": 254,
+      "start": 0,
+      "end": 24
+    },
+    {
+      "item": 5360901,
+      "rate": 2,
+      "days": 254,
+      "start": 0,
+      "end": 24
+    },
+    {
+      "item": 5360902,
+      "rate": 3,
+      "days": 254,
+      "start": 0,
+      "end": 24
+    },
+    {
+      "item": 5211901,
+      "rate": 2,
+      "days": 254,
+      "start": 0,
+      "end": 24
+    },
+    {
+      "item": 5211902,
+      "rate": 3,
+      "days": 254,
+      "start": 0,
+      "end": 24
+    }
+  ]
+}

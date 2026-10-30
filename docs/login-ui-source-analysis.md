@@ -193,7 +193,8 @@ screen = 1.2 × src + (186, -29)
 | 内容底 | `UI/Login.img/WorldSelect/BtWorld/chBackgrn` | 卷轴 + (39, 158) |
 | 世界标题 | `UI/Login.img/WorldSelect/world/<worldId>` | 卷轴 + (73, 141) |
 | 频道按钮 | `UI/Login.img/WorldSelect/channel/<i>/<normal\|disabled>` | 卷轴 + (74, 211)，4 列×5 行，固定 20 个 |
-| 频道负载条 | 客户端绘制 | 单元格 +(6,14)，8×9 蓝条（仅可用频道） |
+| 频道负载条 | `UI/Login.img/WorldSelect/channel/chgauge`（73×9） | 格内 +(7, 17)，按 level 从左裁 7..73 宽、8 高（见 4.2.1） |
+| 频道选中标记 | `UI/Login.img/WorldSelect/channel/chSelect`（4 帧动画） | 格内锚点 +(20, 7)，每帧用自己的 origin |
 | 进入频道 | `UI/Login.img/WorldSelect/BtGoworld` | (756, 497) |
 | 公告面板 | `UI/Login.img/WorldNotice/BalloonForLoginProcess/*` + `Title` | (288, 302)，186×76 |
 | 查看世界地图 | `UI/Login.img/WorldSelect/BtViewAll` | (0, 125) |
@@ -201,6 +202,19 @@ screen = 1.2 × src + (186, -29)
 | 回到首页 | `UI/Login.img/Common/BtStart` | (0, 425) |
 
 绘制顺序：卷轴 → `signboard` → 内容 → 世界木牌 → 公告。源端木牌压在卷轴滚筒上，招牌压住滚筒上半部。
+
+#### 4.2.1 频道格几何 / 选中标记 / 负载条（2026-10-30 按 exe 常量坐实）
+
+- 频道格：`0x6299e2 GetChannelRect(i)` —— `left = (i%4)*94 + 35`、`top = (i/4)*32 + 57`、92×30（相对内容区原点）。
+- 选中标记：`0x629a2e SelectChannel(idx)` 里 `0x558` = `channel/chSelect`，锚点 = 格内 `(left+20, top+7)`
+  （`0x629ab8/0x629abf` 分别给 `rect.top+7`、`rect.left+0x14`）。4 帧 23×11/38×21/42×33/59×33，
+  delay `100/50/50`（末帧无 delay ⇒ 停在完整红圈），每帧用自己的 origin，合成后正好圈住 `CH.n`。
+  `if (this+0xdc == idx) return` —— 同格重复点击不重播。
+- 负载条：`0x628c14` 里 `0x54f` = `channel/chgauge`，`level = clamp(load/60+1, 1, 14)`，
+  宽度 `= 5*level + (level==14 ? 1 : 0) + 2`（7..73，最大正好等于素材宽），位置格内 `(left+7, top+17)`、高 8，
+  从素材左边裁一段 —— 不是固定小方块。`load` 由服务端 `Channel.getChannelCapacity()` 下发
+  （`ceil(在线人数 / channel_capacity * 800)`）。
+- **不再自绘橙框/蓝块**：选中与负载两者都是 IMG 素材，自绘版本已删除。
 
 ### 4.3 选角
 
@@ -368,7 +382,8 @@ screen = 1.2 × src + (186, -29)
 - `LoginFlow.Tex` → `Art.Tex("wz://…")`，职业卡、说明板、选择按钮、角色名木板、外观木板、左右箭头均读取客户端原始 `UI/Login.img`。
 - `DrawAt` 以原图宽高绘制，`Button/DrawState` 则使用代码指定矩形；因此用了 IMG 仍可能因矩形坐标、大小、origin 使用错误而错位。
 - `DrawCharacter` → `WzCharacter.Appearance` → `Compose`：读取身体、头、脸、头发及装备 IMG，按部件锚点和层次合成纹理。不是手画人物，也不是单张完整人物 IMG。
-- 外观名称、输入文字、状态提示由 GUI 文本绘制；天空清屏、频道负载条、频道选中框由代码绘制。并非所有屏幕像素都来自 IMG。
+- 外观名称、输入文字、状态提示由 GUI 文本绘制；天空清屏由代码绘制。频道负载条、频道选中标记、选角选中特效
+  都已改成读 IMG（`channel/chgauge`、`channel/chSelect`、`CharSelect/effect/0|1`），不再自绘。
 
 ### 本轮直接读取原始 IMG 的结果
 

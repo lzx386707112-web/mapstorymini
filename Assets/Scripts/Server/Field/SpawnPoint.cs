@@ -112,14 +112,13 @@ namespace Server.Field
             if (spawnedMonsters > 0) spawnedMonsters--;
         }
 
-        // 源端 SpawnPoint.duplicate（frenzy 用）；复制当前所有可变状态。
-        public SpawnPoint Duplicate()
+        // Source duplicate constructs a fresh unoccupied point at current server time.
+        public SpawnPoint Duplicate(long nowMs)
         {
-            var copy = new SpawnPoint(Def, mobInterval, nextPossibleSpawn)
+            var copy = new SpawnPoint(Def, mobInterval, nowMs)
             {
                 denySpawn = denySpawn,
                 respawnTimeMultiplier = respawnTimeMultiplier,
-                spawnedMonsters = spawnedMonsters,
             };
             return copy;
         }

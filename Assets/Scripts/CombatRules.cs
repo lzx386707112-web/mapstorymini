@@ -34,7 +34,7 @@ public static class CombatRules
     // 原服务端只收客户端结果；下列随机/防御系数尚不能据服务端证明为当前 EXE 常量。
     public static DamageResult Attack(CharacterAttributes a, WeaponDef w, int watk, int matk,
         System.Collections.Generic.Dictionary<string, object> target, NativeSkillDefinition skill,
-        double roll, double critRoll, double hitRoll)
+        double roll, double critRoll, double hitRoll,int damageCap=InitialDamageCap)
     {
         bool magic = skill != null && skill.Magic;
         int diff = Math.Max(0, NativeCombatData.Int(target,"level",1) - a.level);
@@ -44,7 +44,7 @@ public static class CombatRules
         if (hitRoll >= hitChance) return new DamageResult(0, false);
         // StatEffect.fixdamage / AbstractDealDamageHandler.getFixDamage:
         // these skills do not use the absent percentage-damage field.
-        if (skill != null && skill.FixedDamage >= 0) return Resolve(skill.FixedDamage);
+        if (skill != null && skill.FixedDamage >= 0) return Resolve(skill.FixedDamage,damageCap:damageCap);
         bool dexWeapon = w.kind == WeaponKind.bow || w.kind == WeaponKind.crossbow || w.kind == WeaponKind.gun;
         int main = w.kind == WeaponKind.claw ? a.luk : dexWeapon ? a.dex : a.str;
         int secondary = w.kind == WeaponKind.claw ? a.dex + a.str : dexWeapon ? a.str : a.dex;
@@ -62,7 +62,7 @@ public static class CombatRules
         if (damage > 0 && a.setItemBonus != null)
             damage = AdminSetItem.ApplyDamage(a.setItemBonus, NativeCombatData.Int(target,"boss",0) != 0,
                 (int)Math.Min(int.MaxValue, Math.Ceiling(damage)));
-        return Resolve(damage,critical);
+        return Resolve(damage,critical,damageCap);
     }
 
     public static double ElementModifier(System.Collections.Generic.Dictionary<string,object> target, string element)

@@ -30,6 +30,47 @@ public sealed class FieldDirector : MonoBehaviour
     readonly System.Random rng = new System.Random();
 
     float respawnTimer;
+    readonly List<Point> frenzyPoints=new List<Point>();
+    long frenzyExpires;
+    NativeImgAnimation frenzyImage;
+    Vector3 frenzyPosition;
+    int frenzyFacing;
+    public bool FrenzyActive => frenzyExpires>NowMs();
+
+    public string ActivateFrenzy(PlayerCtrl owner)
+    {
+        if(Map==null || spawner==null || owner==null) return "当前无法放置轮回碑石。";
+        if(frenzyExpires!=0) return "该地图已经存在轮回碑石。";
+        float x=owner.FeetPos.x*Art.PPU,y=-owner.FeetPos.y*Art.PPU-1;
+        bool floor=false;
+        foreach(var fh in Map.footholds)
+            if(fh.x1!=fh.x2 && x>=Mathf.Min(fh.x1,fh.x2) && x<=Mathf.Max(fh.x1,fh.x2) && fh.y1+(fh.y2-fh.y1)*(x-fh.x1)/(fh.x2-fh.x1)>=y) { floor=true; break; }
+        if(!floor) return "当前位置无法放置轮回碑石。";
+        frenzyPosition=new Vector3(x/Art.PPU,-(DropToFoothold(x,y)-1)/Art.PPU,0);
+        frenzyFacing=owner.facing;
+        foreach(var sp in spawner.StartFrenzy())
+        {
+            var point=new Point {sp=sp}; points.Add(point); bySpawn[sp]=point; frenzyPoints.Add(point);
+        }
+        frenzyExpires=NowMs()+600000;
+        frenzyImage=NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/summon/summoned",transform,frenzyPosition,owner.SortingOrder-1,flip:owner.facing>0);
+        NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/effect",owner.transform,owner.FeetPos,owner.SortingOrder+1,flip:owner.facing>0);
+        respawnTimer=0; TickRespawn(0);
+        return null;
+    }
+    public void StopFrenzy()
+    {
+        if(frenzyExpires==0) return;
+        frenzyExpires=0; spawner?.StopFrenzy();
+        foreach(var point in frenzyPoints)
+        {
+            if(point.mob!=null) point.mob.ExpireNative(1);
+            points.Remove(point); bySpawn.Remove(point.sp);
+        }
+        frenzyPoints.Clear();
+        frenzyImage?.Remove(); frenzyImage=null;
+        NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/summon/die",transform,frenzyPosition,GameLoop.I?.player?.SortingOrder ?? 100,flip:frenzyFacing>0);
+    }
     FieldPortal nearPortal;      // 当前脚下可用的传送门（HUD 用来提示「按 ↑ 进入」）
     float portalLock;
     bool portalArmed;            // Touch portals rearm on exit; manual portals also rearm on up release.
@@ -493,9 +534,14 @@ public sealed class FieldDirector : MonoBehaviour
 
     void TickRespawn(float dt)
     {
+        if(frenzyExpires!=0)
+        {
+            if(NowMs()>=frenzyExpires) StopFrenzy();
+            else if(frenzyImage==null) frenzyImage=NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/summon/stand",transform,frenzyPosition,GameLoop.I?.player?.SortingOrder ?? 100,flip:frenzyFacing>0,repeat:true);
+        }
         respawnTimer -= dt;
         if (respawnTimer > 0f) return;
-        respawnTimer = RespawnInterval;
+        respawnTimer = frenzyExpires!=0 ? Mathf.Max(.001f,RespawnInterval/2) : RespawnInterval;
 
         if (spawner == null) return;
         // 后端按源端 MapleMap.respawn：计算应补数量 + 遍历（可打乱）刷怪点 + ShouldSpawn 闸门。
@@ -806,6 +852,7 @@ public sealed class FieldDirector : MonoBehaviour
 
     public void ClearMobs()
     {
+        StopFrenzy();
         foreach (var mob in dynamicMobs)
             if (mob != null) { mob.gameObject.SetActive(false); Destroy(mob.gameObject); }
         dynamicMobs.Clear();

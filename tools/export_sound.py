@@ -229,10 +229,14 @@ def main():
         if e:
             index[f"Game/{g}"] = e
 
+    jukebox = export("Jukebox/Congratulation", "Jukebox/Congratulation", "Jukebox/Congratulation.mp3")
+    if jukebox:
+        index["Jukebox/Congratulation"] = jukebox
+
     # ---- UI 音效 ----
     print("== UI ==")
     for u in ["BtMouseClick", "MenuUp", "MenuDown", "BtMouseOver",
-              "DragStart", "DragEnd", "Tab"]:
+              "DragStart", "DragEnd", "Tab", "VegaSuccess", "VegaFail", "VegaTwinkling"]:
         e = export(f"UI/{u}", f"UI/{u}", f"UI/{u}.mp3")
         if e:
             index[f"UI/{u}"] = e

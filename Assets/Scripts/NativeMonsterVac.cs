@@ -37,7 +37,7 @@ public sealed class NativeMonsterVac : MonoBehaviour
             if (entry.Value != null) entry.Value.Remove();
         }
         locked.Clear();
-        GetComponent<NativeBuffs>()?.Cancel(2431158);
+        GetComponent<NativeBuffs>()?.Cancel(-2431158);
     }
     void OnDestroy() => StopVac();
     void Update()

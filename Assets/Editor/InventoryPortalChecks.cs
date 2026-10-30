@@ -21,6 +21,7 @@ public static class InventoryPortalChecks
         object previousSaving = saving.GetValue(null);
         var keys = KeyMap.ExportCharacter();
         var oldLoop = GameLoop.I;
+        int oldMap=Profile.LastMapId;
         GameObject go = null, mapGo = null;
         try
         {
@@ -100,6 +101,7 @@ public static class InventoryPortalChecks
             loop.field.GetType().GetField("<Map>k__BackingField",Flags).SetValue(loop.field,new FieldMap {id=100000000});
             typeof(NativeMonsterVac).GetMethod("Update",Flags).Invoke(player.GetComponent<NativeMonsterVac>(),null);
             Require(!player.GetComponent<NativeMonsterVac>().Active && !mob.VacuumLocked,"Map change retained vacuum/monster lock");
+            checks+=InventoryItemFunctionChecks.Check(db,(int)character.id,player,loop.field,server.Bots);
             Debug.Log("[InventoryPortalChecks] PASS "+checks);
         }
         catch(Exception e) { exit=1; Debug.LogException(e); }
@@ -112,6 +114,7 @@ public static class InventoryPortalChecks
             if(mapGo!=null) UnityEngine.Object.DestroyImmediate(mapGo);
             if(go!=null) UnityEngine.Object.DestroyImmediate(go);
             GameLoop.I=oldLoop; profileField.SetValue(null,oldData); saving.SetValue(null,previousSaving); KeyMap.LoadCharacter(keys);
+            Profile.LastMapId=oldMap;
             if(File.Exists(path)) File.Delete(path);
         }
         if(Application.isBatchMode) EditorApplication.Exit(exit);

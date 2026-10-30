@@ -124,7 +124,7 @@ public static class StatusBar
                 GUI.DrawTexture(At(x, barY, gw, BarH), frames[i], ScaleMode.StretchToFill);
 
             // 原版受击反馈：hpFlash / mpFlash 是 5 帧（0/1 交替，109×18），叠在槽体上
-            if (i < 2) DrawFlash(i, x, barY);
+            if (i < 2) DrawFlash(i, x, barY, ratio[i]);
             // Native tempExp is banked Gacha EXP, not a timed recent-gain flash.
             if (i == 2) DrawTemporaryExp(x, barY);
 
@@ -172,10 +172,21 @@ public static class StatusBar
         lastHp = ratio[0]; lastMp = ratio[1];
     }
 
-    static void DrawFlash(int index, float x, float barY)
+    static void DrawFlash(int index, float x, float barY, float ratio)
     {
-        float since = Time.unscaledTime - (index == 0 ? hpFlashAt : mpFlashAt);
-        if (since < 0f || since >= FlashFrame * FlashFrames) return;
+        // 系统设置里的 HP/MP 警报：低于阈值就一直闪（每 1 秒闪 0.5 秒），
+        // 和受击闪烁共用同一组 flash 图，只是驱动方式不同。
+        int alarm = index == 0 ? ClientSettings.HpAlarm : ClientSettings.MpAlarm;
+        float since;
+        if (alarm > 0 && Mathf.RoundToInt(ratio * 100f) <= alarm)
+        {
+            since = Mathf.Repeat(Time.unscaledTime, 1f);
+        }
+        else
+        {
+            since = Time.unscaledTime - (index == 0 ? hpFlashAt : mpFlashAt);
+            if (since < 0f || since >= FlashFrame * FlashFrames) return;
+        }
         int frame = Mathf.Clamp(Mathf.FloorToInt(since / FlashFrame), 0, FlashFrames - 1) % 2;
         var tex = Art.Tex("ui/statusbar/" + (index == 0 ? "hp" : "mp") + "flash_" + frame + ".bytes");
         if (tex == null) return;

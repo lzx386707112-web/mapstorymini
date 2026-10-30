@@ -140,6 +140,9 @@ public sealed class NativeBuffs : MonoBehaviour
         var effect=new Effect { Id=-itemId,DurationMs=durationMs,Started=now,Until=now+durationMs/1000.0,
             NoShadow=NativeItemSource.Node(itemId)?.Int("info/noShadow") != 0 };
         foreach (var pair in stats) effect.Stats.Add(pair.Key,pair.Value);
+        var spec=NativeItemSource.Node(itemId)?.Get("spec");
+        int interval=spec?.Int("mmpRRate")>0 ? spec.Int("mmpRRate") : spec?.Int("mhpRRate") ?? 0;
+        effect.NextRecovery=now+(short)(interval*100)/1000.0;
         Register(effect);
     }
     public void Tick(double now)
@@ -281,6 +284,20 @@ public sealed class NativeBuffs : MonoBehaviour
         {
             effect.NextRecovery=now+(ConfigBool("use_ultra_recovery") ? 2 : 5);
             player.hp=Mathf.Min(player.hpMax,player.hp+(sbyte)effect.Stats["RECOVERY"]);
+        }
+        Effect extra=null;
+        if(winners.TryGetValue("HPREC",out var hpExtra)) extra=hpExtra;
+        if(winners.TryGetValue("MPREC",out var mpExtra) && (extra==null || mpExtra.Started>extra.Started)) extra=mpExtra;
+        if(extra!=null && now>=extra.NextRecovery)
+        {
+            var spec=NativeItemSource.Node(-extra.Id)?.Get("spec");
+            int interval=spec?.Int("mmpRRate")>0 ? spec.Int("mmpRRate") : spec?.Int("mhpRRate") ?? 0;
+            if(interval>0)
+            {
+                extra.NextRecovery=now+(short)(interval*100)/1000.0;
+                player.hp=Mathf.Clamp(player.hp+Value("HPREC"),0,player.hpMax);
+                player.mp=Mathf.Clamp(player.mp+Value("MPREC"),0,player.mpMax);
+            }
         }
         if (winners.TryGetValue("DRAGONBLOOD",out var blood) && now>=blood.NextDragonBlood)
         {

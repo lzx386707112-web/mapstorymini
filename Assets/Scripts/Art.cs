@@ -346,6 +346,7 @@ public static class Art
     {
         Ensure();
         if (kind == "chars") return WzCharacter.Clip(key, anim);
+        if (kind == "morph") return WzAssets.MorphClip(key,anim);
         if (kind == "mobs") return WzAssets.MobClip(key, anim);
         return null;
     }

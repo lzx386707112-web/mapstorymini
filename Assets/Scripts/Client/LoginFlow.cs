@@ -108,9 +108,9 @@ public class LoginFlow : MonoBehaviour
     }
     readonly Dictionary<string, UiAnimation> uiAnimations = new Dictionary<string, UiAnimation>();
     readonly Dictionary<string, float> animationStarts = new Dictionary<string, float>();
-    float pageStartedAt, worldScrollStartedAt, genderStartedAt, selectionStartedAt;
+    float pageStartedAt, worldScrollStartedAt, genderStartedAt, selectionStartedAt, channelSelectedAt;
     bool genderWasOpen;
-    int animatedSlot = -1;
+    int animatedSlot = -1, animatedChannel = -1;
     LoginStage animationStage = LoginStage.Login;
     readonly Dictionary<string, Sprite> previewSprites = new Dictionary<string, Sprite>();
     readonly Dictionary<int, string> equipNames = new Dictionary<int, string>();
@@ -271,6 +271,10 @@ public class LoginFlow : MonoBehaviour
             animationStage = stage;
             pageStartedAt = Time.unscaledTime;
             animationStarts.Clear();
+            // 换屏等于源端重建窗口：选中特效/选中标记都从第 0 帧重播。
+            // 不重置的话相位会接着上一屏算，光柱可能正好卡在 1px 宽的首帧上，看着像「没有特效」。
+            animatedSlot = -1;
+            animatedChannel = -1;
         }
 
         if (genderOpen && !genderWasOpen) genderStartedAt = Time.unscaledTime;
@@ -279,6 +283,12 @@ public class LoginFlow : MonoBehaviour
         {
             animatedSlot = selectedSlot;
             selectionStartedAt = Time.unscaledTime;
+        }
+        // 源端 SelectChannel（0x629a2e）在索引变化时才重建 chSelect 动画；同格再点不重播。
+        if (animatedChannel != channelIndex)
+        {
+            animatedChannel = channelIndex;
+            channelSelectedAt = Time.unscaledTime;
         }
 
         switch (stage)
@@ -687,12 +697,19 @@ public class LoginFlow : MonoBehaviour
         if (!string.IsNullOrEmpty(text)) GUI.Label(rect, text, style);
     }
 
-    void DrawNameTag(float centerX, float topY, string name)
+    // 选中槽位的特效锚点高度：= effect/1 最大帧高 = effect/0 帧 0 的 origin.y + 帧高，
+    // 两条序列底边重合在脚点上（见 DrawCharSlots 注释）。
+    const float CharEffectAnchorY = 337f;
+
+    void DrawNameTag(float centerX, float topY, string name, bool selected = true)
     {
         if (string.IsNullOrEmpty(name)) return;
-        var left = Tex(UI + "CharSelect/nameTag/1/0");
-        var mid = Tex(UI + "CharSelect/nameTag/1/1");
-        var right = Tex(UI + "CharSelect/nameTag/1/2");
+        // 源端 nameTag 两套：/0 高 20（半透明灰底）、/1 高 22（实心黑底）。选中的槽位用 /1，
+        // 未选中用 /0 —— 原实现三个槽位全用 /1，未选中的名牌也跟选中一样黑。
+        string tag = UI + "CharSelect/nameTag/" + (selected ? "1" : "0") + "/";
+        var left = Tex(tag + "0");
+        var mid = Tex(tag + "1");
+        var right = Tex(tag + "2");
         if (left == null || mid == null || right == null) return;
 
         float textW = _tiny.CalcSize(new GUIContent(name)).x / s + 8;
@@ -956,6 +973,7 @@ public class LoginFlow : MonoBehaviour
 
         scrollOpen = false;
         worldIndex = -1;
+        animatedChannel = -1;
         stage = LoginStage.WorldSelect;
     }
 
@@ -1031,6 +1049,7 @@ public class LoginFlow : MonoBehaviour
         if (i < 0 || i >= worlds.Count) return;
         worldIndex = i;
         channelIndex = 0;
+        animatedChannel = -1;   // 换大区后频道列表重建，chSelect 选中标记重播一次
         var w = worlds[i];
         GameSession.BeginSession(GameSession.AccountId, GameSession.AccountName, w.id, 1);
         channels = WorldService.Channels(GameSession.Server.Db, w.id);
@@ -1106,17 +1125,13 @@ public class LoginFlow : MonoBehaviour
             var tex = Tex(UI + "WorldSelect/channel/" + i + "/" + (usable ? "normal" : "disabled"));
             if (tex != null) DrawTex(tex, cr);
             else GUI.Label(cr, "CH." + (i + 1), _brown);
-            // 频道负载条：源端是客户端直接绘制的蓝色小进度条，非 IMG 素材。
-            if (usable)
-                UiKit.Fill(R(cx + 6, cy + 14, 8, 9), new Color(0.24f, 0.44f, 0.78f, 0.95f));
+            // 负载条是 IMG 素材（channel/chgauge），不是自绘蓝块，见 DrawChannelGauge。
+            if (usable) DrawChannelGauge(cx, cy, i);
+            // 选中标记是 IMG 动画（channel/chSelect）叠在选中格上，源端没有橙框之类的自绘描边。
             if (usable && i == channelIndex)
-            {
-                var color = new Color(1f, 0.66f, 0.12f, 1f);
-                UiKit.Fill(new Rect(cr.x, cr.y, cr.width, 2f * s), color);
-                UiKit.Fill(new Rect(cr.x, cr.yMax - 2f * s, cr.width, 2f * s), color);
-                UiKit.Fill(new Rect(cr.x, cr.y, 2f * s, cr.height), color);
-                UiKit.Fill(new Rect(cr.xMax - 2f * s, cr.y, 2f * s, cr.height), color);
-            }
+                DrawAnimationAt(UI + "WorldSelect/channel/chSelect",
+                    cx + ChannelSelectDx, cy + ChannelSelectDy, true,
+                    loop: false, startedAt: channelSelectedAt);
             if (enter) { EnterCharSelect(); return; }
         }
 
@@ -1130,6 +1145,38 @@ public class LoginFlow : MonoBehaviour
             if (title != null) DrawTex(title, R(bx + 8, by + 9, title.width, title.height));
             Label(R(bx, by + 40, 186, 24), world.recommendMessage, _row);
         }
+    }
+
+    // 源端 SelectChannel（0x629a2e）给 chSelect 动画设的锚点：格内 (left + 20, top + 7)
+    //   —— 0x629ab8 mov eax,[ebp-0x34](rect.top) / add eax,7，0x629abf mov eax,[ebp-0x38](rect.left) / add eax,0x14
+    // chgauge 的贴图位置：格内 (left + 7, top + 17)，高 8
+    //   —— 0x6290fd add edx,7 / 0x629100 add ecx,0x11 / 0x6290df push 8
+    const float ChannelSelectDx = 20f, ChannelSelectDy = 7f;
+    const float ChannelGaugeDx = 7f, ChannelGaugeDy = 17f;
+
+    // 源端 0x628c14 对每个可用频道画负载条（逐条对应下面几处常量）：
+    //   level = clamp(load / 60 + 1, 1, 14)   —— 0x62907e push 0x3c、0x629083 inc、0x62908d..0x629092 夹取
+    //   宽度  = 5 * level + (level == 14 ? 1 : 0) + 2   —— 0x62909d lea eax,[eax+eax*4]、0x6290a1 lea eax,[ecx+eax+2]
+    //   位置  = 格内 (7, 17)、高 8           —— 0x6290fd add edx,7 / 0x629100 add ecx,0x11 / 0x6290df push 8
+    // chgauge 是 73×9 的整条渐变（蓝→绿→橙）+ 刻度，按宽度从左裁：空频道只露蓝色短段，
+    // 满负载（level 14）宽度正好 73 = 整条。原实现自绘 8×9 蓝块，已按源端换成 IMG。
+    void DrawChannelGauge(float cellX, float cellY, int index)
+    {
+        var gauge = Tex(UI + "WorldSelect/channel/chgauge");
+        if (gauge == null) return;
+        int load = index < channels.Count ? channels[index].load : 0;
+        float width = ChannelGaugeWidth(load, gauge.width);
+        float height = Mathf.Min(gauge.height, 8);
+        if (width <= 0) return;
+        DrawTexUv(gauge, R(cellX + ChannelGaugeDx, cellY + ChannelGaugeDy, width, height),
+            UvRect(gauge, 0, 0, width, height));
+    }
+
+    // 负载条宽度公式独立出来，回归脚本（LoginFlowChecks）直接调这个，别在测试里另抄一份。
+    public static float ChannelGaugeWidth(int load, float maxWidth)
+    {
+        int level = Mathf.Clamp(load / 60 + 1, 1, 14);
+        return Mathf.Min(maxWidth, level * 5 + (level == 14 ? 1 : 0) + 2);
     }
 
     void EnterCharSelect()
@@ -1214,10 +1261,19 @@ public class LoginFlow : MonoBehaviour
             {
                 var rec = chars[idx];
                 bool selected = idx == selectedSlot;
-                if (selected) DrawAnimationAt(UI + "CharSelect/effect/0", x, y - 330, true, startedAt: selectionStartedAt);
+                // 源端 SetSelectedSlot（0x5f6482）给选中槽位建两套 effect：+0x1cc = effect/1（光柱）、
+                // +0x1d0 = effect/0（星点）。两套共用同一锚点，锚点 = 脚点 − 337 由素材自证：
+                // 两者底边都等于「绘制偏移 + 帧高」= (-origin.y) + height，
+                // effect/1 末帧是 0+337，effect/0 首帧是 205+132 = 337，正好同时落在脚点上。
+                // 原实现只画 effect/0 且锚点写成 −330（缺光柱、偏高 7px）。
+                float fx = x, fy = y - CharEffectAnchorY;
+                // 光柱在角色身后循环播放（末帧 delay 3000 → 亮 3 秒再重升）。
+                if (selected) DrawAnimationAt(UI + "CharSelect/effect/1", fx, fy, true, startedAt: selectionStartedAt);
                 DrawAnimationAt(UI + "CharSelect/character/0", x, y, true);
                 DrawCharacter(CharPreview(rec), x, y, 1f);
-                DrawNameTag(x, y + 2, rec.name);
+                DrawNameTag(x, y + 2, rec.name, selected);
+                // 星点在角色前面，一次性爆开：末帧 a1 = 0 且 delay 0，播完停在不可见帧。
+                if (selected) DrawAnimationAt(UI + "CharSelect/effect/0", fx, fy, true, loop: false, startedAt: selectionStartedAt);
                 if (selected) DrawCharInfo(rec, x);
             }
             else if (idx < Slots)
@@ -1831,7 +1887,9 @@ public class LoginFlow : MonoBehaviour
     Sprite AnimatedPreview(string[] ids)
     {
         string appearance = string.Join("_", ids);
-        int frame = WzCharacter.AppearanceFrame(ids, Time.unscaledTime - pageStartedAt);
+        // 选角/建号预览的 stand 动画走客户端统一时钟（源端所有槽位读同一个时间基），
+        // 不能拿 pageStartedAt 当起点：翻页、切子页会把角色打回第 0 帧，看上去像卡一下。
+        int frame = WzCharacter.AppearanceFrame(ids, Time.unscaledTime);
         string key = appearance + "/" + frame;
         if (!previewSprites.ContainsKey(key)) AddPreview(key, ids, frame);
         return previewSprites.TryGetValue(key, out var sprite) ? sprite : null;

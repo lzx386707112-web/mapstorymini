@@ -1,0 +1,2064 @@
+{
+  "sha256": "1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2",
+  "base": 4194304,
+  "classifier": 4744283,
+  "cashDispatcherClassifier": 4744149,
+  "items": {
+    "5010000": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010001": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010002": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010003": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010004": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010005": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010006": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010007": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010008": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010009": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010010": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010011": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010012": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010013": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010014": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010015": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010016": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010017": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010018": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010019": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010020": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010021": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010022": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010023": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010024": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010025": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010026": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010027": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010028": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010029": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010030": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010031": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010032": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010033": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010034": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010035": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010038": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010039": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010041": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010042": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010043": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010044": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010045": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010046": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010048": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010049": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010051": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010052": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010053": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010054": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010055": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010056": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010999": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010057": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010059": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010060": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010061": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010064": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010065": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010066": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010068": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010069": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010070": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010074": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5010073": {
+      "type": 9,
+      "cashType": 0
+    },
+    "5021000": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021001": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021002": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021003": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021004": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021005": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021006": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021007": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021008": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021009": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021010": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021011": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021012": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021013": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021014": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021015": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021016": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021017": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021019": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021020": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021021": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021023": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021024": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021022": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021025": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5021026": {
+      "type": 10,
+      "cashType": 0
+    },
+    "5030000": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030001": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030002": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030003": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030004": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030005": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030006": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030008": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030009": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030010": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030011": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5030012": {
+      "type": 11,
+      "cashType": 0
+    },
+    "5040000": {
+      "type": 22,
+      "cashType": 22
+    },
+    "5040001": {
+      "type": 22,
+      "cashType": 22
+    },
+    "5041000": {
+      "type": 22,
+      "cashType": 22
+    },
+    "5050000": {
+      "type": 23,
+      "cashType": 23
+    },
+    "5050001": {
+      "type": 24,
+      "cashType": 24
+    },
+    "5050002": {
+      "type": 24,
+      "cashType": 24
+    },
+    "5050003": {
+      "type": 24,
+      "cashType": 24
+    },
+    "5050004": {
+      "type": 24,
+      "cashType": 24
+    },
+    "5060000": {
+      "type": 25,
+      "cashType": 25
+    },
+    "5060001": {
+      "type": 26,
+      "cashType": 26
+    },
+    "5060002": {
+      "type": 27,
+      "cashType": 27
+    },
+    "5061000": {
+      "type": 64,
+      "cashType": 64
+    },
+    "5061001": {
+      "type": 64,
+      "cashType": 64
+    },
+    "5061002": {
+      "type": 64,
+      "cashType": 64
+    },
+    "5061003": {
+      "type": 64,
+      "cashType": 64
+    },
+    "5070000": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5071000": {
+      "type": 12,
+      "cashType": 12
+    },
+    "5072000": {
+      "type": 13,
+      "cashType": 13
+    },
+    "5073000": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5074000": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5075000": {
+      "type": 46,
+      "cashType": 46
+    },
+    "5075001": {
+      "type": 47,
+      "cashType": 47
+    },
+    "5075002": {
+      "type": 48,
+      "cashType": 48
+    },
+    "5075003": {
+      "type": 49,
+      "cashType": 49
+    },
+    "5075004": {
+      "type": 50,
+      "cashType": 50
+    },
+    "5075005": {
+      "type": 51,
+      "cashType": 51
+    },
+    "5076000": {
+      "type": 14,
+      "cashType": 14
+    },
+    "5077000": {
+      "type": 60,
+      "cashType": 60
+    },
+    "5080000": {
+      "type": 18,
+      "cashType": 18
+    },
+    "5080001": {
+      "type": 18,
+      "cashType": 18
+    },
+    "5080002": {
+      "type": 18,
+      "cashType": 18
+    },
+    "5080003": {
+      "type": 18,
+      "cashType": 18
+    },
+    "5090000": {
+      "type": 21,
+      "cashType": 21
+    },
+    "5100000": {
+      "type": 20,
+      "cashType": 20
+    },
+    "5110000": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5120000": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120001": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120002": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120003": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120004": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120005": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120006": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120007": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120008": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120009": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120010": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120011": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120012": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120014": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120015": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120016": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120017": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120018": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120019": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120020": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120021": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120022": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120023": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120024": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120025": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120026": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120027": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120028": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120030": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121000": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121001": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121002": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121003": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121004": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121005": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121006": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121007": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121008": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121009": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121010": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121011": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121012": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121013": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121014": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121015": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121016": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121017": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121019": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121020": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5121022": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5122000": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120033": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120034": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120995": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120996": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120997": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120998": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5120999": {
+      "type": 16,
+      "cashType": 16
+    },
+    "5130000": {
+      "type": 7,
+      "cashType": 0
+    },
+    "5140000": {
+      "type": 4,
+      "cashType": 0
+    },
+    "5140001": {
+      "type": 4,
+      "cashType": 0
+    },
+    "5140002": {
+      "type": 4,
+      "cashType": 0
+    },
+    "5140003": {
+      "type": 4,
+      "cashType": 0
+    },
+    "5140004": {
+      "type": 4,
+      "cashType": 0
+    },
+    "5140006": {
+      "type": 4,
+      "cashType": 0
+    },
+    "5150000": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150001": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150002": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150003": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150004": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150005": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150006": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150007": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150008": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150009": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150010": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150011": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150012": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150013": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150014": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150015": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150016": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150017": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150019": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150020": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150021": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150022": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150024": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150025": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150026": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150027": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150030": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150031": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150032": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150033": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150034": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150035": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150038": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150040": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5150044": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151000": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151001": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151002": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151003": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151004": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151005": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151006": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151007": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151008": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151009": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151010": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151011": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151012": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151013": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151014": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151015": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151016": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151017": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151019": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151020": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151021": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151022": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151025": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151026": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151027": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151028": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151029": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5151030": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5152000": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152001": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152002": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152003": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152004": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152005": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152006": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152007": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152008": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152009": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152010": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152011": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152012": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152013": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152014": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152015": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152016": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152017": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152018": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152019": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152021": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152022": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152023": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152024": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152025": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152026": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152027": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152028": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152029": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152030": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152033": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152034": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152035": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152036": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152037": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152038": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152039": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152040": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152041": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152042": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152043": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152044": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152045": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152046": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152047": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152048": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152049": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152050": {
+      "type": 2,
+      "cashType": 0
+    },
+    "5152100": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5152101": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5152102": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5152103": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5152104": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5152105": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5152106": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5152107": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5153000": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5153001": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5153002": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5153003": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5153004": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5153005": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5153006": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5153007": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5153009": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5153010": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5153011": {
+      "type": 3,
+      "cashType": 0
+    },
+    "5154000": {
+      "type": 1,
+      "cashType": 0
+    },
+    "5160000": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160001": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160002": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160003": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160004": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160005": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160006": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160007": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160008": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160009": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160010": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160014": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160011": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160012": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5160013": {
+      "type": 6,
+      "cashType": 0
+    },
+    "5170000": {
+      "type": 17,
+      "cashType": 17
+    },
+    "5180000": {
+      "type": 5,
+      "cashType": 0
+    },
+    "5190000": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5190001": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5190002": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5190003": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5190004": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5190005": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5190006": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5190007": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5190008": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5191000": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5191001": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5191002": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5191003": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5191004": {
+      "type": 28,
+      "cashType": 28
+    },
+    "5200000": {
+      "type": 19,
+      "cashType": 19
+    },
+    "5200001": {
+      "type": 19,
+      "cashType": 19
+    },
+    "5200002": {
+      "type": 19,
+      "cashType": 19
+    },
+    "5211000": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211004": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211005": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211006": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211007": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211008": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211009": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211010": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211011": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211012": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211013": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211014": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211015": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211016": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211017": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211018": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211037": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211038": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211039": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211040": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211041": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211042": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211043": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211044": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211045": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211046": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211048": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211049": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211052": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211060": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211901": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5211902": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5220000": {
+      "type": 39,
+      "cashType": 0
+    },
+    "5220001": {
+      "type": 39,
+      "cashType": 0
+    },
+    "5220010": {
+      "type": 39,
+      "cashType": 0
+    },
+    "5220020": {
+      "type": 39,
+      "cashType": 0
+    },
+    "5221000": {
+      "type": 39,
+      "cashType": 0
+    },
+    "5221001": {
+      "type": 39,
+      "cashType": 0
+    },
+    "5222000": {
+      "type": 39,
+      "cashType": 0
+    },
+    "5230000": {
+      "type": 29,
+      "cashType": 29
+    },
+    "5240000": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240001": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240002": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240003": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240004": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240005": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240006": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240007": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240008": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240009": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240010": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240011": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240012": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240013": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240015": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240017": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240018": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240020": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240021": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240023": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240024": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5240027": {
+      "type": 30,
+      "cashType": 30
+    },
+    "5251000": {
+      "type": 35,
+      "cashType": 0
+    },
+    "5251003": {
+      "type": 35,
+      "cashType": 0
+    },
+    "5251001": {
+      "type": 35,
+      "cashType": 0
+    },
+    "5251002": {
+      "type": 35,
+      "cashType": 0
+    },
+    "5251100": {
+      "type": 36,
+      "cashType": 0
+    },
+    "5252000": {
+      "type": 35,
+      "cashType": 0
+    },
+    "5252001": {
+      "type": 35,
+      "cashType": 0
+    },
+    "5280000": {
+      "type": 33,
+      "cashType": 0
+    },
+    "5281000": {
+      "type": 34,
+      "cashType": 34
+    },
+    "5281001": {
+      "type": 34,
+      "cashType": 34
+    },
+    "5290000": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5290001": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5290002": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5290003": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5290004": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5290005": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5290006": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5290007": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5300000": {
+      "type": 40,
+      "cashType": 40
+    },
+    "5300001": {
+      "type": 40,
+      "cashType": 40
+    },
+    "5300002": {
+      "type": 40,
+      "cashType": 40
+    },
+    "5330000": {
+      "type": 31,
+      "cashType": 31
+    },
+    "5360000": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360001": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360002": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360003": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360004": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360005": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360006": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360007": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360008": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360042": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360901": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5360902": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5370000": {
+      "type": 32,
+      "cashType": 32
+    },
+    "5370001": {
+      "type": 32,
+      "cashType": 32
+    },
+    "5380000": {
+      "type": 41,
+      "cashType": 0
+    },
+    "5390000": {
+      "type": 42,
+      "cashType": 42
+    },
+    "5390001": {
+      "type": 42,
+      "cashType": 42
+    },
+    "5390002": {
+      "type": 42,
+      "cashType": 42
+    },
+    "5390006": {
+      "type": 42,
+      "cashType": 42
+    },
+    "5390005": {
+      "type": 42,
+      "cashType": 42
+    },
+    "5400000": {
+      "type": 52,
+      "cashType": 52
+    },
+    "5401000": {
+      "type": 53,
+      "cashType": 53
+    },
+    "5420000": {
+      "type": 54,
+      "cashType": 0
+    },
+    "5420001": {
+      "type": 54,
+      "cashType": 0
+    },
+    "5420002": {
+      "type": 54,
+      "cashType": 0
+    },
+    "5420003": {
+      "type": 54,
+      "cashType": 0
+    },
+    "5420004": {
+      "type": 54,
+      "cashType": 0
+    },
+    "5420005": {
+      "type": 54,
+      "cashType": 0
+    },
+    "5420006": {
+      "type": 54,
+      "cashType": 0
+    },
+    "5430000": {
+      "type": 57,
+      "cashType": 0
+    },
+    "5431000": {
+      "type": 65,
+      "cashType": 65
+    },
+    "5432000": {
+      "type": 65,
+      "cashType": 65
+    },
+    "5450000": {
+      "type": 37,
+      "cashType": 37
+    },
+    "5451000": {
+      "type": 59,
+      "cashType": 0
+    },
+    "5460000": {
+      "type": 57,
+      "cashType": 0
+    },
+    "5470000": {
+      "type": 38,
+      "cashType": 0
+    },
+    "5490000": {
+      "type": 58,
+      "cashType": 0
+    },
+    "5490001": {
+      "type": 58,
+      "cashType": 0
+    },
+    "5490002": {
+      "type": 58,
+      "cashType": 0
+    },
+    "5490003": {
+      "type": 58,
+      "cashType": 0
+    },
+    "5500000": {
+      "type": 61,
+      "cashType": 61
+    },
+    "5500001": {
+      "type": 61,
+      "cashType": 61
+    },
+    "5500002": {
+      "type": 61,
+      "cashType": 61
+    },
+    "5500005": {
+      "type": 61,
+      "cashType": 61
+    },
+    "5500006": {
+      "type": 61,
+      "cashType": 61
+    },
+    "5510000": {
+      "type": 62,
+      "cashType": 0
+    },
+    "5520000": {
+      "type": 63,
+      "cashType": 63
+    },
+    "5530000": {
+      "type": 69,
+      "cashType": 69
+    },
+    "5530001": {
+      "type": 69,
+      "cashType": 69
+    },
+    "5530002": {
+      "type": 69,
+      "cashType": 69
+    },
+    "5530003": {
+      "type": 69,
+      "cashType": 69
+    },
+    "5530004": {
+      "type": 69,
+      "cashType": 69
+    },
+    "5530005": {
+      "type": 69,
+      "cashType": 69
+    },
+    "5530006": {
+      "type": 69,
+      "cashType": 69
+    },
+    "5530007": {
+      "type": 69,
+      "cashType": 69
+    },
+    "5530008": {
+      "type": 69,
+      "cashType": 69
+    },
+    "5550000": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5570000": {
+      "type": 66,
+      "cashType": 66
+    },
+    "5590000": {
+      "type": 0,
+      "cashType": 0
+    },
+    "5610000": {
+      "type": 68,
+      "cashType": 68
+    },
+    "5610001": {
+      "type": 68,
+      "cashType": 68
+    },
+    "5990000": {
+      "type": 0,
+      "cashType": 0
+    }
+  }
+}

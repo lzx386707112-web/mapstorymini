@@ -91,3 +91,13 @@ ImageBase `0x400000`（地址均为 VA）。复现入口 `tools/inspect_beidou_c
 - 「放下」的接收端（快捷栏 `CUIStatusBar` / 键位窗对应的 OnMouseButton）尚未定位，
   因此不能证明源端"落到快捷格"落在哪个函数；当前迁移是按"下一次按下"实现的。
 - 源端光标状态编号（是否就是 11/12）未定位。
+
+## 背包物品携带与type2键位（2026-10-30）
+
+用户本轮明确要求背包物品同样点击拿起、下一次点击放下；沿用本页已核实的点击交互模型。
+NativeInventoryActions.Pick/CarryPointerStep由背包原格命中接入，消耗品、椅子、现金物品可携带；装备/材料未改为直接使用快捷物品。
+KeyConfigWindow沿用现有原键帽命中与草稿提交，底栏沿用SlotRect；不新增或重画控件。图标只取NativeItemSource原IMG。
+协议依据源KeymapChangeHandler及原keymap type：物品type2/action为正物品ID，技能type1/action为技能ID；
+内部QuickSlots以负物品ID区分，但进出数据库边界还原type2/正ID，不用ID数值范围猜技能或物品。
+放下动作消费当次按下和随后的释放，避免绑定药水时顺带喝掉；右键/Esc取消，不扣物品。
+光标11/12仍继承本页的项目映射待核实边界，没有新增它们是原端确定编号的结论。

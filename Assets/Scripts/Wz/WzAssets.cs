@@ -76,7 +76,18 @@ public static class WzAssets
     {
         if (source.StartsWith("wz://", StringComparison.Ordinal)) source = source.Substring(5);
         int split = source.IndexOf(".img/", StringComparison.Ordinal);
-        if (split < 0) return FileRoot(source);
+        if (split < 0)
+        {
+            // Original resource-manager paths can omit the IMG suffix (showInfo,
+            // e.g. Effect/OnUserEff/normalEffect/mushroomcastle/chatBalloon2).
+            // Resolve only an existing IMG boundary; never synthesize a resource.
+            for (int boundary = source.IndexOf('/'); boundary >= 0; boundary = source.IndexOf('/', boundary + 1))
+            {
+                string file = source.Substring(0, boundary) + ".img";
+                if (HasFile(file)) return FileRoot(file).Get(source.Substring(boundary + 1))?.Resolve();
+            }
+            return FileRoot(source);
+        }
         return FileRoot(source.Substring(0, split + 4)).Get(source.Substring(split + 5))?.Resolve();
     }
     public static ImgNode Canvas(ImgNode frame)
@@ -216,6 +227,32 @@ public static class WzAssets
             root = FileRoot(file);
         }
         return root;
+    }
+    public static Art.Clip MorphClip(string key,string action)
+    {
+        string clipKey="morph/"+key+"/"+action;
+        if(mobClips.TryGetValue(clipKey,out var cached)) return cached;
+        if(!int.TryParse(key,out int id)) return null;
+        var seen=new HashSet<int>();
+        while(seen.Add(id))
+        {
+            string file="Morph/"+id.ToString("D4")+".img";
+            if(!HasFile(file)) return null;
+            var root=FileRoot(file); var frames=Frames(root.Get(action));
+            if(frames.Count>0)
+            {
+                var clip=new Art.Clip {frames=new string[frames.Count],delays=new float[frames.Count]};
+                for(int i=0;i<frames.Count;i++)
+                {
+                    clip.frames[i]="wz://"+file+"/"+action+"/"+frames[i].Name;
+                    clip.delays[i]=Math.Max(1,Math.Abs(frames[i].Resolve().Int("delay",100)))/1000f;
+                }
+                mobClips[clipKey]=clip; return clip;
+            }
+            var link=root.Get("info/link"); if(link==null) return null;
+            id=Convert.ToInt32(link.Value);
+        }
+        return null;
     }
     public static Art.Clip MobClip(string key, string action)
     {

@@ -32,9 +32,10 @@ public static class HitFeel
 
     // 只震屏、不带顿帧。怪物 attack<N>/info/tremble 走这里
     // （BeiDou.exe 0x6671D3：非 0 时用常量 30.0 调一次震屏）。
+    // 系统设置里的「画面效果」就是这道总开关：关掉后只剩顿帧和闪白，不再抖屏。
     public static void Shake(float worldAmplitude, float seconds)
     {
-        if (worldAmplitude <= 0f) return;
+        if (worldAmplitude <= 0f || !ClientSettings.ScreenEffects) return;
         _shakeNow = worldAmplitude;
         _shakeDur = Mathf.Max(0.05f, seconds);
         _shakeUntil = Time.unscaledTime + _shakeDur;

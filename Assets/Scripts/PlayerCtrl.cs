@@ -392,6 +392,7 @@ public class PlayerCtrl : MonoBehaviour
     void Awake()
     {
         Profile.Load();
+        if(GetComponent<NativeEquipmentEffects>()==null) gameObject.AddComponent<NativeEquipmentEffects>();
         Profile.LeveledUp += OnLevelUp;
         movementPhysics = NativeMovementPhysics.Load();
         var physics = WzAssets.FileRoot("Map/Physics.img");
@@ -547,7 +548,10 @@ public class PlayerCtrl : MonoBehaviour
     public void RefreshFieldAppearance()
     {
         if (vis == null) return; // 首次生成由 Start 按已绑定地图构建。
-        vis.gameObject.SetActive(false); Destroy(vis.gameObject); vis = null;
+        vis.gameObject.SetActive(false);
+        if (Application.isPlaying) Destroy(vis.gameObject); else DestroyImmediate(vis.gameObject);
+        vis = null;
+        visibleMorph=0; beforeMorphKey=null;
         BuildArt();
     }
 
@@ -650,7 +654,7 @@ public class PlayerCtrl : MonoBehaviour
         // —— 自动普攻 ——
         // Boss 优先：Boss 体积大、通常只有一只，误判成本比杂兵高得多
         atkTimer -= dt;
-        if ((diseases == null || !diseases.BlocksAttack) && (Terrain == null || attackRequested) && !IsClimbing && atkTimer <= 0f && (vis == null || !vis.IsOneShot))
+        if (!(GetComponent<NativeBuffs>()?.Value("MORPH")>0 && GetComponent<NativeBuffs>().Value("MORPH")<100) && (diseases == null || !diseases.BlocksAttack) && (Terrain == null || attackRequested) && !IsClimbing && atkTimer <= 0f && (vis == null || !vis.IsOneShot))
         {
             var b = FindBossTarget();
             if (attackRequested && StrikeReactor())
@@ -1475,7 +1479,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         RefreshAttributes();
         return CombatRules.Attack(Attributes, weapon, weaponAttack, magicAttack, target, skill,
-            Random.value, Random.value, Random.value);
+            Random.value, Random.value, Random.value,GameSession.Character?.record.damageCap ?? CombatRules.InitialDamageCap);
     }
     // Original handlers only synthesize a template when the initial attack captured
     // no damage (ranged also falls back for all-zero captures). No target defense roll.
@@ -1567,10 +1571,27 @@ public class PlayerCtrl : MonoBehaviour
         GetComponent<SkillSystem>()?.CancelActions();
     }
 
+    string beforeMorphKey;
+    int visibleMorph;
+    void SyncMorph()
+    {
+        if(vis==null) return;
+        int morph=GetComponent<NativeBuffs>()?.Value("MORPH") ?? 0;
+        if(morph==visibleMorph) return;
+        if(morph>0)
+        {
+            if(WzAssets.MorphClip(morph.ToString(),"stand")==null) return;
+            if(visibleMorph==0) beforeMorphKey=vis.key;
+            vis.Init("morph",morph.ToString(),"stand",sr);
+        }
+        else if(beforeMorphKey!=null) vis.Init("chars",beforeMorphKey,"stand",sr);
+        visibleMorph=morph;
+    }
     void SyncTransform()
     {
         transform.position = new Vector3(worldX, terrainY + jumpY + DepthOffset, 0f);
         if (sr == null) return;
+        SyncMorph();
         TickContactTint();
         sr.sortingOrder = SortingOrder;
         if (vis != null)

@@ -102,8 +102,23 @@ public static class QuestLogic
             var book = GameSession.InGame ? GameSession.Net.Social(new SocialRequest { characterId = GameSession.CharacterId }) : null;
             if (book == null || book.cards.Count < r.monsterBookMin) { reason = "怪物手册卡片种类不足 " + r.monsterBookMin; return false; }
         }
-        // A pet in cash storage is not a summoned pet. Do not award pet medals for ownership alone.
-        if (r.pets.Count > 0 || r.petTameness > 0) { reason = "需要召唤符合条件及亲密度的宠物"; return false; }
+        if (r.pets.Count > 0 || r.petTameness > 0)
+        {
+            bool matching=r.pets.Count==0;
+            int tameness=0;
+            if(GameSession.InGame)
+                for(int slot=0;slot<3;slot++)
+                {
+                    var pet=GameSession.Net.ChangeInventory(new InventoryChangeRequest {characterId=GameSession.CharacterId,
+                        itemId=5000000,getPet=true,petSlot=slot}).pet;
+                    if(pet==null) continue;
+                    if(r.pets.Contains(pet.itemId)) matching=true;
+                    tameness=Math.Max(tameness,Convert.ToInt32(pet.petData["closeness"]));
+                }
+            // PetRequirement and MinTamenessRequirement are independent:
+            // the qualifying template and maximum intimacy may be different pets.
+            if(!matching || tameness<r.petTameness) { reason="需要召唤符合条件及亲密度的宠物";return false; }
+        }
         if (r.endDate.Length == 10) {
             if (int.TryParse(r.endDate.Substring(0, 4), out int year) && int.TryParse(r.endDate.Substring(4, 2), out int month) &&
                 int.TryParse(r.endDate.Substring(6, 2), out int day) && int.TryParse(r.endDate.Substring(8, 2), out int hour)) {
@@ -273,6 +288,12 @@ public static class QuestLogic
     public static void Apply(QuestActions a, int questId)
     {
         if (a == null) return;
+        if(a.petTameness!=0 && GameSession.InGame)
+        {
+            var response=GameSession.Net.ChangeInventory(new InventoryChangeRequest {characterId=GameSession.CharacterId,
+                itemId=5000000,petTameness=a.petTameness,petLeaderOnly=true});
+            if(response.inventory!=null) {GameSession.Character.inventory=response.inventory;GameSession.ApplyInventoryToProfile();}
+        }
         if (a.exp > 0) Profile.GrantExperience(a.exp);
         if (a.money != 0) Profile.AddGold(a.money);
 

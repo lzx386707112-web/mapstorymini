@@ -70,3 +70,56 @@
 滚动增量补证：`0x4d8145` 箭头 position += ±1；`0x621e19` 转正文像素乘5，迁移箭头改为5px。`0x4d8189..0x4d81a3` 轨道翻页为 `max(16, range/16)` 个位置单位，迁移按排版范围换算后应用该步长。
 
 本次验证：Unity batchmode `LoginFlowChecks.Run` 最终28项全过，退出码0（日志 `/tmp/mapledash-login-statement-final.log`）；覆盖新账号声明/取消/确认到性别、老账号不弹、正文换行、条外按住移入不滚动、滑块拖动/松开。`git diff --check` 通过。未构建APK、未实机/图形渲染验收，本次不沿用旧截图PASS。
+
+## 2026-10-30 选区频道样式 / 选角选中特效（已按 exe 常量落地）
+
+### 频道格与选中标记
+
+- `0x6299e2` 是 `GetChannelRect(int index, RECT*)`，纯几何：`left = (i%4)*94 + 35`、`top = (i/4)*32 + 57`、宽 92、高 30（常量 `0x5e`/`0x23`/`0x5c`/`0x20`/`0x39`/`0x1e`）。相对内容区原点，与迁移里 `sx+74/cy+211`（sx=396,sy=139）等价，别再当成新坐标系。
+- `0x6289a4` 是频道区的窗口过程：`0x201`(LBUTTONDOWN)/`0x203`(LBUTTONDBLCLK) → `0x629da5` 命中测试（逐格调 `0x6299e2` + `PtInRect`）→ `0x629cbd(index)` 选中；双击再多调 `0x629d0a` 进频道。
+- `0x629a2e` 是 `SelectChannel(int idx)`：**`if (this+0xdc == idx) return`**，同格再点不重建动画；`idx < 0` 时把 `+0xec` 清空（即选中标记消失）。
+- 选中标记素材是 `UI/Login.img/WorldSelect/channel/chSelect`（**不是自绘描边**）：4 帧 23×11 / 38×21 / 42×33 / 59×33，delay `100/50/50`（末帧无 delay），origin 分别是 `(12,-6)/(27,4)/(29,16)/(29,16)`，即每帧中心≈锚点 → 用「每帧 origin」居中画。形状是红色手绘圆圈，最后一帧圈住 `CH.n`。
+- **锚点 = 格内 `(left+20, top+7)`**：`0x629ab8 mov eax,[ebp-0x34](rect.top) / add eax,7`，`0x629abf mov eax,[ebp-0x38](rect.left) / add eax,0x14`，随后 `0x596572` 组 POINT、`0x629adc push 0x558` 取 `chSelect`。合成验证：帧 3 正好套住 `CH.1`，不加任何额外偏移。
+- 播放语义：动画对象挂在 `+0xec`，末帧无 delay ⇒ 播完停在完整红圈（迁移用 `loop:false`），不是每 300ms 重描。
+
+### 频道负载条（IMG，不是自绘色块）
+
+- 素材 `UI/Login.img/WorldSelect/channel/chgauge` 73×9，origin `(36,4)`。
+- `0x628c14` 里逐频道绘制（常量位置都在这段）：
+  - `level = clamp(load/60 + 1, 1, 14)` —— `0x62907e push 0x3c`、`0x629083 inc eax`、`0x62908d..0x629092` 夹 1..14；
+  - 宽度 `= 5*level + (level==14 ? 1 : 0) + 2` → **7..73**（`0x62909d lea eax,[eax+eax*4]`、`0x6290a1 lea eax,[ecx+eax+2]`），最大 73 正好是整条；
+  - 位置 `= 格内 (left+7, top+17)`、高 8（`0x6290fd add edx,7`、`0x629100 add ecx,0x11`、`0x6290df push 8`）。
+- 即「按负载从左裁一段」，空频道只露蓝色短段，满负载延伸到橙色 —— 不是固定小蓝块。
+- `load` 来自服务端 `Channel.getChannelCapacity() = ceil(在线人数 / channel_capacity * 800)`，由 `PacketCreator.getServerList` 每频道 `writeInt`。迁移 `ChannelEntry.load` 恒 0（没有频道级在线集合），公式在 `LoginFlow.ChannelGaugeWidth`。
+
+### 选角选中特效
+
+- `0x5f6482` = `SetSelectedSlot(int idx)`：`idx < 0` 时把 `+0x1cc`、`+0x1d0` 都清空；`[+0x168] != 5` 走主路径（网格 125），`== 5` 走 `ViewAllChar`（网格 117、贴 `ViewAllChar/Select`）。**两个 effect 都挂在主路径上**：
+  - `0x5f6518 push 0x521` → `UI/Login.img/CharSelect/effect/0` → `+0x1d0`（星点，6 帧）
+  - `0x5f6653 push 0x522` → `UI/Login.img/CharSelect/effect/1` → `+0x1cc`（光柱，5 帧）
+- 锚点由素材自证：底边 = `(-origin.y) + height`。`effect/1` 末帧 `0+337`；`effect/0` 首帧 `205+132 = 337`。两条序列底边同时落在脚点上 ⇒ **锚点 = (槽位 x, 脚点 y − 337)**，x 方向两套 origin 中心都≈0。
+- 播放语义：`effect/1` delay `150/100/100/100/3000` → 循环（亮 3 秒再重升）；`effect/0` delay `300/120/120/120/120/0` 且末帧 `a1=0` → 一次性淡出，`loop:false` 停在不可见末帧。
+- 角色 stand 动作用客户端统一时钟（所有槽位同相位），不要拿「进页时间」当起点，否则翻页会打回第 0 帧。
+- 名牌两套：`nameTag/0` 高 20（半透明灰）+ 段宽 8/9/7，`nameTag/1` 高 22（实心黑）+ 8/9/10 ⇒ 选中用 `/1`、未选中用 `/0`。
+
+### 复现
+
+```
+python3 tools/inspect_beidou_client.py <BeiDou.exe> --fn 0x6299e2      # 频道 RECT
+python3 tools/inspect_beidou_client.py <BeiDou.exe> --fn 0x629a2e      # SelectChannel + chSelect 锚点
+python3 tools/inspect_beidou_client.py <BeiDou.exe> --fn 0x628c14      # 每频道 normal/disabled + chgauge
+python3 tools/inspect_beidou_client.py <BeiDou.exe> --fn 0x5f6482      # SetSelectedSlot + 两套 effect
+python3 tools/imgdump.py UI/Login.img WorldSelect/channel/chSelect --depth 1
+```
+
+回归：`LoginFlowChecks.Run` 第 8 节断言锚点常量、chgauge 宽度公式（7 / 32 / 73）与两套 effect 的底边 337。
+
+### 实拍核对（2026-10-30，`LoginUiReview` 16 张）
+
+- 选区：红圈（`chSelect` 末帧）套住 `CH.1`、三个可用频道槽内有蓝色短条（level 1 → 宽 7），位置对。
+- 选角：`charselect-effect.png` 里光柱确实在屏上（x 756..806，与锚点算出的 754..808 一致），但**只露出卷轴上沿以上的一段**。原因不是 bug：
+  - 光柱素材自身 alpha 上亮下淡（帧 2 各段均值 175 / 144 / 89 / 32），越靠脚越淡；
+  - 角色信息卷轴（`CharSelect/scroll` + `charInfo`）压在其中段，角色本体又盖住最窄的下段。
+  - 源端两个 effect 在 `SetSelectedSlot` 里创建（`+0x1cc` / `+0x1d0`），卷轴/charInfo 在另一处创建；**绘制先后未从 exe 确证**，现状按「特效在卷轴之下」绘制。若后续要更醒目，需先确证源端层序再改，不要凭观感翻。
+- `charselect-effect.png` 的卷轴是空白，不是回归：钉 `selectionStartedAt` 会连卷轴展开动画一起重播，`DrawCharInfo` 前 0.35s 按源端语义不画文字。
+- 该轮 `LoginFlowChecks.Run` 因并发会话把 `Assets/Editor/PreviewShot.cs` 改到一半（`Ready/SetupEquip…` 未定义，Editor 程序集编译失败）未能重跑，非本次改动引起。

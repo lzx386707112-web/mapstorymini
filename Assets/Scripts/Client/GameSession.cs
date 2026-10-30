@@ -177,7 +177,7 @@ public static class GameSession
     }
 
     /// <summary>确认复活：走 ChangeMap(fromDying=1)，血量由服务端按 respawn 规则给。</summary>
-    public static ChangeMapResponse Respawn(bool usedSafetyCharm)
+    public static ChangeMapResponse Respawn(bool usedSafetyCharm,bool wheel=false,int deathX=0,int deathY=0)
     {
         if (!InGame) return new ChangeMapResponse { ok = false };
         var res = Net.ChangeMap(new ChangeMapRequest
@@ -185,9 +185,11 @@ public static class GameSession
             characterId = CharacterId,
             fromDying = true,
             usedSafetyCharm = usedSafetyCharm,
+            wheel=wheel,deathX=deathX,deathY=deathY,
         });
         if (res != null && res.ok && Character != null)
         {
+            if(res.inventory!=null) {Character.inventory=res.inventory;ApplyInventoryToProfile();}
             Character.record.map = res.mapId;
             Character.record.hp = res.hp;
             Character.record.mp = res.mp;
@@ -222,6 +224,7 @@ public static class GameSession
         NativeCommunityWindow.Reset();
         NativeMedalWindow.Visible = false;
         NativeCashWindow.Reset();
+        NativeVegaWindow.Close();
         NativeNpcShopWindow.Reset();
         NativeMapWindows.WorldVisible = false;
         NativeMonsterBook.Visible = false;
@@ -236,6 +239,7 @@ public static class GameSession
     {
         if (InGame) SaveToDb();
         NativeCashWindow.Reset();
+        NativeVegaWindow.Close();
         NativeNpcShopWindow.Reset();
         Net?.EndSocialSession(CharacterId);
         InGame = false;
@@ -247,6 +251,7 @@ public static class GameSession
     {
         if (InGame) SaveToDb();
         NativeCashWindow.Reset();
+        NativeVegaWindow.Close();
         NativeNpcShopWindow.Reset();
         Net?.EndSocialSession(CharacterId);
         InGame = false;
@@ -328,6 +333,7 @@ public static class GameSession
             if (EquipSlot.SlotOf(it.itemId) == EquipSlot.Weapon) d.owned.Add(it.itemId.ToString());
             else d.AddItem(it.itemId, it.quantity);
         }
+        NativeEquipmentEffects.EquipmentChanged();
 
         // 装备窗读 Profile，场景精灵则缓存合成配方；同步后必须刷新变化的外观。
         if (player != null && previousAppearance != WzCharacter.CurrentAppearanceKey())
@@ -393,7 +399,7 @@ public static class GameSession
         rec.maxmp = d.baseMaxMp;
         // 当前 HP/MP 取运行时玩家实体（PlayerCtrl.hp/mp）
         var p = GameLoop.I != null ? GameLoop.I.player : null;
-        rec.hp = p != null ? Mathf.Clamp(Mathf.RoundToInt(p.hp), 1, d.baseMaxHp) : d.baseMaxHp;
+        rec.hp = p != null ? Mathf.Clamp(Mathf.RoundToInt(p.hp), 0, d.baseMaxHp) : d.baseMaxHp;
         rec.mp = p != null ? Mathf.Clamp(Mathf.RoundToInt(p.mp), 0, d.baseMaxMp) : d.baseMaxMp;
         rec.ap = d.ap;
         rec.job = d.jobId;
@@ -404,9 +410,13 @@ public static class GameSession
         rec.equipslots = d.equipmentSlots;
 
         // 技能
-        Character.skills.Clear();
+        var previousSkills=Character.skills;
+        Character.skills=new List<SkillEntry>();
         foreach (var kv in SkillProgress.AllLearned())
-            Character.skills.Add(new SkillEntry { skillId = kv.Key, skillLevel = kv.Value, masterLevel = SkillBook.MasterCapOf(kv.Key) });
+            Character.skills.Add(new SkillEntry { skillId = kv.Key, skillLevel = kv.Value, masterLevel = previousSkills.Find(s=>s.skillId==kv.Key)?.masterLevel ?? SkillBook.Get(kv.Key)?.masterLevel ?? 0 });
+        foreach(var skill in previousSkills)
+            if(skill.masterLevel>0 && !Character.skills.Exists(s=>s.skillId==skill.skillId))
+                Character.skills.Add(new SkillEntry {skillId=skill.skillId,skillLevel=0,masterLevel=skill.masterLevel,expiration=skill.expiration});
 
         // 任务（status 2=完成 / 1=进行中；已完成的不再记为进行中）
         Character.quests.Clear();

@@ -12,15 +12,20 @@ public sealed class EquipPatchRequest
 {
     public int characterId;
     public long inventoryItemId;
+    public long? expiration;
     public int starLevel, starCount, maxStar;
     public string owner;
     public int str, dex, int_, luk, hp, mp, watk, matk, wdef, mdef, acc, avoid, hands, speed, jump, upgradeslots;
+    public int scrollId, scrollPosition, vegaItemId, cashItemId;
+    public bool whiteScroll;
+    public int[] scrollRequirements;
 }
 
 public sealed class EquipPatchResponse
 {
     public bool ok = true;
     public string error = "";
+    public string scrollResult;
     public List<InventoryEntry> inventory;
 }
 
@@ -43,11 +48,19 @@ public static class NativeEquipService
 {
     public static EquipPatchResponse Patch(DbStore db, EquipPatchRequest r)
     {
+        if(r!=null && r.cashItemId>0) return NativeCashEquipmentService.Apply(db,r);
+        if(r!=null && r.scrollId>0) return NativeScrollService.Apply(db,r);
         if (r == null || r.inventoryItemId <= 0) return new EquipPatchResponse { ok = false, error = "无效装备" };
         var row = db.Table("inventoryitems").Find(x =>
             DbStore.Long(x, "inventoryitemid") == r.inventoryItemId &&
             DbStore.Int(x, "characterid") == r.characterId);
         if (row == null) return new EquipPatchResponse { ok = false, error = "找不到这件装备" };
+        if(r.expiration.HasValue)
+        {
+            row["expiration"]=r.expiration.Value;
+            db.Save();
+            return new EquipPatchResponse {inventory=CharService.Load(db,r.characterId).inventory};
+        }
 
         var eq = db.Table("inventoryequipment").Find(x => DbStore.Long(x, "inventoryitemid") == r.inventoryItemId);
         if (eq == null)
@@ -59,6 +72,7 @@ public static class NativeEquipService
         }
 
         eq["upgradeslots"] = (long)r.upgradeslots;
+        eq["nativeStats"] = 1L;
         eq["str"] = (long)r.str; eq["dex"] = (long)r.dex;
         eq["int"] = (long)r.int_; eq["luk"] = (long)r.luk;
         eq["hp"] = (long)r.hp; eq["mp"] = (long)r.mp;

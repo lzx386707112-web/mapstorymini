@@ -39,7 +39,13 @@ public static class BottomBar
 
     static readonly Dictionary<string, Texture2D> tex = new Dictionary<string, Texture2D>();
     static bool collapsed;
-    public static bool InterfaceVisible;
+    // 第 4 枚大按钮（界面）的菜单开关。目录/界面互斥的状态在 BottomMenu 里，
+    // 这里只是保留旧字段名给外部读。
+    public static bool InterfaceVisible
+    {
+        get { return ShortcutWindow.Visible; }
+        set { ShortcutWindow.Visible = value; }
+    }
 
     static Texture2D T(string name)
     {
@@ -560,8 +566,9 @@ public static class BottomBar
         {
             case 0: ShopWindow.Toggle(); break;
             case 1: HelpWindow.Toggle(); break;
+            // 目录 / 界面：两个弹出菜单互斥，开一个自动收起另一个
             case 2: GameMenuWindow.Toggle(); break;
-            case 3: InterfaceVisible = !InterfaceVisible; break;
+            case 3: ShortcutWindow.Toggle(); break;
         }
     }
 

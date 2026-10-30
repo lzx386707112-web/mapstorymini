@@ -95,6 +95,20 @@ public class DeathFlow : MonoBehaviour
         if (phase == Phase.Dying && timer > ConfirmDelay) phase = Phase.Confirm;
     }
 
+    // 4A95BF excludes special fields and event-map families before offering
+    // Notice/2. The server independently checks possession at confirmation.
+    public static bool WheelAllowed(int fieldType,int mapId)
+        => fieldType!=1 && !(fieldType>=3 && fieldType<=5) && fieldType!=7 &&
+            fieldType!=10 && fieldType!=11 && fieldType!=15 && mapId/100000000!=9 &&
+            mapId/1000!=200090 && mapId/1000000!=390;
+    public static bool OfferWheel
+    {
+        get
+        {
+            var map=GameLoop.I?.field?.Map;
+            return map!=null && WheelAllowed(map.fieldType,map.id) && Profile.ItemCount(DeathService.WheelOfFortune)>0;
+        }
+    }
     void OnGUI()
     {
         if (phase != Phase.Confirm) return;
@@ -109,24 +123,29 @@ public class DeathFlow : MonoBehaviour
             // Original 800x600 position (257,97), retain its offset from screen center.
             float x = UiKit.W / scale / 2f - 143;
             float y = UiKit.H / scale / 2f - 203;
-            var background = Art.Tex("wz://UI/UIWindow.img/Notice/0");
+            bool wheel=OfferWheel;
+            var background = Art.Tex("wz://UI/UIWindow.img/Notice/"+(wheel ? 2 : 0));
             if (background != null) GUI.DrawTexture(new Rect(x, y, 286, 146), background);
-            bool submit = NativeUi.Button(new Rect(x + 124, y + 115, 47, 19),
-                "UI/Basic.img/BtOK2", Pointer.Pos / scale);
+            bool submit=wheel ? NativeUi.Button(new Rect(x+92,y+115,47,19),"UI/Basic.img/BtYes2",Pointer.Pos/scale) :
+                NativeUi.Button(new Rect(x+124,y+115,47,19),"UI/Basic.img/BtOK2",Pointer.Pos/scale);
+            if(wheel && NativeUi.Button(new Rect(x+148,y+115,47,19),"UI/Basic.img/BtNo2",Pointer.Pos/scale))
+            {Confirm(false);return;}
             var e = Event.current;
             if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter))
             { submit = true; e.Use(); }
-            if (submit || timer > ConfirmDelay + 600f) Confirm();
+            if (submit) Confirm(wheel);
+            else if(timer>ConfirmDelay+600f) Confirm(false);
         }
         finally { GUI.matrix = matrix; GUI.depth = depth; }
     }
 
     // —————————————————— 确认：回城 ——————————————————
 
-    void Confirm()
+    void Confirm(bool wheel=false)
     {
         bool charm = settlement != null && settlement.usedSafetyCharm;
-        var res = GameSession.Respawn(charm);
+        var p=GameLoop.I?.player;
+        var res = GameSession.Respawn(charm,wheel,p!=null ? (int)(p.FeetPos.x*Art.PPU) : 0,p!=null ? (int)(-p.FeetPos.y*Art.PPU) : 0);
         if (!res.ok)
         {
             // 服务端没给目标图（数据缺失）时退回客户端本地重生，至少不卡死
@@ -135,7 +154,9 @@ public class DeathFlow : MonoBehaviour
         }
 
         var gl = GameLoop.I;
-        if (gl != null && gl.field != null && res.mapId != gl.field.Map.id)
+        if(res.wheelUsed && gl?.field!=null)
+            gl.field.WarpTo(res.mapId,portalIndex:res.spawnPoint);
+        else if (gl != null && gl.field != null && res.mapId != gl.field.Map.id)
             gl.field.Enter(res.mapId, null);
         else if (gl != null && gl.field != null)
             gl.field.RespawnPlayer();

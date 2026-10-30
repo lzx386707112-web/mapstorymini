@@ -1,0 +1,38 @@
+Inventory / hidden portal regression — 2026-10-30
+
+Unity batch editor:
+  Unity -batchmode -nographics -projectPath MapleDash -executeMethod InventoryPortalChecks.Run
+  Exit 0; [InventoryPortalChecks] PASS 35.
+  Isolated temporary DbStore/Profile: pendant/totem/face/rings equip, slot mirror,
+  unequip, skill 1016 grant, keymap type=2 round trip, click-carry and key placement,
+  placement press/release swallowed, original shortcut NPC without consumption,
+  original monster-vac item script consumption and repeat rejection,
+  Lith Harbor portal30 original IMG proximity appearance,
+  normal mob pull/lock, boss exclusion, map-change unlock.
+  Edit-mode fixture explicitly registers mobs because OnEnable is not automatic.
+
+Final compile:
+  rtk proxy dotnet build -t:Rebuild MapleDash/tools/unity-compile-check/Check.csproj --nologo
+  Exit 0; 0 warnings, 0 errors.
+
+Required script harness:
+  --pack: pack=2779 npc=889 quest=470 parseFail=0 mangled=0.
+  --run: files=889 ok=790 parseFail=0 runFail=27 javaInterop=72.
+  Full NPC mock run is NOT all-pass; existing baseline failures remain, including
+  missing Java classes and unimplemented size() calls. Do not infer all item/NPC
+  menu branches work from static routing or from the focused Unity regression.
+
+rtk git -C MapleDash diff --check: exit 0.
+
+Audit reproduction:
+  rtk proxy python3 MapleDash/tools/audit_inventory_functions.py
+  docs/inventory-function-audit.md and .json preserve missing routes and examples.
+  Counts include old/event/placeholder IMG records, not just obtainable items.
+
+Boundaries:
+  No APK build/deployment or Android device acceptance.
+  Hidden rendering added for verified pt10. pt11 custom continuation needs further
+  source verification. Missing-frame-delay fallback 100ms is an adaptation.
+  Spirit Pendant timed EXP and Frenzy skill-to-spawner effect remain unported.
+  Vacuum integer rounding, original network interpolation and complete status
+  conflict semantics are not claimed equivalent; see reverse skill reference.

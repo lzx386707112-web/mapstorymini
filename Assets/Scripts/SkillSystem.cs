@@ -97,6 +97,16 @@ public partial class SkillSystem : MonoBehaviour
         if (data == null) return Reject("缺少技能数据");
         int level = SkillProgress.LevelOf(skillId);
         if (level <= 0) return Reject("技能尚未学习（技能窗里加点）");
+        if(skillId==1016)
+        {
+            if(p==null || p.hp<=0 || GameLoop.I?.field==null) return Reject("当前无法放置轮回碑石。");
+            if(Profile.EquipOfSlot(-53)!=1189999) return Reject("请先装备轮回碑石。");
+            if(State(1016).Remaining(Time.realtimeSinceStartupAsDouble)>0) return Reject("技能冷却中");
+            string failure=GameLoop.I.field.ActivateFrenzy(p);
+            if(failure!=null) return Reject(failure);
+            State(1016).TryStart(Time.realtimeSinceStartupAsDouble,1200);
+            p.PlayNativeSkill(1016); return true;
+        }
         if (data.IsPassive && !InstantSelfSkill(skillId)) return Reject("被动技能无需施放");
         var native = SkillBook.Native(skillId, level);
         if (native == null) return Reject("技能等级数据缺失");
@@ -128,6 +138,7 @@ public partial class SkillSystem : MonoBehaviour
         // 原端 TryUseSkill：MP 不够直接拒绝，扣蓝在施法成功之后。
         // mpCon 来自 Skill.wz 对应等级的 mpCon（见 NativeSkillDefinition.MpCost），不是本地估值。
         var buffs=NativeBuffs.For(p);
+        if(buffs.Value("MORPH")>0 && buffs.Value("MORPH")<100 && (s.native.Kind=="Attack" || s.native.Kind=="Pull")) return Reject("变身状态下无法攻击");
         int mpCost=s.native.MpCost;
         int amplification=Profile.JobId==211 || Profile.JobId==212 ? 2110001 : Profile.JobId==221 || Profile.JobId==222 ? 2210001 :
             Profile.JobId==1211 || Profile.JobId==1212 ? 12110001 : Profile.JobId>=2215 && Profile.JobId<=2218 ? 22150000 : 0;

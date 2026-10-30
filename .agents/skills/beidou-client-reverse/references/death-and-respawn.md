@@ -22,7 +22,7 @@ BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df13
 - `0x897C94` OnCreate在普通分支`0x89810F..0x89812B`读取Notice/0，
   `0x8981B0..0x8981B6`以控件ID1、局部(124,115)创建 `UI/Basic.img/BtOK2`（47×19）。
 - `0x8981E1`分派ID1到`0x898224(0)`，调用`0x53035D`换图后清理；`0x898203`包含600000ms自动确认。
-- Notice1/2/4及轮回道具的特殊复活分支存在，但本次未迁移，不能声称完整复活道具体系覆盖。
+- Notice1/4及复活buff特殊分支仍有未迁移边界；Notice2轮回道具后续迁移见本文末补充。
 
 ## MapleDash修复及边界
 
@@ -72,3 +72,8 @@ Unity保留墓碑在角色之后绘制（SortingOrder+1）并跟随角色地图�
 NativeGameplayFixChecks.Run退出0：包括原IMG墓碑600px起点、880ms落地、land保持和2.2秒确认阶段。
 compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0。全量NPC Mock运行889条790通过，27 runFail及72 Java interop缺口与此前基线一致，不能称全量脚本验证通过。
 死亡层叠尚无EXE逐帧画面oracle；未打包APK、未做Android实机验收。EXP主条方案仍待用户选择，不以HP/MP通过代替EXP验证。
+
+
+## 原地复活术5510000补充（2026-10-30）
+
+EXE身份同本文首段。897C94..8981DD选择Notice/2（286×146），BtYes2(92,115)、BtNo2(148,115)，600秒超时否；8981E1按钮6/7→898224→53035D。客户端4A95BF特殊field门控仍有虚表身份未核实边界。服务端ChangeMapHandler90..118：持有轮回且请求使用则扣1，HP50、MP不变、当前图最近可用出生门；MapleMap3107限定pt0..1且tm999999999。DeathFlow、ChangeMapRequest/Protocol、GameSession.Respawn接入；死亡存档HP下限改0，避免保存成1而拒绝复活。原轮回与复活buff优先级、数量文字及Android交互未完成验收。证据docs/skill-regression/revive-item-dialog-2026-10-30.txt，业务回归inventory-items-isolated11-2026-10-30.txt PASS158；后续isolated20 PASS182亦覆盖该分支，不代替视觉/实机验证。完整逐条物品进度见inventory-use-and-equipment.md。

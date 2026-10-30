@@ -17,7 +17,12 @@ public sealed class CommunityRequest {
     public string[] titles;
 }
 public sealed class CommunityMember {
-    public int id, level, rank, senior;
+    // job / map 对应源端 showGuildInfo 包里的 jobId 与成员所在地图：
+    //   包体字段串是 name(13 定长) → job(int) → level(int) → guildRank(int) → online(int) → signature(int) → allianceRank(int)，
+    //   见 GuildPackets.showGuildInfo；地图不在这个包里，源端客户端「成员位置」是拿本地成员表的 mapId 拼一句话打到聊天窗
+    //   （BeiDou.exe 0x911C5C → 0x9118A4 查在线表 → 0x91192F 取记录 → 格式串 "%s"），不发任何 GUILD_OPERATION。
+    //   本工程没有客户端侧成员表，改由服务端随 DTO 下发同一份数据，语义一致。
+    public int id, level, rank, senior, job, map;
     public string name;
     public bool online;
 }
@@ -29,6 +34,7 @@ public sealed class CommunityResponse {
     public string[] titles = new string[5];
     public List<CommunityMember> guild = new List<CommunityMember>(), family = new List<CommunityMember>();
     public List<int> used = new List<int>();
+    public List<int> couponBuffs = new List<int>();
     public double expRate = 1, dropRate = 1, mesoRate = 1;
     // 家族 Buff 的掉落倍率（源端 getBossDropRate = getDropRate()/world × world.bossDropRate，
     // boss 走这条不含世界 drop_rate 的分量）
@@ -291,6 +297,7 @@ public sealed class NativeCommunityService {
         result.expRate *= GameConfigDao.GetFloat(db, "exp_rate", 1);
         result.dropRate *= GameConfigDao.GetFloat(db, "drop_rate", 1);
         result.mesoRate = GameConfigDao.GetFloat(db, "meso_rate", 1);
+        NativeCouponRates.Apply(db,cid,result,DateTime.Now);
         return result;
     }
     CommunityResponse Read(CharRecord c) {
@@ -310,5 +317,5 @@ public sealed class NativeCommunityService {
         foreach (var f in formations) if (f.Value.expires > Now && f.Value.members.Contains((int)c.id) && !f.Value.accepted.Contains((int)c.id)) result.guildConfirmation = f.Key;
         if (boards.TryGetValue((int)c.id, out string board)) result.board = board; return result;
     }
-    CommunityMember Member(CharRecord c) => new CommunityMember { id = (int)c.id, name = c.name, level = c.level, rank = c.guildrank, online = online.Contains((int)c.id) };
+    CommunityMember Member(CharRecord c) => new CommunityMember { id = (int)c.id, name = c.name, level = c.level, rank = c.guildrank, online = online.Contains((int)c.id), job = c.job, map = c.map };
 }

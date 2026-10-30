@@ -155,6 +155,10 @@
   "ms": 2411,
   "path": "Sound/Game/QuestClear.mp3"
  },
+ "Jukebox/Congratulation": {
+  "ms": 67030,
+  "path": "Sound/Jukebox/Congratulation.mp3"
+ },
  "Mob/100100/Damage": {
   "ms": 0,
   "path": "Sound/Mob/100100_Damage.mp3"
@@ -374,6 +378,18 @@
  "UI/Tab": {
   "ms": 68,
   "path": "Sound/UI/Tab.mp3"
+ },
+ "UI/VegaFail": {
+  "ms": 1985,
+  "path": "Sound/UI/VegaFail.mp3"
+ },
+ "UI/VegaSuccess": {
+  "ms": 1985,
+  "path": "Sound/UI/VegaSuccess.mp3"
+ },
+ "UI/VegaTwinkling": {
+  "ms": 750,
+  "path": "Sound/UI/VegaTwinkling.mp3"
  },
  "Weapon/barehands/Attack": {
   "ms": 171,

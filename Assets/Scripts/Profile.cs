@@ -206,6 +206,7 @@ public static class Profile
     // 返回本次结算升了几级（默认升级保护开启，所以通常是 0 或 1）。
     public static int GrantExperience(int amount)
     {
+        amount=(int)System.Math.Min(int.MaxValue,(long)amount+NativeEquipmentEffects.PendantBonus(amount));
         if (GameLoop.I?.player?.GetComponent<NativeMobDebuffs>()?.Has(124) == true) amount /= 2;
         if (amount <= 0) return 0;
         int before = Data.level;
@@ -291,6 +292,47 @@ public static class Profile
         Data.ap--;
         Save();
         return true;
+    }
+    // —— 能力值洗点（源端 AssignAPProcessor.APResetAction / UseCashItemHandler175..235）——
+    // APFrom/APTo 是原端编码：STR 64 / DEX 128 / INT 256 / LUK 512 / HP 2048 / MP 8192。
+    // 原端先按 APFrom 扣一点（STR/DEX/INT/LUK 需 >=5），再用 addStat(APTo, usedAPReset=true) 加一点。
+    // 本工程 StatWindow 的 HP/MP 加点箭头常驻禁用，hpMpUsed 恒为 0，
+    // 所以 HP/MP 两行按源端 hpMpUsed<1 分支拒绝，不伪造洗血结果。
+    public static string ResetAp(int from, int to)
+    {
+        var a = Data.attributes;
+        switch (from)
+        {
+            case 64: if (a.str < 5) return "你的力量(STR)不足，无法进行重置。"; break;
+            case 128: if (a.dex < 5) return "你的敏捷(DEX)不足，无法进行重置。"; break;
+            case 256: if (a.intelligence < 5) return "你的智力(INT)不足，无法进行重置。"; break;
+            case 512: if (a.luk < 5) return "你的运气(LUK)不足，无法进行重置。"; break;
+            case 2048: case 8192: return "你没有足够的HP、MP属性点用于AP重置。";
+            default: return "AP重置操作执行失败。";
+        }
+        switch (to)
+        {
+            case 64: case 128: case 256: case 512: break;
+            case 2048: case 8192: return "你没有足够的HP、MP属性点用于AP重置。";
+            default: return "AP重置操作执行失败。";
+        }
+        switch (from)
+        {
+            case 64: a.str--; break;
+            case 128: a.dex--; break;
+            case 256: a.intelligence--; break;
+            default: a.luk--; break;
+        }
+        switch (to)
+        {
+            case 64: a.str++; break;
+            case 128: a.dex++; break;
+            case 256: a.intelligence++; break;
+            default: a.luk++; break;
+        }
+        Save();
+        GameLoop.I?.player?.RefreshBuffAttributes();
+        return null;
     }
     public static int InventoryCapacity(int tab)
     {

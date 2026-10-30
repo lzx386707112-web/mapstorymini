@@ -7,6 +7,13 @@ public static class NativeCommunityWindow {
     static CommunityResponse state;
     static string name = "", text = "", rank = "5", logo = "0", logoColor = "0", background = "0", backgroundColor = "0";
     static string[] titles = new string[5];
+    // 家族窗口（NativeGuildWindow / NativeGuildGradeWindow）用同一份会话状态与请求通道：
+    // 源端这两个窗口按的是同一套 Community 协议，不需要另开一条链路。
+    public static CommunityResponse State => state;
+    public static string InputName { get => name; set => name = value ?? ""; }
+    public static string InputText { get => text; set => text = value ?? ""; }
+    public static string InputRank { get => rank; set => rank = value ?? "5"; }
+    public static string[] InputTitles { get => titles; set => titles = value ?? new string[5]; }
     static Vector2 scroll;
     static string board = "";
     static int chatChannel;
@@ -25,12 +32,14 @@ public static class NativeCommunityWindow {
         return state;
     }
     public static void Toggle(GameAction next) {
+        // 家族是 UserList 主窗的 tab2，走原版窗口；学院 / 聊天记录仍用本文的紧凑面板
+        if (next == GameAction.Family) { NativeGuildWindow.Toggle(); return; }
         if (Visible && action == next) { Visible = false; return; }
         action = next; state = Request(CommunityOperation.Read); Visible = true; scroll = Vector2.zero;
-        text = next == GameAction.Family ? state.notice : next == GameAction.School ? state.precepts : state.board;
+        text = next == GameAction.School ? state.precepts : state.board;
         titles = (string[])state.titles.Clone();
     }
-    public static void Reset() { Visible = false; state = null; board = ""; }
+    public static void Reset() { Visible = false; state = null; board = ""; NativeGuildWindow.Reset(); NativeGuildGradeWindow.Reset(); }
     static int Int(string value) { int.TryParse(value, out int n); return n; }
     public static void Draw() {
         if (!Visible || state == null) return;
@@ -41,36 +50,9 @@ public static class NativeCommunityWindow {
         var oldFont = GUI.skin.font; GUI.skin.font = UiKit.Font;
         GUILayout.BeginHorizontal(); GUILayout.Label(NativeKeyActions.Of(action).name); if (GUILayout.Button("刷新", GUILayout.Width(60))) Request(CommunityOperation.Read); if (GUILayout.Button("关闭", GUILayout.Width(60))) Visible = false; GUILayout.EndHorizontal();
         scroll = GUILayout.BeginScrollView(scroll);
-        if (action == GameAction.Family) Guild();
-        else if (action == GameAction.School) Family();
+        if (action == GameAction.School) Family();
         else Board();
         GUILayout.EndScrollView(); GUI.skin.font = oldFont; GUILayout.EndArea();
-    }
-    static void Guild() {
-        if (state.guildConfirmation > 0) { GUILayout.Label("收到创建家族的成员确认"); GUILayout.BeginHorizontal(); if (GUILayout.Button("同意创建")) Request(CommunityOperation.ConfirmGuild, state.guildConfirmation, 1); if (GUILayout.Button("拒绝")) Request(CommunityOperation.ConfirmGuild, state.guildConfirmation, 0); GUILayout.EndHorizontal(); }
-        if (state.guildId <= 0) {
-            GUILayout.Label("尚未加入家族"); name = GUILayout.TextField(name, 12);
-            if (GUILayout.Button("发起创建（源端默认6人 / 150万金币）")) Request(CommunityOperation.CreateGuild);
-            if (state.guildInvite > 0 && GUILayout.Button("接受家族邀请")) Request(CommunityOperation.AcceptGuild);
-            return;
-        }
-        GUILayout.Label(state.guildName + "    " + state.guild.Count + " / " + state.capacity + "    GP " + state.gp);
-        GUILayout.Label("公告：" + state.notice);
-        foreach (var m in state.guild.ToArray()) {
-            GUILayout.BeginHorizontal(); GUILayout.Label(m.name + "  Lv." + m.level + "  " + state.titles[Mathf.Clamp(m.rank - 1, 0, 4)] + (m.online ? " 在线" : " 离线"));
-            if (m.id != GameSession.CharacterId) { if (GUILayout.Button("设职位", GUILayout.Width(70))) Request(CommunityOperation.GuildRank, m.id, Int(rank)); if (GUILayout.Button("驱逐", GUILayout.Width(50))) Request(CommunityOperation.ExpelGuild, m.id); }
-            GUILayout.EndHorizontal();
-        }
-        GUILayout.Label("角色名 / 职位等级（2～5）"); name = GUILayout.TextField(name, 13); rank = GUILayout.TextField(rank, 1);
-        if (GUILayout.Button("邀请成员")) Request(CommunityOperation.InviteGuild);
-        text = GUILayout.TextField(text, 100); if (GUILayout.Button("保存公告")) Request(CommunityOperation.GuildNotice);
-        GUILayout.Label("五级职位名称"); for (int i = 0; i < 5; i++) titles[i] = GUILayout.TextField(titles[i] ?? "", 45);
-        if (GUILayout.Button("保存职位名称")) Request(CommunityOperation.GuildTitles);
-        GUILayout.Label("徽章图案 / 颜色 / 底纹 / 底纹颜色（需在家族总部）");
-        GUILayout.BeginHorizontal(); logo = GUILayout.TextField(logo, 5); logoColor = GUILayout.TextField(logoColor, 3); background = GUILayout.TextField(background, 5); backgroundColor = GUILayout.TextField(backgroundColor, 3); GUILayout.EndHorizontal();
-        if (GUILayout.Button("修改徽章（源端默认500万金币）")) Request(CommunityOperation.GuildEmblem);
-        if (GUILayout.Button("扩充5名成员容量")) Request(CommunityOperation.ExpandGuild);
-        GUILayout.BeginHorizontal(); if (GUILayout.Button("退出家族")) Request(CommunityOperation.LeaveGuild); if (GUILayout.Button("解散家族（族长）")) Request(CommunityOperation.DisbandGuild); GUILayout.EndHorizontal();
     }
     static readonly string[] Privileges = { "传送到同学", "召集同学", "本人掉落1.5倍 / 15分", "本人经验1.5倍 / 15分", "学院团结 经验掉落2倍 / 30分", "本人掉落2倍 / 15分", "本人经验2倍 / 15分", "本人掉落2倍 / 30分", "本人经验2倍 / 30分", "组队掉落2倍 / 30分", "组队经验2倍 / 30分" };
     static void Family() {

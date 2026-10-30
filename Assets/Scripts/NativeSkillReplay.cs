@@ -43,7 +43,7 @@ public static class NativeSkillReplay
     }
 
     // Java Math.round for nonnegative damage; preserve each captured critical flag.
-    public static DamageResult[] Adapt(IReadOnlyList<DamageResult> source, int count, double fromPercent, double toPercent)
+    public static DamageResult[] Adapt(IReadOnlyList<DamageResult> source, int count, double fromPercent, double toPercent,int damageCap=CombatRules.InitialDamageCap)
     {
         if (source.Count == 0) return Array.Empty<DamageResult>();
         var result = new DamageResult[Math.Max(1, Math.Min(15, count))];
@@ -51,7 +51,7 @@ public static class NativeSkillReplay
         {
             var value = source[i % source.Count];
             double scaled = fromPercent > 0 ? Math.Floor(value.Amount * toPercent / fromPercent + .5) : value.Amount;
-            result[i] = new DamageResult((int)Math.Max(0, Math.Min(CombatRules.InitialDamageCap, scaled)), value.Critical);
+            result[i] = new DamageResult((int)Math.Max(0, Math.Min(damageCap, scaled)), value.Critical);
         }
         return result;
     }
@@ -104,7 +104,7 @@ public partial class SkillSystem
                 ApplyReplayHit(cast,cast.native,hit.Target,hit.Hits,origin,facing,numberMode);
             var thunder = SkillBook.Native(15121009, Mathf.Clamp(cast.native.Level,1,SkillBook.MaxLevelOf(15121009)));
             var thunderSource = template.Length > 0 ? template : p.ReplayFallback(cast.native,Mathf.Clamp(thunder.HitCount,1,15),true);
-            var thunderHits = NativeSkillReplay.Adapt(thunderSource,thunder.HitCount,cast.native.DamagePercent,thunder.DamagePercent);
+            var thunderHits = NativeSkillReplay.Adapt(thunderSource,thunder.HitCount,cast.native.DamagePercent,thunder.DamagePercent,GameSession.Character?.record.damageCap ?? CombatRules.InitialDamageCap);
             int triggered = 0;
             foreach (var hit in captured)
             {
@@ -133,7 +133,7 @@ public partial class SkillSystem
                 if (fallback && (cast.native.Magic || IsRangedReplay(cast.native.Id)))
                     source = p.ReplayFallback(cast.native,1,false);
                 float percent = stage.Warrior && stage.OriginalFirst ? cast.native.DamagePercent : replay.DamagePercent;
-                adapted = NativeSkillReplay.Adapt(source,count,cast.native.DamagePercent,percent);
+                adapted = NativeSkillReplay.Adapt(source,count,cast.native.DamagePercent,percent,GameSession.Character?.record.damageCap ?? CombatRules.InitialDamageCap);
             }
             StartCoroutine(ReplayStage(cast, replay, stage, captured, adapted, origin, facing, field, map));
         }

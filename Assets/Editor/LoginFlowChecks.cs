@@ -170,6 +170,45 @@ public static class LoginFlowChecks
             Check(autoId > 0 && AccountsDao.Gender(db, autoId) == 0, "新号性别自动落 0（男）",
                 "id=" + autoId + " gender=" + (autoId > 0 ? AccountsDao.Gender(db, autoId) : -1));
 
+            // ── 8. 选区/选角的选中样式与特效：锚点必须由素材自证，不是拍脑袋的偏移 ──
+            Log("════ 8. 频道选中 / 选角特效锚点 ════");
+            Check(WzAssets.Node("wz://UI/Login.img/WorldSelect/channel/chSelect/3") != null,
+                "频道选中用 IMG 动画 chSelect（不是自绘描边）", "");
+            Check((float)Const(flow, "ChannelSelectDx") == 20f && (float)Const(flow, "ChannelSelectDy") == 7f,
+                "chSelect 锚点 = 格内 (20,7)（源端 0x629ab8/0x629abf）",
+                Const(flow, "ChannelSelectDx") + "," + Const(flow, "ChannelSelectDy"));
+
+            var gauge = Art.Tex("wz://UI/Login.img/WorldSelect/channel/chgauge");
+            Check(gauge != null && gauge.width == 73 && gauge.height == 9, "负载条用 IMG 素材 chgauge 73×9",
+                gauge == null ? "null" : gauge.width + "×" + gauge.height);
+            Check((float)Const(flow, "ChannelGaugeDx") == 7f && (float)Const(flow, "ChannelGaugeDy") == 17f,
+                "chgauge 贴在格内 (7,17)（源端 0x6290fd/0x629100）", "");
+            Check(LoginFlow.ChannelGaugeWidth(0, 73) == 7f, "空频道负载条宽 7（level 1）",
+                "" + LoginFlow.ChannelGaugeWidth(0, 73));
+            Check(LoginFlow.ChannelGaugeWidth(14 * 60, 73) == 73f, "满负载负载条正好 73 = 整条（level 14）",
+                "" + LoginFlow.ChannelGaugeWidth(14 * 60, 73));
+            Check(LoginFlow.ChannelGaugeWidth(60 * 5, 73) == 32f, "load 300 → level 6 → 宽 5×6+2 = 32",
+                "" + LoginFlow.ChannelGaugeWidth(60 * 5, 73));
+
+            // 特效锚点：effect/1 最大帧底边与 effect/0 首帧底边都落在锚点 + 337，即脚点上
+            float anchor = (float)Const(flow, "CharEffectAnchorY");
+            Check(anchor == 337f, "选角特效锚点 = 脚点 − 337", "" + anchor);
+            Check(FxBottomMax("CharSelect/effect/1") == 337, "effect/1 最高帧底边 = 锚点+337（光柱打到脚上）",
+                "" + FxBottomMax("CharSelect/effect/1"));
+            Check(FxBottom("CharSelect/effect/0", 0) == 337, "effect/0 首帧底边 = 锚点+337（星点起于脚下）",
+                "" + FxBottom("CharSelect/effect/0", 0));
+            Check(WzAssets.Node("wz://UI/Login.img/CharSelect/nameTag/0/1") != null
+                && WzAssets.Node("wz://UI/Login.img/CharSelect/nameTag/1/1") != null,
+                "名牌两套（/0 未选中、/1 选中）都在", "");
+
+            // 三套动画都要能真的读成帧序列，否则画面上「有代码没图形」。
+            Check(ClipFrames(flow, "UI/Login.img/CharSelect/effect/0") == 6,
+                "effect/0 解析出 6 帧", "" + ClipFrames(flow, "UI/Login.img/CharSelect/effect/0"));
+            Check(ClipFrames(flow, "UI/Login.img/CharSelect/effect/1") == 5,
+                "effect/1 解析出 5 帧（光柱）", "" + ClipFrames(flow, "UI/Login.img/CharSelect/effect/1"));
+            Check(ClipFrames(flow, "UI/Login.img/WorldSelect/channel/chSelect") == 4,
+                "chSelect 解析出 4 帧", "" + ClipFrames(flow, "UI/Login.img/WorldSelect/channel/chSelect"));
+
             Log("完成  通过=" + pass + " 失败=" + fail);
         }
         catch (Exception e) { Debug.LogError(Tag + "自检自身异常：" + e); fail++; }
@@ -187,4 +226,39 @@ public static class LoginFlowChecks
 
     static object Call_Ret(object o, string name)
         => o.GetType().GetMethod(name, Priv, null, Type.EmptyTypes, null).Invoke(o, null);
+
+    // 私有 const 字段（编译器把常量内联进方法体，但字段本身还在元数据里）。
+    static object Const(object o, string name)
+        => o.GetType().GetField(name, BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public).GetValue(null);
+
+    // 特效帧的底边 = 素材绘制位置 + 帧高 = (-origin.y) + height，与 LoginFlow.DrawAnimationAt 的 centered 口径一致。
+    static int FxBottom(string path, int frame)
+    {
+        string uri = "wz://UI/Login.img/" + path + "/" + frame;
+        var tex = Art.Tex(uri);
+        if (tex == null) return -1;
+        return Mathf.RoundToInt(-Art.Origin(uri).y + tex.height);
+    }
+
+    static int FxBottomMax(string path)
+    {
+        int best = -1;
+        for (int i = 0; i < 64; i++)
+        {
+            if (WzAssets.Node("wz://UI/Login.img/" + path + "/" + i) == null) break;
+            int bottom = FxBottom(path, i);
+            if (bottom > best) best = bottom;
+        }
+        return best;
+    }
+
+    // LoginFlow.Animation 的帧数（走真实加载路径，能抓出「代码在跑但素材没读到」）。
+    static int ClipFrames(object flow, string path)
+    {
+        var clip = typeof(LoginFlow).GetMethod("Animation", Priv, null, new[] { typeof(string) }, null)
+            .Invoke(flow, new object[] { path });
+        if (clip == null) return -1;
+        var frames = clip.GetType().GetField("Frames").GetValue(clip) as Texture2D[];
+        return frames == null ? -1 : frames.Length;
+    }
 }
