@@ -1,0 +1,3843 @@
+{
+  "scope": "All shops in original SQL; all map IMG NPC life placements, including linked maps. Static no-quest dispatch path; no runtime click or render acceptance.",
+  "sources": {
+    "V1.0.56__shops_insert_data.sql": "d76462068506057d6e0aa5c9e78165da8e97127fe070e607734a45b6cd0fe0f7",
+    "V1.0.66__shopupdate.sql": "437fcc474079e1de0216c8bbd2ed5b64918214ce0fee5bf4e3d09fe85a268b81",
+    "V1.7.2__insert_shops.sql": "543d83392e63f197fa8d063fe0c718f190bac7294c3934fb888e39bcb1b84868",
+    "V1.7.3__insert_dongfangshenzhou_data.sql": "085a99a727ff1f92af1c5efdb2d65ca2f2f281baea688699f1104706f3143880",
+    "V2.1.14__solomapling_casino_chip_shop.sql": "243c35ad0c94a79736d8dc208f14114570a849bc707be0a373dcc7864e2636cb",
+    "V2.1.15__solomapling_casino_npc_id.sql": "409346a296cad11a9a4fa88c6a15e1b2632b80caf88e4f2fc4ae2bc0a9378f16",
+    "V2.1.16__solomapling_casino_npc_visible_fallback.sql": "edfac31bac986f90e426a1a338c1e368583bc235d7d6bc864a8b68c2029b1f4a",
+    "V1.0.55__shopitems_insert_data.sql": "a897639137fe9b8f2f7720ef3dce1f531ee1c58860f4b2923aeae30b56318654"
+  },
+  "mapFiles": 6337,
+  "shopRows": 121,
+  "shops": [
+    {
+      "npc": 11000,
+      "shopIds": [
+        1337,
+        11000
+      ],
+      "name": "赛德",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 1000001,
+          "life": "0",
+          "x": -270,
+          "y": 138,
+          "fh": 11,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        },
+        {
+          "map": 1010001,
+          "life": "0",
+          "x": -270,
+          "y": 138,
+          "fh": 11,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/11000",
+      "resolvedSourceScript": "npc/11000",
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 11100,
+      "shopIds": [
+        11100
+      ],
+      "name": "露茜",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 1000003,
+          "life": "0",
+          "x": -258,
+          "y": 84,
+          "fh": 5,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        },
+        {
+          "map": 1010003,
+          "life": "0",
+          "x": -258,
+          "y": 84,
+          "fh": 5,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 21000,
+      "shopIds": [
+        21000
+      ],
+      "name": "潘",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 60001,
+          "life": "0",
+          "x": -270,
+          "y": 138,
+          "fh": 11,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        },
+        {
+          "map": 2000001,
+          "life": "0",
+          "x": -270,
+          "y": 138,
+          "fh": 11,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1001000,
+      "shopIds": [
+        1001000
+      ],
+      "name": "赛尔文",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 104000003,
+          "life": "0",
+          "x": -276,
+          "y": 136,
+          "fh": 11,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1001001,
+      "shopIds": [
+        1001001
+      ],
+      "name": "娜塔莎",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 104000001,
+          "life": "0",
+          "x": -276,
+          "y": 136,
+          "fh": 11,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1001100,
+      "shopIds": [
+        1001100
+      ],
+      "name": "米娜",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 104000002,
+          "life": "0",
+          "x": -258,
+          "y": 84,
+          "fh": 4,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1011000,
+      "shopIds": [
+        1011000
+      ],
+      "name": "卡尔",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 100000101,
+          "life": "0",
+          "x": -280,
+          "y": 121,
+          "fh": 18,
+          "footholdLayerGroup": [
+            0,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1011001,
+      "shopIds": [
+        1011001
+      ],
+      "name": "山姆",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 100000101,
+          "life": "1",
+          "x": -275,
+          "y": -225,
+          "fh": 22,
+          "footholdLayerGroup": [
+            0,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1011100,
+      "shopIds": [
+        1011100
+      ],
+      "name": "卢娜",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 100000102,
+          "life": "0",
+          "x": -258,
+          "y": 84,
+          "fh": 5,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1012004,
+      "shopIds": [
+        1012004
+      ],
+      "name": "科尔",
+      "function": "宠物饲料商",
+      "placements": [
+        {
+          "map": 100000100,
+          "life": "1",
+          "x": 3371,
+          "y": -117,
+          "fh": 63,
+          "footholdLayerGroup": [
+            0,
+            4
+          ],
+          "hide": 0
+        },
+        {
+          "map": 100000202,
+          "life": "1",
+          "x": 413,
+          "y": 152,
+          "fh": 329,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1021000,
+      "shopIds": [
+        1021000
+      ],
+      "name": "利伯",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 102000001,
+          "life": "0",
+          "x": -298,
+          "y": 138,
+          "fh": 11,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1021001,
+      "shopIds": [
+        1021001
+      ],
+      "name": "慧丽",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 102000001,
+          "life": "1",
+          "x": -253,
+          "y": 138,
+          "fh": 11,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1021100,
+      "shopIds": [
+        1021100
+      ],
+      "name": "格里高利",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 102000002,
+          "life": "0",
+          "x": -16,
+          "y": 120,
+          "fh": 1,
+          "footholdLayerGroup": [
+            0,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1031000,
+      "shopIds": [
+        1031000
+      ],
+      "name": "妖精 佛罗拉",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 101000001,
+          "life": "0",
+          "x": -302,
+          "y": 138,
+          "fh": 11,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1031001,
+      "shopIds": [
+        1031001
+      ],
+      "name": "妖精 舍拉比",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 101000001,
+          "life": "1",
+          "x": -252,
+          "y": 137,
+          "fh": 11,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1031100,
+      "shopIds": [
+        1031100
+      ],
+      "name": "妖精 莲",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 101000002,
+          "life": "0",
+          "x": -258,
+          "y": 84,
+          "fh": 4,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1032103,
+      "shopIds": [
+        1032103
+      ],
+      "name": "阿尔莫斯",
+      "function": "卷轴商人",
+      "placements": [
+        {
+          "map": 101010102,
+          "life": "45",
+          "x": -179,
+          "y": 1844,
+          "fh": 149,
+          "footholdLayerGroup": [
+            1,
+            2
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1051000,
+      "shopIds": [
+        1051000
+      ],
+      "name": "曼斯塔",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 103000001,
+          "life": "0",
+          "x": 214,
+          "y": -34,
+          "fh": 1,
+          "footholdLayerGroup": [
+            0,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1051001,
+      "shopIds": [
+        1051001
+      ],
+      "name": "玛帕",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 103000001,
+          "life": "1",
+          "x": -249,
+          "y": -49,
+          "fh": 9,
+          "footholdLayerGroup": [
+            1,
+            2
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1051002,
+      "shopIds": [
+        1051002
+      ],
+      "name": "铭仁",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 103000002,
+          "life": "0",
+          "x": -297,
+          "y": -79,
+          "fh": 1,
+          "footholdLayerGroup": [
+            0,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1052104,
+      "shopIds": [
+        1052104
+      ],
+      "name": "图里卡斯",
+      "function": "卷轴商人",
+      "placements": [
+        {
+          "map": 107000100,
+          "life": "27",
+          "x": 826,
+          "y": -186,
+          "fh": 245,
+          "footholdLayerGroup": [
+            4,
+            34
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1052116,
+      "shopIds": [
+        1052116
+      ],
+      "name": "坦坦",
+      "function": "杂货商",
+      "placements": [
+        {
+          "map": 103040000,
+          "life": "0",
+          "x": 450,
+          "y": 416,
+          "fh": 26,
+          "footholdLayerGroup": [
+            3,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1061001,
+      "shopIds": [
+        1061001
+      ],
+      "name": "24小时 排档",
+      "function": "",
+      "placements": [
+        {
+          "map": 105070001,
+          "life": "58",
+          "x": 333,
+          "y": -249,
+          "fh": 1026,
+          "footholdLayerGroup": [
+            1,
+            89
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1061002,
+      "shopIds": [
+        1061002
+      ],
+      "name": "豪素夫",
+      "function": "桑拿浴管家",
+      "placements": [
+        {
+          "map": 105040401,
+          "life": "0",
+          "x": 137,
+          "y": 105,
+          "fh": 48,
+          "footholdLayerGroup": [
+            1,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1081000,
+      "shopIds": [
+        1081000
+      ],
+      "name": "拜伦",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 110000000,
+          "life": "1",
+          "x": 662,
+          "y": -120,
+          "fh": 74,
+          "footholdLayerGroup": [
+            2,
+            78
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1091000,
+      "shopIds": [
+        1091000
+      ],
+      "name": "摩根",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 120000200,
+          "life": "0",
+          "x": 484,
+          "y": 146,
+          "fh": 46,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1091001,
+      "shopIds": [
+        1091001
+      ],
+      "name": "路德司",
+      "function": "防具商人",
+      "placements": [
+        {
+          "map": 120000200,
+          "life": "1",
+          "x": 1055,
+          "y": 148,
+          "fh": 50,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1091002,
+      "shopIds": [
+        1091002
+      ],
+      "name": "咖喱",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 120000200,
+          "life": "4",
+          "x": 3305,
+          "y": 141,
+          "fh": 65,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1093000,
+      "shopIds": [
+        1093000
+      ],
+      "name": "布巴",
+      "function": "",
+      "placements": [
+        {
+          "map": 120000000,
+          "life": "7",
+          "x": 1037,
+          "y": -34,
+          "fh": 87,
+          "footholdLayerGroup": [
+            4,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1100001,
+      "shopIds": [
+        1100001
+      ],
+      "name": "奇里幽",
+      "function": "武器防具商人",
+      "placements": [
+        {
+          "map": 130000200,
+          "life": "5",
+          "x": 82,
+          "y": 83,
+          "fh": 24,
+          "footholdLayerGroup": [
+            3,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1100002,
+      "shopIds": [
+        1100002
+      ],
+      "name": "奇里文",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 130000200,
+          "life": "6",
+          "x": 730,
+          "y": 84,
+          "fh": 35,
+          "footholdLayerGroup": [
+            3,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1200001,
+      "shopIds": [
+        1200001
+      ],
+      "name": "普诺",
+      "function": "武器防具商人",
+      "placements": [
+        {
+          "map": 140000000,
+          "life": "1",
+          "x": 1365,
+          "y": 78,
+          "fh": 35,
+          "footholdLayerGroup": [
+            3,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1200002,
+      "shopIds": [
+        1200002
+      ],
+      "name": "普里普里",
+      "function": "杂货商",
+      "placements": [
+        {
+          "map": 140000000,
+          "life": "2",
+          "x": 2010,
+          "y": 79,
+          "fh": 48,
+          "footholdLayerGroup": [
+            3,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 1301000,
+      "shopIds": [
+        1301000
+      ],
+      "name": "豆尔",
+      "function": "杂货商",
+      "placements": [
+        {
+          "map": 106020000,
+          "life": "5",
+          "x": 599,
+          "y": 30,
+          "fh": 27,
+          "footholdLayerGroup": [
+            3,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2002001,
+      "shopIds": [
+        57
+      ],
+      "name": "鲁迪",
+      "function": "装饰圣诞树商人",
+      "placements": [
+        {
+          "map": 209000000,
+          "life": "3",
+          "x": 721,
+          "y": 148,
+          "fh": 56,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2010004,
+      "shopIds": [
+        2010004
+      ],
+      "name": "瑞撒上等兵",
+      "function": "宠物饲料商人",
+      "placements": [
+        {
+          "map": 200000200,
+          "life": "2",
+          "x": -1154,
+          "y": -268,
+          "fh": 31,
+          "footholdLayerGroup": [
+            3,
+            6
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2012003,
+      "shopIds": [
+        2012003
+      ],
+      "name": "妖精 娜丽",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 200000001,
+          "life": "0",
+          "x": -314,
+          "y": 176,
+          "fh": 6,
+          "footholdLayerGroup": [
+            2,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2012004,
+      "shopIds": [
+        2012004
+      ],
+      "name": "妖精 诺丽",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 200000001,
+          "life": "1",
+          "x": 256,
+          "y": -71,
+          "fh": 2,
+          "footholdLayerGroup": [
+            0,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2012005,
+      "shopIds": [
+        2012005
+      ],
+      "name": "妖精 易多",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 200000002,
+          "life": "0",
+          "x": 290,
+          "y": 170,
+          "fh": 10,
+          "footholdLayerGroup": [
+            2,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2020001,
+      "shopIds": [
+        2020001
+      ],
+      "name": "斯考特",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 211000101,
+          "life": "0",
+          "x": 225,
+          "y": 157,
+          "fh": 1,
+          "footholdLayerGroup": [
+            0,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2022000,
+      "shopIds": [
+        2022000
+      ],
+      "name": "卢米",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 211000101,
+          "life": "1",
+          "x": 313,
+          "y": -51,
+          "fh": 9,
+          "footholdLayerGroup": [
+            0,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2022001,
+      "shopIds": [
+        2022001
+      ],
+      "name": "哈娜",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 211000102,
+          "life": "0",
+          "x": 285,
+          "y": 65,
+          "fh": 20,
+          "footholdLayerGroup": [
+            0,
+            3
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2022002,
+      "shopIds": [
+        2022002
+      ],
+      "name": "巴兰",
+      "function": "卷轴商人",
+      "placements": [
+        {
+          "map": 200080800,
+          "life": "14",
+          "x": -160,
+          "y": -416,
+          "fh": 181,
+          "footholdLayerGroup": [
+            1,
+            6
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2030009,
+      "shopIds": [
+        2030009
+      ],
+      "name": "格里巴",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 211040200,
+          "life": "15",
+          "x": 363,
+          "y": -2077,
+          "fh": 191,
+          "footholdLayerGroup": [
+            3,
+            23
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2040049,
+      "shopIds": [
+        2040049
+      ],
+      "name": "糖果机器",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 221021600,
+          "life": "0",
+          "x": 189,
+          "y": -2895,
+          "fh": 40,
+          "footholdLayerGroup": [
+            3,
+            44
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2040051,
+      "shopIds": [
+        2040051
+      ],
+      "name": "小泰",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 220050300,
+          "life": "0",
+          "x": -83,
+          "y": 2918,
+          "fh": 4,
+          "footholdLayerGroup": [
+            3,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2041002,
+      "shopIds": [
+        2041002
+      ],
+      "name": "和答",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 220000001,
+          "life": "1",
+          "x": -59,
+          "y": 133,
+          "fh": 2,
+          "footholdLayerGroup": [
+            2,
+            4
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2041003,
+      "shopIds": [
+        2041003
+      ],
+      "name": "米鲁",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 220000001,
+          "life": "0",
+          "x": 205,
+          "y": 130,
+          "fh": 2,
+          "footholdLayerGroup": [
+            2,
+            4
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2041006,
+      "shopIds": [
+        2041006
+      ],
+      "name": "米舍凯",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 220000002,
+          "life": "0",
+          "x": 284,
+          "y": 123,
+          "fh": 21,
+          "footholdLayerGroup": [
+            3,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2041014,
+      "shopIds": [
+        2041014
+      ],
+      "name": "帕特里沙",
+      "function": "宠物饲料商人",
+      "placements": [
+        {
+          "map": 220000000,
+          "life": "3",
+          "x": -2430,
+          "y": -22,
+          "fh": 136,
+          "footholdLayerGroup": [
+            1,
+            33
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2041016,
+      "shopIds": [
+        2041016
+      ],
+      "name": "弥勒吉尔",
+      "function": "卷轴商人",
+      "placements": [
+        {
+          "map": 221022000,
+          "life": "13",
+          "x": -215,
+          "y": 1252,
+          "fh": 198,
+          "footholdLayerGroup": [
+            4,
+            15
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2050000,
+      "shopIds": [
+        2050000
+      ],
+      "name": "大山",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 221000200,
+          "life": "3",
+          "x": 278,
+          "y": -2613,
+          "fh": 95,
+          "footholdLayerGroup": [
+            3,
+            71
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2050003,
+      "shopIds": [
+        2050003
+      ],
+      "name": "斯派斯尼",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 221000200,
+          "life": "2",
+          "x": -259,
+          "y": -316,
+          "fh": 65,
+          "footholdLayerGroup": [
+            3,
+            38
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2051000,
+      "shopIds": [
+        2051000
+      ],
+      "name": "珮珀",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 221000200,
+          "life": "0",
+          "x": -311,
+          "y": 1016,
+          "fh": 28,
+          "footholdLayerGroup": [
+            3,
+            16
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2060003,
+      "shopIds": [
+        2060003
+      ],
+      "name": "艾里亚斯",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 230000002,
+          "life": "1",
+          "x": 70,
+          "y": -474,
+          "fh": 23,
+          "footholdLayerGroup": [
+            0,
+            26
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2060004,
+      "shopIds": [
+        2060004
+      ],
+      "name": "安纳斯",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 230000002,
+          "life": "2",
+          "x": -164,
+          "y": 91,
+          "fh": 160,
+          "footholdLayerGroup": [
+            2,
+            9
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2060007,
+      "shopIds": [
+        2060007
+      ],
+      "name": "卡利",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 230000002,
+          "life": "3",
+          "x": -137,
+          "y": -711,
+          "fh": 52,
+          "footholdLayerGroup": [
+            0,
+            26
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2070001,
+      "shopIds": [
+        2070001
+      ],
+      "name": "芭德阿姨",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 222000000,
+          "life": "1",
+          "x": 745,
+          "y": 325,
+          "fh": 210,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2070002,
+      "shopIds": [
+        2070002
+      ],
+      "name": "墨铁",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 222000000,
+          "life": "2",
+          "x": -728,
+          "y": 321,
+          "fh": 192,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2070003,
+      "shopIds": [
+        2070003
+      ],
+      "name": "石铁",
+      "function": "防御武器商人 ",
+      "placements": [
+        {
+          "map": 222000000,
+          "life": "3",
+          "x": -991,
+          "y": 324,
+          "fh": 190,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2080001,
+      "shopIds": [
+        2080001
+      ],
+      "name": "史莱",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 240000002,
+          "life": "0",
+          "x": 6,
+          "y": -88,
+          "fh": 6,
+          "footholdLayerGroup": [
+            0,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2080002,
+      "shopIds": [
+        2080002
+      ],
+      "name": "马克斯",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 240000000,
+          "life": "7",
+          "x": 973,
+          "y": -218,
+          "fh": 21,
+          "footholdLayerGroup": [
+            3,
+            61
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2080003,
+      "shopIds": [
+        2080003
+      ],
+      "name": "诺蔓",
+      "function": "卷轴商人",
+      "placements": [
+        {
+          "map": 240010800,
+          "life": "6",
+          "x": -725,
+          "y": -728,
+          "fh": 84,
+          "footholdLayerGroup": [
+            4,
+            63
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2080004,
+      "shopIds": [
+        2080004
+      ],
+      "name": "马蒂",
+      "function": "宠物饲料商人",
+      "placements": [
+        {
+          "map": 240000000,
+          "life": "5",
+          "x": 767,
+          "y": 22,
+          "fh": 92,
+          "footholdLayerGroup": [
+            3,
+            50
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2082014,
+      "shopIds": [
+        2082014
+      ],
+      "name": "阿阿希亚",
+      "function": "",
+      "placements": [
+        {
+          "map": 240070600,
+          "life": "16",
+          "x": -258,
+          "y": -602,
+          "fh": 4,
+          "footholdLayerGroup": [
+            3,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/2082014",
+      "resolvedSourceScript": "npc/2082014",
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "2082014"
+      ]
+    },
+    {
+      "npc": 2090001,
+      "shopIds": [
+        2090001
+      ],
+      "name": "功功",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 250000000,
+          "life": "1",
+          "x": -1144,
+          "y": 41,
+          "fh": 336,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2090002,
+      "shopIds": [
+        2090002
+      ],
+      "name": "防防",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 250000000,
+          "life": "2",
+          "x": -1506,
+          "y": 44,
+          "fh": 314,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2090003,
+      "shopIds": [
+        2090003
+      ],
+      "name": "达淑",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 250000002,
+          "life": "0",
+          "x": 181,
+          "y": 62,
+          "fh": 2,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2090006,
+      "shopIds": [
+        2090006
+      ],
+      "name": "拉丫头",
+      "function": "宠物商人",
+      "placements": [
+        {
+          "map": 250000000,
+          "life": "3",
+          "x": 1111,
+          "y": 45,
+          "fh": 541,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2093000,
+      "shopIds": [
+        2093000
+      ],
+      "name": "武旦",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 251000000,
+          "life": "2",
+          "x": -581,
+          "y": -21,
+          "fh": 99,
+          "footholdLayerGroup": [
+            4,
+            5
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2093001,
+      "shopIds": [
+        2093001
+      ],
+      "name": "小防防",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 251000000,
+          "life": "3",
+          "x": -129,
+          "y": -17,
+          "fh": 119,
+          "footholdLayerGroup": [
+            4,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2093002,
+      "shopIds": [
+        2093002
+      ],
+      "name": "兰明",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 251000000,
+          "life": "4",
+          "x": 349,
+          "y": 230,
+          "fh": 162,
+          "footholdLayerGroup": [
+            4,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2100002,
+      "shopIds": [
+        2100002
+      ],
+      "name": "寨尔德",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 260000000,
+          "life": "3",
+          "x": 1052,
+          "y": 271,
+          "fh": 41,
+          "footholdLayerGroup": [
+            3,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/2100002",
+      "resolvedSourceScript": "npc/2100002",
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "2100002"
+      ]
+    },
+    {
+      "npc": 2100003,
+      "shopIds": [
+        2100003
+      ],
+      "name": "雅思敏",
+      "function": "绸缎商人",
+      "placements": [
+        {
+          "map": 260000000,
+          "life": "4",
+          "x": 1238,
+          "y": 267,
+          "fh": 42,
+          "footholdLayerGroup": [
+            3,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/2100003",
+      "resolvedSourceScript": "npc/2100003",
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "2100003"
+      ]
+    },
+    {
+      "npc": 2100004,
+      "shopIds": [
+        2100004
+      ],
+      "name": "萨哥特",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 260000000,
+          "life": "5",
+          "x": 1786,
+          "y": 271,
+          "fh": 48,
+          "footholdLayerGroup": [
+            3,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2110001,
+      "shopIds": [
+        2110001
+      ],
+      "name": "哲里",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 261000000,
+          "life": "1",
+          "x": 1333,
+          "y": 185,
+          "fh": 277,
+          "footholdLayerGroup": [
+            4,
+            2
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2130000,
+      "shopIds": [
+        2130000
+      ],
+      "name": "玛伦",
+      "function": "杂货商",
+      "placements": [
+        {
+          "map": 300000000,
+          "life": "3",
+          "x": -2688,
+          "y": 82,
+          "fh": 69,
+          "footholdLayerGroup": [
+            3,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9000055,
+      "shopIds": [
+        9999001
+      ],
+      "name": "阿乐米",
+      "function": "",
+      "placements": [
+        {
+          "map": 970010000,
+          "life": "0",
+          "x": 217,
+          "y": 1113,
+          "fh": 17,
+          "footholdLayerGroup": [
+            3,
+            11
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [
+        "armi"
+      ],
+      "resolvedPackedScript": "npc/9000055",
+      "resolvedSourceScript": "npc/9000055",
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9000069,
+      "shopIds": [
+        9000069
+      ],
+      "name": "彪鲁",
+      "function": "特别商店",
+      "placements": [
+        {
+          "map": 100000000,
+          "life": "27",
+          "x": 2790,
+          "y": 173,
+          "fh": 138,
+          "footholdLayerGroup": [
+            0,
+            33
+          ],
+          "hide": 0
+        },
+        {
+          "map": 910000000,
+          "life": "3",
+          "x": 190,
+          "y": 23,
+          "fh": 123,
+          "footholdLayerGroup": [
+            5,
+            5
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9001002,
+      "shopIds": [
+        9999992,
+        9999993,
+        9999994,
+        9999995,
+        9999996,
+        9999997,
+        9999998,
+        9999999
+      ],
+      "name": "北极熊鲍企",
+      "function": "",
+      "placements": [],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9090000,
+      "shopIds": [
+        1338
+      ],
+      "name": "妙妙",
+      "function": "",
+      "placements": [],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9110002,
+      "shopIds": [
+        9110002
+      ],
+      "name": "亚希子",
+      "function": "",
+      "placements": [
+        {
+          "map": 800000000,
+          "life": "4",
+          "x": 4810,
+          "y": -151,
+          "fh": 192,
+          "footholdLayerGroup": [
+            1,
+            3
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [
+        "Life in Mushroom Shrine..."
+      ],
+      "resolvedPackedScript": "npc/9110002",
+      "resolvedSourceScript": "npc/9110002",
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9110003,
+      "shopIds": [
+        9110003
+      ],
+      "name": "服部平刺",
+      "function": "贩卖道具",
+      "placements": [
+        {
+          "map": 800000000,
+          "life": "7",
+          "x": 1695,
+          "y": 58,
+          "fh": 51,
+          "footholdLayerGroup": [
+            1,
+            10
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9110004,
+      "shopIds": [
+        9110004
+      ],
+      "name": "基得",
+      "function": "贩卖道具",
+      "placements": [
+        {
+          "map": 800000000,
+          "life": "0",
+          "x": 3943,
+          "y": 48,
+          "fh": 147,
+          "footholdLayerGroup": [
+            2,
+            16
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9110005,
+      "shopIds": [
+        9110005
+      ],
+      "name": "健二",
+      "function": "贩卖道具",
+      "placements": [
+        {
+          "map": 800000000,
+          "life": "1",
+          "x": 3093,
+          "y": 54,
+          "fh": 110,
+          "footholdLayerGroup": [
+            2,
+            13
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9110006,
+      "shopIds": [
+        9110006
+      ],
+      "name": "爱子",
+      "function": "贩卖道具",
+      "placements": [
+        {
+          "map": 800000000,
+          "life": "2",
+          "x": 2727,
+          "y": 54,
+          "fh": 93,
+          "footholdLayerGroup": [
+            2,
+            12
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9110007,
+      "shopIds": [
+        9110007
+      ],
+      "name": "元泰",
+      "function": "贩卖道具",
+      "placements": [
+        {
+          "map": 800000000,
+          "life": "3",
+          "x": 3527,
+          "y": 93,
+          "fh": 138,
+          "footholdLayerGroup": [
+            3,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9120000,
+      "shopIds": [
+        9120000
+      ],
+      "name": "阿利博士",
+      "function": "武器防具商人",
+      "placements": [
+        {
+          "map": 801000300,
+          "life": "3",
+          "x": 690,
+          "y": 148,
+          "fh": 26,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9120002,
+      "shopIds": [
+        9120002
+      ],
+      "name": "小优",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 801000300,
+          "life": "0",
+          "x": -1109,
+          "y": 150,
+          "fh": 31,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9120004,
+      "shopIds": [
+        9120004
+      ],
+      "name": "灰源",
+      "function": "桑拿部经理",
+      "placements": [
+        {
+          "map": 801000100,
+          "life": "0",
+          "x": -160,
+          "y": 119,
+          "fh": 8,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9120019,
+      "shopIds": [
+        9120019
+      ],
+      "name": "灰源",
+      "function": "桑拿部经理",
+      "placements": [
+        {
+          "map": 801000200,
+          "life": "0",
+          "x": -156,
+          "y": 121,
+          "fh": 8,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9201020,
+      "shopIds": [
+        9201020
+      ],
+      "name": "佩丽丝",
+      "function": "结婚礼服租赁",
+      "placements": [
+        {
+          "map": 680000001,
+          "life": "0",
+          "x": 58,
+          "y": 210,
+          "fh": 12,
+          "footholdLayerGroup": [
+            2,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9201058,
+      "shopIds": [
+        9201058
+      ],
+      "name": "戴尔菲",
+      "function": "防具商人",
+      "placements": [
+        {
+          "map": 600000000,
+          "life": "1",
+          "x": 3555,
+          "y": 257,
+          "fh": 533,
+          "footholdLayerGroup": [
+            4,
+            31
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9201059,
+      "shopIds": [
+        9201059
+      ],
+      "name": "凯尔",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 600000000,
+          "life": "9",
+          "x": 3684,
+          "y": 493,
+          "fh": 540,
+          "footholdLayerGroup": [
+            4,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9201060,
+      "shopIds": [
+        9201060
+      ],
+      "name": "米琪",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 600000000,
+          "life": "10",
+          "x": 4263,
+          "y": 495,
+          "fh": 598,
+          "footholdLayerGroup": [
+            4,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9201099,
+      "shopIds": [
+        9201099
+      ],
+      "name": "老莫",
+      "function": "",
+      "placements": [
+        {
+          "map": 610010004,
+          "life": "0",
+          "x": -342,
+          "y": 195,
+          "fh": 24,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [
+        "MoStore"
+      ],
+      "resolvedPackedScript": "npc/9201099",
+      "resolvedSourceScript": "npc/9201099",
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "9201099"
+      ]
+    },
+    {
+      "npc": 9201101,
+      "shopIds": [
+        9201101
+      ],
+      "name": "T-1337",
+      "function": "",
+      "placements": [],
+      "scripts": [
+        "tcg4_7"
+      ],
+      "resolvedPackedScript": "npc/9201101",
+      "resolvedSourceScript": "npc/9201101",
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "9201101"
+      ]
+    },
+    {
+      "npc": 9270019,
+      "shopIds": [
+        9270019
+      ],
+      "name": "陈",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 540000000,
+          "life": "0",
+          "x": 2012,
+          "y": 43,
+          "fh": 233,
+          "footholdLayerGroup": [
+            5,
+            21
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9270020,
+      "shopIds": [
+        9270020
+      ],
+      "name": "慧婷",
+      "function": "防具商人",
+      "placements": [
+        {
+          "map": 540000000,
+          "life": "2",
+          "x": 2189,
+          "y": -64,
+          "fh": 238,
+          "footholdLayerGroup": [
+            5,
+            21
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9270021,
+      "shopIds": [
+        9270021
+      ],
+      "name": "温迪",
+      "function": "药水商人",
+      "placements": [
+        {
+          "map": 540000000,
+          "life": "4",
+          "x": 977,
+          "y": 640,
+          "fh": 134,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9270022,
+      "shopIds": [
+        9270022
+      ],
+      "name": "蜜糖",
+      "function": "药水商人",
+      "placements": [
+        {
+          "map": 541000000,
+          "life": "2",
+          "x": -2568,
+          "y": 82,
+          "fh": 57,
+          "footholdLayerGroup": [
+            5,
+            13
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9270027,
+      "shopIds": [
+        9270027
+      ],
+      "name": "奥尔文",
+      "function": "本地特产商",
+      "placements": [
+        {
+          "map": 540000000,
+          "life": "8",
+          "x": 1981,
+          "y": 519,
+          "fh": 234,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9270055,
+      "shopIds": [
+        9270055
+      ],
+      "name": "阿强",
+      "function": "武器销售员",
+      "placements": [
+        {
+          "map": 550000000,
+          "life": "5",
+          "x": 1415,
+          "y": 638,
+          "fh": 191,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9270056,
+      "shopIds": [
+        9270056
+      ],
+      "name": "里段",
+      "function": "防具销售员",
+      "placements": [
+        {
+          "map": 550000000,
+          "life": "0",
+          "x": 1681,
+          "y": 475,
+          "fh": 194,
+          "footholdLayerGroup": [
+            3,
+            2
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9270057,
+      "shopIds": [
+        9270057
+      ],
+      "name": "柯华",
+      "function": "药水销售员",
+      "placements": [
+        {
+          "map": 550000000,
+          "life": "4",
+          "x": -350,
+          "y": 596,
+          "fh": 69,
+          "footholdLayerGroup": [
+            6,
+            12
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9270065,
+      "shopIds": [
+        9270065
+      ],
+      "name": "阿里",
+      "function": "当地的专家",
+      "placements": [
+        {
+          "map": 551000000,
+          "life": "2",
+          "x": -928,
+          "y": 815,
+          "fh": 44,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9310001,
+      "shopIds": [
+        9310001
+      ],
+      "name": "李大嫂",
+      "function": "",
+      "placements": [
+        {
+          "map": 701000000,
+          "life": "4",
+          "x": -1556,
+          "y": 230,
+          "fh": 90,
+          "footholdLayerGroup": [
+            3,
+            42
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/9310001",
+      "resolvedSourceScript": "npc/9310001",
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "9310001"
+      ]
+    },
+    {
+      "npc": 9310002,
+      "shopIds": [
+        9310002
+      ],
+      "name": "张老板",
+      "function": "",
+      "placements": [
+        {
+          "map": 701000000,
+          "life": "3",
+          "x": -1380,
+          "y": 310,
+          "fh": 99,
+          "footholdLayerGroup": [
+            4,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/9310002",
+      "resolvedSourceScript": "npc/9310002",
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "9310002"
+      ]
+    },
+    {
+      "npc": 9310003,
+      "shopIds": [
+        9310003
+      ],
+      "name": "陈小姐",
+      "function": "",
+      "placements": [
+        {
+          "map": 701000000,
+          "life": "2",
+          "x": -80,
+          "y": 311,
+          "fh": 160,
+          "footholdLayerGroup": [
+            4,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/9310003",
+      "resolvedSourceScript": "npc/9310003",
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "9310003"
+      ]
+    },
+    {
+      "npc": 9310030,
+      "shopIds": [
+        9310030
+      ],
+      "name": "倩倩",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 702000000,
+          "life": "0",
+          "x": 1452,
+          "y": 150,
+          "fh": 404,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/9310030",
+      "resolvedSourceScript": "npc/9310030",
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "9310030"
+      ]
+    },
+    {
+      "npc": 9310033,
+      "shopIds": [
+        9310033
+      ],
+      "name": "金中钊",
+      "function": "防御武器商人 ",
+      "placements": [
+        {
+          "map": 702000000,
+          "life": "4",
+          "x": -1194,
+          "y": 270,
+          "fh": 121,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9310038,
+      "shopIds": [
+        9310038
+      ],
+      "name": "沙坡朗",
+      "function": "武器商人 ",
+      "placements": [
+        {
+          "map": 702000000,
+          "life": "3",
+          "x": -1577,
+          "y": 272,
+          "fh": 65,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9900001,
+      "shopIds": [
+        9900001
+      ],
+      "name": "昨日小睡",
+      "function": "",
+      "placements": [
+        {
+          "map": 180000000,
+          "life": "0",
+          "x": 283,
+          "y": -90,
+          "fh": 26,
+          "footholdLayerGroup": [
+            1,
+            5
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [
+        "levelUP2"
+      ],
+      "resolvedPackedScript": "npc/9900001",
+      "resolvedSourceScript": "npc/9900001",
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "9201099"
+      ]
+    }
+  ],
+  "merchantLabelsWithoutShop": [
+    {
+      "npc": 1055000,
+      "shopIds": [],
+      "name": "英彩",
+      "function": "武器/防具商人",
+      "placements": [],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2110002,
+      "shopIds": [],
+      "name": "吉欧",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 261000002,
+          "life": "0",
+          "x": 40,
+          "y": 119,
+          "fh": 22,
+          "footholdLayerGroup": [
+            3,
+            1
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/2110002",
+      "resolvedSourceScript": "npc/2110002",
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2110004,
+      "shopIds": [],
+      "name": "威尔斯",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 261000002,
+          "life": "2",
+          "x": 56,
+          "y": -106,
+          "fh": 24,
+          "footholdLayerGroup": [
+            3,
+            7
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 2142000,
+      "shopIds": [],
+      "name": "玛亚",
+      "function": "杂货商",
+      "placements": [
+        {
+          "map": 271010000,
+          "life": "3",
+          "x": 413,
+          "y": 262,
+          "fh": 91,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9110001,
+      "shopIds": [],
+      "name": "百鸟警官",
+      "function": "贩卖武器",
+      "placements": [],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9110100,
+      "shopIds": [],
+      "name": "山本大叔",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 800040000,
+          "life": "4",
+          "x": -890,
+          "y": 385,
+          "fh": 21,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/9110100",
+      "resolvedSourceScript": "npc/9110100",
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "9110100"
+      ]
+    },
+    {
+      "npc": 9110101,
+      "shopIds": [],
+      "name": "小太郎",
+      "function": "防具商人",
+      "placements": [
+        {
+          "map": 800040000,
+          "life": "2",
+          "x": -538,
+          "y": 390,
+          "fh": 8,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9110102,
+      "shopIds": [],
+      "name": "田一",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 800040209,
+          "life": "0",
+          "x": -15,
+          "y": 138,
+          "fh": 14,
+          "footholdLayerGroup": [
+            1,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": "npc/9110102",
+      "resolvedSourceScript": "npc/9110102",
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "script",
+      "scriptOpenShopCalls": [
+        "9110102"
+      ]
+    },
+    {
+      "npc": 9130029,
+      "shopIds": [],
+      "name": "吉川元春",
+      "function": "武器防具商人",
+      "placements": [
+        {
+          "map": 807000000,
+          "life": "6",
+          "x": 323,
+          "y": -13,
+          "fh": 106,
+          "footholdLayerGroup": [
+            5,
+            0
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9250007,
+      "shopIds": [],
+      "name": "多昂",
+      "function": "防御武器商人",
+      "placements": [
+        {
+          "map": 500000000,
+          "life": "0",
+          "x": 1539,
+          "y": 60,
+          "fh": 165,
+          "footholdLayerGroup": [
+            4,
+            98
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9250008,
+      "shopIds": [],
+      "name": "潘",
+      "function": "杂货商人",
+      "placements": [
+        {
+          "map": 500000000,
+          "life": "6",
+          "x": -3059,
+          "y": 7,
+          "fh": 21,
+          "footholdLayerGroup": [
+            3,
+            102
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9250009,
+      "shopIds": [],
+      "name": "诺娅",
+      "function": "武器商人",
+      "placements": [
+        {
+          "map": 500000000,
+          "life": "2",
+          "x": -1953,
+          "y": 61,
+          "fh": 45,
+          "footholdLayerGroup": [
+            4,
+            78
+          ],
+          "hide": 0
+        }
+      ],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9330000,
+      "shopIds": [],
+      "name": "兰",
+      "function": "杂货商人",
+      "placements": [],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9330001,
+      "shopIds": [],
+      "name": "黄老板",
+      "function": "武器商人",
+      "placements": [],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9330002,
+      "shopIds": [],
+      "name": "诸葛伦",
+      "function": "防具商人",
+      "placements": [],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": false,
+      "mapleTV": false,
+      "currentNoQuestPath": "missing-script-toast",
+      "scriptOpenShopCalls": []
+    },
+    {
+      "npc": 9330029,
+      "shopIds": [],
+      "name": "悠悠",
+      "function": "杂货商人",
+      "placements": [],
+      "scripts": [],
+      "resolvedPackedScript": null,
+      "resolvedSourceScript": null,
+      "sourcePackMatch": true,
+      "speak": true,
+      "mapleTV": false,
+      "currentNoQuestPath": "silent-return",
+      "scriptOpenShopCalls": []
+    }
+  ],
+  "errors": []
+}

@@ -403,10 +403,9 @@
 `dispose()` 只释放脚本管理器，**已经发出的对话框留在屏幕上**，玩家点掉最后一个按钮才真正关闭 ——
 这是源端 `sendOk + dispose` 的常见写法，如果 dispose 就清屏，玩家会看到对白一闪而过。
 
-单机没有的系统（组队、远征队、公会、仓库、宠物、拍卖、活动、MTS）返回 `null`；`null` 上的成员读取
-由解释器的「空收件人」兜住：`size()=0`、`isEmpty()=true`、其余调用返回 `null`。这样脚本会自然走进
-源端那批「你没有队伍」「没有可复活宠物」的分支，而不是在第一行就 `TypeError` 把整段对话打断。
-排查真实空指针时把 `JsInterpreter.StrictNullMembers` 打开即可回到严格模式。
+未迁移接口使用明确的 `Unmigrated server API` 错误，正式会话保持严格null成员检查。
+只有源端允许为空且已接入真实状态的getter才返回null；不得用 `size()=0` 或任意成员返回null掩盖缺接口。
+Java互操作通过显式类注册迁移原API，不依赖JVM或任意反射，已覆盖的类与验证范围见逆向skill的NPC记录。
 
 ### 任务数据（Quest.wz）
 
@@ -451,8 +450,7 @@
 
 - `NpcDialogUi`：`UI/UIWindow.img/UtilDlgEx` 底板 + NPC 名 + 关闭钮 + 正文富文本 + 选项行，
   底部按钮按 `Mode` 取 `BtNext/BtPrev/BtOK/BtYes/BtNo/BtQYes/BtQNo/BtClose`
-- `DialogText`：`#b/#r/#g/#y/#d/#c/#k` → `<color=…>`、`#L<idx>#…#l` → 选项、`#m/#p/#t/#z/#v/#i/#f/#s`
-  做名字/数字替换（`String.wz` 取名，带缓存）
+- `DialogText`：`#b/#r/#g/#d/#w/#k` 颜色、`#L<idx>#…#l` 行内选项；`#m/#p/#@/#t/#z/#q` 名称、`#c`持有数量、`#y/#u`任务名称/状态，`#v/#i/#s/#f/#W`引用原IMG图标。数值按原端atoi读取十进制前缀，支持冒号后缀；纯文本入口复用同一解析器。高级任务动态标记及引用点击行为的迁移边界见逆向skill的NPC对话记录。
 - `NpcField`：双击 NPC 打开任务/脚本选择，按可完成、可开始、其他分组；默认问候读取 `String/Npc.img/d0`，其他脚本读取 NPC `info/script`。命名脚本缺失时沿用源端数字 NPC 脚本兜底。
 - 对话使用原生 `UtilDlgEx/t,c,s`（中段平铺）、左侧 NPC 动画与 `bar` 名牌，右侧正文及原生任务分组标题；高度随内容变化。结束对话在左下，翻页/接受按钮在右侧正文下方。
 - NPC 提示使用 `UIWindow.img/QuestIcon` 动画；角色灯泡使用 `BasicEff.img/QuestAlert/Default`，列表仅收集符合条件且带 `autoStart/autoComplete/autoPreComplete` 的远程任务。`fieldEnter` 读取子项 `0`，避免地图限制失效。普通任务距离校验对应源端 1200×800；自动任务跳过距离限制。
@@ -460,30 +458,17 @@
 - `QuestWindow`：`UI/UIWindow.img/Quest/backgrnd`(245×396)+`backgrnd2`(305×396)、`S=1.25`，
   两个页签（进行中/已完成）、详情与奖励、`BtGiveup` 放弃
 
-### 覆盖率（`tools/script-harness` 离线实测）
+### 覆盖率与正式API审计（2026-10-29，进行中）
 
-| 集合 | 文件 | 跑通 | Java 互操作 | 运行时异常 | 语法不支持 |
-| --- | --- | --- | --- | --- | --- |
-| `npc/` | 889 | 785 | 70 | 27 | 7 |
-| `quest/` | 294 | 275 | 6 | 7 | 6 |
-| 合计 | 1183 | **1060 (89.6%)** | 76 | 34 | 13 |
+旧Mock的889条/47 RUN/73 JAVA不是120个已确认游戏故障：Mock缺正式Java注册，且旧回复序列会在dispose后继续执行action并发送无效选项。不得按Mock剩余条数填充空接口。
 
-跑通部分的实测指标：产生 **1817 段对白**、**896 次 dispose**。
+当前 `ScriptApiAudit.Run` 使用真实NpcSession/NpcApi与隔离GameServer数据库：**889条829通过60失败；原120项106通过14失败；25项直接宿主检查通过**。每条起始地图1000000（独立还原LastMapId偏好）、level30/job0/金币100000，沿首条菜单最多回复14次；无活动渲染场景、队伍和事件实例。这是交互冒烟检查，不代表全部选项/系统或Android验收。
 
-剩下 4% 是源端脚本自己用了客户端跑不了的东西，逐类列清楚：
+纯解释器/服务self-test为40通过0失败；资源包2779条（npc889/quest470），parseFail0、mangled0；compile-check Rebuild为0错误0警告。逐项结果与缺口依据见 [script-api-audit.md](script-api-audit.md)、[script-api-audit.json](script-api-audit.json)。Mock --run仍存在未接正式宿主的错误，不能替代正式API审计。
 
-| 不支持 | 条数 | 原因 |
-| --- | --- | --- |
-| `Java.type` / `java.util.*` / `importPackage` | 76 | 单机没有 JVM；脚本在做内存表操作或事件实例调用 |
-| `eval` | 2 | 需要动态求值，安全与 IL2CPP 都不允许 |
-| 正则字面量 `/.../g` | 2 | 词法器不支持 `/` 的两种含义（除号/正则）歧义判定 |
-| `for...of` / 解构参数 `([a,b]) => …` / 箭头函数 | 9 | ES6 语法，当时按 ES5 目标实现 |
+三处用户明确授权的本地覆盖保留源端不变：2040022辅助剂说明dispose后补return；2010005金币/船票判断前初始化access=false；2143003使用真实CYGNUS枚举。统一由sync工具打包。
 
-这些脚本走到时给的是 `BottomBar.Toast(...)` + 一条 `[Script]` error 日志，不会静默假装成功。
-提示语已经改成能直接定位问题的形式（原来是笼统的「对话脚本出错（详见日志）」）：
-
-- 缺服务端接口 → `该功能尚未接入（缺少 cm.xxx / player.xxx）`
-- 缺整个 Java 类 → `该功能需要未接入的服务端类 org.gms.xxx.Yyy`
+缺服务端方法/类时仍显示可定位错误，未迁移的副本地图、猜拳/家族创建界面、假人Boss等不得假装成功。
 
 ### 脚本点击链路（`QuestNpcChecks.RunMenu`）
 
@@ -521,7 +506,7 @@
 - `tools/script-harness --parse <dir>`：只查语法覆盖率
 - `tools/script-harness --trace <file>`：单脚本逐句跟踪（`sendNext → sendSimple → sendYesNo → 金币不足分支`）
 - `tools/script-harness --pack <json>`：走客户端同一套 `MiniJson` 解 `npc_scripts.json`，逐条丢给引擎，
-  确保「打包 → 读取 → 解析」链路没坏（当前 1183 条，`parseFail=13`、`mangled=0`）
+  确保「打包 → 读取 → 解析」链路没坏（当前2779条，`parseFail=0`、`mangled=0`）
 - `tools/unity-compile-check`：用 `Assets/Scripts/**` + `Assets/Editor/**` 对全部 Unity 模块 DLL 编译，
   0 error / 0 warning
 - `QuestNpcChecks.Run`（编辑器，可不进 Play）：
@@ -535,7 +520,7 @@
 - 只做了「读」的还原：任务状态、击杀进度、`infoEx` 进度都落在本地存档（`PlayerPrefs`），没有服务端校验
 - `startscript/endscript` 的字段名（`q1021s`）与脚本文件名（`1021.js`）不一致：源端
   `QuestScriptManager` 实际按 `quest/<questid>.js` 加载，本实现跟着按 id 取，不按字段名取
-- 商店交易、仓库、宠物、公会、远征队这些被脚本调用的系统，客户端只给「空集合」语义
+- 各系统按实际迁移状态提供接口；未知API严格报错，不再给统一「空集合」语义。普通商店以并行的npc-shops记录为准，其余不据此声称完整迁移
 - 反应堆脚本（`reactor/`）已有原JS act入口，当前宿主覆盖mapMessage/spawnNpc/getEventInstance，OPQ祭坛交付已回归；完整反应堆API、事件私有地图与前端受击动画仍未完成（详见逆向skill的假人系统记录）。
 
 ### 2026-10-23 对话回归记录

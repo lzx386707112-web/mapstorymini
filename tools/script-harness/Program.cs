@@ -65,11 +65,13 @@ internal static class Program
             eng.Run();
             bool quest = File.ReadAllText(file).Contains("qm.");
             if (eng.HasFunction("start")) { if (quest) eng.Call("start", new JsNumber(1), new JsNumber(0), new JsNumber(0)); else eng.Call("start"); }
-            for (int i = 0; i < 8 && !trace.Disposed; i++)
+            for (int i = 0; i < 8 && !trace.Disposed && trace.PendingDialog; i++)
             {
                 if (!eng.HasFunction("action") && !quest) break;
-                Console.WriteLine("   >>> action(1, 1, " + (i % 3) + ")");
-                try { if (quest) eng.Call("start", new JsNumber(1), new JsNumber(1), new JsNumber(i % 3)); else eng.Call("action", new JsNumber(1), new JsNumber(1), new JsNumber(i % 3)); }
+                int replyType = trace.ReplyType, replySelection = trace.Selection;
+                trace.PendingDialog = false;
+                Console.WriteLine("   >>> action(1, " + replyType + ", " + replySelection + ")");
+                try { if (quest) eng.Call("start", new JsNumber(1), new JsNumber(replyType), new JsNumber(replySelection)); else eng.Call("action", new JsNumber(1), new JsNumber(replyType), new JsNumber(replySelection)); }
                 catch (Exception ex) { Console.WriteLine("   !!! " + ex.Message); break; }
             }
             return 0;
@@ -113,6 +115,7 @@ internal static class Program
             catch (JsRuntimeException ex) when (ex.Message.Contains("Java interop"))
             {
                 unsupported++;
+                failures.Add("JAVA  " + Path.GetFileName(file) + " :: " + Brief(ex));
             }
             catch (Exception ex)
             {
@@ -125,7 +128,7 @@ internal static class Program
                           " parseFail=" + parseFail + " runFail=" + runFail +
                           " javaInterop=" + unsupported + " dialogs=" + dialogs + " disposed=" + disposed);
         foreach (var f in failures) Console.WriteLine("  " + f);
-        return parseFail + runFail == 0 ? 0 : 1;
+        return parseFail + runFail + unsupported == 0 ? 0 : 1;
     }
 
     // 验证 Quest.wz 结构与 QuestCatalog 的读法一致
@@ -220,12 +223,13 @@ internal static class Program
             else engine.Call("start");
         }
 
-        for (int i = 0; i < 14 && mock.DialogCount < 40; i++)
+        for (int i = 0; i < 14 && !mock.Disposed && mock.PendingDialog && mock.DialogCount < 40; i++)
         {
             if (isQuest ? !engine.HasFunction("start") : !engine.HasFunction("action")) break;
-            double mode = i % 4 == 2 ? 0 : 1;
-            double type = i % 2 == 0 ? 1 : 0;
-            double selection = i % 3;
+            double mode = 1;
+            double type = mock.ReplyType;
+            double selection = mock.Selection;
+            mock.PendingDialog = false;
             try
             {
                 if (isQuest) engine.Call("start", new JsNumber(mode), new JsNumber(type), new JsNumber(selection));
@@ -253,6 +257,8 @@ internal static class Program
         public bool Disposed;
         public bool Trace;
         public int DialogCount;
+        public bool PendingDialog;
+        public int ReplyType, Selection = -1;
 
         static readonly HashSet<string> ObjectGetters = new HashSet<string>(StringComparer.Ordinal)
         {
@@ -300,8 +306,6 @@ internal static class Program
 
         static JsFunction FnOf(JsValue v) => JsFunction.FromNative("const", c => v);
 
-        void ResetDialog() { }
-
         JsFunction DefaultFn(string name)
         {
             return JsFunction.FromNative(name, c =>
@@ -310,6 +314,16 @@ internal static class Program
                 if (name.StartsWith("send"))
                 {
                     DialogCount++;
+                    PendingDialog = true;
+                    ReplyType = name == "sendSimple" ? 4 : name == "sendYesNo" ? 1 : name == "sendAcceptDecline" ? 12 : name == "sendGetText" ? 2 : name == "sendGetNumber" ? 3 : 0;
+                    Selection = -1;
+                    if (ReplyType == 4)
+                    {
+                        var link = Regex.Match(JsConvert.ToString(c.Arg(0)), @"#L(-?\d+)#");
+                        if (!link.Success) PendingDialog = false;
+                        else Selection = int.Parse(link.Groups[1].Value);
+                    }
+                    else if (ReplyType == 3) Selection = JsConvert.ToInt32(c.Arg(1));
                     if (Trace) Console.WriteLine("   " + name + "(" + Brief1(JsConvert.ToString(c.Arg(0))) + ")");
                     return JsUndefined.Value;
                 }

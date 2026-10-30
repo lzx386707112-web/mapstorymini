@@ -6,6 +6,7 @@ namespace MapleDash.Js
     public sealed class JsInterpreter
     {
         public JsScope Global { get; }
+        readonly JsHostObject globalObject;
 
         long steps;
         public long MaxSteps = 4000000;
@@ -15,10 +16,13 @@ namespace MapleDash.Js
         readonly Random rng = new Random();
         public Action<string> Trace;
         public Func<string, JsValue> ResolveHostType;
+        internal readonly Dictionary<string, JsValue> JavaTypes = new Dictionary<string, JsValue>(StringComparer.Ordinal);
 
         public JsInterpreter()
         {
             Global = new JsScope(null, true);
+            globalObject = new JsHostObject(Global);
+            Global.Declare("this", globalObject);
             JsBuiltins.Install(this, Global);
         }
 
@@ -103,7 +107,8 @@ namespace MapleDash.Js
             try
             {
                 var scope = new JsScope(fn.Closure ?? Global, true);
-                scope.Declare("this", fn.Arrow && fn.Closure.TryGet("this", out var lexicalThis) ? lexicalThis : thisValue ?? JsUndefined.Value);
+                scope.Declare("this", fn.Arrow && fn.Closure.TryGet("this", out var lexicalThis) ? lexicalThis
+                    : thisValue == null || thisValue is JsNull || thisValue is JsUndefined ? globalObject : thisValue);
                 if (fn.Patterns != null)
                     for (int n = 0; n < fn.Patterns.Length; n++)
                         JsPatterns.Bind(fn.Patterns[n], args != null && n < args.Length ? args[n] : JsUndefined.Value, this, scope, true);
@@ -140,6 +145,7 @@ namespace MapleDash.Js
         {
             if (obj == null) obj = JsUndefined.Value;
 
+            if (ReferenceEquals(obj, globalObject)) return Global.TryGet(key, out var globalValue) ? globalValue : JsUndefined.Value;
             if (obj is JsDate date) return date.Get(key);
             if (obj is JsRegExp regex) return regex.Get(key);
             if (obj is JsHostObject h) return h.Get(key);
@@ -224,6 +230,7 @@ namespace MapleDash.Js
         public void SetMember(JsValue obj, string key, JsValue value)
         {
             value = value ?? JsNull.Value;
+            if (ReferenceEquals(obj, globalObject)) { Global.Set(key, value); return; }
             if (obj is JsRegExp regex && key == "lastIndex") { regex.SetLastIndex(value); return; }
             if (obj is JsHostObject h) { h.Set(key, value); return; }
             if (obj is JsObject o) { o.Set(key, value); return; }

@@ -329,6 +329,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         public EnemyUnit enemy;
         public BossUnit boss;
+        public Server.Field.MapReactor reactor;
         public DamageResult hit;
         public float timer;
         public int facing;
@@ -467,7 +468,28 @@ public class PlayerCtrl : MonoBehaviour
         if (grounded && !moving && climb == null) hp = Mathf.Min(hpMax, hp + 10f);
     }
 
-    public bool Sitting { get; private set; }
+    bool sitting;
+    NativeBotChair chairEffect;
+    public int ChairId { get; private set; }
+    public bool Sitting
+    {
+        get => sitting;
+        private set
+        {
+            sitting = value;
+            if (!value) { ChairId = 0; if (chairEffect != null) chairEffect.Set(0, vis); }
+        }
+    }
+    public bool UseChair(int itemId)
+    {
+        if (!grounded || IsClimbing || hp <= 0f || vis == null) return false;
+        Sitting = true;
+        ChairId = itemId;
+        vis.SetBase("sit");
+        if (chairEffect == null) chairEffect = gameObject.AddComponent<NativeBotChair>();
+        chairEffect.Set(itemId, vis);
+        return true;
+    }
     public bool Crouching { get; private set; }
     string swingAction = "atk";
     bool NativeBasicAttackActive => Terrain != null && vis != null && vis.IsOneShot &&
@@ -631,7 +653,11 @@ public class PlayerCtrl : MonoBehaviour
         if ((diseases == null || !diseases.BlocksAttack) && (Terrain == null || attackRequested) && !IsClimbing && atkTimer <= 0f && (vis == null || !vis.IsOneShot))
         {
             var b = FindBossTarget();
-            if (b != null)
+            if (attackRequested && StrikeReactor())
+            {
+                atkTimer = attackInterval;
+            }
+            else if (b != null)
             {
                 atkTimer = attackInterval;
                 if (Terrain == null) facing = b.transform.position.x >= worldX ? 1 : -1;
@@ -701,6 +727,20 @@ public class PlayerCtrl : MonoBehaviour
     }
 
     // 空挥：没有目标也要有完整动作和速度
+    bool StrikeReactor()
+    {
+        if (Terrain==null || vis==null || GameLoop.I?.field?.Map==null) return false;
+        var local=AfterimageFx.AttackBounds(WzCharacter.Afterimage(vis.key),
+            Crouching ? "proneStab" : WzCharacter.AttackPoseName(vis.key));
+        if (!local.HasValue) return false;
+        var target=NativeReactorView.FindTarget(GameLoop.I.field.Map.id,
+            NativeTargetGeometry.World(local.Value,FeetPos,facing>0));
+        if (target==null) return false;
+        float windup=BeginSwing();
+        pending=new PendingHit { reactor=target,timer=windup,facing=facing,active=true };
+        return true;
+    }
+
     void SwingEmpty()
     {
         if (!SpendBasicProjectile()) return;
@@ -730,7 +770,14 @@ public class PlayerCtrl : MonoBehaviour
         if (pending.timer > 0f) return;
         pending.active = false;
         var p = pending;
-        if (p.boss != null)
+        if (p.reactor != null)
+        {
+            var r=p.reactor;
+            if (GameLoop.I?.field?.Map?.id==r.mapId &&
+                ReferenceEquals(Server.Field.MapReactorService.Find(r.mapId,r.objectId),r))
+                Server.Field.MapReactorService.HitPlayer(r.mapId,r.objectId,GameSession.CharacterId);
+        }
+        else if (p.boss != null)
         {
             if (!p.boss.dead) HitBoss(p.boss, p.hit);
         }
@@ -937,18 +984,15 @@ public class PlayerCtrl : MonoBehaviour
         float y = terrainY + jumpY;
         if (climb == null && grabCooldown <= 0f && Mathf.Abs(climbInput) > 0.15f && Climbs != null)
         {
-            // 抓取横向距离沿用原端的「站在绳梯正下方」语义（±10px）。
-            // 纵向给 100px 容差：WZ 里绳梯 y2 是图元下端，常常悬在落脚平台上方
-            // （全量统计：88 条差 ≤40px，17 条 40~80px，3 条 80~120px），
-            // 原来用 y < bottom 直接判死，站在梯脚按上根本抓不到。
+            // Only grab a rope already reached by the feet. Never lift a passer-by
+            // across the empty space below its bottom endpoint.
             float distance = 10f / Art.PPU;
-            float bottomSlack = 100f / Art.PPU;
             float topSlack = 8f / Art.PPU;
             foreach (var line in Climbs)
             {
                 float dx = Mathf.Abs(worldX - line.x);
                 if (dx > distance) continue;
-                if (y < line.bottom - bottomSlack || y > line.top + topSlack) continue;
+                if (y < line.bottom || y > line.top + topSlack) continue;
                 // 站在平台顶端正上方按上 = 想往上走，不是想爬；只有按上时忽略顶端这条线。
                 if (grounded && climbInput > 0f && y >= line.top - topSlack) continue;
                 distance = dx;
@@ -962,12 +1006,7 @@ public class PlayerCtrl : MonoBehaviour
                 grounded = false;
                 vy = 0f;
                 dropSegment = -1;      // 抓住绳梯 = 离开原来那条平台，忽略指针作废
-                // 吸附到绳身上：从地面够到悬空的绳底时，脚底先贴到 y2 再往上爬
-                float cy = terrainY + jumpY;
-                if (cy < climb.bottom) jumpY = climb.bottom - terrainY;
-                else if (cy > climb.top) jumpY = climb.top - terrainY;
-                // 必须用吸附后的高度继续算位移：不然第一帧还在绳底下方，
-                // 下面「nextY < climb.bottom 就脱手」会立刻把刚抓住的绳子放掉。
+                if (y > climb.top) jumpY = climb.top - terrainY;
                 y = terrainY + jumpY;
             }
         }
@@ -1312,6 +1351,7 @@ public class PlayerCtrl : MonoBehaviour
     // 不是满血 —— 常规 50，护符 30%，特殊图满血。
     public void Revive(int hpValue, int mpValue)
     {
+        Sitting = false;
         GetComponent<NativeMobDebuffs>()?.Clear();
         CancelRush();
         climb = null;
@@ -1331,10 +1371,34 @@ public class PlayerCtrl : MonoBehaviour
     // 死亡姿势：源端动作名是 dead（躺在地上），不是 die（倒地过程）
     public void PlayDeadPose()
     {
+        Sitting = false;
         if (vis == null) return;
         var action = Art.GetClip(vis.kind, vis.key, "dead") != null ? "dead" : "die";
         vis.SetBase(action);
         vis.Play(action, false);
+    }
+
+    // 92FD5A: origin (x,y-20), rotating child (-10,0), 2000ms;
+    // avatar alpha moves from 0 to 255 over 2500ms.
+    public void PresentDeath(float seconds)
+    {
+        if (vis == null) return;
+        float angle = seconds * Mathf.PI;
+        // Shape2D rounds the rotated child to integer pixels (ties away from zero).
+        float x = -10f * Mathf.Cos(angle), y = 10f * Mathf.Sin(angle);
+        x = Mathf.Sign(x) * Mathf.Floor(Mathf.Abs(x) + .5f);
+        y = Mathf.Sign(y) * Mathf.Floor(Mathf.Abs(y) + .5f);
+        vis.transform.localPosition = new Vector3(x, 20f + y, 0f) / Art.PPU;
+        var color = vis.Renderer.color;
+        color.a = Mathf.Clamp01(seconds / 2.5f);
+        vis.Renderer.color = color;
+    }
+
+    public void ClearDeathPresentation()
+    {
+        if (vis == null) return;
+        vis.transform.localPosition = Vector3.zero;
+        vis.Renderer.color = Color.white;
     }
 
     public void AddAttackBonus(float amount, float seconds)
@@ -1473,6 +1537,7 @@ public class PlayerCtrl : MonoBehaviour
     // 换地图 / 从传送门落地：直接指定落脚点（地面 y 由调用方按 foothold 求出）。
     public void PlaceAt(float x, float groundY)
     {
+        Sitting = false;
         CancelRush();
         climb = null;
         dropSegment = -1;

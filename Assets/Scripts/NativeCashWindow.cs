@@ -26,6 +26,7 @@ public static class NativeCashWindow {
     static readonly int[] currencies = { 1, 2, 4 };
     public static void Toggle() {
         if (ShopWindow.Visible) { Request(CashOperation.Close); Reset(); return; }
+        NativeNpcShopWindow.Close();
         var result = Request(CashOperation.Open); ShopWindow.Visible = result != null && result.ok;
         if (ShopWindow.Visible) { category = 1; subcategory = page = lockerRow = inventoryRow = 0; previousTimeScale = Time.timeScale; Time.timeScale = 0; }
     }

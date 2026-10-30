@@ -119,14 +119,14 @@ public static class StatusBar
             // 少了这一层，空槽会直接露出深色面板，和原版差得很明显。
             if (gray != null)
                 GUI.DrawTexture(At(x, barY + 1f, gw, BarH - 2f), gray, ScaleMode.StretchToFill);
-            DrawClippedFill(At(x, barY, gw * ratio[i], BarH), fills[i], gw);
+            DrawClippedFill(At(x, barY, gw * GaugeRatio(i, Time.unscaledTime), BarH), fills[i], gw);
             if (frames[i] != null)
                 GUI.DrawTexture(At(x, barY, gw, BarH), frames[i], ScaleMode.StretchToFill);
 
             // 原版受击反馈：hpFlash / mpFlash 是 5 帧（0/1 交替，109×18），叠在槽体上
             if (i < 2) DrawFlash(i, x, barY);
-            // EXP：刚吃到的那一段用 gauge/tempExp 的浅色条标出来，半秒后消失
-            if (i == 2) DrawExpGain(x, gw, barY);
+            // Native tempExp is banked Gacha EXP, not a timed recent-gain flash.
+            if (i == 2) DrawTemporaryExp(x, barY);
 
             // 数值：紧跟在 HP/MP/EXP 字样后面。原版就是这个排法（截图里是 HP[384/435]），
             // 不是右对齐到槽尾——槽尾那一段是留给填充余量的。
@@ -144,20 +144,32 @@ public static class StatusBar
     // 每帧 100ms，走完 0.5 秒收工。只在数值下降时触发，升级/回血不闪。
     const float FlashFrame = 0.1f;
     const int FlashFrames = 5;
-    const float ExpGainHold = 0.5f;
-    static float hpFlashAt = -99f, mpFlashAt = -99f, expGainAt = -99f;
-    static float lastHp = 1f, lastMp = 1f, lastExp;
-    static float expGainFrom, expGainTo;
+    static float hpFlashAt = -99f, mpFlashAt = -99f;
+    static float lastHp = 1f, lastMp = 1f;
     static bool gaugeInit;
+    // CUIStatusBar::SetNumberValue 8D8BAC/8D932C: HP/MP vectors move over 700ms.
+    const float GaugeDuration = .7f;
+    static readonly float[] gaugeFrom = new float[3], gaugeTo = new float[3], gaugeAt = new float[3];
+    static float GaugeRatio(int index, float now) => Mathf.Lerp(gaugeFrom[index], gaugeTo[index],
+        Mathf.Clamp01((now - gaugeAt[index]) / GaugeDuration));
 
     static void TrackGauges(float[] ratio)
     {
         float now = Time.unscaledTime;
-        if (!gaugeInit) { gaugeInit = true; lastHp = ratio[0]; lastMp = ratio[1]; lastExp = ratio[2]; return; }
+        if (!gaugeInit)
+        {
+            gaugeInit = true; lastHp = ratio[0]; lastMp = ratio[1];
+            for (int i = 0; i < 3; i++) gaugeFrom[i] = gaugeTo[i] = ratio[i];
+            return;
+        }
+        for (int i = 0; i < 2; i++)
+            if (ratio[i] != gaugeTo[i])
+            { gaugeFrom[i] = GaugeRatio(i, now); gaugeTo[i] = ratio[i]; gaugeAt[i] = now; }
+        // EXP's base fill updates immediately; temporary EXP is a separate stat.
+        gaugeFrom[2] = gaugeTo[2] = ratio[2];
         if (ratio[0] < lastHp - 0.0005f) hpFlashAt = now;
         if (ratio[1] < lastMp - 0.0005f) mpFlashAt = now;
-        if (ratio[2] > lastExp + 0.0005f) { expGainFrom = lastExp; expGainTo = ratio[2]; expGainAt = now; }
-        lastHp = ratio[0]; lastMp = ratio[1]; lastExp = ratio[2];
+        lastHp = ratio[0]; lastMp = ratio[1];
     }
 
     static void DrawFlash(int index, float x, float barY)
@@ -170,13 +182,26 @@ public static class StatusBar
         GUI.DrawTexture(At(x, barY, tex.width, tex.height), tex, ScaleMode.StretchToFill);
     }
 
-    static void DrawExpGain(float x, int gw, float barY)
+    // 8DA0A9..8DA1C2: floor(115 * min(gachaExp, maxExp-exp) / maxExp).
+    static Rect TemporaryExpRect(long exp, long maximum, long temporary)
     {
-        if (expGainTo <= expGainFrom) return;
-        if (Time.unscaledTime - expGainAt >= ExpGainHold) return;
-        var tex = Art.Tex("ui/statusbar/gauge_tempExp.bytes");
+        if (maximum <= 0) return Rect.zero;
+        exp = System.Math.Max(0, System.Math.Min(maximum, exp));
+        temporary = System.Math.Max(0, System.Math.Min(maximum - exp, temporary));
+        int from = (int)(115 * exp / maximum);
+        int width = (int)(115 * temporary / maximum);
+        // Native x=441..556, relative to the EXP frame at x=435.
+        return new Rect(6 + from, 1, width, 15);
+    }
+
+    static void DrawTemporaryExp(float x, float barY)
+    {
+        long temporary = GameSession.Character?.record?.gachaexp ?? 0;
+        var r = TemporaryExpRect(Profile.experience, Profile.ExpNeeded, temporary);
+        if (r.width <= 0) return;
+        var tex = Art.Tex("wz://UI/StatusBar.img/gauge/tempExp");
         if (tex == null) return;
-        GUI.DrawTexture(At(x + gw * expGainFrom, barY + 1f, gw * (expGainTo - expGainFrom), BarH - 2f),
+        GUI.DrawTexture(At(x + r.x, barY + r.y, r.width, r.height),
             tex, ScaleMode.StretchToFill);
     }
 

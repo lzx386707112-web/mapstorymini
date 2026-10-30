@@ -147,6 +147,7 @@ public sealed class NpcSession
         string source = ScriptSource.LoadNpc(npcId, scriptName, out scriptKey);
         if (string.IsNullOrEmpty(source))
         {
+            if (NativeNpcShopWindow.HasNpc(npcId)) { NativeNpcShopWindow.OpenNpc(npcId); return null; }
             BottomBar.Toast(WzNames.Npc(npcId) + " 没有对白脚本");
             return null;
         }
@@ -216,7 +217,8 @@ public sealed class NpcSession
             // Some IMG quests omit stop text; retain their original progress description.
             pages = stopPages.Count > 0 ? stopPages : new List<string> { quest.info.Length > 1 ? quest.info[1] : quest.name };
         }
-        Action show = () => SetDialog(branch ? (page == pages.Count - 1 ? NpcDialogMode.Ok : NpcDialogMode.Next) :
+        bool asking = say != null && say.Int("ask") != 0;
+        Action show = () => SetDialog(!branch && asking && pages[page].Contains("#L") ? NpcDialogMode.Simple : branch ? (page == pages.Count - 1 ? NpcDialogMode.Ok : NpcDialogMode.Next) :
             page == pages.Count - 1 ? NpcDialogMode.AcceptDecline : page == 0 ? NpcDialogMode.Next : NpcDialogMode.NextPrev, pages[page]);
         localKeepsSession = true;
         localResponse = (mode, selection) =>
@@ -227,6 +229,20 @@ public sealed class NpcSession
                 if (mode == 1 && ++page < pages.Count) show();
                 else Close();
                 return;
+            }
+            if (asking && pages[page].Contains("#L"))
+            {
+                if (mode != 1) { Close(); return; }
+                if (!DialogFlow.Links(Dialog.Content).Contains(selection)) return;
+                string wrong = say?.Text("stop/" + page + "/" + selection);
+                if (!string.IsNullOrEmpty(wrong))
+                {
+                    pages = new List<string> { wrong };
+                    page = 0;
+                    branch = true;
+                    show();
+                    return;
+                }
             }
             if (page < pages.Count - 1)
             {

@@ -33,6 +33,7 @@ public class EnemyUnit : MonoBehaviour
     int patrolDir = 1;
 
     float stunUntil;
+    public bool VacuumLocked { get; set; }
     float knockV;
     float laneCooldown;
     float dieT = -1f;          // >=0 表示正在播死亡动画（含末尾淡出）
@@ -161,7 +162,7 @@ public class EnemyUnit : MonoBehaviour
         float dt = Time.deltaTime;
         if (dt <= 0f) { SyncVisual(); return; }
 
-        if (knockV != 0f)
+        if (!VacuumLocked && knockV != 0f)
         {
             transform.position += Vector3.right * (knockV * dt);
             knockV = Mathf.MoveTowards(knockV, 0f, 26f * dt);
@@ -181,7 +182,7 @@ public class EnemyUnit : MonoBehaviour
             lane += p.lane > lane ? 1 : -1;
         }
 
-        bool stunned = Time.time < stunUntil;
+        bool stunned = Time.time < stunUntil || VacuumLocked;
         bool moving = false;
         int faceDir = 1;
         float dx = p.worldX - transform.position.x;
@@ -416,6 +417,11 @@ public class EnemyUnit : MonoBehaviour
     public float SkillsSealedUntil { get; private set; }
     public void SealSkills(float seconds) => SkillsSealedUntil = Time.unscaledTime + Mathf.Max(0, seconds);
 
+    public void MoveVac(Vector3 position)
+    {
+        transform.position = position;
+        terrainY = position.y;
+    }
     public void PullTowards(float x)
     {
         if (IsBoss) return;

@@ -1440,9 +1440,7 @@ public static class VirtualControls
     static Texture2D SlotIcon(VCElem e)
     {
         int id = ButtonSkill(e);
-        if (id <= 0) return null;
-        var data = SkillBook.Get(id);
-        return data != null && !string.IsNullOrEmpty(data.icon) ? Art.Tex(data.icon) : null;
+        return QuickSlots.BindingIcon(id);
     }
 
     static string ButtonLabel(VCElem e)

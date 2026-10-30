@@ -640,6 +640,11 @@ public static class BottomBar
             var key = QuickBarKeys.Of(i);
             int skillSlot = QuickBarKeys.SkillSlot(key);
             int id = skillSlot >= 0 ? QuickSlots.Id(skillSlot) : 0;
+            if (QuickSlots.IsItem(id))
+            {
+                var itemIcon = QuickSlots.BindingIcon(id);
+                if (itemIcon != null) GUI.DrawTexture(r, itemIcon, ScaleMode.ScaleToFit);
+            }
             var data = id > 0 ? SkillBook.Get(id) : null;
             if (data != null)
             {
@@ -671,7 +676,7 @@ public static class BottomBar
             if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.RightPressed && r.Contains(Pointer.Pos))
                 { if (skillSlot >= 0) QuickSlots.Clear(skillSlot); }
             // 手上拿着技能时点快捷格 = 放下绑定（由 SkillWindow 处理），不再当作施放
-            if (SkillWindow.Dragging)
+            if (SkillWindow.Dragging || NativeInventoryActions.Carrying)
             {
                 if (Event.current.type == EventType.Repaint && Pointer.RightPressed && r.Contains(Pointer.Pos))
                     SkillWindow.CancelSkillDrag();
@@ -680,7 +685,7 @@ public static class BottomBar
             if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
             {
                 AudioManager.Play("UI/BtMouseClick", 0.7f, false);
-                if (id > 0) QuickSlots.Cast(skillSlot);
+                if (id != 0) QuickSlots.Cast(skillSlot);
                 else if (key != KeyCode.None && key == KeyMap.Of(GameAction.Attack)) GameLoop.I.player.RequestAttack();
                 else if (key != KeyCode.None) { InputHub.SetVirtual(key, true); InputHub.SetVirtual(key, false); }
             }

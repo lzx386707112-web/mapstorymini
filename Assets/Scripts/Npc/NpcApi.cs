@@ -4,7 +4,7 @@ using MapleDash.Js;
 using UnityEngine;
 
 // cm / qm 的 C# 实现。方法名与源端 NPCConversationManager / QuestActionManager 对齐；
-// 没有对应系统的调用（家族、远征队、事件副本）返回 null/0，让脚本按原端分支自然收尾。
+// 未迁移接口明确报错；已实现 getter 仅在源端对应的合法空状态返回 null。
 public static class NpcApi
 {
     static JsValue U => JsUndefined.Value;
@@ -46,6 +46,9 @@ public static class NpcApi
         var player = BuildPlayer(session);
         var map = BuildMap();
 
+        cm.Set("startMonsterVac", Ret(_ => B(Pc != null && NativeMonsterVac.For(Pc).StartVac())));
+        cm.Set("isMonsterVacActive", Ret(_ => B(Pc?.GetComponent<NativeMonsterVac>()?.Active == true)));
+        cm.Set("stopMonsterVac", Fn(_ => Pc?.GetComponent<NativeMonsterVac>()?.StopVac()));
         cm.Set("getPlayer", Ret(_ => player));
         cm.Set("getChar", Ret(_ => player));
         cm.Set("getNpc", Ret(_ => N(npcId)));
@@ -170,7 +173,20 @@ public static class NpcApi
         // 再 dispose，返回 true 表示脚本该 return。单机背包不限格数，与 canHold 恒真保持一致。
         cm.Set("isNotCanHold", Ret(_ => B(false)));
         // ItemInformationProvider.getName / itemDataExists 的等价判断：WZ 里有没有这件道具。
-        cm.Set("itemExists", Ret(c => B(!string.IsNullOrEmpty(WzNames.Item(Int(c, 0))))));
+        cm.Set("getCosmeticItem", Ret(c =>
+        {
+            int id = Int(c, 0);
+            if (WzNames.HasItem(id)) return N(id);
+            int baseId = id < 30000 ? id / 1000 * 1000 + id % 100 : id / 10 * 10;
+            return N(id != baseId && WzNames.HasItem(baseId) ? baseId : -1);
+        }));
+        cm.Set("isCosmeticEquipped", Ret(c =>
+        {
+            int id = Int(c, 0);
+            var record = GameSession.Character?.record;
+            return B(record != null && (id < 30000 ? record.face : record.hair) == id);
+        }));
+        cm.Set("itemExists", Ret(c => B(WzNames.HasItem(Int(c, 0)))));
         cm.Set("hasItemData", Ret(c => B(!string.IsNullOrEmpty(WzNames.Item(Int(c, 0))))));
         cm.Set("getInventory", Ret(c => BuildInventory(Int(c, 0))));
         cm.Set("removeAll", Fn(c => { }));
@@ -201,7 +217,7 @@ public static class NpcApi
             session.RequestWarp(target, WarpName(c, 1), WarpIndex(c, 1));
         }));
         cm.Set("warpParty", Fn(c => session.RequestWarp(Int(c, 0), WarpName(c, 1), WarpIndex(c, 1))));
-        cm.Set("getWarpMap", Ret(_ => N(0)));
+        cm.Set("getWarpMap", Ret(c => BuildWarpMap(Int(c, 0))));
         // AbstractPlayerInteraction.getMarketPortalId(mapId)（AbstractPlayerInteraction.java:126）：
         // 目标图里第一个 script 含 "market" 的门（MapleMap.findMarketPortal），没有就取随机出生门。
         cm.Set("getMarketPortalId", Ret(c => N(MarketPortalId(Int(c, 0)))));
@@ -223,6 +239,23 @@ public static class NpcApi
         cm.Set("isQuestStarted", Ret(c => B(Profile.IsQuestStarted(Int(c, 0)))));
         cm.Set("isQuestCompleted", Ret(c => B(Profile.IsQuestCompleted(Int(c, 0)))));
         cm.Set("isQuestActive", Ret(c => B(Profile.IsQuestStarted(Int(c, 0)))));
+        cm.Set("getQuestRecord", Ret(c =>
+        {
+            int id = Int(c, 0);
+            var record = new JsHostObject(id);
+            Lenient(record, "questRecord");
+            JsValue Data(bool write, JsCall args)
+            {
+                if (!GameSession.InGame) throw new JsRuntimeException("Quest record requires an active character");
+                return GameSession.Net.Script(new ScriptRequest { characterId=GameSession.CharacterId, questId=id,
+                    operation=write ? ScriptOperation.SetQuestCustomData : ScriptOperation.GetQuestCustomData,
+                    customData=args.Arg(0) is JsNull ? null : Str(args,0) }).value;
+            }
+            record.Set("getCustomData", Ret(args => Data(false, args)));
+            record.Set("setCustomData", Fn(args => { Data(true, args); }));
+            record.Set("getStatus", Ret(args => N(Profile.QuestStatus(id))));
+            return record;
+        }));
         cm.Set("getQuestStatus", Ret(c => N(Profile.QuestStatus(Int(c, 0)))));
         cm.Set("getQuestProgressInt", Ret(c => N(Profile.QuestProgressInt(Int(c, 0), Key(c, 1), Int(c, 2, 0)))));
         cm.Set("getQuestProgress", Ret(c => S(Profile.QuestProgress(Int(c, 0), Key(c, 1), ""))));
@@ -269,12 +302,12 @@ public static class NpcApi
         cm.Set("showInfo", Fn(c => NativeImgAnimation.ShowInfo(Str(c, 0))));
         cm.Set("showIntro", Fn(c => NativeMapIntro.Show(Str(c,0))));
         cm.Set("showVideo", Fn(c => { }));
-        cm.Set("playSound", Fn(c => { }));
+        cm.Set("playSound", Fn(c => AudioManager.Play(Str(c, 0), pitchVary: false)));
         cm.Set("guideHint", Fn(c => { }));
         cm.Set("showQuestCompleteEffect", Fn(c => QuestNotice.ShowCompleteEffect()));
         cm.Set("showItemGain", Fn(c => { }));
         cm.Set("openNpc", Fn(c => session.RequestOpenNpc(Int(c, 0), c.ArgCount > 1 ? Str(c, 1, null) : null)));
-        cm.Set("openShopNPC", Fn(c => BottomBar.Toast("商店系统尚未接入")));
+        cm.Set("openShopNPC", Fn(c => NativeNpcShopWindow.OpenShop(Int(c, 0), true)));
         cm.Set("getPlayerCount", Ret(_ => N(1)));
         cm.Set("isLeader", Ret(_ => B(IsPartyLeader())));
         cm.Set("isPartyLeader", Ret(_ => B(IsPartyLeader())));
@@ -558,7 +591,7 @@ public static class NpcApi
 
         // —— GM / 活动工具 ——
         cm.Set("getDisconnected", Ret(_ => B(false)));
-        cm.Set("getConnection", Ret(_ => JsNull.Value));   // DatabaseConnection 管理脚本专用，单机不开放 DB
+        cm.Set("getConnection", Ret(_ => throw new JsRuntimeException("Unmigrated server API: cm.getConnection")));
         cm.Set("divideTeams", Fn(c => { }));
         cm.Set("warpMembers", Fn(c => session.RequestWarp(Int(c, 0))));   // 单机=把自己传过去
         cm.Set("givePartyExp", Fn(c => Profile.GrantExperience(Int(c, 0))));
@@ -881,6 +914,42 @@ public static class NpcApi
         p.Set("isCygnus", Ret(_ => B(QuestLogic.PlayerJob / 1000 == 1)));
         // Character.getFishLevel()（源端 V1.9.9__insert_fishing_items.sql 给 characters 加的 fishLevel 列）
         p.Set("getFishLevel", Ret(_ => N(GameSession.Character?.record.fishLevel ?? 1)));
+        p.Set("getHair", Ret(_ => N(GameSession.Character?.record.hair ?? 0)));
+        p.Set("getFace", Ret(_ => N(GameSession.Character?.record.face ?? 0)));
+        p.Set("getBuddylist", Ret(_ =>
+        {
+            var list = new JsHostObject(null);
+            Lenient(list, "buddylist");
+            list.Set("getCapacity", Ret(c => N(GameSession.Character?.record.buddyCapacity ?? 25)));
+            return list;
+        }));
+        p.Set("setBuddyCapacity", Fn(c =>
+        {
+            if (!GameSession.InGame) throw new JsRuntimeException("Buddy capacity requires an active character");
+            int capacity = Int(c, 0);
+            var response = GameSession.Net.Social(new SocialRequest { characterId = GameSession.CharacterId,
+                operation = SocialOperation.SetBuddyCapacity, buddyCapacity = capacity });
+            if (!response.ok) throw new JsRuntimeException(response.error);
+            GameSession.Character.record.buddyCapacity = capacity;
+        }));
+        p.Set("getMonsterBook", Ret(_ =>
+        {
+            var book = new JsHostObject(null);
+            Lenient(book, "monsterBook");
+            book.Set("getTotalCards", Ret(c => N(GameSession.InGame
+                ? GameSession.Net.Social(new SocialRequest { characterId = GameSession.CharacterId }).cards.Count : 0)));
+            return book;
+        }));
+        // Character.java:712; loaded from characters.partySearch, not a constant.
+        p.Set("isRecvPartySearchInviteEnabled", Ret(_ =>
+        {
+            if (!GameSession.InGame || GameSession.Character == null)
+                throw new JsRuntimeException("Party search preference requires an active character");
+            return B(GameSession.Character.record.partySearch != 0);
+        }));
+        p.Set("gmLevel", Ret(_ => N(GameSession.Character?.record.gm ?? 0)));
+        p.Set("gotPartyQuestItem", Ret(c => B((GameSession.Character?.record.dataString ?? "").Contains(Str(c, 0)))));
+        p.Set("getGuildId", Ret(_ => N(GameSession.Character?.record.guildid ?? 0)));
         p.Set("getGender", Ret(_ => N(GameSession.Character?.record.gender ?? 0)));
         p.Set("getName", Ret(_ => S(Profile.playerName)));
         p.Set("isGM", Ret(_ => B((GameSession.Character?.record.gm ?? 0) > 1)));
@@ -915,6 +984,9 @@ public static class NpcApi
         // Character.saveLocation(type) / saveLocationOnWarp()：warp 前记住「从哪来」（Character.java:8120/8131）
         p.Set("saveLocation", Fn(c => SaveLocation(Str(c, 0))));
         p.Set("saveLocationOnWarp", Fn(_ => SaveLocationOnWarp()));
+        p.Set("startMonsterVac", Ret(_ => B(GameLoop.I?.player != null && NativeMonsterVac.For(GameLoop.I.player).StartVac())));
+        p.Set("isMonsterVacActive", Ret(_ => B(GameLoop.I?.player?.GetComponent<NativeMonsterVac>()?.Active == true)));
+        p.Set("stopMonsterVac", Fn(_ => GameLoop.I?.player?.GetComponent<NativeMonsterVac>()?.StopVac()));
         p.Set("startPartyGrindCompanions", Ret(_ => B(GameSession.InGame && GameSession.Net.PartyGrind(
             new Server.Bot.PartyGrindRequest { characterId=GameSession.CharacterId, operation=Server.Bot.PartyGrindOperation.Start }).ok)));
         p.Set("isPartyGrindActive", Ret(_ => B(GameSession.InGame && GameSession.Net.PartyGrind(
@@ -948,19 +1020,20 @@ public static class NpcApi
         p.Set("addHP", Fn(c => { if (Pc != null) Pc.hp = Mathf.Clamp(Pc.hp + Int(c, 0), 0, Pc.hpMax); }));
         p.Set("addMP", Fn(c => { if (Pc != null) Pc.mp = Mathf.Clamp(Pc.mp + Int(c, 0), 0, Pc.mpMax); }));
         p.Set("dropMessage", Fn(c => ToastIfAny(c.ArgCount > 1 ? Str(c, 1) : Str(c, 0))));
+        p.Set("message", Fn(c => ToastIfAny(Str(c, 0))));
         p.Set("changeMap", Fn(c => session.RequestWarp(Int(c,0),null,c.ArgCount>1 ? Int(c,1) : -1)));
         p.Set("setMap", Fn(c => { if (NpcSession.Active != null) NpcSession.Active.RequestWarp(Int(c, 0)); }));
         p.Set("isAlive", Ret(_ => B(Pc != null && Pc.hp > 0)));
         p.Set("getEvents", Ret(_ => new JsArray()));
         p.Set("getAreaInfos", Ret(_ => new JsArray()));
-        p.Set("getPartnerId", Ret(_ => N(0)));
+        p.Set("getPartnerId", Ret(_ => N(GameSession.Character?.record.partnerId ?? 0)));
         p.Set("getCashShop", Ret(_ => GameSession.InGame ? BuildCashShop() : JsNull.Value));
         // Character.getStorage()（源端 Character.java）。仓库整套（存/取/金币/槽位 UI）未迁移，
         // 但必须返回一个对象：npc/9030100.js 是 `cm.getPlayer().getStorage().sendStorage(...)`，
         // 返回 undefined 会让「点仓库 NPC」直接崩成「对话脚本出错」。
         p.Set("getStorage", Ret(_ => BuildStorage()));
         p.Set("getFamilyEntry", Ret(_ => JsNull.Value));
-        p.Set("sendPacket", Fn(c => { }));
+        p.Set("sendPacket", Fn(c => ApplyScriptPacket(c.Arg(0))));
         p.Set("cancelEffect", Fn(c => { }));
         p.Set("cancelAllBuffs", Fn(c => { }));
         p.Set("respawn", Fn(c => { }));
@@ -1179,10 +1252,46 @@ public static class NpcApi
             ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId, operation = CommunityOperation.Read })
             : new CommunityResponse();
 
+    static JsArray CharactersOnScriptMap(int mapId)
+    {
+        var result = new JsArray();
+        if (GameSession.InGame && MapId == mapId) result.Items.Add(BuildPlayer(NpcSession.MapContext()));
+        foreach (var actor in Server.Bot.BotRegistry.OnMap(mapId))
+        {
+            if (!actor.online || actor.world != GameSession.World || actor.channel != GameSession.Channel) continue;
+            var player = new JsHostObject(actor);
+            Lenient(player, "mapCharacter");
+            player.Set("getId", Ret(_ => N(actor.id)));
+            player.Set("getName", Ret(_ => S(actor.name)));
+            player.Set("getLevel", Ret(_ => N(actor.level)));
+            player.Set("getMapId", Ret(_ => N(actor.mapId)));
+            result.Items.Add(player);
+        }
+        return result;
+    }
+
+    static JsValue BuildWarpMap(int id)
+    {
+        FieldCatalog.Ensure();
+        if (!FieldCatalog.Maps.ContainsKey(id)) return JsNull.Value;
+        if (id == MapId) return BuildMap();
+        var map = new JsHostObject(id);
+        Lenient(map, "map." + id);
+        map.Set("getId", Ret(_ => N(id)));
+        map.Set("getMapId", Ret(_ => N(id)));
+        map.Set("getMapName", Ret(_ => S(WzNames.Map(id))));
+        map.Set("getCharacters", Ret(_ => CharactersOnScriptMap(id)));
+        map.Set("getAllCharacters", map.Get("getCharacters"));
+        map.Set("getCharactersSize", Ret(_ => N(CharactersOnScriptMap(id).Items.Count)));
+        map.Set("countPlayers", map.Get("getCharactersSize"));
+        return map;
+    }
+
     static JsHostObject BuildMap()
     {
         var m = new JsHostObject(null);
         Lenient(m, "map");
+        m.Set("broadcastMessage", Fn(c => ApplyScriptPacket(c.Arg(c.ArgCount - 1))));
         m.Set("getId", Ret(_ => N(MapId)));
         m.Set("getMapId", Ret(_ => N(MapId)));
         m.Set("getReturnMap", Ret(_ =>
@@ -1190,9 +1299,10 @@ public static class NpcApi
             var f = GameLoop.I != null ? GameLoop.I.field : null;
             return N(f != null && f.Map != null ? f.Map.returnMap : MapId);
         }));
-        m.Set("getCharactersSize", Ret(_ => N(1)));
-        m.Set("getCharacters", Ret(_ => new JsArray()));
-        m.Set("getAllCharacters", Ret(_ => new JsArray()));
+        m.Set("getCharactersSize", Ret(_ => N(CharactersOnScriptMap(MapId).Items.Count)));
+        m.Set("countPlayers", m.Get("getCharactersSize"));
+        m.Set("getCharacters", Ret(_ => CharactersOnScriptMap(MapId)));
+        m.Set("getAllCharacters", m.Get("getCharacters"));
         m.Set("getPortal", Ret(c =>
         {
             var p = new JsHostObject(null);
@@ -1206,6 +1316,20 @@ public static class NpcApi
             foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead) result.Items.Add(BuildMonster(mob));
             return result;
         }));
+        // MapleMap.getMonsters/getAllMonsters expose the same MONSTER objects.
+        m.Set("getMonsters", m.Get("getMobs"));
+        m.Set("getAllMonsters", m.Get("getMobs"));
+        m.Set("countMonster", Ret(c =>
+        {
+            int min = Int(c, 0), max = c.ArgCount > 1 ? Int(c, 1) : min, count = 0;
+            foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead && mob.fieldMobId >= min && mob.fieldMobId <= max) count++;
+            return N(count);
+        }));
+        m.Set("isCPQWinnerMap", Ret(_ => B(MapId == 980031300 || MapId == 980032300 || MapId == 980033300 ||
+            (MapId >= 980000103 && MapId <= 980000603 && (MapId - 980000103) % 100 == 0))));
+        m.Set("isCPQLoserMap", Ret(_ => B(MapId == 980031400 || MapId == 980032400 || MapId == 980033400 ||
+            (MapId >= 980000104 && MapId <= 980000604 && (MapId - 980000104) % 100 == 0))));
+        m.Set("getMapName", Ret(_ => S(WzNames.Map(MapId))));
         m.Set("countMonsters", Ret(_ => N(CountFieldMonsters())));
         m.Set("getSpawnedMonstersOnMap", Ret(_ => N(CountFieldMonsters())));
         m.Set("spawnMonsterOnGroundBelow", Fn(c => {
@@ -1215,13 +1339,37 @@ public static class NpcApi
             SpawnScriptMob(id,x,y,true);
         }));
         m.Set("killAllMonsters", Fn(c => GameLoop.I?.field?.ClearMobs()));
-        m.Set("getReactorById", Ret(_ => JsNull.Value));
-        m.Set("getReactor", Ret(_ => JsNull.Value));
+        JsValue Reactor(Func<Server.Field.MapReactor, bool> matches)
+        {
+            foreach (var reactor in Server.Field.MapReactorService.Get(MapId))
+            {
+                if (!reactor.alive || !matches(reactor)) continue;
+                var result = new JsHostObject(reactor);
+                Lenient(result, "reactor");
+                result.Set("getId", Ret(c => N(reactor.id)));
+                result.Set("getObjectId", Ret(c => N(reactor.objectId)));
+                result.Set("getName", Ret(c => S(reactor.name)));
+                result.Set("getState", Ret(c => N(reactor.state)));
+                return result;
+            }
+            return JsNull.Value;
+        }
+        m.Set("getReactorByName", Ret(c => Reactor(reactor => reactor.name == Str(c, 0))));
+        m.Set("getReactorById", Ret(c => Reactor(reactor => reactor.id == Int(c, 0))));
+        m.Set("getReactorByOid", Ret(c => Reactor(reactor => reactor.objectId == Int(c, 0))));
         m.Set("getMonsterById", Ret(c => {
             foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead && mob.fieldMobId == Int(c,0)) return BuildMonster(mob);
             return JsNull.Value;
         }));
         return m;
+    }
+
+    sealed class ScriptSound { public string path; public bool music; }
+    static void ApplyScriptPacket(JsValue packet)
+    {
+        if (packet is JsHostObject host && host.Host is ScriptSound sound)
+        { if (sound.music) AudioManager.PlayBgm(sound.path); else AudioManager.Play(sound.path, pitchVary: false); return; }
+        throw new JsRuntimeException("Unmigrated script packet effect");
     }
 
     static int CountFieldMonsters()
@@ -1237,6 +1385,61 @@ public static class NpcApi
         var java = new JsHostObject(null);
         java.Set("type",Ret(c => {
             string name = Str(c,0);
+            if (name == "soloMapling.ArtificialPlayer.BotTypes.Blackjack.BlackjackDealerBot")
+            {
+                var dealer = new JsHostObject(null);
+                Lenient(dealer, "BlackjackDealerBot");
+                dealer.Set("joinNearestTable", Ret(args =>
+                {
+                    var player = args.Arg(0);
+                    int id = JsConvert.ToInt32(args.Interp.Call(args.Interp.GetMember(player, "getId"), player, new JsValue[0]));
+                    if (!GameSession.InGame || id != GameSession.CharacterId)
+                        throw new JsRuntimeException("Blackjack player is not the active character");
+                    var actor = GameServer.Local?.ActiveBotPlayer(id);
+                    if (actor == null || !actor.online || actor.mapId != MapId)
+                        throw new JsRuntimeException("Blackjack requires the active field player");
+                    return S(Server.Bot.Types.Blackjack.BlackjackDealerBot.JoinNearestTable(actor));
+                }));
+                return dealer;
+            }
+            if (name == "org.gms.client.command.CommandsExecutor")
+            {
+                var executor = new JsHostObject(null);
+                Lenient(executor, "CommandsExecutor");
+                executor.Set("getInstance", Ret(_ => executor));
+                executor.Set("getCommandsNameDesc", Ret(_ =>
+                {
+                    var groups = new JsArray();
+                    foreach (var group in AdminCommands.ScriptCommandDescriptions(GameServer.Local.Db))
+                    {
+                        var names = new JsArray(); var descriptions = new JsArray();
+                        foreach (var command in group)
+                        {
+                            names.Items.Add(S(command.Key)); descriptions.Items.Add(S(command.Value));
+                        }
+                        var pair = new JsHostObject(null);
+                        Lenient(pair, "CommandNameDescription");
+                        pair.Set("getLeft", Ret(args => BuildJavaList(names)));
+                        pair.Set("getRight", Ret(args => BuildJavaList(descriptions)));
+                        groups.Items.Add(pair);
+                    }
+                    return BuildJavaList(groups);
+                }));
+                return executor;
+            }
+            if (name == "org.gms.server.ShopFactory")
+            {
+                var factory = new JsHostObject(null);
+                factory.Set("getInstance", Ret(_ => factory));
+                factory.Set("getShop", Ret(args =>
+                {
+                    int id = Int(args, 0);
+                    var shop = new JsHostObject(null);
+                    shop.Set("sendShop", Fn(_ => NativeNpcShopWindow.OpenShop(id, false)));
+                    return shop;
+                }));
+                return factory;
+            }
             if (name == "java.awt.Point") return JsFunction.FromNative("Point",args => {
                 var point = new JsHostObject(null);
                 point.Set("x",N(Int(args,0))); point.Set("y",N(Int(args,1)));
@@ -1264,7 +1467,86 @@ public static class NpcApi
             {
                 var type = new JsHostObject(null);
                 Lenient(type, name);
+                if (name == "org.gms.util.PacketCreator")
+                {
+                    type.Set("musicChange", Ret(args => new JsHostObject(new ScriptSound { path = Str(args, 0), music = true })));
+                    type.Set("playSound", Ret(args => new JsHostObject(new ScriptSound { path = Str(args, 0) })));
+                }
                 if (name == "org.gms.net.server.Server") type.Set("getInstance", Ret(_ => type));
+                return type;
+            }
+            if (name == "org.gms.constants.id.MapId")
+            {
+                var type = new JsHostObject(null);
+                Lenient(type, "MapId");
+                type.Set("isPartyDojo", Ret(args => B(Int(args, 0) >= 925030100 && Int(args, 0) <= 925033804)));
+                return type;
+            }
+            if (name == "org.gms.server.quest.Quest")
+            {
+                var type = new JsHostObject(null);
+                Lenient(type, "Quest");
+                type.Set("getInstance", Ret(args =>
+                {
+                    int id = Int(args, 0);
+                    var definition = QuestCatalog.Get(id);
+                    var quest = new JsHostObject(id);
+                    Lenient(quest, "Quest." + id);
+                    void OwnPlayer(JsCall call)
+                    {
+                        var player = call.Arg(0);
+                        int owner = JsConvert.ToInt32(call.Interp.Call(call.Interp.GetMember(player, "getId"), player, new JsValue[0]));
+                        if (!GameSession.InGame || owner != GameSession.CharacterId) throw new JsRuntimeException("Quest player is not the active character");
+                    }
+                    quest.Set("getId", Ret(c => N(id)));
+                    quest.Set("canStart", Ret(c => { OwnPlayer(c); return B(definition != null && QuestLogic.CanStart(definition, Int(c, 1))); }));
+                    quest.Set("canComplete", Ret(c => { OwnPlayer(c); return B(definition != null && QuestLogic.CanComplete(definition, Int(c, 1))); }));
+                    quest.Set("start", Fn(c => { OwnPlayer(c); if (definition != null && QuestLogic.CanStart(definition, Int(c, 1))) QuestLogic.Start(definition, Int(c, 1), true); }));
+                    quest.Set("complete", Fn(c => { OwnPlayer(c); if (definition != null && QuestLogic.CanComplete(definition, Int(c, 1))) QuestLogic.Complete(definition, Int(c, 1), true); }));
+                    quest.Set("reset", Fn(c => { OwnPlayer(c); Profile.ResetQuest(id); }));
+                    return quest;
+                }));
+                return type;
+            }
+            if (name == "org.gms.server.expeditions.ExpeditionType")
+            {
+                var type = new JsHostObject(null);
+                Lenient(type, "ExpeditionType");
+                string[] names = { "BALROG_EASY", "BALROG_NORMAL", "SCARGA", "SHOWA", "ZAKUM", "HORNTAIL", "CHAOS_ZAKUM", "CHAOS_HORNTAIL", "ARIANT", "ARIANT1", "ARIANT2", "PINKBEAN", "CWKPQ", "CYGNUS", "AKAYRUM", "LUCID", "KARING" };
+                int[] levels = { 50, 50, 100, 100, 50, 100, 120, 120, 20, 20, 20, 120, 90, 170, 140, 220, 100 };
+                for (int i = 0; i < names.Length; i++)
+                {
+                    string enumName = names[i]; int minLevel = levels[i];
+                    var value = new JsHostObject(enumName);
+                    Lenient(value, "ExpeditionType." + enumName);
+                    value.Set("name", Ret(_ => S(enumName)));
+                    value.Set("toString", Ret(_ => S(enumName)));
+                    value.Set("getMinSize", Ret(_ => N(1)));
+                    value.Set("getMaxSize", Ret(_ => N(enumName.StartsWith("ARIANT", StringComparison.Ordinal) ? 7 : 30)));
+                    value.Set("getMinLevel", Ret(_ => N(minLevel)));
+                    value.Set("getMaxLevel", Ret(_ => N(255)));
+                    value.Set("getRegistrationMinutes", Ret(_ => N(5)));
+                    type.Set(enumName, value);
+                }
+                return type;
+            }
+            if (name == "org.gms.constants.game.GameConstants")
+            {
+                var type = new JsHostObject(null);
+                Lenient(type, "GameConstants");
+                int JobId(JsCall args) => args.Arg(0) is JsHostObject job
+                    ? JsConvert.ToInt32(args.Interp.Call(job.Get("getId"), job, new JsValue[0])) : Int(args, 0);
+                type.Set("isAriantColiseumArena", Ret(args => { int map = Int(args, 0); return B(map / 1000 == 980010 && map % 10 == 1); }));
+                type.Set("isCygnus", Ret(args => B(Int(args, 0) / 1000 == 1)));
+                type.Set("isAran", Ret(args => { int id = Int(args, 0); return B(id == 2000 || (id >= 2100 && id <= 2112)); }));
+                type.Set("getJobBranch", Ret(args => { int id = JobId(args); return N(id % 1000 == 0 ? 0 : id % 100 == 0 ? 1 : 2 + id % 10); }));
+                type.Set("getHallOfFameMapid", Ret(args =>
+                {
+                    int id = JobId(args);
+                    if (id / 1000 == 1) return N(130000100);
+                    if (id == 2000 || (id >= 2100 && id <= 2112)) return N(140010110);
+                    switch (id / 100) { case 1: return N(102000004); case 2: return N(101000004); case 3: return N(100000204); case 4: return N(103000008); case 5: return N(120000105); default: return N(130000110); }
+                }));
                 return type;
             }
             if (name == "org.gms.client.SkillFactory")
@@ -1428,6 +1710,7 @@ public static class NpcApi
         var c = new JsHostObject(player);
         Lenient(c, "client");
         c.Set("getPlayer", Ret(_ => player));
+        c.Set("sendPacket", Fn(args => ApplyScriptPacket(args.Arg(0))));
         c.Set("getChannel", Ret(_ => N(GameSession.Channel)));
         c.Set("getWorld", Ret(_ => N(GameSession.World)));
         c.Set("getChannelServer", Ret(_ => BuildChannelServer(player)));
@@ -1438,7 +1721,7 @@ public static class NpcApi
     // 单机只有自己在线：ChannelServer.getPlayerStorage().getAllCharacters() 只装自己一个。
     // 共同富裕 / 冒险炒股 这类「给当前频道所有人发点券」的脚本靠这条链跑通，
     // 语义上等价于「发给自己」。
-    static JsHostObject BuildChannelServer(JsHostObject player)
+    internal static JsHostObject BuildChannelServer(JsHostObject player)
     {
         var server = new JsHostObject(null);
         Lenient(server, "channelServer");
@@ -1447,6 +1730,24 @@ public static class NpcApi
         storage.Set("getAllCharacters", Ret(_ => new JsArray(new JsValue[] { player })));
         storage.Set("getAllCharactersCount", Ret(_ => N(1)));
         storage.Set("getCharacterById", Ret(_ => player));
+        foreach (string method in new[] { "getStoredVar", "setStoredVar" })
+        {
+            bool write = method == "setStoredVar";
+            server.Set(method, Ret(c =>
+            {
+                if (!GameSession.InGame) throw new JsRuntimeException("Channel variables require an active character");
+                return GameSession.Net.Script(new ScriptRequest { characterId=GameSession.CharacterId,
+                    operation=write ? ScriptOperation.SetStoredVar : ScriptOperation.GetStoredVar,
+                    world=GameSession.World, channel=GameSession.Channel, variableKey=Int(c,0), variableValue=Int(c,1) }).value;
+            }));
+        }
+        server.Set("getMapFactory", Ret(_ =>
+        {
+            var factory = new JsHostObject(null);
+            Lenient(factory, "mapFactory");
+            factory.Set("getMap", Ret(c => BuildWarpMap(Int(c, 0))));
+            return factory;
+        }));
         server.Set("getPlayerStorage", Ret(_ => storage));
         server.Set("getChannel", Ret(_ => N(GameSession.Channel)));
         server.Set("getWorld", Ret(_ => N(GameSession.World)));

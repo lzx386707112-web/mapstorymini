@@ -140,6 +140,8 @@ public interface ITransport
     CommunityResponse Community(CommunityRequest req);
     BossResponse Boss(BossRequest req);
     CashResponse Cash(CashRequest req);
+    bool HasNpcShop(int npcId);
+    NpcShopResponse NpcShop(NpcShopRequest req);
     Server.Bot.PartyGrindResponse PartyGrind(Server.Bot.PartyGrindRequest req);
     Server.Bot.Trade.BotTradeResponse BotTrade(Server.Bot.Trade.BotTradeRequest req);
     Server.Bot.MarketResponse Market(Server.Bot.MarketRequest req);
@@ -168,8 +170,10 @@ public sealed class InProcessTransport : ITransport
     public InventoryChangeResponse ChangeInventory(InventoryChangeRequest r) => NativeInventoryService.Handle(server.Db, r);
     public EquipPatchResponse UpdateEquip(EquipPatchRequest r) => NativeEquipService.Patch(server.Db, r);
     public SlotRemoveResponse RemoveSlot(SlotRemoveRequest r) => NativeEquipService.RemoveSlot(server.Db, r);
+    public bool HasNpcShop(int npcId) => server.NpcShops.HasNpc(npcId);
+    public NpcShopResponse NpcShop(NpcShopRequest r) => server.NpcShops.Handle(r);
     public CashResponse Cash(CashRequest r) => server.Cash.Handle(r);
-    public void EndSocialSession(int characterId) { server.EndBotSession(characterId); server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); }
+    public void EndSocialSession(int characterId) { server.EndBotSession(characterId); server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); server.NpcShops.EndSession(characterId); }
 
     public LoginResponse Login(LoginRequest r)
     {

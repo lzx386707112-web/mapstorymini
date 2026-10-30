@@ -266,7 +266,7 @@ public sealed class NativeMobController : MonoBehaviour
             // MapleMap.mobMpRecovery uses mob level, not the unused WZ mpRecovery value.
             state.HealMp(NativeCombatData.Int(mob.CombatStats,"level",1),NativeCombatData.Int(mob.CombatStats,"maxMP"));
         }
-        if (Now < blockedUntil || Busy || Now < nextDecision) return;
+        if (mob.VacuumLocked || Now < blockedUntil || Busy || Now < nextDecision) return;
         var player = GameLoop.I.player;
         if (player == null || player.hp <= 0) return;
         nextDecision = Now + 500; // Local AI polling; the source client, not server, chooses cast requests.

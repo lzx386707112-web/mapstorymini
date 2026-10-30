@@ -455,6 +455,29 @@ WarpWorldCommand|转区";
         });
     }
 
+    // CommandService.loadCommands: level 0..6, enabled rows, first syntax wins.
+    // Reuse the same seed and i18n catalog as the administration endpoint.
+    public static List<KeyValuePair<string, string>>[] ScriptCommandDescriptions(DbStore db)
+    {
+        EnsureSeed(db);
+        var groups = new List<KeyValuePair<string, string>>[7];
+        var registered = new HashSet<string>(StringComparer.Ordinal);
+        for (int level = 0; level < groups.Length; level++)
+        {
+            groups[level] = new List<KeyValuePair<string, string>>();
+            foreach (var row in db.Table("command_info").rows)
+            {
+                if (DbStore.Int(row, "level") != level || DbStore.Int(row, "enabled") == 0) continue;
+                // A missing command class cannot be registered by the Java service.
+                if (!DescMap.TryGetValue(DbStore.Str(row, "clazz"), out string description)) continue;
+                string syntax = DbStore.Str(row, "syntax").ToLowerInvariant();
+                if (!registered.Add(syntax)) continue;
+                groups[level].Add(new KeyValuePair<string, string>(syntax, description));
+            }
+        }
+        return groups;
+    }
+
     static void EnsureSeed(DbStore db)
     {
         if (!db.HasTable("command_info")) return;

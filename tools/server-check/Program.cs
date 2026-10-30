@@ -282,6 +282,11 @@ public static class Program
         Check(makeBuddy.code == 0, "创建好友申请目标");
         SocialResponse Social(int id, SocialOperation op, string target = "", int cardId = 0)
             => social.Handle(new SocialRequest { characterId = id, operation = op, target = target, cardId = cardId });
+        Check(social.Handle(new SocialRequest { characterId=first, operation=SocialOperation.SetBuddyCapacity, buddyCapacity=30 }).capacity==30,
+            "NPC好友扩容写回容量");
+        Check(new NativeSocialService(DbStore.Open(socialPath)).Handle(new SocialRequest { characterId=first }).capacity==30,
+            "NPC好友扩容重载后保留");
+        Check(Social(second, SocialOperation.Read).capacity==25, "NPC好友扩容不影响其他角色");
         Check(!Social(first, SocialOperation.AddBuddy, "HeroOne").ok, "拒绝添加自己");
         Check(!Social(first, SocialOperation.AddBuddy, "MissingName").ok, "拒绝不存在的好友");
         Check(Social(first, SocialOperation.AddBuddy, "BuddyTwo").ok, "给离线角色发送好友申请");

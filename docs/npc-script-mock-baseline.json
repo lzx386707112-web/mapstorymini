@@ -1,0 +1,605 @@
+{
+  "description": "Original simplified mock results (47 runtime / 73 Java); not verified game failures.",
+  "entries": [
+    {
+      "script": "1002003.js",
+      "kind": "RUN",
+      "error": "TypeError: getCapacity is not a function (undefined)"
+    },
+    {
+      "script": "1012100.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "1022000.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "1032001.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "1032001_nextLevel.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "1052001.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "1061009.js",
+      "kind": "RUN",
+      "error": "TypeError: getId is not a function (undefined)"
+    },
+    {
+      "script": "1061014.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "1063000.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.client.inventory.InventoryType"
+    },
+    {
+      "script": "1063001.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.client.inventory.InventoryType"
+    },
+    {
+      "script": "1063002.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.client.inventory.InventoryType"
+    },
+    {
+      "script": "1063011.js",
+      "kind": "RUN",
+      "error": "TypeError: cannot read property 'println' of undefined"
+    },
+    {
+      "script": "1063017.js",
+      "kind": "RUN",
+      "error": "TypeError: getMap is not a function (undefined)"
+    },
+    {
+      "script": "1090000.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "1092095.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: java.util.Calendar"
+    },
+    {
+      "script": "11000.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.ShopFactory"
+    },
+    {
+      "script": "1101001.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "1102003.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "1104100.js",
+      "kind": "RUN",
+      "error": "TypeError: getPosition is not a function (undefined)"
+    },
+    {
+      "script": "1104101.js",
+      "kind": "RUN",
+      "error": "TypeError: getPosition is not a function (undefined)"
+    },
+    {
+      "script": "1104102.js",
+      "kind": "RUN",
+      "error": "TypeError: getPosition is not a function (undefined)"
+    },
+    {
+      "script": "1104103.js",
+      "kind": "RUN",
+      "error": "TypeError: getPosition is not a function (undefined)"
+    },
+    {
+      "script": "1104104.js",
+      "kind": "RUN",
+      "error": "TypeError: getPosition is not a function (undefined)"
+    },
+    {
+      "script": "1104200.js",
+      "kind": "RUN",
+      "error": "TypeError: countPlayers is not a function (undefined)"
+    },
+    {
+      "script": "1202010.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "2006.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.ItemInformationProvider"
+    },
+    {
+      "script": "2010005.js",
+      "kind": "RUN",
+      "error": "ReferenceError: access is not defined"
+    },
+    {
+      "script": "2010007.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "2010008.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "2012027.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.PacketCreator"
+    },
+    {
+      "script": "2012028.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.PacketCreator"
+    },
+    {
+      "script": "2012029.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.PacketCreator"
+    },
+    {
+      "script": "2012030.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.PacketCreator"
+    },
+    {
+      "script": "2012031.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.PacketCreator"
+    },
+    {
+      "script": "2012032.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.PacketCreator"
+    },
+    {
+      "script": "2012033.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.PacketCreator"
+    },
+    {
+      "script": "2030013.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "2040022.js",
+      "kind": "RUN",
+      "error": "ReferenceError: currentItemSet is not defined"
+    },
+    {
+      "script": "2040046.js",
+      "kind": "RUN",
+      "error": "TypeError: getCapacity is not a function (undefined)"
+    },
+    {
+      "script": "2040050.js",
+      "kind": "RUN",
+      "error": "TypeError: cannot read property '2' of undefined"
+    },
+    {
+      "script": "2042000.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "2042001.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "2042002.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "2082014.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "2083000.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "2083004.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "2083006.js",
+      "kind": "RUN",
+      "error": "ReferenceError: status is not defined"
+    },
+    {
+      "script": "2091005.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "2091005_old.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "2091009.js",
+      "kind": "RUN",
+      "error": "TypeError: countPlayers is not a function (undefined)"
+    },
+    {
+      "script": "2101014.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "2101015.js",
+      "kind": "RUN",
+      "error": "TypeError: getAriantRewardTier is not a function (undefined)"
+    },
+    {
+      "script": "2101016.js",
+      "kind": "RUN",
+      "error": "TypeError: getAriantScore is not a function (undefined)"
+    },
+    {
+      "script": "2101017.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "2112000.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.life.LifeFactory"
+    },
+    {
+      "script": "2112010.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.life.LifeFactory"
+    },
+    {
+      "script": "2141001.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "2143003.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "2143004.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "9000012.js",
+      "kind": "RUN",
+      "error": "TypeError: addLimit is not a function (undefined)"
+    },
+    {
+      "script": "9000017.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "9000018.js",
+      "kind": "RUN",
+      "error": "TypeError: prepareStatement is not a function (undefined)"
+    },
+    {
+      "script": "9000019.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.client.inventory.InventoryType"
+    },
+    {
+      "script": "9000036.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "9000040.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "9000040_1.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "9000055.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.life.LifeFactory"
+    },
+    {
+      "script": "9001000.js",
+      "kind": "RUN",
+      "error": "TypeError: getCustomData is not a function (undefined)"
+    },
+    {
+      "script": "9010000.js",
+      "kind": "RUN",
+      "error": "Java package imports require an explicit migrated class registry; package wildcard imports are unsupported"
+    },
+    {
+      "script": "9020002.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.ExpTable"
+    },
+    {
+      "script": "9040006.js",
+      "kind": "RUN",
+      "error": "TypeError: getState is not a function (undefined)"
+    },
+    {
+      "script": "9071000.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.ExtendUtil"
+    },
+    {
+      "script": "9110015.js",
+      "kind": "RUN",
+      "error": "Java package imports require an explicit migrated class registry; package wildcard imports are unsupported"
+    },
+    {
+      "script": "9110016.js",
+      "kind": "RUN",
+      "error": "Java package imports require an explicit migrated class registry; package wildcard imports are unsupported"
+    },
+    {
+      "script": "9110106.js",
+      "kind": "RUN",
+      "error": "Java package imports require an explicit migrated class registry; package wildcard imports are unsupported"
+    },
+    {
+      "script": "9110112.js",
+      "kind": "RUN",
+      "error": "Java package imports require an explicit migrated class registry; package wildcard imports are unsupported"
+    },
+    {
+      "script": "9110116.js",
+      "kind": "RUN",
+      "error": "Java package imports require an explicit migrated class registry; package wildcard imports are unsupported"
+    },
+    {
+      "script": "9120201.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "9130000.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.quest.Quest"
+    },
+    {
+      "script": "9201002.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "9201011.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "9201012.js",
+      "kind": "RUN",
+      "error": "TypeError: getRelationshipId is not a function (undefined)"
+    },
+    {
+      "script": "9201101.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "9201113.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "9201123.js",
+      "kind": "RUN",
+      "error": "TypeError: getId is not a function (undefined)"
+    },
+    {
+      "script": "9201124.js",
+      "kind": "RUN",
+      "error": "TypeError: getId is not a function (undefined)"
+    },
+    {
+      "script": "9201125.js",
+      "kind": "RUN",
+      "error": "TypeError: getId is not a function (undefined)"
+    },
+    {
+      "script": "9201126.js",
+      "kind": "RUN",
+      "error": "TypeError: getId is not a function (undefined)"
+    },
+    {
+      "script": "9201127.js",
+      "kind": "RUN",
+      "error": "TypeError: getId is not a function (undefined)"
+    },
+    {
+      "script": "9209000.js",
+      "kind": "RUN",
+      "error": "TypeError: getId is not a function (undefined)"
+    },
+    {
+      "script": "9209001.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: java.util.Calendar"
+    },
+    {
+      "script": "9209002.js",
+      "kind": "RUN",
+      "error": "TypeError: cannot read property 'println' of undefined"
+    },
+    {
+      "script": "9209100.js",
+      "kind": "RUN",
+      "error": "TypeError: getPosition is not a function (undefined)"
+    },
+    {
+      "script": "9220004.js",
+      "kind": "RUN",
+      "error": "TypeError: size is not a function (undefined)"
+    },
+    {
+      "script": "9270047.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "9310005.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.quest.Quest"
+    },
+    {
+      "script": "9330045.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.packets.Fishing"
+    },
+    {
+      "script": "9390220.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: java.text.SimpleDateFormat"
+    },
+    {
+      "script": "9900001.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.client.SkillFactory"
+    },
+    {
+      "script": "9900002.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.life.LifeFactory"
+    },
+    {
+      "script": "9900008.js",
+      "kind": "RUN",
+      "error": "TypeError: getId is not a function (undefined)"
+    },
+    {
+      "script": "9977777.js",
+      "kind": "RUN",
+      "error": "TypeError: cannot read property 'writeFeatureTab_PQs' of undefined"
+    },
+    {
+      "script": "MagatiaPassword.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.PacketCreator"
+    },
+    {
+      "script": "akayrumbattle.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType"
+    },
+    {
+      "script": "commands.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.client.command.CommandsExecutor"
+    },
+    {
+      "script": "cpqchallenge.js",
+      "kind": "RUN",
+      "error": "TypeError: size is not a function (undefined)"
+    },
+    {
+      "script": "cpqchallenge2.js",
+      "kind": "RUN",
+      "error": "TypeError: size is not a function (undefined)"
+    },
+    {
+      "script": "credits.js",
+      "kind": "RUN",
+      "error": "TypeError: cannot read property 'writeServerStaff_BeiDou' of undefined"
+    },
+    {
+      "script": "gachaponInfo.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.server.gachapon.Gachapon"
+    },
+    {
+      "script": "mPark_in00.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.ExtendUtil"
+    },
+    {
+      "script": "mPark_in01.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.ExtendUtil"
+    },
+    {
+      "script": "mPark_in02.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.ExtendUtil"
+    },
+    {
+      "script": "mPark_welcome.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.util.ExtendUtil"
+    },
+    {
+      "script": "mapleTV.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.config.GameConfig"
+    },
+    {
+      "script": "out272000410.js",
+      "kind": "RUN",
+      "error": "TypeError: size is not a function (undefined)"
+    },
+    {
+      "script": "out272000410b.js",
+      "kind": "RUN",
+      "error": "TypeError: size is not a function (undefined)"
+    },
+    {
+      "script": "outAkayrum.js",
+      "kind": "RUN",
+      "error": "TypeError: size is not a function (undefined)"
+    },
+    {
+      "script": "rank_user.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.constants.game.GameConstants"
+    },
+    {
+      "script": "waterOfLife.js",
+      "kind": "RUN",
+      "error": "TypeError: size is not a function (undefined)"
+    },
+    {
+      "script": "坐骑领取.js",
+      "kind": "JAVA",
+      "error": "Java interop: class not migrated: org.gms.client.inventory.InventoryType"
+    }
+  ]
+}

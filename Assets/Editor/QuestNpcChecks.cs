@@ -39,6 +39,7 @@ public static class QuestNpcChecks
             CheckQuestCatalog();
             CheckScriptLookup();
             CheckDialogText();
+            CheckDialogReferenceTokens();
             CheckDialogBreakEscapes();
             CheckQuestRules();
             CheckBeginnerNpcBindings();
@@ -1328,6 +1329,81 @@ public static class QuestNpcChecks
         var icon = DialogText.Parse("#i04000000#");
         Check(icon.Runs.Count == 1 && icon.Runs[0].Kind == DialogRunKind.Icon, "#i 应该产生图标节点");
         Check(!string.IsNullOrEmpty(icon.Runs[0].Art), "#i 的道具图标路径没有解析出来");
+    }
+
+    static void CheckDialogReferenceTokens()
+    {
+        var data = Profile.Data;
+        string snapshot = JsonUtility.ToJson(data);
+        try
+        {
+            data.questStarted.Clear(); data.questCompleted.Clear();
+            var raw = QuestCatalog.Get(1040).stateInfo[1];
+            var content = DialogText.Parse(raw);
+            for (int id = 1041; id <= 1044; id++)
+            {
+                // 名字直接对照当前源IMG，不能在运行时代码里写死四条任务。
+                string name = QuestCatalog.Get(id).name;
+                Check(!string.IsNullOrEmpty(name) && content.Body.Contains(name), "1040须展开修炼任务名：" + id);
+            }
+            Check(!content.Body.Contains("1041b") && !content.Body.Contains("()") &&
+                  content.Body.Contains("未开始"), "路卡斯1040真实正文不得遗留编号/b/空状态");
+            Check(content.Runs.TrueForAll(r => r.Color != DialogText.Orange), "#y任务引用不得切到橙色");
+
+            Check(DialogText.Parse("#u1041#").Body == "未开始", "未接任务状态须使用原端中文表");
+            data.questStarted.Add(1041);
+            Check(DialogText.Parse("#u1041#").Body == "进行中", "已接任务引用须读取实时状态");
+            data.questStarted.Remove(1041); data.questCompleted.Add(1041);
+            Check(DialogText.Parse("#u1041#").Body == "已结束", "完成任务状态须使用原端中文表");
+            string adjacent = "#y1041##b(#u1041#)#k尾文";
+            string expected = "麦加的第一次修炼(已结束)尾文";
+            Check(DialogText.Parse(adjacent).Body == expected && DialogText.StripMarkup(adjacent) == expected,
+                "相邻任务标记与纯文本入口不得错吞颜色/尾文");
+
+            var skill = DialogText.Parse("#L7##s5221009# #b#q5221009##k#l尾文");
+            var icon = skill.Runs.Find(r => r.Kind == DialogRunKind.Icon && !r.SelectionMarker);
+            Check(icon != null && icon.Art == "Skill/522.img/skill/5221009/icon" && icon.Link == 7,
+                "真实6410脚本的技能图标须引用原IMG并保留选项号");
+            Check(skill.Body.Contains("心灵控制") && skill.Body.EndsWith("尾文") && !skill.Body.Contains("5221009"),
+                "真实6410技能名须从String/Skill.img展开且保留后文");
+            Check(icon != null && WzAssets.Node(icon.Art) != null, "技能图标节点必须真实存在");
+
+            Check(DialogText.Parse("#t1092000:#").Body == WzNames.Item(1092000), "任务奖励的冒号后缀不得读成ID0");
+            var item = DialogText.Parse("#i 4000000#").Runs[0];
+            Check(item.Art == DialogText.ItemIconPath(4000000), "原端atoi必须允许数字前的空白");
+            Check(DialogText.Parse("#t+1092000:#").Body == WzNames.Item(1092000), "原端atoi必须允许正号和数字后缀");
+            Check(DialogText.StripMarkup("#t1092000:#/#q5221009#") == WzNames.Item(1092000) + "/心灵控制",
+                "纯文本入口必须复用完整引用解析");
+            Check(DialogText.StripMarkup(null) == "", "空菜单文本不得抛异常");
+            Check(DialogText.Parse("#b#@1022000:##k尾文").Body == "武术教练尾文" &&
+                  DialogText.StripMarkup("#@1022000:#") == "武术教练", "任务NPC引用#@必须展开原IMG名称并保留后文");
+
+            var badge = DialogText.Parse("前#Wprob#后");
+            Check(badge.Runs.Count == 3 && badge.Runs[1].Art == "UI/UIWindow.img/Quest/prob" && badge.Body == "前后",
+                "原端奖励标记须引用Quest原IMG且保留两侧文字");
+
+            // 遍历真实QuestInfo，覆盖其他任务/简述使用的全部数字y/u引用。
+            int references = 0;
+            var nodes = new Stack<MapleDash.Wz.ImgNode>();
+            nodes.Push(WzAssets.FileRoot("Quest/QuestInfo.img"));
+            while (nodes.Count > 0)
+            {
+                var node = nodes.Pop();
+                foreach (var child in node.Children) nodes.Push(child);
+                if (!(node.Value is string text)) continue;
+                foreach (System.Text.RegularExpressions.Match match in System.Text.RegularExpressions.Regex.Matches(text, @"#[yu](\d+)#"))
+                {
+                    int id = int.Parse(match.Groups[1].Value);
+                    string result = DialogText.Parse(match.Value + "尾文").Body;
+                    string value = match.Value[1] == 'y' ? QuestCatalog.Get(id)?.name ?? "" :
+                        Profile.QuestStatus(id) == 2 ? "已结束" : Profile.QuestStatus(id) == 1 ? "进行中" : "未开始";
+                    Check(result == value + "尾文", "真实QuestInfo引用不得错吞边界：" + match.Value);
+                    references++;
+                }
+            }
+            Check(references >= 90, "须实际扫描QuestInfo任务引用，不能只检查构造字符串");
+        }
+        finally { JsonUtility.FromJsonOverwrite(snapshot, data); }
     }
 
     // 原端文案的换行不是控制字符，而是字面反斜杠序列：Quest/Say.img 里存的就是 "\r\n" 四个字符

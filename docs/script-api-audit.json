@@ -1,0 +1,4458 @@
+{
+    "auditMapId": 1000000,
+    "scripts": 889,
+    "passed": 829,
+    "failed": 60,
+    "hostChecks": 25,
+    "requestedScripts": 120,
+    "requestedPassed": 106,
+    "requestedFailed": 14,
+    "hostError": "",
+    "entries": [
+        {
+            "script": "1002000.js",
+            "error": "",
+            "pages": 6
+        },
+        {
+            "script": "1002002.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1002003.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1002004.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1002005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1002006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1002007.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1002100.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1002101.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1002103.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1012000.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1012002.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1012005.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1012006.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1012007.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1012008.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "1012009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1012100.js",
+            "error": "",
+            "pages": 5
+        },
+        {
+            "script": "1012103.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1012104.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1012105.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1012112.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1012113.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1012114.js",
+            "error": "",
+            "pages": 5
+        },
+        {
+            "script": "1012115.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1012116.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1012117.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1012118.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1012119.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1013001.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1013002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1013104.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1013200.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "10200.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "10201.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "10202.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "10203.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "10204.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1022000.js",
+            "error": "",
+            "pages": 5
+        },
+        {
+            "script": "1022001.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1022002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1022003.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "1022004.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1022005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1022101.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1022101_old.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1022104.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1022105.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1032000.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1032001.js",
+            "error": "",
+            "pages": 5
+        },
+        {
+            "script": "1032001_nextLevel.js",
+            "error": "",
+            "pages": 7
+        },
+        {
+            "script": "1032002.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1032003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1032004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1032005.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1032006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1032007.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1032008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1032009.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1032100.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1032102.js",
+            "error": "Unmigrated server API: player.getPet",
+            "pages": 1
+        },
+        {
+            "script": "1032109.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1032110.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1032111.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1032113.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1032114.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1040000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1043000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1043001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1052001.js",
+            "error": "",
+            "pages": 5
+        },
+        {
+            "script": "1052002.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1052003.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "1052004.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1052005.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1052006.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1052007.js",
+            "error": "Unmigrated event instance API: getMapFactory",
+            "pages": 1
+        },
+        {
+            "script": "1052008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1052009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1052010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1052011.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1052012.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1052013.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "1052014.js",
+            "error": "",
+            "pages": 14
+        },
+        {
+            "script": "1052015.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1052016.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1052017.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1052100.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1052101.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1052107.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1052109.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1052110.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1052111.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1052112.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1052113.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1052114.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1052115.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1052125.js",
+            "error": "Unmigrated event instance map isolation: 103040410",
+            "pages": 1
+        },
+        {
+            "script": "1061000.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1061006.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1061007.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1061008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1061009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1061010.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1061012.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1061014.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1061016.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1061018.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "1061100.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1063000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1063001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1063002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1063011.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1063012.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1063013.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1063016.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1063017.js",
+            "error": "Unmigrated server API: map.910510202.spawnMonsterOnGroundBelow",
+            "pages": 1
+        },
+        {
+            "script": "1063018.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1072000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1072001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1072002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1072003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1072004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1072005.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1072006.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1072007.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1072008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1081001.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1090000.js",
+            "error": "",
+            "pages": 5
+        },
+        {
+            "script": "1091003.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1091004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092007.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1092008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092014.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1092015.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092016.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092018.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092019.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092090.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092091.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092094.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1092095.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1094000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1094002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1094003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1094004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1094005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1094006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1095000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1095001.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1095002.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1096001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1096003.js",
+            "error": "Intro requires an active original field",
+            "pages": 0
+        },
+        {
+            "script": "1096005.js",
+            "error": "Unmigrated server API: cm.removeNPC",
+            "pages": 1
+        },
+        {
+            "script": "1096010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "11000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1100000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1100003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1100004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1100005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1100006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1100007.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1100008.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1101001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1101008.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1102001.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1102002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1102003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1103000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1103005.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1104000.js",
+            "error": "Unmigrated event instance map isolation: 910510000",
+            "pages": 1
+        },
+        {
+            "script": "1104002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104100.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104101.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104102.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104103.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104104.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104200.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1104201.js",
+            "error": "Unmigrated server API: map.getNPCById",
+            "pages": 0
+        },
+        {
+            "script": "1104202.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104203.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104204.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104205.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104206.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1104207.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1200000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1200003.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1200004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1200005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1200006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1202000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "1202009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1202010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1204001.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "1209000.js",
+            "error": "Intro requires an active original field",
+            "pages": 1
+        },
+        {
+            "script": "1209001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1209002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1209003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1209004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1209005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "12101.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "1300001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1300006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1300012.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1300013.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "1300014.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2001000.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "2001001.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2001002.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2001003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2001004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2002000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2003.js",
+            "error": "",
+            "pages": 14
+        },
+        {
+            "script": "2006.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2007.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2010000.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "2010001.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2010002.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2010003.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "2010005.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2010006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2010007.js",
+            "error": "Unmigrated server API: player.genericGuildMessage",
+            "pages": 2
+        },
+        {
+            "script": "2010008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2010009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012000.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2012001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012002.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2012006.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2012007.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2012008.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2012009.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2012012.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012013.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012014.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012015.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012021.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012022.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2012023.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012024.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2012025.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012027.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012028.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012029.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012030.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012031.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012032.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2012033.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2013000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2013001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2013002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2020000.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "2020002.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "2020004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2020005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2020008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2020009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2020010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2020011.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2020013.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2022004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2023000.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2030000.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2030006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2030006_old.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2030008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2030010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2030011.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2030013.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2030013_old.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2030014.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2032001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2032002.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "2032003.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2040000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2040003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2040014.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2040016.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "2040019.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2040020.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040021.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040022.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040024.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2040025.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2040026.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2040027.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2040028.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040030.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040031.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2040032.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040033.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2040034.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040035.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040036.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2040037.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2040038.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2040039.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2040040.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2040041.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2040042.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2040043.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2040044.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2040045.js",
+            "error": "TypeError: cannot read property 'warpEventTeam' of null",
+            "pages": 1
+        },
+        {
+            "script": "2040046.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2040047.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040047_old.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2040048.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2040050.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "2040052.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2041000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2041001.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2041007.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2041008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2041009.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2041010.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2041013.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2041017.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2041023.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2041024.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2041025.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2041026.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2041029.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2042000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2042001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2042002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2042003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2042004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2042005.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2042007.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2042008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2042009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2043000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2050004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2050014.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2050015.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2050016.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2050017.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2050018.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2050019.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2060005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2060008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2060009.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2060100.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2070000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2071012.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2080000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2080005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2081000.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "2081004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2081005.js",
+            "error": "Java interop: class not migrated: org.gms.client.BuffStat",
+            "pages": 1
+        },
+        {
+            "script": "2081009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2081010.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2081100.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2081200.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2081300.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2081400.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2081500.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2082000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2082001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2082002.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2082003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2082004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2082014.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2083000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2083001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2083002.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2083004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2083005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2083006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2090000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2090004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2090005.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2090100.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2090101.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2090102.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2090103.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2090104.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2091005.js",
+            "error": "Unmigrated server API: channelServer.lookupPartyDojo",
+            "pages": 1
+        },
+        {
+            "script": "2091005_old.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2091006.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2091009.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2093003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2093004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2094000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2094001.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2094002.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2095000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2096000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2100.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2100000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2100001.js",
+            "error": "",
+            "pages": 5
+        },
+        {
+            "script": "2100002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2100003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2100005.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2100006.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2100007.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2100008.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2100009.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2101.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2101000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101002.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2101003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2101004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101007.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101011.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101013.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "2101014.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101015.js",
+            "error": "Unmigrated server API: player.getAriantColiseum",
+            "pages": 0
+        },
+        {
+            "script": "2101016.js",
+            "error": "Unmigrated server API: player.getAriantColiseum",
+            "pages": 0
+        },
+        {
+            "script": "2101017.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2101018.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "2102000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2102001.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "2102002.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2103000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103011.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103012.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2103013.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2104.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2110000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2110002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2110005.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2111000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111007.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111011.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111012.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111013.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111014.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111015.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111016.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111017.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111018.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111019.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111020.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111021.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111022.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111023.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2111025.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2111026.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2112000.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "2112001.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2112003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2112004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2112005.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "2112006.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "2112007.js",
+            "error": "TypeError: cannot read property 'getIntProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2112010.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "2112011.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2112013.js",
+            "error": "TypeError: cannot read property 'getIntProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2112016.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2112018.js",
+            "error": "TypeError: cannot read property 'getIntProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "2120003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2131000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2131001.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2131002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2131003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2131004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2131005.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2131006.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2131007.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2132000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2132001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2132002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2132003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2133000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2133001.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2133002.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2133004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2141000.js",
+            "error": "Unmigrated server API: cm.removeNpc",
+            "pages": 1
+        },
+        {
+            "script": "2141001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2141002.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "2143000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "2143003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2143004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2144007.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2144014.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2144016.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2144017.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "2144020.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "22000.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "2540000.js",
+            "error": "Java interop: class not migrated: org.gms.client.inventory.Item",
+            "pages": 1
+        },
+        {
+            "script": "3003104.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003107.js",
+            "error": "Unmigrated server API: cm.mentorshipOverview",
+            "pages": 1
+        },
+        {
+            "script": "3003150.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003151.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003152.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003153.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003154.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003155.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003156.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "3003165.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003200.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003201.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003202.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003203.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003205.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003206.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003208.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003209.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "3003210.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003211.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003214.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003215.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003216.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003218.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003219.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003220.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003222.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003224.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003235.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003239.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003241.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3003243.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "3005427.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "6410.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9000000.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9000001.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9000002.js",
+            "error": "warp: 无效的地图 id -1",
+            "pages": 3
+        },
+        {
+            "script": "9000004.js",
+            "error": "TypeError: cannot read property 'getPlayers' of null",
+            "pages": 0
+        },
+        {
+            "script": "9000007.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9000008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9000009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9000010.js",
+            "error": "warp: 无效的地图 id -1",
+            "pages": 1
+        },
+        {
+            "script": "9000011.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9000012.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9000013.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9000017.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9000018.js",
+            "error": "Unmigrated server API: cm.getConnection",
+            "pages": 2
+        },
+        {
+            "script": "9000019.js",
+            "error": "Unmigrated server API: org.gms.util.PacketCreator.openRPSNPC",
+            "pages": 0
+        },
+        {
+            "script": "9000020.js",
+            "error": "",
+            "pages": 5
+        },
+        {
+            "script": "9000021.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "9000021_old.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9000036.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9000037.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9000038.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9000040.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9000040_1.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9000041.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9000049.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9000055.js",
+            "error": "Java interop: class not migrated: soloMapling.ArtificialPlayer.BotBossCombatManager",
+            "pages": 0
+        },
+        {
+            "script": "9001000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9001102.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9001105.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9010000.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9010001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9010002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9010003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9010004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9010021.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9010022.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9010022_old.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9020000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9020001.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "9020002.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9030000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9030100.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9040000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9040001.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9040002.js",
+            "error": "",
+            "pages": 14
+        },
+        {
+            "script": "9040003.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "9040004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9040005.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9040006.js",
+            "error": "TypeError: cannot read property 'getState' of null",
+            "pages": 0
+        },
+        {
+            "script": "9040007.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9040008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9040009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9040010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9040011.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9040012.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9060000.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9063168.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9071000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9071001.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9071003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9071004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9071005.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9100001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9101001.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9102100.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9102101.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9103000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9103001.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9103002.js",
+            "error": "TypeError: cannot read property 'giveEventReward' of null",
+            "pages": 1
+        },
+        {
+            "script": "9103003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9105004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9105005.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9110000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9110002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9110015.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9110016.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9110100.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9110102.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9110105.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9110106.js",
+            "error": "",
+            "pages": 5
+        },
+        {
+            "script": "9110107.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9110109.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9110112.js",
+            "error": "",
+            "pages": 5
+        },
+        {
+            "script": "9110115.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9110116.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120010.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9120013.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120015.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120023.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120025.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120026.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120027.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120031.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120032.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120034.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120036.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120037.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120039.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120040.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120041.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120042.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120047.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120052.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120053.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120100.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9120101.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9120102.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9120103.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9120200.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9120201.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9120202.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "9120203.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9130000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9130100.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9130145.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9200000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9200100.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9200101.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9200102.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201000.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201004.js",
+            "error": "Unmigrated server API: player.isMarried",
+            "pages": 0
+        },
+        {
+            "script": "9201005.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201007.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201008.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201009.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201010.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201011.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201012.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201013.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201014.js",
+            "error": "Unmigrated server API: player.getMarriageInstance",
+            "pages": 0
+        },
+        {
+            "script": "9201015.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201016.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201017.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201018.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201019.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201021.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201022.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201023.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201024.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201025.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201026.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201027.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201033.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201039.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201042.js",
+            "error": "",
+            "pages": 14
+        },
+        {
+            "script": "9201043.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201044.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "9201045.js",
+            "error": "TypeError: cannot read property 'getProperty' of null",
+            "pages": 0
+        },
+        {
+            "script": "9201046.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201047.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201048.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201049.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201050.js",
+            "error": "",
+            "pages": 14
+        },
+        {
+            "script": "9201051.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201052.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201054.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201056.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201057.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201061.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201062.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201063.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201064.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201065.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201068.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201069.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201070.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9201071.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201072.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201073.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201079.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201081.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201082.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201083.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201084.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201093.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201094.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201095.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201096.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "9201097.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201098.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201099.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201100.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201101.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201102.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201103.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201104.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201105.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201106.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201107.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201108.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201109.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201110.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201111.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201112.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201113.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201114.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201115.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201123.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201124.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201125.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201126.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201127.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201128.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201129.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201130.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201131.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201132.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201133.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201134.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "9201135.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9201142.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9201143.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9209000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9209000_old.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9209001.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9209002.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9209003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9209004.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9209005.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "9209006.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9209007.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9209100.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9220004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9220005.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9220005_old.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9220018.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9220019.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9220020.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9250006.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9250010.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9250040.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9250045.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9250047.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9250049.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9250050.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9270017.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9270018.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9270023.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9270024.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9270025.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9270026.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9270031.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9270033.js",
+            "error": "TypeError: cannot read property 'isEventCleared' of null",
+            "pages": 0
+        },
+        {
+            "script": "9270036.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9270037.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9270038.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9270041.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9270042.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9270043.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9270044.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9270045.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9270047.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9270054.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9300003.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9300005.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9300007.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9300008.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9300009.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9300010.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9300345.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9310000.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9310001.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9310002.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9310003.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9310004.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9310005.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9310006.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9310007.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9310013.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9310030.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9310031.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9310032.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9310035.js",
+            "error": "",
+            "pages": 11
+        },
+        {
+            "script": "9310036.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9310037.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9310039.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9310043.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9310044.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9310050.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9310056.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9310057.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9310058.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9310084.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9330021.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9330028.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9330032.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9330044.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9330045.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9330046.js",
+            "error": "warp: 无效的地图 id -1",
+            "pages": 1
+        },
+        {
+            "script": "9330048.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9330049.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9330052.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9330054.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9330061.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9330062.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9330074.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9330087.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9390220.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "9390221.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "9390225.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9390254.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9900000.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9900001.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9900001_2.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9900002.js",
+            "error": "Java interop: class not migrated: soloMapling.ArtificialPlayer.BotBossCombatManager",
+            "pages": 0
+        },
+        {
+            "script": "9900008.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "9900009.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "9977777.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "AkayrumFS.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "MagatiaPassword.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "MaybeItsGrendel_end.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "PupeteerPassword.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "ThiefPassword.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "akayrumbattle.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "changeName.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "commands.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "cpqchallenge.js",
+            "error": "TypeError: cannot read property 'getMembers' of null",
+            "pages": 0
+        },
+        {
+            "script": "cpqchallenge2.js",
+            "error": "TypeError: cannot read property 'getMembers' of null",
+            "pages": 0
+        },
+        {
+            "script": "credits.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "equipment_fusion.js",
+            "error": "",
+            "pages": 4
+        },
+        {
+            "script": "gachapon.js",
+            "error": "",
+            "pages": 3
+        },
+        {
+            "script": "gachaponInfo.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "gachaponRemote.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "gachaponold.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "link_system.js",
+            "error": "Unmigrated server API: cm.linkSystemOverview",
+            "pages": 0
+        },
+        {
+            "script": "mParkEnter.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "mParkShop.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "mParkShuttle.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "mPark_in00.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "mPark_in01.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "mPark_in02.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "mPark_retire.js",
+            "error": "",
+            "pages": 2
+        },
+        {
+            "script": "mPark_welcome.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "mapleTV.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "monster_vac_toggle.js",
+            "error": "Unmigrated server API: cm.isMonsterVacActive",
+            "pages": 0
+        },
+        {
+            "script": "oldSuse.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "openShopNPC.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "out272000410.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "out272000410b.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "outAkayrum.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "rank_user.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "rebirth.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "scroll_generator.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "unidentifiedNpc.js",
+            "error": "",
+            "pages": 1
+        },
+        {
+            "script": "waterOfLife.js",
+            "error": "",
+            "pages": 0
+        },
+        {
+            "script": "坐骑领取.js",
+            "error": "",
+            "pages": 2
+        }
+    ]
+}

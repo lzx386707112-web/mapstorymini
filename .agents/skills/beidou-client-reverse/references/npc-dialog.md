@@ -551,3 +551,129 @@ sendAcceptDecline —— 那是二值按钮，不是 `#L` 选项列表）。
 - 失败的 3 项（1021 苹果发放、1021 引导动画、QuestClear 特效）在**移除本用例的基线**
   `/tmp/quest_base.log`（24270 通过 / 3 失败，失败项相同）里同样存在，属改动之前就有的问题。
 - 编译检查 `tools/unity-compile-check`：0 warning / 0 error。
+
+## 2026-10-29 路卡斯1040乱码与共用文本引用解析
+
+### 身份与原端调用链
+
+EXE：`clien/BeiDou.exe`，SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，ImageBase `0x400000`。中文表来自 `clien/ijl15.dll`，SHA256 `87c0d58d53b4294acf53f053191c67739d1fa1ab2e9532fd764ba6b251f85c7e`，ImageBase `0x10000000`；表导出及替换机制见 `binary-and-tools.md` 与 `string-pool-zh.json`。
+
+- 源服务端 `wz/Quest.wz/QuestInfo.img.xml` 的 `1040/1` 原文为 `#y1041# #b (#u1041#)#k`，后接1042～1044；任务名是麦加的各次修炼。截图的 `1041b()` 来自旧迁移解析器：将 `#y` 当橙色、残留数字后错配下一对井号，再将未知 `u` 丢弃。不是JS函数，也不应改脚本或资源文案。
+- `99DD54` 是文本排版/标记分派；`99E16D → 9A264F → 9A283B` 分词；`99E428 → 9A2DE0` 分类。`99E197..99E403` 处理颜色、粗体及选项结束（串2244～2251为k/r/g/b/e/n/l/d），**y不在颜色分支**。`9A2DE0` 默认type17交给替换分支，而非统一颜色。
+- `9A1878..9A1BFF` 按标记字符分派；`y` 到 `9A1BB8`，调用 `5CF63E` 取任务名，随后把任务ID存run+4。`u` 到 `9A1D27..9A1EF9`：先由 `9A25FF` 查完成表，再查context的进行中表（+4DF），映射0/1/2到串4296/4297/4298。EXE英文是Not Started/In Progress/Ended，ijl15替换为**未开始/进行中/已结束**。替换文字走 `9A206B` 的当前颜色/粗体设置，不自行改橙色。
+- `q` 到 `9A1F54..9A2005`，以`%07d`索引`String/Skill.img`读取name（串1604）；`s` 在`9A2DE0`分为type9，`99E627..99E6A4`通过`75C755`读取技能名及技能对象+AC的原图。迁移路径复用 `Skill/<id/10000,D3>.img/skill/<id,D7>/icon`。真实`npc/6410.js`与`quest/6410.js`含`#s5221009# #b#q5221009##k`，名字“心灵控制”。旧代码把s参数直接打印为数字，q被静默丢弃。
+- `@` 到 `9A19B9..9A1A1A`，`p` 到 `9A200A..9A205F`：同样以NPC ID、同一String根（局部-7C）、name串1604调用`98CF56`。@额外写run+3C供原端交互。当前先迁移相同的NPC名称替换；真实`#@1022000:#`为“武术教练”。
+- 数值读取统一 `9A262F → A6134A → A612BF`：跳前导空白，读可选正负号和十进制前缀，遇非数字停止（32位算术）。因此`#t1092000:#`、`#i 4000000#`合法；旧`int.TryParse`会误读为0。此修正用于所有共用数值引用，不修改源文案。
+- `W` 在`9A2DE0`分为type16；`9A1659..9A1841`剥去`#W`与结尾井号，用串5585=`UI/UIWindow.img/Quest/%s`取图。已迁移为Icon run。`Quest/prob`原图60×14、origin(0,0)，summary/reward等节点仍用原IMG；不自绘。
+
+### 审计范围与剩余缺口
+
+检查当前完整`Data/scripts`文本，以及源端`QuestInfo.img.xml`和`Say.img.xml`。粗略搜`#[A-Za-z]`会把`#L0#Mother...`的闭合井号当成M标记，不能当覆盖率。以下为QuestInfo中完整标记格式命中数（正则非运行时路径覆盖）：y49、u45、数字q38、W101、`[itzv]数字:#`1193、`@数字:#`337；本次已修复这些类别的名称/状态/图标及数值前缀处理。脚本另外存在动态拼接的s/q与`#B`进度条，不能凭静态计数认定所有分支已运行。
+
+仍未迁移：`#M数字#`18处、`#x数字#`17处（1047等怪物卡任务）；`#jcmp/try/min/sec#`等60处（1200等挑战任务）；`#R数字#`18处（如2314）、`#Q数字#`1处（4490）；`#Dhour/min/sec/count/day...#`12处（29003等）；脚本的`#B`进度条。以上仅确认源文案存在且当前无对应解析，完整语义/数据依赖须继续追踪`99DD54`对应分支，不能擅造0值或自绘替代。未知/缺闭合标记仍可能被旧默认分支吞字，尚未改成猜测的容错规则。
+
+`#a`当前由`QuestWindow.ExpandProgress`按当前任务展开，NPC共用解析器未接。补查`9A1A1F → A288ED`可确认编码为`questId=参数/10`、`目标序号=参数%10`；从进行中进度串截取每目标3字符，格式串5516=`%d / %d`。现有QuestWindow使用`1/1`（无空格），本次未扩大到进度协议迁移。此边界不得视为已完整还原。
+
+任务名run+4、NPC引用run+3C的原端点击/悬停语义未完整迁移；本次不把任务/NPC引用伪装为`#L`选项回复。y/u遵循当前颜色，s/W保留所在`#L`的Link/Bold/Color。`StripMarkup`现复用`Parse`的Runs，避免两套解析规则再次分叉，仍保留原纯文本入口的换行（不做Body的Trim）。
+
+### 复现与验证
+
+项目根目录下可复现：
+
+```sh
+rtk proxy /tmp/mapledash-reverse-venv/bin/python tools/inspect_beidou_client.py ../../Beidou-Server/clien/BeiDou.exe --fn 0x99DD54 --start 0x9A184B --end 0x9A2074
+rtk proxy /tmp/mapledash-reverse-venv/bin/python tools/inspect_beidou_client.py ../../Beidou-Server/clien/BeiDou.exe --fn 0x9A2DE0
+rtk proxy /tmp/mapledash-reverse-venv/bin/python tools/inspect_beidou_client.py ../../Beidou-Server/clien/BeiDou.exe --fn 0xA612BF
+rtk proxy python3 tools/imgdump.py String/Skill.img 5221009 --depth 1
+rtk proxy python3 tools/imgdump.py UI/UIWindow.img Quest/prob --depth 1
+```
+
+运行时代码为`Assets/Scripts/Npc/DialogText.cs`；`QuestNpcChecks.CheckDialogReferenceTokens`覆盖1040真实正文、三种状态、标记相邻边界、真实技能图/名称、NPC引用、带冒号/空白/正号参数、原W图标、null纯文本，以及真实QuestInfo全部94处数字y/u引用。未修改源端脚本，未打包APK、未做Android实机或新布局的视觉验收。
+
+最终验证：compile-check Rebuild 0错误0警告；Unity QuestNpcChecks 24470通过/3失败，对照本次修改前基线24355通过/3失败，新增115项全部通过。三项失败均为基线已有的1021苹果发放、1021引导动画、QuestClear动画，不能把全量回归声称为全通过。脚本包2779条parseFail=0、mangled=0；全量NPC889条parseFail=0、runFail=47、javaInterop=73，与已记录基线相同。CLI运行使用`tools/script-harness`工作目录下`--run ../../../MapleDashResources/Data/scripts/npc`（上级规则示例的两层相对路径在当前目录结构下不存在），`--pack ../../Assets/Resources/Scripts/npc_scripts.json`。本次运行日志`/tmp/dialog-baseline.log`、`/tmp/dialog-final.log`、`/tmp/dialog-compile-final.log`、`/tmp/dialog-script-run.log`、`/tmp/dialog-script-pack.log`为临时结果；可持久复现的断言保留于上述Editor检查方法。
+
+
+## 2026-10-29 NPC Java互操作与运行审计（进行中）
+
+### 纠正旧验收口径
+
+上节的889条 / 47 RUN / 73 JAVA来自 `tools/script-harness/Program.cs` 的 MockConversation，不等于120个已确认游戏故障：测试桩没有正式Java宿主注册，原先即使start中dispose仍继续发action，并轮换任意type/selection。正式 `ScriptApiAudit.Run` 通过NpcSession/NpcApi + 隔离GameServer数据库复测，基线889条691通过198失败；原120条中42条在正式运行接口下已通过。审计仅覆盖level30/job0/金币100000的首个可选路径，最多14次回复，无活动地图/事件实例；事件前置条件错误不能计为已经确认的解析器缺陷。该基线曾未隔离独立的LastMapId偏好，不能用于严格逐项增量比较。当前审计每条固定起始地图1000000并在finally还原mxd.fieldmap（含原key不存在的情况）；正式结果写入 `docs/script-api-audit.json`，口径和剩余项见 `docs/script-api-audit.md`。
+
+### 源端依据与迁移
+
+本节为服务端Java/JS语义迁移，没有新增EXE函数或UI布局结论。源文件根为 `Beidou-Server/gms-server/src/main/java/`：
+
+- `org/gms/server/expeditions/ExpeditionType.java`：17项枚举的min/max人数、等级、注册分钟。各项minSize均1，solo配置不改变当前结果；ARIANT三项maxSize7，其余30，maxLevel255，注册5分钟。按原值建立显式宿主，未知方法继续报错；不代表远征系统完整迁移。
+- `org/gms/constants/game/GameConstants.java:428..461`：荣誉殿地图按骑士团/战神/冒险家职业分派；职业阶段按jobid模1000/100/10判定。地图值来自 `constants/id/MapId.java:255..264`。`MapId.isPartyDojo`使用闭区间925030100..925033804。
+- `org/gms/util/ExtendUtil.java`：三元字符串键extend_id/type/name精确查询，首次插入create_time、后续保留create_time写update_time。NativeScriptService新增同表持久化宿主，和已有NativeScriptValues共用extend_value表，未将任意type伪装成每日记录。
+- `org/gms/client/Character.java:8743` + `BuddyList`：好友扩容修改容量；当前桥通过NativeSocialService写真实角色记录并保存，其他角色不变。MonsterBook.java:60..79/133：getTotalCards为不同卡片种类数，不是卡片数量总和，桥读取社交服务cards.Count。
+- MapleMap.java:1383/1422：getMonsters与getAllMonsters均枚举当前地图MONSTER。桥复用当前field怪物对象集合；尚非所有远程地图/独立副本对象。
+- 解释器显式Java注册支持importClass的构造器/对象类身份、importPackage的惰性已注册类查找及词法遮蔽，保留未知类/歧义错误。System.out/err输出真实控制台；Calendar保留Java月份从0开始、星期日=1；SimpleDateFormat仅迁移源9390220所用yyyyMMdd，未支持的pattern明确报错。
+
+### 用户授权脚本例外
+
+用户明确允许对以下三处添加最小本地覆盖。2040022.js：源端辅助剂说明分支dispose后缺少return，随后读取未赋值currentItemSet.length；覆盖文件 `content/script-overrides/npc/2040022.js` 仅在该dispose后增加return，源服务端脚本不变，统一sync工具生成运行资源。2010005.js：在status2金币/船票判断前仅增加 `var access = false;`，防止不足时读取未定义变量。2143003.js：仅将 `ExpeditionType.Cydnus` 改为真实枚举 `CYGNUS`。三份源端文件保持不变，授权不扩展到其他脚本改写。
+
+### 本轮补充的已核实接口
+
+- `JsInterpreter` 的普通函数无接收者调用采用全局this；全局this属性与Global作用域双向对应，箭头仍捕获词法this。原credits/9977777的 `this[函数名]()` 因此可分派，不把undefined全局改成任意空对象。
+- `Character.getQuestRecord` 的customData是QuestStatus瞬时字段，源端getCustomData无DB写出调用；按角色/任务键保留到角色会话结束，不冒称持久化。Channel.getStoredVar/setStoredVar是world/channel/key共享内存，默认0、跨角色共用，服务实例重建清空。
+- `GachaponService.getRewardsByNpcId` 与抽奖共用有效奖池查询：NPC匹配**或公共池**，按有效期过滤、池id升序；修复既有GachaDraw遗漏公共池。ServerManager仅接入真实gachaponService查询，其他bean明确报错。
+- `CommandService.java:37..54/101..149`、`CommandsExecutor.loadCommandsExecutor`：0..6级按启用状态建立名称/描述Pair，名称小写且重复只注册首个。NpcApi.CommandsExecutor复用AdminCommands原命令种子和i18n描述及command_info实时配置；没有复制已停用的旧registerLv0..6硬编码表。读列表不等于全部GM命令执行器迁移完成。
+- `EventManager.java:1262`→`World.java:441`→`NumberTool.java:36..46`：transportationTime采用world_prop.travel_rate的Java float乘积，向零截断，溢出按Java整数转换夹取。NativeEventScripts注入当前world的实际配置；无world显式报错。
+- `PacketCreator.playSound/musicChange`构造延迟消费的命令，只有sendPacket/broadcastMessage才播放；原PacketCreator.java:4327/4331分别为effect3/4。`tools/export_sound.py --npc-field-only`直接导出源Sound/Field.img的orbis音符、Party1/Clear/Failed及Bgm04/Shinin'Harbor原始音频；未接的其他效果包仍报错。
+- MapleMap reactor getter按name/id/oid读取真实MapReactorService对象，缺对象返回null；forceHitReactor(newState)不能误绑为ForceHit自增状态。远程地图只暴露已有真实读能力，不能把远程spawn转到当前地图。
+
+### 当前验证与阻塞（继续处理中）
+
+2026-10-29：纯解释器/服务自测40通过0失败；含导入/日期、global this、ExtendUtil、customData与channel隔离、公共扭蛋池、交通倍率，以及2010005金币/船票不足两条分支。compile-check Rebuild为0错误0警告；包2779条（npc889/quest470）、parseFail0/mangled0。
+
+正式NpcSession/NpcApi审计：889条829通过60失败；原Mock的120条清单106通过14失败，25项直接宿主断言通过。首条菜单路径、最多14次回复、level30/job0/金币100000、起始地图1000000、无渲染场景/事件/队伍；不是所有选项或APK验收。`docs/npc-script-mock-baseline.json`固定原120项身份，`docs/script-api-audit.json`保存逐项结果。
+
+社交服务3项好友容量持久化/隔离断言已通过；完整server-check在既有MarketEconomy.TrailingDigit的Int32溢出中断，不能声称全量通过。普通商店并行改动的先前编译阻塞已经解除。
+
+剩余14项含真正未迁移系统和缺副本/队伍/地图上下文的脚本。9000018依赖npccashshopdajieda，但全源仓库SQL/XML/CSV/JSON/Java/JS搜索仅该脚本命中，尚无表结构/商品数据依据；用户确认没有备份，明确要求无法修复的部分先按源端保留，故此项暂留原脚本，不再等待备份。未知系统不得以返回null、假地图、假成功或修改原业务脚本掩盖。
+
+### 无备份后的保留范围与补接（2026-10-29）
+
+用户明确答复无数据库备份：“能修就修，修不了先按源端来”。9000018保留源JS和原SQL，不构造空npccashshopdajieda或猜填商品；cm.getConnection由返回null改为明确的未迁移接口错误，避免后续prepareStatement空指针掩盖真正缺口。
+
+Character.java:712读取canRecvPartySearchInvite，该值在6941从characters.partySearch装载（默认true）并在8437保存。NpcApi.isRecvPartySearchInviteEnabled已绑定当前真实角色partySearch，未登录明确报错；toggleRecvPartySearchInvite及其PartySearchCoordinator登记流程仍未迁移，不据此声称组队搜索全功能完成。
+
+原 `soloMapling/ArtificialPlayer/BotTypes/Blackjack/BlackjackDealerBot.java:68..89` 按同地图荷官欧氏距离取最近并调用joinPlayerFromNpc。NpcApi显式类注册调用已有C#牌桌服务；仅使用GameServer.ActiveBotPlayer登记的当前真人，拒绝不同ID、未登记/离线/地图不同的身份，不构造替身玩家。原无荷官提示完整保留“请确认21点桌功能已开启，并重新进入自由市场”。9000055仍依赖未迁移BotBossCombatManager，类入口补接不等于该NPC全部分支通过。
+
+ScriptApiAudit.CheckPlayerBridges覆盖组队搜索状态0/1、不同ID拒绝、无field登记拒绝、真实登记无荷官、两荷官取最近及实际牌桌成员加入、重复加入不增员；测试对象与respondant在finally清理。当前没有新的EXE/UI布局结论，亦没有整局21点/Android实机验收。
+
+
+## Say.img 数据问答：瑞恩选错仍判正确的纠正（2026-10-30）
+
+身份：BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，ImageBase `0x400000`。
+旧「12 个选项任务」审计只统计 JS，不包含无 JS 的 Say.img 问答，不可据此声称全任务选项覆盖。
+NPC 瑞恩12101对应任务1009..1015，原问答来自 `Quest/Say.img/<id>/1`，不是 rein.js。
+
+确定调用链：`0x71737B`读取ask，非0到`0x717963`问答循环；`0x7179E9`读取stop，
+`0x717A68`取页号子节点；`0x717D7D..0x717D86`从对话对象+F4取得选中链接号；
+`0x717D97..0x717DD8`用该号读取 `stop/<page>/<selection>`字符串；
+`0x717E08..0x717E11`非空去`0x717F80`显示普通确定反馈，之后返回false；空则`0x717E17`页号递增，
+最终`0x718070`返回true。不能把一次mode=1当成任意答案都正确，也不能硬编码选项0。
+
+原数据：1009正确0/I，1012正确3/Z，1013正确1/8级；stop对应错误选项有解释，正确项不含错误字符串。
+`stop/0/answer`虽有1/4/2等值，本分支已核实使用的是所选链接号对应的stop字符串，不直接比较answer。
+`NpcSession.BeginDataQuest`按ask展示原#L菜单，检查有效链接；错误只展示stop并结束，不交付、不发奖励；正确推进原下一页。
+原JS不变。复现：`tools/imgdump.py Quest/Say.img 1012/1 --depth 5`；
+`tools/inspect_beidou_client.py <BeiDou.exe> --fn 0x717963`。验证入口 `NativeGameplayFixChecks.Run`逐题遍历全部可见链接，区分错误反馈/不交付和正确翻页。
+
+## 2026-10-30 对话Esc归属与路过误触发
+
+NpcDialogUi.DrawDialog原本有OnGUI KeyDown Escape→NpcSession.Cancel，但InputBridge把NPC从全局Esc分派排除，依赖GUI事件独占消费，运行中会漏关。
+现于已有会话输入分派首先处理物理Esc或GameAction.Menu，调用同一Cancel（发送取消并关闭），保留本帧dialogInput快照归属，避免关对话后同一Esc又打开侧菜单。
+删除FieldDirector.CheckNpc中的HeldUp→TryInteractNearest额外入口；显式NativeKeyActions.NpcTalk和鼠标点NPC入口保留。
+这项是输入接线修复，不改变原脚本对白或IMG布局，不新增“靠近自动说话”逻辑。
+InteractionRegressionChecks.Run通过真实NpcSession+InputBridge.Update注入Menu动作检查关闭且不打开侧菜单；物理键平台事件仍需实机验证。
+
+### 本轮验证范围（2026-10-30 第二批反馈）
+
+隔离Unity工程InteractionRegressionChecks.Run退出0：真实Quest需求下怪物/全局任务掉落四阶段、普通0/−1掉落、实际NpcSession及InputBridge的Esc动作关闭与菜单不穿透、按上门原地松开/再按、触碰门防循环、HP/MP 700ms中点、死亡视觉origin/旋转/alpha及清理。
+NativeGameplayFixChecks.Run退出0：包括原IMG墓碑600px起点、880ms落地、land保持和2.2秒确认阶段。
+compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0。全量NPC Mock运行889条790通过，27 runFail及72 Java interop缺口与此前基线一致，不能称全量脚本验证通过。
+死亡层叠尚无EXE逐帧画面oracle；未打包APK、未做Android实机验收。EXP主条方案仍待用户选择，不以HP/MP通过代替EXP验证。

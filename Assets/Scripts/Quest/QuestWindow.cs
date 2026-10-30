@@ -14,12 +14,69 @@ public static class QuestWindow
     static readonly List<Entry> rows = new List<Entry>();
     struct Entry { public int id, area, count; }
 
-    public static void Toggle() { Visible = !Visible; }
-    public static void Select(int id) { selectedId = id; tab = Profile.QuestStatus(id); detailVisible = Visible = true; }
+    public static void Toggle()
+    {
+        if (Visible) { Visible = false; return; }
+        Visible = true;
+        BuildRows();
+        // 87FAC0..87FADD: an empty initial in-progress page falls back to available.
+        if (tab == 1 && rows.Count == 0) tab = 0;
+        EnsureSelection();
+        detailVisible = selectedId > 0;
+    }
+    public static void Select(int id)
+    {
+        var quest = QuestCatalog.Get(id);
+        if (quest == null) return;
+        selectedId = id;
+        tab = Profile.QuestStatus(id);
+        collapsed.Remove(quest.area);
+        BuildRows();
+        RevealSelection();
+        bodyScroll = summaryScroll = 0;
+        detailVisible = Visible = true;
+    }
+
+    // 87FD4F -> 882A71/882B2E -> 8846F2: select a task on entry/tab change.
+    static void EnsureSelection()
+    {
+        BuildRows();
+        var selected = QuestCatalog.Get(selectedId);
+        if (selectedId > 0 && selected != null && Profile.QuestStatus(selectedId) == tab)
+        {
+            collapsed.Remove(selected.area);
+            BuildRows();
+            if (rows.Exists(row => row.id == selectedId)) { RevealSelection(); return; }
+        }
+        selectedId = 0;
+        bodyScroll = summaryScroll = listScroll = 0;
+        // Native selection expands the task's category before finding its display row.
+        if (rows.Count > 0 && collapsed.Remove(rows[0].area)) BuildRows();
+        foreach (var row in rows)
+            if (row.id > 0) { selectedId = row.id; break; }
+        RevealSelection();
+    }
+    static void RevealSelection()
+    {
+        int index = rows.FindIndex(row => row.id == selectedId && row.id > 0);
+        if (index < 0) return;
+        if (index < listScroll) listScroll = index;
+        else if (index >= listScroll + 14) listScroll = index - 13;
+        listScroll = Mathf.Clamp(listScroll, 0, Mathf.Max(0, rows.Count - 14));
+    }
+    static void SelectTab(int value)
+    {
+        tab = value;
+        selectedId = 0;
+        EnsureSelection();
+        detailVisible = selectedId > 0;
+    }
 
     public static void Draw()
     {
         if (!Visible) return;
+        // Quest completion/abandonment can change while the window is closed or visible.
+        if (selectedId > 0 && Profile.QuestStatus(selectedId) != tab) EnsureSelection();
         bool showDetail = detailVisible && selectedId > 0;
         float scale = Mathf.Min(BottomBar.S, (UiKit.W - 16f) / (showDetail ? 550f : 245f), (UiKit.H - BottomBar.Height - 16f) / 396f);
         var origin = new Vector2((UiKit.W - (showDetail ? 550 : 245) * scale) / 2f,
@@ -74,7 +131,7 @@ public static class QuestWindow
             var label = Art.Tex("wz://UI/UIWindow.img/Quest/Tab/" + (tab == i ? "disabled/" : "enabled/") + i);
             if (label != null) GUI.DrawTexture(QuestUi.Rect(start + 57 / 2 - label.width / 2, 23 + 19 / 2 - label.height / 2 + 2, label.width, label.height), label);
             if (QuestUi.Click(QuestUi.Rect(start - 4, 23, 65, 19)) && tab != i)
-            { tab = i; selectedId = 0; listScroll = bodyScroll = summaryScroll = 0; }
+            { SelectTab(i); }
         }
     }
 

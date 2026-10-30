@@ -4,8 +4,50 @@ using System.Collections.Generic;
 // Source UseItemHandler and dedicated equipment / chair / cash handlers use distinct routes.
 public static class NativeInventoryActions
 {
+    static int carriedItem;
+    static bool swallowDrop;
+    public static bool Carrying => carriedItem != 0;
+    public static void Pick(int id)
+    {
+        // Native keymap item bindings are for consumables, usable setup and cash items.
+        if (id / 1000000 != 2 && id / 10000 != 301 && id / 1000000 != 5) return;
+        SkillWindow.CancelSkillDrag();
+        carriedItem = id;
+    }
+    public static void CarryStep()
+    {
+        if (Event.current != null && Event.current.type == EventType.Repaint) CarryPointerStep();
+    }
+    public static void CarryPointerStep()
+    {
+        if (swallowDrop)
+        {
+            if (Pointer.Released) { Pointer.ConsumeClick(); swallowDrop = false; }
+            return;
+        }
+        if (!Carrying) return;
+        if (Pointer.RightPressed || Input.GetKeyDown(KeyCode.Escape) || NpcSession.Blocking)
+        { carriedItem = 0; return; }
+        if (!Pointer.Pressed) return;
+        int id = carriedItem;
+        carriedItem = 0;
+        bool placed = KeyConfigWindow.Visible && !KeyConfigWindow.Carrying && KeyConfigWindow.DropSkill(Pointer.Pos, -id);
+        if (!placed && !KeyConfigWindow.Visible)
+            for (int i = 0; i < QuickSlots.Count; i++)
+                if (BottomBar.SlotRect(i).Contains(Pointer.Pos)) { QuickBarKeys.BindSkill(i, -id); placed = true; break; }
+        if (placed) { swallowDrop = true; Pointer.ConsumeClick(); Pointer.Pressed = false; }
+    }
+    public static void DrawCarry()
+    {
+        if (!Carrying) return;
+        NativeCursor.Request(NativeCursor.StateHold);
+        var icon = NativeItemSource.Icon(carriedItem);
+        float size = 32 * BottomBar.S;
+        if (icon != null) GUI.DrawTexture(new Rect(Pointer.Pos.x-size/2, Pointer.Pos.y-size/2, size, size), icon, ScaleMode.ScaleToFit);
+    }
     public static void DoubleClick(int itemId, int inventoryPosition = 0)
     {
+        carriedItem = 0;
         string error = TryUse(itemId, inventoryPosition);
         if (!string.IsNullOrEmpty(error)) BottomBar.Toast(error);
     }
@@ -66,13 +108,18 @@ public static class NativeInventoryActions
                 return null;
             }
             var spec = NativeItemSource.Node(itemId)?.Get("spec");
+            if (spec?.Int("isNpc") == 1)
+            {
+                if (spec.Int("remove") == 1 && !Profile.RemoveItem(itemId, 1)) return "背包里没有这个物品";
+                return NpcSession.Talk(spec.Int("npc"), spec.Text("script")) != null ? null : "物品NPC脚本尚未接入";
+            }
             if (!string.IsNullOrEmpty(spec?.Text("script")))
                 return NpcSession.UseItem(itemId) != null ? null : "物品脚本尚未接入";
             if (NpcSession.UseRestorative(itemId)) return null;
             if (UseStatPotion(itemId,player)) return null;
             return "该消耗品的特殊使用功能尚未接入";
         }
-        if (itemId / 10000 == 301) return "椅子使用功能尚未接入";
+        if (itemId / 10000 == 301) return player.UseChair(itemId) ? null : "请站在地面上使用椅子";
         if (itemId / 1000000 == 5) return "该现金道具的使用功能尚未接入";
         return "这个物品不能直接使用";
     }

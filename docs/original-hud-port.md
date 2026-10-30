@@ -198,7 +198,7 @@ Q 开任务窗，C 打开本地聊天输入，界面显示可切换。尚无对�
 | --- | --- | --- |
 | 掉血闪烁 | `gauge/hpFlash/0`、`/1`（109×18） | 5 帧 × 100ms = 0.5s，0/1 交替，叠在槽体上；只在数值下降时触发，回血/升级不闪 |
 | 掉蓝闪烁 | `gauge/mpFlash/0`、`/1`（108×18） | 同上，独立计时 |
-| 经验增量段 | `gauge/tempExp`（1×16 浅色条） | 从旧比例画到新比例，覆盖在灰底之上、外框之下，保持 0.5s |
+| 暂存经验段（2026-10-30纠正旧“经验增量”误解） | `gauge/tempExp`（1×16 浅色条） | 读取Gacha EXP，不是普通获得经验闪条，也没有0.5s寿命；完整证据及整数布局见 `.agents/skills/beidou-client-reverse/references/statusbar-layout.md` |
 | 频道下拉 | `UI/Basic.img/ComboBox2` 四态（81×20） | 8 行 × 20px，从按钮下沿往上展开；当前项 pressed、悬停 mouseOver；点空白 / Esc 收起 |
 
 频道按钮本身改回原版专用素材 `base/chatTarget`（81×20）——`BeiDou.exe` 的字符串池里直接引用的

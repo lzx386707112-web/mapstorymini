@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using MapleDash.Js;
 
-public enum ScriptOperation { Open, Call, Close, SaveLocation, PeekLocation, GetLocation, ClearLocation, GachaDraw }
+public enum ScriptOperation { Open, Call, Close, SaveLocation, PeekLocation, GetLocation, ClearLocation, GachaDraw, GetStoredVar, SetStoredVar, GetQuestCustomData, SetQuestCustomData }
 
 // 本地传输专用宿主桥：JS 对象显式绑定，禁止反射调用任意 C#/Java 方法。
 // 脚本状态/解释执行属于 Server；对话与地图效果由 Client 注入的适配器消费。
@@ -15,6 +15,9 @@ public sealed class ScriptRequest
     public JsValue[] arguments;
     public string location;
     public int mapId, portalId;
+    public int world, channel, variableKey, variableValue;
+    public int questId;
+    public string customData;
     public int gachaponId;   // GachaDraw：gachapon_reward_pool.gachapon_id（NPC 编号或远程扭蛋 id）
 }
 public sealed class ScriptResponse
@@ -29,7 +32,9 @@ public sealed class NativeScriptService
     sealed class Session { public int characterId; public JsEngine engine; }
     readonly Dictionary<int, Session> sessions = new Dictionary<int, Session>();
     int sequence;
+    readonly Dictionary<(int character, int quest), string> questCustomData = new Dictionary<(int, int), string>();
     readonly DbStore db;
+    readonly Dictionary<(int world, int channel, int key), int> storedVars = new Dictionary<(int, int, int), int>();
     public NativeScriptService(DbStore db = null) { this.db = db; }
     static readonly HashSet<string> LocationTypes = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -40,6 +45,23 @@ public sealed class NativeScriptService
 
     public ScriptResponse Handle(ScriptRequest request)
     {
+        if (request.operation == ScriptOperation.GetQuestCustomData || request.operation == ScriptOperation.SetQuestCustomData)
+        {
+            if (db == null || CharactersDao.FindById(db, request.characterId) == null)
+                throw new JsRuntimeException("Script character does not exist");
+            var key = (request.characterId, request.questId);
+            if (request.operation == ScriptOperation.SetQuestCustomData) questCustomData[key] = request.customData;
+            return new ScriptResponse { value = questCustomData.TryGetValue(key, out string value) && value != null
+                ? (JsValue)new JsString(value) : JsNull.Value };
+        }
+        if (request.operation == ScriptOperation.GetStoredVar || request.operation == ScriptOperation.SetStoredVar)
+        {
+            if (db == null || CharactersDao.FindById(db, request.characterId) == null)
+                throw new JsRuntimeException("Script character does not exist");
+            var key = (request.world, request.channel, request.variableKey);
+            if (request.operation == ScriptOperation.SetStoredVar) storedVars[key] = request.variableValue;
+            return new ScriptResponse { value = new JsNumber(storedVars.TryGetValue(key, out int value) ? value : 0) };
+        }
         if (request.operation == ScriptOperation.GachaDraw)
         {
             if (db == null || CharactersDao.FindById(db, request.characterId) == null)
@@ -74,8 +96,8 @@ public sealed class NativeScriptService
                     if (pair.Key != "Java") engine.Bind(pair.Key, pair.Value);
             engine.Interp.ResolveHostType = name =>
             {
-                if (name == "org.gms.config.GameConfig" && db != null) return ConfigClass();
-                if (name == "org.gms.util.packets.Fishing") return FishingClass();
+                var native = ResolveHostType(name);
+                if (native != null) return native;
                 if (request.bindings != null && request.bindings.TryGetValue("Java", out var fallback))
                     return engine.Interp.Call(engine.Interp.GetMember(fallback, "type"), fallback, new JsValue[] { new JsString(name) });
                 return null;
@@ -106,19 +128,26 @@ public sealed class NativeScriptService
     // 返回 [itemId, quantity]；奖池为空返回空数组（客户端给「百宝箱为空」提示）。
     static readonly Random gachaRandom = new Random();
 
-    JsValue GachaDraw(int gachaponId)
+    List<DbRow> ActiveGachaPools(int gachaponId)
     {
         var now = DateTime.Now;
         var pools = new List<DbRow>();
         if (db.HasTable("gachapon_reward_pool"))
             foreach (var pool in db.Table("gachapon_reward_pool").rows)
             {
-                if (DbStore.Int(pool, "gachapon_id") != gachaponId) continue;
+                if (DbStore.Int(pool, "gachapon_id") != gachaponId && DbStore.Int(pool, "is_public") != 1) continue;
                 string start = DbStore.Str(pool, "start_time"), end = DbStore.Str(pool, "end_time");
                 if (!string.IsNullOrEmpty(start) && DateTime.TryParse(start, out var s) && now < s) continue;
                 if (!string.IsNullOrEmpty(end) && DateTime.TryParse(end, out var e) && now > e) continue;
                 pools.Add(pool);
             }
+        pools.Sort((a,b)=>DbStore.Int(a,"id").CompareTo(DbStore.Int(b,"id")));
+        return pools;
+    }
+
+    JsValue GachaDraw(int gachaponId)
+    {
+        var pools = ActiveGachaPools(gachaponId);
         if (pools.Count == 0) return new JsArray();
 
         int probTotal = 0, totalWeight = 0;
@@ -148,6 +177,125 @@ public sealed class NativeScriptService
     }
 
     static int MathfRound(float v) => (int)MathF.Round(v, MidpointRounding.AwayFromZero);
+
+    // Shared by NPC and EventManager engines; both execute the same server Java API.
+    public JsValue ResolveHostType(string name)
+    {
+        if (name == "org.gms.server.gachapon.Gachapon") return GachaponClass();
+        if (name == "org.gms.manager.ServerManager" && db != null) return ServerManagerClass();
+        if (name == "org.gms.config.GameConfig" && db != null) return ConfigClass();
+        if (name == "org.gms.constants.string.ExtendType") return ExtendTypeClass();
+        if (name == "org.gms.util.ExtendUtil" && db != null) return ExtendClass();
+        if (name == "org.gms.util.packets.Fishing") return FishingClass();
+        return null;
+    }
+
+    // EventManager -> World.getTransportationTime -> NumberTool.floatToInt.
+    public int TransportationTime(int world, int travelTime)
+    {
+        var row = db?.Table("world_prop").Find(value => DbStore.Int(value, "id") == world);
+        if (row == null) throw new JsRuntimeException("Missing event world: " + world);
+        float rate = Convert.ToSingle(row["travel_rate"], System.Globalization.CultureInfo.InvariantCulture);
+        float result = travelTime * rate;
+        if (float.IsNaN(result)) return 0;
+        if ((double)result > int.MaxValue) return int.MaxValue;
+        if ((double)result < int.MinValue) return int.MinValue;
+        return (int)result;
+    }
+
+    static JsValue GachaponClass()
+    {
+        var type=new JsHostObject(null);
+        var enumeration=new JsHostObject(null);
+        // Gachapon.GachaponType + message_zh_CN.properties GachaCommand.message2..11.
+        string[] names={ "射手村", "魔法森林", "勇士部落", "废弃都市", "林中之城", "古代神社", "昭和村更衣室(男)", "昭和村更衣室(女)", "新叶城", "诺特勒斯" };
+        int[] ids={9100100,9100101,9100102,9100103,9100104,9100105,9100106,9100107,9100109,9100117};
+        enumeration.Set("getLootNames",JsFunction.FromNative("getLootNames",c=>new JsArray(Array.ConvertAll<string,JsValue>(names,n=>new JsString(n)))));
+        enumeration.Set("getLootIds",JsFunction.FromNative("getLootIds",c=>new JsArray(Array.ConvertAll<int,JsValue>(ids,n=>new JsNumber(n)))));
+        type.Set("GachaponType",enumeration);
+        return type;
+    }
+
+    JsValue ServerManagerClass()
+    {
+        var type=new JsHostObject(null);
+        var context=new JsHostObject(null);
+        type.Set("getApplicationContext",JsFunction.FromNative("getApplicationContext",c=>context));
+        context.Set("getBean",JsFunction.FromNative("getBean",c=>
+        {
+            string name=JsConvert.ToString(c.Arg(0));
+            if(name!="gachaponService") throw new JsRuntimeException("Unmigrated server bean: "+name);
+            var service=new JsHostObject(null);
+            service.Set("getRewardsByNpcId",JsFunction.FromNative("getRewardsByNpcId",args=>
+            {
+                var rewards=new JsArray();
+                foreach(var pool in ActiveGachaPools(JsConvert.ToInt32(args.Arg(0))))
+                    foreach(var row in db.Table("gachapon_reward").rows)
+                        if(DbStore.Int(row,"pool_id")==DbStore.Int(pool,"id"))
+                        {
+                            var reward=new JsHostObject(row);
+                            reward.Set("getItemId",JsFunction.FromNative("getItemId",_=>new JsNumber(DbStore.Int(row,"item_id"))));
+                            reward.Set("getQuantity",JsFunction.FromNative("getQuantity",_=>new JsNumber(DbStore.Int(row,"quantity"))));
+                            rewards.Items.Add(reward);
+                        }
+                return rewards;
+            }));
+            return service;
+        }));
+        return type;
+    }
+
+    static JsValue ExtendTypeClass()
+    {
+        var type = new JsHostObject(null);
+        var values = new Dictionary<string, JsHostObject>(StringComparer.Ordinal);
+        string[] names = { "ACCOUNT_EXTEND", "ACCOUNT_EXTEND_DAILY", "ACCOUNT_EXTEND_WEEKLY", "CHARACTER_EXTEND", "CHARACTER_EXTEND_DAILY", "CHARACTER_EXTEND_WEEKLY", "UNSUPPORTED" };
+        string[] codes = { "11", "12", "13", "21", "22", "23", "99" };
+        for (int i=0; i<names.Length; i++)
+        {
+            string name=names[i], code=codes[i];
+            var value=new JsHostObject(code);
+            value.Set("getType", JsFunction.FromNative("getType", _ => new JsString(code)));
+            value.Set("name", JsFunction.FromNative("name", _ => new JsString(name)));
+            value.Set("toString", JsFunction.FromNative("toString", _ => new JsString(name)));
+            values[code]=value; type.Set(name, value);
+        }
+        type.Set("getExtendType", JsFunction.FromNative("getExtendType", c => values.TryGetValue(JsConvert.ToString(c.Arg(0)),out var value) ? value : values["99"]));
+        type.Set("isAccount", JsFunction.FromNative("isAccount", c => { string code=JsConvert.ToString(c.Arg(0));return JsBoolean.Of(code=="11" || code=="12" || code=="13"); }));
+        type.Set("isCharacter", JsFunction.FromNative("isCharacter", c => { string code=JsConvert.ToString(c.Arg(0));return JsBoolean.Of(code=="21" || code=="22" || code=="23"); }));
+        return type;
+    }
+
+    // ExtendUtil.java: exact (id,type,name) key, insert create_time / update update_time.
+    JsValue ExtendClass()
+    {
+        var type = new JsHostObject(null);
+        DbRow Find(JsCall call) => db.Table("extend_value").Find(row =>
+            DbStore.Str(row, "extend_id") == JsConvert.ToString(call.Arg(0)) &&
+            DbStore.Str(row, "extend_type") == JsConvert.ToString(call.Arg(1)) &&
+            DbStore.Str(row, "extend_name") == JsConvert.ToString(call.Arg(2)));
+        type.Set("getExtendValue", JsFunction.FromNative("getExtendValue", call =>
+        {
+            var row = Find(call);
+            if (row == null) return JsNull.Value;
+            var value = new JsHostObject(row);
+            value.Set("getExtendValue", JsFunction.FromNative("getExtendValue", _ => new JsString(DbStore.Str(row, "extend_value"))));
+            return value;
+        }));
+        type.Set("saveOrUpdateExtendValue", JsFunction.FromNative("saveOrUpdateExtendValue", call =>
+        {
+            var row = Find(call);
+            long now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            if (row == null) db.Table("extend_value").Insert(new DbRow {
+                ["extend_id"] = JsConvert.ToString(call.Arg(0)), ["extend_type"] = JsConvert.ToString(call.Arg(1)),
+                ["extend_name"] = JsConvert.ToString(call.Arg(2)), ["extend_value"] = JsConvert.ToString(call.Arg(3)),
+                ["create_time"] = now, ["update_time"] = 0L });
+            else { row["extend_value"] = JsConvert.ToString(call.Arg(3)); row["update_time"] = now; }
+            db.Save();
+            return JsUndefined.Value;
+        }));
+        return type;
+    }
 
     JsValue ConfigClass()
     {
@@ -247,6 +395,9 @@ public sealed class NativeScriptService
 
     public void EndSession(int characterId)
     {
+        var questKeys = new List<(int character, int quest)>();
+        foreach (var key in questCustomData.Keys) if (key.character == characterId) questKeys.Add(key);
+        foreach (var key in questKeys) questCustomData.Remove(key);
         var remove = new List<int>();
         foreach (var pair in sessions) if (pair.Value.characterId == characterId) remove.Add(pair.Key);
         foreach (int id in remove) sessions.Remove(id);

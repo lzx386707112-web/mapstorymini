@@ -256,7 +256,7 @@ namespace Server.Field
 
         /// <summary>MapleMap.dropFromReactor -> spawnDrop；原 short delay 重载忽略 delay。</summary>
         public static MapItem DropFromReactor(int mapId, int dropperId, int ownerId,
-            InventoryEntry item, float x, float y, float reactorX, float reactorY)
+            InventoryEntry item, float x, float y, float reactorX, float reactorY, int questId = -1)
         {
             if (item == null) return null;
             int partyId = PartyOf?.Invoke(ownerId) ?? -1;
@@ -264,6 +264,7 @@ namespace Server.Field
             // MapleMap.dropFromReactor -> spawnDrop, not spawnItemDrop: no DROP_LIMIT
             // disappearance branch, party drop type, then item-reactor activation.
             var drop = NewItem(mapId,item,dropperId,ownerId,partyId,(byte)(partyId == -1 ? 0 : 1),false,dx,dy);
+            drop.questId = questId;
             Register(mapId,drop,true);
             Spawned?.Invoke(drop);
             return drop;

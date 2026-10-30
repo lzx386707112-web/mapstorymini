@@ -43,6 +43,17 @@ public sealed class NativeMapView : MonoBehaviour
         return life.Int("y");
     }
 
+    // CNpc::Update 6D267D; CStaticFoothold ctor A4534A stores the
+    // first two WZ foothold path components in +1C/+20 (A43E7B loader).
+    public static long NpcDepth(ImgNode map, int foothold)
+    {
+        foreach (var layer in Children(map.Get("foothold")))
+            foreach (var group in layer.Children)
+                if (group.Get(foothold.ToString()) != null)
+                    return 10L * (3000L * int.Parse(layer.Name) - int.Parse(group.Name)) - 0x3FFF8AD5;
+        return -0x3FFF8AD5L;
+    }
+
     public static FieldMap LoadMap(FieldMap previous)
     {
         var n = MapRoot(previous.id);
@@ -99,6 +110,14 @@ public sealed class NativeMapView : MonoBehaviour
     readonly List<Animation> animations = new List<Animation>();
     readonly List<Background> backgrounds = new List<Background>();
     readonly HashSet<SpriteRenderer> weatherSkyBacks = new HashSet<SpriteRenderer>();
+    sealed class HiddenPortal
+    {
+        public int X, Y;
+        public Animation Start, Continue, Exit;
+        public bool Near;
+        public float Changed;
+    }
+    readonly List<HiddenPortal> hiddenPortals = new List<HiddenPortal>();
     NativeWeatherField weather;
     public int DrawCount { get; private set; }
     public int TextureCount => framesUsed.Count;
@@ -169,6 +188,7 @@ public sealed class NativeMapView : MonoBehaviour
         public ImgNode Definition, Art;
         public long Z;
         public int Layer, Sequence;
+        public bool Npc;
     }
     // 原端 MakeObj 0x63C263：解析不到素材节点时只跳过一次引用计数调用
     // （cmp eax,edi / je 0x63c275），随后照常算 z 并创建对象，函数不会中断。
@@ -223,6 +243,18 @@ public sealed class NativeMapView : MonoBehaviour
         }
         catch (Exception) { return 80f; }
     }
+    Transform mapBody;
+    ImgNode displayedMap;
+    readonly List<long> mapDepths = new List<long>();
+    readonly List<SpriteRenderer> mapRenderers = new List<SpriteRenderer>();
+    void AddMapRenderer(SpriteRenderer renderer, long depth)
+    {
+        int at = mapDepths.Count;
+        while (at > 0 && mapDepths[at - 1] > depth) at--;
+        mapDepths.Insert(at, depth); mapRenderers.Insert(at, renderer);
+        renderer.transform.SetParent(mapBody, false);
+        for (int i = at; i < mapRenderers.Count; i++) mapRenderers[i].sortingOrder = i;
+    }
     readonly Dictionary<Server.Field.MapNpcPosition,FieldNpc> dynamicNpcs = new Dictionary<Server.Field.MapNpcPosition,FieldNpc>();
     public void SyncDynamicNpcs(FieldMap field)
     {
@@ -234,7 +266,17 @@ public sealed class NativeMapView : MonoBehaviour
             string id=spawn.id.ToString("D7");var npc=NpcRoot(id);
             if(!Drawable(npc?.Get("stand")))continue;
             // Identical stand node, origin and coordinate conversion to static map NPCs.
-            Draw(npc.Get("stand"),"Npc_"+id,spawn.x,spawn.y,100);
+            int foothold = 0; float below = float.PositiveInfinity;
+            // AbstractPlayerInteraction.spawnNpc assigns findBelow(pos), including
+            // script-created merchants which have no authored life/fh entry.
+            foreach (var fh in field.footholds)
+            {
+                if (fh.x1 == fh.x2 || spawn.x < Math.Min(fh.x1, fh.x2) || spawn.x > Math.Max(fh.x1, fh.x2)) continue;
+                float y = fh.y1 + (fh.y2 - fh.y1) * (spawn.x - fh.x1) / (fh.x2 - fh.x1);
+                if (y >= spawn.y && y < below) { below = y; foothold = fh.id; }
+            }
+            var draw = Draw(npc.Get("stand"),"Npc_"+id,spawn.x,spawn.y,0);
+            if (draw != null) AddMapRenderer(draw.Renderer, NpcDepth(displayedMap, foothold));
             var model=new FieldNpc { id=spawn.id,x=spawn.x,y=spawn.y,head=NpcHeadHeight(spawn.id) };
             field.npcs.Add(model);dynamicNpcs.Add(spawn,model);
         }
@@ -243,9 +285,10 @@ public sealed class NativeMapView : MonoBehaviour
     public void Show(int id)
     {
         gameObject.AddComponent<NativeReactorView>().Bind(id);
-        var map = MapRoot(id);
+        var map = MapRoot(id); displayedMap = map;
         var body = new GameObject("MapLayers"); body.transform.SetParent(transform, false);
         body.AddComponent<UnityEngine.Rendering.SortingGroup>().sortingOrder = -400;
+        mapBody = body.transform;
         // Native layer z: RestoreTile 0x0063A91F and MakeObj 0x0063C289.
         // Tiles and objects have different base bands; sorting both by their small z fields is wrong.
         var draws = new List<MapDraw>();
@@ -273,13 +316,23 @@ public sealed class NativeMapView : MonoBehaviour
                     Z = d.Int("z") + 30000L * layer - 0x3FFFF830, Sequence = draws.Count });
             }
         }
+        foreach (var life in Children(map.Get("life")))
+        {
+            if (life.Text("type") != "n" || life.Int("hide") != 0) continue;
+            string npcId = int.Parse(life.Text("id")).ToString("D7");
+            var npc = NpcRoot(npcId);
+            if (!Drawable(npc?.Get("stand"))) { Missing(life, id, "npc", npcId + "/stand", life.Name); continue; }
+            draws.Add(new MapDraw { Definition = life, Art = npc.Get("stand"), Npc = true,
+                Z = NpcDepth(map, life.Int("fh")), Sequence = draws.Count });
+        }
         draws.Sort((a, b) => { int z = a.Z.CompareTo(b.Z); return z == 0 ? a.Sequence.CompareTo(b.Sequence) : z; });
         for (int i = 0; i < draws.Count; i++)
         {
             var item = draws[i]; var d = item.Definition;
-            var draw = Draw(item.Art, d.Parent.Name + "_" + item.Layer + "_" + d.Name, d.Int("x"), d.Int("y"), i, d.Int("f") != 0);
+            var draw = Draw(item.Art, item.Npc ? "Npc_" + d.Text("id") : d.Parent.Name + "_" + item.Layer + "_" + d.Name,
+                d.Int("x"), item.Npc ? NpcGroundY(map, d) : d.Int("y"), i, d.Int("f") != 0);
             if (draw == null) continue;
-            draw.Renderer.transform.SetParent(body.transform, false);
+            AddMapRenderer(draw.Renderer, item.Z);
         }
         foreach (var b in Children(map.Get("back")))
         {
@@ -295,16 +348,23 @@ public sealed class NativeMapView : MonoBehaviour
             a.Renderer.enabled = false;
             backgrounds.Add(new Background { Definition = b, Art = a });
         }
-        foreach (var life in Children(map.Get("life")))
-        {
-            if (life.Text("type") != "n" || life.Int("hide") != 0) continue;
-            string npcId = int.Parse(life.Text("id")).ToString("D7");
-            var npc = NpcRoot(npcId);
-            if (!Drawable(npc?.Get("stand"))) { Missing(life, id, "npc", npcId + "/stand", life.Name); continue; }
-            Draw(npc.Get("stand"), "Npc_" + npcId, life.Int("x"), NpcGroundY(map, life), 100, life.Int("f") != 0);
-        }
         foreach (var p in Children(map.Get("portal")))
-            if (p.Int("pt") == 2) Draw(FileRoot("Map/MapHelper.img").Get("portal/game/pv"), "Portal_" + p.Name, p.Int("x"), p.Int("y"), 200, defaultDelay: 120);
+            // CPortal 0x711F89: types 2, 4 and 7 share the visible pv effect.
+            if (p.Int("pt") == 2 || p.Int("pt") == 4 || p.Int("pt") == 7) Draw(FileRoot("Map/MapHelper.img").Get("portal/game/pv"), "Portal_" + p.Name, p.Int("x"), p.Int("y"), 200, defaultDelay: 120);
+        // CPortalList 0x712D35: ph appears only for the nearby selected hidden portal.
+        foreach (var p in Children(map.Get("portal")))
+        {
+            int type = p.Int("pt");
+            if (type != 10) continue;
+            string image = p.Text("image");
+            var art = FileRoot("Map/MapHelper.img").Get("portal/game/ph/" + (image == "" ? "default" : image));
+            var hidden = new HiddenPortal { X = p.Int("x"), Y = p.Int("y"), Changed = float.NegativeInfinity };
+            hidden.Start = Draw(art.Get("portalStart"), "Portal_"+p.Name+"_start", hidden.X, hidden.Y, 200);
+            hidden.Continue = Draw(art.Get("portalContinue"), "Portal_"+p.Name, hidden.X, hidden.Y, 200);
+            hidden.Exit = Draw(art.Get("portalExit"), "Portal_"+p.Name+"_exit", hidden.X, hidden.Y, 200);
+            foreach (var a in new[] { hidden.Start, hidden.Continue, hidden.Exit }) { animations.Remove(a); a.Renderer.enabled = false; }
+            hiddenPortals.Add(hidden);
+        }
         weather = gameObject.AddComponent<NativeWeatherField>();
         weather.Bind(this, id, map);
         Debug.Log("[DirectIMG] Map=" + id + " files=" + FileCount + " draws=" + DrawCount + " textures=" + TextureCount +
@@ -313,8 +373,36 @@ public sealed class NativeMapView : MonoBehaviour
     void LateUpdate()
     {
         foreach (var a in animations) a.Tick(Time.timeSinceLevelLoad);
+        TickHiddenPortals();
         weather?.Tick();
         if (Camera.main != null) UpdateBackgrounds(Camera.main, Time.timeSinceLevelLoad);
+    }
+    void TickHiddenPortals()
+    {
+        var player = GameLoop.I?.player;
+        HiddenPortal selected = null;
+        if (player != null)
+        {
+            var pos = player.FeetPos;
+            // CUserLocal 0x95057B passes 100; CPortalList 0x712C57 uses y +/-50.
+            for (int i = hiddenPortals.Count-1; i >= 0; i--)
+                if (pos.x*Art.PPU >= hiddenPortals[i].X-100 && pos.x*Art.PPU < hiddenPortals[i].X+100 &&
+                    -pos.y*Art.PPU >= hiddenPortals[i].Y-50 && -pos.y*Art.PPU < hiddenPortals[i].Y+50)
+                { selected = hiddenPortals[i]; break; }
+        }
+        float now = Time.timeSinceLevelLoad;
+        foreach (var p in hiddenPortals)
+        {
+            bool near = p == selected;
+            if (near != p.Near) { p.Near = near; p.Changed = now; }
+            float elapsed = now-p.Changed;
+            p.Start.Renderer.enabled = near && elapsed < p.Start.Cycle;
+            p.Continue.Renderer.enabled = near && elapsed >= p.Start.Cycle;
+            p.Exit.Renderer.enabled = !near && elapsed < p.Exit.Cycle;
+            if (p.Start.Renderer.enabled) p.Start.Tick(elapsed);
+            if (p.Continue.Renderer.enabled) p.Continue.Tick(elapsed-p.Start.Cycle);
+            if (p.Exit.Renderer.enabled) p.Exit.Tick(elapsed);
+        }
     }
     public IEnumerable<SpriteRenderer> WeatherTintBacks()
     {

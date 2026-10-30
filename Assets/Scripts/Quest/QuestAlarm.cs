@@ -7,6 +7,8 @@ public static class QuestAlarm
     static readonly List<int> tracked = new List<int>();
     static readonly Dictionary<int, float> updated = new Dictionary<int, float>();
     static bool automatic = true, visible = true, expanded;
+    static Vector2 position = new Vector2(float.NaN, 35), grab;
+    static bool dragging;
     public static IReadOnlyList<int> Tracked => tracked;
     public static bool CanTrack(QuestDef quest) => quest != null && tracked.Count < 5 && !tracked.Contains(quest.id) &&
         (quest.completeReq.mobs.Count > 0 || quest.completeReq.items.Count > 0 || quest.completeReq.quests.Count > 0 || quest.completeReq.meso > 0);
@@ -30,7 +32,15 @@ public static class QuestAlarm
         }
         if (!visible) return;
         float scale = BottomBar.S;
-        QuestUi.Begin(NativeUi.ClampWindowPosition(new Vector2(UiKit.W / scale - 233, 35), new Vector2(223, 25), scale) * scale, scale);
+        if (float.IsNaN(position.x)) position.x = UiKit.W / scale - 233;
+        position = NativeUi.ClampWindowPosition(position, new Vector2(223, 25), scale);
+        var header = new Rect((position.x + 25) * scale, position.y * scale, 114 * scale, 20 * scale);
+        if (Event.current.type == EventType.Repaint && Pointer.Pressed && header.Contains(Pointer.Pos))
+        { dragging = true; grab = Pointer.Pos / scale - position; Pointer.ConsumeClick(); }
+        if (dragging && Pointer.Down)
+            position = NativeUi.ClampWindowPosition(Pointer.Pos / scale - grab, new Vector2(223, 25), scale);
+        if (dragging && !Pointer.Down) { dragging = false; Pointer.ConsumeClick(); }
+        QuestUi.Begin(position * scale, scale);
         QuestUi.Image("QuestAlarm/" + (expanded ? "backgrndmax" : "backgrndmin"), 0, 0);
         QuestUi.Label(new Rect(25, 2, 114, 18), "任务告知(" + tracked.Count + "/5)", Color.black);
         if (QuestUi.Button("UI/UIWindow.img/QuestAlarm/BtQ", 5, 4)) QuestWindow.Toggle();

@@ -82,6 +82,7 @@ namespace Server.Bot
             MapItemService.Clock = () => BotScheduler.Clock;
             MapReactorService.Clock = () => BotScheduler.Clock;
             MapReactorService.Templates = MapReactorTemplate.Parse(BotWarmup.Root("Bot/ReactorTemplates"));
+            NativeReactorDrops.Load(BotWarmup.Root("Bot/ReactorDrops"));
             MapItemService.Spawned += MapReactorService.ActivateItemReactors;
             reactorScripts = new NativeReactorScriptService(key=>MapReactorService.ScriptSource?.Invoke(key));
             reactorScripts.Message = (map,type,text)=>MapReactorService.ScriptMessage?.Invoke(map,type,text);

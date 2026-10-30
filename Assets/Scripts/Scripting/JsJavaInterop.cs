@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace MapleDash.Js
 {
@@ -25,13 +26,38 @@ namespace MapleDash.Js
             {
                 foreach (var argument in c.Args)
                 {
-                    if (!(argument is JsHostObject type) || !(type.Host is string name)) throw new JsRuntimeException("Invalid importClass argument");
+                    string name = JsConvert.ToString(it.GetMember(argument, "__javaClassName"));
+                    if (name == "undefined") throw new JsRuntimeException("Invalid importClass argument");
                     scope.Declare(name.Substring(name.LastIndexOf('.') + 1), Resolve(it, name));
                 }
                 return JsUndefined.Value;
             }));
+            var imports = new List<string>();
+            scope.ResolveImport = name =>
+            {
+                if (name.Length == 0 || !char.IsUpper(name[0])) return null;
+                JsValue found = null;
+                foreach (string package in imports)
+                {
+                    string fullName = package + "." + name;
+                    JsValue value;
+                    try { value = Resolve(it, fullName); }
+                    catch (JsRuntimeException e) when (e.Message == "Java interop: class not migrated: " + fullName) { continue; }
+                    if (found != null && !ReferenceEquals(found, value)) throw new JsRuntimeException("Ambiguous Java import: " + name);
+                    found = value;
+                }
+                return found;
+            };
             scope.Declare("importPackage", Fn("importPackage", c =>
-                throw new JsRuntimeException("Java package imports require an explicit migrated class registry; package wildcard imports are unsupported")));
+            {
+                foreach (var argument in c.Args)
+                {
+                    if (!(argument is JsHostObject package) || !(package.Host is string name))
+                        throw new JsRuntimeException("Invalid importPackage argument");
+                    if (!imports.Contains(name)) imports.Add(name);
+                }
+                return JsUndefined.Value;
+            }));
         }
 
         static JsHostObject Package(JsInterpreter it, string name)
@@ -47,6 +73,17 @@ namespace MapleDash.Js
         }
 
         public static JsValue Resolve(JsInterpreter it, string name)
+        {
+            if (it.JavaTypes.TryGetValue(name, out var cached)) return cached;
+            var value = ResolveType(it, name);
+            if (value is JsFunction function) function.Members.Set("__javaClassName", new JsString(name));
+            else if (value is JsHostObject host) host.Set("__javaClassName", new JsString(name));
+            else if (value is JsObject obj) obj.Set("__javaClassName", new JsString(name));
+            it.JavaTypes[name] = value;
+            return value;
+        }
+
+        static JsValue ResolveType(JsInterpreter it, string name)
         {
             switch (name)
             {
@@ -65,7 +102,31 @@ namespace MapleDash.Js
                 case "java.lang.System":
                     var system = new JsObject();
                     system.Set("currentTimeMillis", Fn("currentTimeMillis", c => N(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())));
+                    foreach (string stream in new[] { "out", "err" })
+                    {
+                        var writer = stream == "out" ? Console.Out : Console.Error;
+                        var output = new JsObject();
+                        output.Set("println", Fn("println", c => { writer.WriteLine(c.ArgCount == 0 ? "" : Text(c)); return JsUndefined.Value; }));
+                        output.Set("print", Fn("print", c => { writer.Write(c.ArgCount == 0 ? "" : Text(c)); return JsUndefined.Value; }));
+                        system.Set(stream, output);
+                    }
                     return system;
+                case "java.util.Date": return JsDate.Constructor();
+                case "java.util.Calendar": return Calendar();
+                case "java.text.SimpleDateFormat":
+                    return Fn("SimpleDateFormat", c =>
+                    {
+                        // Source 9390220 uses yyyyMMdd. Reject patterns whose Java semantics are not migrated.
+                        string pattern = Text(c);
+                        if (pattern != "yyyyMMdd") throw new JsRuntimeException("Unmigrated SimpleDateFormat pattern: " + pattern);
+                        var format = new JsObject();
+                        format.Set("format", Fn("format", a =>
+                        {
+                            if (!(a.Arg(0) is JsDate date)) throw new JsRuntimeException("SimpleDateFormat.format requires a Date");
+                            return new JsString(DateTimeOffset.FromUnixTimeMilliseconds((long)date.Milliseconds).ToLocalTime().ToString(pattern, CultureInfo.InvariantCulture));
+                        }));
+                        return format;
+                    });
                 case "java.util.Arrays":
                     var arrays = new JsObject();
                     arrays.Set("asList", Fn("asList", c => c.ArgCount == 1 && c.Arg(0) is JsArray a ? new JsArray(a.Items) : new JsArray(c.Args)));
@@ -74,6 +135,40 @@ namespace MapleDash.Js
             var value = it.ResolveHostType?.Invoke(name);
             if (value != null && !(value is JsNull) && !(value is JsUndefined)) return value;
             throw new JsRuntimeException("Java interop: class not migrated: " + name);
+        }
+
+        static JsObject Calendar()
+        {
+            var type = new JsObject();
+            foreach (var pair in new Dictionary<string, int> { ["YEAR"] = 1, ["MONTH"] = 2, ["DATE"] = 5, ["DAY_OF_MONTH"] = 5,
+                ["DAY_OF_WEEK"] = 7, ["HOUR_OF_DAY"] = 11, ["MINUTE"] = 12, ["SECOND"] = 13, ["MILLISECOND"] = 14,
+                ["SUNDAY"] = 1, ["MONDAY"] = 2, ["TUESDAY"] = 3, ["WEDNESDAY"] = 4, ["THURSDAY"] = 5, ["FRIDAY"] = 6, ["SATURDAY"] = 7 })
+                type.Set(pair.Key, N(pair.Value));
+            type.Set("getInstance", Fn("getInstance", c =>
+            {
+                var now = DateTimeOffset.Now;
+                var calendar = new JsObject();
+                calendar.Set("get", Fn("get", a =>
+                {
+                    switch (Int(a))
+                    {
+                        case 1: return N(now.Year); case 2: return N(now.Month - 1); case 5: return N(now.Day);
+                        case 7: return N((int)now.DayOfWeek + 1); case 11: return N(now.Hour);
+                        case 12: return N(now.Minute); case 13: return N(now.Second); case 14: return N(now.Millisecond);
+                        default: throw new JsRuntimeException("Unmigrated Calendar field: " + Int(a));
+                    }
+                }));
+                calendar.Set("getTime", Fn("getTime", a => new JsDate(now.ToUnixTimeMilliseconds())));
+                calendar.Set("getTimeInMillis", Fn("getTimeInMillis", a => N(now.ToUnixTimeMilliseconds())));
+                calendar.Set("setTime", Fn("setTime", a =>
+                {
+                    if (!(a.Arg(0) is JsDate date)) throw new JsRuntimeException("Calendar.setTime requires a Date");
+                    now = DateTimeOffset.FromUnixTimeMilliseconds((long)date.Milliseconds).ToLocalTime();
+                    return JsUndefined.Value;
+                }));
+                return calendar;
+            }));
+            return type;
         }
 
         static JsHostObject Point(JsCall c)

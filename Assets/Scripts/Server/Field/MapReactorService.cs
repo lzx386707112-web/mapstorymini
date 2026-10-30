@@ -149,6 +149,30 @@ namespace Server.Field
 
         // ——————————————————— 受击 / 破坏 / 重生 ———————————————————
 
+        // Reactor.hitReactor's type-0 branch. Keep the explicit OPQ/CustomReactor
+        // path below separate: it is not the WZ event state machine.
+        public static bool HitPlayer(int mapId, int objectId, int ownerId)
+        {
+            var reactor = Find(mapId, objectId);
+            var events = reactor?.template?.Events(reactor.state);
+            if (reactor == null || !reactor.alive || events == null || events.Count == 0 || events[0].type != 0)
+                return false;
+            reactor.previousState = reactor.state;
+            reactor.state = events[0].next;
+            reactor.visualRevision++;
+            reactor.lastHitAt = Now();
+            int next = reactor.template.Next(reactor.state, 0);
+            bool end = next < reactor.state;
+            if (end)
+            {
+                reactor.alive = false;
+                reactor.respawnAt = reactor.respawnSeconds > 0 ? Now() + reactor.respawnSeconds * 1000L : 0;
+            }
+            Changed?.Invoke(reactor);
+            if (end || next == reactor.state) Act?.Invoke(reactor, ownerId);
+            return true;
+        }
+
         // CustomReactor.hitReactor only increments state and broadcasts. In particular,
         // reaching state 4 does not remove the reactor or arrange a respawn.
         public static MapReactor ForceHit(int mapId, int objectId)
@@ -228,6 +252,7 @@ namespace Server.Field
         {
             foreach (var pair in byMap) ResolveRespawns(pair.Key, pair.Value, now);
             ResolveItemActivations(now);
+            NativeReactorDrops.Tick(now);
         }
 
         static void ResolveRespawns(int mapId, List<MapReactor> list, long now)
@@ -245,8 +270,8 @@ namespace Server.Field
 
         /// <summary>地图卸载/换图：丢弃该图实例（下次访问会按当前 MapRuntime 重建）。</summary>
         public static void Clear(int mapId)
-        { byMap.Remove(mapId);itemActivations.RemoveAll(a=>a.reactor.mapId==mapId); }
+        { byMap.Remove(mapId);itemActivations.RemoveAll(a=>a.reactor.mapId==mapId);NativeReactorDrops.Clear(mapId); }
 
-        public static void ClearAll() { byMap.Clear();itemActivations.Clear(); }
+        public static void ClearAll() { byMap.Clear();itemActivations.Clear();NativeReactorDrops.Clear(); }
     }
 }

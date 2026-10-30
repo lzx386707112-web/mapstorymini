@@ -49,6 +49,7 @@ public class GameLoop : MonoBehaviour
         if (UnityEditor.SessionState.GetBool("NativeBuffRenderChecks", false) ||
             UnityEditor.SessionState.GetBool("NativeSkillNodeChecks", false) ||
             UnityEditor.SessionState.GetBool("NativeCashSceneChecks", false) ||
+            UnityEditor.SessionState.GetBool("NativeNpcShopSceneChecks", false) ||
             UnityEditor.SessionState.GetBool("NativeViewportChecks", false)) return;
 #endif
 #if UNITY_WEBGL && !UNITY_EDITOR

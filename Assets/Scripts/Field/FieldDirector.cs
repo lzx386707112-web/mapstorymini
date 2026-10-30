@@ -32,7 +32,7 @@ public sealed class FieldDirector : MonoBehaviour
     float respawnTimer;
     FieldPortal nearPortal;      // 当前脚下可用的传送门（HUD 用来提示「按 ↑ 进入」）
     float portalLock;
-    bool portalArmed;            // 离开门后才置 true；防止进门/出生瞬间来回弹
+    bool portalArmed;            // Touch portals rearm on exit; manual portals also rearm on up release.
     float saveTimer;
     bool logKills;
 
@@ -154,7 +154,7 @@ public sealed class FieldDirector : MonoBehaviour
 
         respawnTimer = RespawnInterval;
         portalLock = 0.4f;
-        // 出生点常常正好落在传送门上：必须先离开一次才允许触发，否则按着上会来回弹
+        // Holding up through arrival must not bounce back; releasing it permits a new entry.
         portalArmed = false;
         nearPortal = null;
         Profile.LastMapId = map.id;
@@ -398,7 +398,6 @@ public sealed class FieldDirector : MonoBehaviour
 
         portalLock = Mathf.Max(0f, portalLock - dt);
         CheckPortals(player, dt);
-        CheckNpc(player);
         TickRespawn(dt);
         TickEnvironment(player,Time.realtimeSinceStartupAsDouble);
 
@@ -492,15 +491,6 @@ public sealed class FieldDirector : MonoBehaviour
         logClock = 0f; hitchFrames = 0;
     }
 
-    // 靠近 NPC 按 ↑ 对话。传送门优先（同位置时按原端行为进图）。
-    void CheckNpc(PlayerCtrl player)
-    {
-        if (Warping || NpcSession.Active != null) return;
-        if (nearPortal != null) return;
-        if (!PressUp()) return;
-        NpcField.TryInteractNearest();
-    }
-
     void TickRespawn(float dt)
     {
         respawnTimer -= dt;
@@ -537,6 +527,10 @@ public sealed class FieldDirector : MonoBehaviour
 
         FieldPortal hit = FindPortal(player);
         nearPortal = hit;
+
+        // Releasing up rearms a manual portal at the arrival point; touch
+        // portals still require leaving their bounds to avoid a warp loop.
+        if (hit != null && !hit.TouchTrigger && !PressUp()) portalArmed = true;
 
         if (hit == null)
         {
@@ -799,7 +793,7 @@ public sealed class FieldDirector : MonoBehaviour
             MapItemService.CalcDropPos(Map.id, landing.x * Art.PPU, -landing.y * Art.PPU,
                 pos.x * Art.PPU, -pos.y * Art.PPU, out float dropX, out float dropY);
             GroundItem.Spawn(itemId, qty, new Vector3(dropX / Art.PPU, -dropY / Art.PPU, 0), from: pos);
-        }, rng, dropRate);
+        }, rng, dropRate, QuestLogic.NeedQuestItem);
         dropped += n;
         mesosTotal += mesos;
     }
@@ -860,6 +854,7 @@ public sealed class FieldDirector : MonoBehaviour
         if (botField == null) botField = GetComponent<BotField>();
         botField?.Clear();
         NpcSession.CloseActive();
+        NativeNpcShopWindow.Close();
         if (view != null) view.Clear();
         Map = null;
         PlayerCtrl.SetTerrain(null);

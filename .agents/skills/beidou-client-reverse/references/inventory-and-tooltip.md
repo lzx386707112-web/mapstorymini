@@ -256,3 +256,25 @@ EXE 身份同上。新增逆向对象 `clien/BeiDouSetItemCompat.dll`，SHA256 `
 `0x8E5172..0x8E51A7` 设 12 号）」把套装面板从 9 号统一到 12 号 ——
 9 号字摆在 16px 行距里明显偏小（用户 2026-10-29 反馈「下方属性描述的文字又很小」）。
 **这是按行距一致性推的，不是 DLL 实测字号，后续如定位到字体创建点需以其为准。**
+
+
+## 玩家背包椅子使用（2026-10-30）
+
+椅子效果原端证据复用[假人系统](solomapling.md)的0x93C7C3/0x941417：effect/effect2、z、fixed、pos1=brow；
+不得重新猜成navel。原UseChairHandler校验301类及SETUP持有数量后调用Character.sitChair，椅子不消耗；
+Character.java:7565物品椅子设置chair并广播showChair，地图椅子另走registerChairBuff分支。
+NativeInventoryActions原先无条件提示“椅子使用功能尚未接入”；现检查存活/背包数量后调用PlayerCtrl.UseChair，
+复用NativeBotChair读取原Item/Install/0301.img，不复制或自绘椅子素材。
+坐姿取消（移动/跳跃/攀爬/攻击）、死亡、复活和PlaceAt均清除椅子效果。当前只复用已核实的普通pos0/1特效；
+复杂多人数/骑乘类特殊椅子、服务端外观广播与钓鱼不在本次迁移范围。
+验证入口 `NativeGameplayFixChecks.Run`覆盖3010000/3010001原效果创建、不消耗及攻击/死亡/换图清理。
+
+## 装备槽位、NPC物品与特殊物品入口修复（2026-10-30，本轮）
+
+新记录见 [物品使用与装备槽位](inventory-use-and-equipment.md)。前文“戒指/项链没有Profile槽位”的迁移状态已由本轮替换：
+原端 getEquipSlotType 映射、四枚戒指、吊坠、腰带、肩饰、副手、心脏、徽章、纹章与图腾负槽位已贯通数据库→Profile→属性与装备窗。
+原IMG背板 Equip/backgrnd175×304、FullBackgrnd208×291，origin0,0；既有格子左上(5,35)、步长33、32×32图标矩形保持。
+本次逐图核对：小窗戒指在(row1,col3/4)及(row4,col3/4)，吊坠(row3,col2)，图腾(row5,col4)；大窗戒指在(row1,col4/5)、(row4,col4/5)，吊坠(row3,col2)。
+FullBackgrnd没有图腾格，不另绘新格；小窗使用原图的图腾格。未改变背景或新增自定义UI。
+饰品持久化用PlayerProfileData平行列表，纸娃娃Appearance与属性Worn分开，避免把无纸娃娃层的图腾/吊坠传给衣帽合成器。
+2029001/2029006的spec/isNpc入口已接线；其他缺口以新审计报告为准，不能把脚本入口存在视为完整物品效果通过。

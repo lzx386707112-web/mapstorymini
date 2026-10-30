@@ -13,6 +13,8 @@ public sealed class NativeEventScriptService
     readonly Dictionary<int,Instance> membership=new Dictionary<int,Instance>();
     readonly List<Task> tasks=new List<Task>();
     public Func<Instance,int,JsValue> InstanceMap;
+    public Func<JsValue> ChannelServer;
+    public Func<int, int> TransportationTime;
     public Action<Instance,int?> Clock;
     public Action<Instance> ReleaseMaps;
     public Action<Exception> Error;
@@ -112,6 +114,8 @@ public sealed class NativeEventScriptService
             this.service=service;Name=name;engine=new JsEngine(text,"event/"+name);
             Host=Strict(this,"event manager");Properties(Host,properties);
             Bind(Host,"getName",c=>new JsString(Name));
+            Bind(Host,"getTransportationTime",c=>new JsNumber(service.TransportationTime?.Invoke(JsConvert.ToInt32(c.Arg(0))) ?? throw new JsRuntimeException("Event transportation time is not configured")));
+            Bind(Host,"getChannelServer",c=>service.ChannelServer?.Invoke() ?? throw new JsRuntimeException("Event channel server is not configured"));
             Bind(Host,"newInstance",c=>NewInstance(Text(c)).Host);
             Bind(Host,"getInstance",c=>instances.TryGetValue(Text(c),out var eim) ? (JsValue)eim.Host : JsNull.Value);
             Bind(Host,"getInstances",c=>{var values=new List<JsValue>();foreach(var eim in instances.Values)values.Add(eim.Host);return Players(values);});
@@ -205,6 +209,7 @@ public sealed class NativeEventScriptService
             this.manager=manager;this.service=service;Name=name;
             Host=Strict(this,"event instance");Properties(Host,properties);
             Bind(Host,"getName",c=>new JsString(Name));
+            Bind(Host,"getChannelServer",c=>service.ChannelServer?.Invoke() ?? throw new JsRuntimeException("Event channel server is not configured"));
             Bind(Host,"getEm",c=>manager.Host);
             Bind(Host,"getEventManager",c=>manager.Host);
             Bind(Host,"getPlayers",c=>Players(players.Values));

@@ -5,13 +5,14 @@ using MapleDash.Wz;
 using UnityEngine;
 
 // 原端 NPC 对话文本标记解析：
-//   #b #r #g #y #d #w #k   颜色开关（无结尾 #）
+//   #b #r #g #d #w #k      颜色开关（无结尾 #）；#y 是任务名，不是颜色
 //   #e / #n                粗体开 / 关
 //   #L<idx>#...#l          选项。原端是「正文流里的行内可点文字」，
 //                          不是另起一段列表，所以这里只在流里打 Link 标记，不搬走文字。
-//   #m<id># 地图名   #p<id># NPC 名   #t<id>#/#z<id># 道具名
+//   #m<id># 地图名   #p<id>#/#@<id>:# NPC 名   #t<id>#/#z<id># 道具名
 //   #i<id># / #v<id>#  道具图标（原端就是画图标，不画名字）
-//   #f<path># 图片   #h 角色名   #c<id># 持有数量   #s<string># 原样文字
+//   #f<path># 图片   #h 角色名   #c<id># 持有数量
+//   #y<id># 任务名   #u<id># 任务状态   #q<id># 技能名   #s<id># 技能图标
 public enum DialogRunKind { Text, Link, Icon }
 
 public sealed class DialogRun
@@ -124,11 +125,11 @@ public static class DialogText
             }
 
             // 颜色开关：没有闭合的 #
-            if (code == 'b' || code == 'r' || code == 'g' || code == 'k' || code == 'y' || code == 'd' || code == 'w')
+            if (code == 'b' || code == 'r' || code == 'g' || code == 'k' || code == 'd' || code == 'w')
             {
                 Flush();
                 color = code == 'b' ? Blue : code == 'r' ? Red : code == 'g' ? Green :
-                        code == 'y' ? Orange : code == 'd' ? Purple : code == 'w' ? White : Ink;
+                        code == 'd' ? Purple : code == 'w' ? White : Ink;
                 i += 2;
                 continue;
             }
@@ -143,10 +144,32 @@ public static class DialogText
                 case 'o': buffer.Append(WzNames.Mob(ToInt(payload))); break;
                 case 'c': buffer.Append(Profile.ItemCount(ToInt(payload))); break;
                 case 'm': buffer.Append(WzNames.Map(ToInt(payload))); break;
+                case '@':
                 case 'p': buffer.Append(WzNames.Npc(ToInt(payload))); break;
                 case 't':
                 case 'z': buffer.Append(WzNames.Item(ToInt(payload))); break;
-                case 's': buffer.Append(payload); break;
+                case 'y': buffer.Append(QuestCatalog.Get(ToInt(payload))?.name ?? ""); break;
+                // BeiDou.exe 9A1D27..9A1EF9；ijl15 中文表 4296..4298。
+                case 'u':
+                    int status = Profile.QuestStatus(ToInt(payload));
+                    buffer.Append(status == 2 ? "已结束" : status == 1 ? "进行中" : "未开始");
+                    break;
+                case 'q': buffer.Append(SkillName(ToInt(payload))); break;
+                case 's':
+                    Flush();
+                    int skillId = ToInt(payload);
+                    content.Runs.Add(new DialogRun
+                    {
+                        Kind = DialogRunKind.Icon, Link = link, Bold = bold, Color = color,
+                        Art = "Skill/" + (skillId / 10000).ToString("D3") + ".img/skill/" + skillId.ToString("D7") + "/icon",
+                        Fallback = "[" + SkillName(skillId) + "]",
+                    });
+                    break;
+                case 'W':
+                    Flush();
+                    content.Runs.Add(new DialogRun { Kind = DialogRunKind.Icon, Link = link, Bold = bold, Color = color,
+                        Art = "UI/UIWindow.img/Quest/" + payload });
+                    break;
                 case 'v':
                 case 'i':
                     {
@@ -180,9 +203,17 @@ public static class DialogText
 
     static int ToInt(string s)
     {
-        int v;
-        return int.TryParse(s, out v) ? v : 0;
+        // 9A262F → A6134A → A612BF：atoi，读取带符号十进制前缀，允许空白和 : 后缀。
+        int i = 0, value = 0;
+        while (i < s.Length && char.IsWhiteSpace(s[i])) i++;
+        bool negative = i < s.Length && s[i] == '-';
+        if (i < s.Length && (s[i] == '+' || s[i] == '-')) i++;
+        while (i < s.Length && s[i] >= '0' && s[i] <= '9')
+            value = unchecked(value * 10 + s[i++] - '0');
+        return negative ? unchecked(-value) : value;
     }
+
+    static string SkillName(int id) => WzAssets.FileRoot("String/Skill.img")?.Get(id.ToString("D7"))?.Text("name") ?? "";
 
     // 道具图标节点：#i<id>#/#v<id># 在原端画的是 IMG 里的 info/icon。
     public static string ItemIconPath(int id)
@@ -206,35 +237,9 @@ public static class DialogText
     // 选项文字里的颜色/图标标记也要去掉（程序生成的列表行用不到标记，这里只兜底）
     public static string StripMarkup(string raw)
     {
-        raw = NormalizeBreaks(raw);
-        var sb = new StringBuilder(raw.Length);
-        int i = 0;
-        while (i < raw.Length)
-        {
-            char ch = raw[i];
-            if (ch != '#') { sb.Append(ch); i++; continue; }
-            if (i + 1 >= raw.Length) break;
-            char code = raw[i + 1];
-            if (code == '#') { sb.Append('#'); i += 2; continue; }
-            if (code == 'l') { i += 2; continue; }
-            if (code == 'e' || code == 'n') { i += 2; continue; }
-            if (code == 'b' || code == 'r' || code == 'g' || code == 'k' || code == 'y' || code == 'd' || code == 'w')
-            {
-                i += 2;
-                continue;
-            }
-            int close = raw.IndexOf('#', i + 2);
-            if (close < 0) break;
-            string payload = raw.Substring(i + 2, close - i - 2);
-            if (code == 'm') sb.Append(WzNames.Map(ToInt(payload)));
-            else if (code == 'h') sb.Append(Profile.playerName);
-            else if (code == 'c') sb.Append(Profile.ItemCount(ToInt(payload)));
-            else if (code == 'o') sb.Append(WzNames.Mob(ToInt(payload)));
-            else if (code == 'p') sb.Append(WzNames.Npc(ToInt(payload)));
-            else if (code == 't' || code == 'z') sb.Append(WzNames.Item(ToInt(payload)));
-            else if (code == 'v' || code == 'i') sb.Append("[" + WzNames.Item(ToInt(payload)) + "]");
-            i = close + 1;
-        }
+        var sb = new StringBuilder();
+        foreach (var run in Parse(raw).Runs)
+            sb.Append(run.Kind == DialogRunKind.Icon ? run.Fallback : run.Text);
         return sb.ToString();
     }
 }

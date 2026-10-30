@@ -123,6 +123,18 @@ internal static class ScriptRuntimeChecks
             "var HashMap=Java.type('java.util.HashMap');function test(){var m=new HashMap();m.put(1,'number');m.put('1','string');return [m.get(1),m.get('1'),m.size()].join(',');}")));
         Check("Java point via package and type", () => Equal("4,7", Execute(
             "function test(){var Point=Java.type('java.awt.Point');var p=new Point(4,7);return [p.getX(),new java.awt.Point(4,7).getY()].join(',');}")));
+        Check("sloppy global this dispatch matches original credits script", () => Equal("7,8,9,true", Execute(
+            "var n=7;function writeStaff(){return n;}function test(){var first=this['writeStaff']();this.n=8;var second=n;n=9;return [first,second,this.n,(function(){return this;}).call(null)===this].join(',');}")));
+        Check("method receivers and arrow lexical this remain distinct", () => Equal("4,4", Execute(
+            "function test(){var o={n:4,f:function(){return [this.n,(()=>this.n)()].join(',');}};return o.f();}")));
+        Check("Java imports preserve constructor identity and lexical shadowing", () => Equal("4,true,9", Execute(
+            "importClass(java.awt.Point);importPackage(java.awt);function test(){var p=new Point(4,7);function local(){var Point=9;return Point;}return [p.getX(),Point===Java.type('java.awt.Point'),local()].join(',');}")));
+        Check("Java package imports resolve registered types only", () => Equal("12", Execute(
+            "importPackage(java.lang);importPackage(net.sf.odinms.client);function test(){return Integer.parseInt('12');}")));
+        Check("unknown imported Java class remains an error", () => Throws(() => Execute(
+            "importPackage(java.util);function test(){return new MissingClass();}")));
+        Check("Calendar and date formatting preserve local Java field conventions", () => Equal("2026,9,29,5,20261029,true", Execute(
+            "importClass(java.util.Calendar);importClass(java.text.SimpleDateFormat);function test(){var d=new Date(1793248496000);var c=Calendar.getInstance();c.setTime(d);return [c.get(Calendar.YEAR),c.get(Calendar.MONTH),c.get(Calendar.DATE),c.get(Calendar.DAY_OF_WEEK),new SimpleDateFormat('yyyyMMdd').format(c.getTime()),c.getTimeInMillis()==d.getTime()].join(',');}")));
         Check("Date timestamps and local setHours", () => Equal("true,true", Execute(
             "function test(){var d=new Date(0);var n=d.setHours(0,0,5,0);return [d.getTime()==n,new Date(n)<=new Date(n+1)].join(',');}")));
         Check("direct eval reuses current scope without runtime code generation", () => Equal("8", Execute(
@@ -212,6 +224,100 @@ internal static class ScriptRuntimeChecks
                 db.Save();
                 var reopened=new NativeScriptValues(DbStore.Open(path),()=>now);
                 if(reopened.Handle(new ScriptValueRequest{characterId=first,name="reward"}).value!="永久")throw new Exception("value not persisted");
+            } finally { if(System.IO.File.Exists(path))System.IO.File.Delete(path); }
+        });
+        Check("channel variables and transient quest custom data preserve ownership/lifetime", () => {
+            string path=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"mapledash-channel-"+Guid.NewGuid()+".json");
+            try {
+                var db=DbStore.Create(path);
+                int one=(int)CharactersDao.Insert(db,new CharRecord{accountid=1,name="One"});
+                int two=(int)CharactersDao.Insert(db,new CharRecord{accountid=1,name="Two"});
+                var server=new NativeScriptService(db);
+                JsValue Value(ScriptOperation operation,int owner,int channel=1,string text=null) => server.Handle(new ScriptRequest {
+                    operation=operation, characterId=owner, channel=channel, variableKey=9000049, variableValue=3, questId=150001, customData=text }).value;
+                Equal("0",Value(ScriptOperation.GetStoredVar,one));
+                Value(ScriptOperation.SetStoredVar,one);
+                Equal("3",Value(ScriptOperation.GetStoredVar,two));
+                Equal("0",Value(ScriptOperation.GetStoredVar,one,2));
+                Equal("null",Value(ScriptOperation.GetQuestCustomData,one));
+                Value(ScriptOperation.SetQuestCustomData,one,text:"42");
+                Equal("42",Value(ScriptOperation.GetQuestCustomData,one));
+                Equal("null",Value(ScriptOperation.GetQuestCustomData,two));
+                server.EndSession(one);
+                Equal("null",Value(ScriptOperation.GetQuestCustomData,one));
+                Equal("3",Value(ScriptOperation.GetStoredVar,two));
+                server=new NativeScriptService(db);
+                Equal("0",Value(ScriptOperation.GetStoredVar,one));
+            } finally { if(System.IO.File.Exists(path))System.IO.File.Delete(path); }
+        });
+        Check("authorized 2010005 override denies travel without money or ticket", () => {
+            string source=System.IO.File.ReadAllText("../../../MapleDashResources/Data/scripts/npc/2010005.js");
+            foreach(int selection in new[]{0,1}) {
+                int disposed=0,warps=0,charged=0;var cm=new JsHostObject(null);
+                cm.Set("sendYesNo",JsFunction.FromNative("sendYesNo",c=>JsUndefined.Value));
+                cm.Set("sendOk",JsFunction.FromNative("sendOk",c=>JsUndefined.Value));
+                cm.Set("dispose",JsFunction.FromNative("dispose",c=>{disposed++;return JsUndefined.Value;}));
+                cm.Set("getMeso",JsFunction.FromNative("getMeso",c=>new JsNumber(0)));
+                cm.Set("haveItem",JsFunction.FromNative("haveItem",c=>JsBoolean.False));
+                cm.Set("gainMeso",JsFunction.FromNative("gainMeso",c=>{charged++;return JsUndefined.Value;}));
+                cm.Set("warp",JsFunction.FromNative("warp",c=>{warps++;return JsUndefined.Value;}));
+                var engine=new JsEngine(source,"2010005");engine.Run(scope=>scope.Declare("cm",cm));
+                engine.Call("action",new JsNumber(1),new JsNumber(4),new JsNumber(selection));
+                engine.Call("action",new JsNumber(1),new JsNumber(1),new JsNumber(-1));
+                if(disposed!=1 || warps!=0 || charged!=0)throw new Exception("failed travel must not warp/charge");
+            }
+        });
+        Check("event travel rate uses world settings, Java float arithmetic and truncation", () => {
+            string path=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"mapledash-travel-"+Guid.NewGuid()+".json");
+            try {
+                var db=DbStore.Create(path); var server=new NativeScriptService(db);
+                var world=db.Table("world_prop").Find(row=>DbStore.Int(row,"id")==0);
+                world["travel_rate"]=0.125d;
+                var events=new NativeEventScriptService(key=>"function init(){em.setProperty('travel',em.getTransportationTime(15));}",()=>0);
+                events.TransportationTime=time=>server.TransportationTime(0,time);
+                var manager=events.GetManager("travel");var interp=new JsInterpreter();
+                Equal("1",interp.Call(manager.Host.Get("getProperty"),manager.Host,new JsValue[]{new JsString("travel")}));
+                if(server.TransportationTime(0,-15)!=-1)throw new Exception("negative truncation");
+                world["travel_rate"]=2d;
+                if(server.TransportationTime(0,int.MaxValue)!=int.MaxValue)throw new Exception("overflow clamp");
+                Throws(()=>server.TransportationTime(99,1));
+                events.Clear();
+            } finally { if(System.IO.File.Exists(path))System.IO.File.Delete(path); }
+        });
+        Check("Gachapon reward queries include public pools and exclude expired pools", () => {
+            string path=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"mapledash-gacha-"+Guid.NewGuid()+".json");
+            try {
+                var db=DbStore.Create(path);
+                int owner=(int)CharactersDao.Insert(db,new CharRecord{accountid=1,name="Gacha"});
+                db.Table("gachapon_reward_pool").rows.Clear(); db.Table("gachapon_reward").rows.Clear();
+                db.Table("gachapon_reward_pool").Insert(new DbRow{["id"]=1L,["gachapon_id"]=99L,["is_public"]=1L,["prob"]=10000L});
+                db.Table("gachapon_reward_pool").Insert(new DbRow{["id"]=2L,["gachapon_id"]=9100100L,["end_time"]="2000-01-01"});
+                db.Table("gachapon_reward_pool").Insert(new DbRow{["id"]=3L,["gachapon_id"]=9100100L,["end_time"]="2999-01-01"});
+                foreach(int id in new[]{1,2,3})db.Table("gachapon_reward").Insert(new DbRow{["pool_id"]=(long)id,["item_id"]=(long)(2000000+id),["quantity"]=1L});
+                var server=new NativeScriptService(db);
+                var opened=server.Handle(new ScriptRequest{operation=ScriptOperation.Open,source="var G=Java.type('org.gms.server.gachapon.Gachapon');var M=Java.type('org.gms.manager.ServerManager');function test(){return G.GachaponType.getLootNames()[0]+','+G.GachaponType.getLootIds()[0]+','+M.getApplicationContext().getBean('gachaponService').getRewardsByNpcId(9100100).map(x=>x.getItemId()).join(',');}"});
+                Equal("射手村,9100100,2000001,2000003",server.Handle(new ScriptRequest{operation=ScriptOperation.Call,sessionId=opened.sessionId,function="test"}).value);
+                Equal("2000001,1",server.Handle(new ScriptRequest{operation=ScriptOperation.GachaDraw,characterId=owner,gachaponId=123}).value is JsArray draw ? new JsString(string.Join(",",draw.Items.ConvertAll(JsConvert.ToString))) : JsUndefined.Value);
+            } finally { if(System.IO.File.Exists(path))System.IO.File.Delete(path); }
+        });
+        Check("ExtendType enum values and identity", () => {
+            var server=new NativeScriptService();
+            var opened=server.Handle(new ScriptRequest{operation=ScriptOperation.Open,source="var T=Java.type('org.gms.constants.string.ExtendType');function test(){return [T.CHARACTER_EXTEND_DAILY.getType(),T.isAccount('12'),T.isCharacter('22'),T.getExtendType('22')===T.CHARACTER_EXTEND_DAILY,T.getExtendType('missing')===T.UNSUPPORTED].join(',');}"});
+            Equal("22,true,true,true,true",server.Handle(new ScriptRequest{operation=ScriptOperation.Call,sessionId=opened.sessionId,function="test"}).value);
+        });
+        Check("ExtendUtil exact keys, updates and durable values", () => {
+            string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mapledash-extend-"+Guid.NewGuid()+".json");
+            try {
+                var db=DbStore.Create(path);
+                string script="var E=Java.type('org.gms.util.ExtendUtil');function write(){E.saveOrUpdateExtendValue('1','21','reward','old');E.saveOrUpdateExtendValue('1','21','reward','new');return E.getExtendValue('1','21','reward').getExtendValue();}function read(){return E.getExtendValue('1','21','reward').getExtendValue();}function other(){return E.getExtendValue('2','21','reward');}";
+                var server=new NativeScriptService(db);
+                var opened=server.Handle(new ScriptRequest{operation=ScriptOperation.Open,source=script});
+                Equal("new",server.Handle(new ScriptRequest{operation=ScriptOperation.Call,sessionId=opened.sessionId,function="write"}).value);
+                Equal("null",server.Handle(new ScriptRequest{operation=ScriptOperation.Call,sessionId=opened.sessionId,function="other"}).value);
+                if(db.Table("extend_value").rows.Count!=1)throw new Exception("duplicate update row");
+                server=new NativeScriptService(DbStore.Open(path));
+                opened=server.Handle(new ScriptRequest{operation=ScriptOperation.Open,source=script});
+                Equal("new",server.Handle(new ScriptRequest{operation=ScriptOperation.Call,sessionId=opened.sessionId,function="read"}).value);
             } finally { if(System.IO.File.Exists(path))System.IO.File.Delete(path); }
         });
         Check("server top-level failure leaves no session", () => {

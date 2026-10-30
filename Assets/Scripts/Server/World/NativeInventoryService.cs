@@ -10,6 +10,7 @@ public static class NativeInventoryService {
         var items = db.Table("inventoryitems");
         if (r.equip) {
             int slot = EquipmentSlotOf(r.itemId);
+            if (slot == -12 && (r.equipSlot == -12 || r.equipSlot == -13 || r.equipSlot == -15 || r.equipSlot == -16)) slot = r.equipSlot;
             if (slot == 0 || slot != r.equipSlot) return new InventoryChangeResponse { ok = false, error = "无效装备槽位" };
             var source = items.Find(x => DbStore.Int(x, "characterid") == r.characterId && DbStore.Int(x, "itemid") == r.itemId &&
                 (r.quantity == 0 ? DbStore.Int(x, "position") == slot : DbStore.Int(x, "position") > 0 && (r.sourcePosition == 0 || DbStore.Int(x, "position") == r.sourcePosition)));
@@ -72,14 +73,9 @@ public static class NativeInventoryService {
     // Pure server mapping: script harness must not depend on Unity's equipment presentation.
     public static int EquipmentSlotOf(int itemId)
     {
-        int prefix = itemId / 10000;
-        switch (prefix) {
-            case 100: return -1; case 101: return -2; case 102: return -3; case 103: return -4;
-            case 104: case 105: return -5; case 106: return -6; case 107: return -7;
-            case 108: return -8; case 109: return -10; case 110: return -9; case 114: return -49;
-            default: return prefix >= 121 && prefix <= 160 ? -11 : 0;
-        }
+        return -Server.Bot.Decorator.BotCustomization.EquipSlotType(itemId);
     }
+
     static bool TwoHanded(int id) => id / 10000 >= 140 && id / 10000 <= 149;
     static int Free(DbStore db, CharRecord c, int type) {
         int max = type == 1 ? c.equipslots : type == 2 ? c.useslots : type == 3 ? c.setupslots : type == 4 ? c.etcslots : 96;

@@ -31,6 +31,26 @@ public sealed class NativeReactorView : MonoBehaviour
     readonly Dictionary<string, Clip> clips = new Dictionary<string, Clip>();
     int mapId;
     public void Bind(int id) { mapId = id; }
+    public static MapReactor FindTarget(int map,Rect attack)
+    {
+        foreach (var pool in FindObjectsOfType<NativeReactorView>())
+        {
+            if (pool.mapId!=map) continue;
+            foreach (var r in MapReactorService.Get(map))
+            {
+                var events=r.template?.Events(r.state);
+                if (!r.alive || events==null || events.Count==0 || events[0].type!=0) continue;
+                var clip=pool.Load(r.id,r.state,false);
+                if (clip==null) continue;
+                var sprite=clip.At(Math.Max(0,MapReactorService.Now()-r.lastHitAt));
+                var box=sprite.bounds;
+                var bounds=Rect.MinMaxRect(r.x/Art.PPU+box.min.x,-r.y/Art.PPU+box.min.y,
+                    r.x/Art.PPU+box.max.x,-r.y/Art.PPU+box.max.y);
+                if (attack.Overlaps(bounds)) return r;
+            }
+        }
+        return null;
+    }
     ImgNode Root(int id)
     {
         var seen = new HashSet<int>();
@@ -48,7 +68,7 @@ public sealed class NativeReactorView : MonoBehaviour
     {
         string key = id + "/" + state + (hit ? "/hit" : "");
         if (clips.TryGetValue(key, out var clip)) return clip;
-        var node = Root(id)?.Get(state + (hit ? "/hit" : ""));
+        var node = Root(id)?.Get(state + (hit ? "/hit" : ""))?.TryResolve();
         if (node == null) { clips[key] = null; return null; }
         var frames = new List<ImgNode>();
         foreach (var child in node.Children) if (int.TryParse(child.Name, out _)) frames.Add(child);
@@ -89,7 +109,7 @@ public sealed class NativeReactorView : MonoBehaviour
             }
             long elapsed = Math.Max(0, now - view.started);
             if (view.hit != null && elapsed < view.hit.duration) view.renderer.sprite = view.hit.At(elapsed);
-            else view.renderer.sprite = view.stand?.At(elapsed - (view.hit?.duration ?? 0));
+            else view.renderer.sprite = reactor.alive ? view.stand?.At(elapsed - (view.hit?.duration ?? 0)) : null;
         }
         foreach (int id in new List<int>(views.Keys)) if (!current.Contains(id))
         { Destroy(views[id].renderer.gameObject); views.Remove(id); }

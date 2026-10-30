@@ -28,6 +28,7 @@ public sealed class GameServer
     public NativeSocialService Social { get; private set; }
     public NativeCommunityService Community { get; private set; }
     public NativeCashService Cash { get; private set; }
+    public NativeNpcShopService NpcShops { get; private set; }
     public NativeBossService Bosses { get; private set; }
     public NativeWeatherService Weather { get; set; }
     public NativeSkillBackdropService Backdrops { get; } = new NativeSkillBackdropService();
@@ -49,6 +50,7 @@ public sealed class GameServer
         srv.Social.ChatAccepted = srv.RouteBotChat;
         srv.Community = new NativeCommunityService(srv.Db);
         srv.Cash = new NativeCashService(srv.Db);        srv.Bosses = new NativeBossService(srv.Db);
+        srv.NpcShops = new NativeNpcShopService(srv.Db) { Player = srv.ActiveBotPlayer };
         srv.Transport = new InProcessTransport(srv);
         // 假人资源包在后台线程预解析：等真正进图拉起假人时（World/Bots 首次访问）
         // 就不用把 8.6MB+3.3MB 的 JSON 卡在当前帧。
@@ -70,6 +72,7 @@ public sealed class GameServer
         srv.Community = new NativeCommunityService(db);
         srv.Cash = new NativeCashService(db);
         srv.Bosses = new NativeBossService(db);
+        srv.NpcShops = new NativeNpcShopService(srv.Db) { Player = srv.ActiveBotPlayer };
         srv.Transport = new InProcessTransport(srv);
         Local = srv;
         return srv;

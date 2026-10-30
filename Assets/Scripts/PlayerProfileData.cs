@@ -34,6 +34,9 @@ public sealed class PlayerProfileData
     // 0 表示空。源端装备落在 inventoryitems(EQUIPPED)，单机沿用武器同路，存本地 JSON，
     // 不单独拆表；DB 表结构仍 1:1 对齐源端（见 Schema.sql 的 inventoryitems/inventoryequipment）。
     public int equipHat, equipTop, equipBottom, equipShoes, equipGlove, equipCape, equipShield;
+    // Remaining native negative slots; parallel lists survive JsonUtility serialization.
+    public List<int> accessorySlots = new List<int>();
+    public List<int> accessoryItems = new List<int>();
     public string hair = "h0";
     public string outfit = "none";
     public List<string> owned = new List<string> { "1302000" };
@@ -211,7 +214,9 @@ public sealed class PlayerProfileData
             case -9: return equipCape;
             case -10: return equipShield;
             case -11: return int.TryParse(equipWeapon, out var w) ? w : 0;
-            default: return 0;
+            default:
+                int i = accessorySlots == null ? -1 : accessorySlots.IndexOf(slot);
+                return i >= 0 && accessoryItems != null && i < accessoryItems.Count ? accessoryItems[i] : 0;
         }
     }
 
@@ -227,6 +232,13 @@ public sealed class PlayerProfileData
             case -9: equipCape = itemId; break;
             case -10: equipShield = itemId; break;
             case -11: equipWeapon = itemId.ToString(); break;
+            default:
+                if (accessorySlots == null) accessorySlots = new List<int>();
+                if (accessoryItems == null) accessoryItems = new List<int>();
+                int i = accessorySlots.IndexOf(slot);
+                if (i < 0) { accessorySlots.Add(slot); accessoryItems.Add(itemId); }
+                else accessoryItems[i] = itemId;
+                break;
         }
     }
 

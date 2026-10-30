@@ -1,5 +1,14 @@
 # 技能、地图、怪物：节点与执行覆盖
 
+## 2026-10-29：皮奥所在彩虹村箱子漏导出
+
+- `String/Npc.img/10000/name=皮奥`；地图 `1000000` 的 life 包含 NPC 10000。
+- 原 `Map/Map/Map0/001000000.img` SHA256 `c79edc6ae6dd6a752d5999383317e745df12386bb5ff6823ebf765603bbeaf6d`：reactor 0/1/2/4/3 均为 2001，依次 `(610,254,90秒)`、`(324,-78,100秒)`、`(1529,132,90秒)`、`(231,253,180秒)`、`(1947,-167,90秒)`；f均为0。坐标为原地图像素，不做脚底修正。
+- `Reactor/0002001.img` SHA256 `8982f4bcc290074b150baaf081f8437612f8f920d42289cd48e6d264fcef0705`：state 0→1→2→3→4，事件type=0；站姿64×45、origin=(33,23)，state1/2/3的站姿UOL引用state0；hit帧delay=150ms，state4为1×1透明图。原渲染器直接读取IMG及origin，不新增绘制。
+- 缺失原因：`Assets/Resources/Bot/Maps/1.json` 的1000000未包含reactors，`BotNavigationMapLoader`得到空列表，`MapReactorService.Get/Build`无实例，`NativeReactorView.Tick`无物件可画。已增量补入五个原始spawn和2001模板。导出器默认包含该图，地图文件名补齐9位；增量模板导出保留其他地图已有模板。
+- 复现：`python3 tools/imgdump.py Map/Map/Map0/001000000.img reactor --depth 3`、`python3 tools/imgdump.py Reactor/0002001.img --depth 5`、`python3 tools/patch_solomapling_reactors.py --maps 1000000`。
+- 初次补数据时仅验证五个spawn与原IMG一致、其他地图字段及模板不变；随后已继续补齐普攻、原脚本掉落、权威拾取与Profile同步、任务交付和刷新。新EXE证据、实际验证及通用Reactor边界统一见[任务箱子与Reactor](reactor-boxes.md)，不再沿用初次“普攻/dropItems未接入”的描述。
+
 本记录对应 2026-10-29 全量节点审计，入口为 `docs/gameplay-node-audit.md`。
 不是完整玩法迁移声明。已知源端行为、当前代码和缺口分别记录，不能只看 parser PASS。
 

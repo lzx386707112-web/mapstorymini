@@ -164,11 +164,15 @@ public static class NpcField
                 string name = entry.Text("script");
                 if (!string.IsNullOrEmpty(name)) scripts.Add(name);
             }
+        bool shop = NativeNpcShopWindow.HasNpc(npcId);
+        // Native quest menus keep the ordinary NPC conversation entry. A database
+        // merchant needs that entry even when info/script is absent.
+        if (choices.Count > 0 && scripts.Count == 0 && shop) scripts.Add(null);
         // 没有脚本的装饰 NPC 不弹「没有对白脚本」。speak 仅定义气泡，
         // 不能据此吞掉有数字脚本的 NPC（例如训练营 2100）。
         //   info/MapleTV = 1  → 自由市场的电视（客户端走 MapleTV 界面，不是对话）
-        //   info/speak 有条目且无脚本 → 只有头顶气泡的装饰 NPC（9000069 彪鲁）
-        if (choices.Count == 0 && scripts.Count == 0 && IsSilentNpc(npcId)) return;
+        //   info/speak 只定义头顶气泡；数据库商人仍可开店。
+        if (choices.Count == 0 && scripts.Count == 0 && IsSilentNpc(npcId) && !shop) return;
         // BeiDou.exe 6D3400..6D347C：没有任务候选时直接发起普通 NPC
         // 对话。info/script 是分派元数据，不应凭它多插入一层内部名称菜单。
         if (choices.Count == 0) { NpcSession.Talk(npcId, scripts.Count > 0 ? scripts[0] : null); return; }

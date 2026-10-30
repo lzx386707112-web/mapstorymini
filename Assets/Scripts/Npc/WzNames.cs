@@ -87,6 +87,7 @@ public static class WzNames
         {
             switch (cat)
             {
+                case 0: return id / 10000 >= 2 && id / 10000 <= 6 ? EquipItem(id) : null;
                 case 1: return EquipItem(id);
                 case 2: return FlatItem("String/Consume.img", id);
                 case 3: return FlatItem("String/Ins.img", id);

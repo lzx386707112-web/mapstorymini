@@ -21,7 +21,8 @@ public static class FieldLoot
     public static float OffsetPx(int d)
         => (d % 2 == 0) ? 25f * ((d + 1) / 2) : -25f * (d / 2);
 
-    public static void Roll(int mobId, DropSink sink, Random rng, double dropRate = 1)
+    public static void Roll(int mobId, DropSink sink, Random rng, double dropRate = 1,
+        Func<int, int, bool> needQuestItem = null)
     {
         if (sink == null || rng == null) return;
         int d = 1;
@@ -36,6 +37,7 @@ public static class FieldLoot
             foreach (var row in list)
             {
                 if (rng.Next(0, DropStore.ChanceDenominator) >= row.chance * dropRate) continue;
+                if (needQuestItem != null && !needQuestItem(row.quest, row.item)) continue;
                 if (row.item == 0)
                 {
                     // nextInt(Max - Min) + Min；Max == Min 时 nextInt(0) 在原服返回 0
@@ -58,6 +60,7 @@ public static class FieldLoot
         {
             if (rng.Next(0, DropStore.ChanceDenominator) >= row.chance * dropRate) continue;
             if (row.item == 0) continue;                     // 全局掉落不生成金币
+            if (needQuestItem != null && !needQuestItem(row.quest, row.item)) continue;
             int min = Math.Max(1, row.min);
             int max = Math.Max(min, row.max);
             int qty = max > min ? rng.Next(min, max + 1) : min;   // rand(min, max) 两端都含

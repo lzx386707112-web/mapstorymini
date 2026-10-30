@@ -90,6 +90,7 @@ public class GameHUD : MonoBehaviour
             return;
         }
 
+        NativeInventoryActions.CarryStep();
         // 原版底部栏：底板 → 左段状态条 → 右侧按钮 + 快捷格（都在 BottomBar 里按顺序画）
         NpcDialogUi.DrawField();
         BottomBar.Draw();
@@ -110,25 +111,10 @@ public class GameHUD : MonoBehaviour
             if (!KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
         }
         KeyConfigWindow.Draw();
+        NativeInventoryActions.DrawCarry();
         // 悬浮球/快捷菜单由 InputBridge.OnGUI 绘制（仅游戏内显示）
         // 虚拟按键编辑器也由 InputBridge.OnGUI 全局绘制。
         if (showTuning && !HideTuning) DrawTuning();
-
-        if (GameLoop.I != null && GameLoop.I.gameOver)
-        {
-            Fill(new Rect(0, 0, UiKit.W, UiKit.H), new Color(0f, 0f, 0f, 0.55f));
-            var g = new GUIStyle();
-            g.alignment = TextAnchor.MiddleCenter;
-            g.fontSize = 34;
-            g.fontStyle = FontStyle.Bold;
-            g.normal.textColor = new Color(1f, 0.4f, 0.42f);
-            GUI.Label(new Rect(0, UiKit.H * 0.42f, UiKit.W, 60), "倒下了", g);
-            var s = new GUIStyle(_small);
-            s.alignment = TextAnchor.MiddleCenter;
-            s.fontSize = 15;
-            GUI.Label(new Rect(0, UiKit.H * 0.42f + 52, UiKit.W, 24),
-                      "击杀 " + (GameLoop.I != null ? GameLoop.I.killCount : 0) + "  ·  即将重来", s);
-        }
     }
 
     // TouchPad.Update 统一接收每根手指的 Began；OnGUI 只绘制，避免一次点击多次施法。

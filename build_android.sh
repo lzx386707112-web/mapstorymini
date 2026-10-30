@@ -1,7 +1,7 @@
 #!/bin/bash
-# 一键：构建 APK → 装到手机 → 启动（资源由用户单独传输）
+# 一键：构建 APK → 有可用手机时安装并启动（资源由用户单独传输）
 # 用法：
-#   ./build_android.sh           # 构建 + 安装 + 启动
+#   ./build_android.sh           # 构建；手机未连接时自动跳过安装与启动
 #   ./build_android.sh --no-install   # 只出 APK，不碰手机
 set -e
 
@@ -16,6 +16,7 @@ APP_ID="com.mapledash.game"
 T0=$(date +%s)
 
 NO_INSTALL=0
+SKIP_INSTALL_REASON="--no-install"
 [ "$1" = "--no-install" ] && NO_INSTALL=1
 
 # ---------- 0/5 前置检查（早失败，省得白等三分钟）----------
@@ -51,12 +52,12 @@ if [ "$NO_INSTALL" = "0" ]; then
     STATE=$("$ADB" get-state 2>/dev/null || echo "none")
   fi
   if [ "$STATE" != "device" ]; then
-    echo "❌ 手机未连接或未授权 USB 调试（adb 状态：$STATE）"
-    "$ADB" devices -l
-    echo "   插好数据线 → 手机上点「允许 USB 调试」→ 重跑。"
-    exit 1
+    echo "   手机未连接或不可用（adb 状态：$STATE），继续构建 APK，跳过安装与启动。"
+    NO_INSTALL=1
+    SKIP_INSTALL_REASON="无可用手机"
+  else
+    echo "设备：$("$ADB" shell getprop ro.product.model 2>/dev/null | tr -d '\r')"
   fi
-  echo "设备：$("$ADB" shell getprop ro.product.model 2>/dev/null | tr -d '\r')"
 fi
 
 # ---------- 0.5/5 Schema 同步 ----------
@@ -122,7 +123,7 @@ grep "\[Build\] 结果" "$LOG" | tail -1
 ls -lh "$PROJ/Builds/MapleDash.apk"
 
 if [ "$NO_INSTALL" = "1" ]; then
-  echo "已跳过安装（--no-install）。APK：$PROJ/Builds/MapleDash.apk"
+  echo "已跳过安装（$SKIP_INSTALL_REASON）。APK：$PROJ/Builds/MapleDash.apk"
   echo "APK 不含完整 Data；资源请自行放到 /sdcard/mapstory，安装可用 ./install_apk.sh。"
   exit 0
 fi

@@ -111,6 +111,21 @@ def main():
     if INDEX.is_file():
         index = json.loads(INDEX.read_text())
 
+    # FIELD_EFFECT mode=4 paths used by original harp NPC scripts.
+    if "--npc-field-only" in sys.argv:
+        for key in ["orbis/" + note for note in ("do", "re", "mi", "pa", "sol", "la", "si")] + ["Party1/Clear", "Party1/Failed"]:
+            entry = export(key, "Field/" + key, "Field/" + key + ".mp3")
+            if entry is None:
+                raise RuntimeError("Missing original NPC field sound: " + key)
+            index[key] = entry
+        key = "Bgm04/Shinin'Harbor"
+        entry = export(key, key, "Bgm/" + key + ".mp3")
+        if entry is None:
+            raise RuntimeError("Missing original credits BGM: " + key)
+        index[key] = entry
+        INDEX.write_text(json.dumps(index, ensure_ascii=False, indent=1, sort_keys=True))
+        return
+
     # Direction scenes reference Sound properties outside Sound.wz by their full
     # IMG UOL. Keep that key and export the original MPEG payload without changes.
     if "--direction-only" in sys.argv:

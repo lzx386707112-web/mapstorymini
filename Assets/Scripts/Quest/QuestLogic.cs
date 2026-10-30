@@ -25,6 +25,20 @@ public static class QuestLogic
     // 职业主键已经是 job id（存档字段）；JobId(cls) 只留给旧存档迁移路径。
     public static int PlayerJob => Profile.JobId;
 
+    // Character.needQuestItem + Quest.get{Start,Complete}ItemAmountNeeded.
+    public static bool NeedQuestItem(int questId,int itemId)
+    {
+        if (Server.Field.MapItemPickup.NeedQuestItemUnrestricted(questId)) return true;
+        int status=Profile.QuestStatus(questId);
+        if (status!=0 && status!=1) return false;
+        var quest=QuestCatalog.Get(questId);
+        if (quest==null) return false;
+        var items=status==0 ? quest.startReq.items : quest.completeReq.items;
+        foreach (var row in items)
+            if (row.item==itemId) return Profile.ItemCount(itemId)<row.count;
+        return status==1;
+    }
+
     public static bool CanStart(QuestDef q, int npcId, out string reason)
     {
         int status = Profile.QuestStatus(q.id);

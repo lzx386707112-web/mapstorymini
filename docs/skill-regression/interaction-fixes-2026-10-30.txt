@@ -1,0 +1,13 @@
+
+### 本轮验证范围（2026-10-30 第二批反馈）
+
+隔离Unity工程InteractionRegressionChecks.Run退出0：真实Quest需求下怪物/全局任务掉落四阶段、普通0/−1掉落、实际NpcSession及InputBridge的Esc动作关闭与菜单不穿透、按上门原地松开/再按、触碰门防循环、HP/MP 700ms中点、死亡视觉origin/旋转/alpha及清理。
+NativeGameplayFixChecks.Run退出0：包括原IMG墓碑600px起点、880ms落地、land保持和2.2秒确认阶段。
+compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0。全量NPC Mock运行889条790通过，27 runFail及72 Java interop缺口与此前基线一致，不能称全量脚本验证通过。
+死亡层叠尚无EXE逐帧画面oracle；未打包APK、未做Android实机验收。EXP主条方案仍待用户选择，不以HP/MP通过代替EXP验证。
+
+复现入口：InteractionRegressionChecks.Run、NativeGameplayFixChecks.Run、QuestWindowEntryChecks.Run；需要MAPLEDASH_IMG_ROOT指向原资源Data。
+
+QuestWindowEntryChecks.Run退出0；QuestAlarmDragChecks PASS真实Repaint长按拖动、释放、按钮排除。git diff --check通过。
+
+用户选择严格源端EXP后补核：tempExp实际为Gacha EXP；移除普通经验500ms假闪条，接真实暂存值。新增EXP主条立即更新/暂存整数几何/上限/满级/跨级断言，Unity InteractionRegressionChecks退出0；编译0错误0警告；无Android实机验证。

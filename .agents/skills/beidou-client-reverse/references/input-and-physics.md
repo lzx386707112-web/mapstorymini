@@ -253,3 +253,12 @@ NativeBuffRenderChecks.CheckFlashJump 检查拒绝不扣MP、落地后仍受1500
 
 本批 Soul Rush 新增准入/冲量/落地/1500ms 断言在隔离Unity
 NativeBuffChecks.RunAll（/tmp/mapledash-priority-four-runtime2.log）退出0；未作Android验证。
+
+
+## 去除绳底下方的自动抬升（2026-10-30）
+
+本次属于删除迁移代码中自行增加的100px绳底容差及吸附，不是新认定的原端物理常量。
+旧PlayerCtrl.StepClimb在有上/下输入分量时，允许脚底低于绳底100px并立即把jumpY设到绳底，
+导致斜向经过绳子下方会被抬起。现只在脚底达到bottom后才允许抓取，不改已有原端绳梯左右跳初速。
+验证 `NativeGameplayFixChecks.Run`覆盖脚底低于绳底50px且有向上分量不附着/不抬升，以及绳身范围内正常抓取；
+`RopeJumpChecks.Run`继续验证左右跳0.5/1.3与方向门控。

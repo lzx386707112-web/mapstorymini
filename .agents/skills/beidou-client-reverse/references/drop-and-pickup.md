@@ -94,3 +94,18 @@ rtk proxy /Applications/Unity/Unity.app/Contents/MacOS/Unity -batchmode -nograph
 `GroundItemChecks.Run`新增真实IMG的帽子1002000、药水2000000、蜗牛壳4000000与小金币，在同一脚点、相同悬浮相位0/240/600/1200ms检查SpriteRenderer实际世界边界底线一致；另独立断言金币初始底线为脚点上方4px。这是几何回归，不是Android截图或GPU像素验收。
 
 本轮实际Unity batch检查通过（退出码0）：上述12组基线比较、金币4px参照断言及既有72组拾取/48组抛出oracle回归。奇数canvas高度另补齐整数halfHeight与Unity浮点center间的半像素差，防止药水出现0.5px下沉；未改IMG像素。
+
+## 2026-10-30 本地怪物掉落补接任务需求过滤
+
+依据服务端Character.java needQuestItem（约5769行）和MapleMap.java spawnDrop（约1281行），不是EXE显示推断。
+quest=0/−1不限制；未接取仅允许Check/0明确列出的接取前收集需求且背包未足量；进行中按Check/1需求且未足量，
+无显式完成item需求时允许脚本任务掉落（MAX_VALUE语义）；完成后不再需要。不能把所有未接取状态一刀切，否则违反原端接取前收集例外。
+现有QuestLogic.NeedQuestItem与GroundItemBridge已有该条件，本地FieldLoot.Roll遗漏；现由FieldDirector注入同一判断到怪物表和全局表，生成前筛选。
+抽样统计工具不传predicate，仍能统计原始掉落表概率。InteractionRegressionChecks.Run以真实Quest IMG需求+必掉测试表验证未接/进行中/够数/完成及0/−1普通掉落。
+
+### 本轮验证范围（2026-10-30 第二批反馈）
+
+隔离Unity工程InteractionRegressionChecks.Run退出0：真实Quest需求下怪物/全局任务掉落四阶段、普通0/−1掉落、实际NpcSession及InputBridge的Esc动作关闭与菜单不穿透、按上门原地松开/再按、触碰门防循环、HP/MP 700ms中点、死亡视觉origin/旋转/alpha及清理。
+NativeGameplayFixChecks.Run退出0：包括原IMG墓碑600px起点、880ms落地、land保持和2.2秒确认阶段。
+compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0。全量NPC Mock运行889条790通过，27 runFail及72 Java interop缺口与此前基线一致，不能称全量脚本验证通过。
+死亡层叠尚无EXE逐帧画面oracle；未打包APK、未做Android实机验收。EXP主条方案仍待用户选择，不以HP/MP通过代替EXP验证。

@@ -56,6 +56,23 @@ public static class AfterimageFx
         }
     }
 
+    // CUserLocal::TryDoingMeleeAttack/414440: use the action's original lt/rb,
+    // not the visible trail's alpha bounds or an invented attack radius.
+    public static Rect? AttackBounds(string afterName, string action)
+    {
+        if (string.IsNullOrEmpty(afterName) || string.IsNullOrEmpty(action)) return null;
+        string path="Character/Afterimage/"+afterName+".img";
+        if (!WzAssets.HasFile(path)) return null;
+        foreach (var alias in Aliases(action))
+        {
+            var node=WzAssets.Node(path+"/0/"+alias)?.TryResolve();
+            var lt=node?.Get("lt");var rb=node?.Get("rb");
+            if (lt==null || rb==null) continue;
+            return Rect.MinMaxRect(lt.X,lt.Y,rb.X,rb.Y);
+        }
+        return null;
+    }
+
     static Frame[] Load(string afterName, string action)
     {
         string path = "Character/Afterimage/" + afterName + ".img";

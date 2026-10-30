@@ -50,7 +50,8 @@ public sealed class GroundItemBridge : MonoBehaviour
         if (runtime == null) return null;
         var actor = runtime.Player(GameSession.CharacterId);
         if (actor == null) return null;
-        looter = new BotActorLooter(actor, runtime.trades, runtime.parties);
+        looter = new BotActorLooter(actor, runtime.trades, runtime.parties,
+            new BotLootHooks { NeedQuestItem=QuestLogic.NeedQuestItem });
         looterId = actor.id;
         return looter;
     }
@@ -62,12 +63,15 @@ public sealed class GroundItemBridge : MonoBehaviour
     void OnSpawned(MapItem item)
     {
         if (item == null || item.mapId != CurrentMapId) return;
+        if (!item.IsMeso && !QuestLogic.NeedQuestItem(item.questId,item.ItemId)) return;
         foreach (var view in GroundItem.All)
             if (view != null && view.bound != null && view.bound.objectId == item.objectId) return;   // 已有显示
         // 金币：GroundItem 用 itemId==0 表示，amount 为金额
         var actor = BotRegistry.Get(item.dropperId);
+        var reactor = MapReactorService.Find(item.mapId,item.dropperId);
         Vector3 from = actor != null && actor.mapId == item.mapId
-            ? new Vector3(actor.x / Art.PPU, -actor.y / Art.PPU, 0) : ToUnity(item);
+            ? new Vector3(actor.x / Art.PPU, -actor.y / Art.PPU, 0)
+            : reactor!=null ? new Vector3(reactor.x/Art.PPU,-reactor.y/Art.PPU,0) : ToUnity(item);
         GroundItem.Spawn(item.IsMeso ? 0 : item.ItemId, item.IsMeso ? item.meso : item.Quantity,
             ToUnity(item), item, from);
     }
@@ -97,6 +101,10 @@ public sealed class GroundItemBridge : MonoBehaviour
         if (item == null || actor == null) return false;
         if (item.mapId != CurrentMapId) return false;
         // 源端 Character.pickupItem：400ms 延迟、canBePickedBy、背包空间、addFromDrop/gainMeso
-        return MapItemPickup.PickupItem(item, actor, (long)(Time.realtimeSinceStartup * 1000));
+        var player=runtime.Player(GameSession.CharacterId);
+        int before=player.character.record.meso;
+        bool picked=MapItemPickup.PickupItem(item, actor, (long)(Time.realtimeSinceStartup * 1000));
+        if (picked) GameSession.ApplyGroundPickup(player,player.character.record.meso-before);
+        return picked;
     }
 }

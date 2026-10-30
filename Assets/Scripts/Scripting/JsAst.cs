@@ -9,6 +9,7 @@ namespace MapleDash.Js
         readonly Dictionary<string, JsValue> vars = new Dictionary<string, JsValue>(StringComparer.Ordinal);
         public readonly JsScope Parent;
         public readonly JsScope FunctionScope;
+        public Func<string, JsValue> ResolveImport;
 
         public JsScope(JsScope parent, bool functionBoundary = false)
         {
@@ -22,8 +23,7 @@ namespace MapleDash.Js
 
         public JsValue Get(string name)
         {
-            for (var s = this; s != null; s = s.Parent)
-                if (s.vars.TryGetValue(name, out var v)) return v;
+            if (TryGet(name, out var value)) return value;
             throw new JsRuntimeException("ReferenceError: " + name + " is not defined");
         }
 
@@ -31,6 +31,11 @@ namespace MapleDash.Js
         {
             for (var s = this; s != null; s = s.Parent)
                 if (s.vars.TryGetValue(name, out value)) return true;
+            for (var s = this; s != null; s = s.Parent)
+            {
+                value = s.ResolveImport?.Invoke(name);
+                if (value != null && !(value is JsUndefined)) return true;
+            }
             value = JsUndefined.Value;
             return false;
         }

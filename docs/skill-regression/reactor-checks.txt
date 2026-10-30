@@ -1,0 +1,18 @@
+2026-10-29 Pio quest / Maple Island box regression
+
+Unity: independent temporary project, shared current Assets/Packages/ProjectSettings, native IMG root mounted explicitly. Temporary DB and in-memory Profile; no APK build or Android deployment.
+Entry: NativeReactorChecks.Run
+Exit code: 0
+[NativeReactorChecks] PASS: five IMG boxes; original weapon attack bounds; wrong facing/distance rejected; real player windup/four hits; original JS and SQL drops; duplicate guards; pickup persistence and Profile sync; Pio Quest.wz hand-in; 90s respawn
+Additional assertions: five decoded original 64x45 sprites; state1/2 hit UOL=300ms; original crouch rectangle; drop spray zero-delay then 200ms; surplus quest pickup rejected.
+
+C# Assets/Scripts + Assets/Editor rebuild: 0 warnings, 0 errors, exit 0. Build outputs isolated under /tmp/mapledash-reactor-build.
+Android NativeAssetIndex: Reactor/0002001.img and Character/Afterimage/swordOL.img present.
+
+Required NPC harness run (absolute Data/scripts/npc path):
+mode=--run files=889 ok=769 parseFail=0 runFail=47 javaInterop=73 dialogs=1149 disposed=750
+Required packed-script parse:
+pack=2779 npc=889 quest=470 chars=5903KiB parseFail=0 mangled=0
+The existing full NPC execution is not a full PASS: 47 runtime failures and 73 unsupported Java interop cases.
+
+Full server-check attempted; aborted before reactor checks in unrelated MarketEconomy.TrailingDigit/Style/Price -> MarketShopGenerator.Primary with Int32 OverflowException. No full-suite PASS claimed. Targeted Unity regression above independently exercises real reactor script, server drop pool, real persisted pickup bridge, quest hand-in and respawn.

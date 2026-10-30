@@ -682,7 +682,7 @@ namespace Server.Bot.Types.Blackjack
                 double distance = dx * dx + dy * dy;
                 if (distance < nearestDistance) { nearestDistance = distance; nearest = dealer; }
             }
-            if (nearest == null) return "当前地图没有可加入的 21 点荷官。";
+            if (nearest == null) return "当前地图没有可加入的 21 点荷官。请确认 21 点桌功能已开启，并重新进入自由市场。";
             return nearest.JoinPlayerFromNpc(player);
         }
 

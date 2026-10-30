@@ -4,7 +4,7 @@ using System.Collections.Generic;
 // Rules translated from BuddylistModifyHandler, Party.createParty,
 // PartySearchStartHandler, MessengerHandler and the chat handlers.
 // This transport hosts one active character; other saved characters are offline.
-public enum SocialOperation { Read, AddBuddy, AcceptBuddy, DeleteBuddy, CreateParty, LeaveParty, InviteParty, SearchParty, StopSearch, OpenMessenger, CloseMessenger, InviteMessenger, SendChat, AddMonsterCard, SetBookCover, AcceptMessenger, DeclineMessenger, AcceptParty, DeclineParty, ExpelParty, ChangePartyLeader }
+public enum SocialOperation { Read, AddBuddy, AcceptBuddy, DeleteBuddy, CreateParty, LeaveParty, InviteParty, SearchParty, StopSearch, OpenMessenger, CloseMessenger, InviteMessenger, SendChat, AddMonsterCard, SetBookCover, AcceptMessenger, DeclineMessenger, AcceptParty, DeclineParty, ExpelParty, ChangePartyLeader, SetBuddyCapacity }
 public enum NativeChatChannel { All, Whisper, Party, Buddy, Guild, Alliance, Spouse, Messenger }
 public sealed class SocialRequest
 {
@@ -14,6 +14,7 @@ public sealed class SocialRequest
     public string target = "", text = "", group = "Default Group";
     public int minLevel, maxLevel;
     public int cardId;
+    public int buddyCapacity;
     public int messengerRoom;
     public int partyId;
     public int memberId;
@@ -64,6 +65,9 @@ public sealed class NativeSocialService
         string error = null;
         switch (request.operation)
         {
+            case SocialOperation.SetBuddyCapacity:
+                self.buddyCapacity = request.buddyCapacity;
+                CharactersDao.Save(db, self); db.Save(); break;
             case SocialOperation.AddBuddy: error = AddBuddy(self, request); break;
             case SocialOperation.AcceptBuddy: error = AcceptBuddy(self, request.target); break;
             case SocialOperation.DeleteBuddy:

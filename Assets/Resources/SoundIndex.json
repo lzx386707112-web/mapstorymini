@@ -15,6 +15,10 @@
   "ms": 166635,
   "path": "Sound/Bgm/Bgm00_SleepyWood.mp3"
  },
+ "Bgm04/Shinin'Harbor": {
+  "ms": 115722,
+  "path": "Sound/Bgm/Bgm04/Shinin'Harbor.mp3"
+ },
  "BgmJp/FirstStepMaster": {
   "ms": 0,
   "path": "Sound/Bgm/BgmJp_FirstStepMaster.mp3"
@@ -275,6 +279,14 @@
   "ms": 0,
   "path": "Sound/Mob/9500102_Die.mp3"
  },
+ "Party1/Clear": {
+  "ms": 3753,
+  "path": "Sound/Field/Party1/Clear.mp3"
+ },
+ "Party1/Failed": {
+  "ms": 1764,
+  "path": "Sound/Field/Party1/Failed.mp3"
+ },
  "Skill/1101006/Use": {
   "ms": 0,
   "path": "Sound/Skill/1101006_Use.mp3"
@@ -414,5 +426,33 @@
  "Weather/wind": {
   "ms": 60029,
   "path": "Sound/Weather/wind.mp3"
+ },
+ "orbis/do": {
+  "ms": 2000,
+  "path": "Sound/Field/orbis/do.mp3"
+ },
+ "orbis/la": {
+  "ms": 2000,
+  "path": "Sound/Field/orbis/la.mp3"
+ },
+ "orbis/mi": {
+  "ms": 2000,
+  "path": "Sound/Field/orbis/mi.mp3"
+ },
+ "orbis/pa": {
+  "ms": 2000,
+  "path": "Sound/Field/orbis/pa.mp3"
+ },
+ "orbis/re": {
+  "ms": 2000,
+  "path": "Sound/Field/orbis/re.mp3"
+ },
+ "orbis/si": {
+  "ms": 2000,
+  "path": "Sound/Field/orbis/si.mp3"
+ },
+ "orbis/sol": {
+  "ms": 2000,
+  "path": "Sound/Field/orbis/sol.mp3"
  }
 }

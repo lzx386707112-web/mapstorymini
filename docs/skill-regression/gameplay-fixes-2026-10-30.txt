@@ -1,0 +1,7 @@
+2026-10-30
+Unity批处理 `NativeGameplayFixChecks.Run`退出0：1009..1015全部原IMG选项、错误反馈/不交付/经验不变、正确翻页；绳底下方带向上分量不抬升及正常抓取；3010000/3010001效果及攻击/死亡/换图清理；1010000实际Portal_1原图（missingArt=0）；墓碑600px起点/880ms落地/land保持/2.2s后确认阶段，Notice0与BtOK2可加载。
+`RopeJumpChecks.Run`退出0：绳/梯左右30/60/120Hz、无方向不脱手、0.5/1.3初速、朝向和未暂停jump动作。
+compile-check Rebuild：0错误0警告；脚本包2779条、parseFail0/mangled0。Mock全量NPC运行889条790通过，parseFail0、runFail27、javaInterop72，非全量通过；这不是本次Say问答的验收替代。
+没有Android实机或复活道具特殊分支验收。任务按键面板差异等待用户进一步说明，未猜改布局。摘要同时保存在 `docs/skill-regression/gameplay-fixes-2026-10-30.txt`。
+
+后续任务面板核对：只有一套QuestWindow，任务键漏选中/展开详情。已按87FD4F→882A71/882B2E→8846F2及884335→88422C补齐。QuestWindowEntryChecks.Run退出0/PASS，真实任务键和FadeYesNo确认点击显示同任务双面板；任务区域两截图像素一致。编译0错误0警告。详见quest-window-and-alarm.md的2026-10-30记录；以上“等待补充”已解决。

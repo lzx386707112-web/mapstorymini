@@ -149,19 +149,19 @@ public static class EquipWindow
     static Rect At(Rect r, float x, float y, float w, float h) => new Rect(r.x + x * S, r.y + y * S, w * S, h * S);
     static Texture2D Tex(string node) => Art.Tex("wz://UI/UIWindow.img/Equip/" + node);
 
-    // 每格对应的原端装备位；0 = 该项目没有实现（戒指/肩饰/腰带/副手/图腾/骑兽等）。
+    // 每格对应原 IMG 背景已有的装备位；0 = 空白或未迁移的骑兽/宠物位。
     // 行 0..6 自上而下、列 0..4 自左而右，按 backgrnd 上的中文槽位名对齐：
     //   帽子 / 勋章 额饰 戒指 戒指 / 眼饰 耳饰 肩饰 / 披风 上衣 项链 武器 盾牌 /
     //   手套 裤裙 腰带 指环 指环 / 鞋子 副手 图腾 / 骑兽 鞍子 心脏 徽章 纹章
     static readonly int[,] SmallCells =
     {
         { 0, EquipSlot.Hat, 0, 0, 0 },
-        { EquipSlot.Medal, EquipSlot.FaceAccessory, 0, 0, 0 },
-        { 0, 0, EquipSlot.EyeAccessory, EquipSlot.Earring, 0 },
-        { EquipSlot.Cape, EquipSlot.Top, 0, EquipSlot.Weapon, EquipSlot.Shield },
-        { EquipSlot.Glove, EquipSlot.Bottom, 0, 0, 0 },
-        { 0, 0, EquipSlot.Shoes, 0, 0 },
-        { 0, 0, 0, 0, 0 },
+        { EquipSlot.Medal, EquipSlot.FaceAccessory, 0, -12, -13 },
+        { 0, 0, EquipSlot.EyeAccessory, EquipSlot.Earring, -20 },
+        { EquipSlot.Cape, EquipSlot.Top, -17, EquipSlot.Weapon, EquipSlot.Shield },
+        { EquipSlot.Glove, EquipSlot.Bottom, -50, -15, -16 },
+        { 0, 0, EquipSlot.Shoes, -51, -53 },
+        { 0, 0, -54, -55, -56 },
     };
 
     // 展开态 6 列，同样按 FullBackgrnd 的槽位名对齐：
@@ -170,10 +170,10 @@ public static class EquipWindow
     static readonly int[,] FullCells =
     {
         { 0, EquipSlot.Hat, 0, 0, 0, 0 },
-        { EquipSlot.Medal, EquipSlot.FaceAccessory, 0, 0, 0, 0 },
+        { EquipSlot.Medal, EquipSlot.FaceAccessory, 0, 0, -12, -13 },
         { 0, 0, EquipSlot.EyeAccessory, 0, EquipSlot.Earring, 0 },
-        { EquipSlot.Cape, EquipSlot.Top, 0, 0, EquipSlot.Weapon, EquipSlot.Shield },
-        { EquipSlot.Glove, EquipSlot.Bottom, 0, 0, 0, 0 },
+        { EquipSlot.Cape, EquipSlot.Top, -17, 0, EquipSlot.Weapon, EquipSlot.Shield },
+        { EquipSlot.Glove, EquipSlot.Bottom, -50, 0, -15, -16 },
         { 0, 0, EquipSlot.Shoes, 0, 0, 0 },
         { 0, 0, 0, 0, 0, 0 },
     };
@@ -362,6 +362,7 @@ public static class InvenWindow
                 var offered = equipment == null ? GameSession.Character.inventory.Find(item => item.itemId == id && item.inventoryType == tab + 1 && item.position > 0) : equipment[index];
                 NativeTradeWindow.BeginItemDrag(offered);
             }
+            if (press && !NativeTradeWindow.CanOffer && slot.Contains(Pointer.Pos)) NativeInventoryActions.Pick(id);
             if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && slot.Contains(Pointer.Pos))
             {
                 Pointer.ConsumeClick();
@@ -503,7 +504,7 @@ public static class GameWindows
         SkillWindow.Visible || QuestWindow.Visible || KeyConfigWindow.Visible ||
         NativeMapWindows.WorldVisible || NativeSocialWindow.Visible || NativeMonsterBook.Visible ||
         NativeCommunityWindow.Visible || NativeMedalWindow.Visible || ShopWindow.Visible ||
-        NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible;
+        NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible || NativeNpcShopWindow.Visible;
 
     // ——————————————— Esc 分层关闭 ———————————————
     // 原版 Esc 是「系统菜单」键，但用户要求：只要有面板开着，Esc 先关面板。
@@ -513,7 +514,7 @@ public static class GameWindows
     enum Panel
     {
         Stat, Equip, Inven, Shop, Quest, Shortcut, Help, GameMenu, Skill,
-        World, Social, MonsterBook, Community, Medal,
+        World, Social, MonsterBook, Community, Medal, NpcShop,
     }
     static readonly Panel[] panels = (Panel[])System.Enum.GetValues(typeof(Panel));
     static readonly List<Panel> openOrder = new List<Panel>();
@@ -527,6 +528,7 @@ public static class GameWindows
             case Panel.Equip: return EquipWindow.Visible;
             case Panel.Inven: return InvenWindow.Visible;
             case Panel.Shop: return ShopWindow.Visible;
+            case Panel.NpcShop: return NativeNpcShopWindow.Visible;
             case Panel.Quest: return QuestWindow.Visible;
             case Panel.Shortcut: return ShortcutWindow.Visible;
             case Panel.Help: return HelpWindow.Visible;
@@ -550,6 +552,7 @@ public static class GameWindows
             case Panel.Inven: InvenWindow.Visible = false; return;
             // 商城开着的期间 timeScale=0，必须走 Reset 才会把时间轴还回去
             case Panel.Shop: NativeCashWindow.Reset(); return;
+            case Panel.NpcShop: NativeNpcShopWindow.Close(); return;
             case Panel.Quest: QuestWindow.Visible = false; return;
             case Panel.Shortcut: ShortcutWindow.Visible = false; return;
             case Panel.Help: HelpWindow.Visible = false; return;
@@ -619,6 +622,7 @@ public static class GameWindows
         NativeMedalWindow.Draw();
         NativeTradeWindow.Draw();
         NativeMarketWindow.Draw();
+        NativeNpcShopWindow.Draw();
         NativeCharacterMenu.Draw();
         ItemTooltip.Flush();
         }

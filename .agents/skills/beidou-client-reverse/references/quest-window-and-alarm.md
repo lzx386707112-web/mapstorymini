@@ -102,3 +102,56 @@ EXE身份仍为本文SHA256。此次明确区分：目标达成、可交付时�
 - 重新用 `tools/imgdump.py UI/UIWindow.img FadeYesNo/backgrnd4 --depth 2` 和 `tools/imgpng.py` 核对原素材：154×44、origin=(0,0)，尾尖局部坐标(140,43)。底栏已核实通知槽x573、宽42，便签iconMemo在x599、宽14，其中心为x606（通知槽内33）。
 - `QuestNotice.DrawReady` 使用 `BottomBar.NotifyBoxRect()`，气泡左上角为 `(槽x+(33−140)×S, 槽y−(43+5×存活窗序)×S)`；尾尖水平对齐便签中心，垂直在槽顶上方保留原5px错层。不再依赖屏幕右缘，不改素材、内容或触发条件。
 - 验证：原IMG导出目视核对，1040×260、1280×720、1920×1080、2400×1080坐标公式检查及diff检查通过；compile-check Rebuild 0错误0警告，脚本包2779条parseFail=0，全量NPC run仍为既存47 runFail/73 javaInterop。未运行Unity画面或Android实机验收。本节不沿用此前运行回归作为新定位的视觉验收。
+
+
+## 2026-10-30 任务键与完成通知入口差异：自动选择/详情展开
+
+身份仍为本文完整SHA256。全工程入口核对：NativeKeyActions.Execute(GameAction.Quest)、
+ShortcutWindow的BtQuest、QuestAlarm/BtQ均调用同一QuestWindow.Toggle；
+FadeYesNo确认及告知栏任务行调用QuestWindow.Select。没有第二套玩家任务窗口。
+旧Toggle只反转Visible，首次selectedId=0导致只出现245×396列表；
+Select额外设置状态页和selectedId，因此通知出现245+305双面板。隐藏详情后Toggle亦未恢复详情，
+通知定位还没有展开折叠分类/滚动到任务行。不是原IMG存在两种不同任务面板。
+
+### 补核的原端状态链
+
+- `0x87FB2F..0x87FB84`：控件2000、通知500的页签变更调用`0x87FD4F`。
+- `0x87FD57..0x87FD6B`：清列表this+5C4为-1，写页签this+5C0，再重建列表/滚动范围。
+- 进行中页`0x87FD78..0x87FD85`先尝试`0x882932`、再`0x88296E`（this+5A4记录的上次进行中任务）。
+  `0x882932`消费任务管理器+270队列（`0x71DF05/0x71DF1C`），队列完整写入语义尚未逆向；
+  不将其擅自解释成“所有可交付任务”或“最近完成任务”。本次没有新增该独立原生队列。
+- `0x87FDA1..0x87FDB8`仍无选中时调用`0x882A71`，从当前页列表跳过分类行并选首个任务；
+  `0x882B2E`先展开分类（`0x882CA6`）、找到任务行后`0x882C23`调用`0x8846F2`写this+5C4，
+  `0x882C3E`调用`0x882C8A`同步滚动位置。选择进行中任务时`0x884743`保存任务号到+5A4。
+- `0x884390..0x88439C`：Update发现有选中行且没有详情对象this+614时，调用`0x88422C(1)`；
+  后者`0x884287..0x8842C5`构造详情（`0x87B155`）。因此自动选中后下一次Update就打开详情，不是必须手点任务行。
+- OnCreate `0x87FAA8..0x87FAE2`：无有效初始页签时先选进行中，若+5C4仍-1再选可开始。
+  有有效显式页签则遵循该页，不据此声称空的已完成页也要跳可开始。
+
+### 当前修复
+
+QuestWindow.Toggle打开时重建列表、恢复有效选中任务，否则自动选择首项并打开原详情；
+进行中空列表回到可开始。切换页签复用同一选择流程。Select会展开目标分类、重置正文滚动并让对应列表行可见。
+保持原245/305×396、Tab2/VScr4/背景和各节点布局；无新自绘面板。新实现没有补齐原生任务更新队列、拖动动画或所有任务排序优先级。
+
+复现：`inspect_beidou_client.py <exe> --fn 0x87FD4F`、`--fn 0x882A71`、`--fn 0x882B2E`、
+`--fn 0x8846F2`、`--fn 0x884335`、`--fn 0x88422C`，以及`--fn 0x87EC3F`末尾。
+验证入口：QuestWindowEntryChecks.Run，使用隔离Profile和真实OnGUI任务键/FadeYesNo确认点击，
+检查两入口选中任务/页签/详情一致、空进行中回退、已完成页自动选中、隐藏详情后重开以及折叠/视口外任务定位。
+截图输出docs/hud-review/quest-key-entry.png、quest-notice-entry.png。
+
+本次实际验证：QuestWindowEntryChecks.Run在Unity真实Play/OnGUI下退出0并PASS；
+上述入口、页签、详情恢复与任务可见性断言均通过。两张1280×720截图已目视复核，窗口区域(365,146)..(915,542)
+像素比较一致；背景是隔离fixture的自动登录画面，不代表地图端到端或Android实机验收。
+compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0；Mock全量NPC仍为790通过、27runFail、72javaInterop，未冒称全量脚本通过。
+此前death-and-respawn/回归摘要里“任务面板等待补充”的状态由本节后续分析与修复取代。
+
+## 2026-10-30 任务告知鼠标长按拖动
+
+沿本文已核实QuestAlarm IMG/223px布局与按钮坐标，不改素材。原实现每次Draw强制贴右上，没有保留拖动状态。
+现保存窗口位置，用标题局部(25,0,114,20)捕获按下，持续按住时跟随Pointer位移，释放后结束并消费点击；
+该区域避开原BtQ/BtAuto/最大化/关闭按钮，位置按现有NativeUi.ClampWindowPosition约束视口。
+这段捕获是Unity输入迁移，不是新发现的EXE精确DragStart矩形；原CWnd鼠标捕获语义见ui-drag-and-drop.md。
+QuestWindowEntryChecks.Run新增实际Repaint下按住、移动、释放和按钮区域不误拖的断言。
+
+本轮实际验证：隔离Unity QuestWindowEntryChecks.Run退出0，QuestAlarmDragChecks明确PASS长按标题移动、释放停止、按钮区域不误拖；既有任务键/通知入口回归亦PASS。首次失败为浮点精确比较，改为0.01像素容差；后续截图目录缺失仅修fixture自动建目录。未做Android实机验收。

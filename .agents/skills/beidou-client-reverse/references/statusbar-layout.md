@@ -229,3 +229,54 @@ mode 3 的尺寸逻辑（0x8d4ab1 起）：
 /tmp/mapledash-reverse-venv/bin/python tools/inspect_beidou_client.py \
   ../../Beidou-Server/clien/BeiDou.exe --start 0x8d2fa6 --end 0x8d3700
 ```
+
+## 2026-10-30 HP/MP数值变化的700ms向量位移
+
+BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，ImageBase400000。
+`8D80A4`绘制入口在`8D8247`调用`8D850B` SetNumberValue；不是8D423D/8D536C的按钮/键盘处理。
+HP `8D8B43..8D8B65`按105−floor(hp×105/maxHp)计算遮罩位置，`8D8BA7..8D8BAC`取layer时间+0x2BC(700ms)，
+`8D8C0A`对向量RelMove，另一尺寸向量同样在`8D8C87`加700ms；MP对应`8D9327..8D932C`、`8D9407`。
+StatusBar在HP/MP目标改变时从当前显示比例连续插值700ms；文字仍直接显示权威值。使用既有原IMG，不新增自画槽体。
+
+EXP不能直接套用上述700ms作为“原端已证实”：`8D9A1A..8D9AD2`主条115像素遮罩RelMove的time参数为空，主条直接更新。
+`8D2C61`字符串1959=UI/StatusBar.img/gauge/tempExp；layer存statusbar+BC4，z1，位置(556,581)，
+`8D9C07..8DA1C2`维护增量层位置/尺寸。旧实现的“500ms保持后消失”暂未在这段汇编找到时间依据，不能沿用其注释当新逆向结论。
+用户已明确选择严格还原源端；随后完整追参纠正tempExp语义，见下节。
+复现：inspect_beidou_client.py <exe> --fn 0x8D80A4 / --fn 0x8D850B / --fn 0x8D01B2。
+InteractionRegressionChecks.Run检查HP/MP变化350ms处位于中间值；尚未Android实机验收。
+
+### 本轮验证范围（2026-10-30 第二批反馈）
+
+隔离Unity工程InteractionRegressionChecks.Run退出0：真实Quest需求下怪物/全局任务掉落四阶段、普通0/−1掉落、实际NpcSession及InputBridge的Esc动作关闭与菜单不穿透、按上门原地松开/再按、触碰门防循环、HP/MP 700ms中点、死亡视觉origin/旋转/alpha及清理。
+NativeGameplayFixChecks.Run退出0：包括原IMG墓碑600px起点、880ms落地、land保持和2.2秒确认阶段。
+compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0。全量NPC Mock运行889条790通过，27 runFail及72 Java interop缺口与此前基线一致，不能称全量脚本验证通过。
+死亡层叠尚无EXE逐帧画面oracle；未打包APK、未做Android实机验收。此轮尚未验证EXP；后续用户已选择严格源端，见下节。
+
+## 2026-10-30 EXP补核纠正：tempExp不是“最近增量半秒闪条”
+
+用户明确选择“严格还原原端增量效果”。先前提问把tempExp解释为普通经验增量动画有误，此处以实际参数链纠正。
+二进制身份沿上节完整SHA256。`8D8199..8D81AD`读取CharacterData+B1（保护值校验位+B9）到local−14；
+`8D81D5..8D81E2`读取CharacterData+91（保护校验位+99）到EBX；
+`8D8234..8D8247`把local−14作为SetNumberValue的第7参[ebp+20]，EBX作为第5参[ebp+18]。
+`4E29CF..4E2A1E`序列化顺序为+91的int、+9D的short、+B1的int、+D1的int、+DD的byte；
+`4E2CA2..4E2CB6`反序列化int到+B1/+B9。
+与源端PacketCreator.java addCharStats的exp(int)、fame(short)、gachaExp(int)、map(int)、spawn(byte)逐项一致，
+所以+B1明确为Gacha EXP，不是上次获得经验，也不是时间计时器。
+服务端Stat.GACHAEXP=0x200000；Character.java gainGachaExp/addGachaExp及UseSolomonHandler写入/消耗暂存值。
+
+`8D9A1A..8D9BB4`主EXP遮罩以115像素整数比例直接设置；
+`8DA0A9..8DA0D3`计算delta=min(gachaExp,maxExp−exp)，width=floor(115×delta/maxExp)；
+`8DA0FA..8DA12B`位置为(556−max(115−floor(115×exp/maxExp),0),581)，
+`8DA17F..8DA1C2`尺寸(width,15)，time参数为空。无500ms寿命，无普通经验变化触发闪条。
+IMG `UI/StatusBar.img/gauge/tempExp`是1×16、origin(0,0)原Canvas，按原层尺寸裁展到高15。
+本端EXP frame原生x435，所以浅色层局部x=6+floor(115×exp/maxExp)、y=1；沿既有状态栏位置缩放。
+
+StatusBar移除expGainAt/From/To及ExpGainHold和普通经验变化触发；
+浅色层从GameSession.Character.record.gachaexp读取权威暂存数值，不按时间消失；经验主条仍立即更新。
+未登录/暂存值0时不显示。只接已有存档数据，不扩展所罗门道具兑换和新增服务端协议。
+复现：inspect_beidou_client.py <exe> --fn 0x8D80A4 / --fn 0x8D850B / --fn 0x432C2D；
+--start 0x4E29CF --end 0x4E2A4F及--start 0x4E2CA2 --end 0x4E2CD6；imgdump.py UI/StatusBar.img gauge/tempExp --depth 3。
+InteractionRegressionChecks新增普通增经验无假闪条、暂存条整数几何/封顶/满级/跨级重置及主条立即更新断言。
+旧docs/original-hud-port.md的“半秒”记录已同步标为错误结论，不能再据此实现。
+
+本次实际验证：隔离Unity InteractionRegressionChecks.Run退出0，含新增EXP主条立即更新及暂存条六项边界断言；compile-check Rebuild为0错误0警告，git diff --check通过。未做Android实机或源EXE逐帧画面对照。

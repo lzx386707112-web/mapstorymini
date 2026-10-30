@@ -11,11 +11,12 @@ The field layout matches what export_solomapling_maps.py now emits:
     reactors = [{'id': <reactor data id>, 'x': .., 'y': .., 'reactorTime': .., 'name': ..}]
 
 Usage:
-    python3 tools/patch_solomapling_reactors.py                # patch the default OPQ set
+    python3 tools/patch_solomapling_reactors.py                # patch Maple Island and OPQ
     python3 tools/patch_solomapling_reactors.py --maps 920010000 920010400
 """
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -27,7 +28,8 @@ from wzpy import WzImage, WzKey
 # 920010400 唱片箱 9 个、920011200 出口图 0 个（仍写入空数组，表示「这张图已导出、确实没有反应堆」）。
 # 源端 OPQConstants / OPQOrchestrator 不再引用别的带反应堆地图：200080101 招募大厅与
 # 200080100 售票处都没有 reactor 节点。
-DEFAULT_MAPS = ('920010000', '920010100', '920010400', '920011200')
+# 皮奥所在彩虹村：原图的五个 0002001 箱子，不能只导出组队副本的反应堆。
+DEFAULT_MAPS = ('1000000', '920010000', '920010100', '920010400', '920011200')
 
 
 def parse_reactors(path, key):
@@ -51,7 +53,8 @@ def parse_reactors(path, key):
 
 
 def export_templates(data, ids, target):
-    templates = {}
+    # Incremental map updates must retain templates used by other shards.
+    templates = json.loads(target.read_text()) if target.exists() else {}
     key = WzKey.for_region('GMS')
     for rid in sorted(ids):
         path = data / 'Reactor' / (str(rid).zfill(7) + '.img')
@@ -99,7 +102,7 @@ def main():
     per_shard = {}
     template_ids = {2202004}
     for map_id in (str(int(m)) for m in args.maps):
-        hits = sorted((args.data / 'Map/Map').rglob(map_id + '.img'))
+        hits = sorted((args.data / 'Map/Map').rglob(map_id.zfill(9) + '.img'))
         if not hits:
             raise SystemExit(f'Map image not found: {map_id}')
         reactors = parse_reactors(hits[0], key)
@@ -119,6 +122,20 @@ def main():
         shard.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')) + '\n')
 
     export_templates(args.data, template_ids, ROOT / "Assets/Resources/Bot/ReactorTemplates.json")
+
+    # This task migrates Maple Island's box table; retain other migrated tables.
+    # V1.0.59 repeats questid=1008 for both quest items; later migrations do not
+    # change these eight rows. Keep probabilities in SQL, never in runtime code.
+    if 2001 in template_ids:
+        sql = ROOT.parent.parent / 'Beidou-Server/gms-server/src/main/resources/db/migration/V1.0.58__reactordrops_insert_data.sql'
+        rows = re.findall(r'\(\s*\d+\s*,\s*2001\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(-?\d+)\s*\)', sql.read_text())
+        if len(rows) != 8:
+            raise ValueError('Maple Island reactor drop table changed; review SQL migrations')
+        target = ROOT / 'Assets/Resources/Bot/ReactorDrops.json'
+        drops = json.loads(target.read_text()) if target.exists() else {}
+        drops['2001'] = [dict(item=int(item), chance=int(chance), quest=int(quest))
+                         for item, chance, quest in rows]
+        target.write_text(json.dumps(drops, separators=(',', ':')) + '\n')
 
 
 if __name__ == '__main__':

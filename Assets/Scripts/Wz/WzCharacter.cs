@@ -79,7 +79,7 @@ public static class WzCharacter
         {
             if (item.inventoryType != InventoryDao.Equipped) continue;
             if (item.position == EquipSlot.Weapon) weapon = item.itemId;
-            else if (Array.IndexOf(EquipSlot.Worn, item.position) >= 0 && item.itemId > 0)
+            else if (Array.IndexOf(EquipSlot.Appearance, item.position) >= 0 && item.itemId > 0)
                 ids.Add(item.itemId.ToString("D8"));
         }
         if (weapon > 0) ids.Add(weapon.ToString("D8"));
@@ -90,7 +90,7 @@ public static class WzCharacter
     {
         if (!GameSession.InGame || GameSession.Character == null) return null;
         var inventory = new List<InventoryEntry>();
-        foreach (int slot in EquipSlot.Worn)
+        foreach (int slot in EquipSlot.Appearance)
         {
             int id = Profile.Data.EquipOfSlot(slot);
             if (id > 0) inventory.Add(new InventoryEntry { inventoryType = InventoryDao.Equipped,

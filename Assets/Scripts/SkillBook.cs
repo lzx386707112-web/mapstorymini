@@ -476,6 +476,14 @@ public static class QuickSlots
         PlayerPrefs.Save();
     }
 
+    // Item bindings use the native keymap type 2; keep their payload distinct from skill IDs.
+    public static bool IsItem(int id) => id < 0;
+    public static Texture2D BindingIcon(int id)
+    {
+        if (IsItem(id)) return NativeItemSource.Icon(-id);
+        var skill = SkillBook.Get(id);
+        return skill != null && !string.IsNullOrEmpty(skill.icon) ? Art.Tex(skill.icon) : null;
+    }
     public static void Clear(int slot) => Bind(slot, 0);
 
     public static void Cast(int slot)
@@ -483,6 +491,7 @@ public static class QuickSlots
         var player = GameLoop.I != null ? GameLoop.I.player : null;
         if (player == null) return;
         int id = Id(slot);
+        if (IsItem(id)) { NativeInventoryActions.DoubleClick(-id); return; }
         var sys = player.GetComponent<SkillSystem>();
         if (sys == null) return;
         if (id == 0) { sys.Report("快捷格 " + (slot + 1) + " 是空的（技能窗里拖技能上去）"); return; }
@@ -522,7 +531,7 @@ public static class QuickBarKeys
     {
         if (key == KeyCode.None) return -1;
         for (int i = 0; i < QuickSlots.Count; i++)
-            if (KeyMap.Of(QuickSlots.Action(i)) == key && QuickSlots.Id(i) > 0) return i;
+            if (KeyMap.Of(QuickSlots.Action(i)) == key && QuickSlots.Id(i) != 0) return i;
         return -1;
     }
     public static GameAction? Function(KeyCode key)

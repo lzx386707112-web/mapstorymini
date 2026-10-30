@@ -90,10 +90,10 @@ public static class KeyMap
             var key = NativeKeyLayout.FromScanCode(entry.key);
             if (key != KeyCode.None && NativeKeyActions.Find(entry.type, entry.action, out var action))
                 Claim(action, key);
-            else if (key != KeyCode.None && entry.type == 1 && skillSlot < QuickSlots.Count)
+            else if (key != KeyCode.None && (entry.type == 1 || entry.type == 2) && skillSlot < QuickSlots.Count)
             {
                 Claim(QuickSlots.Action(skillSlot), key);
-                skills[skillSlot++] = entry.action;
+                skills[skillSlot++] = entry.type == 2 ? -entry.action : entry.action;
             }
             else unmapped.Add(entry);
         }
@@ -139,9 +139,9 @@ public static class KeyMap
         if (scan < 0 || occupied.Contains(scan)) return;
         var entry = NativeKeyActions.Of(action);
         int slot = QuickSlots.Index(action);
-        if (entry == null && (slot < 0 || QuickSlots.Id(slot) <= 0)) return;
-        result.Add(new KeymapEntry { key = scan, type = entry != null ? entry.Type : 1,
-            action = entry != null ? entry.id : QuickSlots.Id(slot) });
+        if (entry == null && (slot < 0 || QuickSlots.Id(slot) == 0)) return;
+        result.Add(new KeymapEntry { key = scan, type = entry != null ? entry.Type : QuickSlots.IsItem(QuickSlots.Id(slot)) ? 2 : 1,
+            action = entry != null ? entry.id : System.Math.Abs(QuickSlots.Id(slot)) });
         occupied.Add(scan);
     }
 
@@ -667,7 +667,8 @@ public class InputBridge : MonoBehaviour
         // 物理方向键和屏上十字键都能用。
         if (dialogInput && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible)
         {
-            if (InputHub.Pressed(GameAction.NpcTalk)) NpcDialogUi.ContinueWithTalkKey();
+            if (Input.GetKeyDown(KeyCode.Escape) || InputHub.Pressed(GameAction.Menu)) NpcSession.Active?.Cancel();
+            else if (InputHub.Pressed(GameAction.NpcTalk)) NpcDialogUi.ContinueWithTalkKey();
             else if (InputHub.Pressed(GameAction.Up)) NpcDialogUi.MoveSelection(-1);
             else if (InputHub.Pressed(GameAction.Down)) NpcDialogUi.MoveSelection(1);
         }
@@ -703,7 +704,7 @@ public class InputBridge : MonoBehaviour
         // 已经各自处理 Esc 的层（键位窗、虚拟键编辑器、侧滑菜单、聊天输入、频道下拉、
         // NPC 对话）在这里让出去，避免一次按键关掉两层。
         bool escapeOwnedElsewhere = KeyConfigWindow.Visible || VirtualControlsEditor.Visible ||
-            GameSideMenu.Blocking || BottomBar.ChatFocused || BottomBar.ChannelListOpen || NpcSession.Blocking;
+            GameSideMenu.Blocking || BottomBar.ChatFocused || BottomBar.ChannelListOpen || dialogInput || NpcSession.Blocking;
         if (!escapeOwnedElsewhere && InputHub.Pressed(GameAction.Menu))
             NativeKeyActions.Execute(GameAction.Menu);
         if (KeyConfigWindow.Visible || VirtualControlsEditor.Visible || NpcSession.Blocking)
@@ -716,7 +717,7 @@ public class InputBridge : MonoBehaviour
         // 快捷栏：按下哪个键就放哪一格的技能（原版 QuickSlot 的语义）
         if (playing)
             for (int i = 0; i < QuickSlots.Count; i++)
-                if (QuickSlots.Id(i) > 0 && InputHub.Pressed(QuickSlots.Action(i)))
+                if (QuickSlots.Id(i) != 0 && InputHub.Pressed(QuickSlots.Action(i)))
                     QuickSlots.Cast(i);
 
         // BeiDou 0094F5EA is the sole call to the basic-attack handler 0094E256:
@@ -724,7 +725,7 @@ public class InputBridge : MonoBehaviour
         // A later direction key replaces the keyboard repeat owner as in DirectInput.
         bool skillOwnsAttack = false;
         for (int i = 0; i < QuickSlots.Count; i++)
-            if (QuickSlots.Id(i) > 0 && KeyMap.Of(QuickSlots.Action(i)) == KeyMap.Of(GameAction.Attack))
+            if (QuickSlots.Id(i) != 0 && KeyMap.Of(QuickSlots.Action(i)) == KeyMap.Of(GameAction.Attack))
                 skillOwnsAttack = true;
         if (playing && !skillOwnsAttack &&
             (InputHub.Pressed(GameAction.Attack) || InputHub.Repeated(GameAction.Attack))) game.player.RequestAttack();

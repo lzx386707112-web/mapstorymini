@@ -39,6 +39,13 @@ public static class GameSession
         };
         global::Server.Field.MapReactorService.EventInstance = map=>GameLoop.I?.field?.Map?.id==map ? NativeEventScripts.Instance() : MapleDash.Js.JsNull.Value;
         global::Server.Field.MapReactorService.ScriptError = error=>UnityEngine.Debug.LogError("[ReactorScript] "+error.Message);
+        global::Server.Field.NativeReactorDrops.NeedsQuestItem = (owner,quest,item)=>owner!=CharacterId || QuestLogic.NeedQuestItem(quest,item);
+        global::Server.Field.NativeReactorDrops.Rates = owner=>
+        {
+            var rates=Net.Community(new CommunityRequest { characterId=owner,operation=CommunityOperation.Read });
+            var set=owner==CharacterId ? EquipLoadout.CurrentSetBonus() : null;
+            return (AdminSetItem.ApplyRate(set,"DropRate",rates.dropRate),rates.mesoRate);
+        };
         global::Server.Bot.BotTypeManager.GrantTutorialAdmin = GrantTutorialAdmin;
         global::Server.Bot.BotTypeManager.ApplySkillEffect = ApplyBotSkillEffect;
         MigrateLegacyProfile();
@@ -215,6 +222,7 @@ public static class GameSession
         NativeCommunityWindow.Reset();
         NativeMedalWindow.Visible = false;
         NativeCashWindow.Reset();
+        NativeNpcShopWindow.Reset();
         NativeMapWindows.WorldVisible = false;
         NativeMonsterBook.Visible = false;
         InGame = true;
@@ -228,6 +236,7 @@ public static class GameSession
     {
         if (InGame) SaveToDb();
         NativeCashWindow.Reset();
+        NativeNpcShopWindow.Reset();
         Net?.EndSocialSession(CharacterId);
         InGame = false;
         Character = null;
@@ -238,6 +247,7 @@ public static class GameSession
     {
         if (InGame) SaveToDb();
         NativeCashWindow.Reset();
+        NativeNpcShopWindow.Reset();
         Net?.EndSocialSession(CharacterId);
         InGame = false;
         Character = null;
@@ -323,6 +333,9 @@ public static class GameSession
         if (player != null && previousAppearance != WzCharacter.CurrentAppearanceKey())
             player.RefreshFieldAppearance();
     }
+    public static void ApplyGroundPickup(Server.Bot.BotActor actor,int mesoDelta)
+        => ApplyTradeInventory(actor,mesoDelta);
+
     static void ApplyTradeInventory(Server.Bot.BotActor actor,int mesoDelta)
     {
         if (!InGame || Character==null || actor.id!=CharacterId) return;
@@ -409,7 +422,7 @@ public static class GameSession
 
     // 装备槽位（源端 inventoryitems 的 position 为负值）：-1帽/-5衣/-6裤/-7鞋/-8手套/-9披风/-10盾
     static bool IsEquipSlot(int pos)
-        => pos == -49 || pos == -1 || pos == -5 || pos == -6 || pos == -7 || pos == -8 || pos == -9 || pos == -10;
+        => System.Array.IndexOf(EquipSlot.Worn, pos) >= 0;
 
     // 发型 id（源端 30000~39999 含发色）↔ 客户端 h0/h1… 标签
     static string HairFromId(int id)

@@ -222,3 +222,51 @@ Unity batch `UiIssueChecks.Run` 48项通过/0失败（含5项名牌几何检查�
   现在目标为 0 时在 `TickWarpFade` 里直接换成它的 `returnMap`（10000），`Enter` 里另有
   `deferredWarpMap` 兜住「真的站上 0 号图」的情况（如存档 `LastMapId = 0`）。
   以后若补上 `Effect/Direction3.img/goAdventure` 开场演出，这两处应改为「播完再跳」。
+
+
+## 可见传送门与麦加训练入口（2026-10-30）
+
+身份同本文（BeiDou.exe SHA256 `1b91cf5b…f134b2`）。`0x711F89..0x711FAC`明确比较pt=7、2、4，
+都调用`0x712313`同一可见图层；该函数依次读取 `Map/MapHelper.img/portal/game/pv`。
+pt3/9走`0x712243`另一分支，不能由此推定所有按上门都应绘制pv，也不能把缺失的pg节点造出来。
+复现：`inspect_beidou_client.py <exe> --fn 0x711F89`和`--fn 0x712313`。
+这次确认的是视觉分派，不代表上文触发距离的待核实项已经解决。
+
+地图1010000「冒险家修炼入口」原`Map/Map/Map0/001010000.img/portal/1`：
+pn=in00、pt7、(x,y)=(74,154)、tm999999999、script=entertraining。
+NativeMapView旧实现仅绘制pt2，故有脚本触发入口但无光洞；现将2/4/7统一使用原pv动画，原坐标与帧origin保持不变。
+原 `portal/entertraining.js` 按已接任务1041/1042/1043/1044分别warp1010100/1010200/1010300/1010400，portal4；
+无对应任务只提示，不擅自开放训练。原JS及FieldDirector触发规则均未改。
+验证入口 `NativeGameplayFixChecks.Run`加载实际1010000并断言Portal_1有原sprite、pt7和原脚本名。
+
+## 2026-10-30 传送后原地再按上的重入
+
+触发类型仍按本文已核实pt分类。问题来自FieldDirector.portalArmed只在FindPortal=null时复位，目的地角色站在门上则永远不复位。
+现按上门在原地松开上方向时也重新允许，后续新按上即可进入；保留400ms到图锁和渐变期间不接新门。
+触碰型pt1/6仍必须离开范围再复位，到图初始portalArmed=false，不能因没有按上就重启触碰门形成循环。
+InteractionRegressionChecks.Run验证到图仍按上不反弹、原地释放可重置、新按上启动渐变，以及触碰型原地释放不重置。
+这里是本项目输入状态锁修正，没有将400ms项目锁推断为EXE新结论。
+
+### 本轮验证范围（2026-10-30 第二批反馈）
+
+隔离Unity工程InteractionRegressionChecks.Run退出0：真实Quest需求下怪物/全局任务掉落四阶段、普通0/−1掉落、实际NpcSession及InputBridge的Esc动作关闭与菜单不穿透、按上门原地松开/再按、触碰门防循环、HP/MP 700ms中点、死亡视觉origin/旋转/alpha及清理。
+NativeGameplayFixChecks.Run退出0：包括原IMG墓碑600px起点、880ms落地、land保持和2.2秒确认阶段。
+compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0。全量NPC Mock运行889条790通过，27 runFail及72 Java interop缺口与此前基线一致，不能称全量脚本验证通过。
+死亡层叠尚无EXE逐帧画面oracle；未打包APK、未做Android实机验收。EXP主条方案仍待用户选择，不以HP/MP通过代替EXP验证。
+
+## 明珠港船下隐藏传送门（2026-10-30，本轮）
+
+二进制身份沿用本页 SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`。
+`Map/Map/Map1/104000000.img/portal/30` 为 h_west01，pt10，(-572,191)，目标同图 h_east01；
+portal29 为配对 h_east01，(2894,423)。节点已被 NativeMapView.LoadMap 解析；旧实现缺的是隐藏门特效，不是没有 portal 数据。
+
+已核实调用链：
+- `0x711F89` 分派中 pt10/11 进入 `0x712157`，加入 manager+0xC 隐藏门列表；image 为空时 `0x712210..0x71223C` 写 default。
+- `0x950573..0x9505B8` 从玩家位置调用 `0x712C57`，传入半宽100；`0x712CAA..0x712CDC` 构造 x±传入半宽、y±50 的 RECT，并调用 PtInRect。逆序选首个命中门。
+- `0x712D35` 在新旧门指针不同时切换；旧门读 portalExit（池4390，`0x712E7F`），新门读 portalStart（池4388，`0x713147`）；pt10用 `0x71259D`（字段工具可复现 portal/game/ph），pt11起始用 `0x712827`（psh）。
+- `0x71332C` 在当前层动画结束后读 portalContinue（池4389，`0x71340D`）；该段调用 `0x71259D`，不能据节点名推导成始终绘制普通 pv。
+- `Map/MapHelper.img/portal/game/ph/default`：Start4帧、Continue7帧、Exit3帧；Canvas自带origin（例如Start0为92×119 origin45,117，Continue0为104×118 origin44,115）。psh/default同尺寸；帧无delay，本项目沿用无delay默认100ms，不把此默认称为已逆向的原端时长。
+
+复现：`tools/imgdump.py Map/Map/Map1/104000000.img portal --depth 3`；`--fn 0x712C57`、`--fn 0x712D35`、`--fn 0x71259D --fields 0x71259D --pool <字符串池JSON>`、`--fn 0x71332C`。
+迁移：NativeMapView为pt10保存隐藏门三段原动画，未靠近时隐藏，靠近后Start→Continue、离开Exit；保留节点坐标与原origin。
+pt11自定义image与ph共享Continue的原端细节尚需继续逐图核对，本轮未扩展pt11渲染，不将默认ph/psh相同推广为任意自定义图形相同。

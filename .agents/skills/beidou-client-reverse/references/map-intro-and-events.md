@@ -78,3 +78,10 @@ NativeGameplayNodeChecks 在隔离Unity exit0：男女goAdventure原图尺寸800
 中途位移、输入锁和图片清理；男女goLith初始并行图层和声音索引；540飞行oracle。
 NPC全量889脚本：769成功/47既有runtime fail/73既有JavaInterop，不是全通过；
 资源包2779条/npc889/quest470/parseFail0/mangled0；未构建或验收APK。
+
+## 2026-10-29 宿主与审计补充
+
+EventManager原属channel，不应因没有渲染中的field就返回null。NativeEventScripts改为独立 `[NativeEventScripts]` 宿主（Play时DontDestroyOnLoad），换角色清理；事件引擎复用NativeScriptService的GameConfig/Extend/Gachapon显式Java注册，getChannelServer通过委托注入NpcApi真实channel桥。
+getTransportationTime已按EventManager.java1262→World.java441→NumberTool.java36接实际world_prop.travel_rate（float乘积、向零截断/Java夹取）；未知world显式报错。未接交通船只状态、独立地图及可视时钟仍保持原缺口。
+
+上节889/47/73为旧Mock统计，不能视为120个已确认游戏故障。最新正式宿主审计为889/829通过/60失败，原120项106通过14失败；固定地图1000000、无事件上下文，仅首条交互路径。selftest现40通过0失败（含交通倍率与原warrior独立fixture），不等于Unity独立副本或Android已验收。详见npc-dialog与docs/script-api-audit.md。

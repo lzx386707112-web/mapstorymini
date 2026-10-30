@@ -31,8 +31,9 @@ public static class EquipSlot
     public const int Weapon = -11;
     public const int Medal = -49;
 
-    // 客户端真正渲染/叠加的槽位（饰品的美术不在纸娃娃配方里，先不参与）
-    public static readonly int[] Worn = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon, Medal };
+    // Paper-doll layers and stat-bearing equipped slots have different consumers.
+    public static readonly int[] Appearance = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon };
+    public static readonly int[] Worn = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon, Medal, FaceAccessory, EyeAccessory, Earring, -12, -13, -15, -16, -17, -50, -20, -55, -56, -54, -53, -51 };
 
     public static string NameOf(int slot)
     {
@@ -77,7 +78,7 @@ public static class EquipCatalog
             case 109: return "Shield";
             case 110: return "Cape";
             case 111: return "Ring";
-            case 101: case 102: case 103: return "Accessory";
+            case 101: case 102: case 103: case 167: return "Accessory";
             default:
                 int t = itemId / 10000;
                 if (t >= 112 && t <= 119) return "Accessory";
@@ -159,6 +160,9 @@ public static class EquipLoadout
     {
         int slot = EquipSlot.SlotOf(itemId);
         if (slot == 0) return "这不是可装备的物品";
+        if (slot == -12)
+            foreach (int ringSlot in new[] { -12, -13, -15, -16 })
+                if (Profile.EquipOfSlot(ringSlot) == 0) { slot = ringSlot; break; }
         if (slot == EquipSlot.Weapon)
         {
             if (!WeaponDefs.TryGet(itemId.ToString(), out var weapon)) return "这件武器的穿戴尚未接入";
@@ -167,8 +171,6 @@ public static class EquipLoadout
             return MoveEquipment(itemId, slot, false, inventoryPosition);
         }
         if (slot == EquipSlot.Medal) { NativeMedalWindow.Wear(itemId, false); return null; }
-        if (slot != EquipSlot.Hat && slot != EquipSlot.Top && slot != EquipSlot.Bottom && slot != EquipSlot.Shoes &&
-            slot != EquipSlot.Glove && slot != EquipSlot.Cape && slot != EquipSlot.Shield) return "这个装备栏位尚未接入";
         string why = EquipCatalog.WhyNot(itemId, attrs, Profile.JobId);
         if (why != null) return why;
         if (Profile.ItemCount(itemId) <= 0) return "背包里没有这件装备";
@@ -183,6 +185,7 @@ public static class EquipLoadout
         if (!response.ok) return response.error;
         GameSession.Character.inventory = response.inventory;
         GameSession.ApplyInventoryToProfile();
+        if (!unequip && itemId == 1189999 && SkillProgress.LevelOf(1016) == 0) SkillProgress.SetLearned(1016, 1);
         Profile.Save();
         return null;
     }

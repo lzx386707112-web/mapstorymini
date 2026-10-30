@@ -26,6 +26,14 @@ public sealed class NativeReactorScriptService : IDisposable
         try
         {
             var rm=new JsObject();
+            rm.Set("dropItems",JsFunction.FromNative("dropItems",c=>
+            {
+                if (c.ArgCount!=5) throw new JsRuntimeException("Reactor dropItems overload is not migrated: "+c.ArgCount);
+                NativeReactorDrops.Drop(reactor,owner,JsConvert.ToBoolean(c.Arg(0)),
+                    JsConvert.ToInt32(c.Arg(1)),JsConvert.ToInt32(c.Arg(2)),
+                    JsConvert.ToInt32(c.Arg(3)),JsConvert.ToInt32(c.Arg(4)));
+                return JsUndefined.Value;
+            }));
             rm.Set("mapMessage",JsFunction.FromNative("mapMessage",c=>
             { Message?.Invoke(reactor.mapId,JsConvert.ToInt32(c.Arg(0)),JsConvert.ToString(c.Arg(1)));return JsUndefined.Value; }));
             rm.Set("spawnNpc",JsFunction.FromNative("spawnNpc",c=>

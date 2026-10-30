@@ -78,8 +78,7 @@ public static class KeyConfigWindow
     {
         if (QuickSlots.Index(action) >= 0)
         {
-            var skill = SkillBook.Get(QuickSlots.Id(QuickSlots.Index(action)));
-            return skill != null && !string.IsNullOrEmpty(skill.icon) ? Art.Tex(skill.icon) : null;
+            return QuickSlots.BindingIcon(QuickSlots.Id(QuickSlots.Index(action)));
         }
         var entry = NativeKeyActions.Of(action);
         return entry != null ? T("icon_" + entry.id) : null;
@@ -93,8 +92,7 @@ public static class KeyConfigWindow
         int slot = QuickSlots.Index(action);
         if (slot >= 0 && skillDraft.TryGetValue(slot, out var id))
         {
-            var skill = SkillBook.Get(id);
-            return skill != null && !string.IsNullOrEmpty(skill.icon) ? Art.Tex(skill.icon) : null;
+            return QuickSlots.BindingIcon(id);
         }
         return Icon(action);
     }
@@ -230,7 +228,9 @@ public static class KeyConfigWindow
         int slot = QuickSlots.Index(action);
         if (slot >= 0)
         {
-            var skill = SkillBook.Get(skillDraft.TryGetValue(slot, out var id) ? id : QuickSlots.Id(slot));
+            int binding = skillDraft.TryGetValue(slot, out var id) ? id : QuickSlots.Id(slot);
+            if (QuickSlots.IsItem(binding)) return WzNames.Item(-binding);
+            var skill = SkillBook.Get(binding);
             if (skill != null) return skill.name;
         }
         var entry = NativeKeyActions.Of(action);
@@ -379,8 +379,7 @@ public static class KeyConfigWindow
                 int index = QuickSlots.Index(kv.Key);
                 if (skillDraft.TryGetValue(index, out var skillId))
                 {
-                    var skill = SkillBook.Get(skillId);
-                    icon = skill != null ? Art.Tex(skill.icon) : null;
+                    icon = QuickSlots.BindingIcon(skillId);
                 }
                 else icon = Icon(kv.Key);
                 if (icon != null) GUI.DrawTexture(r, icon, ScaleMode.ScaleToFit);
