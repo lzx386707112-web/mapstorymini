@@ -383,6 +383,9 @@ public sealed class NativeEventScriptService
         public int PlayerCount=>players.Count;
         // 原生宿主（SeedTowerCompat 等）读实例属性用：源端 eim.getProperty 的直读版。
         public string Property(string key) => properties.TryGetValue(key,out var value) ? value : null;
+        // playerGrid 的直读版（eim.gridCheck 的 C# 侧）。组队任务陪跑的假人用它读出
+        // 「自己抽到第几题」，再去取对应张数的优惠券——不需要在移植端另抄一份题目表。
+        public int Grid(int characterId) => playerGrid.TryGetValue(characterId,out int status) ? status : -1;
         // 原生宿主写实例属性用（LucidBossCompat 暴怒失败复活 P2 后把 phase 改回 2）。
         public void SetIntProperty(string key,int value)
             => properties[key] = value.ToString(System.Globalization.CultureInfo.InvariantCulture);

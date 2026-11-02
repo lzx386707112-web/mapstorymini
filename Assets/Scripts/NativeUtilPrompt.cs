@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-// CUtilDlg / compact CUtilDlgEx: verified native Notice3/4 slices and edit rectangles.
+// CUtilDlg / compact CUtilDlgEx: native Notice3/4 slices and compact controls.
 public static class NativeUtilPrompt
 {
     const string OwnerKey = "NativeUtilPrompt";
@@ -72,13 +72,17 @@ public static class NativeUtilPrompt
             bool submit = false;
             if (edit)
             {
-                var editRect=numeric ? new Rect(x+19,y+textHeight+24,229,18) : new Rect(x+19,y+height-73,226,15);
-                UiKit.Fill(editRect, Color.black);
-                UiKit.Fill(new Rect(editRect.x+1,editRect.y+1,editRect.width-2,editRect.height-2), Color.white);
+                // CUtilDlgEx compact OnCreate (9A8716), not NPC-style 9A83F6.
+                var editRect = new Rect(x + 19, y + height - 73, 226, 15);
+                if (!numeric)
+                {
+                    UiKit.Fill(editRect, Color.black);
+                    UiKit.Fill(new Rect(editRect.x+1,editRect.y+1,editRect.width-2,editRect.height-2), Color.white);
+                }
                 style.wordWrap = false;
                 style.normal.textColor = Color.black;
                 style.fontStyle = FontStyle.Normal;
-                var contentRect=numeric ? new Rect(x+22,y+textHeight+27,224,14) : new Rect(editRect.x+2,editRect.y+2,editRect.width-4,editRect.height-4);
+                var contentRect = numeric ? editRect : new Rect(editRect.x+2,editRect.y+2,editRect.width-4,editRect.height-4);
                 string value = GUI.TextField(contentRect, input, numeric ? 19 : textMax, style);
                 if(numeric) { input = ""; foreach (char c in value) if (c >= '0' && c <= '9') input += c; }
                 else input=value;
@@ -91,10 +95,10 @@ public static class NativeUtilPrompt
                         numeric ? TouchScreenKeyboardType.NumberPad : TouchScreenKeyboardType.Default,
                         numeric ? 19 : textMax);
                 }
-                submit = NativeUi.Button(numeric ? new Rect(x + 212,y + height - 26,46,18) : new Rect(x+158,y+height-30,47,19),
-                    numeric ? "UI/UIWindow.img/UtilDlgEx/BtOK" : "UI/Basic.img/BtOK2", pointer);
-                if (NativeUi.Button(numeric ? new Rect(x + 9,y + height - 26,46,18) : new Rect(x+208,y+height-30,47,19),
-                    numeric ? "UI/UIWindow.img/UtilDlgEx/BtClose" : "UI/Basic.img/BtCancel2", pointer)) { Clear(); return; }
+                submit = NativeUi.Button(new Rect(x + 158,y + height - 30,47,19),
+                    "UI/Basic.img/BtOK2", pointer);
+                if (NativeUi.Button(new Rect(x + 208,y + height - 30,47,19),
+                    "UI/Basic.img/BtCancel2", pointer)) { Clear(); return; }
             }
             else
             {

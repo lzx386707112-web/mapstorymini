@@ -184,3 +184,128 @@ watk/matk/wdef/mdef 的难度调整未接入本地战斗链路（PQ 难度差异
   9300001实际模板ID、两种物品地面图标加载、券3980/20000、三种通行证怪各100/100）。
   tools/server-check --pq-feedback 34/0，覆盖旧存档补键、保留配置、跨层追怪、冷却及远程攻击。
   掉落测试未完整跑 Android 击杀→地面→拾取；用户所述“完全不出券”在当前Unity数据未复现。
+
+
+## 2026-11-02 副本只有真人、假人仍在入口：实例作用域修复
+
+这是移植端编号语义错误，不是源脚本人数条件：NativeEventMap 为每份EIM地图分配负数Scope，
+而脚本getId/getMapId继续返回原模板ID；FieldDirector.StateId/BotCombatField/BotField运行索引用Scope。
+旧PqDirector.ByStageMap(负Scope)恒找不到副本，PqRun.Tick也无法由Scope识别阶段；
+WarpBot又拒绝mapId<=0。因此已成功进本的真人无法带入假人，甚至后续超时被当招募失败。
+
+修复边界：
+- MapRuntime.templateMapId由NativeEventMap构建时填Id；PqDirector.TemplateMapId只用于阶段身份判断。
+- AdoptStageEntry/OnLocalMap/Run.Tick按模板识别阶段；PqRun.CurrentMap按队长当前Scope返回运行地图。
+- WarpBot接受MapService已注册的负Scope，未知负数仍拒绝；怪物/反应堆/站位/导航均用CurrentMap Scope。
+- 下一阶段比较先还原模板身份，DriveBot允许负Scope重试跟随；名称/队伍HP按field.StateId查假人。
+- 源端参照：EventInstanceManager.java registerParty(Party,MapleMap):390，遍历合格在线成员，
+  从招募地图取真实Character再registerPlayer；本次只修假人运行态地图跟随，不声称已补齐
+  NativeEventScriptService.StartParty的全部假人EIM成员宿主/阶段NPC行为。未改原JS或新增EXE结论。
+
+验证：Unity PqInstanceChecks 97/0：四种陪跑副本都经真实NativeEventMap负Scope，接管五名队友、
+验证OnMap注册表五人、下一阶段Scope跟随；另保留六人资格和掉落检查。server-check --pq-feedback 34/0，
+unity-compile-check 0 warning/0 error。未运行Android实机画面验收。
+
+
+## 2026-11-02 假人跑图 vs 关卡脚本：流程差异盘点（KPQ 为主）
+
+结论口径：`PqCatalog` 是「阶段动作表」（打怪/砸堆/站位/直发道具），`PqRun` 只在动作跑完后
+以**队长身份静默点一次** NPC。它复现的是「结果」，不是脚本里「谁先找 NPC、要领什么、
+道具怎么流动」的过程。以下逐条来自 `npc/9020001.js` + `PqRun.cs/PqCatalog.cs` 现状。
+
+KPQ 第一关（103000800，入口门 sp x≈-1077 在左，Cloto 9020001 x=592 在右，next00 x=716）：
+1. 源端队员先到 Cloto 领题：`gridCheck==-1` → 随机题号 `gridInsert` → 需
+   `stage1Answers=[10,35,20,25,25,30,8]` 张 4001007（券由 9300001 掉，20%，questid=0）。
+   现状：无此环节，假人进图直接 `ClearMobs` 打怪（用户观察到的现象即此）。
+2. 源端回 Cloto：`itemQuantity(4001007)==answer` → 扣券 + `gainItem(4001008,1)` + `gridInsert(0)`，
+   台词「把通行证交给队长」；队长在旁等，队员把证丢/交易给队长。
+   现状：无换证、无等待、无丢证；`PqDirector.Give` 直接把道具写进真人背包（连地面过程都省）。
+3. 源端队长分支：`numpasses = eim.getPlayerCount()-1` + `cm.hasItem(4001008,numpasses)` 才 clearStage。
+   现状：`NpcApi.getPlayerCount` 恒 1（`NpcApi.cs:472`），`eim.getPlayerCount`=实例登记人数（只有真人）
+   ⇒ numpasses=0，队长空手点一次即过，第一关本体校验被单机化绕过。
+4. 门：源端 `portal/kpq0.js` 查 `1stageclear` 由玩家自己踩 next00；现状 `AdvanceStage`
+   比较模板 id 后直接 `WarpPlayer`，踩门这步被跳过。
+
+KPQ 第 2/3/4 关（103000801/2/3）：源端第一次对话只发规则并把随机组合写进 `stgNProperty`，
+**第二次对话**才 `rectangleStages` 核对（`getPlayers().size()<3` 直接放行）。现状每关只点一次
+（`talkStage` 守卫）⇒ 只走引言分支，脚本从未 `clearStage`：没有 `Nstageclear`、没有阶段经验
+（200/400/800，`linkToNextStage→giveEventPlayersStageReward`）、没有 clear 特效，全靠 `AdvanceStage`
+硬传。另外假人站位是「按队伍顺序占前 N 个矩形」，与脚本抽中的组合无关。
+
+KPQ 第 5 关（103000804）：现状 `KillBoss` + `Give(4001008,10)` → 点一次即 clearStage+clearPQ；
+源端 10 张券来自 9300000/9300002/9300003（各 100%）。且过关后脚本要求**再点一次** Cloto
+（`5stageclear` 且 stage>=5 的分支不 dispose）→ status1 → `giveEventReward` + `warp(103000805,st00)`。
+现状无第二次对话 ⇒ 永远进不了奖励关。
+
+奖励关 103000805：源端由 9020002 收尾（确定离开 → 前三名额外奖励 + `recordEntryPQ` + warp 103000000）。
+现状 `PqCatalog` 没有这张图的阶段，一旦玩家真的到了这里，`PqRun` 按 offMap 8s 直接 `End(true)`
+传到 103000890，既不领奖也不记次数。
+
+其它副本同型：LudiPQ 各阶段脚本是「点一次设置 `statusStgN=0`、点一次核对」，但
+`getIntProperty` 缺省 0（源端同）导致 `state==-1` 的引言分支实际不可达 ⇒ 一次对话+持有足量
+4001022 就能真 clearStage（现在靠 `Give` 直发，能过但「打怪攒券」是演的）。PiratePQ 第二关
+3 轮对话已显式建模（`PqStep.rounds/openOnly`），但三色勋章同样是 `Give` 直发。
+
+抽象层未落地字段：`PqStep.need`、`PqStep.rounds`、`PqRun.TalkRetryMs` 目前都没有驱动逻辑
+（打怪/砸堆一律「清空即完成」，不看数量）。
+
+待补齐的能力（决定能走多真）：
+- 假人执行 NPC 脚本：`NpcSession.scriptCharacterId` 写死 `GameSession.CharacterId`，
+  `cm.isEventLeader/eim.gridCheck` 全按本地角色算 ⇒ 队员分支目前物理上跑不了。
+- 假人进实例：`Instance.Register` 只登记真人，人数类判定（numpasses、minPlayers）全部退化为 1 人。
+- 假人背包/拾取：`DropCommands.botLoot*` 只是「让地面物品消失」，不入库；券无法真正攒到假人身上。
+
+
+## 2026-11-02 按脚本流程重接废都：队长按 NPC 自己算的人数收证
+
+口径来源（用户）：**队长按它自己和 NPC 对话得到的数量来收**，不引入「假人交几张就要求几张」这类
+自定义耦合。落到实现上就是恢复源端那句 `numpasses = eim.getPlayerCount()-1`。
+
+### 1. 人数口径：假人真的登记进事件实例
+- 新增 `NativeEventScripts.RegisterBotPlayer/UnregisterBotPlayer`：用 `BotNpcApi.Player(null,bot)`
+  造常驻 player 宿主，`Instance.Register(host, entry:false)`（不触发 `playerEntry` 的 changeMap）。
+  `BotNpcApi.FallbackCm` 补了无会话版 cm，因为 `eim.unregisterPlayer` 会拿
+  `getAbstractPlayerInteraction` 清 `setEventExclusiveItems` 的独占道具。
+- `PqRun.EnterStage` → `RegisterBots()`；`End`/核对兜底 → `ReleaseBots()`。
+- 效果：6 人队进本后 `getPlayerCount()==6`，队长点 Cloto 时 `numpasses==5`，
+  `cm.hasItem(4001008,5)` 才 clearStage —— 空手过关的口子没了。
+
+### 2. 第一关：队员分支真跑（`PqAction.BotAsk/BotCollect/BotExchange/BotWait/HandOver`）
+- `BotAsk`：假人走到 Cloto（9020001）→ `PqBotNpcDriver.Talk` 以**队员身份**跑
+  `gridCheck==-1 → 随机题号`，把脚本那一页题目原文念出来，再读 `Instance.Grid(botId)`
+  → `PqCatalog.Stage1Answer`（照抄 `9020001.js:38` 的 `[10,35,20,25,25,30,8]`）算出要收几张。
+- `BotCollect`：打 9300001，**自己捡地上的 4001007**（`Field/BotGroundPickup.cs`：
+  `MapItemService.ItemsInRange` + `MapItemPickup.PickupItem` + `BotActorLooter`，与真人同一条结算链）。
+  按「还差几张」封顶拾取 —— 脚本判定是 `itemQuantity == answer` 严格相等，多捡一张反而交不掉。
+- `BotExchange`：券数正好相等才回 Cloto 换证；`gainItem(4001008,1)` 成功后说
+  「换到通行证了，我在 Cloto 旁边等队长」。多出来的券在这里丢掉。
+- `BotWait` → `HandOver`：站 NPC 旁等，再把证从**假人背包**扣掉落到队长背包
+  （`PqDirector.BotItem` 钩子 → `BotNpcApi.Gain`），一人一张。`questScriptFailed`
+  或数量不足时按差额补给队长并在提示里写明（保底，不让整趟卡死）。
+- 队长最后那一次静默点 NPC 就是脚本的判定分支，数量由脚本自己算。
+
+### 3. 第 2/3/4 关：两次对话 + 按组合站位（`PqAction.StageCheck`）
+- 第一步 `Talk` 让队长听规则（脚本写 `stgNProperty`），`WorkTalk` 现在**等回调完成**再进下一步；
+  `talkSent/talkDone` 改为按步骤重置（以前一关只发一次对话，第二次对话永远不发）。
+- `StageCheck`：读 `stgNProperty` 行号 → `PqCatalog.Combo`（照抄 `9020001.js:49-60` 的
+  4/10/20 组）→ 组合为 1 的矩形各放一个假人，其余退到出生门（三个阶段出生点都在判定矩形之外，
+  已按 WZ 坐标核对）→ 队长点第二次核对；`Nstageclear` 出现即通过。
+- 两次核对仍不过 → `ReleaseBots()`（实例人数回落，脚本 `getPlayers().size()<3` 直接放行）+
+  再点一次，最多 5 轮。这是源端自带的单机宽容条款，不是另造条件；像素级站位（尤其 4px 宽的绳子矩形）
+  误差不会被放大成死锁。
+
+### 4. 第 5 关 / 奖励关
+- 先 `KillBoss`，再按 9300000/2/3 的 100% 通行证掉落 `BotCollect(itemId=4001008, need=10)`
+  捡够 10 张 → `HandOver(itemCount=10)` → 队长点 Cloto 交 10 张 → `clearStage + clearPQ`，
+  同一段对话的 status1 分支 `giveEventReward + warp(103000805,st00)`。
+- `PqCatalog` 补了 103000805 阶段（9020002，确定离开 → 发奖 + 记次数 + 传回 103000000）。
+  以前这张图没有阶段，玩家真到了这里会被 offMap 8s 直接 End。
+
+### 5. 回归
+- `tools/server-check --pq-feedback` 52/0，新增 12 条：答案表/组合表与脚本一致、第一关五步齐全、
+  第一关不再直发证、实例登记后 PlayerCount 递增/重复登记不重复计数、`gridInsert→Grid` 读回题号、
+  题号 3 → 20 张券、交证后假人扣减+队长入账。
+- `tools/unity-compile-check` 0 warning / 0 error。
+- 未跑：Unity `PqInstanceChecks`（需 batchmode）与 Android 实机。实机上要盯三件事：
+  ① 假人是否真的去捡券（掉落归属=队长，靠同队归属窗口放行）；② 第 2/3/4 关组合站位是否落进矩形；
+  ③ 券的掉落节奏够不够 5 分钟内收满（20% 掉落，22 只鳄鱼/波）。

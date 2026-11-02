@@ -36,6 +36,7 @@ public static class PqChecks
     {
         PartyIndexChecks(Check);
         CombatChecks(Check);
+        StageOneChecks(Check);
         string dir = EventScriptDir();
         if (dir == null)
         {
@@ -122,6 +123,154 @@ public static class PqChecks
             "组队任务：按队伍编号能取到全部成员（实际 " + (byId != null ? byId.members.Count : 0) + " 人）");
         // 契约守卫：两套编号不可混用。哪天 For() 被改成兼容队伍编号，这条会亮，提醒回来重看 Begin。
         Check(parties.For(party.id) == null, "组队任务：For(队伍编号) 不命中（编号语义不可混用）");
+    }
+
+    // 废都第一关的「人数 → 要几张证」口径回归。
+    //
+    // 源端 npc/9020001.js:141-150 是队长分支：
+    //   numpasses = eim.getPlayerCount() - 1;  if (cm.hasItem(4001008, numpasses)) clearStage(...)
+    // 移植端以前只把本地角色登记进实例，所以这个数字恒为 0 —— 队长空手就能过关，
+    // 「要收几张券」整段队员分支从来没跑过。这里锁住修复后的三条：
+    //   1. 假人能登记进事件实例，PlayerCount 跟着涨（队长的 numpasses 才是真人数）；
+    //   2. eim.gridCheck 的题目号能被 C# 侧读回，按题目表换算成要收几张券；
+    //   3. 第一关的动作表必须是「领题 → 收券 → 换证 → 等队长 → 交证」，不能退回直发。
+    static void StageOneChecks(Action<bool, string> check)
+    {
+        var kpq = Server.Bot.Types.Pq.PqCatalog.Get("KPQ");
+        check(kpq != null && kpq.stages.Count >= 1, "KPQ 数据表可读");
+        if (kpq == null) return;
+
+        // —— 题库（源端 npc/9020001.js:38）——
+        int[] expect = { 10, 35, 20, 25, 25, 30, 8 };
+        bool answers = true;
+        for (int i = 0; i < expect.Length; i++)
+            if (Server.Bot.Types.Pq.PqCatalog.Stage1Answer(i + 1) != expect[i]) answers = false;
+        check(answers, "KPQ 第一关 7 道题的答案表与脚本一致");
+        check(Server.Bot.Types.Pq.PqCatalog.Stage1Answer(0) == 0 &&
+              Server.Bot.Types.Pq.PqCatalog.Stage1Answer(8) == 0,
+              "KPQ 越界题目号返回 0（没领到题）");
+
+        // —— 2/3/4 关的随机组合表（源端 npc/9020001.js:49-60）——
+        int[] lens = { 4, 5, 6 };
+        string[] props = { "stg2Property", "stg3Property", "stg4Property" };
+        for (int i = 0; i < props.Length; i++)
+        {
+            var combo = Server.Bot.Types.Pq.PqCatalog.Combo(props[i], 0);
+            int ones = 0;
+            if (combo != null) foreach (int v in combo) ones += v;
+            check(combo != null && combo.Length == lens[i] && ones == 3,
+                "KPQ " + props[i] + " 组合长度 " + lens[i] + " 且恰好 3 个位置要站人");
+        }
+        check(Server.Bot.Types.Pq.PqCatalog.Combo("stg2Property", 99) == null,
+            "KPQ 组合行号越界返回 null（不乱站位）");
+
+        // —— 第一关的动作表：必须是真流程 ——
+        var stage1 = kpq.stages[0];
+        bool hasAsk = false, hasCollect = false, hasExchange = false, hasWait = false, hasHandOver = false, direct = false;
+        foreach (var step in stage1.steps)
+        {
+            if (step.action == Server.Bot.Types.Pq.PqAction.BotAsk) hasAsk = true;
+            if (step.action == Server.Bot.Types.Pq.PqAction.BotCollect) hasCollect = true;
+            if (step.action == Server.Bot.Types.Pq.PqAction.BotExchange) hasExchange = true;
+            if (step.action == Server.Bot.Types.Pq.PqAction.BotWait) hasWait = true;
+            if (step.action == Server.Bot.Types.Pq.PqAction.HandOver) hasHandOver = true;
+            if (step.action == Server.Bot.Types.Pq.PqAction.GrantItem &&
+                step.itemId == Server.Bot.Types.Pq.PqCatalog.PassTicket) direct = true;
+        }
+        check(hasAsk && hasCollect && hasExchange && hasWait && hasHandOver,
+            "KPQ 第一关：领题→收券→换证→等队长→交证 五步齐全");
+        check(!direct && stage1.requireItem == 0,
+            "KPQ 第一关不再直发通行证（由队员交上来）");
+
+        // —— 队长要几张 = 实例人数-1：假人登记 / 题目号读回 ——
+        NativeEventScriptService service = null;
+        try
+        {
+            string dir = EventScriptDir();
+            if (dir == null) { Console.WriteLine("  SKIP 实例计数检查：找不到源端脚本目录"); return; }
+            service = new NativeEventScriptService(key => ReadEvent(dir, key), () => 0,
+                engine => engine.Interp.ResolveHostType = ResolveHostType);
+            var manager = service.GetManager("KerningPQ");
+            var instance = manager.NewInstance("PQCountCheck");
+            check(instance.PlayerCount == 0, "新实例初始人数 0");
+            var leader = FakePlayer(90001, 103000800);
+            instance.Register(leader, false);
+            check(instance.PlayerCount == 1, "登记队长后人数 1（numpasses=0）");
+            int bot1 = 90002;
+            instance.Register(FakePlayer(bot1, 103000800), false);
+            check(instance.PlayerCount == 2, "登记一名假人队友后人数 2（队长要 1 张证）");
+            instance.Register(FakePlayer(90002, 103000800), false);
+            check(instance.PlayerCount == 2, "同一名假人重复登记不重复计数");
+            // eim.gridInsert(玩家, 3) → gridCheck 读回 3，C# 侧同一份数据
+            var insert = instance.Host.Get("gridInsert") as JsFunction;
+            insert.Native(new JsCall { This = instance.Host,
+                Args = new JsValue[] { FakePlayer(bot1, 103000800), new JsNumber(3) } });
+            check(instance.Grid(bot1) == 3 && instance.Grid(90003) == -1,
+                "gridInsert 写入题目号，Grid 读回 3 / 未领题 -1");
+            check(Server.Bot.Types.Pq.PqCatalog.Stage1Answer(instance.Grid(bot1)) == 20,
+                "题目号 3 → 要收 20 张优惠券（源端 stage1Answers）");
+            instance.Unregister(FakePlayer(bot1, 103000800));
+            check(instance.PlayerCount == 1, "假人离开实例后人数回到 1");
+        }
+        catch (Exception error)
+        {
+            check(false, "实例计数检查抛出：" + error.Message);
+        }
+        finally
+        {
+            try { service?.Clear(); } catch (Exception) { }
+        }
+
+        // —— 交证：从假人背包扣、落到队长背包 ——
+        var previousGrant = Server.Bot.Types.Pq.PqDirector.GrantItem;
+        var previousItem = Server.Bot.Types.Pq.PqDirector.BotItem;
+        var bot = new Server.Bot.BotCharacter { id = 91001, name = "PqHandOver", level = 30, mapId = 103000800 };
+        bot.inventory.Add(new InventoryEntry { itemId = Server.Bot.Types.Pq.PqCatalog.PassTicket, inventoryType = 4, quantity = 1 });
+        Server.Bot.BotRegistry.Add(bot);
+        int granted = 0;
+        try
+        {
+            Server.Bot.Types.Pq.PqDirector.GrantItem = (_, count) => granted += count;
+            Server.Bot.Types.Pq.PqDirector.BotItem = (target, itemId, count) =>
+            {
+                for (int i = target.inventory.Count - 1; i >= 0 && count < 0; i--)
+                {
+                    var entry = target.inventory[i];
+                    if (entry == null || entry.itemId != itemId) continue;
+                    int take = Math.Min(entry.quantity, -count);
+                    entry.quantity -= take; count += take;
+                    if (entry.quantity <= 0) target.inventory.RemoveAt(i);
+                }
+            };
+            var run = new Server.Bot.Types.Pq.PqRun(kpq, 1, 100001);
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            ((List<int>)typeof(Server.Bot.Types.Pq.PqRun).GetField("bots", flags).GetValue(run)).Add(bot.id);
+            var hand = typeof(Server.Bot.Types.Pq.PqRun).GetMethod("WorkHandOver", flags);
+            var step = new Server.Bot.Types.Pq.PqStep
+            { action = Server.Bot.Types.Pq.PqAction.HandOver, itemId = Server.Bot.Types.Pq.PqCatalog.PassTicket };
+            hand.Invoke(run, new object[] { step });
+            check(granted == 1, "交证：队长背包收到 1 张通行证（实际 " + granted + "）");
+            int left = 0;
+            foreach (var entry in bot.inventory) if (entry != null && entry.itemId == Server.Bot.Types.Pq.PqCatalog.PassTicket) left += entry.quantity;
+            check(left == 0, "交证：假人背包里的证被扣掉（剩 " + left + "）");
+        }
+        finally
+        {
+            Server.Bot.BotRegistry.Remove(bot);
+            Server.Bot.Types.Pq.PqDirector.GrantItem = previousGrant;
+            Server.Bot.Types.Pq.PqDirector.BotItem = previousItem;
+        }
+    }
+
+    // 实例登记用的最小玩家宿主：getId/getMapId 就够 registerParty/gridCheck 用。
+    static JsValue FakePlayer(int id, int mapId)
+    {
+        var player = new JsHostObject(null);
+        player.Set("getId", JsFunction.FromNative("getId", _ => new JsNumber(id)));
+        player.Set("getMapId", JsFunction.FromNative("getMapId", _ => new JsNumber(mapId)));
+        player.Set("getName", JsFunction.FromNative("getName", _ => new JsString("P" + id)));
+        player.Set("dropMessage", JsFunction.FromNative("dropMessage", _ => JsUndefined.Value));
+        return player;
     }
 
     static void CombatChecks(Action<bool,string> check)

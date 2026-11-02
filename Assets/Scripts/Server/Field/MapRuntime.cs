@@ -42,6 +42,8 @@ namespace Server.Field
     public sealed class MapRuntime
     {
         public int mapId;
+        // 实例运行编号与阶段模板编号分开，避免假人进入公共模板图。
+        public int templateMapId;
         public int returnMap, fieldLimit, left, right, top, bottom;
         public bool swim;
         public bool everlast;

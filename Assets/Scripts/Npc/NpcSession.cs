@@ -27,6 +27,12 @@ public sealed class NpcSession
     int scriptSessionId;
     int scriptCharacterId;
     bool hasStart, hasAction, hasEnd;
+    // 非空 = 这次对话是「假人以队员身份」跑的（组队任务队员分支）：cm/player 由
+    // BotNpcApi 绑定，作用在假人自己的背包上，不碰本地角色的存档。
+    public Server.Bot.BotCharacter Actor;
+    public JsValue CmHost => cm;
+    // 假人会话最近一页原文（领题时要把「要几张」念出来，靠它取）。
+    public string LastSay;
     ITransport scriptTransport;
     NativeScriptService offlineScripts;
 
@@ -180,6 +186,38 @@ public sealed class NpcSession
         return session;
     }
 
+    /// <summary>
+    /// 以假人（队员）身份打开一次 NPC 脚本。语义与 Talk 相同，只是 cm.getPlayer()/
+    /// cm.getItemQuantity/gainItem 全部作用在这个假人身上，eim.isEventLeader 恒为 false。
+    /// 组队任务的队员分支（废都第一关的领题/换证）只能靠它跑到。
+    /// </summary>
+    public static NpcSession TalkAs(int npcId, Server.Bot.BotCharacter actor, string scriptName = null)
+    {
+        if (actor == null) return null;
+        CloseActive();
+        string scriptKey;
+        string source = ScriptSource.LoadNpc(npcId, scriptName, out scriptKey);
+        if (string.IsNullOrEmpty(source)) return null;
+        var session = new NpcSession(npcId, 0, false, false) { Actor = actor };
+        Active = session;
+        session.Begin(source, scriptKey);
+        session.FinishInvocation();
+        return session;
+    }
+
+    /// <summary>
+    /// 假人会话的同步推进：按「确定/下一步」回一次话。返回值 false = 脚本已经结束。
+    /// 与 PqNpcDriver 的区别是这里不排帧——假人不需要看到对话框，一次 call 就能跑完。
+    /// </summary>
+    public bool Advance()
+    {
+        if (Disposed || Closed) return false;
+        Dialog.Mode = NpcDialogMode.None;
+        CallScript("action", new JsNumber(1), new JsNumber(0), new JsNumber(-1));
+        FinishInvocation();
+        return !Disposed && !Closed;
+    }
+
     // PortalScriptManager.executePortalScript：跑 portal/<script>.js 的 enter(pi)。
     // 脚本不存在或没有 enter 函数时返回 false，FieldDirector 回退到 WZ 的 tm/tn 直传
     // （对应源端 GenericPortal.enterPortal 的 else 分支）。
@@ -311,13 +349,16 @@ public sealed class NpcSession
             int slash = name.IndexOf('/');
             ScriptName = slash < 0 ? name : name.Substring(slash + 1);
             scriptTransport = GameSession.Net;
-            scriptCharacterId = GameSession.CharacterId;
+            // 假人会话按假人身份进脚本：eim.gridCheck/gridInsert 的键、cm.isEventLeader、
+            // 道具读写都跟着这个 id 走；真人会话仍然用本地角色。
+            scriptCharacterId = Actor != null ? Actor.id : GameSession.CharacterId;
             if (scriptTransport == null) offlineScripts = new NativeScriptService(); // 编辑器离线检查
-            cm = NpcApi.Build(this, NpcId, QuestId, IsQuest);
+            cm = Actor != null ? BotNpcApi.Build(this, Actor) : NpcApi.Build(this, NpcId, QuestId, IsQuest);
             var bindings = new Dictionary<string, JsValue>
             {
                 [IsQuest ? "qm" : "cm"] = cm, ["pi"] = cm, ["im"] = cm,
-                ["player"] = NpcApi.BuildPlayer(this), ["Java"] = NpcApi.BuildJava()
+                ["player"] = Actor != null ? BotNpcApi.Player(this, Actor) : NpcApi.BuildPlayer(this),
+                ["Java"] = NpcApi.BuildJava()
             };
             var opened = Dispatch(new ScriptRequest { operation = ScriptOperation.Open, name = name, source = source, bindings = bindings });
             scriptSessionId = opened.sessionId;

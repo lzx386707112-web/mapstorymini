@@ -87,6 +87,7 @@ public sealed class FieldDirector : MonoBehaviour
     // 假人系统的前端组件：只取一次（原来每帧 GetComponent，白花时间）
     BotCombatField botCombat;
     GroundItemBridge groundLoot;
+    readonly BotGroundPickup botPickup = new BotGroundPickup();
     BotField botField;
     // debug_frame_log：每 2 秒打一次掉帧统计，验证「进游戏还卡不卡」
     bool logFrames;
@@ -675,6 +676,18 @@ public sealed class FieldDirector : MonoBehaviour
             Server.Bot.Types.Pq.PqDirector.GrantItem = (itemId, count) => Profile.AddItem(itemId, count);
             Server.Bot.Types.Pq.PqDirector.TalkNpc = (npcId, openOnly, prefer, done) =>
                 PqNpcDriver.Begin(npcId, openOnly ? PqNpcPolicy.OpenOnly : PqNpcPolicy.Complete, prefer, done);
+            // 假人以队员身份自己点 NPC（组队任务队员分支：废都第一关领题/换证）。
+            Server.Bot.Types.Pq.PqDirector.BotTalkNpc = (Server.Bot.BotCharacter bot, int npcId, out string say) =>
+                PqBotNpcDriver.Talk(bot, npcId, out say);
+            // 假人登记进事件实例：源端 registerParty 会把全队都登记，队长点 NPC 时
+            // numpasses = eim.getPlayerCount()-1 才是「除我以外几名队员」。
+            Server.Bot.Types.Pq.PqDirector.EnterInstance = botId => NativeEventScripts.RegisterBotPlayer(botId);
+            Server.Bot.Types.Pq.PqDirector.LeaveInstance = botId => NativeEventScripts.UnregisterBotPlayer(botId);
+            Server.Bot.Types.Pq.PqDirector.InstanceGrid = NativeEventScripts.GridOf;
+            Server.Bot.Types.Pq.PqDirector.InstanceProperty = NativeEventScripts.InstanceProperty;
+            // 假人自己捡地面掉落（队员攒优惠券）。
+            Server.Bot.Types.Pq.PqDirector.PickupItem = (bot, itemId, max) => botPickup.PickNearby(bot, itemId, 120f, max);
+            Server.Bot.Types.Pq.PqDirector.BotItem = (bot, itemId, count) => BotNpcApi.Gain(bot, itemId, count);
             Server.Bot.Types.Pq.PqDirector.Notice = text => NativeSystemMessage.Drop(5, text);
         }
         // 当前图的导航几何分片还在后台解析时，这一帧就不碰假人系统。
@@ -704,6 +717,7 @@ public sealed class FieldDirector : MonoBehaviour
         botCombat.Bind(this, bots);
         if (groundLoot == null) groundLoot = GetComponent<GroundItemBridge>() ?? gameObject.AddComponent<GroundItemBridge>();
         groundLoot.Bind(this, bots);
+        botPickup.Bind(bots);
         // Drive 内部：BotTasks 的分帧泵 + 受预算约束的状态机分发，不会一次跑完全部假人。
         bots.Drive((long)(Time.realtimeSinceStartup * 1000));
         view.SyncDynamicNpcs();

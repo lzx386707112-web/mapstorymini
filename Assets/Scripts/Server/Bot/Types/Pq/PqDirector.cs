@@ -35,6 +35,12 @@ namespace Server.Bot.Types.Pq
         public static Action<int,int> GrantItem;
         /// <summary>静默代点 NPC：(npcId, openOnly, prefer, done)（接 PqNpcDriver.Begin）。</summary>
         public static Action<int,bool,string[],Action<bool>> TalkNpc;
+        /// <summary>
+        /// 假人自己点 NPC（以队员身份跑脚本）：(bot, npcId, out 最后一页原文)（接 PqBotNpcDriver.Talk）。
+        /// 源端的队员分支（废都第一关领题/换证）只能走这条，队长代点永远进的是队长分支。
+        /// </summary>
+        public delegate bool BotTalkHandler(BotCharacter bot, int npcId, out string say);
+        public static BotTalkHandler BotTalkNpc;
         /// <summary>给玩家发一条系统提示（粉色聊天行）。</summary>
         public static Action<string> Notice;
 
@@ -71,6 +77,11 @@ namespace Server.Bot.Types.Pq
 
         static DbStore Db => BotClient.GetBotClient()?.db;
         static BotPartyService Parties => BotTypeManager.Parties;
+        public static int TemplateMapId(int mapId)
+        {
+            var map = MapService.Get(mapId);
+            return map != null && map.templateMapId > 0 ? map.templateMapId : mapId;
+        }
 
         public static bool Enabled => BotConfig.PqLobbyBotsEnabled(Db);
 
@@ -147,7 +158,7 @@ namespace Server.Bot.Types.Pq
             // 例外是「玩家正带着队伍进副本」——新图是某副本的阶段图时大厅这一摊先留着，
             // PqDirector.Tick → AdoptStageEntry 还要从这里拉人补进队；等玩家真的离场
             // （换到既不是阶段图也不是招募图的图）再收。
-            var entering = PqCatalog.ByStageMap(mapId);
+            var entering = PqCatalog.ByStageMap(TemplateMapId(mapId));
             foreach (var lobby in new List<Lobby>(lobbies.Values))
                 if (lobby.def.recruitMap != mapId && lobby.def != entering) RetireIdle(lobby);
         }
@@ -390,7 +401,7 @@ namespace Server.Bot.Types.Pq
         /// </summary>
         static void AdoptStageEntry(BotActor player, long ms)
         {
-            var def = PqCatalog.ByStageMap(player.mapId);
+            var def = PqCatalog.ByStageMap(TemplateMapId(player.mapId));
             if (def == null || Parties == null) return;
             var party = Parties.For(player.id);
             if (party == null || runs.ContainsKey(party.id)) return;
@@ -565,7 +576,7 @@ namespace Server.Bot.Types.Pq
         /// <summary>把假人送到目标图（点由地图的传送门/中线决定）。</summary>
         public static bool WarpBot(BotCharacter bot, int mapId)
         {
-            if (bot == null || mapId <= 0) return false;
+            if (bot == null || mapId == 0 || mapId < 0 && !MapService.Has(mapId)) return false;
             if (bot.mapId != mapId)
             {
                 if (!MapService.Has(mapId))
@@ -619,6 +630,68 @@ namespace Server.Bot.Types.Pq
         {
             if (itemId <= 0 || count <= 0) return;
             GrantItem?.Invoke(itemId, count);
+        }
+
+        /// <summary>假人去找 NPC 说话（队员分支）。没接线或脚本出错返回 false，调用方据此回退。</summary>
+        public static bool BotTalk(BotCharacter bot, int npcId, out string say)
+        {
+            say = null;
+            if (bot == null || npcId == 0 || BotTalkNpc == null) return false;
+            try { return BotTalkNpc(bot, npcId, out say); }
+            catch (Exception) { return false; }
+        }
+
+        // ——— 事件实例里的「队员身份」与地面拾取（接 NativeEventScripts / BotGroundPickup）———
+        /// <summary>把假人登记进当前事件实例（源端 EventManager.registerParty 会登记全队）。</summary>
+        public static Action<int> EnterInstance;
+        public static Action<int> LeaveInstance;
+        /// <summary>实例里这个角色抽到的题目号（eim.gridCheck 的直读版），不在实例返回 -1。</summary>
+        public static Func<int,int> InstanceGrid;
+        /// <summary>实例属性直读（"2stageclear"、阶段随机组合用的 "stg2Property"）。</summary>
+        public static Func<string,string> InstanceProperty;
+        /// <summary>假人自己捡脚下的道具：(bot, itemId, max) → 捡到的件数。</summary>
+        public static Func<BotCharacter,int,int,int> PickupItem;
+
+        public static bool EnterEvent(int botId)
+        {
+            if (EnterInstance == null) return false;
+            try { EnterInstance(botId); return true; }
+            catch (Exception) { return false; }
+        }
+
+        public static void LeaveEvent(int botId)
+        {
+            try { LeaveInstance?.Invoke(botId); }
+            catch (Exception) { /* 实例已经 dispose：摘人失败不影响收尾 */ }
+        }
+
+        public static int GridOf(int botId)
+        {
+            try { return InstanceGrid != null ? InstanceGrid(botId) : -1; }
+            catch (Exception) { return -1; }
+        }
+
+        public static string PropertyOf(string key)
+        {
+            try { return InstanceProperty != null ? InstanceProperty(key) : null; }
+            catch (Exception) { return null; }
+        }
+
+        public static int Pickup(BotCharacter bot, int itemId, int max = int.MaxValue)
+        {
+            if (bot == null || itemId <= 0 || max <= 0 || PickupItem == null) return 0;
+            try { return PickupItem(bot, itemId, max); }
+            catch (Exception) { return 0; }
+        }
+
+        /// <summary>改假人自己的背包（队员换证/交证时用，落在 BotCharacter.inventory）。</summary>
+        public static Action<BotCharacter,int,int> BotItem;
+
+        public static void BotGain(BotCharacter bot, int itemId, int count)
+        {
+            if (bot == null || itemId <= 0 || count == 0 || BotItem == null) return;
+            try { BotItem(bot, itemId, count); }
+            catch (Exception) { /* 假人背包不是权威状态：写失败也不能影响真人流程 */ }
         }
 
         public static void Say(BotCharacter bot, string text)

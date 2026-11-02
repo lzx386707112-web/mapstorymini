@@ -187,9 +187,6 @@ public static class PqInstanceChecks
                 var actualParty = (JsValue)InvokeStatic(typeof(NpcApi), "BuildParty", new object[] { null });
                 int eligible = new Probe("return em.getEligibleParty(p).length;", ("em", manager.Host), ("p", actualParty)).Int();
                 Require(eligible == 6, def.eventName + " 真实六人队伍资格=" + eligible);
-                parties.Leave(cid);
-                foreach (int id in botIds) Server.Bot.BotRegistry.Remove(id);
-
                 var (party, leader) = FakeParty(cid, def.recruit);
                 var recruitHost = new JsHostObject(null);
                 recruitHost.Set("getId", JsFunction.FromNative("getId", _ => new JsNumber(def.recruit)));
@@ -204,6 +201,46 @@ public static class PqInstanceChecks
                 var map = EntryMap(eim, def.entry);
                 Require(map is JsHostObject, def.eventName + " 入口图实例化");
                 if (!(map is JsHostObject)) continue;
+
+                var pq = Server.Bot.Types.Pq.PqCatalog.ByStageMap(def.entry);
+                if (pq != null && map is JsHostObject mapWrapper && mapWrapper.Host is NativeEventMap instanceMap)
+                {
+                    var previousParties = Server.Bot.BotTypeManager.Parties;
+                    var previousPlayerId = Server.Bot.Types.Pq.PqDirector.LocalPlayerId;
+                    try
+                    {
+                        Server.Bot.BotTypeManager.Parties = parties;
+                        Server.Bot.Types.Pq.PqDirector.LocalPlayerId = () => cid;
+                        local.mapId = instanceMap.Scope;
+                        Require(instanceMap.Scope < 0 && instanceMap.Geometry.templateMapId == def.entry,
+                            def.eventName + " 实例负编号保留原地图身份");
+                        InvokeStatic(typeof(Server.Bot.Types.Pq.PqDirector), "AdoptStageEntry", local, 1000L);
+                        var run = Server.Bot.Types.Pq.PqDirector.RunOf(parties.For(cid).id);
+                        Require(run != null && run.Bots.Count == 5, def.eventName + " 实例入场接管五名队友");
+                        run?.Tick(1500);
+                        Require(botIds.TrueForAll(id => Server.Bot.BotRegistry.Get(id).mapId == instanceMap.Scope),
+                            def.eventName + " 五名假人进入队长同一实例，而非公共模板图");
+                        Require(Server.Bot.BotRegistry.OnMap(instanceMap.Scope).Count == 5,
+                            def.eventName + " 地图渲染注册表能取到五名队友");
+                        if (pq.stages.Count > 1)
+                        {
+                            var nextHost = (JsHostObject)EntryMap(eim, pq.stages[1].mapId);
+                            var nextMap = (NativeEventMap)nextHost.Host;
+                            local.mapId = nextMap.Scope;
+                            run?.Tick(2000);
+                            Require(botIds.TrueForAll(id => Server.Bot.BotRegistry.Get(id).mapId == nextMap.Scope),
+                                def.eventName + " 下一阶段仍跟随同一实例作用域");
+                        }
+                    }
+                    finally
+                    {
+                        Server.Bot.Types.Pq.PqDirector.Reset();
+                        Server.Bot.BotTypeManager.Parties = previousParties;
+                        Server.Bot.Types.Pq.PqDirector.LocalPlayerId = previousPlayerId;
+                    }
+                }
+                parties.Leave(cid);
+                foreach (int id in botIds) Server.Bot.BotRegistry.Remove(id);
 
                 int count = MobCount(map);
                 Require(count >= def.expectMin,

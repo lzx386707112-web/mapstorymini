@@ -56,7 +56,7 @@ public sealed class NativeEventMap
         var template=FieldCatalog.GetMap(id) ?? throw new JsRuntimeException("Missing event map: "+id);
         Template=NativeMapView.LoadMap(template);
         var source=GameServer.Local.Bots.GetMap(id);
-        Geometry=new MapRuntime {mapId=Scope,returnMap=source.returnMap,fieldLimit=source.fieldLimit,
+        Geometry=new MapRuntime {mapId=Scope,templateMapId=Id,returnMap=source.returnMap,fieldLimit=source.fieldLimit,
             left=source.left,right=source.right,top=source.top,bottom=source.bottom,
             swim=source.swim,everlast=source.everlast,footholdSpeed=source.footholdSpeed,
             minX=source.minX,maxX=source.maxX,minY=source.minY,maxY=source.maxY};

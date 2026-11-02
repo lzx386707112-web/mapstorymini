@@ -131,7 +131,7 @@ ItemMoveHandler.java:44
 
 同一 BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2` / ImageBase400000。
 `9AC552` 将 A4（compact）传给 `99DD54`；`99DD7A..99DDA0` 将非零参数映射到默认字体索引4（白色，字体初始化见 npc-dialog）。因此 compact 正文不是黑色；编辑控件 `9A8424` 则明确 FF000000。正文测量宽225（`9A3D07` compact分支），内部margin2（`9A3DF6`），不能直接用GUIStyle.CalcHeight代替原正文流。
-`9ACD54`正文原点20,22，总高contentHeight+99；`9A83F6`的黑框19,contentHeight+24,229,18，白框20,contentHeight+25,227,16，编辑控件22,contentHeight+27,224,14。OK为212,height-26，Close为9,height-26；两图原始46×18，旧实现43×19拉伸错误。
+`9ACD54`正文原点20,22，总高contentHeight+99。**控件分支纠正**：此前误用非compact的`9A83F6`（黑白框、左下BtClose），这些不能用于丢弃数量窗。背包丢弃字符串885的调用点`4F384C`进入`4F55C4`，`4F561F..4F5644`传compact=1；`9A6370`的`9A63A5..9A63BC`按+A4分派，非零调用`9A8716`，零才调用`9A83F6`。compact编辑框为(19,height-73,226,15)，没有非compact的额外黑白框绘制；`9A87EE`字符串1257=`UI/Basic.img/BtOK2`，位置(158,height-30)，`9A886F`字符串1258=`UI/Basic.img/BtCancel2`，位置(208,height-30)，均使用原始47×19。所以丢物品窗是右下确定+取消，不是单确定，也没有左下结束对话。金币`81D996`也传compact=1。当前NativeUtilPrompt数量分支已据此纠正；保留Esc取消/回车提交。新增复现汇编见`docs/skill-regression/compact-number-branch-correction-2026-11-02.txt`。
 背景仍为Notice3/t(266×21)、c(266×20)、Notice4/s(266×78)。代码仅照搬已核实的黑白输入框绘制；其他素材继续直接取IMG。
 复现：`tools/inspect_beidou_client.py <exe> --fn 0x9a83f6`，持久汇编见 `docs/skill-regression/compact-number-controls-2026-11-02.txt`；排版使用既有DialogFlow输入模式，默认#w、margin2，数字单独黑字。Windows Arial与Unity中文字形差异仍是迁移边界；未作Android截图验收。
 
@@ -140,7 +140,7 @@ ItemMoveHandler.java:44
 ### 排查结论（改动前）
 - 丢弃 `NativeInventoryActions.cs:73` `DropToField`：可堆叠（`quantity>1` 且 `id/1000000!=1` 非装备）弹 `NativeUtilPrompt.Number("扔掉多少？", …)`；装备/单件直接丢 1 个。
 - 出售 `NativeNpcShopWindow.cs:88` `SellSelected`：可充能道具或 `quantity<=1` 走 `Confirm`，其余弹 `NativeUtilPrompt.Number("要出售多少个？", …)`。购买 `BuySelected` 同样走 `Number`。
-- 弹窗本体 `NativeUtilPrompt.cs`：`Number/NumberLong/Text/Confirm` 四种，数值用原图 `Notice3/Notice4` 切图 + `UI/UIWindow.img/UtilDlgEx/BtOK|BtClose`，输入框是裸 `GUI.TextField`（数值过滤非数字、最多 19 位），Esc 取消 / 回车提交、`min..max` 校验。**全文件没有任何 `TouchScreenKeyboard.Open`，输入框矩形也没有点击命中检测**。
+- 弹窗本体 `NativeUtilPrompt.cs`：`Number/NumberLong/Text/Confirm` 四种，数值用原图 `Notice3/Notice4` 切图（原错误实现套用 `UI/UIWindow.img/UtilDlgEx/BtOK|BtClose`，现已纠正为compact的Basic按钮），输入框是裸 `GUI.TextField`（数值过滤非数字、最多 19 位），Esc 取消 / 回车提交、`min..max` 校验。**全文件没有任何 `TouchScreenKeyboard.Open`，输入框矩形也没有点击命中检测**。
 - 全工程显式拉软键盘原本只有 `LoginFlow.cs`（账号/密码/角色名）、`BottomBar.cs`（聊天）两处；`VirtualControls.cs` 只读 `visible/area` 做避让。
 - **决定性对照**：`LoginFlow.cs:826` 同样是 `GUI.TextField`，但点击时（`Application.isMobilePlatform`）额外调 `OpenKeyboard` → `TouchScreenKeyboard.Open`，并注释「关掉再重开在 Android 上是真会失败的」——证明本工程不信任 IMGUI 输入框自动弹键盘，必须显式拉起。数量弹窗缺的正是这段。
 

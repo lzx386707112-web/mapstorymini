@@ -162,6 +162,32 @@ public sealed class NativeEventScripts : MonoBehaviour
     }
     public static NativeEventScriptService.Instance InstanceById(int characterId)
         => active?.service?.GetInstance(characterId);
+    // ——— 组队任务陪跑的假人：以「队员」身份登记进事件实例 ———
+    // 源端 EventManager.registerParty(party, map) 会把全队成员都 registerPlayer 进去，
+    // eim.getPlayerCount() 因此等于队伍人数；移植端以前只登记本地角色，于是
+    // KPQ 第一关 numpasses = getPlayerCount()-1 恒为 0 —— 队长空手就能过关，
+    // 「要收几张券」整段逻辑从来没跑过。假人登记后这个数字恢复成「除队长外的队员数」。
+    // entry=false：不触发 playerEntry（源端那条是 player.changeMap(...)，假人换图由 PqRun 负责）。
+    public static bool RegisterBotPlayer(int botId)
+    {
+        var instance=CurrentInstance();
+        var bot=Server.Bot.BotRegistry.Get(botId);
+        if(instance==null || bot==null)return false;
+        instance.Register(BotNpcApi.Player(null,bot),false);
+        return true;
+    }
+    public static bool UnregisterBotPlayer(int botId)
+    {
+        var bot=Server.Bot.BotRegistry.Get(botId);
+        var instance=active?.service?.GetInstance(botId) ?? CurrentInstance();
+        if(instance==null || bot==null)return false;
+        instance.Unregister(BotNpcApi.Player(null,bot));
+        return true;
+    }
+    /// <summary>实例里这个角色抽到的题目号（eim.gridCheck 的直读版）；不在实例返回 -1。</summary>
+    public static int GridOf(int characterId) => InstanceById(characterId)?.Grid(characterId) ?? -1;
+    /// <summary>实例属性直读（stg2Property / 1stageclear 这类阶段判定用）。</summary>
+    public static string InstanceProperty(string key) => CurrentInstance()?.Property(key);
     public static NativeEventMap ResolveMap(int id)
     {
         if(active==null || !ReferenceEquals(active.character,GameSession.Character))return null;

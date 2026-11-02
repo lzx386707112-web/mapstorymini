@@ -22,6 +22,18 @@ namespace Server.Bot.Types.Pq
         KillBoss,
         /// <summary>只能由队长触发的 NPC 对话（静默代点）。</summary>
         Talk,
+        /// <summary>假人以队员身份找 NPC 领题（废都第一关：gridCheck → 随机题目）。</summary>
+        BotAsk,
+        /// <summary>假人打怪 + 自己捡地上的券，直到每人手上凑齐题目要求的张数。</summary>
+        BotCollect,
+        /// <summary>假人拿券回 NPC 换成通行证（队员分支）。</summary>
+        BotExchange,
+        /// <summary>假人站到 NPC 旁边等队长。</summary>
+        BotWait,
+        /// <summary>假人把凑到的证交给队长（从假人背包扣，落到队长背包）。</summary>
+        HandOver,
+        /// <summary>按阶段随机组合站位，再由队长核对（废都 2/3/4）；核对通过才继续。</summary>
+        StageCheck,
     }
 
     public sealed class PqStep
@@ -30,13 +42,15 @@ namespace Server.Bot.Types.Pq
         public int[] ids = System.Array.Empty<int>();   // 怪 / 反应堆模板 id
         public int minId, maxId;                        // 反应堆 id 区间（0 = 不用）
         public int need;                                // 数量要求
-        public int itemId, itemCount;                   // GrantItem
+        public int itemId, itemCount;                   // GrantItem / HandOver
         public int npc;                                 // Talk
         public bool openOnly;                           // 只开一次对话（海盗船 2094002）
         public int rounds = 1;                          // Talk 重复轮数
         public string[] prefer;                         // 对话选项偏好关键字
-        public List<PqRect> stands;                     // Stand
+        public List<PqRect> stands = new List<PqRect>();  // Stand / StageCheck（必须初始化：数据表用集合初始化器写）
+        public string comboProperty;                    // StageCheck：阶段随机组合写在哪个实例属性上
         public string say;                              // 做这件事时假人说的话
+        public long timeoutMs;                          // 0 = 用默认步骤超时；攒券这类要放宽
     }
 
     public struct PqRect
@@ -94,6 +108,44 @@ namespace Server.Bot.Types.Pq
         public const int PirateLow = 4001120, PirateMid = 4001121, PirateHigh = 4001122;
 
         static readonly Dictionary<string, PqDef> all = new Dictionary<string, PqDef>();
+
+        // ————— 废都第一关的题库（npc/9020001.js:30-38，题目号从 1 开始）—————
+        // 假人领题后 eim.gridCheck 拿到题目号，按这张表才知道要收几张优惠券。
+        // 移植端不重写脚本，这张表只是把脚本里的 stage1Answers 抄给 C# 侧读。
+        static readonly int[] Stage1Answers = { 10, 35, 20, 25, 25, 30, 8 };
+        public static int Stage1Answer(int question)
+            => question >= 1 && question <= Stage1Answers.Length ? Stage1Answers[question - 1] : 0;
+
+        // ————— 废都 2/3/4 关的随机组合（npc/9020001.js:49-60）—————
+        // 1 = 这个位置要站 1 个人，0 = 不能站。脚本把抽中的行号写进 stgNProperty，
+        // 假人按行号摆位，队长再点一次 NPC 核对。
+        static readonly int[][] Stage2Combos =
+        {
+            new[] { 0, 1, 1, 1 }, new[] { 1, 0, 1, 1 }, new[] { 1, 1, 0, 1 }, new[] { 1, 1, 1, 0 },
+        };
+        static readonly int[][] Stage3Combos =
+        {
+            new[] { 0, 0, 1, 1, 1 }, new[] { 0, 1, 0, 1, 1 }, new[] { 0, 1, 1, 0, 1 }, new[] { 0, 1, 1, 1, 0 },
+            new[] { 1, 0, 0, 1, 1 }, new[] { 1, 0, 1, 0, 1 }, new[] { 1, 0, 1, 1, 0 }, new[] { 1, 1, 0, 0, 1 },
+            new[] { 1, 1, 0, 1, 0 }, new[] { 1, 1, 1, 0, 0 },
+        };
+        static readonly int[][] Stage4Combos =
+        {
+            new[] { 0, 0, 0, 1, 1, 1 }, new[] { 0, 0, 1, 0, 1, 1 }, new[] { 0, 0, 1, 1, 0, 1 }, new[] { 0, 0, 1, 1, 1, 0 },
+            new[] { 0, 1, 0, 0, 1, 1 }, new[] { 0, 1, 0, 1, 0, 1 }, new[] { 0, 1, 0, 1, 1, 0 }, new[] { 0, 1, 1, 0, 0, 1 },
+            new[] { 0, 1, 1, 0, 1, 0 }, new[] { 0, 1, 1, 1, 0, 0 }, new[] { 1, 0, 0, 0, 1, 1 }, new[] { 1, 0, 0, 1, 0, 1 },
+            new[] { 1, 0, 0, 1, 1, 0 }, new[] { 1, 0, 1, 0, 0, 1 }, new[] { 1, 0, 1, 0, 1, 0 }, new[] { 1, 0, 1, 1, 0, 0 },
+            new[] { 1, 1, 0, 0, 0, 1 }, new[] { 1, 1, 0, 0, 1, 0 }, new[] { 1, 1, 0, 1, 0, 0 }, new[] { 1, 1, 1, 0, 0, 0 },
+        };
+        public static int[] Combo(string property, int index)
+        {
+            int[][] table = property == "stg2Property" ? Stage2Combos
+                : property == "stg3Property" ? Stage3Combos
+                : property == "stg4Property" ? Stage4Combos : null;
+            if (table == null || index < 0 || index >= table.Length) return null;
+            return table[index];
+        }
+
         public static IEnumerable<PqDef> All => all.Values;
         public static PqDef Get(string key) => key != null && all.TryGetValue(key, out var def) ? def : null;
         public static PqDef ForMap(int mapId)
@@ -130,42 +182,83 @@ namespace Server.Bot.Types.Pq
                 recruitNpc = 9020000, minLevel = 21,
                 keywords = new[] { "求组", "缺一", "缺二", "缺三", "q1", "q2", "组队", "废都", "下水道", "通行证" },
             };
-            // 阶段 1：源端 9020001 的队长分支要「队员数-1 张通行证」。单机实例只登记本地角色，
-            // 所以数量恒为 0；假人仍然照脚本把券攒出来（看得见的活），再让队长去交。
+            // 阶段 1：完全按 npc/9020001.js 的队员分支走 ——
+            //   领题（gridCheck=-1 → 随机题目）→ 打鳄鱼捡券 → 回 Cloto 换 1 张通行证
+            //   → 站 NPC 旁边等队长 → 把证交给队长。
+            // 队长点 Cloto 时脚本自己算 numpasses = eim.getPlayerCount()-1（假人已登记进实例），
+            // 所以这里不预设数量：队员真实交上来几张，队长手上就有几张，不够脚本会拦。
             def.stages.Add(new PqStage
             {
                 mapId = 103000800, stageNo = 1, npc = 9020001, title = "第一阶段：收集通行证",
-                steps = { Clear("第一阶段：先把路上的怪清掉，券我来捡") },
+                steps = {
+                    new PqStep { action = PqAction.BotAsk, npc = 9020001, timeoutMs = 20000, say = "我先去 Cloto 那里领题" },
+                    new PqStep { action = PqAction.BotCollect, ids = new[] { 9300001 }, timeoutMs = 300000,
+                        say = "券我来捡，题目要几张就收几张" },
+                    new PqStep { action = PqAction.BotExchange, npc = 9020001, timeoutMs = 90000,
+                        say = "券齐了，回 Cloto 换通行证" },
+                    new PqStep { action = PqAction.BotWait, npc = 9020001, say = "我在 Cloto 旁边等队长来收" },
+                    new PqStep { action = PqAction.HandOver, itemId = PassTicket, say = "通行证交给队长" },
+                },
             });
-            // 阶段 2/3/4：绳子 / 平台 / 木桶三选三，判定矩形照 npc/9020001.js:41-47。
+            // 阶段 2/3/4：源端第一次对话只发规则 + 抽组合，第二次才核对（npc/9020001.js:181-257）。
+            // 假人按抽中的组合摆位，队长核对；核对不过就重摆重试，仍不过就按源端
+            // 「人数不足 3 人直接放行」的单机口径退出实例成员身份。
             def.stages.Add(new PqStage
             {
-                mapId = 103000801, stageNo = 2, npc = 9020001, title = "第二阶段：挂绳子",
-                steps = { Stand("第二阶段我去挂绳子", new PqRect(-755, -132, 4, 218), new PqRect(-721, -340, 4, 166),
-                    new PqRect(-586, -326, 4, 150), new PqRect(-483, -181, 4, 222)) },
+                mapId = 103000801, stageNo = 2, title = "第二阶段：挂绳子",
+                steps = {
+                    new PqStep { action = PqAction.Talk, npc = 9020001, say = "队长去听第二阶段的规则" },
+                    new PqStep { action = PqAction.StageCheck, npc = 9020001, comboProperty = "stg2Property",
+                        say = "我按绳子组合挂上去",
+                        stands = {
+                            new PqRect(-755, -132, 4, 218), new PqRect(-721, -340, 4, 166),
+                            new PqRect(-586, -326, 4, 150), new PqRect(-483, -181, 4, 222) } },
+                },
             });
             def.stages.Add(new PqStage
             {
-                mapId = 103000802, stageNo = 3, npc = 9020001, title = "第三阶段：站平台",
-                steps = { Stand("第三阶段我站平台", new PqRect(608, -180, 140, 50), new PqRect(791, -117, 140, 45),
-                    new PqRect(958, -180, 140, 50), new PqRect(876, -238, 140, 45), new PqRect(702, -238, 140, 45)) },
+                mapId = 103000802, stageNo = 3, title = "第三阶段：站平台",
+                steps = {
+                    new PqStep { action = PqAction.Talk, npc = 9020001, say = "队长去听第三阶段的规则" },
+                    new PqStep { action = PqAction.StageCheck, npc = 9020001, comboProperty = "stg3Property",
+                        say = "平台我站中间那一格",
+                        stands = {
+                            new PqRect(608, -180, 140, 50), new PqRect(791, -117, 140, 45),
+                            new PqRect(958, -180, 140, 50), new PqRect(876, -238, 140, 45),
+                            new PqRect(702, -238, 140, 45) } },
+                },
             });
             def.stages.Add(new PqStage
             {
-                mapId = 103000803, stageNo = 4, npc = 9020001, title = "第四阶段：踩木桶",
-                steps = { Stand("第四阶段踩木桶", new PqRect(910, -236, 35, 5), new PqRect(877, -184, 35, 5),
-                    new PqRect(946, -184, 35, 5), new PqRect(845, -132, 35, 5), new PqRect(910, -132, 35, 5),
-                    new PqRect(981, -132, 35, 5)) },
+                mapId = 103000803, stageNo = 4, title = "第四阶段：踩木桶",
+                steps = {
+                    new PqStep { action = PqAction.Talk, npc = 9020001, say = "队长去听第四阶段的规则" },
+                    new PqStep { action = PqAction.StageCheck, npc = 9020001, comboProperty = "stg4Property",
+                        say = "我踩木桶",
+                        stands = {
+                            new PqRect(910, -236, 35, 5), new PqRect(877, -184, 35, 5),
+                            new PqRect(946, -184, 35, 5), new PqRect(845, -132, 35, 5),
+                            new PqRect(910, -132, 35, 5), new PqRect(981, -132, 35, 5) } },
+                },
             });
-            // 阶段 5：源端要 10 张通行证（npc/9020001.js:260），先打 BOSS 再凑券。
+            // 阶段 5：BOSS 掉 4001008（9300000/2/3 各 999999/999999 必掉），队员捡满 10 张交给队长，
+            // 队长点 Cloto 交 10 张 → clearStage + clearPQ → 再点一页领奖并传送到 103000805。
             def.stages.Add(new PqStage
             {
                 mapId = 103000804, stageNo = 5, npc = 9020001, title = "最后阶段：BOSS",
-                requireItem = PassTicket, requireCount = 10,
-                steps = { new PqStep { action = PqAction.KillBoss, say = "BOSS 我来拉，你们清小怪" },
-                          Give(PassTicket, 10, "券够了，队长去交") },
+                steps = {
+                    new PqStep { action = PqAction.KillBoss, say = "BOSS 我来拉，你们清小怪" },
+                    new PqStep { action = PqAction.BotCollect, ids = new[] { 9300000, 9300002, 9300003 },
+                        itemId = PassTicket, need = 10, timeoutMs = 240000, say = "通行证我来捡，凑 10 张" },
+                    new PqStep { action = PqAction.HandOver, itemId = PassTicket, itemCount = 10, say = "10 张都交给队长" },
+                },
             });
-            // 奖励阶段 103000805 没有 NPC 判定，直接由 PqRun 走出口。
+            // 奖励阶段：由 9020002 发奖 + 记录进入次数 + 传回 103000000。
+            def.stages.Add(new PqStage
+            {
+                mapId = 103000805, stageNo = 6, title = "奖励阶段",
+                steps = { new PqStep { action = PqAction.Talk, npc = 9020002, say = "领完奖就回城" } },
+            });
             return def;
         }
 
