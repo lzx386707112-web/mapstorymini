@@ -143,7 +143,7 @@ public static class BottomBar
     static bool enterPending;
     public static NativeChatChannel ChatChannel { get; private set; }
     static string whisperTarget = "";
-    static readonly string[] ChatNames = { "所有人", "悄悄话", "组队", "好友", "家族", "联盟", "夫妻", "讯息" };
+    static readonly string[] ChatNames = { "所有人", "悄悄话", "组队", "好友", "家族", "联盟", "夫妻", "讯息", "宠物" };
     static TouchScreenKeyboard chatKeyboard;
     static void CloseChatKeyboard()
     {
@@ -214,6 +214,17 @@ public static class BottomBar
         {
             AddChat("当前地图已被 GM 禁言", ChatPink);
             return false;
+        }
+        // 宠物聊天（PetChatHandler）：不走 SOCIAL 通道（源端独立 PET_CHAT 包）。
+        // 气泡画在宠物头顶（NativePetField.ShowChat），聊天框记录一行；
+        // act 0..9 是宠物表情动作码，视觉差异小、宠物动作集没有对应帧，不触发。
+        if (channel == NativeChatChannel.Pet)
+        {
+            var petField = GameLoop.I?.field?.GetComponent<NativePetField>();
+            bool shown = petField != null && petField.ShowChat(text);
+            AddChat("[宠物] " + Profile.playerName + " : " + text, shown ? ChatWhite : ChatPink);
+            if (!shown) AddChat("没有出场的宠物可以说话", ChatPink);
+            return shown;
         }
         var result = NativeSocialWindow.Request(SocialOperation.SendChat, target, text, channel);
         // 源端发送失败走 serverNotice(5, …)：聊天窗粉色，不是浮层提示。
@@ -727,6 +738,11 @@ public static class BottomBar
             {
                 var itemIcon = QuickSlots.BindingIcon(id);
                 if (itemIcon != null) GUI.DrawTexture(r, itemIcon, ScaleMode.ScaleToFit);
+            }
+            else if (NativeSkillMacros.IsMacro(id))
+            {
+                var macroIcon = QuickSlots.BindingIcon(id);
+                if (macroIcon != null) GUI.DrawTexture(r, macroIcon, ScaleMode.ScaleToFit);
             }
             var data = id > 0 ? SkillBook.Get(id) : null;
             if (data != null)

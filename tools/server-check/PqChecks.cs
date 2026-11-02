@@ -34,6 +34,7 @@ public static class PqChecks
 
     public static void Run(Action<bool, string> Check)
     {
+        PartyIndexChecks(Check);
         string dir = EventScriptDir();
         if (dir == null)
         {
@@ -96,6 +97,30 @@ public static class PqChecks
             catch (JsRuntimeException) { threw = true; }
             Check(threw, "未注入 MonsterFactory 时 em.getMonster 明确报错");
         }
+    }
+
+    // BotPartyService 有两套编号：角色 id（membership 的键）和队伍编号（nextId 从 1000000001 起）。
+    // For()/Get() 收角色 id，ById() 收队伍编号。PqRun.Begin 曾经拿队伍编号去 For()，
+    // 结果稳定是 null —— 表现就是「真人进了副本，队伍里的假人全留在招募图」。
+    static void PartyIndexChecks(Action<bool, string> Check)
+    {
+        var db = DbStore.Create(Path.Combine(Path.GetTempPath(), "maple-pq-party-" + Guid.NewGuid().ToString("N") + ".json"));
+        var parties = new Server.Bot.BotPartyService(db);
+        var leader = new Server.Bot.BotActor { id = 1001, name = "Leader", level = 50, world = 0, mapId = 103000000 };
+        var bot = new Server.Bot.BotActor { id = 900001, name = "Bot", level = 50, world = 0, mapId = 103000000 };
+
+        Check(parties.Create(leader), "组队任务：真人可以建队");
+        var party = parties.For(leader.id);
+        Check(party != null && party.leader == leader.id, "组队任务：For(角色 id) 取到队伍");
+        if (party == null) return;
+
+        Check(parties.Join(bot, party.id), "组队任务：假人能加入队伍");
+        var byId = parties.ById(party.id);
+        Check(ReferenceEquals(byId, party), "组队任务：ById(队伍编号) 取到同一支队伍");
+        Check(byId != null && byId.members.Count == 2,
+            "组队任务：按队伍编号能取到全部成员（实际 " + (byId != null ? byId.members.Count : 0) + " 人）");
+        // 契约守卫：两套编号不可混用。哪天 For() 被改成兼容队伍编号，这条会亮，提醒回来重看 Begin。
+        Check(parties.For(party.id) == null, "组队任务：For(队伍编号) 不命中（编号语义不可混用）");
     }
 
     static string EventScriptDir()

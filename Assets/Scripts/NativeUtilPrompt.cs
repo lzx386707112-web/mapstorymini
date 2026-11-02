@@ -4,6 +4,7 @@ using UnityEngine;
 // CUtilDlg / compact CUtilDlgEx: verified native Notice3/4 slices and edit rectangles.
 public static class NativeUtilPrompt
 {
+    const string OwnerKey = "NativeUtilPrompt";
     static string text, input;
     // 数值输入用 long：金币/经验已经超出 21 亿，若还用 int 做上下界，交易窗口就放不进全额金币。
     static long minimum, maximum;
@@ -21,11 +22,14 @@ public static class NativeUtilPrompt
     { Clear(); text = prompt; answer = done; }
     public static void Text(string prompt, string value, int min, int max, Action<string> done)
     { Clear(); text = prompt; input = value ?? ""; textMin = min; textMax = max; entered = done; }
-    public static void Clear() { number = null; answer = null; entered = null; text = input = null; }
+    public static void Clear() { number = null; answer = null; entered = null; text = input = null; NativeEditKeyboard.Close(); }
     public static void Cancel() { var callback = answer; Clear(); callback?.Invoke(false); }
     public static void Draw()
     {
         if (!Visible) return;
+        // 每个 GUI 事件先读键盘快照再绘制/消费 Enter：Android 输入法最终合成可能与 Done/Enter
+        // 同帧到达，Done 与回车同帧也只提交一次（沿用 BottomBar.DrawChat 的既有修正）。
+        var keyboardSignal = NativeEditKeyboard.Sync(OwnerKey, ref input);
         Drawing = true;
         float scale = BottomBar.S;
         var matrix = GUI.matrix; var pointer = Pointer.Pos / scale;
@@ -59,6 +63,15 @@ public static class NativeUtilPrompt
                 string value = GUI.TextField(contentRect, input, numeric ? 19 : textMax, style);
                 if(numeric) { input = ""; foreach (char c in value) if (c >= '0' && c <= '9') input += c; }
                 else input=value;
+                // 点击输入框拉起系统键盘：数值用数字键盘、文本用普通键盘；上限与 GUI.TextField 一致。
+                // 同一个输入框已开着键盘时绝不重开（Android 关掉再 Open 真会失败，见 LoginFlow 注释）。
+                if (Event.current.type == EventType.Repaint && GUI.enabled && Pointer.Clicked && editRect.Contains(pointer))
+                {
+                    Pointer.ConsumeClick();
+                    NativeEditKeyboard.Open(OwnerKey, input,
+                        numeric ? TouchScreenKeyboardType.NumberPad : TouchScreenKeyboardType.Default,
+                        numeric ? 19 : textMax);
+                }
                 submit = NativeUi.Button(numeric ? new Rect(x + 212,y + height - 26,43,19) : new Rect(x+158,y+height-30,47,19),
                     numeric ? "UI/UIWindow.img/UtilDlgEx/BtOK" : "UI/Basic.img/BtOK2", pointer);
                 if (NativeUi.Button(numeric ? new Rect(x + 9,y + height - 26,43,19) : new Rect(x+208,y+height-30,47,19),
@@ -73,6 +86,9 @@ public static class NativeUtilPrompt
             var e = Event.current;
             if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape) { Cancel(); e.Use(); return; }
             if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter)) { submit = true; e.Use(); }
+            // 输入法 Done 与回车等价；同帧一起到达也只提交一次。
+            // Canceled 只收键盘（Sync 内已 Close），弹窗保留，用户仍可点 OK/关闭。
+            if (keyboardSignal == NativeEditKeyboard.Signal.Done) submit = true;
             if (!submit) return;
             if (numeric)
             {

@@ -54,7 +54,8 @@ public static class NativeCharacterMenu
             if (Button("BtTrade",54)) { NativeTradeWindow.Invite(target.id); Close(); return; }
             if (Button("BtWhisper",69)) { BottomBar.FocusChat(NativeChatChannel.Whisper,target.name); Close(); return; }
             if (party && Button("BtParty",84)) { var response = NativeSocialWindow.Request(SocialOperation.InviteParty,target.name); if (!response.ok) NativeSystemMessage.Drop(5,response.error); Close(); return; }
-            Button("BtClaim",party ? 99 : 84,false);
+            // 检举：源端同款入口（右键菜单 → Claim 窗），受害者名预填
+            if (Button("BtClaim", party ? 99 : 84)) { NativeClaimWindow.Open(target.name); Close(); return; }
             if (Event.current.type == EventType.Repaint && Pointer.Clicked && !rect.Contains(pointer)) Close();
         }
         finally { GUI.enabled = enabled; GUI.matrix = matrix; }

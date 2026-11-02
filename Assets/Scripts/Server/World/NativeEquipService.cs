@@ -27,6 +27,7 @@ public sealed class EquipPatchResponse
     public bool ok = true;
     public string error = "";
     public string scrollResult;
+    public int rewardItemId, rewardQuantity;   // 孵化器（5060002）开出的奖励
     public List<InventoryEntry> inventory;
 }
 

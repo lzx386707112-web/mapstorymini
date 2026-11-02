@@ -667,16 +667,10 @@ public static class BottomMenu
     // 首行：目录 24（让开底图标题），界面 5（11 项要填满 245，源端那 8 项的排法塞不下）
     static int FirstRow(int kind) { return kind == Catalog ? 24 : 5; }
 
-    // 源端只有「我的排行」（BtRanking）没做，其余界面项都在；目录 4 项全可用。
-    static bool Enabled(int kind, int index)
-    {
-        return kind == Catalog ? true : index < InterfaceButtons.Length - 1;
-    }
+    // 目录 4 项与「界面」11 项（含最后的 BtRanking）现在全部可用。
+    static bool Enabled(int kind, int index) => true;
 
-    static string DisabledHint(int kind, int index)
-    {
-        return "我的排行：源端未实现，手机端未开放";
-    }
+    static string DisabledHint(int kind, int index) => "";
 
     static void Click(int kind, int index)
     {
@@ -702,6 +696,7 @@ public static class BottomMenu
         if (index == 7) NativeGuildWindow.Toggle();
         if (index == 8) NativeSocialWindow.Toggle(GameAction.Buddy);
         if (index == 9) NativeMonsterBook.Toggle();
+        if (index == 10) NativeRankingWindow.Toggle();
     }
 
     // 源端「游戏结束」直接退客户端；手机端退出就是杀进程，加一道 YesNo 确认免得误触。
@@ -837,7 +832,7 @@ public static class GameWindows
         NativeCommunityWindow.Visible || NativeGuildWindow.Visible || NativeGuildGradeWindow.Visible ||
         NativeMedalWindow.Visible || ShopWindow.Visible || GameOptWindow.Visible ||
         SysOptWindow.Visible || ChannelWindow.Visible ||
-        NativeVegaWindow.Visible || NativeResetWindow.Visible || NativeSpResetWindow.Visible || NativeTeleportWindow.Visible || NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterInfo.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible || NativeNpcShopWindow.Visible || NativeDeliveryWindow.Visible;
+        NativeVegaWindow.Visible || NativeResetWindow.Visible || NativeSpResetWindow.Visible || NativeTeleportWindow.Visible || NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterInfo.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible || NativeNpcShopWindow.Visible || NativeDeliveryWindow.Visible || NativeMerchantWindow.Visible || NativeMakerWindow.Visible || NativeRankingWindow.Visible || NativePlayerShopWindow.Visible || NativeItemSearchWindow.Visible || NativeStorageWindow.Visible || NativeClaimWindow.Visible || NativeRpsWindow.Visible || NativeRemoteGachaponWindow.Visible;
 
     // ——————————————— Esc 分层关闭 ———————————————
     // 原版 Esc 是「系统菜单」键，但用户要求：只要有面板开着，Esc 先关面板。
@@ -847,7 +842,7 @@ public static class GameWindows
     enum Panel
     {
         Stat, Equip, Inven, Shop, Quest, Shortcut, Help, GameMenu, Skill,
-        World, Social, MonsterBook, Community, Guild, Medal, NpcShop, Delivery,
+        World, Social, MonsterBook, Community, Guild, Medal, NpcShop, Delivery, Merchant, Maker, Ranking, PlayerShop, ItemSearch, Storage, Claim, Rps, RemoteGachapon,
         GameOpt, SysOpt, Channel,
     }
     static readonly Panel[] panels = (Panel[])System.Enum.GetValues(typeof(Panel));
@@ -864,6 +859,15 @@ public static class GameWindows
             case Panel.Shop: return ShopWindow.Visible;
             case Panel.NpcShop: return NativeNpcShopWindow.Visible;
             case Panel.Delivery: return NativeDeliveryWindow.Visible;
+            case Panel.Merchant: return NativeMerchantWindow.Visible;
+            case Panel.Maker: return NativeMakerWindow.Visible;
+            case Panel.Ranking: return NativeRankingWindow.Visible;
+            case Panel.PlayerShop: return NativePlayerShopWindow.Visible;
+            case Panel.ItemSearch: return NativeItemSearchWindow.Visible;
+            case Panel.Storage: return NativeStorageWindow.Visible;
+            case Panel.Claim: return NativeClaimWindow.Visible;
+            case Panel.Rps: return NativeRpsWindow.Visible;
+            case Panel.RemoteGachapon: return NativeRemoteGachaponWindow.Visible;
             case Panel.Quest: return QuestWindow.Visible;
             case Panel.Shortcut: return ShortcutWindow.Visible;
             case Panel.Help: return HelpWindow.Visible;
@@ -893,6 +897,15 @@ public static class GameWindows
             case Panel.Shop: NativeCashWindow.Reset(); return;
             case Panel.NpcShop: NativeNpcShopWindow.Close(); return;
             case Panel.Delivery: NativeDeliveryWindow.Close(); return;
+            case Panel.Merchant: NativeMerchantWindow.Close(); return;
+            case Panel.Maker: NativeMakerWindow.Close(); return;
+            case Panel.Ranking: NativeRankingWindow.Close(); return;
+            case Panel.PlayerShop: NativePlayerShopWindow.Close(); return;
+            case Panel.ItemSearch: NativeItemSearchWindow.Close(); return;
+            case Panel.Storage: NativeStorageWindow.Close(); return;
+            case Panel.Claim: NativeClaimWindow.Close(); return;
+            case Panel.Rps: NativeRpsWindow.Close(); return;
+            case Panel.RemoteGachapon: NativeRemoteGachaponWindow.Close(); return;
             case Panel.Quest: QuestWindow.Visible = false; return;
             case Panel.Shortcut: ShortcutWindow.Visible = false; return;
             case Panel.Help: HelpWindow.Visible = false; return;
@@ -936,6 +949,15 @@ public static class GameWindows
         if (NativeTradeWindow.Visible) { NativeTradeWindow.Close(); return true; }
         if (NativeMarketWindow.Visible) { NativeMarketWindow.Close(); return true; }
         if (NativeDeliveryWindow.Visible) { NativeDeliveryWindow.Close(); return true; }
+        if (NativeMerchantWindow.Visible) { NativeMerchantWindow.Close(); return true; }
+        if (NativeMakerWindow.Visible) { NativeMakerWindow.Close(); return true; }
+        if (NativeRankingWindow.Visible) { NativeRankingWindow.Close(); return true; }
+        if (NativePlayerShopWindow.Visible) { NativePlayerShopWindow.Close(); return true; }
+        if (NativeItemSearchWindow.Visible) { NativeItemSearchWindow.Close(); return true; }
+        if (NativeStorageWindow.Visible) { NativeStorageWindow.Close(); return true; }
+        if (NativeClaimWindow.Visible) { NativeClaimWindow.Close(); return true; }
+        if (NativeRpsWindow.Visible) { NativeRpsWindow.RequestLeave(); return true; }
+        if (NativeRemoteGachaponWindow.Visible) { NativeRemoteGachaponWindow.Close(); return true; }
         TrackPanels();
         if (openOrder.Count == 0) return false;
         var top = openOrder[openOrder.Count - 1];
@@ -951,6 +973,7 @@ public static class GameWindows
         ItemTooltip.Reset();
         NativeCashWindow.Tick();
         NativeDeliveryWindow.Tick();
+        NativeItemSearchWindow.Tick();
         bool enabled = GUI.enabled;
         GUI.enabled &= !NativeUtilPrompt.Visible;
         try
@@ -976,6 +999,19 @@ public static class GameWindows
         NativeMarketWindow.Draw();
         NativeNpcShopWindow.Draw();
         NativeDeliveryWindow.Draw();
+        NativeMerchantWindow.Draw();
+        NativeMakerWindow.Draw();
+        NativeRankingWindow.Draw();
+        NativePlayerShopWindow.Draw();
+        NativeItemSearchWindow.Draw();
+        NativeStorageWindow.Draw();
+        NativeClaimWindow.Draw();
+        NativeRpsWindow.Draw();
+        NativeMemoWindow.Draw();
+        NativeMapleTvDisplay.Draw();
+        NativeCarnivalHud.Draw();
+        NativeCarnivalLobby.Draw();
+        NativeRemoteGachaponWindow.Draw();
         NativeCharacterInfo.Draw();
         NativeCharacterMenu.Draw();
         // 目录菜单里开出来的三个窗（源端只有底图，实现见 NativeSettingsWindows.cs）

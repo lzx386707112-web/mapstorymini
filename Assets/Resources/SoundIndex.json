@@ -1,4 +1,8 @@
 {
+ "BGM06/FinalFight": {
+  "ms": 88111,
+  "path": "Sound/Bgm/BGM06_FinalFight.mp3"
+ },
  "Bgm00/FloralLife": {
   "ms": 137639,
   "path": "Sound/Bgm/Bgm00_FloralLife.mp3"
@@ -7,21 +11,1001 @@
   "ms": 72829,
   "path": "Sound/Bgm/Bgm00_GoPicnic.mp3"
  },
+ "Bgm00/Nightmare": {
+  "ms": 190746,
+  "path": "Sound/Bgm/Bgm00_Nightmare.mp3"
+ },
  "Bgm00/RestNPeace": {
   "ms": 175151,
   "path": "Sound/Bgm/Bgm00_RestNPeace.mp3"
+ },
+ "Bgm00/Silence": {
+  "ms": 10083,
+  "path": "Sound/Bgm/Bgm00_Silence.mp3"
  },
  "Bgm00/SleepyWood": {
   "ms": 166635,
   "path": "Sound/Bgm/Bgm00_SleepyWood.mp3"
  },
+ "Bgm01/AncientMove": {
+  "ms": 260336,
+  "path": "Sound/Bgm/Bgm01_AncientMove.mp3"
+ },
+ "Bgm01/BadGuys": {
+  "ms": 218305,
+  "path": "Sound/Bgm/Bgm01_BadGuys.mp3"
+ },
+ "Bgm01/CavaBien": {
+  "ms": 128000,
+  "path": "Sound/Bgm/Bgm01_CavaBien.mp3"
+ },
+ "Bgm01/HighlandStar": {
+  "ms": 237113,
+  "path": "Sound/Bgm/Bgm01_HighlandStar.mp3"
+ },
+ "Bgm01/MoonlightShadow": {
+  "ms": 158511,
+  "path": "Sound/Bgm/Bgm01_MoonlightShadow.mp3"
+ },
+ "Bgm02/AboveTheTreetops": {
+  "ms": 271386,
+  "path": "Sound/Bgm/Bgm02_AboveTheTreetops.mp3"
+ },
+ "Bgm02/EvilEyes": {
+  "ms": 327392,
+  "path": "Sound/Bgm/Bgm02_EvilEyes.mp3"
+ },
+ "Bgm02/JungleBook": {
+  "ms": 216711,
+  "path": "Sound/Bgm/Bgm02_JungleBook.mp3"
+ },
+ "Bgm02/MissingYou": {
+  "ms": 146938,
+  "path": "Sound/Bgm/Bgm02_MissingYou.mp3"
+ },
+ "Bgm02/WhenTheMorningComes": {
+  "ms": 187742,
+  "path": "Sound/Bgm/Bgm02_WhenTheMorningComes.mp3"
+ },
+ "Bgm03/Beachway": {
+  "ms": 196388,
+  "path": "Sound/Bgm/Bgm03_Beachway.mp3"
+ },
+ "Bgm03/BlueSky": {
+  "ms": 161253,
+  "path": "Sound/Bgm/Bgm03_BlueSky.mp3"
+ },
+ "Bgm03/SnowyVillage": {
+  "ms": 155089,
+  "path": "Sound/Bgm/Bgm03_SnowyVillage.mp3"
+ },
+ "Bgm03/Subway": {
+  "ms": 198948,
+  "path": "Sound/Bgm/Bgm03_Subway.mp3"
+ },
+ "Bgm04/PlayWithMe": {
+  "ms": 164205,
+  "path": "Sound/Bgm/Bgm04_PlayWithMe.mp3"
+ },
  "Bgm04/Shinin'Harbor": {
   "ms": 115722,
-  "path": "Sound/Bgm/Bgm04/Shinin'Harbor.mp3"
+  "path": "Sound/Bgm/Bgm04_Shinin'Harbor.mp3"
+ },
+ "Bgm04/UponTheSky": {
+  "ms": 179591,
+  "path": "Sound/Bgm/Bgm04_UponTheSky.mp3"
+ },
+ "Bgm04/WarmRegard": {
+  "ms": 168124,
+  "path": "Sound/Bgm/Bgm04_WarmRegard.mp3"
+ },
+ "Bgm04/WhiteChristmas": {
+  "ms": 183118,
+  "path": "Sound/Bgm/Bgm04_WhiteChristmas.mp3"
+ },
+ "Bgm05/AbandonedMine": {
+  "ms": 178416,
+  "path": "Sound/Bgm/Bgm05_AbandonedMine.mp3"
+ },
+ "Bgm05/HellGate": {
+  "ms": 149446,
+  "path": "Sound/Bgm/Bgm05_HellGate.mp3"
+ },
+ "Bgm05/MineQuest": {
+  "ms": 185573,
+  "path": "Sound/Bgm/Bgm05_MineQuest.mp3"
+ },
+ "Bgm05/WolfWood": {
+  "ms": 164702,
+  "path": "Sound/Bgm/Bgm05_WolfWood.mp3"
+ },
+ "Bgm06/ComeWithMe": {
+  "ms": 200515,
+  "path": "Sound/Bgm/Bgm06_ComeWithMe.mp3"
+ },
+ "Bgm06/FantasticThinking": {
+  "ms": 148271,
+  "path": "Sound/Bgm/Bgm06_FantasticThinking.mp3"
+ },
+ "Bgm06/FlyingInABlueDream": {
+  "ms": 169848,
+  "path": "Sound/Bgm/Bgm06_FlyingInABlueDream.mp3"
+ },
+ "Bgm06/WelcomeToTheHell": {
+  "ms": 178886,
+  "path": "Sound/Bgm/Bgm06_WelcomeToTheHell.mp3"
+ },
+ "Bgm07/Fantasia": {
+  "ms": 151040,
+  "path": "Sound/Bgm/Bgm07_Fantasia.mp3"
+ },
+ "Bgm07/FunnyTimeMaker": {
+  "ms": 119431,
+  "path": "Sound/Bgm/Bgm07_FunnyTimeMaker.mp3"
+ },
+ "Bgm07/HighEnough": {
+  "ms": 216920,
+  "path": "Sound/Bgm/Bgm07_HighEnough.mp3"
+ },
+ "Bgm07/WaltzForWork": {
+  "ms": 94824,
+  "path": "Sound/Bgm/Bgm07_WaltzForWork.mp3"
+ },
+ "Bgm07/WhereverYouAre": {
+  "ms": 187559,
+  "path": "Sound/Bgm/Bgm07_WhereverYouAre.mp3"
+ },
+ "Bgm08/FindingForest": {
+  "ms": 150099,
+  "path": "Sound/Bgm/Bgm08_FindingForest.mp3"
+ },
+ "Bgm08/ForTheGlory": {
+  "ms": 177084,
+  "path": "Sound/Bgm/Bgm08_ForTheGlory.mp3"
+ },
+ "Bgm08/LetsHuntAliens": {
+  "ms": 127503,
+  "path": "Sound/Bgm/Bgm08_LetsHuntAliens.mp3"
+ },
+ "Bgm08/LetsMarch": {
+  "ms": 139363,
+  "path": "Sound/Bgm/Bgm08_LetsMarch.mp3"
+ },
+ "Bgm08/PlotOfPixie": {
+  "ms": 131265,
+  "path": "Sound/Bgm/Bgm08_PlotOfPixie.mp3"
+ },
+ "Bgm09/DarkShadow": {
+  "ms": 128809,
+  "path": "Sound/Bgm/Bgm09_DarkShadow.mp3"
+ },
+ "Bgm09/FairyTale": {
+  "ms": 149890,
+  "path": "Sound/Bgm/Bgm09_FairyTale.mp3"
+ },
+ "Bgm09/FairyTalediffvers": {
+  "ms": 164649,
+  "path": "Sound/Bgm/Bgm09_FairyTalediffvers.mp3"
+ },
+ "Bgm09/TheyMenacingYou": {
+  "ms": 136254,
+  "path": "Sound/Bgm/Bgm09_TheyMenacingYou.mp3"
+ },
+ "Bgm09/TimeAttack": {
+  "ms": 117446,
+  "path": "Sound/Bgm/Bgm09_TimeAttack.mp3"
+ },
+ "Bgm10/BizarreTales": {
+  "ms": 165694,
+  "path": "Sound/Bgm/Bgm10_BizarreTales.mp3"
+ },
+ "Bgm10/TheWayGrotesque": {
+  "ms": 201717,
+  "path": "Sound/Bgm/Bgm10_TheWayGrotesque.mp3"
+ },
+ "Bgm10/Timeless": {
+  "ms": 117289,
+  "path": "Sound/Bgm/Bgm10_Timeless.mp3"
+ },
+ "Bgm10/TimelessB": {
+  "ms": 115670,
+  "path": "Sound/Bgm/Bgm10_TimelessB.mp3"
+ },
+ "Bgm11/Aquarium": {
+  "ms": 145319,
+  "path": "Sound/Bgm/Bgm11_Aquarium.mp3"
+ },
+ "Bgm11/BlueWorld": {
+  "ms": 136385,
+  "path": "Sound/Bgm/Bgm11_BlueWorld.mp3"
+ },
+ "Bgm11/DarkMountain": {
+  "ms": 173479,
+  "path": "Sound/Bgm/Bgm11_DarkMountain.mp3"
+ },
+ "Bgm11/DownTown": {
+  "ms": 168098,
+  "path": "Sound/Bgm/Bgm11_DownTown.mp3"
+ },
+ "Bgm11/ShiningSea": {
+  "ms": 177789,
+  "path": "Sound/Bgm/Bgm11_ShiningSea.mp3"
+ },
+ "Bgm12/AcientRemain": {
+  "ms": 124003,
+  "path": "Sound/Bgm/Bgm12_AcientRemain.mp3"
+ },
+ "Bgm12/AquaCave": {
+  "ms": 149942,
+  "path": "Sound/Bgm/Bgm12_AquaCave.mp3"
+ },
+ "Bgm12/DeepSee": {
+  "ms": 154984,
+  "path": "Sound/Bgm/Bgm12_DeepSee.mp3"
+ },
+ "Bgm12/Dispute": {
+  "ms": 155689,
+  "path": "Sound/Bgm/Bgm12_Dispute.mp3"
+ },
+ "Bgm12/RuinCastle": {
+  "ms": 146991,
+  "path": "Sound/Bgm/Bgm12_RuinCastle.mp3"
+ },
+ "Bgm12/WaterWay": {
+  "ms": 154984,
+  "path": "Sound/Bgm/Bgm12_WaterWay.mp3"
+ },
+ "Bgm13/AcientForest": {
+  "ms": 142132,
+  "path": "Sound/Bgm/Bgm13_AcientForest.mp3"
+ },
+ "Bgm13/FightSand": {
+  "ms": 128052,
+  "path": "Sound/Bgm/Bgm13_FightSand.mp3"
+ },
+ "Bgm13/Leafre": {
+  "ms": 157231,
+  "path": "Sound/Bgm/Bgm13_Leafre.mp3"
+ },
+ "Bgm13/Minar'sDream": {
+  "ms": 132022,
+  "path": "Sound/Bgm/Bgm13_Minar'sDream.mp3"
+ },
+ "Bgm13/TowerOfGoddess": {
+  "ms": 133198,
+  "path": "Sound/Bgm/Bgm13_TowerOfGoddess.mp3"
+ },
+ "Bgm14/Ariant": {
+  "ms": 141505,
+  "path": "Sound/Bgm/Bgm14_Ariant.mp3"
+ },
+ "Bgm14/CaveOfHontale": {
+  "ms": 141949,
+  "path": "Sound/Bgm/Bgm14_CaveOfHontale.mp3"
+ },
+ "Bgm14/DragonLoad": {
+  "ms": 153260,
+  "path": "Sound/Bgm/Bgm14_DragonLoad.mp3"
+ },
+ "Bgm14/DragonNest": {
+  "ms": 145711,
+  "path": "Sound/Bgm/Bgm14_DragonNest.mp3"
+ },
+ "Bgm14/HonTale": {
+  "ms": 143699,
+  "path": "Sound/Bgm/Bgm14_HonTale.mp3"
+ },
+ "Bgm14/HotDesert": {
+  "ms": 138710,
+  "path": "Sound/Bgm/Bgm14_HotDesert.mp3"
+ },
+ "Bgm15/ElinForest": {
+  "ms": 140669,
+  "path": "Sound/Bgm/Bgm15_ElinForest.mp3"
+ },
+ "Bgm15/MureungForest": {
+  "ms": 141897,
+  "path": "Sound/Bgm/Bgm15_MureungForest.mp3"
+ },
+ "Bgm15/MureungHill": {
+  "ms": 151092,
+  "path": "Sound/Bgm/Bgm15_MureungHill.mp3"
+ },
+ "Bgm15/Nautilus": {
+  "ms": 122279,
+  "path": "Sound/Bgm/Bgm15_Nautilus.mp3"
+ },
+ "Bgm15/Pirate": {
+  "ms": 151693,
+  "path": "Sound/Bgm/Bgm15_Pirate.mp3"
+ },
+ "Bgm15/PoisonForest": {
+  "ms": 145946,
+  "path": "Sound/Bgm/Bgm15_PoisonForest.mp3"
+ },
+ "Bgm15/SunsetDesert": {
+  "ms": 157492,
+  "path": "Sound/Bgm/Bgm15_SunsetDesert.mp3"
+ },
+ "Bgm15/WhiteHerb": {
+  "ms": 145528,
+  "path": "Sound/Bgm/Bgm15_WhiteHerb.mp3"
+ },
+ "Bgm15/inNautilus": {
+  "ms": 152084,
+  "path": "Sound/Bgm/Bgm15_inNautilus.mp3"
+ },
+ "Bgm16/Duskofgod": {
+  "ms": 128783,
+  "path": "Sound/Bgm/Bgm16_Duskofgod.mp3"
+ },
+ "Bgm16/FightingPinkBeen": {
+  "ms": 146651,
+  "path": "Sound/Bgm/Bgm16_FightingPinkBeen.mp3"
+ },
+ "Bgm16/Forgetfulness": {
+  "ms": 151301,
+  "path": "Sound/Bgm/Bgm16_Forgetfulness.mp3"
+ },
+ "Bgm16/Remembrance": {
+  "ms": 134504,
+  "path": "Sound/Bgm/Bgm16_Remembrance.mp3"
+ },
+ "Bgm16/Repentance": {
+  "ms": 160888,
+  "path": "Sound/Bgm/Bgm16_Repentance.mp3"
+ },
+ "Bgm16/TimeTemple": {
+  "ms": 136881,
+  "path": "Sound/Bgm/Bgm16_TimeTemple.mp3"
+ },
+ "Bgm17/MureungSchool1": {
+  "ms": 48091,
+  "path": "Sound/Bgm/Bgm17_MureungSchool1.mp3"
+ },
+ "Bgm17/MureungSchool2": {
+  "ms": 57025,
+  "path": "Sound/Bgm/Bgm17_MureungSchool2.mp3"
+ },
+ "Bgm17/MureungSchool3": {
+  "ms": 52192,
+  "path": "Sound/Bgm/Bgm17_MureungSchool3.mp3"
+ },
+ "Bgm17/MureungSchool4": {
+  "ms": 50468,
+  "path": "Sound/Bgm/Bgm17_MureungSchool4.mp3"
+ },
+ "Bgm18/BlackWing": {
+  "ms": 128104,
+  "path": "Sound/Bgm/Bgm18_BlackWing.mp3"
+ },
+ "Bgm18/DrillHall": {
+  "ms": 124604,
+  "path": "Sound/Bgm/Bgm18_DrillHall.mp3"
+ },
+ "Bgm18/QueensGarden": {
+  "ms": 119588,
+  "path": "Sound/Bgm/Bgm18_QueensGarden.mp3"
+ },
+ "Bgm18/RaindropFlower": {
+  "ms": 122331,
+  "path": "Sound/Bgm/Bgm18_RaindropFlower.mp3"
+ },
+ "Bgm18/WolfAndSheep": {
+  "ms": 152058,
+  "path": "Sound/Bgm/Bgm18_WolfAndSheep.mp3"
+ },
+ "Bgm19/BambooGym": {
+  "ms": 272796,
+  "path": "Sound/Bgm/Bgm19_BambooGym.mp3"
+ },
+ "Bgm19/CrystalCave": {
+  "ms": 141453,
+  "path": "Sound/Bgm/Bgm19_CrystalCave.mp3"
+ },
+ "Bgm19/MushCatle": {
+  "ms": 161253,
+  "path": "Sound/Bgm/Bgm19_MushCatle.mp3"
+ },
+ "Bgm19/RienVillage": {
+  "ms": 192809,
+  "path": "Sound/Bgm/Bgm19_RienVillage.mp3"
+ },
+ "Bgm19/SnowDrop": {
+  "ms": 170083,
+  "path": "Sound/Bgm/Bgm19_SnowDrop.mp3"
+ },
+ "Bgm20/NetsPiramid": {
+  "ms": 115252,
+  "path": "Sound/Bgm/Bgm20_NetsPiramid.mp3"
+ },
+ "Bgm20/NetsPiramid2": {
+  "ms": 115252,
+  "path": "Sound/Bgm/Bgm20_NetsPiramid2.mp3"
+ },
+ "Bgm21/2021year": {
+  "ms": 139049,
+  "path": "Sound/Bgm/Bgm21_2021year.mp3"
+ },
+ "Bgm21/2099year": {
+  "ms": 144483,
+  "path": "Sound/Bgm/Bgm21_2099year.mp3"
+ },
+ "Bgm21/2215year": {
+  "ms": 122044,
+  "path": "Sound/Bgm/Bgm21_2215year.mp3"
+ },
+ "Bgm21/2230year": {
+  "ms": 133433,
+  "path": "Sound/Bgm/Bgm21_2230year.mp3"
+ },
+ "Bgm21/2503year": {
+  "ms": 122540,
+  "path": "Sound/Bgm/Bgm21_2503year.mp3"
+ },
+ "Bgm21/KerningSquare": {
+  "ms": 182465,
+  "path": "Sound/Bgm/Bgm21_KerningSquare.mp3"
+ },
+ "Bgm21/KerningSquareField": {
+  "ms": 147748,
+  "path": "Sound/Bgm/Bgm21_KerningSquareField.mp3"
+ },
+ "Bgm21/KerningSquareSubway": {
+  "ms": 159660,
+  "path": "Sound/Bgm/Bgm21_KerningSquareSubway.mp3"
+ },
+ "Bgm21/TeraForest": {
+  "ms": 149472,
+  "path": "Sound/Bgm/Bgm21_TeraForest.mp3"
+ },
+ "Bgm22/DecisiveBattle": {
+  "ms": 120685,
+  "path": "Sound/Bgm/Bgm22_DecisiveBattle.mp3"
+ },
+ "Bgm23/BlizzardCastle": {
+  "ms": 173557,
+  "path": "Sound/Bgm/Bgm23_BlizzardCastle.mp3"
+ },
+ "Bgm23/CrimsonTower": {
+  "ms": 161175,
+  "path": "Sound/Bgm/Bgm23_CrimsonTower.mp3"
+ },
+ "Bgm23/LionHeart": {
+  "ms": 174132,
+  "path": "Sound/Bgm/Bgm23_LionHeart.mp3"
+ },
+ "Bgm24/monsterPark": {
+  "ms": 138083,
+  "path": "Sound/Bgm/Bgm24_monsterPark.mp3"
+ },
+ "Bgm25/AltarOfAkayrum": {
+  "ms": 124003,
+  "path": "Sound/Bgm/Bgm25_AltarOfAkayrum.mp3"
+ },
+ "Bgm25/CrackOfDimension": {
+  "ms": 117133,
+  "path": "Sound/Bgm/Bgm25_CrackOfDimension.mp3"
+ },
+ "Bgm25/CygnusGarden": {
+  "ms": 156969,
+  "path": "Sound/Bgm/Bgm25_CygnusGarden.mp3"
+ },
+ "Bgm25/FlowerInBlue": {
+  "ms": 130115,
+  "path": "Sound/Bgm/Bgm25_FlowerInBlue.mp3"
+ },
+ "Bgm25/destructionPerion": {
+  "ms": 129933,
+  "path": "Sound/Bgm/Bgm25_destructionPerion.mp3"
+ },
+ "Bgm25/destructionPerionShelter": {
+  "ms": 123611,
+  "path": "Sound/Bgm/Bgm25_destructionPerionShelter.mp3"
+ },
+ "Bgm25/destructionTown": {
+  "ms": 154514,
+  "path": "Sound/Bgm/Bgm25_destructionTown.mp3"
+ },
+ "Bgm25/knightsStronghold": {
+  "ms": 156551,
+  "path": "Sound/Bgm/Bgm25_knightsStronghold.mp3"
+ },
+ "Bgm25/timeGate": {
+  "ms": 147017,
+  "path": "Sound/Bgm/Bgm25_timeGate.mp3"
+ },
+ "Bgm28/helisiumField": {
+  "ms": 125805,
+  "path": "Sound/Bgm/Bgm28_helisiumField.mp3"
+ },
+ "Bgm28/helisiumMysticforest": {
+  "ms": 136463,
+  "path": "Sound/Bgm/Bgm28_helisiumMysticforest.mp3"
+ },
+ "Bgm35/Hekaton": {
+  "ms": 121626,
+  "path": "Sound/Bgm/Bgm35_Hekaton.mp3"
+ },
+ "Bgm46/BrokenDream": {
+  "ms": 80754,
+  "path": "Sound/Bgm/Bgm46_BrokenDream.mp3"
+ },
+ "Bgm46/Cave Of Rest": {
+  "ms": 74971,
+  "path": "Sound/Bgm/Bgm46_Cave Of Rest.mp3"
+ },
+ "Bgm46/ChewChew MainTheme": {
+  "ms": 68466,
+  "path": "Sound/Bgm/Bgm46_ChewChew MainTheme.mp3"
+ },
+ "Bgm46/ChewChew WildWorld": {
+  "ms": 75728,
+  "path": "Sound/Bgm/Bgm46_ChewChew WildWorld.mp3"
+ },
+ "Bgm46/ClockTowerofNightmare": {
+  "ms": 104646,
+  "path": "Sound/Bgm/Bgm46_ClockTowerofNightmare.mp3"
+ },
+ "Bgm46/LachelntheIllusionCity": {
+  "ms": 81580,
+  "path": "Sound/Bgm/Bgm46_LachelntheIllusionCity.mp3"
+ },
+ "Bgm46/Lake Of Oblivion": {
+  "ms": 94850,
+  "path": "Sound/Bgm/Bgm46_Lake Of Oblivion.mp3"
+ },
+ "Bgm46/Volcanic Zone Of Extinction": {
+  "ms": 83853,
+  "path": "Sound/Bgm/Bgm46_Volcanic Zone Of Extinction.mp3"
+ },
+ "Bgm46/WierldForestIntheGirlsdream": {
+  "ms": 88161,
+  "path": "Sound/Bgm/Bgm46_WierldForestIntheGirlsdream.mp3"
+ },
+ "Bgm47/ArcanaBoss": {
+  "ms": 93091,
+  "path": "Sound/Bgm/Bgm47_ArcanaBoss.mp3"
+ },
+ "Bgm47/TheTuneOfAzureLight": {
+  "ms": 171232,
+  "path": "Sound/Bgm/Bgm47_TheTuneOfAzureLight.mp3"
+ },
+ "Bgm48/BlackDungeon": {
+  "ms": 10057,
+  "path": "Sound/Bgm/Bgm48_BlackDungeon.mp3"
+ },
+ "Bgm48/MemoryOfKritias": {
+  "ms": 99064,
+  "path": "Sound/Bgm/Bgm48_MemoryOfKritias.mp3"
+ },
+ "Bgm48/Outpost": {
+  "ms": 89439,
+  "path": "Sound/Bgm/Bgm48_Outpost.mp3"
+ },
+ "Bgm48/SwampOfMemoryMoras": {
+  "ms": 100911,
+  "path": "Sound/Bgm/Bgm48_SwampOfMemoryMoras.mp3"
+ },
+ "Bgm49/ConteminatedSea": {
+  "ms": 95465,
+  "path": "Sound/Bgm/Bgm49_ConteminatedSea.mp3"
+ },
+ "Bgm49/DepthOfPain": {
+  "ms": 102272,
+  "path": "Sound/Bgm/Bgm49_DepthOfPain.mp3"
+ },
+ "Bgm49/EternalSwamp": {
+  "ms": 113984,
+  "path": "Sound/Bgm/Bgm49_EternalSwamp.mp3"
+ },
+ "Bgm49/FerociousBattlefield": {
+  "ms": 108611,
+  "path": "Sound/Bgm/Bgm49_FerociousBattlefield.mp3"
+ },
+ "Bgm49/HeartofSuffering": {
+  "ms": 113684,
+  "path": "Sound/Bgm/Bgm49_HeartofSuffering.mp3"
+ },
+ "Bgm49/SecretLabyrinth": {
+  "ms": 90430,
+  "path": "Sound/Bgm/Bgm49_SecretLabyrinth.mp3"
+ },
+ "Bgm49/SoupOfLife": {
+  "ms": 111610,
+  "path": "Sound/Bgm/Bgm49_SoupOfLife.mp3"
+ },
+ "Bgm49/StrangeFog": {
+  "ms": 105560,
+  "path": "Sound/Bgm/Bgm49_StrangeFog.mp3"
+ },
+ "Bgm49/TempleInTheMirror": {
+  "ms": 96117,
+  "path": "Sound/Bgm/Bgm49_TempleInTheMirror.mp3"
+ },
+ "Bgm49/WarCloud": {
+  "ms": 86205,
+  "path": "Sound/Bgm/Bgm49_WarCloud.mp3"
+ },
+ "Bgm49/WaveofEmptiness": {
+  "ms": 95908,
+  "path": "Sound/Bgm/Bgm49_WaveofEmptiness.mp3"
+ },
+ "Bgm50/TearsOfTheWorld": {
+  "ms": 93570,
+  "path": "Sound/Bgm/Bgm50_TearsOfTheWorld.mp3"
+ },
+ "Bgm50/TheWorld’sEnd": {
+  "ms": 86334,
+  "path": "Sound/Bgm/Bgm50_TheWorld’sEnd.mp3"
+ },
+ "Bgm53/BattleOfCernium": {
+  "ms": 91585,
+  "path": "Sound/Bgm/Bgm53_BattleOfCernium.mp3"
+ },
+ "Bgm53/SeaWave": {
+  "ms": 13609,
+  "path": "Sound/Bgm/Bgm53_SeaWave.mp3"
+ },
+ "Bgm53/TheHolyLand": {
+  "ms": 102530,
+  "path": "Sound/Bgm/Bgm53_TheHolyLand.mp3"
+ },
+ "Bgm54/FungusForest": {
+  "ms": 87666,
+  "path": "Sound/Bgm/Bgm54_FungusForest.mp3"
+ },
+ "Bgm54/IlliyardMoor": {
+  "ms": 125335,
+  "path": "Sound/Bgm/Bgm54_IlliyardMoor.mp3"
+ },
+ "Bgm54/MushbudForest": {
+  "ms": 106608,
+  "path": "Sound/Bgm/Bgm54_MushbudForest.mp3"
+ },
+ "Bgm54/ReverseCity": {
+  "ms": 113566,
+  "path": "Sound/Bgm/Bgm54_ReverseCity.mp3"
+ },
+ "Bgm54/ReverseCity2": {
+  "ms": 93404,
+  "path": "Sound/Bgm/Bgm54_ReverseCity2.mp3"
+ },
+ "Bgm54/T-bomb": {
+  "ms": 91187,
+  "path": "Sound/Bgm/Bgm54_T-bomb.mp3"
+ },
+ "Bgm55/SinkingThings": {
+  "ms": 117168,
+  "path": "Sound/Bgm/Bgm55_SinkingThings.mp3"
+ },
+ "Bgm55/WhaleBelly": {
+  "ms": 114720,
+  "path": "Sound/Bgm/Bgm55_WhaleBelly.mp3"
+ },
+ "Bgm55/WhereStarsRest": {
+  "ms": 125232,
+  "path": "Sound/Bgm/Bgm55_WhereStarsRest.mp3"
+ },
+ "Bgm57/Lonesome Cinema": {
+  "ms": 84897,
+  "path": "Sound/Bgm/Bgm57_Lonesome Cinema.mp3"
+ },
+ "Bgm57/Train heading nowhere": {
+  "ms": 96052,
+  "path": "Sound/Bgm/Bgm57_Train heading nowhere.mp3"
+ },
+ "Bgm57/Wayout of the wilderness": {
+  "ms": 91402,
+  "path": "Sound/Bgm/Bgm57_Wayout of the wilderness.mp3"
+ },
+ "Bgm58/Alley on the Other Side": {
+  "ms": 90587,
+  "path": "Sound/Bgm/Bgm58_Alley on the Other Side.mp3"
+ },
+ "Bgm58/Irreversible Abomination": {
+  "ms": 87796,
+  "path": "Sound/Bgm/Bgm58_Irreversible Abomination.mp3"
+ },
+ "Bgm58/Sunshine blurring the Unknown": {
+  "ms": 96470,
+  "path": "Sound/Bgm/Bgm58_Sunshine blurring the Unknown.mp3"
+ },
+ "Bgm58/The Lost City among the Clouds": {
+  "ms": 111454,
+  "path": "Sound/Bgm/Bgm58_The Lost City among the Clouds.mp3"
+ },
+ "Bgm59/The other side of ShangriLa": {
+  "ms": 83936,
+  "path": "Sound/Bgm/Bgm59_The other side of ShangriLa.mp3"
+ },
+ "BgmBT/commercIng": {
+  "ms": 128486,
+  "path": "Sound/Bgm/BgmBT_commercIng.mp3"
+ },
+ "BgmBT/commerzCanal": {
+  "ms": 123924,
+  "path": "Sound/Bgm/BgmBT_commerzCanal.mp3"
+ },
+ "BgmCN/EnSchool": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_EnSchool.mp3"
+ },
+ "BgmCN/GoShanghai": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_GoShanghai.mp3"
+ },
+ "BgmCN/PvP": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_PvP.mp3"
+ },
+ "BgmCN/ShanghaiField": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_ShanghaiField.mp3"
+ },
+ "BgmCN/Yuyuan": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_Yuyuan.mp3"
+ },
+ "BgmCN/shaolin_cangjingge": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_shaolin_cangjingge.mp3"
+ },
+ "BgmCN/shaolin_daxiongbaodian": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_shaolin_daxiongbaodian.mp3"
+ },
+ "BgmCN/shaolin_mishi": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_shaolin_mishi.mp3"
+ },
+ "BgmCN/shaolin_shan": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_shaolin_shan.mp3"
+ },
+ "BgmCN/shaolin_songshan": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_shaolin_songshan.mp3"
+ },
+ "BgmCN/summerboating01": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_summerboating01.mp3"
+ },
+ "BgmCN/summerboating02": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_summerboating02.mp3"
+ },
+ "BgmCN/summerboating03": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmCN_summerboating03.mp3"
+ },
+ "BgmEvent/FunnyRabbit": {
+  "ms": 105717,
+  "path": "Sound/Bgm/BgmEvent_FunnyRabbit.mp3"
+ },
+ "BgmEvent/FunnyRabbitFaster": {
+  "ms": 96130,
+  "path": "Sound/Bgm/BgmEvent_FunnyRabbitFaster.mp3"
+ },
+ "BgmEvent/wichTower": {
+  "ms": 160052,
+  "path": "Sound/Bgm/BgmEvent_wichTower.mp3"
+ },
+ "BgmGL/Amorianchallenge": {
+  "ms": 168081,
+  "path": "Sound/Bgm/BgmGL_Amorianchallenge.mp3"
+ },
+ "BgmGL/Bigfoot": {
+  "ms": 128052,
+  "path": "Sound/Bgm/BgmGL_Bigfoot.mp3"
+ },
+ "BgmGL/Courtyard": {
+  "ms": 144065,
+  "path": "Sound/Bgm/BgmGL_Courtyard.mp3"
+ },
+ "BgmGL/CrimsonwoodKeep": {
+  "ms": 150099,
+  "path": "Sound/Bgm/BgmGL_CrimsonwoodKeep.mp3"
+ },
+ "BgmGL/CrimsonwoodKeepInterior": {
+  "ms": 207020,
+  "path": "Sound/Bgm/BgmGL_CrimsonwoodKeepInterior.mp3"
+ },
+ "BgmGL/GrandmastersGauntlet": {
+  "ms": 256966,
+  "path": "Sound/Bgm/BgmGL_GrandmastersGauntlet.mp3"
+ },
+ "BgmGL/HauntedHouse": {
+  "ms": 140826,
+  "path": "Sound/Bgm/BgmGL_HauntedHouse.mp3"
+ },
+ "BgmGL/NLChunt": {
+  "ms": 144404,
+  "path": "Sound/Bgm/BgmGL_NLChunt.mp3"
+ },
+ "BgmGL/NLCtown": {
+  "ms": 138057,
+  "path": "Sound/Bgm/BgmGL_NLCtown.mp3"
+ },
+ "BgmGL/NLCupbeat": {
+  "ms": 152006,
+  "path": "Sound/Bgm/BgmGL_NLCupbeat.mp3"
+ },
+ "BgmGL/PartyQuestGL": {
+  "ms": 169795,
+  "path": "Sound/Bgm/BgmGL_PartyQuestGL.mp3"
+ },
+ "BgmGL/PhantomForest": {
+  "ms": 150047,
+  "path": "Sound/Bgm/BgmGL_PhantomForest.mp3"
+ },
+ "BgmGL/amoria": {
+  "ms": 159738,
+  "path": "Sound/Bgm/BgmGL_amoria.mp3"
+ },
+ "BgmJp/Bathroom": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp_Bathroom.mp3"
+ },
+ "BgmJp/BattleField": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp_BattleField.mp3"
+ },
+ "BgmJp/BizarreForest": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp_BizarreForest.mp3"
+ },
+ "BgmJp/CastleBoss": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp_CastleBoss.mp3"
+ },
+ "BgmJp/CastleInside": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp_CastleInside.mp3"
+ },
+ "BgmJp/CastleOutSide": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp_CastleOutSide.mp3"
+ },
+ "BgmJp/CastleTrap": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp_CastleTrap.mp3"
+ },
+ "BgmJp/Feeling": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp_Feeling.mp3"
  },
  "BgmJp/FirstStepMaster": {
   "ms": 0,
   "path": "Sound/Bgm/BgmJp_FirstStepMaster.mp3"
+ },
+ "BgmJp/Yume": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp_Yume.mp3"
+ },
+ "BgmJp2/Akiabara": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp2_Akiabara.mp3"
+ },
+ "BgmJp2/Kamuna": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp2_Kamuna.mp3"
+ },
+ "BgmJp2/Odaiba": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp2_Odaiba.mp3"
+ },
+ "BgmJp2/Office": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp2_Office.mp3"
+ },
+ "BgmJp2/Park": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp2_Park.mp3"
+ },
+ "BgmJp2/Rockbongi1": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp2_Rockbongi1.mp3"
+ },
+ "BgmJp2/Rockbongi2": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp2_Rockbongi2.mp3"
+ },
+ "BgmJp2/Tokyosky": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmJp2_Tokyosky.mp3"
+ },
+ "BgmJp3/Hieijan": {
+  "ms": 64052,
+  "path": "Sound/Bgm/BgmJp3_Hieijan.mp3"
+ },
+ "BgmJp3/Hieijan_nohime": {
+  "ms": 66533,
+  "path": "Sound/Bgm/BgmJp3_Hieijan_nohime.mp3"
+ },
+ "BgmJp3/InsideHonnouji": {
+  "ms": 129071,
+  "path": "Sound/Bgm/BgmJp3_InsideHonnouji.mp3"
+ },
+ "BgmJp3/Kecon": {
+  "ms": 128287,
+  "path": "Sound/Bgm/BgmJp3_Kecon.mp3"
+ },
+ "BgmJp3/MomijiNoSakamichi": {
+  "ms": 120711,
+  "path": "Sound/Bgm/BgmJp3_MomijiNoSakamichi.mp3"
+ },
+ "BgmJp3/Momijigaoka": {
+  "ms": 134086,
+  "path": "Sound/Bgm/BgmJp3_Momijigaoka.mp3"
+ },
+ "BgmMY/Highland": {
+  "ms": 144091,
+  "path": "Sound/Bgm/BgmMY_Highland.mp3"
+ },
+ "BgmMY/KualaLumpur": {
+  "ms": 135680,
+  "path": "Sound/Bgm/BgmMY_KualaLumpur.mp3"
+ },
+ "BgmSG/BoatQuay_field": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmSG_BoatQuay_field.mp3"
+ },
+ "BgmSG/BoatQuay_town": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmSG_BoatQuay_town.mp3"
+ },
+ "BgmSG/CBD_field": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmSG_CBD_field.mp3"
+ },
+ "BgmSG/CBD_town": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmSG_CBD_town.mp3"
+ },
+ "BgmSG/Ghostship": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmSG_Ghostship.mp3"
+ },
+ "BgmSG/Ulu_field": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmSG_Ulu_field.mp3"
+ },
+ "BgmTH/ThaiField": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmTH_ThaiField.mp3"
+ },
+ "BgmTH/ThaiTown": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmTH_ThaiTown.mp3"
+ },
+ "BgmTH/goldTempleDungeonTH": {
+  "ms": 223085,
+  "path": "Sound/Bgm/BgmTH_goldTempleDungeonTH.mp3"
+ },
+ "BgmTH/goldTempleFieldTH": {
+  "ms": 149342,
+  "path": "Sound/Bgm/BgmTH_goldTempleFieldTH.mp3"
+ },
+ "BgmTH/goldTempleTownTH": {
+  "ms": 150752,
+  "path": "Sound/Bgm/BgmTH_goldTempleTownTH.mp3"
+ },
+ "BgmTW/101BuildingSubway": {
+  "ms": 159660,
+  "path": "Sound/Bgm/BgmTW_101BuildingSubway.mp3"
+ },
+ "BgmTW/CakeMap": {
+  "ms": 123298,
+  "path": "Sound/Bgm/BgmTW_CakeMap.mp3"
+ },
+ "BgmTW/FishingMemories": {
+  "ms": 0,
+  "path": "Sound/Bgm/BgmTW_FishingMemories.mp3"
+ },
+ "BgmTW/GachaponHousing": {
+  "ms": 138579,
+  "path": "Sound/Bgm/BgmTW_GachaponHousing.mp3"
  },
  "BgmUI/Title": {
   "ms": 376947,
@@ -470,5 +1454,25 @@
  "orbis/sol": {
   "ms": 2000,
   "path": "Sound/Field/orbis/sol.mp3"
+ },
+ "seedBgm17/GoldBeach": {
+  "ms": 138449,
+  "path": "Sound/Bgm/seedBgm17_GoldBeach.mp3"
+ },
+ "seedBgm37/AmusingStoryInTheFairyTale": {
+  "ms": 127686,
+  "path": "Sound/Bgm/seedBgm37_AmusingStoryInTheFairyTale.mp3"
+ },
+ "seedBgm37/JungleInTheSea": {
+  "ms": 135392,
+  "path": "Sound/Bgm/seedBgm37_JungleInTheSea.mp3"
+ },
+ "seedBgm37/TheBottomOfTheSea": {
+  "ms": 125309,
+  "path": "Sound/Bgm/seedBgm37_TheBottomOfTheSea.mp3"
+ },
+ "seedBgm37/VentureIntoTheUnkown": {
+  "ms": 36179,
+  "path": "Sound/Bgm/seedBgm37_VentureIntoTheUnkown.mp3"
  }
 }

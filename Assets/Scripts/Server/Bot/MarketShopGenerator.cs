@@ -10,6 +10,8 @@ namespace Server.Bot
         public InventoryEntry item;
         public int bundles, price;
         public bool exists = true;
+        // 玩家雇佣商店镜像到市场时的槽位号（NativeMerchantService.merchantitems.slot）
+        public int merchantSlot = -1;
     }
 
     public sealed class MarketSoldItem
@@ -26,6 +28,9 @@ namespace Server.Bot
         public int purchasedStocks;
         public string ownerName, description, tier;
         public bool open, playerStore;
+        // 玩家本人开的雇佣商店：由 NativeMerchantService 提供成交回调（merchantSlot, quantity）→ 实收金币，
+        // 返回 <=0 表示这单不能成交。playerStore 且该回调为空时才是「假人开的玩家式店铺」。
+        public Func<int, int, long> playerSell;
         public MarketShopType primary, secondary;
         public MarketShopType? tertiary;
         public readonly List<MarketShopStock> items = new List<MarketShopStock>();

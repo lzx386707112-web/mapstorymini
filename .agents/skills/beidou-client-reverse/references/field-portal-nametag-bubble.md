@@ -321,3 +321,57 @@ pt11自定义image与ph共享Continue的原端细节尚需继续逐图核对，�
 BotField.ShowLocalBalloon，沿用本节原IMG/尺寸/折行/5000ms时长；主角使用实际SpriteAnim
 世界bounds.max.y为头顶，非假人View。假人预热/视图未同步时也可显示；地图Clear清除。
 输入法发送时序及本次验证见[聊天消息](chat-and-system-messages.md)末节。
+
+## 2026-11-02 换图黑幕锁死（出租车传送黑屏）
+
+用户反馈「出租车传送黑屏」。本节记录**结构性缺陷与修复边界**，不是对某张目标图的逐帧 oracle。
+
+### 已核实：换图状态机的异常出口会让黑幕不可逆
+
+`Field/FieldDirector.TickWarpFade` 的 `WarpState.Out` 分支在全黑后调用 `Enter(target, portalName, portalIndex)`。
+`Enter` 内部只有 `view.Show(map)` 包了 `try/catch`（`FieldView.Show` 失败时销毁新图对象、保留旧图并 `return`）；
+其余步骤全部**没有 try 保护**：`FieldCatalog.GetMap` / `NpcField.Bind` / `ApplyGeometry` / `PlacePlayer` /
+`AudioManager.PlayBgm` / `EventMap.Attach` / `BuildPoints` / `MaterializeWildBosses` /
+`NativeSkillBackdrop.Enter` / `NativeMapScripts.Enter` / `NativeEventScripts.ChangedMap`。
+
+任何一步抛异常都会冒泡出 `TickWarpFade`（`Update` 里 `if (Warping) { TickWarpFade(); return; }` 不捕获），
+于是：`warpState` 永远停在 `Out`、`ScreenFade` 的 alpha 停在 1（`OutSeconds` 末 `Advance` 已把它推到 1）、
+`PlayerCtrl.InputLocked` 停在 true（解锁只在 `In` 分支末尾）。表现即「传送后永久黑屏且点不动」。
+
+补查确认**不会**冒泡的路径，避免误判：`NativeMapScripts.Run` 自带 `try/catch`（记 `[MapScript]` 后恢复 ScriptUiLock）；
+`AudioManager.PlayBgm` 对未登记/缺失 BGM 只 `Debug.LogWarning` 后 `return`；`NativeMapIntro.Enter` 只是 `Clear()`。
+
+### 修复（2026-11-02）
+
+`TickWarpFade` 的 `Out` 分支把整段换图包进 `try/catch/finally`：
+- `catch`：`Debug.LogException(e)` 输出完整堆栈（可直接定位 Enter 内失败行）+ `FileLog.Note("[Field/Warp] …")`。
+- `finally`：无条件 `warpState = WarpState.Hold; warpClock = 0f;`，让状态机继续 Hold→In，把 alpha 推回 0 并在 In 末尾解锁输入。
+
+正常传送路径行为不变；`finally` 只在异常时改变结局。
+
+### 出租车链路逐项排除（本次静态核对）
+
+- 脚本：`npc/1012000`/`1002007`/`1022001`/`1032000`/`1052016`/`1092014` 普通出租车的 `maps[]` 全部是
+  100000000/101000000/102000000/103000000/104000000/120000000；`selectedMap` 在 status==2 由选项 `selection` 赋值，
+  status==3 用保存值，**不会**退化成 `maps[undefined]` → `warp(0)`。VIP 车（1002004/1032005）目标 105070001；
+  2023000 雪域车目标 211040200/220050300/220000000/240030000；2060009 海豚车 230030200/230000000/251000100/230010000；
+  9250010 目标 501000000/500000000/500020400。
+- `cm.warp(map, 0)` 的第二参 0 是合法 portal 下标：`WarpIndex` 返回 0 → `RequestWarp` → `ApplyPending` →
+  `FieldDirector.WarpTo(map, null, 0)`，全链透传无 `<=0` 哨兵误判（0 号图另有 `returnMap` 兜底，见上文）。
+- 18 个目标地图 IMG、`Map/Back/<bS>.img` 背景全部物理存在且在 `NativeAssetIndex.json` 的 `files` 中登记
+  （Back 目录 205 个 .img，索引 205 条；**易踩坑**：`WzAssets.DataRoot` 是相对 `Assets/` 算的，从 `MapleDash/`
+  目录用 `../../MapleDashResources` 会指到 `Documents/mxd/` 而误判全部缺失）。
+- portal 下标 0/1/2/3/13/18 全部在 `map.portals.Count` 内；落点坐标均在各自 `VRLeft/Right/Top/Bottom` 内
+  （211040200/220050300/240030000/501000000/500000000 有 VR，其余用 foothold 包络）。
+- 目标图均未被事件系统接管（`NativeEventScripts` / `Server/Field` / Pq 目录 grep 目标 id 为 0 命中）。
+- `ScreenFade.Transition` 只在 `NativeCashWindow` 调用，出租车不走那条路，两套状态机不冲突。
+- 未提交改动里与 warp 相关的 `NpcApi.cs`/`NpcSession.cs` diff 只涉及仓库/猜拳/快递/Fredrick，与本次无关。
+
+### 边界与待核实
+
+- 本修复是**健壮性**：保证黑幕不会永久锁死，并留下可定位的堆栈。它没有证明「出租车 Enter 具体在哪一步抛异常」；
+  需用户复现一次，看 `[Field/Warp]` 日志 / `Debug.LogException` 堆栈再定点修。
+- 若异常发生在 `Map = map` 之后，放掉黑幕后玩家可能停在半初始化地图上（能操作），不是原图；日志可区分。
+- 另发现非黑屏缺口：`Sound/Bgm/` 只有 7 个 mp3，`BgmTH/ThaiTown`、`BgmTH/goldTempleTownTH`、
+  `Bgm00/FloralLife` 等大量 BGM 未打包 → 进图静音（`PlayBgm` 只 warning，不影响画面）。属音频资源缺口，另行补。
+- `tools/unity-compile-check` 的 `dotnet build -t:Rebuild` = 0 warning / 0 error。未打包 APK、未做 Android 实机验收。

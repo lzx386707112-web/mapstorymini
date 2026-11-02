@@ -5,14 +5,24 @@ Outputs MP3 (MPEG ADTS, identical payload bytes as stored in the WZ) plus
 Assets/Resources/SoundIndex.json mapping a logical key to
 {path, ms} so the runtime can load clips via UnityWebRequest.
 
-Extraction scope (kept deliberately small — ~7 MB total):
-  Bgm     every bgm referenced by FieldMaps.json
+Extraction scope:
+  Bgm     every bgm referenced by Field/FieldIndex.json (all 6337 maps, 264 songs)
   Mob     Damage/Die/Attack1/Skill1/CharDam1 for every mob used by the game
   Weapon  Attack for each weapon family
   Skill   Use for every skill in GameplaySkills.json
   Game    pickup / jump / levelup / drop / portal / quest / job
   UI      click / menu hover etc.
+
+The BGM set used to come from FieldMaps.json (37 Maple Island maps only), which
+left every map off-island silent. Run this script again whenever FieldIndex.json
+is regenerated, then re-register the resulting MP3s in NativeAssetIndex.json —
+sync_android_data.py / build_resource_pack.py only ship files listed there.
+
+Usage:
+  python3 tools/export_sound.py             # export BGM + SFX, write SoundIndex.json
+  python3 tools/export_sound.py --register  # re-register every MP3 into NativeAssetIndex.json
 """
+import hashlib
 import json
 import os
 import sys
@@ -27,12 +37,57 @@ RES = ROOT.parent / "MapleDashResources/Data/Sound"
 INDEX = ROOT / "Assets/Resources/SoundIndex.json"
 
 _images = {}
+_img_lower = None
+_trimmed_files = 0
+_trimmed_bytes = 0
+
+
+def trim_to_mp3(data):
+    """Strip the non-MPEG prefix some WZ Sound properties carry.
+
+    52 of the extracted clips (mostly BgmCN / BgmSG / BgmJp and a few Skill Use
+    sounds) start with 80 or 82 bytes of WZ metadata before the first MPEG frame.
+    ffprobe still recognises them, but Unity's AudioType.MPEG decoder is not
+    guaranteed to skip leading garbage, so normalise to a plain MP3 stream.
+    ID3-tagged clips are left intact.
+    """
+    if data[:3] == b"ID3":
+        return data
+    for i in range(min(len(data) - 3, 512)):
+        if data[i] != 0xFF or (data[i + 1] & 0xE0) != 0xE0:
+            continue
+        version = (data[i + 1] >> 3) & 3      # 1 is reserved
+        layer = (data[i + 1] >> 1) & 3        # 0 is reserved
+        bitrate = (data[i + 2] >> 4) & 15     # 0 free / 15 invalid
+        samplerate = (data[i + 2] >> 2) & 3   # 3 is reserved
+        if version != 1 and layer != 0 and bitrate not in (0, 15) and samplerate != 3:
+            return data[i:]
+    return data
+
+
+def image_name(name):
+    """Resolve a Sound IMG stem against the source tree, case-insensitively.
+
+    The shipped field data contains one typo: `BGM06/FinalFight`, while the source
+    file is `Bgm06.img` (which does contain FinalFight). Keep the logical key as
+    the map wrote it, but resolve the stem here so a single bad entry cannot abort
+    the whole 264-song batch.
+    """
+    global _img_lower
+    if (BEIDOU / (name + ".img")).is_file():
+        return name
+    if _img_lower is None:
+        _img_lower = {p.stem.lower(): p.stem for p in BEIDOU.glob("*.img")}
+    return _img_lower.get(name.lower())
 
 
 def image(name):
     if name not in _images:
+        path = BEIDOU / (name + ".img")
+        if not path.is_file():
+            raise FileNotFoundError("Sound IMG 不存在：" + str(path))
         _images[name] = WzImage.from_bytes(
-            (BEIDOU / (name + ".img")).read_bytes(), key=WzKey.for_region("GMS")
+            path.read_bytes(), key=WzKey.for_region("GMS")
         )
     return _images[name]
 
@@ -90,19 +145,32 @@ def sound_bytes(node):
 
 
 def export(key, source, out_rel):
-    """source = 'Bgm00/FloralLife' style path inside Sound/<img>."""
+    """source = 'Bgm00/FloralLife' style path inside Sound/<img>.
+
+    Missing IMGs / nodes are reported and skipped rather than raised: one bad
+    entry in a 264-song catalog must not abort the whole export.
+    """
+    global _trimmed_files, _trimmed_bytes
     img_name, node_path = source.split("/", 1)
-    img = image(img_name)
-    node = resolve(lookup(img.root, node_path))
+    stem = image_name(img_name)
+    if stem is None:
+        print(f"  MISS {key} <- {source} (源端无 {img_name}.img)")
+        return None
+    img = image(stem)
+    node = resolve(lookup(img.root, node_path)) if img.root is not None else None
     data, ms = sound_bytes(node)
     if not data:
         print(f"  MISS {key} <- {source}")
         return None
+    payload = trim_to_mp3(data)
+    if len(payload) != len(data):
+        _trimmed_files += 1
+        _trimmed_bytes += len(data) - len(payload)
     out = RES / out_rel
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_bytes(data)
+    out.write_bytes(payload)
     entry = {"path": "Sound/" + out_rel, "ms": ms}
-    print(f"  ok   {key:28s} {len(data)/1024:8.1f} KB  {ms/1000:6.1f}s")
+    print(f"  ok   {key:28s} {len(payload)/1024:8.1f} KB  {ms/1000:6.1f}s")
     return entry
 
 
@@ -110,6 +178,50 @@ def main():
     index = {}
     if INDEX.is_file():
         index = json.loads(INDEX.read_text())
+
+    # --register: sync_android_data.py and build_resource_pack.py only ship files
+    # listed in NativeAssetIndex.json["files"]. MP3s produced above live in the
+    # runtime Data tree, not in the source WZ tree that originally built that
+    # index, so they must be registered explicitly or the device stays silent.
+    # Re-scan the whole Sound tree (not just BGM) so the Direction/Field sets are
+    # covered too; safe to re-run, sha256 is refreshed when bytes change.
+    if "--register" in sys.argv:
+        idx_path = ROOT / "Assets/Resources/NativeAssetIndex.json"
+        native = json.loads(idx_path.read_bytes())
+        # The checked-in index is indent=1 (219k lines). Always write that
+        # format: package_native_assets.py emits compact JSON, and re-serialising
+        # compact would bury the real 290-entry change in a 200k-line diff.
+        files = native["files"]
+        by_path = {e["path"]: e for e in files}
+        added = updated = 0
+        live = set()
+        for p in sorted(RES.rglob("*.mp3")):
+            rel = "Sound/" + p.relative_to(RES).as_posix()
+            live.add(rel)
+            digest = hashlib.sha256(p.read_bytes()).hexdigest()
+            cur = by_path.get(rel)
+            if cur is None:
+                by_path[rel] = {"path": rel, "sha256": digest}
+                files.append(by_path[rel])
+                added += 1
+            elif cur.get("sha256") != digest:
+                cur["sha256"] = digest
+                updated += 1
+        # A stale MP3 entry makes sync_android_data.py abort with FileNotFoundError
+        # before pushing anything, so prune disappeared files in the same pass.
+        stale = {p for p in by_path
+                 if p.startswith("Sound/") and p.endswith(".mp3") and p not in live}
+        if stale:
+            files[:] = [e for e in files if e["path"] not in stale]
+        raw = json.dumps(native, ensure_ascii=False, indent=1)
+        idx_path.write_text(raw)
+        manifest = ROOT.parent / "MapleDashResources/resource-manifest.json"
+        if manifest.is_file():
+            manifest.write_text(raw)
+        sound_n = sum(1 for e in files if e["path"].startswith("Sound/"))
+        print(f"NativeAssetIndex: 新增 {added} 条 / 刷新 sha256 {updated} 条 / "
+              f"清理失效 {len(stale)} 条，Sound 共 {sound_n} 条，索引总计 {len(files)} 条")
+        return
 
     # FIELD_EFFECT mode=4 paths used by original harp NPC scripts.
     if "--npc-field-only" in sys.argv:
@@ -160,11 +272,19 @@ def main():
              "Bgm00/SleepyWood"]   # 关卡 cliff 主题
     bgms = sorted(set(bgms))
     print(f"== BGM ({len(bgms)}) ==")
+    bgm_miss = []
     for b in bgms:
         file, song = b.split("/", 1)
-        e = export(b, b, f"Bgm/{file}_{song}.mp3")
+        # 用归一化后的真实 IMG 名做文件名（BGM06 -> Bgm06），逻辑 key 保持地图原样。
+        stem = image_name(file) or file
+        e = export(b, b, f"Bgm/{stem}_{song}.mp3")
         if e:
             index[b] = e
+        else:
+            bgm_miss.append(b)
+    print(f"== BGM 导出完成 {len(bgms) - len(bgm_miss)}/{len(bgms)}，缺失 {len(bgm_miss)} ==")
+    for b in bgm_miss:
+        print("   MISS BGM:", b)
 
     # ---- 怪物音效 ----
     # Mob.img 的键是 7 位带前导零的怪物 ID（蜗牛 = 0100100）
@@ -242,12 +362,17 @@ def main():
             index[f"UI/{u}"] = e
 
     INDEX.write_text(json.dumps(index, ensure_ascii=False, indent=1, sort_keys=True))
-    total = sum(
-        (RES / e["path"].split("Sound/", 1)[1]).stat().st_size
-        for e in index.values()
-        if (RES / e["path"].split("Sound/", 1)[1]).is_file()
-    )
+    def size_of(e):
+        p = RES / e["path"].split("Sound/", 1)[1]
+        return p.stat().st_size if p.is_file() else 0
+    total = sum(size_of(e) for e in index.values())
+    bgm_entries = {k: v for k, v in index.items()
+                   if v["path"].startswith("Sound/Bgm/") and not k.startswith("BgmUI/")}
+    bgm_size = sum(size_of(e) for e in bgm_entries.values())
     print(f"\n索引 {INDEX.name}: {len(index)} 条，音频总大小 {total/1024/1024:.2f} MiB")
+    print(f"BGM 已登记 {len(bgm_entries)} 首 / {bgm_size/1024/1024:.2f} MiB；"
+          f"FieldIndex 目标 {len(bgms)} 首，缺失 {len(bgm_miss)} 首")
+    print(f"剥离非 MPEG 前缀：{_trimmed_files} 个文件 / {_trimmed_bytes} 字节")
 
 
 if __name__ == "__main__":

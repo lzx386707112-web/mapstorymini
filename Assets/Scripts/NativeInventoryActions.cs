@@ -97,7 +97,7 @@ public static class NativeInventoryActions
         GameSession.Character.inventory = response.inventory;
         GameSession.ApplyInventoryToProfile(); Profile.Save();
     }
-    static bool IsCashEquipment(int id)=>id==5060000 || id==5060001 || id>=5061000 && id<=5061003 || id/10000==550 || id/10000==552 || id/10000==557;
+    static bool IsCashEquipment(int id)=>id==5060000 || id==5060001 || id>=5061000 && id<=5061003 || id==5060002 || id/10000==550 || id/10000==552 || id/10000==557;
     public static void DrawCarry()
     {
         if (!Carrying) return;
@@ -296,6 +296,10 @@ public static class NativeInventoryActions
             if(itemId==5050000) {NativeResetWindow.Open(itemId,inventoryPosition);return null;}
             // 505 SP 洗点：cashType24 → 0xA0C6DD；5050001..4 = 1..4 转技能点重置卷
             if(itemId>=5050001 && itemId<=5050004) {NativeSpResetWindow.Open(itemId,inventoryPosition);return null;}
+            // 雇佣商人许可（503xxxx）：自由市场里开店 / 打开自家店。
+            if(itemId/10000==503) {NativeMerchantWindow.Open(itemId);return null;}
+            // 营业执照（514xxxx）：个人商店，CREATE createType 4/5 由许可 id 分派（ItemConstants.isPlayerShop）。
+            if(itemId/10000==514) {NativePlayerShopWindow.Open(itemId);return null;}
             // 快速投递券（itemType 533）：只开寄件窗口，券在真正寄出时才扣（DueyProcessor.dueySendItem）。
             if(itemId/10000==533) {NativeDeliveryWindow.Open(true);return null;}
             // 传送石：cashType22 → 0xA0CAB0；5040000..4 普通 / 5041000 VIP
@@ -304,6 +308,44 @@ public static class NativeInventoryActions
             if(itemId/10000==517) {NativeRenameWindow.Open(itemId,inventoryPosition);return null;}
             // 黑板：cashType32 → 0xA0CE2E（CUtilDlgEx type3 max40）
             if(itemId/10000==537) {NativeAdBoard.Open(itemId);return null;}
+            // 喇叭类（itemType 507，UseCashItemHandler 294..375）：广播 = 聊天框白字
+            //（单机唯一真人，与假人喇叭 BotField 同口径；serverNotice(2)/(3) 样式差异不可见）。
+            // whisper/耳朵、道具展示（case 6）、三行输入（case 7）在无观众会话里无可见差异，简化为一行。
+            // 源端 medal 前缀（勋章名）单机恒为无勋章空串。
+            if(itemId/10000==507)
+            {
+                int megaKind=itemId/1000%10;    // 源端 (itemId/1000)%10：1 普通 / 2 超级 / 5 TV / 6 道具 / 7 三连
+                if(itemId>=5075000 && itemId<=5075005)
+                {
+                    // MapleTV 券（case 5，tvType=itemId%10）：正在播放时源端 dropMessage 拒绝且不消耗。
+                    // 源端固定发 5 条消息（TV 轮播，第 5 条限 15 字）；单机一次输入一条。
+                    NativeUtilPrompt.Text("输入要在 MapleTV 上播放的消息。", "", 0, 60, text => {
+                        if(string.IsNullOrEmpty(text)) return;
+                        var response=GameSession.Net.Tv(new TvRequest { characterId=GameSession.CharacterId, itemId=itemId, message=text });
+                        if(response==null || !response.ok) { BottomBar.Toast(response?.error ?? "MapleTV 无法开始"); return; }
+                        if(!Profile.RemoveItem(itemId,1,inventoryPosition)) { BottomBar.Toast("背包里没有这个物品"); return; }
+                        GameSession.SaveToDb();
+                        NativeMapleTvDisplay.Start(response);
+                        // megassenger（tvType>=3）的 ear serverNotice(3) 广播：单机等价聊天框白字
+                        if(response.tvType>=3) BottomBar.AddChat(GameSession.Character.record.name + " : " + text, BottomBar.ChatWhite);
+                    });
+                    return null;
+                }
+                if(megaKind==5) return "MapleTV 效果尚未迁移";
+                if(megaKind!=1 && megaKind!=2 && megaKind!=6 && megaKind!=7) return "源端未启用此喇叭";
+                if(megaKind==1 && GameSession.Character.record.level<=9) return "10 级以上才能使用喇叭";
+                NativeUtilPrompt.Text(megaKind==2 ? "输入要全服广播的消息（超级喇叭）。" : "输入要广播的消息。", "", 0, 70, text => {
+                    if(string.IsNullOrEmpty(text)) return;
+                    if(!Profile.RemoveItem(itemId,1,inventoryPosition)) { BottomBar.Toast("背包里没有这个物品"); return; }
+                    GameSession.SaveToDb();
+                    BottomBar.AddChat(GameSession.Character.record.name + " : " + text, BottomBar.ChatWhite);
+                });
+                return null;
+            }
+            // 猫头鹰搜索器（itemType 523）：开搜索窗，搜到结果才扣券（UseCashItemHandler 428..444）。
+            if(itemId/10000==523) {NativeItemSearchWindow.Open(itemId,inventoryPosition);return null;}
+            // 远程扭蛋操作券（5451000）：选村后跑 gachaponRemote.js（RemoteGachaponHandler）。
+            if(itemId==5451000) {NativeRemoteGachaponWindow.Open();return null;}
             if(itemId==5510000) return "死亡后可在复活确认窗口使用原地复活术";
             if(itemId/1000==5000)
             {

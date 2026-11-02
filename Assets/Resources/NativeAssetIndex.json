@@ -218626,7 +218626,7 @@
   },
   {
    "path": "Sound/Bgm/BgmJp_FirstStepMaster.mp3",
-   "sha256": "9b5960c88c80cbcd248d42a4e7ef4148b73d640e3f19421000f90ae24080d74d"
+   "sha256": "5c0123ce360ee1faeef984dede030e77d4efc5fa9e3373a304fa015f865225ed"
   },
   {
    "path": "Sound/Bgm/BgmUI_Title.mp3",
@@ -218798,63 +218798,63 @@
   },
   {
    "path": "Sound/Skill/1101006_Use.mp3",
-   "sha256": "b7450868abf316fa3a48c8573a0a3223faaa4deb7e9055e589a6656a71a68f0d"
+   "sha256": "5b530a6464db8e7c152abcea1db10c891c754cb87f3d8746b6f7e2651a2dca02"
   },
   {
    "path": "Sound/Skill/1111007_Use.mp3",
-   "sha256": "9021f0190bb2fc185dba6929e89fb6cc52d50690a8badafc40cd09583fe22182"
+   "sha256": "fe434d13300e460a8a24522cad0e91a04c3f1d969852213e19078a949ea35ab2"
   },
   {
    "path": "Sound/Skill/1111008_Use.mp3",
-   "sha256": "64fb468397779775b062483dce8204e3c3a417c3b46dbca0c098a2c078931b50"
+   "sha256": "bf14d5290ea758d324f2e45c8f1192f4f106806b7369c4bfe3838d66101e4aa9"
   },
   {
    "path": "Sound/Skill/1121001_Use.mp3",
-   "sha256": "dee90960ffaaf597e8aa3133da02c9c3e91c330aa86a791340c155ebf91c7f7e"
+   "sha256": "66c8f06303fa39eee6c3434d87bba313c37ee38adeb51e627665870fc81f5667"
   },
   {
    "path": "Sound/Skill/1121006_Use.mp3",
-   "sha256": "3b462213a76ec298f35fb978ae4e3f182cf0f2e6faa9812dac73269a7f5d55c8"
+   "sha256": "8134c78063d2f617d10bd8d78f7192865fb598781228f92d6baf1cb497dfbe1e"
   },
   {
    "path": "Sound/Skill/2101004_Use.mp3",
-   "sha256": "92bea102f32cc26ea2c23f762516d78a4b061d57529b59264b9da6ac88f90f9b"
+   "sha256": "9d5209cafba21c44a69fa340d1631feb518bd23eed7de04e4589158d514b5bf9"
   },
   {
    "path": "Sound/Skill/2111002_Use.mp3",
-   "sha256": "cad72cf96415e975591287f281021a5f89da178d633d92336af5966e8366bd7c"
+   "sha256": "00928192d4223deda2f74f53b642bd3287b9da8e4a278fe1d41a793be57a92ae"
   },
   {
    "path": "Sound/Skill/2121006_Use.mp3",
-   "sha256": "b8476f7c9bdf264bf85130acac63cfc50b5110aaccedadebe97d2193b5c1cc0f"
+   "sha256": "275ce9a38875aaf04539eb84de8a475109cce480bb96959c92f04d08e01d6ab0"
   },
   {
    "path": "Sound/Skill/2121007_Use.mp3",
-   "sha256": "7258eb06228fd880ff1fb0794538652717cd9aea21d8d3170d924e9b5ba01615"
+   "sha256": "145e2c7e1f644e3aabdfce8c79a3a32c06bea42885beee5690fbb1b17c50a409"
   },
   {
    "path": "Sound/Skill/2301005_Use.mp3",
-   "sha256": "0aa219c77b28d0d576d18f1897a80eed96dfa6663a8d6fd3b6be8f7eaf9defba"
+   "sha256": "77fd0456ed6dcd123d8c258b6231f6655d3a6a4282b03c9053c6f76300046961"
   },
   {
    "path": "Sound/Skill/2311004_Use.mp3",
-   "sha256": "543b7b246312576ffd52b19b6b77c38e20b5b6de16b8e17a55909bec938f4c6f"
+   "sha256": "cfd3e3b00667d259530ecc49b50fe8d8088e79c8b0d047f3f57db0e486fa5bce"
   },
   {
    "path": "Sound/Skill/2321007_Use.mp3",
-   "sha256": "c0e55627eea293e95700185e1eee3db58f13351d08c3ee8df6883609935d7643"
+   "sha256": "8cd2dd6a6e88cf9f8c4febd5ca53569f7f4bdbf091b56e4fbf47dfef3c6a9646"
   },
   {
    "path": "Sound/Skill/3111003_Use.mp3",
-   "sha256": "94f0f22c95ce6bd3f0d85f4afd2f25cdac1b3775a4167f04b6cbaaf8c91eb648"
+   "sha256": "4f99010c9067d7f07f03209397a9bf20b0e1469032c1aaf0ae9c5387289a7e41"
   },
   {
    "path": "Sound/Skill/3111004_Use.mp3",
-   "sha256": "d4af62ec5cfac1b3d458ea3e971a7d1e025aae047024d93f8982126b65dc26f5"
+   "sha256": "7abe98de58e61ea976acc53dbeed43da073a2de2e18b08a33dc48c0696915726"
   },
   {
    "path": "Sound/Skill/3121003_Use.mp3",
-   "sha256": "1c74f8bca12237313d61e18ed67984db61d5047467507663b949394cdf67eb35"
+   "sha256": "ddaaabc3426b180e0d9a9809eb02c9c232fe3cc7cc0ce386532072e6d855848a"
   },
   {
    "path": "Sound/UI/BtMouseClick.mp3",
@@ -219455,6 +219455,1162 @@
   {
    "path": "zmap.img",
    "sha256": "f9ae7b5fec4119f82289cf51e94e72966fe6462d944ed653f4a89651a270c9da"
+  },
+  {
+   "path": "Sound/Bgm/BGM06_FinalFight.mp3",
+   "sha256": "7d0087d48bb8828298b85787a257449c1698bf29b63731d47ddb5461a979534a"
+  },
+  {
+   "path": "Sound/Bgm/Bgm00_Nightmare.mp3",
+   "sha256": "6b63051503801e464904d8b3ec5cd42231f212dff76abcaf807f0bcfe2d35591"
+  },
+  {
+   "path": "Sound/Bgm/Bgm00_Silence.mp3",
+   "sha256": "e192ed9a98fd1670ebe0e4445e8aed3e12c942e9a8bb9ab4f5be7994f60ba3dd"
+  },
+  {
+   "path": "Sound/Bgm/Bgm01_AncientMove.mp3",
+   "sha256": "71d4096c715e1963915f99b547c0accd4be722f8ab6984556549a0012df8a3d8"
+  },
+  {
+   "path": "Sound/Bgm/Bgm01_BadGuys.mp3",
+   "sha256": "40a04fa380078485e539909b348c8e44ebca73a9631ed7fdcf5b6ba3b92b9b21"
+  },
+  {
+   "path": "Sound/Bgm/Bgm01_CavaBien.mp3",
+   "sha256": "ffb07f5db2dc5f4548b3167d7af31952371b04e8c43c6d9f226cd2827755158a"
+  },
+  {
+   "path": "Sound/Bgm/Bgm01_HighlandStar.mp3",
+   "sha256": "8e376bac53162a802a53d92a108439a3613a21673325a0134a4f8b7b7b6cb33c"
+  },
+  {
+   "path": "Sound/Bgm/Bgm01_MoonlightShadow.mp3",
+   "sha256": "35bf1e5d53d44969b8c4424b5a00f733a20385035fc1200d15a9599104c6d73a"
+  },
+  {
+   "path": "Sound/Bgm/Bgm02_AboveTheTreetops.mp3",
+   "sha256": "eda73381e6df6862331ef82ef143e907a907696cd1d7539da7eb293f60402e64"
+  },
+  {
+   "path": "Sound/Bgm/Bgm02_EvilEyes.mp3",
+   "sha256": "20b985192a55b38a0f08eb591d8c0e53716b54b4f5f3140ce2120c14b57a8446"
+  },
+  {
+   "path": "Sound/Bgm/Bgm02_JungleBook.mp3",
+   "sha256": "4a5035d4fe04c1f0ccfe3bd2ab929d433b93f6d54ecfe17606e8f3b1c319cc3c"
+  },
+  {
+   "path": "Sound/Bgm/Bgm02_MissingYou.mp3",
+   "sha256": "dff64aae6441132f033902acdd4286d92c9a4eccf46b3f1062695818825eef8f"
+  },
+  {
+   "path": "Sound/Bgm/Bgm02_WhenTheMorningComes.mp3",
+   "sha256": "75950ff6aa6251fda5eb439d897b29bc162ca4e1e67e29f4c9494cf288699be0"
+  },
+  {
+   "path": "Sound/Bgm/Bgm03_Beachway.mp3",
+   "sha256": "d00f1250b5f784770982a7bc21af2b9a21a158be86a3e5a14632f3b1bcf78005"
+  },
+  {
+   "path": "Sound/Bgm/Bgm03_BlueSky.mp3",
+   "sha256": "0861943da23033f0a5d6accb689a51b80b4a6a35cb392ea19b37ea16bb86cb8b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm03_SnowyVillage.mp3",
+   "sha256": "07c105ffdd0031b40e88fbd97e325c72e32631341b3d690d53a10dbddd9bfb78"
+  },
+  {
+   "path": "Sound/Bgm/Bgm03_Subway.mp3",
+   "sha256": "3bef26c48b28db8bf3ac234e8340f881377293fb48006d2484a386c750ec24be"
+  },
+  {
+   "path": "Sound/Bgm/Bgm04_PlayWithMe.mp3",
+   "sha256": "c20f9bd1df2d880a84c216043673579f776482db16b9af882d56aef6ff6ffc05"
+  },
+  {
+   "path": "Sound/Bgm/Bgm04_Shinin'Harbor.mp3",
+   "sha256": "3fe59349a692fff4c26d152c742a7d465e89776dd3e57e5f559159911c54f6ca"
+  },
+  {
+   "path": "Sound/Bgm/Bgm04_UponTheSky.mp3",
+   "sha256": "436d720e216124f068e8fdfec9f1c27b7be4e1a91871d09d967da8c86f392630"
+  },
+  {
+   "path": "Sound/Bgm/Bgm04_WarmRegard.mp3",
+   "sha256": "ad1d3a6d7af197141e0d759e000240dc92f1d109b1b40370a29d513c138bf25b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm04_WhiteChristmas.mp3",
+   "sha256": "ffe2140adc36a0b70b351d342ee587fb71de16923afa468da2986e18e47b3d4d"
+  },
+  {
+   "path": "Sound/Bgm/Bgm05_AbandonedMine.mp3",
+   "sha256": "227c86987bc521eaacf61aefa1a3905ee02cefd651bf19de92fb4dad287ca245"
+  },
+  {
+   "path": "Sound/Bgm/Bgm05_HellGate.mp3",
+   "sha256": "70bbf9a4a7bbd473a53ead6254d797ac46ffdc13f9dc5df59938e084a3f5ec37"
+  },
+  {
+   "path": "Sound/Bgm/Bgm05_MineQuest.mp3",
+   "sha256": "2883348f6a5bc9b02b634a1580bd758a3e1b9e1642299c8f0fb82274c521e315"
+  },
+  {
+   "path": "Sound/Bgm/Bgm05_WolfWood.mp3",
+   "sha256": "500386b03b7321a54447d24e491f41febf51d77eb1cda2c7a11bec70a8f942d7"
+  },
+  {
+   "path": "Sound/Bgm/Bgm06_ComeWithMe.mp3",
+   "sha256": "6440f3ec65b717276087cbc8b8f5d2a990ffc55524d687dba6fe6e95a9c30fb4"
+  },
+  {
+   "path": "Sound/Bgm/Bgm06_FantasticThinking.mp3",
+   "sha256": "0c5294d90a8a3b309010f464b892ace910c23cee3ada6134d5ce5bbbd1291958"
+  },
+  {
+   "path": "Sound/Bgm/Bgm06_FlyingInABlueDream.mp3",
+   "sha256": "7645ac97db5a6b4c9e97a4ddcaf82c81094ccec9b43d1991b36c600feb1eba5c"
+  },
+  {
+   "path": "Sound/Bgm/Bgm06_WelcomeToTheHell.mp3",
+   "sha256": "b5a11b9d083aba3c9029e7766296a5063c1b65ce4cfd542614157f90604d13f5"
+  },
+  {
+   "path": "Sound/Bgm/Bgm07_Fantasia.mp3",
+   "sha256": "bdd92509003a946d78971db119d7aefb0893b98f1289360cf7a42b4961ce94ac"
+  },
+  {
+   "path": "Sound/Bgm/Bgm07_FunnyTimeMaker.mp3",
+   "sha256": "0b59c435d8084f4ef8b3cab71c0b94b660892380e15c5245ee34307851705de6"
+  },
+  {
+   "path": "Sound/Bgm/Bgm07_HighEnough.mp3",
+   "sha256": "dcb62fdd14e814ec2aa596e824f9b8a71dbca52700b94cd2c1a851cb12a490e8"
+  },
+  {
+   "path": "Sound/Bgm/Bgm07_WaltzForWork.mp3",
+   "sha256": "31d67f1854d46578413b5afb9984df52d441d200c4ab64d13e237f4e1164840b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm07_WhereverYouAre.mp3",
+   "sha256": "60d325c60d1c0e4c6647eb28c7f8b6129206e34480b56542f93fe0756ab40fa3"
+  },
+  {
+   "path": "Sound/Bgm/Bgm08_FindingForest.mp3",
+   "sha256": "ac1a9a06eee7c962b2e086821aff5d9c53ef8e2634bc9c338584845af08ecae9"
+  },
+  {
+   "path": "Sound/Bgm/Bgm08_ForTheGlory.mp3",
+   "sha256": "00bf962e523752a707aa139da527de3b1e1e7a88ade9aa7f4a9bc01149469626"
+  },
+  {
+   "path": "Sound/Bgm/Bgm08_LetsHuntAliens.mp3",
+   "sha256": "e4bb945dee6054d347c5de04c47a4e638fa2a2ea25a0374e48d1ae88c30ca8d7"
+  },
+  {
+   "path": "Sound/Bgm/Bgm08_LetsMarch.mp3",
+   "sha256": "b4cfbd6de37c4d985f32de516130eff6cd7f24df5b6f885f00904aaca1b8bd4a"
+  },
+  {
+   "path": "Sound/Bgm/Bgm08_PlotOfPixie.mp3",
+   "sha256": "85fbc6bf62ff5cfa50390ba3f850cde4aa156e1b99b62d9a241650facc87dee5"
+  },
+  {
+   "path": "Sound/Bgm/Bgm09_DarkShadow.mp3",
+   "sha256": "e6f047b6cdfe770eb574cedaa46b596e9b450820be7f46dc3d8635ee4ed33c22"
+  },
+  {
+   "path": "Sound/Bgm/Bgm09_FairyTale.mp3",
+   "sha256": "36a61226e9b3f319e32c52302efc8b8db744da2c3c68d106e25cd5efc49a986f"
+  },
+  {
+   "path": "Sound/Bgm/Bgm09_FairyTalediffvers.mp3",
+   "sha256": "5579c3cac9e3ac0cbc8bb6a2953130fd97193338a020feb6ab589ecaf684f353"
+  },
+  {
+   "path": "Sound/Bgm/Bgm09_TheyMenacingYou.mp3",
+   "sha256": "55e6d5c0ef91419ad136479ac12e1044a22b1259cc060b987e63384aeb3d9fd2"
+  },
+  {
+   "path": "Sound/Bgm/Bgm09_TimeAttack.mp3",
+   "sha256": "599032daa2b90a0a7accb40dabbb13c42fd2d09f14939354adb2f2830c84f6a2"
+  },
+  {
+   "path": "Sound/Bgm/Bgm10_BizarreTales.mp3",
+   "sha256": "a2a54298295821f5e7f1e5d42d1f88114fd3b624bf0bdb3ad1211a36d3697933"
+  },
+  {
+   "path": "Sound/Bgm/Bgm10_TheWayGrotesque.mp3",
+   "sha256": "518796cedb12f71fd65c908bb2dbbbbd96c0a41237357525a54805f08f7224a1"
+  },
+  {
+   "path": "Sound/Bgm/Bgm10_Timeless.mp3",
+   "sha256": "9b7c0f5ede2df4d0904039faef37a91aa7395c052113871b8ff8d7254d349aa3"
+  },
+  {
+   "path": "Sound/Bgm/Bgm10_TimelessB.mp3",
+   "sha256": "20584097b629f0703a188822ee7d5c2f15696317b1eeb144f2e56e61e0f44adf"
+  },
+  {
+   "path": "Sound/Bgm/Bgm11_Aquarium.mp3",
+   "sha256": "6c4eca4a630653ed85259713ef9d3dcaa60a6142fa368091b831dd0df97b8fc2"
+  },
+  {
+   "path": "Sound/Bgm/Bgm11_BlueWorld.mp3",
+   "sha256": "f04226d149a34e5587f0f6aee3e0840bcc4bbd578808ea21f8fbea5ff1e0c04b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm11_DarkMountain.mp3",
+   "sha256": "d55b065c58937b0b36585d118523d4b6becbddb09f9785baead0c0de9b66dc78"
+  },
+  {
+   "path": "Sound/Bgm/Bgm11_DownTown.mp3",
+   "sha256": "9602bf0a784d975faf8e0085e50ab9f608fcd3ef6862e1bd68da29a31d2b6d83"
+  },
+  {
+   "path": "Sound/Bgm/Bgm11_ShiningSea.mp3",
+   "sha256": "5e047b7fba7255304e7059975ae28ded09c06689f6229b37d68016a6665a029e"
+  },
+  {
+   "path": "Sound/Bgm/Bgm12_AcientRemain.mp3",
+   "sha256": "2a714c58f83c230bd6f3ecc5dbb30cf8939030159603ebaf22c2adced0274a1d"
+  },
+  {
+   "path": "Sound/Bgm/Bgm12_AquaCave.mp3",
+   "sha256": "f24d1570a4a7ceb261a7e33aeaa3c40471a2531014ee881cf88867d5019dcc09"
+  },
+  {
+   "path": "Sound/Bgm/Bgm12_DeepSee.mp3",
+   "sha256": "fd259af5c7e4793d5dd4057c581c3f6bb0adf905391f2f418696937c6795ff54"
+  },
+  {
+   "path": "Sound/Bgm/Bgm12_Dispute.mp3",
+   "sha256": "84bceb2ff7fd3427d4f5308bde9cf225ffca2fec47cdca25439083bd1b6730ca"
+  },
+  {
+   "path": "Sound/Bgm/Bgm12_RuinCastle.mp3",
+   "sha256": "8ae844ce0250adc35a176e6c0b667ba985426d30b2b3b6b6d0a8953c31bacfa2"
+  },
+  {
+   "path": "Sound/Bgm/Bgm12_WaterWay.mp3",
+   "sha256": "857aa2d1357e54f1dcbabc5a9662c5fe44cd8a984fddf88afdc78790f7c84315"
+  },
+  {
+   "path": "Sound/Bgm/Bgm13_AcientForest.mp3",
+   "sha256": "c7069b57b74518fa4f3646d5ba4e18818b50c8a8467616b5b315a222efff1d1e"
+  },
+  {
+   "path": "Sound/Bgm/Bgm13_FightSand.mp3",
+   "sha256": "2b87a53f9c94d149bafc8819b3d5c69a272da2338714f6becc1b6a58d3adfa9c"
+  },
+  {
+   "path": "Sound/Bgm/Bgm13_Leafre.mp3",
+   "sha256": "6e19c7102c4024f6298a37667685efcb65b70a6f928ce784fc6378ed58ab408c"
+  },
+  {
+   "path": "Sound/Bgm/Bgm13_Minar'sDream.mp3",
+   "sha256": "a097d5a6a23e5dbbd3689d022685f33f8d3c06d08e01032808807d0046c19079"
+  },
+  {
+   "path": "Sound/Bgm/Bgm13_TowerOfGoddess.mp3",
+   "sha256": "f57b24bb8c252c492289c67bf416f06b38e8fae8335d8417634ae127b00e8f71"
+  },
+  {
+   "path": "Sound/Bgm/Bgm14_Ariant.mp3",
+   "sha256": "e92d5a7ae6cf7e45a7abe6f1ca64128ca860fcbd810b2bd5c0969827101d0441"
+  },
+  {
+   "path": "Sound/Bgm/Bgm14_CaveOfHontale.mp3",
+   "sha256": "a8639619db403bd224345947d3d3a7bc1f74a5a4a8542fcfd7ae495de15f003b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm14_DragonLoad.mp3",
+   "sha256": "c150829abf127fdffb86e0e3759868007c8520e0634d9d1e80d67724d9def607"
+  },
+  {
+   "path": "Sound/Bgm/Bgm14_DragonNest.mp3",
+   "sha256": "cb86551132ea710f698170fd29f462af5370eafce8099e8b707b9bbea2c9b7aa"
+  },
+  {
+   "path": "Sound/Bgm/Bgm14_HonTale.mp3",
+   "sha256": "1206653a19a436ac6e5543ae91430ea81d42357aa2cbee04ea47a0d3d2221064"
+  },
+  {
+   "path": "Sound/Bgm/Bgm14_HotDesert.mp3",
+   "sha256": "2ea7f270cc23bdce4cfbe3336b1c98c5d39523e0ce288e08be6f156ae33f5bac"
+  },
+  {
+   "path": "Sound/Bgm/Bgm15_ElinForest.mp3",
+   "sha256": "6f4c0bce4ccd72d60dec102b321e4f2f0df876831b62497c16734770fd4bdb16"
+  },
+  {
+   "path": "Sound/Bgm/Bgm15_MureungForest.mp3",
+   "sha256": "78e96d186c86fbf4378e7a0b912e59fa93af3f6e85f0bc16ee6f5b76d24f8213"
+  },
+  {
+   "path": "Sound/Bgm/Bgm15_MureungHill.mp3",
+   "sha256": "1bc9c5e2c71c3f5dca1195e9f37bedf1321992312a4acc953a03bb432853a4b5"
+  },
+  {
+   "path": "Sound/Bgm/Bgm15_Nautilus.mp3",
+   "sha256": "177419b9699093ad86c37583b6bb8f6064e78d5047baaf00e4e79671b404f433"
+  },
+  {
+   "path": "Sound/Bgm/Bgm15_Pirate.mp3",
+   "sha256": "5d41351a62308fac760f75f5f77260b40614ed9431dc50af7c549582d875e64f"
+  },
+  {
+   "path": "Sound/Bgm/Bgm15_PoisonForest.mp3",
+   "sha256": "99054f65b88bb2bb7ec5a40574d0c3c1fda97999ebc200db1f49e9dd620d3a71"
+  },
+  {
+   "path": "Sound/Bgm/Bgm15_SunsetDesert.mp3",
+   "sha256": "5348dd97a7cf7a133db4cda2fb70e86c83d61d0873fc284fb924338f1220dd65"
+  },
+  {
+   "path": "Sound/Bgm/Bgm15_WhiteHerb.mp3",
+   "sha256": "2d822d402c782e47edf28d92af020dbccea57909675b597a208d9780f8d16429"
+  },
+  {
+   "path": "Sound/Bgm/Bgm15_inNautilus.mp3",
+   "sha256": "66909a7ac919ba53d89851c14df62fb474dfae734118a0352392cee5b6fbbf33"
+  },
+  {
+   "path": "Sound/Bgm/Bgm16_Duskofgod.mp3",
+   "sha256": "241ce0a40a3bbcc4d61fac14da59c40b7ec97b105d47a3fe536d654274a28319"
+  },
+  {
+   "path": "Sound/Bgm/Bgm16_FightingPinkBeen.mp3",
+   "sha256": "d554da64b6b734204f495a1e16ec0f7af6923037f93757305b593dbc7492c78b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm16_Forgetfulness.mp3",
+   "sha256": "0deb33c00751d3674d7a2e1c9d184ce37de3e8d93b93b0f445cd15dfc1926a41"
+  },
+  {
+   "path": "Sound/Bgm/Bgm16_Remembrance.mp3",
+   "sha256": "c5755ffdbfb58ff4f9f3d09cdf4d4036e98a57b555f487e7fb4a45109e0a49d4"
+  },
+  {
+   "path": "Sound/Bgm/Bgm16_Repentance.mp3",
+   "sha256": "f7cb16b4540dc67e5d90135f07003d42554ce589dff3387f7289ad2094078ec9"
+  },
+  {
+   "path": "Sound/Bgm/Bgm16_TimeTemple.mp3",
+   "sha256": "7157301cc0b32b0bb6096053b96a6a1a523f1be94494b319eb5c5d150361e981"
+  },
+  {
+   "path": "Sound/Bgm/Bgm17_MureungSchool1.mp3",
+   "sha256": "a8fcfa9f7e2b7eb68b72a0152aef3896ba9fbb6e13e1a48713a1081e4b078ef6"
+  },
+  {
+   "path": "Sound/Bgm/Bgm17_MureungSchool2.mp3",
+   "sha256": "d492234863f453cf2fbddb3895a99504bf992aaddc79e758037ad1c18af1d230"
+  },
+  {
+   "path": "Sound/Bgm/Bgm17_MureungSchool3.mp3",
+   "sha256": "73c12d676f4257579985d59224bd46714098ec8cef010a2d844a1eebfcb34238"
+  },
+  {
+   "path": "Sound/Bgm/Bgm17_MureungSchool4.mp3",
+   "sha256": "9c4dcabb9fe6538c7c0453b4e112b5612908ce351c14210dded3f9cc6d2fe614"
+  },
+  {
+   "path": "Sound/Bgm/Bgm18_BlackWing.mp3",
+   "sha256": "74a1e539258edac9c9c5368a85e08c3b76a5d2f057316648e599e6d37a93fb49"
+  },
+  {
+   "path": "Sound/Bgm/Bgm18_DrillHall.mp3",
+   "sha256": "e7ad2593bb77a61c5d4971a9eb49d940e92906d5cd3d87eeb5c9e02ccddc5e98"
+  },
+  {
+   "path": "Sound/Bgm/Bgm18_QueensGarden.mp3",
+   "sha256": "5a53441006cccbc7e7c052289b7bd9abe16fce35670de6385421cc0eaad44d97"
+  },
+  {
+   "path": "Sound/Bgm/Bgm18_RaindropFlower.mp3",
+   "sha256": "a7f4fbd1abc0d79c09623a2758322638ff66b2d994016cf50c07e233bf53e9df"
+  },
+  {
+   "path": "Sound/Bgm/Bgm18_WolfAndSheep.mp3",
+   "sha256": "dd5b79f6b870b5a9c0179d965bbe4b4e5994a5a5e0c9a25d111b9c94332f83e6"
+  },
+  {
+   "path": "Sound/Bgm/Bgm19_BambooGym.mp3",
+   "sha256": "ed20d9e88f295a045d5a40404c1d72c9b0e7613584b0f497a523b48ba0114681"
+  },
+  {
+   "path": "Sound/Bgm/Bgm19_CrystalCave.mp3",
+   "sha256": "883171cd4b282e5c40985e19109f49577ab629fdb6d5cfc12412bafab1137d31"
+  },
+  {
+   "path": "Sound/Bgm/Bgm19_MushCatle.mp3",
+   "sha256": "0861943da23033f0a5d6accb689a51b80b4a6a35cb392ea19b37ea16bb86cb8b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm19_RienVillage.mp3",
+   "sha256": "67573733c5988ae4b8bf79d6747bbf96e87e3e3669c87c4f758942c3037ab734"
+  },
+  {
+   "path": "Sound/Bgm/Bgm19_SnowDrop.mp3",
+   "sha256": "e9c83323d9dc7333473f6461dc2aad689d5b440a448adefea9e232b7d8c37533"
+  },
+  {
+   "path": "Sound/Bgm/Bgm20_NetsPiramid.mp3",
+   "sha256": "268232b7bc30176abe2fd2fd6908fe3a478fa81170dab307b245c92b4b3305a3"
+  },
+  {
+   "path": "Sound/Bgm/Bgm20_NetsPiramid2.mp3",
+   "sha256": "268232b7bc30176abe2fd2fd6908fe3a478fa81170dab307b245c92b4b3305a3"
+  },
+  {
+   "path": "Sound/Bgm/Bgm21_2021year.mp3",
+   "sha256": "70a66d61937c72f326115e57552d10a545b0a9253e62a609fb0a7ce637faf89f"
+  },
+  {
+   "path": "Sound/Bgm/Bgm21_2099year.mp3",
+   "sha256": "723e637dca42490493eae2cff67614426ea4df702970452ab1ec12922e32459d"
+  },
+  {
+   "path": "Sound/Bgm/Bgm21_2215year.mp3",
+   "sha256": "9fe226eff0d6e510cc548341348031a3999b0708d99b827434de9210a8ce754a"
+  },
+  {
+   "path": "Sound/Bgm/Bgm21_2230year.mp3",
+   "sha256": "0aaaec31e320025a3bb5728df2f232347be777156afab1218e7164eed8da34bc"
+  },
+  {
+   "path": "Sound/Bgm/Bgm21_2503year.mp3",
+   "sha256": "32782701b667d4238ec24af22f6fcc03a4d795f94a66eea4232ef7d3bce17d9b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm21_KerningSquare.mp3",
+   "sha256": "5e94f3c94453c32bc601f19dc8d1ced7105a953bd182c2b99e939909f0dd6850"
+  },
+  {
+   "path": "Sound/Bgm/Bgm21_KerningSquareField.mp3",
+   "sha256": "35105014c0067e0195e192ff90ee31d90093590fef1ef9efe6bd30411425b2a8"
+  },
+  {
+   "path": "Sound/Bgm/Bgm21_KerningSquareSubway.mp3",
+   "sha256": "37ebef99adce962fffe4254d9ac7581ccb45b2de5c9f3644ec5efcc112503b06"
+  },
+  {
+   "path": "Sound/Bgm/Bgm21_TeraForest.mp3",
+   "sha256": "f5c0fc87f62d4c00df4b07c587fc403c903ac5d5bec8b2f98ff56374eb236bd9"
+  },
+  {
+   "path": "Sound/Bgm/Bgm22_DecisiveBattle.mp3",
+   "sha256": "afdd35fa2353f4b7a134abd5ea47b037e2ab1aade1a67ecec853df7d61a0bd28"
+  },
+  {
+   "path": "Sound/Bgm/Bgm23_BlizzardCastle.mp3",
+   "sha256": "1a56fcbebffd730ebec2ccb1483fb4018f9776d9054300a01004c024208fae79"
+  },
+  {
+   "path": "Sound/Bgm/Bgm23_CrimsonTower.mp3",
+   "sha256": "73f5dac7e631ac4a38ce11039ccea5378f5d2ca08564f881f71654d0e0f59619"
+  },
+  {
+   "path": "Sound/Bgm/Bgm23_LionHeart.mp3",
+   "sha256": "8384a964ca8f46a62c140344c915eeece0b9b99cf72d6839b173b451d437641c"
+  },
+  {
+   "path": "Sound/Bgm/Bgm24_monsterPark.mp3",
+   "sha256": "3c26ab05fdf1e1d57123de0b8540371b033c27deacdc3d36fce3564433bd984b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm25_AltarOfAkayrum.mp3",
+   "sha256": "d01655aa58aa1270a72b3f013e4a5a564d008898b1793665873dbd9e471015d0"
+  },
+  {
+   "path": "Sound/Bgm/Bgm25_CrackOfDimension.mp3",
+   "sha256": "d547a08c4f540932572f623f61304e0118e0a90bb569db0e97451375d0c51399"
+  },
+  {
+   "path": "Sound/Bgm/Bgm25_CygnusGarden.mp3",
+   "sha256": "e89f133e4707a3490fd6f7ffd6ee1ca226927666b841ced165a432956155e9fe"
+  },
+  {
+   "path": "Sound/Bgm/Bgm25_FlowerInBlue.mp3",
+   "sha256": "4a036e24f8a4e2a1eee22cdfe58539e8362280dfc9f5e8eb0d1c8a02aa28dc01"
+  },
+  {
+   "path": "Sound/Bgm/Bgm25_destructionPerion.mp3",
+   "sha256": "ffbe385af6bf1b0f0e5e41862901d38d1712b540f12aef2aa7f3efa7d7419f75"
+  },
+  {
+   "path": "Sound/Bgm/Bgm25_destructionPerionShelter.mp3",
+   "sha256": "5b8de8faa7c19bd4f1313da904534960a26ed401c4f8f8363a8bfa001142f83b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm25_destructionTown.mp3",
+   "sha256": "a8a583d4f341dc183f78f5616de6002d0d10bf9ef83cfbc34c651e834cb826c2"
+  },
+  {
+   "path": "Sound/Bgm/Bgm25_knightsStronghold.mp3",
+   "sha256": "5b5b9710ececdfd5fc9b1cc5c94e08c1a34d87b86bad8c65ff18b5d8b01a4a10"
+  },
+  {
+   "path": "Sound/Bgm/Bgm25_timeGate.mp3",
+   "sha256": "8413557affd86abe301397c98d14f5cc217e8237529e2e4a12a2b88b4b5c9726"
+  },
+  {
+   "path": "Sound/Bgm/Bgm28_helisiumField.mp3",
+   "sha256": "299548d20cc9bcf08a8e4739afea2322b83f0c717045ed9532a2e810fb423e14"
+  },
+  {
+   "path": "Sound/Bgm/Bgm28_helisiumMysticforest.mp3",
+   "sha256": "c454843ea7637316e27cea434a0efc6ef103735b21753620429d638979b636af"
+  },
+  {
+   "path": "Sound/Bgm/Bgm35_Hekaton.mp3",
+   "sha256": "5eef76c4c481195e658824afc746f92b8953756b9dd751ea63003c2d0fd6c530"
+  },
+  {
+   "path": "Sound/Bgm/Bgm46_BrokenDream.mp3",
+   "sha256": "cb4bc0a503552ff5635793fed7bfe5e71b390abeb9c046fd16a02d291c54bfc8"
+  },
+  {
+   "path": "Sound/Bgm/Bgm46_Cave Of Rest.mp3",
+   "sha256": "7f42595f51b5a13e07124aeeeeb0f5a08b7be3d890cca0e1f6772e4ce4d11b31"
+  },
+  {
+   "path": "Sound/Bgm/Bgm46_ChewChew MainTheme.mp3",
+   "sha256": "709aaf29e675a7e4dcb18edbdda650b402a0a27e5d17c3fdd5420102fb8e17eb"
+  },
+  {
+   "path": "Sound/Bgm/Bgm46_ChewChew WildWorld.mp3",
+   "sha256": "38243a2fb20585eb203b4f00c83c23130b3dd188a82b839ee31c06a92678da7f"
+  },
+  {
+   "path": "Sound/Bgm/Bgm46_ClockTowerofNightmare.mp3",
+   "sha256": "85fe4e12ee70ee2bef973da9ca94ce4148d47da36e156f7f1f8726031625966f"
+  },
+  {
+   "path": "Sound/Bgm/Bgm46_LachelntheIllusionCity.mp3",
+   "sha256": "f09182346ed723f6348bf42d9f3f5fbe2bdde349e3a6e957640bc7f042d226d2"
+  },
+  {
+   "path": "Sound/Bgm/Bgm46_Lake Of Oblivion.mp3",
+   "sha256": "af227503137aa11c1815ad35d385c6f139a78328c4a1d8d5e37466245c68f4e6"
+  },
+  {
+   "path": "Sound/Bgm/Bgm46_Volcanic Zone Of Extinction.mp3",
+   "sha256": "be4c40e0854b3469cc4e0d86cf3f065c687f45b7dfa39020b6b4eac94051a58e"
+  },
+  {
+   "path": "Sound/Bgm/Bgm46_WierldForestIntheGirlsdream.mp3",
+   "sha256": "1ef94557cd9106bba00ac169373ae8ac1b5017010b4609ab24a52cee41b823a8"
+  },
+  {
+   "path": "Sound/Bgm/Bgm47_ArcanaBoss.mp3",
+   "sha256": "30d0c7fa96ced53284479ca3f9081ef97a40051c2ec1ed8344fc409f31bcd7c4"
+  },
+  {
+   "path": "Sound/Bgm/Bgm47_TheTuneOfAzureLight.mp3",
+   "sha256": "2d4e9ee8e0811e19d7e1e12afa3630d9eff77b418bc748f8fc3f98b47fd4c14d"
+  },
+  {
+   "path": "Sound/Bgm/Bgm48_BlackDungeon.mp3",
+   "sha256": "bf38477cdaa9b1fb419586530728ac5236b8879e3f06c9b52ec08c5a27ea057b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm48_MemoryOfKritias.mp3",
+   "sha256": "b47c81574dbc1e6d2efbef6c4ea02f6a598f199bf4280c401dfeb10363f4147e"
+  },
+  {
+   "path": "Sound/Bgm/Bgm48_Outpost.mp3",
+   "sha256": "c8405eeb7ffe1f4a50f557b7959fdd6eac3791fafd6e0e6ea68abf852f99fbe7"
+  },
+  {
+   "path": "Sound/Bgm/Bgm48_SwampOfMemoryMoras.mp3",
+   "sha256": "3a9e39b816475b22b2023423d10cb1ea947285ab8037241899c6a3252eb1ac61"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_ConteminatedSea.mp3",
+   "sha256": "8fbbfe4bc323130ccc4700c2a18692e5a2c4621f897029bba41df63d85ec16aa"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_DepthOfPain.mp3",
+   "sha256": "21e32010a43898177a603f6ab3b278792533d68fba9ed77e6e09fd8927aa99e0"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_EternalSwamp.mp3",
+   "sha256": "5883a6a5c9d85c211409b6f00f97d2cf3b4a8f9283da703fd9b5d236f118127c"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_FerociousBattlefield.mp3",
+   "sha256": "22df5878f22c4b2eb83105bb682581442d02ef707dd197935a7215601ea922bd"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_HeartofSuffering.mp3",
+   "sha256": "30e9b8d2b6691fae59c6ea2fb11f5b9f9faf72a3095e765cf3410b5f8861a2ae"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_SecretLabyrinth.mp3",
+   "sha256": "62c73b32f5fdc383ae60bbc2c274600e62aaa58b4db3bf89dfbc45bc40d2e4bb"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_SoupOfLife.mp3",
+   "sha256": "dda6ec6d8493a064f77f337154037c41a305e1ccb62da1971bed8c7090273a78"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_StrangeFog.mp3",
+   "sha256": "219c25531ef14d8412fd104941ef91029e948e9e7307fb25c8745aadb19e3774"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_TempleInTheMirror.mp3",
+   "sha256": "02b3936ba14be9215be652c942aa5f96b948fd42c6ffe4a83cd65bc63d25d8eb"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_WarCloud.mp3",
+   "sha256": "02649c3158d8994b99b59a77015ae0dbeda3d533fccafe5b5b34c6313965d10c"
+  },
+  {
+   "path": "Sound/Bgm/Bgm49_WaveofEmptiness.mp3",
+   "sha256": "66abf199a711f3fa6e01d88d15c01d3d07a2ae6fdf40fba199b7d8dbcc57aa1d"
+  },
+  {
+   "path": "Sound/Bgm/Bgm50_TearsOfTheWorld.mp3",
+   "sha256": "d420717d6d6b138e5e11f873d65bb7ca3710701d882d643ba330554dc140c1a2"
+  },
+  {
+   "path": "Sound/Bgm/Bgm50_TheWorld’sEnd.mp3",
+   "sha256": "2c0ad0be89e98fb168d4caca81f00a381f33a21cd7aa5c6673910594d9753157"
+  },
+  {
+   "path": "Sound/Bgm/Bgm53_BattleOfCernium.mp3",
+   "sha256": "c4eb83a672170839787ef72521ed12ee4629cbc6fe9831c6cc658ee301ff4ae5"
+  },
+  {
+   "path": "Sound/Bgm/Bgm53_SeaWave.mp3",
+   "sha256": "e61d1f1959ca3040e498a79791f688e810b426c517f0da4a064d4f40ecfb7eb8"
+  },
+  {
+   "path": "Sound/Bgm/Bgm53_TheHolyLand.mp3",
+   "sha256": "654a404f509755926cbe0821b036fe3f2b3cec15f50c4f801d0f0f34d69573a8"
+  },
+  {
+   "path": "Sound/Bgm/Bgm54_FungusForest.mp3",
+   "sha256": "c9b4919135d871fa13a2bf9e9821a09d869b3924d7ea218525e6329bfea88576"
+  },
+  {
+   "path": "Sound/Bgm/Bgm54_IlliyardMoor.mp3",
+   "sha256": "951af353d89d3916083a685d5f229972e614fd93542ef592b8a733881a6ea487"
+  },
+  {
+   "path": "Sound/Bgm/Bgm54_MushbudForest.mp3",
+   "sha256": "ba3e8189df6e600bee9003386aee77252379e03ecd82e7270a2cf7bcedcef9dd"
+  },
+  {
+   "path": "Sound/Bgm/Bgm54_ReverseCity.mp3",
+   "sha256": "c4a02dd627d6b6c85f1e2849c73c263a528680e5c048eb85ee2b21008de0845e"
+  },
+  {
+   "path": "Sound/Bgm/Bgm54_ReverseCity2.mp3",
+   "sha256": "d7b15f26a3f3a5ccdfbdaf7af1a8516135aaa988cec782dfc31be161b4f8fd62"
+  },
+  {
+   "path": "Sound/Bgm/Bgm54_T-bomb.mp3",
+   "sha256": "5dea8b39629c166b2a4f199c44cf49a23e60f42a410cc807fb57441ceeb469dd"
+  },
+  {
+   "path": "Sound/Bgm/Bgm55_SinkingThings.mp3",
+   "sha256": "919a29033ac4b6d14087b6cd2e52f5786c2c027dd23f9e324adbe4dd10489ea4"
+  },
+  {
+   "path": "Sound/Bgm/Bgm55_WhaleBelly.mp3",
+   "sha256": "e085183d0ca745970d93be5995236bd3cc819916b84d52d173c5c5117d102167"
+  },
+  {
+   "path": "Sound/Bgm/Bgm55_WhereStarsRest.mp3",
+   "sha256": "f607ee0ca1719cdb19b7525891eecf0881c2ebfc6970f38d9149d83bee95dc83"
+  },
+  {
+   "path": "Sound/Bgm/Bgm57_Lonesome Cinema.mp3",
+   "sha256": "4cce253a106eae08050af3a153dabe0a2f09f45300486da38e963a6a2773bcc2"
+  },
+  {
+   "path": "Sound/Bgm/Bgm57_Train heading nowhere.mp3",
+   "sha256": "75a9c5c2f7344ec5b9d7f649901e38e3e9eb7a0392086981ac6b7ec692bd6ee4"
+  },
+  {
+   "path": "Sound/Bgm/Bgm57_Wayout of the wilderness.mp3",
+   "sha256": "bb7a2fa89f9a70300e066ed1a8d0aaa8d98cf41a322a12f89e1b7d67223b4489"
+  },
+  {
+   "path": "Sound/Bgm/Bgm58_Alley on the Other Side.mp3",
+   "sha256": "a119399bb99b8df788dab816d107e3c6209048c2011c93998b2c20144cf926a4"
+  },
+  {
+   "path": "Sound/Bgm/Bgm58_Irreversible Abomination.mp3",
+   "sha256": "22babf0ec2b8ad728c868e729f968e45abcb69a06803a50b1e49d569070c574d"
+  },
+  {
+   "path": "Sound/Bgm/Bgm58_Sunshine blurring the Unknown.mp3",
+   "sha256": "f2b444bb23aa5936a17bd3f091214e63c1d1d07729dd438728088e1a1c9adf88"
+  },
+  {
+   "path": "Sound/Bgm/Bgm58_The Lost City among the Clouds.mp3",
+   "sha256": "1203d9eb7371e9a02628b6277cd6214f6ce92b06b999c51a638909250a17613b"
+  },
+  {
+   "path": "Sound/Bgm/Bgm59_The other side of ShangriLa.mp3",
+   "sha256": "3922e6d5b831bb927aa0df31fc0363ef9c9546919c54d64f2338f1b5839a9224"
+  },
+  {
+   "path": "Sound/Bgm/BgmBT_commercIng.mp3",
+   "sha256": "fe33fade4b7a1a3f5ffee71efc45dfd59d43a0483334977e30efac75224c8688"
+  },
+  {
+   "path": "Sound/Bgm/BgmBT_commerzCanal.mp3",
+   "sha256": "5ebd0755da34fc2b8300485a2399da687a0cc57cdf8a574860cc7f569118f758"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_EnSchool.mp3",
+   "sha256": "da611c16e0acb6abb81317e6fd0876b8854d49ddb58d33ec18e3fccdd94cb8e3"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_GoShanghai.mp3",
+   "sha256": "84e7ecea614036e2c4228e6a979b1dc6301c48941b210a4e9596dac9dfac6f9e"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_PvP.mp3",
+   "sha256": "93027587dbca8e6fc6b994093f2f8895c7c257ed5b71f9aa41867cecc08604ff"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_ShanghaiField.mp3",
+   "sha256": "d25f2f882b02128c349844e169d10d8e482e01c8b4243199b9d8357ebca7af14"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_Yuyuan.mp3",
+   "sha256": "5c667c971955a37da9d1e0270c0f51b9ddfffb466a52744b7747a8dbf3834aac"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_shaolin_cangjingge.mp3",
+   "sha256": "e1f6f8c5b4cb50825aecbf82e6aa40057d06417865055ace2b21a8379555ef14"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_shaolin_daxiongbaodian.mp3",
+   "sha256": "179b241754c81d04f8d51239ae7d02b37bd32973a1cc3ab424c06966966fe4f1"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_shaolin_mishi.mp3",
+   "sha256": "1484d7b5d430963ed35fb05abf2a18ee1ce439b503a93d07e4a482b5cc9cad8b"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_shaolin_shan.mp3",
+   "sha256": "9b2536fee37f5cc7d81eaa8986802551123529e303f5ba09a20ac0e7379c97c4"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_shaolin_songshan.mp3",
+   "sha256": "b896c1dbe5cbd36b0469aa6ebaff1c9888ee2e749984d7626512adb248e8c8ab"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_summerboating01.mp3",
+   "sha256": "bb0ddd7808241091204d0f953b62e857a521d433fe569495614471074044577c"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_summerboating02.mp3",
+   "sha256": "fb5d92cc99134928cec63d81bffa80870f55f5fa3f42f37ef577d1c5eb076673"
+  },
+  {
+   "path": "Sound/Bgm/BgmCN_summerboating03.mp3",
+   "sha256": "61dd46228b71e5af1dc6ad0d53d441b843e7743dab1a7e2c2d43e0eb65a83544"
+  },
+  {
+   "path": "Sound/Bgm/BgmEvent_FunnyRabbit.mp3",
+   "sha256": "7a76e641df3c246a3ee2b948d95287a11b695c112665c8f6433d4ae78304f756"
+  },
+  {
+   "path": "Sound/Bgm/BgmEvent_FunnyRabbitFaster.mp3",
+   "sha256": "318cee86768b98e4df4f4d164013d0d683bcc5ab7e23b0e534cc2a6088b52f93"
+  },
+  {
+   "path": "Sound/Bgm/BgmEvent_wichTower.mp3",
+   "sha256": "a025678dd136a2b32d8a450371dbfa2482f8fad0ec656e618df770dc0ea2c840"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_Amorianchallenge.mp3",
+   "sha256": "3e3a1f3479a72da5f1cdac7ecbe146e694dcea48a3a853d260830be6f70911d9"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_Bigfoot.mp3",
+   "sha256": "810d73300ecdb9cd55bc0f3552f1e6d9abd1d5dcd3807c371edab7c4cc4433ea"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_Courtyard.mp3",
+   "sha256": "2ded9fe14131ba3b5291d1c5ebd2d6d173a746b151a4eab37f8df94389b0e581"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_CrimsonwoodKeep.mp3",
+   "sha256": "e1f734ae7bb01ba602a726f48718045ee9147f5afdba4394a8e02a917e5b51a6"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_CrimsonwoodKeepInterior.mp3",
+   "sha256": "dc0a091d09cdb0ad12ff2027db0d450db4b14487b021d691f5bae1455764b859"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_GrandmastersGauntlet.mp3",
+   "sha256": "8edae21c2860977f979ae906f618468152d3904d590988c3fc8c94c92ca2c20f"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_HauntedHouse.mp3",
+   "sha256": "eb9a77ace9afc1d4eec44a4ef4a40bb089defed5fe316af1a3332fdfa9aebc5d"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_NLChunt.mp3",
+   "sha256": "006bf898e067056b53cf6835d82c9a61b84faae7b926031a1a5d890975b0c163"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_NLCtown.mp3",
+   "sha256": "79bb31332ff1bc2bfc496edd9751503a144d8470ef9b290161fa878b73d4efe6"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_NLCupbeat.mp3",
+   "sha256": "e8eefbd3942244358f6827e70dd49f3e6661f73ae9e129e7acac32889d5afe5a"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_PartyQuestGL.mp3",
+   "sha256": "3cbd7ac0b120da3d2fbb2165ae16232a933cd46c6890650956ff4de667039817"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_PhantomForest.mp3",
+   "sha256": "759a39d3e97f238dbefe9eb00cc8e57fa354e1f5be3bdb43913faa64c59e6491"
+  },
+  {
+   "path": "Sound/Bgm/BgmGL_amoria.mp3",
+   "sha256": "c34e6b73bce85a442436ecff20111db54f2326f282762077c89b5cd7fa9d2ebd"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp2_Akiabara.mp3",
+   "sha256": "06a52024bedfe29337064a36b2c0ec004d10024303a0223a19fc8bb421ed9f55"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp2_Kamuna.mp3",
+   "sha256": "fb698fa06457180950f407273741f3b633757a003e7d1ee46a0126bda2b5b82e"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp2_Odaiba.mp3",
+   "sha256": "46dfb4667554df13bbdb8d9426e1a90f5d525c2da8a40c1e93fffee63ee5d9ec"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp2_Office.mp3",
+   "sha256": "a8962e3b97d1fed530601c86214dcc6ed1690ab53648018756637e4012815b07"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp2_Park.mp3",
+   "sha256": "32bd1c49e084bcdde79e3015a2962e34d7b814fa859e3f8cb0385db77cf764cb"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp2_Rockbongi1.mp3",
+   "sha256": "8e0f0beafbea0a66b90d0fccd79a353331196ead73a6fd8bcc4c82bfa2f41f95"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp2_Rockbongi2.mp3",
+   "sha256": "67bd075d74ab19ebd15dd56ceb270cc734f5847956662b561591d592a6d859a6"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp2_Tokyosky.mp3",
+   "sha256": "628ba921d669b8412c9e5d92845d548143a60a3cc3eb8aaefbe64c1afa17bfc7"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp3_Hieijan.mp3",
+   "sha256": "b9c64767008c21930ebacdc5c7d286f514df8f01a43a0d0e16dc60fdfdbf87d1"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp3_Hieijan_nohime.mp3",
+   "sha256": "2c2e233c39c474e2f219230a16d3833f136ff75a1207b5ad504fbed3862d0573"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp3_InsideHonnouji.mp3",
+   "sha256": "461e23782ec4a6f32ee47927012db7cc2c9370dc392c7ed22113bbdade5f3740"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp3_Kecon.mp3",
+   "sha256": "c9ede032728da1eab36f549a5531568c6bb554b9a4f77d8af461020e73f6401e"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp3_MomijiNoSakamichi.mp3",
+   "sha256": "cd2e869fd3340c7844c098e51ceb49a49fa08e090df5056f7618081c6aac1b64"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp3_Momijigaoka.mp3",
+   "sha256": "653c4c441a430b065b6b982727ec84c394c0732cbc6af8f048384c2e0edb8391"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp_Bathroom.mp3",
+   "sha256": "befb8dfc7864c779a5f11696f184f2303f336086253e0861f0457b0f35fff33a"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp_BattleField.mp3",
+   "sha256": "2be576a41f89047e4251b399782a99af8ad7212f22f1ec7196dff9e1db8b9430"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp_BizarreForest.mp3",
+   "sha256": "3144d0530b1791a7d60396b04c6414c12dc41fa918fb3cb6338af34c7f9d9a16"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp_CastleBoss.mp3",
+   "sha256": "305650e146200dc6cf151a5907648a995a0c1cbf73f71a4ec57789891a02d61e"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp_CastleInside.mp3",
+   "sha256": "9f3538539822dc96cf47c61dafbadd3e48b69e00dd441e88cf629573695b0071"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp_CastleOutSide.mp3",
+   "sha256": "042d6516730ecd293ba39b01f2e26e9e84630452c9174ca53e50bf1f16664243"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp_CastleTrap.mp3",
+   "sha256": "e5068051ee244d8f7440d72e5ab2318ceeefecea62f80e24c62dbb0f91f47455"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp_Feeling.mp3",
+   "sha256": "9a7800c64bcc623e4caa37f3b793db6b3ee54072672ef059964ae1eab1d3a889"
+  },
+  {
+   "path": "Sound/Bgm/BgmJp_Yume.mp3",
+   "sha256": "a66c65a1d50e46c2be9cdf5f8388e326b6884705ca06020bebd8a09734fe1658"
+  },
+  {
+   "path": "Sound/Bgm/BgmMY_Highland.mp3",
+   "sha256": "99db506a899aba6b648268bf2fb10a33aebd53e97ced1bb5e6a4fc4b543d76cc"
+  },
+  {
+   "path": "Sound/Bgm/BgmMY_KualaLumpur.mp3",
+   "sha256": "e578206c163a5bdf9e23d14a678526e38cc55a3d611016574034c4ec11618f0d"
+  },
+  {
+   "path": "Sound/Bgm/BgmSG_BoatQuay_field.mp3",
+   "sha256": "3a0eb6432d99f6d2676d7f96bd4640bbd4ca37d9a1bd695a52922d39312f0d7e"
+  },
+  {
+   "path": "Sound/Bgm/BgmSG_BoatQuay_town.mp3",
+   "sha256": "9c50a36cc35caf8211ac1f25c544c40c259fc12f13c983c88cc18594bb5cd352"
+  },
+  {
+   "path": "Sound/Bgm/BgmSG_CBD_field.mp3",
+   "sha256": "480b1882d0c92a98df55cb2b33c5f809df78507d90443a7733fa702fcc122bee"
+  },
+  {
+   "path": "Sound/Bgm/BgmSG_CBD_town.mp3",
+   "sha256": "71e6864a3e02974b98e6106048a9f5df501a87f41367989bfed6f530cd956f2e"
+  },
+  {
+   "path": "Sound/Bgm/BgmSG_Ghostship.mp3",
+   "sha256": "a3b0bdf8b3661ee28bc56d3ecea4a7e57b0737157d900de1b0348a62cea1b4f6"
+  },
+  {
+   "path": "Sound/Bgm/BgmSG_Ulu_field.mp3",
+   "sha256": "85aa9d01b508ff689bb92d7fc5f7c1f9027fcc6dfdb77d21285b37da5b4b7e73"
+  },
+  {
+   "path": "Sound/Bgm/BgmTH_ThaiField.mp3",
+   "sha256": "cfd0143cb2899a62c28bbf120247e384d9054f5651127acbb1eb7078992090e3"
+  },
+  {
+   "path": "Sound/Bgm/BgmTH_ThaiTown.mp3",
+   "sha256": "99cc73722b4ffe379cd1c8ede5fa3fc39a2eb5e16f030eb6902ea11bad84fbbd"
+  },
+  {
+   "path": "Sound/Bgm/BgmTH_goldTempleDungeonTH.mp3",
+   "sha256": "1bac8a4ce3d5c770af41796c36517f3403becbdb5213624e07719d3bd7942b7d"
+  },
+  {
+   "path": "Sound/Bgm/BgmTH_goldTempleFieldTH.mp3",
+   "sha256": "ce64d0392c00cccedab8f0fd42299d5e5f8dcbbdc9aab31f6b30c35f1820ea45"
+  },
+  {
+   "path": "Sound/Bgm/BgmTH_goldTempleTownTH.mp3",
+   "sha256": "36af92f456a4bb28352b55029aa2af1e6df352abc2d8f8b84084d834663f15ae"
+  },
+  {
+   "path": "Sound/Bgm/BgmTW_101BuildingSubway.mp3",
+   "sha256": "37ebef99adce962fffe4254d9ac7581ccb45b2de5c9f3644ec5efcc112503b06"
+  },
+  {
+   "path": "Sound/Bgm/BgmTW_CakeMap.mp3",
+   "sha256": "8e0232e9a64f561ff324328714bd6a195c501413aa65c8d2ab690c8a699cd7e6"
+  },
+  {
+   "path": "Sound/Bgm/BgmTW_FishingMemories.mp3",
+   "sha256": "1161aa256e906fc1bd73163908686a6228d77c8f69d19d97c7f47ac86b2bbc4b"
+  },
+  {
+   "path": "Sound/Bgm/BgmTW_GachaponHousing.mp3",
+   "sha256": "695d70fa2f73a6f580466f93ca9b9fa06191ae04886e6006e6e17c58089bdaee"
+  },
+  {
+   "path": "Sound/Bgm/seedBgm17_GoldBeach.mp3",
+   "sha256": "8a7feb28afc095c7e135f1535df68a7250180eed37326818371dc43e60a9bc5f"
+  },
+  {
+   "path": "Sound/Bgm/seedBgm37_AmusingStoryInTheFairyTale.mp3",
+   "sha256": "25e77a84d0dfd190125c3964a9423db2755a993b4db2c7b9e60838707bc11233"
+  },
+  {
+   "path": "Sound/Bgm/seedBgm37_JungleInTheSea.mp3",
+   "sha256": "3e38ddee99b06397630334edb7f57f97892ac9880e80790230400bb4ee0387ff"
+  },
+  {
+   "path": "Sound/Bgm/seedBgm37_TheBottomOfTheSea.mp3",
+   "sha256": "ba56e916bc2d5816ab58e2a27f32787fc3983108bf88c3a486a73abf2571964b"
+  },
+  {
+   "path": "Sound/Bgm/seedBgm37_VentureIntoTheUnkown.mp3",
+   "sha256": "86b5b3eddcbfc2759eaa85a134388d38b59382a09a0361f2316a9d7e8b475ed7"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/bgm.mp3",
+   "sha256": "fe868ef29301f0ff169c43578227fcdaf39d7c597617de11571dfc03d7020ff5"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/cygnus.mp3",
+   "sha256": "a199bf775d1cde147ed0925dfc0e4ed48c672f34ca5d10470eba4d000cec029c"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/final.mp3",
+   "sha256": "7142829322b9cd37bbb4f4f975f5b14650ddf1fc2deb9b459394577f006ab243"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/heart1.mp3",
+   "sha256": "f07c3c3273f1100cc1055f8026adfce30feb1f728c400acbc6a45098ba36151f"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/heart2.mp3",
+   "sha256": "d2f7cdeb600aad4c40a6c816430635ba390ea93de71ed301e58407d7abac4862"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/heart3.mp3",
+   "sha256": "2ff50aab823337b3c895a8e296ad0d3456d86a69bd44cf449ebd09602789800a"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/heart4.mp3",
+   "sha256": "9720828714e8f82e31d4f174c530589872b4981b60f95db1e16718f14fb8df0f"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/heart5.mp3",
+   "sha256": "ecdd54573aca5553592d4f9268466a6a4ede674b0e8c2cb5101b3862b13ec0bd"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/start.mp3",
+   "sha256": "69a0fa60a037f5e4f32a39e35a267a297bdad545555edf1789a52d17544bb4bd"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/text1.mp3",
+   "sha256": "a88a579fade608520d6b8b1f10e9dbf1cffa2de8fd2e33bc67486c2676f81684"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/text2.mp3",
+   "sha256": "b2aa1ccce5e8273ae7535e871a91d2d196bcd6a8168f8f110d0258b7bc96a0e3"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/text3.mp3",
+   "sha256": "e29f4e232de24d5f985eca18e9596b497737bc46c45deef4a12ae0d57f777e8d"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/text4.mp3",
+   "sha256": "f171a878e46a585576e876986f0c40eb7228fce53e706cf59b6d28d23cde9887"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/text5.mp3",
+   "sha256": "35821e8aeea295820550efb2f0118d432330827444384a5af71049c70a374f2c"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/text6.mp3",
+   "sha256": "af2c14fd1b38ac2c2ed4ca435c98cd2dbb72f7df225d6741ad15aa8a59b3d265"
+  },
+  {
+   "path": "Sound/Direction/Direction/sound/title.mp3",
+   "sha256": "910918a46252d07ae05fb29b1fdf05943ea249e8792682c10626fe39e84d8f48"
+  },
+  {
+   "path": "Sound/Direction/Direction1/sound/FinalFight.mp3",
+   "sha256": "ead1a17cfeb5b70c28b27c9c5e90cfff904c9864b1c07b45f6095780289e2d0e"
+  },
+  {
+   "path": "Sound/Direction/Direction2/sound/FinalFight.mp3",
+   "sha256": "ead1a17cfeb5b70c28b27c9c5e90cfff904c9864b1c07b45f6095780289e2d0e"
+  },
+  {
+   "path": "Sound/Direction/Direction3/sound/Whistle.mp3",
+   "sha256": "178e5d4e397e08d6802a2d7031b79362f235f14111664824f5cdee7842ccc11c"
+  },
+  {
+   "path": "Sound/Direction/Direction3/sound/title.mp3",
+   "sha256": "910918a46252d07ae05fb29b1fdf05943ea249e8792682c10626fe39e84d8f48"
+  },
+  {
+   "path": "Sound/Field/Party1/Clear.mp3",
+   "sha256": "074f5c66fd64693b575604420769744b9ce8f0c4a964be1d36830718f1407a69"
+  },
+  {
+   "path": "Sound/Field/Party1/Failed.mp3",
+   "sha256": "c0b7c8de5e96fb0d77a774a827b214680b8c2eb784f48eebf283201eff8f7db5"
+  },
+  {
+   "path": "Sound/Field/orbis/do.mp3",
+   "sha256": "75b99f6d8146c9e3053c08ae6e19015b9d3adbe551685ad6afa8dabbe2359c1b"
+  },
+  {
+   "path": "Sound/Field/orbis/la.mp3",
+   "sha256": "fd67677485257e760a0ab8b369ab66b49f44ba3b6af5d88327ddceb3e850a7d0"
+  },
+  {
+   "path": "Sound/Field/orbis/mi.mp3",
+   "sha256": "7e4247fa1e80dd9978f0a1e51fe671620966636d62c9a0ef752b7a282c3c4276"
+  },
+  {
+   "path": "Sound/Field/orbis/pa.mp3",
+   "sha256": "5735a1266706be3611b47422fae0c47812fa59c20ca5dda7d18199cb3b69b1d8"
+  },
+  {
+   "path": "Sound/Field/orbis/re.mp3",
+   "sha256": "444e969da798339746cdd138e926329211b6af85579d74c1bde0a7cc37d88c2f"
+  },
+  {
+   "path": "Sound/Field/orbis/si.mp3",
+   "sha256": "48893fb4964f92cb307b8cd79e7f35d0faecf6a365b66cf628b2e15a9e5de895"
+  },
+  {
+   "path": "Sound/Field/orbis/sol.mp3",
+   "sha256": "3fad492d0cce49630e1329d9c268c91dcbbb9d8d48a43c2969f5b1a51874aa4c"
+  },
+  {
+   "path": "Sound/Game/EnchantFailure.mp3",
+   "sha256": "b634621ad88af6792b69d0641da56a3922e934a3c4328131e8b4f8e511a31585"
+  },
+  {
+   "path": "Sound/Game/EnchantSuccess.mp3",
+   "sha256": "194ceb29a083d4c196e1025ffd4678a052c25c2104be78a9c5df3d3642375a85"
+  },
+  {
+   "path": "Sound/Jukebox/Congratulation.mp3",
+   "sha256": "13ac03c9c809f1a062989e68c75cf3676a42da6676dc417038074489249ab885"
+  },
+  {
+   "path": "Sound/UI/VegaFail.mp3",
+   "sha256": "c75e58f3c3c2056a16368ec5bd338d13ae95e6fbaa72b3af8b4016982f145915"
+  },
+  {
+   "path": "Sound/UI/VegaSuccess.mp3",
+   "sha256": "5b7f57dfa284d89fa7706b56b1d23b7f7f1e641e3693d28b8219fb779106f7b1"
+  },
+  {
+   "path": "Sound/UI/VegaTwinkling.mp3",
+   "sha256": "6b794ca1f3c133d297da488bff8d894fb9a534c42158d8176270360ea498adaa"
+  },
+  {
+   "path": "Sound/Weather/rain.mp3",
+   "sha256": "02eeff9cd72d7c3eb4e58f086bf22b7ed34600f26a0f9b8ef0f12c79c4ad7d16"
+  },
+  {
+   "path": "Sound/Weather/wind.mp3",
+   "sha256": "04a3b62e51b04519ce64feaeba435b8cb2424333c0b14d4e6065ad5e17eac446"
   }
  ]
 }

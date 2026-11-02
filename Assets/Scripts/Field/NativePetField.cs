@@ -239,7 +239,59 @@ public sealed class NativePetField : MonoBehaviour
         p.root.transform.position=new Vector3(p.x,p.y,0);
     }
     static void Remove(GameObject go) {if(Application.isPlaying) Destroy(go);else DestroyImmediate(go);}
-    public void Clear() {foreach(var p in pets.Values) Remove(p.root);pets.Clear();accumulated=0;previousHp=previousMp=-1;}
+    public void Clear() {foreach(var p in pets.Values) Remove(p.root);pets.Clear();accumulated=0;previousHp=previousMp=-1;petChat=null;}
+
+    // —————— 宠物聊天（PetChatHandler.java）——————
+    // 源端：客户端发 petChat(chrId, petIndex, act 0..9, text≤127) → 地图广播 → 宠物头顶气泡。
+    // 单机唯一真人，气泡画在出场宠物（slot 最小）头顶；act 是宠物表情动作码，
+    // 宠物动作集（move/hang/jump/stand0/hungry）没有对应帧，不触发。
+    sealed class PetChat { public string text; public float until; }
+    PetChat petChat;
+
+    public bool ShowChat(string text)
+    {
+        if(string.IsNullOrEmpty(text)) return false;
+        if(pets.Count==0) return false;
+        Pet first=null;foreach(var p in pets.Values) if(first==null || p.slot<first.slot) first=p;
+        if(first==null) return false;
+        petChat=new PetChat { text=text.Length>127 ? text.Substring(0,127) : text, until=Time.unscaledTime+5f };
+        return true;
+    }
+
+    void OnGUI()
+    {
+        if(petChat==null) return;
+        float now=Time.unscaledTime;
+        if(now>petChat.until) {petChat=null;return;}
+        Pet p=null;foreach(var pet in pets.Values) if(p==null || pet.slot<p.slot) p=pet;
+        var cam=Camera.main;
+        if(p==null || p.body==null || cam==null) return;
+        var measure=new GUIStyle(GUI.skin.label) { font=UiKit.Font,fontSize=12,wordWrap=false };
+        var layout=NativeChatBalloon.Prepare("pet/0",(int)Mathf.Max(24f,measure.CalcSize(new GUIContent(petChat.text)).x),1);
+        if(layout==null) return;
+        float s=Mathf.Max(0.35f,UiKit.H/768f);
+        float headY=p.body.sprite!=null ? p.body.bounds.max.y : p.y+0.3f;
+        var sp=cam.WorldToScreenPoint(new Vector3(p.x,headY,0f));
+        if(sp.z<0f) return;
+        var anchor=new Vector2(sp.x/UiKit.Scale/s,(Screen.height-sp.y)/UiKit.Scale/s);
+        float alpha=Mathf.Clamp01((petChat.until-now)/1f);
+        UiKit.Begin();
+        var matrix=GUI.matrix;var color=GUI.color;
+        GUI.matrix=matrix*Matrix4x4.Scale(new Vector3(s,s,1f));
+        GUI.color=new Color(1f,1f,1f,alpha);
+        var rect=new Rect(anchor.x-layout.anchorX,anchor.y-layout.texture.height,layout.texture.width,layout.texture.height);
+        GUI.DrawTexture(rect,layout.texture);
+        var textStyle=new GUIStyle(GUI.skin.label)
+        {
+            font=UiKit.Font,fontSize=12,alignment=TextAnchor.MiddleCenter,wordWrap=false,clipping=TextClipping.Overflow,
+        };
+        // pet/0 clr=-8388608（WZ 颜色按 0xBBGGRR 存）→ 深蓝字；Prepare 按 RRGGBB 解释，此处交换 r/b 还原。
+        var c=layout.color;textStyle.normal.textColor=new Color(c.b,c.g,c.r,c.a*alpha);
+        var textRect=layout.text;textRect.position+=rect.position;
+        GUI.Label(textRect,petChat.text,textStyle);
+        GUI.color=color;GUI.matrix=matrix;
+    }
+
     void LateUpdate()
     {
         if(!GameSession.InGame || GameLoop.I?.field?.Map==null) Clear();

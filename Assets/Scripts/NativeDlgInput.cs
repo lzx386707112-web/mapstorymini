@@ -7,6 +7,7 @@ using UnityEngine;
 public static class NativeDlgInput
 {
     const int W = 529, H = 206;
+    const string OwnerKey = "NativeDlgInput";
 
     static string prompt, value;
     static int max;
@@ -16,10 +17,12 @@ public static class NativeDlgInput
 
     public static void Open(string text, string initial, int limit, System.Action<string> callback)
     {
+        // 切到另一个输入框前先收掉旧键盘，避免旧文本被 Sync 灌进新框。
+        NativeEditKeyboard.Close();
         prompt = text; value = initial ?? ""; max = Mathf.Max(1, limit); done = callback;
     }
 
-    public static void Close() { done = null; prompt = value = null; max = 0; }
+    public static void Close() { done = null; prompt = value = null; max = 0; NativeEditKeyboard.Close(); }
 
     static void Style(out GUIStyle body)
     {
@@ -36,6 +39,8 @@ public static class NativeDlgInput
     public static void Draw()
     {
         if (!Visible) return;
+        // 每个 GUI 事件先读键盘快照，再绘制输入框/消费 Enter（Android 最终合成可能与 Done 同帧）。
+        var keyboardSignal = NativeEditKeyboard.Sync(OwnerKey, ref value);
         float s = BottomBar.S;
         var rect = new Rect((UiKit.W - W * s) / 2f, (UiKit.H - H * s) / 2f, W * s, H * s);
         NativeUi.DialogPanel(rect);
@@ -49,6 +54,13 @@ public static class NativeDlgInput
         UiKit.Fill(new Rect(field.x + s, field.y + s, field.width - 2 * s, field.height - 2 * s), Color.white);
         var edit = new GUIStyle(body) { wordWrap = false };
         value = GUI.TextField(new Rect(field.x + 2 * s, field.y + s, field.width - 4 * s, field.height - 2 * s), value ?? "", max, edit);
+        // 点击输入框拉起系统键盘（文本用普通键盘，上限与 GUI.TextField 一致）。
+        // field 已经是屏幕像素坐标，直接用 Pointer.Pos 命中；同框已开着不重开。
+        if (Event.current.type == EventType.Repaint && GUI.enabled && Pointer.Clicked && field.Contains(Pointer.Pos))
+        {
+            Pointer.ConsumeClick();
+            NativeEditKeyboard.Open(OwnerKey, value, TouchScreenKeyboardType.Default, max);
+        }
 
         bool submit = NativeUi.Button(new Rect(rect.x + 475 * s, rect.y + 180 * s, 43 * s, 19 * s), "UI/UIWindow.img/UtilDlgEx/BtOK");
         bool cancel = NativeUi.Button(new Rect(rect.x + 9 * s, rect.y + 180 * s, 43 * s, 19 * s), "UI/UIWindow.img/UtilDlgEx/BtClose");
@@ -56,6 +68,8 @@ public static class NativeDlgInput
         var e = Event.current;
         if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape) { cancel = true; e.Use(); }
         if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter)) { submit = true; e.Use(); }
+        // 输入法 Done 与回车等价；同帧一起到达也只提交一次。Canceled 只收键盘，窗口保留。
+        if (keyboardSignal == NativeEditKeyboard.Signal.Done) submit = true;
 
         if (cancel) { Close(); return; }
         if (!submit) return;

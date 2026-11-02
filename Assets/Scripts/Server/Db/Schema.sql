@@ -565,6 +565,18 @@ CREATE TABLE command_info (
     default_level INTEGER NOT NULL DEFAULT 0
 );
 
+-- V1.0.36：举报记录（ReportHandler.addReport；reporttime 存 Unix 毫秒）
+CREATE TABLE reports
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    reporttime  INTEGER NOT NULL DEFAULT 0,
+    reporterid  INTEGER NOT NULL,
+    victimid    INTEGER NOT NULL,
+    reason      INTEGER NOT NULL DEFAULT 0,
+    chatlog     TEXT    NOT NULL DEFAULT '',
+    description TEXT    NOT NULL DEFAULT ''
+);
+
 -- 假人档案：对齐联机的「账号表」。
 -- 联机里每个玩家账号唯一，所以别人看到他永远是同一张脸、同一个名字；假人现在照这个来：
 -- 几百条档案一次性预置好，之后只读不改，同一个 id 永远同一套外观 + 同一个名字。
@@ -644,4 +656,58 @@ CREATE TABLE dueyitems (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     packageid       INTEGER NOT NULL DEFAULT 0,
     inventoryitemid INTEGER NOT NULL DEFAULT 0
+);
+
+-- 雇佣商店（HiredMerchant）← 源端 playershopitem/inventorymerchant + characters.MerchantMesos/HasMerchant。
+-- 源端把店主物品存在 inventoryitems（type=ItemFactory.MERCHANT=6）并用 inventorymerchant 存 bundles；
+-- 本项目 inventoryitems.type 已经是「道具大分类」（itemId/1000000），所以店内存货行用
+-- characterid = -2（不与快递的 -1 混用）表示「无主」，merchantitems 记录槽位/份数/单价。
+CREATE TABLE hiredmerchants (
+    ownerid     INTEGER PRIMARY KEY,
+    mapid       INTEGER NOT NULL DEFAULT 0,
+    x           INTEGER NOT NULL DEFAULT 0,
+    y           INTEGER NOT NULL DEFAULT 0,
+    permitid    INTEGER NOT NULL DEFAULT 0,
+    description TEXT    NOT NULL DEFAULT '',
+    open        INTEGER NOT NULL DEFAULT 0,
+    published   INTEGER NOT NULL DEFAULT 0,
+    starttime   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE merchantitems (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    ownerid         INTEGER NOT NULL DEFAULT 0,
+    slot            INTEGER NOT NULL DEFAULT 0,
+    inventoryitemid INTEGER NOT NULL DEFAULT 0,
+    bundles         INTEGER NOT NULL DEFAULT 0,
+    price           INTEGER NOT NULL DEFAULT 0
+);
+
+-- Fredrick 寄存提醒 ← V1.0.13__create_fredstorage.sql（timestamp 存毫秒）
+CREATE TABLE fredstorage (
+    cid       INTEGER PRIMARY KEY,
+    daynotes  INTEGER NOT NULL DEFAULT 0,
+    timestamp INTEGER NOT NULL DEFAULT 0
+);
+
+-- HiredMerchant.sold：成交记录（店主窗口的「已售出」列表）
+CREATE TABLE merchantsold (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    ownerid  INTEGER NOT NULL DEFAULT 0,
+    buyer    TEXT    NOT NULL DEFAULT '',
+    itemid   INTEGER NOT NULL DEFAULT 0,
+    quantity INTEGER NOT NULL DEFAULT 0,
+    meso     INTEGER NOT NULL DEFAULT 0,
+    time     INTEGER NOT NULL DEFAULT 0
+);
+
+-- 便签 ← V1.0.27__create_notes.sql（MEMO_RESULT：商城送礼提醒 / 回复送礼便签 / Fredrick 寄存提醒）
+CREATE TABLE notes (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    "to"      TEXT    NOT NULL DEFAULT '',
+    "from"    TEXT    NOT NULL DEFAULT '',
+    message   TEXT    NOT NULL DEFAULT '',
+    timestamp INTEGER NOT NULL DEFAULT 0,
+    fame      INTEGER NOT NULL DEFAULT 0,
+    deleted   INTEGER NOT NULL DEFAULT 0
 );

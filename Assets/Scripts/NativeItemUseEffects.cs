@@ -11,6 +11,9 @@ public static class NativeItemUseEffects
         if(!result.ok) { BottomBar.Toast(result.error); return; }
         GameSession.Character.inventory=result.inventory; GameSession.ApplyInventoryToProfile();
         GameLoop.I?.player?.RefreshBuffAttributes(); Profile.Save();
+        // 孵化器：提示孵出的奖励
+        if(result.rewardItemId!=0)
+            BottomBar.Toast("孵化成功：" + Server.Bot.BotItemCatalog.Shared.Name(result.rewardItemId) + " x" + result.rewardQuantity);
     }
     public static void Scroll(int id,InventoryEntry target)
     {

@@ -147,6 +147,19 @@ public interface ITransport
     bool HasNpcShop(int npcId);
     NpcShopResponse NpcShop(NpcShopRequest req);
     DueyResponse Duey(DueyRequest req);
+    MerchantResponse Merchant(MerchantRequest req);
+    PlayerShopResponse PlayerShop(PlayerShopRequest req);
+    MakerResponse Maker(MakerRequest req);
+    RankingResponse Ranking(RankingRequest req);
+    OwlResponse Owl(OwlRequest req);
+    StorageResponse Storage(StorageRequest req);
+    MacroResponse Macro(MacroRequest req);
+    ReportResponse Report(ReportRequest req);
+    ArenaResponse Arena(ArenaRequest req);
+    RpsResponse Rps(RpsRequest req);
+    MemoResponse Memo(MemoRequest req);
+    TvResponse Tv(TvRequest req);
+    CarnivalResponse Carnival(CarnivalRequest req);
     Server.Bot.PartyGrindResponse PartyGrind(Server.Bot.PartyGrindRequest req);
     Server.Bot.Trade.BotTradeResponse BotTrade(Server.Bot.Trade.BotTradeRequest req);
     Server.Bot.MarketResponse Market(Server.Bot.MarketRequest req);
@@ -178,8 +191,21 @@ public sealed class InProcessTransport : ITransport
     public bool HasNpcShop(int npcId) => server.NpcShops.HasNpc(npcId);
     public NpcShopResponse NpcShop(NpcShopRequest r) => server.NpcShops.Handle(r);
     public DueyResponse Duey(DueyRequest r) => NativeDueyService.Handle(server.Db, r);
+    public MerchantResponse Merchant(MerchantRequest r) => NativeMerchantService.Handle(server.Db, r);
+    public PlayerShopResponse PlayerShop(PlayerShopRequest r) => NativePlayerShopService.Handle(server.Db, r);
+    public MakerResponse Maker(MakerRequest r) => NativeMakerService.Handle(server.Db, r);
+    public RankingResponse Ranking(RankingRequest r) => NativeRankingService.Handle(server.Db, r);
+    public OwlResponse Owl(OwlRequest r) => NativeOwlService.Handle(server.Db, r);
+    public StorageResponse Storage(StorageRequest r) => NativeStorageService.Handle(server.Db, r);
+    public MacroResponse Macro(MacroRequest r) => NativeSkillMacroService.Handle(server.Db, r);
+    public ReportResponse Report(ReportRequest r) => NativeReportService.Handle(server.Db, r);
+    public ArenaResponse Arena(ArenaRequest r) => NativeEventArenaService.Handle(server.Db, r);
+    public RpsResponse Rps(RpsRequest r) => NativeRpsService.Handle(server.Db, r);
+    public MemoResponse Memo(MemoRequest r) => NativeNoteService.Handle(server.Db, r);
+    public TvResponse Tv(TvRequest r) => NativeMapleTvService.Handle(server.Db, r);
+    public CarnivalResponse Carnival(CarnivalRequest r) => NativeCarnivalService.Handle(server.Db, r);
     public CashResponse Cash(CashRequest r) => server.Cash.Handle(r);
-    public void EndSocialSession(int characterId) { NativePetItems.EndSession(server.Db,characterId); server.EndBotSession(characterId); server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); server.NpcShops.EndSession(characterId); }
+    public void EndSocialSession(int characterId) { NativePetItems.EndSession(server.Db,characterId); NativePlayerShopService.Logout(server.Db,characterId); NativeReportService.EndSession(characterId); server.EndBotSession(characterId); server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); server.NpcShops.EndSession(characterId); }
 
     public LoginResponse Login(LoginRequest r)
     {

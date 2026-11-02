@@ -48,3 +48,29 @@ MapFactory.loadLifeRaw：Boss刷新倍率固定1，mobTime按boss_respawn_mob_ti
 - 服务端最终离线检查668通过/0失败，覆盖admin新旧角色GM与假人20px断层。Unity Scripts+Editor最终编译0 warning/0 error。
 - NPC harness 889条：parseFail0、ok790、runFail27、javaInterop72；pack2779条parseFail0/mangled0。宿主缺口保留，不称全脚本通过。
 - 未连接Android设备，未执行APK构建或手机画面/声音/键盘验收。详细项表见docs/feedback-nine-2026-10-31.md。
+
+## 2026-11-02：全地图 BGM 补齐（出岛后静音）
+
+起因：排查出租车传送黑屏时发现 `Sound/Bgm/` 只有 7 个 mp3，进泰国/少林/新加坡等图静音。根因是 `export_sound.py` 旧版只按 `FieldMaps.json`（37 张彩虹岛图）导出；脚本虽已改成读 `Field/FieldIndex.json` 的 `bgms`（264 首，覆盖全部 6337 张图），但**全量分支从未重跑**，索引仍停在 7 首。
+
+音频落地是三段链路，缺一段真机就静音：
+
+1. `Field/FieldIndex.json` → `bgms`（264 首，由 `tools/export_field_index.py` 从全量地图生成）
+2. `tools/export_sound.py` 导出 mp3 到 `MapleDashResources/Data/Sound/`，并写 `Assets/Resources/SoundIndex.json`（`AudioManager.Index` 读它，按 `WzAssets.DataRoot + entry.path` 走 `UnityWebRequestMultimedia` 加载）
+3. `tools/export_sound.py --register` 把 mp3 登记进 `NativeAssetIndex.json["files"]`（含 sha256），同步 `MapleDashResources/resource-manifest.json`。**`sync_android_data.py` 与 `build_resource_pack.py` 只推送 files 列表里的文件**，mp3 不在源端 WZ 树，`package_native_assets.py` 扫描的是源端目录，所以这一步不能省。
+
+三个必须记住的坑：
+
+- **`BGM06/FinalFight` 大小写笔误**：地图数据写大写，源端文件是 `Bgm06.img`（且确实含 FinalFight）。`image()` 原先直接 `read_bytes()`，单个坏条目抛 `FileNotFoundError` 中断整批 264 首。现由 `image_name()` 大小写归一化解析源文件名，逻辑 key 保持地图原样；真缺失的 img/节点统一记 MISS 跳过，不抛。
+- **52 个文件带非 MPEG 前缀**：48 个在 offset 82、4 个在 80（集中在 `BgmCN`/`BgmSG`/`BgmJp`/`BgmJp2` 与部分 `Skill/*/Use`）。`ffprobe` 能跳过后识别成 mp3，但 Unity 的 `AudioType.MPEG` 不保证跳过前导垃圾。现由 `trim_to_mp3()` 扫前 512 字节找首个合法 MPEG 帧头（校验 version/layer/bitrate/samplerate 非保留值）后截断，ID3 标签原样保留。剥离 52 个 / 4256 字节，`file` 已全部识别为 `MPEG ADTS`。
+- **过去漏登记 38 个音频**：Direction 系列与 `Bgm04/Shinin'Harbor` 物理存在但从未进 files。本次 `--register` 全量重扫 Sound 树，新增 290 条、Sound 共 369 条；同时加入「清理失效条目」逻辑——残留的失效 mp3 记录会让 `sync_android_data.py` 在推送前直接 `FileNotFoundError` 中断。
+
+`SoundIndex.json` 的 `ms` 字段解析进 `Entry` 但运行时**从未读取**（`AudioManager` 播放依赖 AudioClip 自身长度），40 首 BGM 的 `ms=0` 属源端 `length_ms` 缺失，不影响播放。
+
+覆盖结果：**257 / 264**。7 首是源端 GMS083 本身没有该节点（与「源端即静默」同口径，不做跨 img 猜测映射）：`Bgm03/BygoneGarden`(13 图)、`Bgm03/CavernOfShadows`(6)、`Bgm16/RedWitch`(2)、`Bgm16/RustyThrone`(4)、`Bgm20/Subway`(20，源端 Bgm20 只有 UnderSubway/UnderSubway2)、`Bgm57/Historical Site of Slime`(1)、`BgmEvent/halloweenMainHall`(10)。
+
+验收：369 个物理 mp3 / 369 条 SoundIndex / 369 条 NativeAssetIndex Sound 三向零差异，path 失效 0、sha256 不符 0、遗留前缀 0、manifest 与索引一致；ffprobe 抽样 5 首（含弯引号文件名 `Bgm50_TheWorld’sEnd.mp3`）全部可解码。`unity-compile-check` 0 warning/0 error；`server-check` 首轮 1195/3（CPQ 平局延长用例时序抖动）、复跑 **1198/0**。音频总量 437.36 MiB（BGM 428.54 MiB）。
+
+边界：**未连接 Android 设备**，`MapleDashResources.zip` 当前不存在，要让真机生效仍需跑 `tools/sync_android_data.py`（或先 `build_resource_pack.py` 再 `--zip`）推送；体积增量约 +437 MiB，首次推送会明显变长。
+
+格式坑：`--register` 必须**固定按 `indent=1` 重写** `NativeAssetIndex.json`（仓库既有 21.9 万行格式）。首次实现沿用了 `package_native_assets.py` 的 `separators=(",", ":")` 紧凑输出，把整份索引压成单行，`git diff` 虚增到 21 万行、真实改动被淹没；改为 `indent=1` 后 diff 收敛到 1188 行。`resource-manifest.json` 与索引写同一份 bytes。

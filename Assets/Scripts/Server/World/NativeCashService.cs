@@ -22,7 +22,7 @@ public interface INativeCashCatalog {
     int EquipSlot(int itemId);
     string CanEquip(int itemId, CharRecord character);
 }
-public enum CashOperation { Open, Close, Read, Buy, Gift, ClaimGifts, Withdraw, Deposit, WishList, ExpandInventory, ExpandCharacters, Equip, Unequip, AdjustBalance, RedeemCode, ExpandStorage }
+public enum CashOperation { Open, Close, Read, Buy, Gift, ClaimGifts, Withdraw, Deposit, WishList, ExpandInventory, ExpandCharacters, Equip, Unequip, AdjustBalance, RedeemCode, ExpandStorage, OpenSurprise }
 public sealed class CashRequest {
     public int characterId, sn, currency = 1, birthday, inventoryType, amount;
     public long itemId;
@@ -43,6 +43,8 @@ public sealed class CashResponse {
     public List<CashStock> stock = new List<CashStock>();
     public List<int> wishes = new List<int>();
     public FullCharacter character;
+    // OpenSurprise 专属：本次开出的奖励（CashShopSurpriseHandler → onCashGachaponOpenSuccess）
+    public int rewardItemId, rewardQuantity = 1, rewardSn;
 }
 public sealed class NativeCashService {
     readonly DbStore db;
@@ -120,7 +122,10 @@ public sealed class NativeCashService {
             string error; db.BeginTransaction();
             try { error = Apply(c, r); if (error == null) db.Commit(); else db.Rollback(); }
             catch { db.Rollback(); throw; }
-            db.Save(); var result = Read(CharactersDao.FindById(db, r.characterId)); result.ok = error == null; result.error = error ?? ""; return result;
+            db.Save(); var result = Read(CharactersDao.FindById(db, r.characterId)); result.ok = error == null; result.error = error ?? "";
+            if (result.ok && r.operation == CashOperation.OpenSurprise)
+            { result.rewardItemId = surpriseRewardItem; result.rewardSn = surpriseRewardSn; }
+            return result;
         }
     }
     public void Sweep() {
@@ -157,7 +162,7 @@ public sealed class NativeCashService {
     }
     string Apply(CharRecord c, CashRequest r) {
         int cid = (int)c.id;
-        if (r.operation == CashOperation.Open) { if (Catalog == null) return "商城目录资源未加载"; if (c.hp <= 0 || CanEnter != null && !CanEnter(c.map)) return "当前状态或地图不能进入商城"; opened.Add(cid); return null; }
+        if (r.operation == CashOperation.Open) { if (Catalog == null) return "商城目录资源未加载"; if (c.hp <= 0 || CanEnter != null && !CanEnter(c.map)) return "当前状态或地图不能进入商城"; opened.Add(cid); string giftWhy = LoadGifts(c); if (giftWhy != null) return giftWhy; return null; }
         if (r.operation == CashOperation.Close) { opened.Remove(cid); return null; }
         if (r.operation == CashOperation.Read) return null;
         // Trusted original NPC scripts award/spend account cash outside the shop.
@@ -191,7 +196,10 @@ public sealed class NativeCashService {
                 if (DbStore.Int(targetRow, "accountid") == c.accountid) return "不能向同账号角色赠送";
                 if (Expand(item) == null) return "礼包目录不完整";
                 Charge(account, 4, item.price);
-                db.Table("cash_gifts").Insert(new DbRow { ["characterid"] = (long)DbStore.Int(targetRow, "id"), ["sn"] = (long)item.sn, ["sender"] = c.name, ["message"] = r.message }); return null;
+                db.Table("cash_gifts").Insert(new DbRow { ["characterid"] = (long)DbStore.Int(targetRow, "id"), ["sn"] = (long)item.sn, ["sender"] = c.name, ["message"] = r.message });
+                // CashOperationHandler action 4：送礼后给收件人留商城提醒便签（收礼在线则立即 show）
+                NativeNoteService.SendNormal(db, c.name + " 给你送了一份礼物！快去现金商城查看吧。", c.name, DbStore.Str(targetRow, "name"));
+                return null;
             case CashOperation.ClaimGifts:
                 var gifts = db.Table("cash_gifts").Select(x => DbStore.Int(x, "characterid") == c.id);
                 var claim = new List<KeyValuePair<CashCommodity, string>>();
@@ -263,9 +271,47 @@ public sealed class NativeCashService {
                 if (item.itemId != 5430000) return "该商品不是角色栏扩充券";
                 if (DbStore.Int(account, "characterslots") >= 15) return "角色栏已达上限";
                 Charge(account, r.currency, item.price); account["characterslots"] = (long)(DbStore.Int(account, "characterslots") + 1); return null;
+            case CashOperation.OpenSurprise:
+                // CashShop.openCashShopSurprise：按 cashId 找惊喜箱（5222000），数量-1；
+                // 奖励 = 在售非礼包商品等概率随机一件（CashShop.getRandomCashItem）。
+                var box = db.Table("cash_items").Find(x => DbStore.Long(x, "id") == r.itemId && Own(x, c) && DbStore.Int(x, "characterid") == 0);
+                if (box == null || DbStore.Int(box, "itemid") != 5222000 || DbStore.Int(box, "quantity") <= 0) return "没有可开启的惊喜箱";
+                if (Stock(c).Count >= 100) return "现金仓库已满";
+                var pool = new List<CashCommodity>();
+                foreach (var cmd in Catalog.All)
+                    if (cmd.onSale == 1 && cmd.itemId / 10000 != 910 && Catalog.Exists(cmd.itemId)) pool.Add(cmd);
+                if (pool.Count == 0) return "商城目录为空";
+                int pick = SurprisePick != null ? SurprisePick(pool.Count) : new Random().Next(pool.Count);
+                var reward = pool[pick];
+                int boxQty = DbStore.Int(box, "quantity");
+                if (boxQty <= 1) db.Table("cash_items").Delete(x => DbStore.Long(x, "id") == r.itemId);
+                else box["quantity"] = (long)(boxQty - 1);
+                AddStock(c, reward, "");
+                surpriseRewardItem = reward.itemId; surpriseRewardSn = reward.sn;
+                return null;
         }
         return "无效商城操作";
     }
+    // CashShop.loadGiftsFromDb：进商城时把 cash_gifts 装进现金仓库，每份礼物 +1 次回复便签机会。
+    // 源端在登录构造 CashShop 时执行；仓库放不下（canAddToInventory 失败）则礼物保留不领。
+    string LoadGifts(CharRecord c) {
+        int cid = (int)c.id;
+        int loaded = 0;
+        foreach (var gift in db.Table("cash_gifts").Select(x => DbStore.Int(x, "characterid") == cid)) {
+            var parts = Expand(Commodity(DbStore.Int(gift, "sn")));
+            if (parts == null) continue;            // 礼物目录缺失：保留礼物（源端 continue）
+            if (Stock(c).Count + loaded + parts.Count > 1000) continue;
+            foreach (var p in parts) AddStock(c, p, DbStore.Str(gift, "sender"));
+            NativeNoteService.AvailableNotes++;
+            loaded += parts.Count;
+            db.Table("cash_gifts").Delete(x => DbStore.Int(x, "id") == DbStore.Int(gift, "id"));
+        }
+        if (loaded > 0) db.Save();
+        return null;
+    }
+    // 测试注入口：惊喜箱奖励下标
+    public static Func<int, int> SurprisePick;
+    int surpriseRewardItem, surpriseRewardSn;
     string CanBuy(CharRecord c, CashCommodity item, DbRow account, int currency) {
         string col = Currency(currency); if (col == null) return "无效余额类型";
         if (item == null || item.onSale != 1 || item.price < 0 || item.count < 1 || item.period < -1) return "商品未出售或数据无效";

@@ -98,6 +98,7 @@ public class GameHUD : MonoBehaviour
         NativeGainNotice.Draw();
         NativeBossHpBar.Draw();
         NativeEventClock.Draw();
+        NativeArenaHud.Draw();
         // showEffect 屏幕特效（事件 clear 等）：盖在人物上、UI 窗口下。
         NativeScreenEffect.Draw();
         QuestAlarm.Draw();

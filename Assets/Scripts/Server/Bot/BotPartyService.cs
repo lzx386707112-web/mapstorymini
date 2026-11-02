@@ -35,6 +35,9 @@ namespace Server.Bot
         }
         public BotActor Get(int id) => players.TryGetValue(id,out var actor) ? actor : BotRegistry.Get(id);
         public Party For(int id) => membership.TryGetValue(id,out int party) && parties.TryGetValue(party,out var value) ? value : null;
+        // 队伍 id 与角色 id 是两套编号（nextId 从 1000000001 起），For()/Get() 收的都是角色 id。
+        // 拿队伍 id 去 For() 会稳定拿到 null，表现为「队伍明明有假人，取成员却是空表」。
+        public Party ById(int partyId) => parties.TryGetValue(partyId,out var value) ? value : null;
         void Persist(int id, int party)
         {
             if (Get(id)?.IsBot() ?? true) return;

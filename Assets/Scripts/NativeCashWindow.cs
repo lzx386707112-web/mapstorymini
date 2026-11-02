@@ -35,7 +35,7 @@ public static class NativeCashWindow {
         var result = Request(CashOperation.Open); ShopWindow.Visible = result != null && result.ok;
         if (ShopWindow.Visible) { category = 1; subcategory = page = lockerRow = inventoryRow = 0; previousTimeScale = Time.timeScale; Time.timeScale = 0; }
     }
-    public static void Reset() { if (ShopWindow.Visible && Time.timeScale == 0) Time.timeScale = previousTimeScale; ShopWindow.Visible = false; state = null; giftVisible = purchaseVisible = birthdayVisible = false; }
+    public static void Reset() { if (ShopWindow.Visible && Time.timeScale == 0) Time.timeScale = previousTimeScale; ShopWindow.Visible = false; state = null; giftVisible = purchaseVisible = birthdayVisible = surpriseVisible = false; }
     public static void GiftWish(int sn, string recipient)
     {
         if (!ShopWindow.Visible && GameLoop.I != null) {
@@ -189,6 +189,7 @@ public static class NativeCashWindow {
             if (giftVisible) { GUI.enabled = enabled && !birthdayVisible; DrawGift(); GUI.enabled = enabled; }
             if (birthdayVisible) DrawBirthday();
             if (purchaseVisible) DrawPurchase();
+            if (surpriseVisible) { GUI.enabled = enabled; DrawSurprise(); }
         } finally { GUI.enabled = enabled; GUI.matrix = previous; }
         if (exit) Toggle();
     }
@@ -303,8 +304,52 @@ public static class NativeCashWindow {
         if (Hit(rect)) {
             bool twice = stockSelection == item.id && stockSelectionLocker == locker && Time.unscaledTime - stockClickAt < .4f;
             stockSelection = item.id; stockSelectionLocker = locker; stockClickAt = Time.unscaledTime;
-            if (twice) Request(locker ? CashOperation.Withdraw : CashOperation.Deposit,item.id);
+            if (twice) {
+                // 惊喜箱（5222000）：双击开 CashGachapon 窗（源端 CashShopSurpriseHandler 前置 UI）
+                if (item.itemId == 5222000) { surpriseVisible = true; surprisePhase = 0; surpriseRewardId = 0; surpriseBoxId = item.id; }
+                else Request(locker ? CashOperation.Withdraw : CashOperation.Deposit,item.id);
+            }
         }
+    }
+
+    // —— 商城惊喜箱窗（UI/UIWindow.img/CashGachapon，170x172；源端 CUICashGachapon）——
+    // BtOpen 开箱 → CashOperation.OpenSurprise（CashShop.openCashShopSurprise：
+    // 惊喜箱数量-1，奖励 = 在售非礼包商品随机一件进现金仓库）→ 展示奖励图标+名字。
+    // 注意素材在 UIWindow.img 不在 CashShop.img，不走 Image()。
+    static bool surpriseVisible;
+    static int surprisePhase;           // 0 待开箱 / 1 已开出
+    static long surpriseBoxId;
+    static int surpriseRewardId;
+    static Texture2D GachaTex(string node) => Art.Tex("wz://UI/UIWindow.img/CashGachapon/" + node);
+    static void DrawSurprise() {
+        if (!surpriseVisible) return;
+        var origin = new Vector2((800 - 170) / 2f, (600 - 172) / 2f);
+        UiKit.Fill(new Rect(0, 0, 800, 600), new Color(0f, 0f, 0f, 0.45f));
+        var bg = GachaTex("backgrnd");
+        if (bg != null) GUI.DrawTexture(new Rect(origin.x, origin.y, bg.width, bg.height), bg);
+        // 开箱动画帧（EffectNormal 166x77 delay 150ms）
+        Texture2D frame = null;
+        int total = 0;
+        while (GachaTex("EffectNormal/" + total) != null) total++;
+        if (total > 0) frame = GachaTex("EffectNormal/" + ((int)(Time.unscaledTime / 0.15f) % total));
+        if (frame != null) GUI.DrawTexture(new Rect(origin.x + 2, origin.y + 55, frame.width, frame.height), frame);
+        if (surprisePhase == 1 && surpriseRewardId != 0) {
+            var icon = NativeItemSource.Icon(surpriseRewardId);
+            if (icon != null) GUI.DrawTexture(new Rect(origin.x + 69, origin.y + 30, icon.width * 2, icon.height * 2), icon);
+            var label = new GUIStyle(GUI.skin.label) { font = UiKit.Font, fontSize = 11, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            label.normal.textColor = Color.black;
+            GUI.Label(new Rect(origin.x + 15, origin.y + 78, 140, 30), WzNames.Item(surpriseRewardId), label);
+        }
+        if (NativeUi.Button(new Rect(origin.x + 67, origin.y + 132, 35, 16),
+                "UI/UIWindow.img/CashGachapon/" + (surprisePhase == 0 ? "BtOpen" : "BtClose"), pointer)) {
+            if (surprisePhase == 0) {
+                var res = Request(CashOperation.OpenSurprise, surpriseBoxId);
+                if (res != null && res.ok) { surpriseRewardId = res.rewardItemId; surprisePhase = 1; }
+            }
+            else surpriseVisible = false;
+        }
+        if (NativeUi.Button(new Rect(origin.x + 152, origin.y + 4, 12, 12), "UI/UIWindow.img/CashGachapon/BtClose", pointer))
+            surpriseVisible = false;
     }
     static void DrawPreview() {
         Image("Base/Preview/" + previewBackground,24,40);

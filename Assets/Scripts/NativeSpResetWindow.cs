@@ -22,8 +22,8 @@ using UnityEngine;
 //   BtClose id=2 @(155,6)。87/129 与 47 宽按钮只差 42 会重叠 5px，与资源图矛盾，
 //   坐标按汇编保留，待实拍核对后修正。摘要两组（像素实测）：灰条+红线（组1 y=91、组2 y=155）
 //   +图标块 (8,组顶+1,35,28)+文字区 (44..168)；灰条上的原端文字未解，留空。
-// 边界：源端来源技能归 0 时清理技能宏（UseCashItemHandler 199..227）——本工程无技能宏，不适用；
-//   req 前置失效照源端不校验；新手（job 0/1000，虚拟 SP 体系）与 autoLearn 技能不进列表。
+// 边界：源端来源技能归 0 时清理技能宏（UseCashItemHandler 199..227）——由 Profile.ResetSp
+//   调 NativeSkillMacros.ClearSkillRefs 完成；req 前置失效照源端不校验；新手（job 0/1000，虚拟 SP 体系）与 autoLearn 技能不进列表。
 public static class NativeSpResetWindow
 {
     const string Root = "UI/UIWindow.img/Reset/SP/";

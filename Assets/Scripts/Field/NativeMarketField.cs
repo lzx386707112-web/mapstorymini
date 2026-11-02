@@ -67,6 +67,13 @@ public sealed class NativeMarketField : MonoBehaviour
                 : employees.TryGetValue(shop.ownerId,out var employee) ? employee.Image : null;
             if (renderer == null || renderer.sprite == null) continue;
             if (!renderer.bounds.Contains(new Vector3(point.x,point.y,renderer.bounds.center.z))) continue;
+            // 点自家摊位：源端 visitShop 允许店主自己进店，这里直接把自己那扇窗重新打开。
+            if (shop.playerStore && shop.ownerId == GameSession.CharacterId)
+            {
+                if (shop.permitId / 10000 == 514) NativePlayerShopWindow.Open(shop.permitId);
+                else NativeMerchantWindow.Open(shop.permitId);
+                Pointer.ConsumeClick(); return true;
+            }
             NativeMarketWindow.Visit(shop.ownerId); Pointer.ConsumeClick(); return true;
         }
         return false;

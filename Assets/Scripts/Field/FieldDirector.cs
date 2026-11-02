@@ -869,33 +869,52 @@ public sealed class FieldDirector : MonoBehaviour
             case WarpState.Out:
                 if (!Advance(0f, 1f, ScreenFade.OutSeconds, warpClock)) return;
                 // 全黑之后才真正换图：玩家看不到任何一帧跳变
-                if (warpTarget == null)
+                // Enter 里除 view.Show 外都没有 try 保护（FieldCatalog.GetMap / NpcField.Bind /
+                // ApplyGeometry / PlacePlayer / AudioManager / BuildPoints / ChangedMap …）。任何一步抛异常
+                // 都会冒泡出这里，把 warpState 永远留在 Out、黑幕 alpha 停在 1、InputLocked 不解除，
+                // 表现就是「传送后永久黑屏且点不动」。出租车等跨图 warp 最容易踩到冷门目标图，
+                // 所以这里无论成功失败都必须走完渐显并解锁，同时把异常连堆栈记下来定位真正的触发点。
+                try
                 {
-                    int target = pendingWarpMap;
-                    pendingWarpMap = -1;
-                    string portalName = pendingWarpPortal;
-                    pendingWarpPortal = null;
-                    int portalIndex = pendingWarpPortalIndex;
-                    pendingWarpPortalIndex = -1;
-                    // pendingWarpMap 的「无目标」哨兵是 -1；0 号图是合法目标（见 WarpTo 注释）
-                    if (target < 0) target = Map != null ? Map.returnMap : 1000000;
-                    // 0 号图是黑场过场舞台（见 Enter 里 deferredWarpMap 的注释）：本端没有开场演出，
-                    // 直接按它的 returnMap 送走，别让玩家先进黑图再跳一次。
-                    if (target == 0)
+                    if (warpTarget == null)
                     {
-                        try
+                        int target = pendingWarpMap;
+                        pendingWarpMap = -1;
+                        string portalName = pendingWarpPortal;
+                        pendingWarpPortal = null;
+                        int portalIndex = pendingWarpPortalIndex;
+                        pendingWarpPortalIndex = -1;
+                        // pendingWarpMap 的「无目标」哨兵是 -1；0 号图是合法目标（见 WarpTo 注释）
+                        if (target < 0) target = Map != null ? Map.returnMap : 1000000;
+                        // 0 号图是黑场过场舞台（见 Enter 里 deferredWarpMap 的注释）：本端没有开场演出，
+                        // 直接按它的 returnMap 送走，别让玩家先进黑图再跳一次。
+                        if (target == 0)
                         {
-                            var pass = FieldCatalog.GetMap(0);
-                            if (pass != null && pass.returnMap > 0 && pass.returnMap != 0) target = pass.returnMap;
+                            try
+                            {
+                                var pass = FieldCatalog.GetMap(0);
+                                if (pass != null && pass.returnMap > 0 && pass.returnMap != 0) target = pass.returnMap;
+                            }
+                            catch (System.Exception e) { Debug.LogWarning("[Field] 0 号过场图解析失败，仍按原目标进入：" + e.Message); }
                         }
-                        catch (System.Exception e) { Debug.LogWarning("[Field] 0 号过场图解析失败，仍按原目标进入：" + e.Message); }
+                        Enter(target, portalName, portalIndex);
                     }
-                    Enter(target, portalName, portalIndex);
+                    else if (warpTarget.tm == Map.id) WarpInsideMap(warpTarget);
+                    else Enter(warpTarget.tm, string.IsNullOrEmpty(warpTarget.targetName) ? null : warpTarget.targetName);
                 }
-                else if (warpTarget.tm == Map.id) WarpInsideMap(warpTarget);
-                else Enter(warpTarget.tm, string.IsNullOrEmpty(warpTarget.targetName) ? null : warpTarget.targetName);
-                warpState = WarpState.Hold;
-                warpClock = 0f;
+                catch (System.Exception e)
+                {
+                    // 堆栈里能直接看到 Enter 内部是哪一步失败的（比只记 Message 有用得多）。
+                    Debug.LogException(e);
+                    FileLog.Note("[Field/Warp] 换图 Enter 抛异常（已强制结束黑幕）：map=" +
+                        (Map != null ? Map.id.ToString() : "null") + " err=" + e.Message);
+                }
+                finally
+                {
+                    // 状态机一定要往前走：Hold → In 会把 alpha 推回 0，In 结束会解除 InputLocked。
+                    warpState = WarpState.Hold;
+                    warpClock = 0f;
+                }
                 return;
 
             case WarpState.Hold:
@@ -987,6 +1006,11 @@ public sealed class FieldDirector : MonoBehaviour
 
         // 任务击杀计数（原端 Character 收到 MOB_KILLED 后推进已接任务的 mob 进度）
         if (questCredit) QuestLogic.OnMobKilled(mob.id);
+
+        // CPQ：杀嘉年华战斗图上的怪得 CP（Monster.getCP → Character.gainCP）
+        int mobCp = (int)Art.Num(mob.stats, "getCP", 0);
+        if (mobCp > 0 && NativeCarnivalHud.OnCarnivalMap(Profile.LastMapId))
+            NativeCarnivalHud.ReportKill(mobCp);
 
         int dropped = 0, mesos = 0;
         DropLoot(e, mob, ref dropped, ref mesos);

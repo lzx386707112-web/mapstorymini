@@ -18,7 +18,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 选角重复写盘卡顿、蜗牛任务告知、技能中心五入口/技能键位语义、后台资料查询与图鉴JSON | [2026-11-01五项反馈](references/login-skill-admin-feedback-2026-11-01.md) |
 | 蜗牛/远程选敌、怪物重叠、吸怪卡顿、NPC不可见会话、物理MISS、血蓝警告与宠物补药七项反馈 | [2026-10-31七项玩法补核](references/seven-gameplay-feedback-2026-10-31.md) |
 | GM聊天命令前缀/权限/后台开关、真实执行/存档同步与逐项迁移边界 | [GM命令](references/gm-commands.md) |
-| 自动AP白字、背包ItemNo、右下获得队列、Boss全图清单/血条与脚本注册、音频/进场阻塞本次修正 | [2026-10反馈补查](references/field-feedback-2026-10.md) |
+| 自动AP白字、背包ItemNo、右下获得队列、Boss全图清单/血条与脚本注册、音频/进场阻塞本次修正、**全地图264首BGM导出/登记三段链路、`BGM06`大小写笔误、52个文件的80/82字节非MPEG前缀剥离、7首源端缺失** | [2026-10反馈补查](references/field-feedback-2026-10.md) |
 | --- | --- |
 | 建号中文名字、长度规则、重名与错误提示 | [角色命名](references/character-name.md) |
 | 登录包序、新账号声明→性别、Notice/TOS/VScr6 素材与坐标、单张滑块与鼠标捕获纠正 | [登录链路与弹窗](references/login-flow.md) |
@@ -35,6 +35,13 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 商城子窗口、商品列表、坐标与素材、现金背包身份/宠物存取持久化 | [现金商城](references/cash-shop.md) |
 | 地图宠物CVecCtrlPet、三宠编队、动作/服装同帧、宠物装备槽/药品绑定与自动HP/MP、实际拾取与边界 | [宠物地图与装备](references/pet-field-and-equipment.md) |
 | 普通NPC商店全量绑定、开店与交易、原版控件布局、店主/柜台深度 | [普通NPC商店](references/npc-shops.md) |
+| 快递 Duey：NPC 9010009 / 533 券入口、getFee 六档、寄件扣费顺序、不可交易与 karma、取件错误码、30 天过期、Delivery 窗口素材与取不到的坐标 | [快递 Duey](references/duey.md) |
+| 雇佣商店：503 许可/自由市场开店、营业态与上架顺序、成交扣费、MerchantMesos 提取与寄存衰减、Fredrick 取回、假人顾客镜像 | [雇佣商店](references/hired-merchant.md) |
+| 制作 Maker：配方取 ItemMake.img（不取源端 SQL，两版 req_meso 不一致）、845 条配方导出、makerAction 的 type 0/3/4、六个状态码、宝石去重与槽位、刺激剂 90%、分解与结晶合成免费 | [制作 Maker](references/maker.md) |
+| 排行榜：榜单(getWorldRankPlayers 三条排序/前50) 与 名次(updateRanking 再加 fame/meso) 是两套、`rankMove` 累加规则（lastlogin<lastUpdate 才保留）、`use_whole_server_ranking` 默认 false、5min/1h 周期、`Ranking/backgrnd` 295x335 且 Tab 只有 0 号板 | [排行榜](references/ranking.md) |
+| 个人商店：514xxxx 营业执照（`isPlayerShop`）、CREATE 4/5 靠 id 分派、纯内存不落库（无 Fredrick/过期）、许可在 OPEN_STORE 才扣、成交直接进身上金币、卖空自动关店、取回后列表前移、`PersonalShop/backgrnd` 525x553 与反汇编坐标 | [个人商店](references/player-shop.md) |
+| 猫头鹰搜索：523xxxx（`itemType==523`）、搜到才扣券、结果单价升序截 200、推荐位 <5 种给固定 11 件 / ≥5 种按次数前 10、`use_enforce_item_suggestion` 默认 false、跳店消息码 1/3/18、窗口素材四页与坐标 | [猫头鹰搜索](references/owl-search.md) |
+| 仓库 Trunk：`sendStorage(client,npcId)` 是 25 个 NPC 脚本唯一真实调用、15 级门槛、费用 `info/trunkPut|trunkGet` 默认 100/0（9030100=500/1000，全量导出 TrunkFees.txt）、错误码 0x0A/0x0B/0x0C/0x11、可充能整组入仓、婚戒禁入、karma 转不可交易、`use_storage_item_sort` 默认 false、上限 48 格、`Trunk/backgrnd` 463x318 双栏 | [仓库](references/storage.md) |
 | 家族列表、按钮分派、职位、对话框、公告板、Tab | [家族与 Tab](references/guild-and-tabs.md) |
 | Point/Linear 采样、玩家/怪物重叠z顺序与闪烁、虚拟控制层、已有验证范围 | [渲染与验证](references/rendering-and-validation.md) |
 | 哪些 UI 尚未替换、原端与移动适配的区别 | [UI 迁移审计](references/ui-audit.md) |
@@ -50,10 +57,10 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 右上角辅助技能状态栏、32px 布局、剩余时间遮罩与迁移缺口 | [临时状态栏](references/temporary-stat-view.md) |
 | 鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义、背包道具丢到地上（ITEM_MOVE action=0） | [UI 拖动语义](references/ui-drag-and-drop.md) |
 | 事件倒计时 CLOCK 面板：258×58 底图/小时底图、四数字槽 86/112/179/205、y=12、前导零与 3600 秒切换 | [事件倒计时](references/event-timer-clock.md) |
-| 组队任务招募/阶段/领奖 NPC：`em.getEligibleParty` 未绑定导致的「对话脚本出错」、`party.toArray`、`em.getMonster`、`map.getPlayers`/`spawnAllMonsterIdFromMapSpawnList`、组队搜索开关与副本公告 | [组队任务接口](references/party-quest.md) |
+| 组队任务招募/阶段/领奖 NPC：`em.getEligibleParty` 未绑定导致的「对话脚本出错」、`party.toArray`、`em.getMonster`、`map.getPlayers`/`spawnAllMonsterIdFromMapSpawnList`、组队搜索开关与副本公告、假人陪跑的队伍编号 vs 角色 id 混用 | [组队任务接口](references/party-quest.md) |
 | Say.img无JS问答ask/stop选错分支、NPC Java导入/日期/global this/命令元数据/21点入口与正式API审计口径、三处源脚本授权覆盖、ijl15对话正文480高度补丁、NPC 对话窗口精确布局/字体/按钮、VScr4、`#L` 图文、`#y/u`任务引用、`#q/s`技能名/图、`#@`NPC名、`#W`原图与atoi参数审计、sendPrev 上一页+确定/对话键任务菜单与接受页推进、灯泡 autoStart/日期筛选、NPC进行中QuestIcon1/stop对白与完成条件击杀计数、截图问候入口/交付奖励10000→4→1、fieldType82青苹果外观、建号路线与远程任务脚本 | [NPC 对话窗口](references/npc-dialog.md) |
 | 任务键/完成通知入口自动选择与详情展开、任务三页签/详情summary/原端Tab2布局、任务告知、达成目标FadeYesNo红气泡、QuestClear及用户授权截图重建训练任务 | [任务窗口与告知](references/quest-window-and-alarm.md) |
-| 传送门 pt 触发方式、NPC 脚下名牌宽+5/高16与Canvas字体高度/透明四角、聊天气泡九宫格与时长、新手训练营 0~4 图、`cm.warp` 目标图不存在的语义 | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |
+| 传送门 pt 触发方式、NPC 脚下名牌宽+5/高16与Canvas字体高度/透明四角、聊天气泡九宫格与时长、新手训练营 0~4 图、`cm.warp` 目标图不存在的语义、**换图 Enter 异常导致黑幕锁死（出租车黑屏）的修复与出租车链路逐项排除** | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |
 | 五转女神条件/永久标记/2029006面板脚本缺失回退链路及授权改为技能窗独立五转页签、装备槽位/吊坠/轮回图腾、NPC物品/原item脚本、怪物吸星大法与全物品入口审计 | [物品使用与装备槽位](references/inventory-use-and-equipment.md) |
 | 背包/装备窗物品悬浮详情：ToolTip 图集、名称/描述来源、属性/需求字段、配色与帧绘制；背包整理/合并（ITEM_SORT2/ITEM_SORT、PairedQuicksort、move 的 owner/充能分支、BtGather/BtSort 二态） | [背包与悬浮详情](references/inventory-and-tooltip.md) |
 | 怪物手册：窗口 475x349、子控件表（两对翻页箭头 48/185 与 270/407、搜索框 49/30/120/15、两条书签栏 -7/25 与 439/506）、卡槽 5x5 命中框 8/31/33/45/27x38、战利品 4x5 网格 38/60/36/32、LeftTab 九套配色、infoPage 170x231 | [怪物手册](references/monster-book.md) |

@@ -62,6 +62,9 @@ public sealed class GameServer
         Server.Bot.BotWarmup.Start("Bot/ReactorDrops");
         Server.Bot.BotWarmup.Start("Bot/Maps");     // 导航/世界图共用这一份
         Local = srv;
+        NativeMerchantService.MarketProvider = () => srv.Bots.shops;
+        NativePlayerShopService.MarketProvider = () => srv.Bots.shops;
+        NativeOwlService.MarketProvider = () => srv.Bots.shops;
         DropStore.DbProvider = () => Local?.Db;
         DropStore.Invalidate();
         return srv;
@@ -83,6 +86,9 @@ public sealed class GameServer
         srv.NpcShops = new NativeNpcShopService(srv.Db) { Player = srv.ActiveBotPlayer };
         srv.Transport = new InProcessTransport(srv);
         Local = srv;
+        NativeMerchantService.MarketProvider = () => srv.Bots.shops;
+        NativePlayerShopService.MarketProvider = () => srv.Bots.shops;
+        NativeOwlService.MarketProvider = () => srv.Bots.shops;
         DropStore.DbProvider = () => Local?.Db;
         DropStore.Invalidate();
         return srv;

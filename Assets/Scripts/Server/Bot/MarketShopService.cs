@@ -45,6 +45,14 @@ namespace Server.Bot
             return result;
         }
         public MarketShop Get(int id) => shops.TryGetValue(id, out var shop) ? shop : null;
+        // 猫头鹰搜索（NativeOwlService）要的是世界级全量在售店铺，等价于源端
+        // World.getActiveMerchants() + getActivePlayerShops()。
+        public List<MarketShop> AllOpen()
+        {
+            var result = new List<MarketShop>();
+            foreach (var shop in shops.Values) if (shop.open) result.Add(shop);
+            return result;
+        }
         bool Reserve(int mapId)
         {
             int count = counts.TryGetValue(mapId, out var existing) ? existing : 0;
@@ -124,13 +132,23 @@ namespace Server.Bot
             int price = MarketEconomy.JavaInt(Math.Min((float)stock.price * quantity, int.MaxValue));
             long balance = actor is BotCharacter bot ? bot.meso : actor.character?.record.meso ?? 0;
             if (balance < price) return MarketPurchaseResult.InsufficientMeso;
-            var seller = shop.playerStore ? BotRegistry.Get(shop.ownerId) as BotCharacter : null;
+            // 玩家本人的雇佣商店（playerSell 回调）与「假人开的玩家式店铺」共用 playerStore 标记：
+            // 前者成交写回 DB 的 MerchantMesos，后者记在假人角色身上。
+            bool playerOwned = shop.playerStore && shop.playerSell != null;
+            var seller = shop.playerStore && !playerOwned ? BotRegistry.Get(shop.ownerId) as BotCharacter : null;
             // PlayerShop checks capacity against the gross price, before its trade fee.
-            if (shop.playerStore && (seller == null || seller.meso + price < seller.meso)) return MarketPurchaseResult.OwnerMesoFull;
+            if (shop.playerStore && !playerOwned && (seller == null || seller.meso + price < seller.meso)) return MarketPurchaseResult.OwnerMesoFull;
+            if (playerOwned && !CanBuyPlayerStore(shop, stock, quantity)) return MarketPurchaseResult.Unavailable;
             TradeItemRules.ApplyKarma(item);
             if (!trades.Purchase(actor, item, price)) return MarketPurchaseResult.InventoryFull;
             long proceeds = price - BotTradeService.Fee(price);
-            if (shop.playerStore) seller.meso += proceeds;
+            if (playerOwned)
+            {
+                long paid = shop.playerSell(stock.merchantSlot, quantity);
+                if (paid <= 0) return MarketPurchaseResult.Unavailable;
+                proceeds = paid;
+            }
+            else if (shop.playerStore) seller.meso += proceeds;
             else shop.merchantMeso += proceeds;
             shop.sold.Add(new MarketSoldItem {buyer = actor.name, itemId = item.itemId,
                 quantity = shop.playerStore ? quantity : item.quantity, meso = proceeds});
@@ -148,6 +166,25 @@ namespace Server.Bot
             }
             return MarketPurchaseResult.Success;
         }
+        // 玩家雇佣商店的预检：成交回调失败会留下假人已付款的中间态，所以先问一次。
+        static bool CanBuyPlayerStore(MarketShop shop, MarketShopStock stock, int quantity)
+            => shop.open && stock.merchantSlot >= 0 && stock.exists && quantity > 0 && quantity <= stock.bundles;
+
+        // 把玩家本人的雇佣商店挂进/摘出市场（假人顾客只认 shops 表里的店）。
+        public void UpsertPlayerStore(MarketShop shop)
+        {
+            if (shop == null || disposed) return;
+            shops[shop.ownerId] = shop;
+        }
+
+        public void RemovePlayerStore(int ownerId)
+        {
+            shops.Remove(ownerId);
+            var leaving = new List<int>();
+            foreach (var visit in visits) if (visit.Value == ownerId) leaving.Add(visit.Key);
+            foreach (int visitor in leaving) Leave(visitor);
+        }
+
         public void Dispose()
         {
             disposed = true; foreach (var task in pending) task.Cancel(); pending.Clear();

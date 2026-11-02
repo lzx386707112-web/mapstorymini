@@ -59,8 +59,29 @@ public static class NativeCashEquipmentService
             eq["vicious"]=(long)(DbStore.Int(eq,"vicious")+1);
             eq["upgradeslots"]=(long)(DbStore.Int(eq,"upgradeslots")+1);
         }
+        else if(cash==5060002)
+        {
+            // 孵化器：吃掉选中的一个道具，随机孵出奖励（getIncubatedItem 奖励池 1:1）。
+            // 源端 bug：`if (i == id) amount = quantitys[i]` 拿数组下标跟道具 id 比，恒假 →
+            //   amount=0 且 addById 加的是孵化器自己；照意图修正为随机取池中一项。
+            if(id==5060002) return Reject("不能孵化孵化器自己");
+            int[] poolIds={1012070,1302049,1302063,1322027,2000004,2000005,2020013,2020015,2040307,2040509,2040519,2040521,2040533,2040715,2040717,2040810,2040811,2070005,2070006,4020009};
+            int[] poolQty={1,1,1,1,240,200,200,200,1,1,1,1,1,1,1,1,1,1,1,3};
+            int pick=IncubatorPick!=null ? IncubatorPick(poolIds.Length) : new Random().Next(poolIds.Length);
+            int rewardId=poolIds[pick],rewardQty=poolQty[pick];
+            var check=NativeInventoryService.CanReceive(db,c,new InventoryChangeRequest {checkItems=new[]{rewardId},checkQuantities=new[]{rewardQty}});
+            if(!check) return Reject("背包空间不足");
+            // 源端先孵化再从选中槽位移除 1 个祭品
+            if(InventoryDao.ConsumeItem(db,request.characterId,id,1)<=0) return Reject("祭品道具不存在");
+            NativeInventoryService.AddItems(db,c,rewardId,rewardQty,-1);
+            InventoryDao.ConsumeItem(db,request.characterId,cash,1); db.Save();
+            return new EquipPatchResponse {inventory=CharService.Load(db,request.characterId).inventory,
+                rewardItemId=rewardId,rewardQuantity=rewardQty};
+        }
         else return Reject("无效的装备现金道具");
         InventoryDao.ConsumeItem(db,request.characterId,cash,1); db.Save();
         return new EquipPatchResponse {inventory=CharService.Load(db,request.characterId).inventory};
     }
+    // 测试注入口：孵化奖励下标
+    public static Func<int,int> IncubatorPick;
 }

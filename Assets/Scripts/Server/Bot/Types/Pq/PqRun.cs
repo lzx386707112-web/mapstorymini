@@ -63,7 +63,10 @@ namespace Server.Bot.Types.Pq
         public void Begin(bool openViaNpc = true)
         {
             bots.Clear();
-            var party = BotTypeManager.Parties?.For(partyId);
+            // partyId 是队伍编号（1000000001 起），BotPartyService.For()/Get() 收的是角色 id，
+            // 拿队伍编号去查必然拿到 null —— 四个副本都变成了「只有真人进本、假人留在原地」。
+            var parties = BotTypeManager.Parties;
+            var party = parties?.ById(partyId) ?? parties?.For(leaderId);
             if (party != null)
                 foreach (int member in party.members)
                     if (BotRegistry.Get(member) != null) bots.Add(member);

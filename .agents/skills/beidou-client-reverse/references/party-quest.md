@@ -70,7 +70,39 @@ getEligibleParty(party):
 2094000/2094001/2094002，事件 KerningPQ/LudiPQ/EllinPQ/PiratePQ，portal kpq0-4、lpq0-7、
 party6_* —— 全部清零。
 
-## 4. 边界
+## 4. 假人陪跑：BotPartyService 的两套编号不可混用
+
+**症状**：玩家在废弃都市组织好队伍、点 NPC 进了副本，队伍里的假人一个都没跟进来
+（留在招募图继续闲逛）。
+
+**根因**：`BotPartyService` 有两套编号——
+- **角色 id**：`membership` 的键，`For(id)` / `Get(id)` / `ChangeLeader(sender,member)` / `Leave(id)` 都收这个；
+- **队伍编号**：`nextId` 从 `1000000001` 起，只有 `Join(actor, partyId)` / `Answer` / `ById` 收这个。
+
+`PqRun.Begin` 当时写的是 `BotTypeManager.Parties.For(partyId)`，拿**队伍编号**去查
+角色 id 的索引表，稳定返回 `null` → `bots` 列表始终为空 → `EnterStage` 的
+`foreach (bots) WarpBot(...)` 一次都不执行，假人原地不动。
+
+同类错还有 `PqDirector.AnswerInvitations` 的 `Parties.For(invite.party)`：恒为 null，
+于是「玩家右键邀请假人」被一律判成「队伍不存在」而拒绝，玩家只能等自动补员。
+
+**修法**：
+- `BotPartyService` 新增 `ById(int partyId)`（按队伍编号取 `Party`）。
+- `PqRun.Begin`：`parties?.ById(partyId) ?? parties?.For(leaderId)`。
+- `AnswerInvitations`：`Parties.ById(invite.party)`。
+- `PqDirector.AdoptStageEntry`（玩家不点「假人凑队」而是自己带人进本）：
+  1. 队长还挂在假人身上 → `ChangeLeader` 让给真人（否则 `startInstance` 与阶段 NPC 全走「请让队长来」）；
+  2. 队伍里一个假人都没有 → 从这一摊大厅按 `recruitMap` 拉人补进队（否则副本里永远只有真人）；
+  3. 再 `Start(def, party.id, player.id, openViaNpc:false)` 接管跑图。
+
+进本后假人的位置由两条路径保证：`PqRun.EnterStage` 一次性 `WarpBot`，以及
+`PqBot.UpdateState → PqRun.DriveBot`（每 700ms，`bot.mapId != CurrentMap` 就 `WarpBot`）。
+后者是兜底——首帧地图几何没就绪时 `WarpBot` 会静默失败，靠它补回来。
+
+**回归**：`PqChecks.PartyIndexChecks` —— 建队 → `For(角色 id)` 命中、`ById(队伍编号)` 命中且成员数正确、
+`For(队伍编号)` 必须为空（编号语义不可混用的契约守卫）。队伍编号被谁改成兼容角色 id，这条会亮。
+
+## 5. 边界
 
 - 单机实例只登记本地真实角色，`registerParty` 不会伪造远端队员；资格判定仍按源端脚本口径跑，
   人数要求靠 `use_enable_solo_expeditions` 放行。

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 // PartySearchStartHandler, MessengerHandler and the chat handlers.
 // This transport hosts one active character; other saved characters are offline.
 public enum SocialOperation { Read, AddBuddy, AcceptBuddy, DeleteBuddy, CreateParty, LeaveParty, InviteParty, SearchParty, StopSearch, OpenMessenger, CloseMessenger, InviteMessenger, SendChat, AddMonsterCard, SetBookCover, AcceptMessenger, DeclineMessenger, AcceptParty, DeclineParty, ExpelParty, ChangePartyLeader, SetBuddyCapacity, CharacterInfo }
-public enum NativeChatChannel { All, Whisper, Party, Buddy, Guild, Alliance, Spouse, Messenger }
+public enum NativeChatChannel { All, Whisper, Party, Buddy, Guild, Alliance, Spouse, Messenger, Pet }
 public sealed class SocialRequest
 {
     public int characterId;

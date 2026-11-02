@@ -560,9 +560,16 @@ public static class QuickSlots
     }
 
     // Item bindings use the native keymap type 2; keep their payload distinct from skill IDs.
-    public static bool IsItem(int id) => id < 0;
+    // 宏绑定也是负数（-1000000 - 宏位），与道具负 id 区间隔离。
+    public static bool IsItem(int id) => id < 0 && !NativeSkillMacros.IsMacro(id);
     public static Texture2D BindingIcon(int id)
     {
+        if (NativeSkillMacros.IsMacro(id))
+        {
+            int first = NativeSkillMacros.FirstSkill(NativeSkillMacros.MarkerIndex(id));
+            var macroData = first != 0 ? SkillBook.Get(first) : null;
+            return macroData != null && !string.IsNullOrEmpty(macroData.icon) ? Art.Tex(macroData.icon) : null;
+        }
         if (IsItem(id)) return NativeItemSource.Icon(-id);
         var skill = SkillBook.Get(id);
         return skill != null && !string.IsNullOrEmpty(skill.icon) ? Art.Tex(skill.icon) : null;
@@ -574,6 +581,7 @@ public static class QuickSlots
         var player = GameLoop.I != null ? GameLoop.I.player : null;
         if (player == null) return;
         int id = Id(slot);
+        if (NativeSkillMacros.IsMacro(id)) { NativeSkillMacros.Cast(NativeSkillMacros.MarkerIndex(id)); return; }
         if (IsItem(id)) { NativeInventoryActions.DoubleClick(-id); return; }
         var sys = player.GetComponent<SkillSystem>();
         if (sys == null) return;

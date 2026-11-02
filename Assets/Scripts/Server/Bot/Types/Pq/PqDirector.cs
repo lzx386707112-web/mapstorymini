@@ -144,8 +144,12 @@ namespace Server.Bot.Types.Pq
             var def = PqCatalog.ForMap(mapId);
             if (def != null) { EnsureLobby(def); return; }
             // 离开招募图：收掉这一摊里没进队的假人（进队的跟着 PqRun 走，不动）。
+            // 例外是「玩家正带着队伍进副本」——新图是某副本的阶段图时大厅这一摊先留着，
+            // PqDirector.Tick → AdoptStageEntry 还要从这里拉人补进队；等玩家真的离场
+            // （换到既不是阶段图也不是招募图的图）再收。
+            var entering = PqCatalog.ByStageMap(mapId);
             foreach (var lobby in new List<Lobby>(lobbies.Values))
-                if (lobby.def.recruitMap != mapId) RetireIdle(lobby);
+                if (lobby.def.recruitMap != mapId && lobby.def != entering) RetireIdle(lobby);
         }
 
         // =====================================================================
@@ -384,8 +388,26 @@ namespace Server.Bot.Types.Pq
             var def = PqCatalog.ByStageMap(player.mapId);
             if (def == null || Parties == null) return;
             var party = Parties.For(player.id);
-            if (party == null || party.leader != player.id) return;
-            if (runs.ContainsKey(party.id)) return;
+            if (party == null || runs.ContainsKey(party.id)) return;
+            // 队长还挂在假人身上（假人开的队、玩家自己先进了本）：队长必须立刻让过来，
+            // 否则 startInstance 认不到队长、阶段 NPC 全走「请让队长来」分支。
+            if (party.leader != player.id)
+            {
+                var leader = Parties.Get(party.leader);
+                if (leader == null || !leader.IsBot()) return;
+                if (!Parties.ChangeLeader(party.leader, player.id)) return;
+            }
+            // 玩家自己开队、没邀请假人就点 NPC 进本时队伍里一个假人都没有：从这一摊大厅
+            // 拉人补进队，不然 PqRun.Begin 收不到成员，副本里永远只有真人。
+            var lobby = LobbyOf(def);
+            if (lobby != null)
+                foreach (int id in new List<int>(lobby.bots))
+                {
+                    if (party.members.Count >= PartySize) break;
+                    var bot = BotRegistry.Get(id);
+                    if (bot == null || bot.mapId != def.recruitMap) continue;
+                    TryJoin(bot, party);
+                }
             Start(def, party.id, player.id, openViaNpc: false);
         }
 
@@ -402,7 +424,9 @@ namespace Server.Bot.Types.Pq
                 if (bot == null) continue;
                 // 只处理玩家自己发的邀请；假人之间的邀请由 Invite 的调用方直接处理。
                 if (invite.inviter == null || invite.inviter.id != playerId) continue;
-                var party = Parties.For(invite.party);
+                // invite.party 是队伍编号，For() 收角色 id —— 用错会恒为 null，
+                // 于是「玩家右键邀请假人」被一律判成队伍不存在而拒绝。
+                var party = Parties.ById(invite.party);
                 bool accept = party != null && party.members.Count < PartySize && Parties.For(id) == null;
                 Parties.Answer(bot, invite.party, accept);
                 if (accept)

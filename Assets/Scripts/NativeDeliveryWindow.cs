@@ -227,7 +227,6 @@ public static class NativeDeliveryWindow
             var data = packages[index];
             float y = y0 + row * 44;
             if (data.item != null) Icon(data.item.itemId, 22, y + 32);
-            else { var meso = Art.Tex("wz://" + Root + "icon1"); if (meso != null) GUI.DrawTexture(new Rect(12, y + 14, meso.width, meso.height), meso); }
             GUI.Label(new Rect(40, y + 2, 150, 14), data.sender, Label());
             GUI.Label(new Rect(40, y + 17, 150, 14), (data.mesos > 0 ? data.mesos.ToString("N0") + " 金币" : "无金币")
                 + (data.item != null ? "  ·  " + ItemCatalog.Name(data.item.itemId) + " x" + data.item.quantity : ""), Label());

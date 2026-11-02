@@ -161,8 +161,10 @@ public sealed class NpcSession
     public static NpcSession Talk(int npcId, string scriptName)
     {
         CloseActive();
-        // NPCTalkHandler：DUEY(9010009) 不走脚本，直接开快递窗口。
-        if (npcId == 9010009 && string.IsNullOrEmpty(scriptName)) { NativeDeliveryWindow.Open(false); return null; }
+        // NPCTalkHandler：DUEY(9010009) 不走脚本，直接开快递窗口（哪怕这个 NPC 配了脚本）。
+        if (npcId == 9010009) { NativeDeliveryWindow.Open(false); return null; }
+        // FredrickHandler 0x1A：自由市场入口的弗利德里，取回雇佣商店寄存（连金币）。
+        if (npcId == 9030000) { NativeMerchantWindow.Retrieve(); return null; }
         string scriptKey;
         string source = ScriptSource.LoadNpc(npcId, scriptName, out scriptKey);
         if (string.IsNullOrEmpty(source))

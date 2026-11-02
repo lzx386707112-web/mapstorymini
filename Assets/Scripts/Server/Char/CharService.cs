@@ -46,6 +46,18 @@ public sealed class KeymapEntry
     public int key, type, action;
 }
 
+// 技能宏（skillmacros 表；源端 SkillMacro.java：5 个宏位，每个 {name, shout, skill1..3}）。
+// position = 宏位 0..4；name ≤12 字符（源端超长直接断线，这里整包拒绝）；shout = 喊出宏名。
+public sealed class MacroEntry
+{
+    public int position;
+    public string name = "";
+    public int shout;
+    public int skill1, skill2, skill3;
+
+    public bool IsEmpty => string.IsNullOrEmpty(name) && skill1 == 0 && skill2 == 0 && skill3 == 0;
+}
+
 // 任务状态（queststatus 表）：0 未接 / 1 进行中 / 2 完成
 public sealed class QuestEntry
 {
@@ -65,6 +77,7 @@ public sealed class FullCharacter
     public List<InventoryEntry> inventory = new List<InventoryEntry>();
     public List<KeymapEntry> keymap = new List<KeymapEntry>();
     public List<QuestEntry> quests = new List<QuestEntry>();
+    public List<MacroEntry> macros = new List<MacroEntry>();
     public long quickslotKeymap;
 }
 
@@ -91,6 +104,20 @@ public static class CharService
 
         foreach (var r in KeymapDao.ByCharacter(db, characterId))
             full.keymap.Add(new KeymapEntry { key = (int)Convert(r, "key"), type = (int)Convert(r, "type"), action = (int)Convert(r, "action") });
+
+        // 技能宏：按 position 升序（源端 CharacterService.loadCharWithSkillMacros 同口径）
+        var macroRows = new List<DbRow>(db.Table("skillmacros").Select(DbStore.Eq("characterid", characterId)));
+        macroRows.Sort((a, b) => Convert(a, "position").CompareTo(Convert(b, "position")));
+        foreach (var r in macroRows)
+            full.macros.Add(new MacroEntry
+            {
+                position = (int)Convert(r, "position"),
+                name = DbStore.Str(r, "name") ?? "",
+                shout = (int)Convert(r, "shout"),
+                skill1 = (int)Convert(r, "skill1"),
+                skill2 = (int)Convert(r, "skill2"),
+                skill3 = (int)Convert(r, "skill3"),
+            });
 
         foreach (var r in QuestStatusDao.ByCharacter(db, characterId))
             full.quests.Add(new QuestEntry
@@ -156,6 +183,19 @@ public static class CharService
 
         int cid = (int)full.record.id;
         KeymapDao.Save(db, cid, full.keymap);
+        // 技能宏：源端 saveCharToDB 是 DELETE 全部 + INSERT 非空宏（Character.java 8492..8505）
+        db.Table("skillmacros").Delete(DbStore.Eq("characterid", cid));
+        foreach (var m in full.macros)
+        {
+            if (m == null || m.IsEmpty) continue;
+            db.Table("skillmacros").Insert(new DbRow
+            {
+                ["characterid"] = cid,
+                ["position"] = m.position,
+                ["skill1"] = m.skill1, ["skill2"] = m.skill2, ["skill3"] = m.skill3,
+                ["name"] = m.name, ["shout"] = m.shout,
+            });
+        }
         foreach (var s in full.skills)
             SkillsDao.Upsert(db, cid, s.skillId, s.skillLevel, s.masterLevel, s.expiration);
         foreach (var q in full.quests)

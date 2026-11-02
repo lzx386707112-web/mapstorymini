@@ -27,21 +27,38 @@ public sealed class NativeMapView : MonoBehaviour
     // assigned foothold. Use that foothold, never a nearest unrelated platform.
     public static float NpcGroundY(ImgNode map, ImgNode life)
     {
-        int id = life.Int("fh");
-        float x = life.Int("x");
-        if (id > 0)
+        return NpcGroundYAt(map, life.Int("x"), life.Int("fh"), life.Int("y"));
+    }
+
+    // 按落点 x 反查所在 foothold 的地面 y；找不到 fh 用 fallback（未贴地 NPC 保留原始位置）。
+    public static float NpcGroundYAt(ImgNode map, int x, int fh, float fallback)
+    {
+        if (fh > 0)
             foreach (var layer in Children(map.Get("foothold")))
                 foreach (var group in layer.Children)
                 {
-                    var f = group.Get(id.ToString());
+                    var f = group.Get(fh.ToString());
                     if (f == null) continue;
                     float x1 = f.Int("x1"), x2 = f.Int("x2");
                     if (x1 == x2 || x < Math.Min(x1, x2) || x > Math.Max(x1, x2)) continue;
                     return f.Int("y1") + (f.Int("y2") - f.Int("y1")) * (x - x1) / (x2 - x1);
                 }
-        // Unattached/floating NPCs retain their authored position.
-        return life.Int("y");
+        return fallback;
     }
+
+    // 单机补充 NPC 出生表（见 LoadMap 内注释）
+    static readonly (int mapId, int npcId, int x, int fh)[] ExtraNpcs =
+    {
+        (910000000, 9000019, 700, 163),
+        // CPQ 结算图（map+2 胜 / map+3 负，六组 field）：斯皮格尔曼 2042000 在 WZ life 里
+        // 只有大厅 980000000 的出生点，源端结算后由脚本流程引导到兑换 NPC——这里补出生点，
+        // 让 rank 经验兑换（2042000.js 的 isCPQWinnerMap/isCPQLoserMap 分支）可达。
+        (980000203, 2042000, 0, 1), (980000204, 2042000, 0, 1),
+        (980000303, 2042000, 0, 1), (980000304, 2042000, 0, 1),
+        (980000403, 2042000, 0, 1), (980000404, 2042000, 0, 1),
+        (980000503, 2042000, 0, 1), (980000504, 2042000, 0, 1),
+        (980000603, 2042000, 0, 1), (980000604, 2042000, 0, 1),
+    };
 
     // CNpc::Update 6D267D; CStaticFoothold ctor A4534A stores the
     // first two WZ foothold path components in +1C/+20 (A43E7B loader).
@@ -91,6 +108,15 @@ public sealed class NativeMapView : MonoBehaviour
             else if (life.Text("type") == "n") m.npcs.Add(new FieldNpc { id = int.Parse(life.Text("id")),
                 hide = life.Int("hide"), x = life.Int("x"), y = NpcGroundY(n, life),
                 head = NpcHeadHeight(int.Parse(life.Text("id"))) });
+        }
+        // 单机补充 NPC 出生：源端 GM 召唤的 NPC 在 WZ 里没有常规出生点（全图扫描 0 命中），
+        // 这里给固定落脚位（与 FieldMaps 素材同源，不进存档）。
+        //   9000019 RPS 猜拳管理员 → 自由市场 910000000，fh=163（x 504..778 平地 y=23），x=700。
+        foreach (var e in ExtraNpcs)
+        {
+            if (e.mapId != previous.id) continue;
+            m.npcs.Add(new FieldNpc { id = e.npcId, x = e.x, y = NpcGroundYAt(n, e.x, e.fh, 23),
+                head = NpcHeadHeight(e.npcId) });
         }
         // Use source VR when present; maps without VR use a provisional foothold-based camera envelope.
         int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;

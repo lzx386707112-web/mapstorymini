@@ -439,7 +439,8 @@ public static class Profile
     // —— 技能点洗点（源端 UseCashItemHandler 175..235 的 SP 分支 / AssignSPProcessor.canSPAssign）——
     // 原端请求先 SPTo 后 SPFrom（窗口 NativeSpResetWindow 已按此序准备）；规则：
     // 目标技能 curLevel < maxLevel（四转受 masterLevel，本工程 SkillBook.MasterCapOf 已合并处理）、
-    // 来源技能 curLevel > 0，双向各 ±1；来源归 0 时原端还会清理技能宏 —— 本工程无技能宏，不适用。
+    // 来源技能 curLevel > 0，双向各 ±1；来源归 0 时原端还会清理技能宏引用并重发宏包
+    // （UseCashItemHandler:199-227），这里由 NativeSkillMacros.ClearSkillRefs 完成。
     // canSPAssign 只校验技能在本职业树；洗点窗列表本就来自 LineForJob，天然满足。
     public static string ResetSp(int spFromId, int spToId)
     {
@@ -454,6 +455,7 @@ public static class Profile
         if (toLv >= cap) return "目标技能等级已达到上限。";
         SkillProgress.SetLevel(spFromId, fromLv - 1);
         SkillProgress.SetLevel(spToId, toLv + 1);
+        if (fromLv - 1 == 0) NativeSkillMacros.ClearSkillRefs(spFromId);
         return null;
     }
     public static int InventoryCapacity(int tab)

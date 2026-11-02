@@ -815,17 +815,22 @@ public static class NpcApi
         cm.Set("fieldLobbied2", Ret(_ => B(false)));
         cm.Set("fieldTaken", Ret(_ => B(false)));
         cm.Set("fieldTaken2", Ret(_ => B(false)));
-        cm.Set("cpqLobby", Ret(_ => JsNull.Value));
+        cm.Set("cpqLobby", Ret(c => { NativeCarnivalLobby.Open(Int(c, 0)); return JsNull.Value; }));
         cm.Set("cpqLobby2", Ret(_ => JsNull.Value));
         cm.Set("challengeParty", Ret(_ => NotAvailable("怪物嘉年华")));
         cm.Set("challengeParty2", Ret(_ => NotAvailable("怪物嘉年华")));
-        cm.Set("sendCPQMapLists", Fn(c => { }));
-        cm.Set("sendCPQMapLists2", Fn(c => { }));
+        // sendCPQMapLists：源端 native 打开房间列表、选择走独立 CPQ 包（不回脚本 selection）。
+        // 单机只有一个空闲 field 组 → 直接开简易选择窗（NativeCarnivalLobby）。
+        cm.Set("sendCPQMapLists", Ret(_ => { NativeCarnivalLobby.Open(); return B(true); }));
+        cm.Set("sendCPQMapLists2", Ret(_ => { NativeCarnivalLobby.Open(); return B(true); }));
         cm.Set("answerCPQChallenge", Fn(c => NotAvailable("怪物嘉年华")));
         cm.Set("cancelCPQLobby", Fn(c => { }));
-        cm.Set("isCPQLoserMap", Ret(_ => B(false)));
-        cm.Set("isCPQWinnerMap", Ret(_ => B(false)));
-        cm.Set("getFestivalPoints", Ret(_ => N(0)));
+        cm.Set("isCPQLoserMap", Ret(_ => B(Profile.LastMapId == 980031400 || Profile.LastMapId == 980032400 || Profile.LastMapId == 980033400 ||
+            (Profile.LastMapId >= 980000104 && Profile.LastMapId <= 980000604 && (Profile.LastMapId - 980000104) % 100 == 0))));
+        cm.Set("isCPQWinnerMap", Ret(_ => B(Profile.LastMapId == 980031300 || Profile.LastMapId == 980032300 || Profile.LastMapId == 980033300 ||
+            (Profile.LastMapId >= 980000103 && Profile.LastMapId <= 980000603 && (Profile.LastMapId - 980000103) % 100 == 0))));
+        // 源端 Character.festivalPoints（MonsterCarnival.finish 里 gainFestivalPoints 写入）
+        cm.Set("getFestivalPoints", Ret(_ => N(NativeCarnivalService.FestivalPoints)));
         cm.Set("partyMembersInMap", Ret(_ => N(HasParty() ? 1 : 0)));
         cm.Set("getUnclaimedMarriageGifts", Ret(_ => N(0)));
         cm.Set("createMarriageWishlist", Ret(_ => NotAvailable("婚礼")));
@@ -1190,11 +1195,12 @@ public static class NpcApi
     static JsHostObject BuildStorage()
     {
         var storage = new JsHostObject(null);
+        // sendStorage(client, npcId)：源端所有仓库 NPC 脚本的唯一真实入口（Storage.sendStorage）。
+        // 15 级门槛在 NativeStorageService.Handle 里也会拦一次，这里提前拦免得先弹了 NPC 对话。
         storage.Set("sendStorage", Fn(c =>
         {
             if (Profile.level < 15) { BottomBar.Toast("15级以后才可以使用仓库服务"); return; }
-            BottomBar.Toast("仓库系统尚未接入");
-            NpcSession.CloseActive();
+            NativeStorageWindow.Open(Int(c, 1));
         }));
         // 其余 Storage 入口一起兜住，免得别的脚本换了写法又崩在同一个地方
         foreach (string name in new[] { "sendStored", "sendTakenOut", "sendMeso", "arrange", "close", "save", "increaseSlots" })
@@ -2069,6 +2075,8 @@ public static class NpcApi
     sealed class ScriptMovePlayer { }
     sealed class ScriptInventoryUpdate { public int mode; public InventoryEntry item; public short oldPosition; }
     sealed class ScriptInventoryPacket { public readonly List<ScriptInventoryUpdate> updates=new List<ScriptInventoryUpdate>(); }
+    // PacketCreator.openRPSNPC()：9000019.js 的唯一真实出口（RPS_GAME mode 8 + npcId）→ 开猜拳窗
+    sealed class ScriptRpsOpen { public int npcId; }
     internal static void ApplyScriptPacket(JsValue packet)
     {
         if (packet is JsHostObject host && host.Host is ScriptSound sound)
@@ -2085,6 +2093,8 @@ public static class NpcApi
         }
         // movePlayer 在单机没有接收方：角色位置已经由 movePlayer(map) 那一步改好了。
         if(packet is JsHostObject moveHost && moveHost.Host is ScriptMovePlayer)return;
+        if(packet is JsHostObject rpsHost && rpsHost.Host is ScriptRpsOpen rps)
+        { NativeRpsWindow.Open(); return; }
         if(packet is JsHostObject inventoryHost && inventoryHost.Host is ScriptInventoryPacket)
         { FlushEquip(); GameSession.ApplyToProfile(); return; }
         throw new JsRuntimeException("Unmigrated script packet effect");
@@ -2137,6 +2147,18 @@ public static class NpcApi
                         view.Set(method,Ret(_=>throw new JsRuntimeException("UnsupportedOperationException: unmodifiable list")));
                     return view;
                 }));return collection;
+            }
+            // 9000019.js：PacketCreator.openRPSNPC() → cm.getClient().sendPacket(...)
+            if (name == "org.gms.util.PacketCreator")
+            {
+                var pc = new JsHostObject(null); Lenient(pc, "PacketCreator");
+                pc.Set("openRPSNPC", Ret(_ =>
+                {
+                    var packet = new JsHostObject(new ScriptRpsOpen { npcId = NativeRpsService.RpsAdminNpc });
+                    Lenient(packet, "Packet");
+                    return packet;
+                }));
+                return pc;
             }
             if (name == "soloMapling.ArtificialPlayer.BotTypes.Blackjack.BlackjackDealerBot")
             {

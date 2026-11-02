@@ -63,6 +63,9 @@ public static class GameSession
         };
         global::Server.Bot.BotTypeManager.GrantTutorialAdmin = GrantTutorialAdmin;
         global::Server.Bot.BotTypeManager.ApplySkillEffect = ApplyBotSkillEffect;
+        // 仓库 NPC 的 trunkPut/trunkGet 费用表（tools/export_trunk_fees.py 生成）。
+        // 放客户端初始化注入：server-check 工程不含 UnityEngine，GameServer 必须保持纯 C#。
+        NativeStorageService.FeeProvider = () => Resources.Load<TextAsset>("Storage/TrunkFees")?.text;
         MigrateLegacyProfile();
     }
 
@@ -242,9 +245,31 @@ public static class GameSession
         NativeVegaWindow.Close();
         NativeNpcShopWindow.Reset();
         NativeDeliveryWindow.Reset();
+        NativeMerchantWindow.Reset();
+        NativePlayerShopWindow.Reset();
+        NativeItemSearchWindow.Reset();
+        NativeStorageWindow.Reset();
+        NativeSkillMacros.Reset();
+        NativeClaimWindow.Reset();
+        NativeArenaHud.Reset();
+        NativeRpsWindow.Reset();
+        NativeRpsService.ClearSessions();   // 源端 RPS 会话随 Character 销毁
+        NativeMemoWindow.Reset();
+        NativeNoteService.AvailableNotes = 0;   // 源端 CashShop.notes 按角色加载，重登归零
+        NativeMapleTvDisplay.Reset();
+        NativeCarnivalHud.Reset();
+        NativeCarnivalService.AbandonOnLogout();
+        NativeCarnivalService.FestivalPoints = 0;   // 源端 Character.festivalPoints 内存字段，重登归零
+        NativeCarnivalLobby.Reset();
+        NativeRemoteGachaponWindow.Reset();
+        NativeMakerWindow.Reset();
+        NativeRankingWindow.Reset();
         NativeMapWindows.WorldVisible = false;
         NativeMonsterBook.Visible = false;
         InGame = true;
+        // PlayerLoggedinHandler:366 noteService.show：登录时有未读便签就弹便签窗
+        if (Net != null && Net.Memo(new MemoRequest { characterId = CharacterId, action = 2 })?.notes is { Length: > 0 })
+            NativeMemoWindow.Open();
         ApplyToProfile();
         KeyMap.LoadCharacter(Character.keymap);
         return true;
@@ -284,6 +309,25 @@ public static class GameSession
         NativeVegaWindow.Close();
         NativeNpcShopWindow.Reset();
         NativeDeliveryWindow.Reset();
+        NativeMerchantWindow.Reset();
+        NativePlayerShopWindow.Reset();
+        NativeItemSearchWindow.Reset();
+        NativeStorageWindow.Reset();
+        NativeSkillMacros.Reset();
+        NativeClaimWindow.Reset();
+        NativeArenaHud.Reset();
+        NativeRpsWindow.Reset();
+        NativeRpsService.ClearSessions();   // 源端 RPS 会话随 Character 销毁
+        NativeMemoWindow.Reset();
+        NativeNoteService.AvailableNotes = 0;   // 源端 CashShop.notes 按角色加载，重登归零
+        NativeMapleTvDisplay.Reset();
+        NativeCarnivalHud.Reset();
+        NativeCarnivalService.AbandonOnLogout();
+        NativeCarnivalService.FestivalPoints = 0;   // 源端 Character.festivalPoints 内存字段，重登归零
+        NativeCarnivalLobby.Reset();
+        NativeRemoteGachaponWindow.Reset();
+        NativeMakerWindow.Reset();
+        NativeRankingWindow.Reset();
         // 源端断线由 Channel 通知事件实例（Client.java:969）；单机在这里补同一次回调，
         // 必须在 Character 置空之前，事件实例才反查得到玩家。
         if (InGame) global::NativeEventScripts.PlayerDisconnected();
@@ -300,6 +344,25 @@ public static class GameSession
         NativeVegaWindow.Close();
         NativeNpcShopWindow.Reset();
         NativeDeliveryWindow.Reset();
+        NativeMerchantWindow.Reset();
+        NativePlayerShopWindow.Reset();
+        NativeItemSearchWindow.Reset();
+        NativeStorageWindow.Reset();
+        NativeSkillMacros.Reset();
+        NativeClaimWindow.Reset();
+        NativeArenaHud.Reset();
+        NativeRpsWindow.Reset();
+        NativeRpsService.ClearSessions();   // 源端 RPS 会话随 Character 销毁
+        NativeMemoWindow.Reset();
+        NativeNoteService.AvailableNotes = 0;   // 源端 CashShop.notes 按角色加载，重登归零
+        NativeMapleTvDisplay.Reset();
+        NativeCarnivalHud.Reset();
+        NativeCarnivalService.AbandonOnLogout();
+        NativeCarnivalService.FestivalPoints = 0;   // 源端 Character.festivalPoints 内存字段，重登归零
+        NativeCarnivalLobby.Reset();
+        NativeRemoteGachaponWindow.Reset();
+        NativeMakerWindow.Reset();
+        NativeRankingWindow.Reset();
         if (InGame) global::NativeEventScripts.PlayerDisconnected();
         Net?.EndSocialSession(CharacterId);
         InGame = false;

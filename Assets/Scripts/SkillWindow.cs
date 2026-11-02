@@ -378,6 +378,9 @@ public static class SkillWindow
                     return;
                 }
                 string why;
+                // 锻造（Maker，技能 1007 / 10001007 / 20001007 / 20011007）双击是开制作窗，
+                // 源端由 MakerSkillHandler 接 MAKER_SKILL 包，不走施法流程。
+                if (hit.id % 10000 == 1007) { NativeMakerWindow.Open(); return; }
                 SkillCast.TryCast(hit.id, out why);
                 return;
             }
@@ -518,7 +521,8 @@ public static class SkillWindow
     // 右窗在左窗下面绘制，重叠2px，左窗边框盖住右窗左侧阴影。
     static bool macroVisible = true;
     static int macroScroll, macroSelected = -1;
-    static bool macroLoaded, macroDirty;
+    static int macroLoadCid;       // 切角后必须重读（源端每次进角色都重发宏数据包）
+    static bool macroDirty;
     static readonly int[,] macroSkills = new int[5, 3];
     static readonly string[] macroNames = new string[5];
     static readonly bool[] macroShowName = new bool[5];
@@ -530,16 +534,19 @@ public static class SkillWindow
         if (tex != null) GUI.DrawTexture(At(win, x, y, tex.width, tex.height), tex);
     }
 
+    // 权威数据在服务端（skillmacros 表）；这里把镜像同步进 UI 数组，切角时重读。
     static void LoadMacros()
     {
-        if (macroLoaded) return;
-        macroLoaded = true;
+        int cid = GameSession.InGame ? GameSession.CharacterId : 0;
+        if (macroLoadCid == cid) return;
+        macroLoadCid = cid;
+        macroDirty = false;
         for (int i = 0; i < 5; i++)
         {
-            macroNames[i] = PlayerPrefs.GetString("mxd.macro." + i + ".name", "");
-            macroShowName[i] = PlayerPrefs.GetInt("mxd.macro." + i + ".show", 0) != 0;
+            macroNames[i] = NativeSkillMacros.Name(i);
+            macroShowName[i] = NativeSkillMacros.ShowName(i);
             for (int j = 0; j < 3; j++)
-                macroSkills[i, j] = PlayerPrefs.GetInt("mxd.macro." + i + ".skill." + j, 0);
+                macroSkills[i, j] = NativeSkillMacros.Skill(i, j);
         }
     }
 
@@ -602,6 +609,14 @@ public static class SkillWindow
         if (macroSelected >= 0)
         {
             MacroImage(win, "Macroicon/" + macroSelected + "/icon", 20, 198);
+            // 选中且宏非空时，按这个大图标 = 把整条宏拿到手上（拖到快捷格绑定）。
+            // 原端把宏绑到按键走键盘设定窗，这里用项目既有的快捷格等价实现。
+            var bigIcon = At(win, 20, 198, 32, 32);
+            if (press && bigIcon.Contains(Pointer.Pos) && NativeSkillMacros.HasContent(macroSelected))
+            {
+                dragId = NativeSkillMacros.Marker(macroSelected);
+                carrying = true;
+            }
             var style = Style(12, Color.black, TextAnchor.MiddleLeft, false, true);
             string name = GUI.TextField(nameRect, macroNames[macroSelected], 12, style);
             if (name != macroNames[macroSelected]) { macroNames[macroSelected] = name; macroDirty = true; }
@@ -618,15 +633,17 @@ public static class SkillWindow
         if (!macroDirty) GUI.DrawTexture(ok, Wz("UI/Basic.img/BtOK2/disabled/0"));
         else if (NativeUi.Button(ok, "UI/Basic.img/BtOK2"))
         {
+            // 确认 = 全 5 槽整包上送服务端（源端 SkillMacroHandler 的 position = 包内序号）
             for (int i = 0; i < 5; i++)
             {
-                PlayerPrefs.SetString("mxd.macro." + i + ".name", macroNames[i]);
-                PlayerPrefs.SetInt("mxd.macro." + i + ".show", macroShowName[i] ? 1 : 0);
+                NativeSkillMacros.SetName(i, macroNames[i]);
+                if (macroShowName[i] != NativeSkillMacros.ShowName(i)) NativeSkillMacros.ToggleShow(i);
                 for (int j = 0; j < 3; j++)
-                    PlayerPrefs.SetInt("mxd.macro." + i + ".skill." + j, macroSkills[i, j]);
+                    NativeSkillMacros.SetSkill(i, j, macroSkills[i, j]);
             }
-            PlayerPrefs.Save();
-            macroDirty = false;
+            string err = NativeSkillMacros.Commit();
+            if (err != null) BottomBar.Toast("宏保存失败：" + err);
+            else macroDirty = false;
         }
     }
 
@@ -1049,6 +1066,17 @@ public static class SkillWindow
     public static void DrawDragGhost()
     {
         if (!Dragging) return;
+        // 宏 ghost = 链上第一个技能的图标
+        if (NativeSkillMacros.IsMacro(dragId))
+        {
+            var first = NativeSkillMacros.FirstSkill(NativeSkillMacros.MarkerIndex(dragId));
+            var md = first != 0 ? SkillBook.Get(first) : null;
+            var mIcon = SkillIcon(md);
+            if (mIcon != null)
+                GUI.DrawTexture(new Rect(Pointer.Pos.x - 16f * S, Pointer.Pos.y - 16f * S, 32f * S, 32f * S),
+                    mIcon, ScaleMode.ScaleToFit);
+            return;
+        }
         var d = SkillBook.Get(dragId);
         var icon = SkillIcon(d);
         if (icon != null)
@@ -1058,6 +1086,19 @@ public static class SkillWindow
 
     static bool DropOnSlot(int id)
     {
+        // 宏落点：只接受快捷格（虚拟按键的技能校验会拒绝宏标记）
+        if (NativeSkillMacros.IsMacro(id))
+        {
+            for (int i = 0; i < QuickSlots.Count; i++)
+            {
+                if (!BottomBar.SlotRect(i).Contains(Pointer.Pos)) continue;
+                if (!QuickBarKeys.BindSkill(i, id)) return true;
+                int idx = NativeSkillMacros.MarkerIndex(id);
+                BottomBar.Toast("已把宏「" + NativeSkillMacros.Name(idx) + "」绑定到快捷格 " + (i + 1));
+                return true;
+            }
+            return false;
+        }
         if (DropOnMacro(id)) return true;
         // 放到屏上虚拟按键：把这个按键直接变成该技能键（原版"技能拖进快捷格"的屏上等价物）。
         // 键盘设定窗口盖住按键时，落在键帽上的优先算键位绑定——视觉在上面的那个先收到。

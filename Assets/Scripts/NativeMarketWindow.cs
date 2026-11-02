@@ -74,7 +74,9 @@ public static class NativeMarketWindow
             try
             {
                 var p = pointer-position;
-                Image("backgrnd6",0,0);
+                // 514xxxx 是个人商店（PlayerShop），用 PersonalShop/backgrnd；
+                // 503xxxx 是雇佣商店（EntrustedShop），沿用 backgrnd6。
+                Image(shop.permitId / 10000 == 514 ? "backgrnd" : "backgrnd6",0,0);
                 if (!shop.playerStore)
                 {
                     // CEntrustedShopDlg::DrawEmployee 5181EE: slot 0 from

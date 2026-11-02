@@ -9,11 +9,13 @@ public static class NativeChatBalloon
     public sealed class Layout { public Texture2D texture; public Rect text; public Color color; public int anchorX, lineHeight; }
     static readonly Dictionary<string,Layout> cache=new Dictionary<string,Layout>();
     static readonly string[] names={"c","n","s","w","e","nw","ne","sw","se","arrow","head"};
-    public static Layout Prepare(int style,int innerWidth,int lines)
+    public static Layout Prepare(int style,int innerWidth,int lines) => Prepare(style.ToString(),innerWidth,lines);
+    // 字符串路径版：宠物气泡等子树样式（UI/ChatBalloon.img/pet/0）
+    public static Layout Prepare(string stylePath,int innerWidth,int lines)
     {
-        string key=style+":"+innerWidth+":"+lines;
+        string key=stylePath+":"+innerWidth+":"+lines;
         if(cache.TryGetValue(key,out var found))return found;
-        var root=WzAssets.Node("UI/ChatBalloon.img/"+style);
+        var root=WzAssets.Node("UI/ChatBalloon.img/"+stylePath);
         if(root==null){cache[key]=null;return null;}
         var nodes=new Dictionary<string,ImgNode>();
         foreach(string name in names)

@@ -287,7 +287,7 @@ public static class NativeInventoryService {
     }
 
     static bool TwoHanded(int id) => id / 10000 >= 140 && id / 10000 <= 149;
-    static int Free(DbStore db, CharRecord c, int type) {
+    internal static int Free(DbStore db, CharRecord c, int type) {
         int max = type == 1 ? c.equipslots : type == 2 ? c.useslots : type == 3 ? c.setupslots : type == 4 ? c.etcslots : 96;
         var used = new HashSet<int>(); foreach (var row in InventoryDao.ItemsByCharacter(db, (int)c.id)) if (DbStore.Int(row, "inventorytype") == type) used.Add(DbStore.Int(row, "position"));
         for (int i = 1; i <= max; i++) if (!used.Contains(i)) return i; return 0;

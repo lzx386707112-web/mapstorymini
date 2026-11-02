@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 
 static class NativeSystemChecks {
-    sealed class Catalog : INativeCashCatalog {
+    internal sealed class Catalog : INativeCashCatalog {
         public Dictionary<int, CashCommodity> entries = new Dictionary<int, CashCommodity> {
             [100] = new CashCommodity { sn = 100, itemId = 5370000, price = 100, count = 1, period = 90, onSale = 1 },
             [101] = new CashCommodity { sn = 101, itemId = 1000000, price = 200, count = 1, period = -1, onSale = 1 },
             [102] = new CashCommodity { sn = 102, itemId = 9100000, price = 250, count = 1, period = 90, onSale = 1 },
             [103] = new CashCommodity { sn = 103, itemId = 5030000, price = 10, count = 1, period = 1, onSale = 1 },
             [105] = new CashCommodity { sn = 105, itemId = 5000000, price = 0, count = 1, period = 90, onSale = 1 },
-            [104] = new CashCommodity { sn = 104, itemId = 5430000, price = 300, count = 1, period = -1, onSale = 1 }
+            [104] = new CashCommodity { sn = 104, itemId = 5430000, price = 300, count = 1, period = -1, onSale = 1 },
+            [106] = new CashCommodity { sn = 106, itemId = 5222000, price = 100, count = 1, period = 90, onSale = 1 }
         };
         public IEnumerable<CashCommodity> All => entries.Values;
         public CashCommodity Find(int sn) => entries.TryGetValue(sn, out var e) ? e : null;
@@ -130,7 +131,8 @@ static class NativeSystemChecks {
             Check(!Gift(leader, "Player6", 20000101).ok, "赠送需要通过账号生日验证");
             Check(!Gift(leader, "Player1").ok, "禁止给同账号角色赠送");
             Check(Gift(leader, "Player6").ok && S(leader).prepaid == 9900, "赠送只扣预付点券并记录离线礼物");
-            Check(S(ids[6], CashOperation.Open).gifts == 1, "收件人进入商城读取待领礼物");
+            // 源端 CashShop 构造（登录）时 loadGiftsFromDb 就把礼物装进现金仓库；项目等价在进商城时领取。
+            Check(S(ids[6], CashOperation.Open).gifts == 0 && S(ids[6]).stock.Exists(x => x.giftFrom == "Player0"), "收件人进商城自动领取礼物（等价源端 loadGiftsFromDb）");
             var gift = S(ids[6], CashOperation.ClaimGifts);
             Check(gift.ok && gift.gifts == 0 && gift.stock.Count == 1 && gift.stock[0].giftFrom == "Player0", "领取礼物保留赠送人并清除待领记录");
             Check(S(ids[6], CashOperation.ClaimGifts).stock.Count == 1, "礼物不能重复领取");
