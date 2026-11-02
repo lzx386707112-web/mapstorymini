@@ -22,7 +22,7 @@ public interface IRespawnMapInfo
 
 public sealed class DeathResult
 {
-    public int expLost;
+    public long expLost;
     public bool usedSafetyCharm;
     public bool noExpLoss;             // 新手 / 城镇保护 / fieldLimit 命中
 }
@@ -65,7 +65,7 @@ public static class DeathService
         if (mapInfo != null && mapInfo.NoExpDecrease(mapId)) { res.noExpLoss = true; return res; }
 
         // 城镇只扣 1%；野外 LUK<50 扣 10%，否则 20%（源端 7514-7531）
-        int dummy = ServerExpTable.GetExpNeededForLevel(chr.level);
+        long dummy = ServerExpTable.GetExpNeededForLevel(chr.level);
         bool town = mapInfo != null && mapInfo.IsTown(mapId);
         if (town) dummy /= 100;
         else dummy = chr.luk < 50 ? dummy / 10 : dummy / 20;

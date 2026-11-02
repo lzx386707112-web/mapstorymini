@@ -13,7 +13,9 @@ using System;
 //   level_up_sp_gain=3           → 每级 3 SP，levelUpGainSp() 对新手（jobBranch==0）直接返回
 //   use_add_slots_by_level=false → 升级不加背包格（格子只在转职时 +4）
 //   use_level_up_protect=true    → 一次经验结算最多升 1 级（防止连升）
-//   getMaxClassLevel()=255       → 等级上限（V2.1.50 把 mxj_max_level 改成 255）
+//   等级上限 = 300（源端 V2.1.50 的 255 不够用，本工程上限见 ExpCurve.CapLevel）
+//   200 级（含）以上升级需求改为每级 +20%（ExpCurve），300 级需求已到 1.6e17
+//   → 所以经验一律用 long，不再做 int.MaxValue 钳制
 //   升满级后经验封顶 99%（getMaxLevelExpLimit），避免客户端把终止经验值画崩
 //
 // 本文件不碰 Unity，方便用编辑器自检在无 Play 的情况下跑完整条升级链路。
@@ -73,13 +75,14 @@ public static class LevelSystem
         EnsureBaseline(d);
 
         int maxLevel = ExpTable.MaxLevel;
-        long total = Math.Max(0, d.experience) + amount;
-        if (total > int.MaxValue) total = int.MaxValue;   // 原端 exp 是 int
+        // long：300 级需求 1.6e17，不钳制到 int。加法做饱和，别让两笔巨额经验翻负。
+        long current = Math.Max(0, d.experience);
+        long total = amount > long.MaxValue - current ? long.MaxValue : current + amount;
 
         int levels = 0;
         while (d.level < maxLevel)
         {
-            int need = Math.Max(1, ExpTable.Needed(d.level));
+            long need = Math.Max(1, ExpTable.Needed(d.level));
             if (total < need) break;
             total -= need;
             LevelUp(d);
@@ -89,8 +92,9 @@ public static class LevelSystem
 
         if (d.level >= maxLevel)
         {
-            // 满级保留 99%，与原端 getMaxLevelExpLimit 一致
-            long cap = (long)Math.Max(1, ExpTable.Needed(d.level)) * 99 / 100;
+            // 满级保留 99%，与原端 getMaxLevelExpLimit 一致。
+            // 先除以 100 再乘 99：300 级需求 1.6e17，直接 ×99 会溢出 long。
+            long cap = ExpCap(d.level);
             if (total > cap) total = cap;
         }
 
@@ -116,10 +120,18 @@ public static class LevelSystem
         // 与 AddExperience 相同的满级封顶
         if (d.level >= ExpTable.MaxLevel)
         {
-            long cap = (long)Math.Max(1, ExpTable.Needed(d.level)) * 99 / 100;
+            long cap = ExpCap(d.level);
             if (d.experience > cap) d.experience = cap;
         }
         return levels;
+    }
+
+    // 原端 getMaxLevelExpLimit：满级后经验封顶 99%。
+    // 必须先除后乘——300 级需求 1.6e17，直接 ×99 会溢出 long 变成负数。
+    public static long ExpCap(int level)
+    {
+        long need = Math.Max(1, ExpTable.Needed(level));
+        return need / 100 * 99 + need % 100 * 99 / 100;
     }
 
     // 直接抬到目标等级（调试 / 验收用）：按 LevelUp 的成长区间逐级补，

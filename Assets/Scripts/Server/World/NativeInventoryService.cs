@@ -1,16 +1,24 @@
 using System;
 using System.Collections.Generic;
-public sealed class InventoryChangeRequest { public int characterId, itemId, quantity, equipSlot, sourcePosition; public int petSlot, evolvePetId; public int petTameness; public bool petLeaderOnly; public bool getPet; public bool equip, projectile, removeAll, togglePet, worldQuestDraw, petTick; public int grantItemId, grantQuantity, grantMinutes; public bool consumeGrantSource, breakthrough; public int bankExp, maxBankLevel; public long grantDurationMs=-1; public int[] checkItems, checkQuantities; public int removeCheckItem, removeCheckQuantity; }
-public sealed class InventoryChangeResponse { public bool ok = true; public string error = "", message; public InventoryEntry pet; public int damageCap, bankedExp; public List<InventoryEntry> inventory; }
+public enum ExtraStorageOperation { None, Read, Store, Withdraw }
+public sealed class InventoryChangeRequest { public ExtraStorageOperation extraStorage; public int extraStorageType; public int characterId, itemId, quantity, equipSlot, sourcePosition; public int petSlot, evolvePetId; public int petTameness; public bool petLeaderOnly; public bool readPetExclusions, writePetExclusions; public int petId; public int[] petExclusions; public bool getPet, createPet; public long itemExpiration=-1; public bool equip, projectile, removeAll, togglePet, worldQuestDraw, petTick; public int grantItemId, grantQuantity, grantMinutes; public bool consumeGrantSource, breakthrough; public int bankExp, maxBankLevel; public long grantDurationMs=-1; public int[] checkItems, checkQuantities; public int removeCheckItem, removeCheckQuantity; public bool dropToField; public int dropQuantity, dropMapId, dropX, dropY; public bool sortItems, mergeItems; public int sortInventoryType; }
+public sealed class InventoryChangeResponse { public int extraStorageQuantity; public bool ok = true; public string error = "", message; public InventoryEntry pet; public List<int> petExclusions; public long damageCap; public int bankedExp, createdPetId; public bool inventoryChanged; public List<InventoryEntry> inventory; }
 public static class NativeInventoryService {
     static readonly Dictionary<(DbStore,int),long> worldQuestUse=new Dictionary<(DbStore,int),long>();
     static readonly Random worldQuestRandom=new Random();
     // Existing gameplay is client-authoritative; persistence still runs inside transport.
     public static InventoryChangeResponse Handle(DbStore db, InventoryChangeRequest r) {
         var c = CharactersDao.FindById(db, r.characterId);
-        if (c == null || r.itemId <= 0 && r.checkItems==null) return new InventoryChangeResponse { ok = false, error = "角色或道具不存在" };
+        bool petOperation=r.readPetExclusions || r.writePetExclusions || r.getPet || r.petTick || r.evolvePetId>0 || r.petTameness!=0;
+        if (c == null || r.itemId <= 0 && r.checkItems==null && !petOperation && !r.sortItems && !r.mergeItems) return new InventoryChangeResponse { ok = false, error = "角色或道具不存在" };
         InventoryDao.ExpireItems(db,r.characterId,DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        // ITEM_SORT2 / ITEM_SORT：背包整理与合并，走 NativeInventorySort 的源端算法。
+        if(r.sortItems) return NativeInventorySort.Sort(db,c,r.sortInventoryType);
+        if(r.mergeItems) return NativeInventorySort.Merge(db,c,r.sortInventoryType);
+        if(r.extraStorage!=ExtraStorageOperation.None)return NativeExtraStorage.Handle(db,c,r);
+        if(r.readPetExclusions || r.writePetExclusions) return NativePetItems.Exclusions(db,r);
         if(r.checkItems!=null) return new InventoryChangeResponse {ok=CanReceive(db,c,r)};
+        if(r.dropToField) return DropToField(db,c,r);
         if(r.removeAll)
         {
             InventoryDao.ConsumeItem(db,r.characterId,r.itemId,InventoryDao.CountOf(db,r.characterId,r.itemId));
@@ -51,6 +59,14 @@ public static class NativeInventoryService {
             db.Save();return new InventoryChangeResponse {inventory=CharService.Load(db,r.characterId).inventory,message="获得了任务物品："+Server.Bot.BotItemCatalog.Shared.Name(reward)};
         }
         if(r.petTameness!=0) return NativePetItems.GainTameness(db,r.characterId,r.petTameness,r.petLeaderOnly);
+        if(r.createPet)
+        {
+            if(r.itemId/1000!=5000 || Server.Bot.BotItemCatalog.Shared.Info(r.itemId)==null)
+                return new InventoryChangeResponse {ok=false,error="宠物资源不存在"};
+            int petId=(int)db.Table("pets").Insert(new DbRow { ["name"]=Server.Bot.BotItemCatalog.Shared.Name(r.itemId),
+                ["level"]=1L,["closeness"]=0L,["fullness"]=100L,["summoned"]=0L,["flag"]=0L });
+            db.Save();return new InventoryChangeResponse {createdPetId=petId};
+        }
         if(r.getPet) return new InventoryChangeResponse {pet=NativePetItems.GetPet(db,r.characterId,r.petSlot)};
         if(r.evolvePetId>0) return NativePetItems.Evolve(db,r);
         if(r.petTick) return NativePetItems.Tick(db,r.characterId,DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
@@ -76,7 +92,20 @@ public static class NativeInventoryService {
             if(r.consumeGrantSource) InventoryDao.ConsumeItem(db,r.characterId,r.itemId,1);
         } else if (r.equip) {
             int slot = EquipmentSlotOf(r.itemId);
-            if (slot == -12 && (r.equipSlot == -12 || r.equipSlot == -13 || r.equipSlot == -15 || r.equipSlot == -16)) slot = r.equipSlot;
+            if(NativePetItems.IsEquipment(r.itemId))
+            {
+                slot=NativePetItems.EquipmentSlot(r.itemId,r.petSlot);
+                if(r.quantity!=0)
+                {
+                    var pet=NativePetItems.GetPet(db,r.characterId,r.petSlot);
+                    if(pet==null || !NativePetItems.EquipmentFits(r.itemId,pet.itemId))
+                        return new InventoryChangeResponse {ok=false,error="请先召唤可以穿戴此装备的宠物"};
+                }
+                else
+                    for(int i=0;i<3;i++) if(NativePetItems.EquipmentSlot(r.itemId,i)==r.equipSlot) slot=r.equipSlot;
+            }
+            if (slot == -12 && (r.equipSlot == -12 || r.equipSlot == -13 || r.equipSlot == -15 || r.equipSlot == -16) ||
+                slot == -112 && (r.equipSlot == -112 || r.equipSlot == -113 || r.equipSlot == -115 || r.equipSlot == -116)) slot = r.equipSlot;
             if (slot == 0 || slot != r.equipSlot) return new InventoryChangeResponse { ok = false, error = "无效装备槽位" };
             var source = items.Find(x => DbStore.Int(x, "characterid") == r.characterId && DbStore.Int(x, "itemid") == r.itemId &&
                 (r.quantity == 0 ? DbStore.Int(x, "position") == slot : DbStore.Int(x, "position") > 0 && (r.sourcePosition == 0 || DbStore.Int(x, "position") == r.sourcePosition)));
@@ -113,7 +142,7 @@ public static class NativeInventoryService {
         } else if (r.quantity > 0) {
             var check=new InventoryChangeRequest {checkItems=new[] {r.itemId},checkQuantities=new[] {r.quantity}};
             if(!CanReceive(db,c,check)) return new InventoryChangeResponse {ok=false,error="背包空间不足，无法获取"};
-            AddItems(db,c,r.itemId,r.quantity,-1);
+            AddItems(db,c,r.itemId,r.quantity,r.itemExpiration,r.petId>0 ? r.petId : -1);
         } else if (r.quantity < 0) {
             if (r.sourcePosition!=0) {
                 var source=items.Find(x=>DbStore.Int(x,"characterid")==r.characterId && DbStore.Int(x,"itemid")==r.itemId &&
@@ -131,7 +160,8 @@ public static class NativeInventoryService {
         }
         db.Save(); return new InventoryChangeResponse { inventory = CharService.Load(db, r.characterId).inventory };
     }
-    static void AddItems(DbStore db,CharRecord c,int itemId,int count,long expiration)
+    // Duey / 交易等外部装箱复用同一套放包规则（源端 InventoryManipulator.addFromDrop）。
+    internal static void AddItems(DbStore db,CharRecord c,int itemId,int count,long expiration,int petId=-1)
     {
         int type=itemId/1000000;
         var items=db.Table("inventoryitems");
@@ -153,13 +183,13 @@ public static class NativeInventoryService {
         {
             int position=Free(db,c,type),quantity=Math.Min(remaining,max);
             if(position==0 || quantity<=0) throw new InvalidOperationException("Inventory capacity preflight mismatch");
-            long id=InventoryDao.InsertItem(db,(int)c.id,itemId,type,position,quantity);
+            long id=InventoryDao.InsertItem(db,(int)c.id,itemId,type,position,quantity,pet ? petId : -1);
             if(type==1) InventoryDao.InsertEquipment(db,id);
             items.Find(x=>DbStore.Long(x,"inventoryitemid")==id)["expiration"]=expiration;
             remaining-=quantity;
         }
     }
-    static bool CanReceive(DbStore db,CharRecord c,InventoryChangeRequest r)
+    internal static bool CanReceive(DbStore db,CharRecord c,InventoryChangeRequest r)
     {
         var character=CharService.Load(db,(int)c.id);
         var actor=new Server.Bot.BotActor {id=(int)c.id,job=c.job,character=character};
@@ -194,7 +224,66 @@ public static class NativeInventoryService {
     // Pure server mapping: script harness must not depend on Unity's equipment presentation.
     public static int EquipmentSlotOf(int itemId)
     {
-        return -Server.Bot.Decorator.BotCustomization.EquipSlotType(itemId);
+        var info = Server.Bot.BotItemCatalog.Shared.Info(itemId);
+        // ItemInformationProvider.canWearEquipment -> constants.inventory.EquipSlot:
+        // the original IMG islot, including Wp/Tm/Sd absent from the old ID-only mapping.
+        string islot = info != null && info.TryGetValue("islot", out var value) ? value as string : null;
+        int slot = islot switch {
+            "Cp" => -1, "HrCp" => -1, "Af" => -2, "Ay" => -3, "Ae" => -4,
+            "Ma" => -5, "MaPn" => -5, "Pn" => -6, "So" => -7, "GlGw" => -8, "Gv" => -8,
+            "Sr" => -9, "Si" => -10, "Wp" => -11, "WpSi" => -11, "WpSp" => -11,
+            "Ri" => -12, "Pe" => -17, "Tm" => -18, "Sd" => -19, "Sh" => -20,
+            "Sw" => -51, "Po" => -53, "Ht" => -54, "Ba" => -55, "Em" => -56,
+            "Me" => -49, "Be" => -50, _ => -Server.Bot.Decorator.BotCustomization.EquipSlotType(itemId)
+        };
+        return slot != 0 && Server.Bot.BotItemCatalog.Int(info, "cash") != 0 ? slot - 100 : slot;
+    }
+
+    // 源端「背包里把道具丢到地上」走的是 ITEM_MOVE(0x47)：ItemMoveHandler 读到 action==0 就转
+    // InventoryManipulator.drop(c, type, src, quantity)。这里照抄那段判定：
+    //   - 该格不存在 / 交易或小游戏中 → 什么都不做（这里只回 ok=false，不改背包）
+    //   - quantity < 堆叠数且不是可充能道具（itemId/10000==207）→ 拆一份新的出去，原格减数量
+    //   - 否则整格移除（装备连 inventoryequipment 行一起删）
+    //   - 落地一律 spawnItemDrop(dropper=owner=玩家, pos=玩家脚点, playerDrop=true, ffaDrop=true)
+    // 单机没有服务端角色坐标，落点由客户端回传；吸附/夹取仍由 MapItemService.CalcItemDropPos 负责。
+    static InventoryChangeResponse DropToField(DbStore db, CharRecord character, InventoryChangeRequest r)
+    {
+        int characterId = (int)character.id;
+        var full = CharService.Load(db, characterId);
+        if (full == null || full.inventory == null) return new InventoryChangeResponse { ok = false, error = "角色或道具不存在" };
+
+        InventoryEntry source = null;
+        foreach (var entry in full.inventory)
+            if (entry.itemId == r.itemId && entry.position > 0 &&
+                (r.sourcePosition == 0 || entry.position == r.sourcePosition)) { source = entry; break; }
+        if (source == null) return new InventoryChangeResponse { ok = false, error = "背包里没有这件物品" };
+
+        int have = source.quantity;
+        int take = r.dropQuantity;
+        // 源端丢弃前先判 (!isRechargeable && source.quantity < quantity) || quantity < 0
+        if (take <= 0 || take > have) return new InventoryChangeResponse { ok = false, error = "数量不正确" };
+
+        bool rechargeable = source.itemId / 10000 == 207;
+        if (take < have && !rechargeable)
+        {
+            var row = db.Table("inventoryitems").Find(x => DbStore.Long(x, "inventoryitemid", -1) == source.itemRowId);
+            if (row != null) row["quantity"] = (long)(have - take);
+        }
+        else
+        {
+            take = have;
+            db.Table("inventoryitems").Delete(x => DbStore.Long(x, "inventoryitemid", -1) == source.itemRowId);
+            db.Table("inventoryequipment").Delete(x => DbStore.Long(x, "inventoryitemid", -1) == source.itemRowId);
+        }
+        db.Save();
+
+        var dropped = source.Copy();
+        dropped.quantity = take;
+        Server.Field.MapItemService.SpawnItemDrop(r.dropMapId, characterId, characterId,
+            Server.Field.MapItemService.PartyOf != null ? Server.Field.MapItemService.PartyOf(characterId) : -1,
+            dropped, r.dropX, r.dropY, true, true);
+
+        return new InventoryChangeResponse { inventory = CharService.Load(db, characterId).inventory };
     }
 
     static bool TwoHanded(int id) => id / 10000 >= 140 && id / 10000 <= 149;

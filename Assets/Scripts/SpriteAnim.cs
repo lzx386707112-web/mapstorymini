@@ -175,8 +175,16 @@ public class SpriteAnim : MonoBehaviour
         if (cur == null || sr == null) return;
         if (expression != null)
         {
-            if (Time.unscaledTime - expressionStarted >= expressionDuration) expression = null;
-            Apply(idx);
+            bool ending = Time.unscaledTime - expressionStarted >= expressionDuration;
+            if (ending) expression = null;
+            // 表情帧不是缓存好的纸娃娃：WzCharacter.ExpressionFrame 每次都走 Compose
+            // （逐像素混合 + new Texture2D + Apply，单张 3~10ms），而且表情种类 × 帧
+            // 全都不在 BotAppearancePrebake 的预合成范围（那里只铺 stand/walk/sit/jump）。
+            // 这里以前无条件 Apply，等于绕过了 throttleWhenBusy 的帧预算——十几个假人
+            // 各换一次脸，一帧里就能连做几十张合成，表现为「走到假人堆里卡几秒」。
+            // 表情结束那一帧必须无条件还一次默认脸（走 Art.Frame 缓存，零成本），
+            // 否则脸会停在最后一个表情上。
+            if (ending || !throttleWhenBusy || Server.Bot.BotWorkPump.Has(2f)) Apply(idx);
         }
         float dt = Time.deltaTime * Mathf.Max(0f, speed);
         if (dt <= 0f) return;

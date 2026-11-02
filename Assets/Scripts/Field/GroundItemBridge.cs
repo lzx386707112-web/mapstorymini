@@ -15,6 +15,7 @@ public sealed class GroundItemBridge : MonoBehaviour
     BotActorLooter looter;
     int looterId = -1;
     System.Func<MapItem, bool> pickupHandler;
+    System.Func<MapItem,int,bool> petPickupHandler;
     bool subscribed;
 
     public void Bind(FieldDirector field, BotRuntime bots)
@@ -26,6 +27,8 @@ public sealed class GroundItemBridge : MonoBehaviour
         MapItemService.Spawned += OnSpawned;
         MapItemService.Removed += OnRemoved;
         GroundItem.AuthoritativePickup = pickupHandler;
+        petPickupHandler=TryPetPickup;
+        GroundItem.AuthoritativePetPickup=petPickupHandler;
         subscribed = true;
     }
 
@@ -36,6 +39,8 @@ public sealed class GroundItemBridge : MonoBehaviour
         MapItemService.Spawned -= OnSpawned;
         MapItemService.Removed -= OnRemoved;
         if (ReferenceEquals(GroundItem.AuthoritativePickup, pickupHandler)) GroundItem.AuthoritativePickup = null;
+        if (ReferenceEquals(GroundItem.AuthoritativePetPickup,petPickupHandler)) GroundItem.AuthoritativePetPickup=null;
+        petPickupHandler=null;
         pickupHandler = null;
         looter = null; looterId = -1;
     }
@@ -51,12 +56,14 @@ public sealed class GroundItemBridge : MonoBehaviour
         var actor = runtime.Player(GameSession.CharacterId);
         if (actor == null) return null;
         looter = new BotActorLooter(actor, runtime.trades, runtime.parties,
-            new BotLootHooks { NeedQuestItem=QuestLogic.NeedQuestItem });
+            new BotLootHooks { NeedQuestItem=QuestLogic.NeedQuestItem,
+                GainNxCredit=amount=>GameSession.Net.Cash(new CashRequest { characterId=GameSession.CharacterId,
+                    operation=CashOperation.AdjustBalance,currency=1,amount=amount }) });
         looterId = actor.id;
         return looter;
     }
 
-    int CurrentMapId => owner != null && owner.Map != null ? owner.Map.id : -1;
+    int CurrentMapId => owner != null && owner.Map != null ? owner.StateId : -1;
 
     static Vector3 ToUnity(MapItem item) => new Vector3(item.x / Art.PPU, -item.y / Art.PPU, 0f);
 
@@ -86,6 +93,11 @@ public sealed class GroundItemBridge : MonoBehaviour
                 System.Func<Vector2?> target = null;
                 if (item.pickupCharacterId == GameSession.CharacterId && item.pickupPetIndex < 0)
                     target = GroundItem.LocalPickupTarget;
+                else if(item.pickupCharacterId==GameSession.CharacterId && item.pickupPetIndex>=0)
+                {
+                    int pet=item.pickupPetIndex;
+                    target=()=>owner!=null ? owner.GetComponent<NativePetField>()?.PickupTarget(pet) : null;
+                }
                 else if (item.pickupCharacterId != 0 && item.pickupPetIndex < 0)
                 {
                     int picker = item.pickupCharacterId;
@@ -96,15 +108,32 @@ public sealed class GroundItemBridge : MonoBehaviour
     }
 
     bool TryPickup(MapItem item)
+        =>TryPickup(item,-1);
+    bool TryPetPickup(MapItem item,int petSlot)
+    {
+        if(item==null) return false;
+        var pet=GameSession.Net.ChangeInventory(new InventoryChangeRequest {characterId=GameSession.CharacterId,getPet=true,petSlot=petSlot}).pet;
+        if(pet==null || !NativePetField.CanPickup(petSlot,item.IsMeso)) return false;
+        if(NativePetItems.ExcludesPickup(GameSession.Server.Db,GameSession.CharacterId,item.IsMeso ? 0 : item.ItemId)) return false;
+        return TryPickup(item,petSlot);
+    }
+    bool TryPickup(MapItem item,int petSlot)
     {
         var actor = Looter();
         if (item == null || actor == null) return false;
         if (item.mapId != CurrentMapId) return false;
         // 源端 Character.pickupItem：400ms 延迟、canBePickedBy、背包空间、addFromDrop/gainMeso
         var player=runtime.Player(GameSession.CharacterId);
-        int before=player.character.record.meso;
-        bool picked=MapItemPickup.PickupItem(item, actor, (long)(Time.realtimeSinceStartup * 1000));
-        if (picked) GameSession.ApplyGroundPickup(player,player.character.record.meso-before);
+        long before=player.character.record.meso;
+        int itemId=item.ItemId, quantity=item.Quantity;
+        bool isMeso=item.IsMeso;
+        bool picked=MapItemPickup.PickupItem(item, actor, (long)(Time.realtimeSinceStartup * 1000),petSlot);
+        if (picked)
+        {
+            long mesoGain = player.character.record.meso-before;
+            GameSession.ApplyGroundPickup(player,mesoGain);
+            NativeGainNotice.Pickup(isMeso ? 0 : itemId, isMeso ? mesoGain : quantity);
+        }
         return picked;
     }
 }

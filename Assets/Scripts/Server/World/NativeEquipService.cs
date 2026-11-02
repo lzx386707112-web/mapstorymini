@@ -15,6 +15,7 @@ public sealed class EquipPatchRequest
     public long? expiration;
     public int starLevel, starCount, maxStar;
     public string owner;
+    public string expandAttribute4;
     public int str, dex, int_, luk, hp, mp, watk, matk, wdef, mdef, acc, avoid, hands, speed, jump, upgradeslots;
     public int scrollId, scrollPosition, vegaItemId, cashItemId;
     public bool whiteScroll;
@@ -84,6 +85,7 @@ public static class NativeEquipService
         eq["starCount"] = (long)Math.Max(0, r.starCount);
         eq["maxStar"] = (long)Math.Max(0, r.maxStar);
         if (r.owner != null) row["owner"] = r.owner;
+        if (r.expandAttribute4 != null) eq["expandAttribute4"] = r.expandAttribute4;
 
         db.Save();
         return new EquipPatchResponse { inventory = CharService.Load(db, r.characterId).inventory };

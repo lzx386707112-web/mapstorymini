@@ -109,3 +109,24 @@ quest=0/−1不限制；未接取仅允许Check/0明确列出的接取前收集�
 NativeGameplayFixChecks.Run退出0：包括原IMG墓碑600px起点、880ms落地、land保持和2.2秒确认阶段。
 compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0。全量NPC Mock运行889条790通过，27 runFail及72 Java interop缺口与此前基线一致，不能称全量脚本验证通过。
 死亡层叠尚无EXE逐帧画面oracle；未打包APK、未做Android实机验收。EXP主条方案仍待用户选择，不以HP/MP通过代替EXP验证。
+
+## 2026-10-31 宠物拾取链路补接
+
+EXE身份沿用binary-and-tools；705C5D→50483A的脚点半开范围x±25/y−50..+10、
+可见落物状态3和每落物3000ms失败重试，证据归档pet-follow-2026-10-31.asm。
+NativePetField依实际磁铁/道具袋装备调用GroundItem.TryPetPickup，绑定落物走既有
+MapItemPickup.PickupItem的原归属/空间/400ms校验；reason5目标由GroundItemBridge解析到
+对应NativePetField.PickupTarget，不能飞向人物。局部掉落仍复用既有本地入库路径。
+服装/金币/道具实际入库、卸下磁铁停止拾取的Unity隔离回归已通过；绑定落物路径尚未
+Android实机验收，过滤配置、扩大范围/扫落物主动寻路未完成。详见pet-field-and-equipment.md。
+
+## 2026-10-31 NX卡拾取路径纠正
+
+服务端MapItemPickup已有源Character.pickupItem规则：4031865每张100、4031866每张250，乘实际quantity，
+直接gainCash(NX_CREDIT=1)，不占背包。原本本地GroundItem漏掉此分类而AddItem；权威GroundItemBridge的
+BotActorLooter也未配置GainNxCredit钩子。两处现连接CashOperation.AdjustBalance的真实账号余额，
+本地余额请求失败保留落物。验证见docs/pet-review/four-feedback-verification.md。
+
+## 2026-11-01 点券反馈复核
+
+未改已接线的NX发放逻辑。NativePetSceneChecks本轮真实临时账号回归PASS79：4031865数量2余额200，4031866数量2后累计700，均无背包卡；日志docs/four-feedback-pet-20261101.log。补齐既有fixture缺失的GameSession.Server注入，避免新版宠物过滤在测试中空引用。当前代码未复现不入账；未核对反馈APK是否包含10-31修复，也没有Android实机验收。

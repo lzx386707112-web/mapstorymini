@@ -245,16 +245,18 @@ public static class DialogFlow
         return links;
     }
 
+    // ijl15 1000FC30 patches 9A3D81: the native 240px maximum becomes 480px.
     // 9ACC20：超出最大正文区不足 16px 时仍扩大窗口，不启用滚动。
-    public static bool NeedsScroll(float contentHeight) => (int)(contentHeight - 240f) / 8 > 1;
-    public static float BodyHeight(float contentHeight) => NeedsScroll(contentHeight) ? 240f : Mathf.Max(120f, contentHeight);
+    public const float MaxBodyHeight = 480f;
+    public static bool NeedsScroll(float contentHeight) => (int)(contentHeight - MaxBodyHeight) / 8 > 1;
+    public static float BodyHeight(float contentHeight) => NeedsScroll(contentHeight) ? MaxBodyHeight : Mathf.Max(120f, contentHeight);
 
     // ——————————————— 绘制 ———————————————
     // 返回 >= 0 表示玩家点了这个选项号；-1 表示没点。
     // selected 是原端的 +0xF4（当前选项链接号，-1 = 未选中）：绘制时只有它的行首标记
     // 换成 dot1（红），其余用 dot0（浅灰）；鼠标移到选项上（0x9ABA42）也会改写它。
     public static int DrawPane(Rect window, DialogContent content, ref float scroll, float reservedHeight,
-        bool input, ref int selected)
+        bool input, ref int selected, bool revealSelection = false)
     {
         EnsureStyles();
         if (content == null) return -1;
@@ -290,6 +292,7 @@ public static class DialogFlow
             if (Mathf.Abs(wheel) > .01f)
                 scroll = Mathf.Clamp(scroll - Mathf.Round(wheel) * 16f, 0f, maxScroll);
         }
+        local = Pointer.Pos - inner.position + new Vector2(1f, scroll + 1f);
 
         // 原端 0x9AC040 只在鼠标移动时把命中项的链接号写进 +0xF4，不是每帧按位置覆盖，
         // 否则停在同一行按上下键会被悬停拽回去。
@@ -310,7 +313,7 @@ public static class DialogFlow
         else if (!inside) hoverKnown = false;
 
         // 上下键把选中项移出可见区时滚动过去（0x9AC38E → 0x9AC3B4）：按 8 的整数倍滚。
-        if (maxScroll > 0f && selected >= 0)
+        if (maxScroll > 0f && selected >= 0 && revealSelection)
         {
             for (int i = 0; i < layout.Spans.Count; i++)
             {
@@ -323,6 +326,7 @@ public static class DialogFlow
                 break;
             }
         }
+        local = Pointer.Pos - inner.position + new Vector2(1f, scroll + 1f);
 
         GUI.BeginClip(inner);
         for (int i = 0; i < layout.Spans.Count; i++)

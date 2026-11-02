@@ -31,14 +31,17 @@ public sealed class BotPreload : MonoBehaviour
         // 三个大 JSON 没解析完就别碰：BotWarmup.Root() 会 Join 后台线程，
         // 等于把整段解析搬回主线程（这正是要避免的卡顿）。
         if (!BotWarmup.Ready("Bot/Items") || !BotWarmup.Ready("Bot/SoloMapling") ||
-            !BotWarmup.Ready("Bot/Maps")) return;
+            !BotWarmup.Ready("Bot/Maps") ||
+            !BotWarmup.Ready("Bot/ReactorTemplates") || !BotWarmup.Ready("Bot/ReactorDrops")) return;
 
         if (!built)
         {
             built = true;
             try
             {
+                var buildWatch=System.Diagnostics.Stopwatch.StartNew();
                 var bots = server.Bots;      // 首次访问即构造；构造完保持不动，进图直接可用
+                FileLog.Note("[Bot/Preload] runtime_ctor_ms="+buildWatch.ElapsedMilliseconds);
                 Debug.Log("[Bot] 运行时已预建：假人 " + BotRegistry.Count() + " 个");
             }
             catch (System.Exception e)
@@ -50,7 +53,13 @@ public sealed class BotPreload : MonoBehaviour
         }
 
         // 已经进图：驱动权交给 FieldDirector.TickBots（它每帧推同一个 Drive），这里退场。
-        if (GameSession.InGame) { finished = true; Destroy(this); return; }
+        // 退场前把组队任务剩余分片一次排完：逐帧 PrefetchStep 可能没跑完 37 张（玩家秒点进游戏 /
+        // IsMarketStartupComplete 提前置位），漏掉的分片进图后就要在主线程读 TextAsset。
+        if (GameSession.InGame)
+        {
+            Server.Bot.Types.Pq.PqDirector.PrefetchAll();
+            finished = true; Destroy(this); return;
+        }
 
         // 兜底的计时必须在这里累加，不能放到下面 Drive 之后：纸娃娃预合成一旦卡住
         // （StandReady 永远不为真），下面那句 return 每帧都在原地打转，计时器永远走不到
@@ -58,6 +67,9 @@ public sealed class BotPreload : MonoBehaviour
         // 100% CPU、画面钉死在加载页、日志停在 [Art] ready 之前的那个死循环。
         warmupSeconds += Time.unscaledDeltaTime;
         bool timedOut = warmupSeconds >= MaxWarmupSeconds;
+        // 组队任务分片预热不能等纸娃娃：StandReady 迟迟不置位时下面那句 return 会让
+        // 预热一帧都推不动，进图就得现场读 TextAsset。放在检查之前，每帧都推进。
+        Server.Bot.Types.Pq.PqDirector.PrefetchStep();
 
         // 等纸娃娃把 stand 帧铺完再建假人：顺序必须是「纹理先就绪 → 再建假人 → 进图摆视图」。
         // 反过来的话，假人先建好、纹理没就绪，进图那一刻 BotField.Create 会现场 CPU 合成，
@@ -70,6 +82,9 @@ public sealed class BotPreload : MonoBehaviour
         try
         {
             BotWorkPump.BeginFrame();
+            // 组队任务四副本的 7 个地图分片在加载页逐帧排进后台解析：走到入口时已 Ready，
+            // 不会有「现场解 JSON → 主线程卡几秒」。一次只推一张，不占满加载页单帧。
+            Server.Bot.Types.Pq.PqDirector.PrefetchStep();
             server.Bots.Drive((long)(Time.realtimeSinceStartup * 1000f));
         }
         catch (System.Exception e)
@@ -80,6 +95,7 @@ public sealed class BotPreload : MonoBehaviour
         }
         if (timedOut || Server.Bot.Environment.BotEnvironment.IsMarketStartupComplete)
         {
+            Server.Bot.Types.Pq.PqDirector.PrefetchAll();
             finished = true;
             Debug.Log("[Bot] 假人预热完成：在场 " + BotRegistry.Count() + " 个，进图不再生成" +
                       (timedOut ? "（超时放行）" : ""));

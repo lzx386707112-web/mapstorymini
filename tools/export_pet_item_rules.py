@@ -29,6 +29,12 @@ for path in pet_paths:
     info=image.root.get("info")
     if info:
         pets[str(int(path.stem))]={key:getattr(info.get(key),"value",default) for key,default in (("hungry",1),("evol1",0))}
-result={"sources":{str(path):hashlib.sha256(path.read_bytes()).hexdigest() for path in (img_path,java,*pet_paths)},"tameness":thresholds,"foods":foods,"pets":pets}
+equip_paths=sorted((project.parent/"MapleDashResources/Data/Character/PetEquip").glob("*.img"))
+equips={}
+for path in equip_paths:
+    image=WzImage.from_bytes(path.read_bytes(),key=WzKey.for_region("GMS"));image.parse()
+    if image.truncated or image.parse_warnings: raise ValueError("Incomplete pet equip IMG: "+str(path))
+    equips[str(int(path.stem))]=[int(n.name) for n in image.root.children() if n.name.isdigit()]
+result={"sources":{str(path):hashlib.sha256(path.read_bytes()).hexdigest() for path in (img_path,java,*pet_paths,*equip_paths)},"tameness":thresholds,"foods":foods,"pets":pets,"equips":equips}
 (project/"Assets/Resources/PetItemRules.json").write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n")
 print(f"foods={len(foods)} tameness={len(thresholds)} pets={len(pets)}")

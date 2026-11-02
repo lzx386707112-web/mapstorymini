@@ -32,6 +32,13 @@ public static class LoginFlowChecks
     static void Call(object o, string name)
         => o.GetType().GetMethod(name, Priv, null, Type.EmptyTypes, null).Invoke(o, null);
 
+    static object Call(object o, string name, params object[] args)
+    {
+        var types = new Type[args.Length];
+        for (int i = 0; i < args.Length; i++) types[i] = args[i].GetType();
+        return o.GetType().GetMethod(name, Priv, null, types, null).Invoke(o, args);
+    }
+
     public static void Run()
     {
         string path = Path.Combine(Path.GetTempPath(), "mapledash-login-" + Guid.NewGuid() + ".json");
@@ -208,6 +215,35 @@ public static class LoginFlowChecks
                 "effect/1 解析出 5 帧（光柱）", "" + ClipFrames(flow, "UI/Login.img/CharSelect/effect/1"));
             Check(ClipFrames(flow, "UI/Login.img/WorldSelect/channel/chSelect") == 4,
                 "chSelect 解析出 4 帧", "" + ClipFrames(flow, "UI/Login.img/WorldSelect/channel/chSelect"));
+
+            // ── 9. 选中槽位播走路、未选中仍站立 ──
+            // 口径来源：源端表现（用户给定）。exe 侧动作切换点未定位（动作名表 0xbec620 的 getter
+            // 0x4a8ce6 的调用者都不在登录区，登录区也没有 walk1/stand1 的字符串池引用），
+            // 所以这里只锁「行为」，不谎称已确证地址。
+            Log("════ 9. 选中角色播走路动作 ════");
+            var list = GameSession.CharList(GameSession.World, GameSession.Channel);
+            var chars = list?.characters;
+            Check(chars != null && chars.Count > 0, "选角列表拿得到角色（用于验证动作）",
+                "count=" + (chars != null ? chars.Count : 0));
+            if (chars != null && chars.Count > 0)
+            {
+                var rec = chars[0];
+                string[] ids = GameSession.PreviewAppearance(rec);
+                var standSprite = Call(flow, "CharPreview", rec, false);
+                var walkSprite = Call(flow, "CharPreview", rec, true);
+                Check(standSprite != null && walkSprite != null, "站立、走路两帧都合成成功",
+                    (standSprite == null ? "stand=null " : "") + (walkSprite == null ? "walk=null" : ""));
+                Check(standSprite != null && walkSprite != null && !ReferenceEquals(standSprite, walkSprite),
+                    "选中槽位换走路动作（与站立的不是同一张帧）", "");
+
+                // 「一直重复走路」= 走路本身是多帧循环，不是静止单帧。
+                var frames = new System.Collections.Generic.HashSet<int>();
+                for (int i = 0; i < 24; i++) frames.Add(WzCharacter.AppearanceFrame(ids, i * 0.05f, true));
+                Check(frames.Count >= 2, "走路是多帧循环（不是单帧静止）", "frames=" + frames.Count);
+                var standFrames = new System.Collections.Generic.HashSet<int>();
+                for (int i = 0; i < 24; i++) standFrames.Add(WzCharacter.AppearanceFrame(ids, i * 0.05f, false));
+                Check(standFrames.Count >= 2, "站立本身也是多帧（呼吸），不是被改坏", "frames=" + standFrames.Count);
+            }
 
             Log("完成  通过=" + pass + " 失败=" + fail);
         }

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 // Rules translated from BuddylistModifyHandler, Party.createParty,
 // PartySearchStartHandler, MessengerHandler and the chat handlers.
 // This transport hosts one active character; other saved characters are offline.
-public enum SocialOperation { Read, AddBuddy, AcceptBuddy, DeleteBuddy, CreateParty, LeaveParty, InviteParty, SearchParty, StopSearch, OpenMessenger, CloseMessenger, InviteMessenger, SendChat, AddMonsterCard, SetBookCover, AcceptMessenger, DeclineMessenger, AcceptParty, DeclineParty, ExpelParty, ChangePartyLeader, SetBuddyCapacity }
+public enum SocialOperation { Read, AddBuddy, AcceptBuddy, DeleteBuddy, CreateParty, LeaveParty, InviteParty, SearchParty, StopSearch, OpenMessenger, CloseMessenger, InviteMessenger, SendChat, AddMonsterCard, SetBookCover, AcceptMessenger, DeclineMessenger, AcceptParty, DeclineParty, ExpelParty, ChangePartyLeader, SetBuddyCapacity, CharacterInfo }
 public enum NativeChatChannel { All, Whisper, Party, Buddy, Guild, Alliance, Spouse, Messenger }
 public sealed class SocialRequest
 {
@@ -29,7 +29,9 @@ public sealed class SocialMember
 }
 public sealed class SocialResponse
 {
+    public NativeCharacterInfoData characterInfo;
     public bool ok = true, party, searching, messenger;
+    public NativeCommandResult command;
     public string error = "";
     public int capacity;
     public int bookLevel = 1, bookCover;
@@ -45,12 +47,13 @@ public sealed class SocialResponse
 public sealed class NativeSocialService
 {
     readonly DbStore db;
+    public readonly NativeGmCommands Commands;
     public Action<SocialRequest> ChatAccepted;
     public readonly Server.Bot.Social.BotMessenger BotMessenger = new Server.Bot.Social.BotMessenger();
     public readonly Server.Bot.BotPartyService Parties;
     int messengerOwner, searchOwner;
     readonly Dictionary<int, long> lastChat = new Dictionary<int, long>();
-    public NativeSocialService(DbStore db) { this.db = db; Parties = new Server.Bot.BotPartyService(db); }
+    public NativeSocialService(DbStore db) { this.db = db; Commands = new NativeGmCommands(db); Parties = new Server.Bot.BotPartyService(db); }
     public void EndSession(int characterId)
     {
         Parties.EndSession(characterId); if (searchOwner == characterId) searchOwner = 0;
@@ -62,7 +65,18 @@ public sealed class NativeSocialService
     {
         var self = CharactersDao.FindById(db, request.characterId);
         if (self == null) return new SocialResponse { ok = false, error = "角色不存在" };
+        if (request.operation == SocialOperation.CharacterInfo)
+        {
+            var actor = request.memberId == 0 || request.memberId == self.id ? null : Parties.Get(request.memberId);
+            var viewer = Parties.Get((int)self.id);
+            if (request.memberId != 0 && request.memberId != self.id && (actor == null || !actor.online || actor.world != self.world || actor.mapId != self.map))
+                return new SocialResponse { ok = false, error = "该角色不在当前地图" };
+            if (actor != null && viewer != null && actor.channel != viewer.channel)
+                return new SocialResponse { ok = false, error = "该角色不在当前频道" };
+            return new SocialResponse { characterInfo = NativeCharacterInfoData.Read(db, self, actor) };
+        }
         string error = null;
+        NativeCommandResult command = null;
         switch (request.operation)
         {
             case SocialOperation.SetBuddyCapacity:
@@ -118,7 +132,14 @@ public sealed class NativeSocialService
                     else if (!BotMessenger.InviteMember(Parties.Actor(self),target)) error="无法发出聊天邀请";
                 }
                 break;
-            case SocialOperation.SendChat: error = ValidateChat(self, request); break;
+            case SocialOperation.SendChat:
+                if (NativeGmCommands.IsCommand(self, request.text))
+                {
+                    command = request.text.Length > 127 ? NativeCommandResult.Fail("聊天内容不能超过127个字符") : Commands.Execute(self, request.text);
+                    if (!command.ok) error = command.error;
+                }
+                else error = ValidateChat(self, request);
+                break;
             case SocialOperation.AddMonsterCard:
                 if (request.cardId / 10000 != 238) { error = "无效怪物卡片"; break; }
                 var card = db.Table("monsterbook").Find(r => DbStore.Int(r, "charid") == self.id && DbStore.Int(r, "cardid") == request.cardId);
@@ -130,7 +151,7 @@ public sealed class NativeSocialService
                 self.monsterbookcover = request.cardId;
                 CharactersDao.Save(db, self); db.Save(); break;
         }
-        var response = new SocialResponse { ok = error == null, error = error ?? "", capacity = self.buddyCapacity,
+        var response = new SocialResponse { command = command, ok = error == null, error = error ?? "", capacity = self.buddyCapacity,
             party = Parties.For((int)self.id) != null, searching = searchOwner == self.id, messenger = messengerOwner == self.id || BotMessenger.Contains((int)self.id),
             messengerInvite = BotMessenger.Invitation((int)self.id), messengerInviter = BotMessenger.Inviter((int)self.id),
             messengerMembers = BotMessenger.Members((int)self.id), messengerMessages = BotMessenger.Messages((int)self.id, request.afterMessengerMessage) };

@@ -158,6 +158,14 @@ namespace Server.Bot
         // 各类型的默认 tick 周期（ms），子类可重写
         protected virtual long DefaultPeriodMs() => 2000 + random.Next(4000);
 
+        /// <summary>
+        /// 这个类型生成时是否跳过出生编舞。ManuallyStartBot 默认把首 tick 推迟
+        /// SpawnChoreographyMaxMs(7s)+错峰，为的是等 portalenterdrop 播完；没有编舞的类型
+        /// （例如组队任务入口假人 CreateBotPollReadiness 的 playArrival=false）等这 7~10 秒
+        /// 就是纯空转，表现为「假人站住好几秒才开始动」。
+        /// </summary>
+        public virtual bool SkipsSpawnChoreography => false;
+
         // —— 源端钩子 ——
         public virtual bool IsAvailableForAmbientActions() => false;
         public virtual void DisplayCommands(BotActor player)

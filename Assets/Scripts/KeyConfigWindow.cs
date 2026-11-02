@@ -347,6 +347,7 @@ public static class KeyConfigWindow
         EnsurePos();
         pos.x = Mathf.Clamp(pos.x, 0, Mathf.Max(0, UiKit.W - 629 * S));
         pos.y = Mathf.Clamp(pos.y, 0, Mathf.Max(0, UiKit.H - 373 * S));
+        NativeUi.RegisterWindow("KeyConfigWindow", R(0, 0, 629, 373), () => Visible);
         bool tick = confirmMode == 0 && Event.current.type == EventType.Repaint && !(quickEdit && QuickRect.Contains(Pointer.Pos));
         if (tick && Input.GetKeyDown(KeyCode.Escape))
         {

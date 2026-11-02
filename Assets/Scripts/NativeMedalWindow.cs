@@ -11,7 +11,9 @@ public static class NativeMedalWindow {
         string why = EquipCatalog.WhyNot(item, Profile.Attributes, Profile.JobId); if (!unequip && why != null) { BottomBar.Toast(why); return; }
         var result = GameSession.Net.ChangeInventory(new InventoryChangeRequest { characterId = GameSession.CharacterId, itemId = item, equip = true, equipSlot = -49, quantity = unequip ? 0 : 1 });
         if (!result.ok) { BottomBar.Toast(result.error); return; }
-        GameSession.Character.inventory = result.inventory; Profile.SetEquipSlot(EquipSlot.Medal, unequip ? 0 : item);
+        GameSession.Character.inventory = result.inventory;
+        GameSession.ApplyInventoryToProfile();
+        Profile.Save();
     }
     public static void Draw() {
         if (!Visible) return;

@@ -59,7 +59,8 @@ public sealed class NativeDamageNumber : MonoBehaviour
         number.started = Time.realtimeSinceStartupAsDouble;
     }
 
-    public static void Show(Vector3 position, int amount, string color, float scale)
+    // 伤害是 long：单段可以超过 21 亿，飘字按原样逐位取图
+    public static void Show(Vector3 position, long amount, string color, float scale)
     {
         string group = color == "cri" ? "NoCri" : color == "blue" ? "NoBlue" : color == "violet" ? "NoViolet" : "NoRed";
         var root = Root(color);

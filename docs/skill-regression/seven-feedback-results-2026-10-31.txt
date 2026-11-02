@@ -1,0 +1,12 @@
+2026-10-31 seven gameplay feedback verification
+BeiDou.exe SHA256 1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2
+x86 oracle: 3600 cases PASS
+[GameplayFeedbackChecks] 27 mob pose/frame combinations, 19110 overlap pixels
+[GameplayFeedbackChecks] PASS 22735
+[NativePetSceneChecks] PASS 79
+通过 707 / 失败 0
+dotnet unity-compile-check Rebuild: 0 warnings, 0 errors
+script-harness --pack: pack=2779 npc=889 quest=470 chars=5903KiB parseFail=0 mangled=0
+script-harness --run: files=889 ok=790 parseFail=0 runFail=27 javaInterop=72 dialogs=1218 disposed=746; exit=1 (mock/API limitations)
+git diff --check: PASS
+No Android device/APK verification in this run.

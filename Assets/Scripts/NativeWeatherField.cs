@@ -131,7 +131,18 @@ public sealed class NativeWeatherField : MonoBehaviour
         }
         if(HasSky) view.PromoteWeatherBacks(mapNode);
         ground=gameObject.AddComponent<NativeWeatherGround>();
-        ground.Bind(NativeMapView.LoadMap(new FieldMap{id=mapId}));
+        // Ground weather only uses footholds. Loading the complete field here also
+        // resolves every NPC avatar/head during an already expensive map transition.
+        var geometry = new FieldMap { id = mapId };
+        var footholds = mapNode.Get("foothold");
+        if (footholds != null)
+            foreach (var layer in footholds.Children)
+                foreach (var group in layer.Children)
+                    foreach (var f in group.Children)
+                        geometry.footholds.Add(new FieldFoothold { id = int.Parse(f.Name),
+                            layer = int.Parse(layer.Name), group = int.Parse(group.Name),
+                            x1 = f.Int("x1"), y1 = f.Int("y1"), x2 = f.Int("x2"), y2 = f.Int("y2") });
+        ground.Bind(geometry);
         sound=gameObject.AddComponent<NativeWeatherSound>();
         particles=gameObject.AddComponent<NativeWeatherParticles>();
     }

@@ -58,7 +58,10 @@ namespace Server.Bot
             BotEnvironment.PopulateMarketRooms = shops.PopulateRooms;
             partyGrind = new BotPartyGrindService(this.parties,GetMap,null,db);
             BotTypeManager.PartyGrind = partyGrind;
-            observers = new BotObserverTracker(() => players.Values, GetMap, BotWorldGraph.Load());
+            // 观察器每 2 秒 Refresh 一次，走阻塞 GetMap 的话：分片没就绪会 Join 解析线程，
+            // 分片就绪但还没登记 MapService 又会重复 Build 一张 MapRuntime（519 foothold，几十 ms）。
+            // 换成「已注册就命中、没就绪就返回 null」的非阻塞取法，Refresh 里本来就有 null 兜底。
+            observers = new BotObserverTracker(() => players.Values, NonBlockingMap, BotWorldGraph.Load());
             townSpawner = new BotTownSpawner(new BotTownPresenceConfig(BotResources.Load()), TryGetMap);
             // EnvironmentManager（市场环境启动编排）的地图加载/城镇游荡钩子
             BotEnvironment.GetMap = GetMap;
@@ -87,6 +90,7 @@ namespace Server.Bot
             reactorScripts = new NativeReactorScriptService(key=>MapReactorService.ScriptSource?.Invoke(key));
             reactorScripts.Message = (map,type,text)=>MapReactorService.ScriptMessage?.Invoke(map,type,text);
             reactorScripts.EventInstance = map=>MapReactorService.EventInstance?.Invoke(map);
+            reactorScripts.Player = owner=>MapReactorService.Player?.Invoke(owner);
             reactorScripts.Error = error=>MapReactorService.ScriptError?.Invoke(error);
             MapReactorService.Act = (reactor,owner)=>reactorScripts.Act(reactor,owner);
             Types.Opq.OpqOrchestrator.LeaderMapOf = id =>
@@ -96,6 +100,33 @@ namespace Server.Bot
                 var leader = party == null ? null : this.parties.Get(party.leader);
                 return member != null && leader != null && leader.online &&
                     leader.world == member.world && leader.channel == member.channel ? leader.mapId : -1;
+            };
+            // 组队任务假人：地图装载一律走「非阻塞」通道。
+            // 旧接线直接调 GetMap → BotNavigationMapLoader.Shard(..., allowBlocking:true)
+            // → BotWarmup.Root() 会 Join 后台解析线程，把 0.3~1.4MB 分片的 JSON 解析整个搬到
+            // 主线程，就是「走到假人面前卡几秒」的来源。分片没解好返回 false，由 PqDirector
+            // 下一帧再问（LoadText / 解析在后台，主线程一帧都不等）。
+            Types.Pq.PqDirector.LoadMap = mapId =>
+            {
+                if (MapService.Get(mapId) != null) return true;
+                try { return TryGetMap(mapId, out _, false) == BotMapState.Ready; }
+                catch (ArgumentException) { return false; }
+            };
+            // 加载页把组队任务用到的 7 个分片提前排进后台解析，走到入口时已经 Ready。
+            // PinShard 必须先于「已加载就 return」：pin 只是登记一个路径、零开销，但漏了它
+            // 分片就会被 LRU 挤出，副本内换阶段时重新在主线程读 TextAsset（反复卡顿的根因）。
+            var prefetchedShards = new HashSet<string>();
+            Types.Pq.PqDirector.PrefetchMap = id =>
+            {
+                try
+                {
+                    string path = maps.ShardPath(id);
+                    if (!string.IsNullOrEmpty(path)) maps.PinShard(path);
+                    if (MapService.Get(id) != null) return;
+                    // 同一分片只排一次；BotWarmup.Start 本身幂等，pin 之后也不会被驱逐重读。
+                    if (!string.IsNullOrEmpty(path) && prefetchedShards.Add(path)) BotWarmup.Start(path);
+                }
+                catch (ArgumentException) { /* 这张图索引里内联几何，没有分片可预热 */ }
             };
             observers.Start();
             // ≡ 源端经 BotControlController→BotControlService.requestMarketStartup 后台触发；
@@ -122,8 +153,19 @@ namespace Server.Bot
             if (disposed || string.IsNullOrWhiteSpace(text) || text[0] == '/' || !players.TryGetValue(playerId, out var player)) return false;
             BotTypeManager.Messages.Add(new Social.ChatMessage(player, text), Social.QueueType.PRIMARY);
             BotTypeManager.Events.Publish(Events.EventFactory.ChatGeneral(player, text));
+            // 组队任务入口的关键词（求组/缺一/q1/开个牧师…）：招募图上有人喊就开始凑队。
+            Types.Pq.PqDirector.OnChat(player, text);
             return true;
         }
+        // 高频只读用途（观察/巡逻）：绝不 Join、绝不重复 Build。没就绪就返回 null，
+        // 由调用方下一帧再问；就绪时会顺手登记进 MapService，之后直接命中缓存。
+        MapRuntime NonBlockingMap(int id)
+        {
+            var map = MapService.Get(id);
+            if (map != null) return map;
+            return TryGetMap(id, out var loaded, false) == BotMapState.Ready ? loaded : null;
+        }
+
         public MapRuntime GetMap(int id)
         {
             var map = MapService.Get(id);
@@ -143,7 +185,7 @@ namespace Server.Bot
             }
             bool ready;
             try { ready = maps.TryGeometry(id, out map); }
-            catch (ArgumentException) { map = null; return BotMapState.Missing; }
+            catch (Exception) { map = null; return BotMapState.Missing; }
             if (!ready || map == null) { map = null; return BotMapState.Pending; }
             MapService.Register(map); registeredMaps.Add(id);
             return BotMapState.Ready;
@@ -154,7 +196,10 @@ namespace Server.Bot
             if (actor == null || portal == null || !portal.enabled) return false;
             try
             {
-                var destination = GetMap(portal.targetMap);
+                // 假人进门发生在 bots.Drive 的移动 tick 里：走阻塞 GetMap 时，目标图分片
+                // 没解析完就会 Join 后台线程，一次卡掉整帧。没就绪就这一帧不走，下一帧再试。
+                var destination = NonBlockingMap(portal.targetMap);
+                if (destination == null) return false;
                 var exit = destination.portals.Find(p => p.name == portal.targetName) ?? destination.portals.Find(p => p.id == 0);
                 if (exit == null) return false;
                 actor.x = exit.x; actor.y = exit.y;
@@ -187,7 +232,12 @@ namespace Server.Bot
             if (changedMap)
             {
                 actor.MarkMapEntry();
-                GetMap(mapId); observers.MarkObservedNow(mapId); observers.Refresh();
+                // 分片确实不在资源包里时 GetMap/Refresh 会抛 ArgumentException。以前它会一路冒到
+                // TickBots，每帧刷异常；这里就地吞掉，角色位置/队伍绑定照常同步。
+                // 非阻塞：分片还在后台解析时只登记观察，绝不 Join / 现场读 TextAsset。
+                // 解析完那一帧 TryGetMap 会把 MapRuntime 注册进 MapService，后续调用直接命中。
+                try { TryGetMap(mapId, out _, false); observers.MarkObservedNow(mapId); observers.Refresh(); }
+                catch (ArgumentException) { observers.MarkObservedNow(mapId); }
                 // BotAutoSpawner.onPlayerEnterMap只确保standalone，不擅自按地图创建假人。
                 BotClient.EnsureStandaloneClient(BotClient.GetBotClient()?.db);
                 BotTypeManager.Events.Publish(new Events.GameEvent(actor, Events.EventType.MAP_ENTERED));
@@ -230,6 +280,9 @@ namespace Server.Bot
             reactorScripts.Dispose();
             Types.Opq.OpqOrchestrator.LeaderMapOf = null;
             Types.Opq.OpqOrchestrator.ShutdownRun();
+            Types.Pq.PqDirector.Reset();
+            Types.Pq.PqDirector.LoadMap = null;
+            Types.Pq.PqDirector.PrefetchMap = null;
             BotMovementService.EnterPortal = null; BotMovementService.ResolveProfile = null;
             BotMovementService.IsObserved = null; BotMovementService.Broadcast = null; BotMovementPlayback.Broadcast = null;
             BotTypeManager.Output.Clear(); players.Clear();

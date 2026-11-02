@@ -8,7 +8,7 @@ public enum CommunityOperation {
     Read, CreateGuild, ConfirmGuild, InviteGuild, AcceptGuild, LeaveGuild, DisbandGuild,
     ExpelGuild, GuildRank, GuildTitles, GuildNotice, GuildEmblem, ExpandGuild,
     InviteFamily, AcceptFamily, SeparateFamily, FamilyPrecepts, UseFamily,
-    SetBoard, CloseBoard, AnswerSummon, RecordKill
+    SetBoard, CloseBoard, AnswerSummon, RecordKill, ReadFamilyTree
 }
 public sealed class CommunityRequest {
     public int characterId, targetId, value, logo, logoColor, background, backgroundColor;
@@ -29,12 +29,15 @@ public sealed class CommunityMember {
 public sealed class CommunityResponse {
     public bool ok = true;
     public string error = "", guildName = "", notice = "", precepts = "", board = "";
-    public int guildId, capacity, gp, familyId, reputation, todayRep, totalRep, meso, map;
+    public int guildId, capacity, gp, familyId, reputation, todayRep, totalRep, map;
+    public long meso;
     public int guildInvite, familyInvite, guildConfirmation, summonFrom;
     public string[] titles = new string[5];
     public List<CommunityMember> guild = new List<CommunityMember>(), family = new List<CommunityMember>();
     public List<int> used = new List<int>();
     public List<int> couponBuffs = new List<int>();
+    public int treeTarget;
+    public List<CommunityMember> familyTree = new List<CommunityMember>();
     public double expRate = 1, dropRate = 1, mesoRate = 1;
     // 家族 Buff 的掉落倍率（源端 getBossDropRate = getDropRate()/world × world.bossDropRate，
     // boss 走这条不含世界 drop_rate 的分量）
@@ -52,6 +55,7 @@ public sealed class NativeCommunityService {
     sealed class GuildFormation { public string name; public long expires; public HashSet<int> members = new HashSet<int>(), accepted = new HashSet<int>(); }
     public static readonly int[] FamilyCosts = { 300, 500, 700, 800, 1000, 1200, 1500, 2000, 2500, 4000, 5000 };
     public NativeCommunityService(DbStore db) { this.db = db; }
+    public Func<int, int, bool> SameChannel;
     static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     public void BeginSession(int id) { online.Add(id); }
     public void EndSession(int id) {
@@ -87,20 +91,44 @@ public sealed class NativeCommunityService {
     DbRow Family(int id) => db.Table("family_character").Find(r => DbStore.Int(r, "cid") == id);
     List<DbRow> FamilyMembers(int id) => db.Table("family_character").Select(r => DbStore.Int(r, "familyid") == id);
     void SetCharacter(int id, string column, int value) => db.Table("characters").Update(r => DbStore.Int(r, "id") == id, new DbRow { [column] = (long)value });
-    void Meso(CharRecord c, int amount) { c.meso += amount; SetCharacter((int)c.id, "meso", c.meso); }
+    void SetCharacterLong(int id, string column, long value) => db.Table("characters").Update(r => DbStore.Int(r, "id") == id, new DbRow { [column] = value });
+    void Meso(CharRecord c, long amount) { c.meso = Math.Max(0, c.meso + amount); SetCharacterLong((int)c.id, "meso", c.meso); }
     void Membership(int id, int guild, int rank) { SetCharacter(id, "guildid", guild); SetCharacter(id, "guildrank", rank); }
-    void ResetDaily(DbRow row) {
+    bool ResetDaily(DbRow row) {
         long midnight = new DateTimeOffset(DateTime.Today).ToUnixTimeMilliseconds();
-        if (DbStore.Long(row, "lastresettime") >= midnight) return;
+        if (DbStore.Long(row, "lastresettime") >= midnight) return false;
         row["lastresettime"] = Now; row["todaysrep"] = 0L; row["reptosenior"] = 0L;
         int cid = DbStore.Int(row, "cid");
         db.Table("family_entitlement").Delete(r => DbStore.Int(r, "charid") == cid && DbStore.Long(r, "timestamp") < midnight);
+        return true;
     }
     public CommunityResponse Handle(CommunityRequest r) {
         var self = Character(r.characterId);
         if (self == null) return new CommunityResponse { ok = false, error = "角色不存在" };
         string error;
         lock (db) {
+            if (r.operation == CommunityOperation.ReadFamilyTree) {
+                var pedigree = Read(self);
+                var target = r.targetId > 0 ? Character(r.targetId) : Find(r.name, self.world);
+                if (!GameConfigDao.GetBool(db, "use_family_system", true) || target == null ||
+                    target.world != self.world || !online.Contains((int)target.id) || Family((int)target.id) == null ||
+                    SameChannel != null && !SameChannel((int)self.id, (int)target.id)) {
+                    pedigree.ok = false; pedigree.error = "目标角色不在线或尚未加入学院"; return pedigree;
+                }
+                pedigree.treeTarget = (int)target.id;
+                foreach (var row in FamilyMembers(DbStore.Int(Family((int)target.id), "familyid"))) {
+                    var member = Character(DbStore.Int(row, "cid"));
+                    if (member == null) continue;
+                    var entry = Member(member); entry.senior = DbStore.Int(row, "seniorid"); pedigree.familyTree.Add(entry);
+                }
+                return pedigree;
+            }
+            // A rates/UI read must not snapshot and serialize the whole database.
+            // Most kills also have no family reputation recipient.
+            var family = Family(r.characterId);
+            if (r.operation == CommunityOperation.Read || r.operation == CommunityOperation.RecordKill &&
+                (r.value <= 1 || family == null || Family(DbStore.Int(family, "seniorid")) == null))
+                return Read(self);
             db.BeginTransaction();
             try { error = Apply(self, r); if (error == null) db.Commit(); else db.Rollback(); }
             catch { db.Rollback(); throw; }
@@ -308,7 +336,8 @@ public sealed class NativeCommunityService {
             foreach (var row in db.Table("characters").Select(x => DbStore.Int(x, "guildid") == c.guildid)) result.guild.Add(Member(Character(DbStore.Int(row, "id"))));
         }
         var family = Family((int)c.id); if (family != null) {
-            ResetDaily(family); result.familyId = DbStore.Int(family, "familyid"); result.reputation = DbStore.Int(family, "reputation"); result.todayRep = DbStore.Int(family, "todaysrep"); result.totalRep = DbStore.Int(family, "totalreputation"); result.precepts = DbStore.Str(family, "precepts");
+            if (ResetDaily(family)) db.Save();
+            result.familyId = DbStore.Int(family, "familyid"); result.reputation = DbStore.Int(family, "reputation"); result.todayRep = DbStore.Int(family, "todaysrep"); result.totalRep = DbStore.Int(family, "totalreputation"); result.precepts = DbStore.Str(family, "precepts");
             foreach (var row in FamilyMembers(result.familyId)) { var m = Character(DbStore.Int(row, "cid")); if (m != null) { var member = Member(m); member.senior = DbStore.Int(row, "seniorid"); result.family.Add(member); } }
             foreach (var row in db.Table("family_entitlement").Select(x => DbStore.Int(x, "charid") == c.id)) result.used.Add(DbStore.Int(row, "entitlementid"));
         }

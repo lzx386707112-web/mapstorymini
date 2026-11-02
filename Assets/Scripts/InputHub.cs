@@ -75,6 +75,15 @@ public static class KeyMap
 
     static readonly List<KeymapEntry> unmapped = new List<KeymapEntry>();
 
+    public static int PetPotion(bool hp) => unmapped.Find(e=>e.key==(hp ? 91 : 92) && e.type==7)?.action ?? 0;
+    public static void BindPetPotion(bool hp,int id)
+    {
+        int key=hp ? 91 : 92;
+        unmapped.RemoveAll(e=>e.key==key && e.type==7);
+        if(id>0) unmapped.Add(new KeymapEntry {key=key,type=7,action=id});
+        GameSession.SaveToDb();
+    }
+
     public static void LoadCharacter(List<KeymapEntry> entries)
     {
         Ensure();
@@ -124,6 +133,7 @@ public static class KeyMap
         for (int i = 0; i < QuickSlots.Count; i++) AppendKeymap(result, occupied, QuickSlots.Action(i));
         foreach (var entry in unmapped)
         {
+            if(entry.type==7 && (entry.key==91 || entry.key==92)) { result.Add(entry); continue; }
             int scan = NativeKeyLayout.ToScanCode(NativeKeyLayout.FromScanCode(entry.key));
             if (scan < 0 || occupied.Contains(scan)) continue;
             result.Add(entry);
@@ -337,6 +347,8 @@ public static class InputHub
             virtualHeld.Remove(k);
         }
     }
+
+    public static bool KeyDown(KeyCode key) => Enabled && KeyPressed(key);
 
     public static bool Held(GameAction a)
     {
@@ -661,7 +673,13 @@ public class InputBridge : MonoBehaviour
         // 屏上虚拟按键（摇杆/十字/按钮）：先把触摸翻译成注入，
         // 后面读 AxisX/Pressed 时已经包含虚拟键的量。
         bool dialogInput = NpcSession.Blocking && !GameSideMenu.Blocking && !BottomBar.ChatFocused;
-        VirtualControls.Tick((playing || dialogInput) && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible);
+        bool chatInput = BottomBar.ChatFocused && !GameSideMenu.Blocking && !NpcSession.Blocking;
+        VirtualControls.Tick((playing || dialogInput || chatInput) && !VirtualControlsEditor.Visible);
+        // Enter is a fixed chat key, including virtual keys; it is not a remappable action.
+        bool chatEnter = game != null && game.state == GameLoop.GameState.Playing && game.player != null &&
+            !NpcSession.Blocking && !ShopWindow.Visible && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible &&
+            !GameSideMenu.Blocking && (InputHub.KeyDown(KeyCode.Return) || InputHub.KeyDown(KeyCode.KeypadEnter));
+        if (chatEnter) { BottomBar.QueueChatEnter(); playing = false; }
         // 在打开 NPC 的分派之前处理已存在的会话，同一按下不能打开又翻页。
         // 上下键在 #L 菜单里移动当前选项（原端 0x9AC104/0x9AC347），和对话键同一条派发路径，
         // 物理方向键和屏上十字键都能用。
@@ -687,7 +705,7 @@ public class InputBridge : MonoBehaviour
             TouchInput.MoveV = 0f;
         }
 
-        if ((playing || dialogInput) && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible)
+        if ((playing || dialogInput) && !VirtualControlsEditor.Visible)
         {
             foreach (var entry in NativeKeyActions.Entries)
             {

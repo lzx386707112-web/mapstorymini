@@ -60,6 +60,7 @@ public static class NativeMarketWindow
         var shop = state?.visiting; if (shop == null) return;
         float scale = BottomBar.S;
         position = NativeUi.ClampWindowPosition(position,new Vector2(525,553),scale);
+        NativeUi.RegisterWindow("NativeMarketWindow", new Rect(position.x*scale,position.y*scale,525*scale,553*scale), () => NativeMarketWindow.Visible);
         var pointer = Pointer.Pos/scale; var matrix = GUI.matrix;
         GUI.matrix = matrix*Matrix4x4.Scale(new Vector3(scale,scale,1));
         try

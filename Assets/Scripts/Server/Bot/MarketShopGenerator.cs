@@ -15,13 +15,15 @@ namespace Server.Bot
     public sealed class MarketSoldItem
     {
         public string buyer;
-        public int itemId, quantity, meso;
+        public int itemId, quantity;
+        public long meso;
     }
 
     public sealed class MarketShop
     {
         public int ownerId, mapId, world, channel, permitId, x, y;
-        public int merchantMeso, purchasedStocks;
+        public long merchantMeso;
+        public int purchasedStocks;
         public string ownerName, description, tier;
         public bool open, playerStore;
         public MarketShopType primary, secondary;

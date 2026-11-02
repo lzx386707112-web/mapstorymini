@@ -81,8 +81,8 @@ namespace Server.Bot
         public void GainMeso(int amount)
         {
             if (amount == 0) return;
-            if (actor is BotCharacter bot) bot.meso = unchecked(bot.meso + amount);
-            else if (actor.character != null) actor.character.record.meso = unchecked((int)(actor.character.record.meso + amount));
+            if (actor is BotCharacter bot) bot.meso = checked(bot.meso + amount);
+            else if (actor.character != null) actor.character.record.meso = checked(actor.character.record.meso + amount);
             Commit();
         }
 

@@ -94,6 +94,8 @@ static class SettingsShell
         }
         if (!Pointer.Down) dragging = false;
 
+        NativeUi.RegisterWindow(background, rect, () =>
+            background.Contains("GameOpt/") ? GameOptWindow.Visible : SysOptWindow.Visible);
         var tex = Art.Tex(background);
         if (tex != null) GUI.DrawTexture(rect, tex);
 
@@ -231,7 +233,7 @@ public static class SysOptWindow
         Slider(r, RowMouse, TrackX, TrackW, 0.5f, 103, false);
         HintRow(r, RowMouse);
 
-        // —— HP / MP 警报：低于阈值时血条/蓝条按 1 秒周期闪 ——
+        // —— HP / MP 警报：低于阈值且数值下降时播放一次原 IMG 警告动画 ——
         int hp = Mathf.RoundToInt(Slider(r, RowHp, TrackX, TrackW, ClientSettings.HpAlarm / 100f, 104, true) * 100f);
         if (hp != ClientSettings.HpAlarm) { ClientSettings.HpAlarm = hp; }
         int mp = Mathf.RoundToInt(Slider(r, RowMp, TrackX, TrackW, ClientSettings.MpAlarm / 100f, 105, true) * 100f);
@@ -369,6 +371,7 @@ public static class ChannelWindow
 
         pos = NativeUi.ClampWindowPosition(pos, new Vector2(W, H), S);
         var r = new Rect(pos.x * S, pos.y * S, W * S, H * S);
+        NativeUi.RegisterWindow("ChannelWindow", r, () => ChannelWindow.Visible);
         if (Event.current.type == EventType.Repaint && Pointer.Pressed &&
             At(r, 0, 0, W, 26).Contains(Pointer.Pos))
         {

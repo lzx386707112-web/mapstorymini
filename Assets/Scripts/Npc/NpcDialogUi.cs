@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using MapleDash.Wz;
+using Server.Bot;
 using UnityEngine;
 
 // 对话窗口 + NPC 任务图标。图片全部来自原版 UI/UIWindow.img/UtilDlgEx。
@@ -57,6 +58,7 @@ public static class NpcDialogUi
         int index = links.IndexOf(session.Dialog.SelectedLink);
         index = index < 0 ? 0 : Mathf.Clamp(index + direction, 0, links.Count - 1);
         session.Dialog.SelectedLink = links[index];
+        session.Dialog.RevealSelection = true;
         return true;
     }
 
@@ -68,8 +70,10 @@ public static class NpcDialogUi
     {
         NpcSession.Tick();
         OnlineTime.Tick();
+        // 组队任务自动代点：脚本照跑，窗口不画（玩家看不到对话闪动）。
+        PqNpcDriver.Tick();
         var session = NpcSession.Active;
-        if (session != null && session.Dialog.Visible)
+        if (!NpcSession.Silent && session != null && session.Dialog.Visible)
         {
             var matrix = GUI.matrix;
             var pointer = Pointer.Pos;
@@ -87,6 +91,7 @@ public static class NpcDialogUi
     // 场景名牌/任务标记在浮窗下面，对话框仍在浮窗上面。
     public static void DrawField()
     {
+        DrawCharacterNames();
         DrawNpcNames();
         DrawMarkers();
         DrawPlayerQuestAlert();
@@ -117,6 +122,120 @@ public static class NpcDialogUi
         float w = Mathf.Ceil(textSize.x) + NameExtraWidth;
         plate = new Rect(anchor.x - Mathf.Floor(w * .5f), anchor.y + NameGapPx, w, NamePlateHeight);
         text = new Rect(plate.x + NameTextX, plate.y, w - NameExtraWidth, NamePlateHeight);
+    }
+
+    // ——————— 角色脚下名牌（本地角色 + 同图假人）———————
+    // 调用点：本地角色 0x942E25、其他角色 0x942F48/0x943038，都走 0x5F0334(type=1000)。
+    // 画布几何与 NPC 名牌（type=1001）完全一致，差别只在字：
+    //   0x98A74A 默认字体索引 0 = Arial 12 / ARGB FFFFFFFF（白）/ 不加粗
+    //   底色仍是 0x5F0E25 的 A0000000；四角照样清 1×1 像素（0x5F1445..0x5F150A）
+    // 所以这里复用 NamePlateRects，只换字色与字重。
+    static GUIStyle characterNameStyle;
+    static readonly Dictionary<string, float> characterNameWidths = new Dictionary<string, float>();
+    static readonly Color CharacterNameText = Color.white;
+
+    public static void DrawCharacterNames()
+    {
+        var cam = Camera.main;
+        if (!GameSession.InGame || cam == null) return;
+        var loop = GameLoop.I;
+        if (loop == null) return;
+        if (characterNameStyle == null)
+            characterNameStyle = new GUIStyle
+            {
+                font = UiKit.Font,
+                fontSize = NameFontSize,
+                fontStyle = FontStyle.Normal,
+                alignment = TextAnchor.UpperLeft,
+                padding = new RectOffset(),
+                margin = new RectOffset(),
+                wordWrap = false,
+                clipping = TextClipping.Clip,
+            };
+        // 名牌与地图共用原端像素尺度（和 NPC 名牌同一口径）。
+        float scale = UiKit.H / (2f * cam.orthographicSize * Art.PPU);
+        var matrix = GUI.matrix;
+        try
+        {
+            GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(scale, scale, 1f));
+            var player = loop.player;
+            if (player != null && player.hp > 0f && !string.IsNullOrEmpty(Profile.playerName))
+                DrawCharacterName(cam, scale, player.FeetPos, Profile.playerName, true);
+            var bots = loop.field != null ? loop.field.GetComponent<BotField>() : null;
+            var map = loop.field != null ? loop.field.Map : null;
+            if (bots != null && map != null)
+                foreach (var actor in BotRegistry.OnMap(map.id))
+                {
+                    if (!actor.online || string.IsNullOrEmpty(actor.name)) continue;
+                    if (!bots.TryFeet(actor.id, out var feet)) continue;
+                    DrawCharacterName(cam, scale, feet, actor.name);
+                }
+        }
+        finally { GUI.matrix = matrix; }
+    }
+
+    static void DrawCharacterName(Camera cam, float scale, Vector2 feet, string name, bool local = false)
+    {
+        var sp = cam.WorldToScreenPoint(new Vector3(feet.x, feet.y, 0f));
+        if (sp.z < 0f) return;
+        var gui = new Vector2(sp.x / UiKit.Scale, (Screen.height - sp.y) / UiKit.Scale) / scale;
+        if (gui.x < -60f || gui.x > UiKit.W / scale + 60f || gui.y < -30f || gui.y > UiKit.H / scale + 60f) return;
+        // CalcSize 每个名字只量一次：同图几十个假人、每帧全量 Font.RequestCharactersInTexture 太贵。
+        if (!characterNameWidths.TryGetValue(name, out float width))
+        {
+            width = characterNameStyle.CalcSize(new GUIContent(name)).x;
+            characterNameWidths[name] = width;
+        }
+        NamePlateRects(gui, new Vector2(width, NameFontSize), out var plate, out var text);
+        int tag = local ? NativeNameTag.RingStyle("nameTag") : 0;
+        if (tag == 0 || !NativeNameTag.Draw("UI/NameTag.img/"+tag,name,new Vector2(gui.x,gui.y+2),characterNameStyle,out plate))
+        {
+            var labelStyle = characterNameStyle;
+            if (tag == 1)
+            {
+                labelStyle = new GUIStyle(characterNameStyle) {fontStyle=FontStyle.Bold};
+                width = labelStyle.CalcSize(new GUIContent(name)).x;
+            }
+            NamePlateRects(gui, new Vector2(width, NameFontSize), out plate, out text);
+            if (tag == 1)
+            {
+                var blue = new Color32(0x2c,0x80,0xad,0xff);
+                UiKit.Fill(new Rect(plate.x+1,plate.y+1,plate.width-2,plate.height-2),new Color32(255,255,255,0xb2));
+                UiKit.Fill(new Rect(plate.x+1,plate.y,plate.width-2,1),blue);
+                UiKit.Fill(new Rect(plate.x+1,plate.yMax-1,plate.width-2,1),blue);
+                UiKit.Fill(new Rect(plate.x,plate.y+1,1,plate.height-2),blue);
+                UiKit.Fill(new Rect(plate.xMax-1,plate.y+1,1,plate.height-2),blue);
+                labelStyle.normal.textColor=Color.black;
+                GUI.Label(text,name,labelStyle);
+            }
+            else
+            {
+                UiKit.Fill(new Rect(plate.x, plate.y + 1f, plate.width, plate.height - 2f), NameBg);
+                UiKit.Fill(new Rect(plate.x + 1f, plate.y, plate.width - 2f, 1f), NameBg);
+                UiKit.Fill(new Rect(plate.x + 1f, plate.yMax - 1f, plate.width - 2f, 1f), NameBg);
+                characterNameStyle.normal.textColor = CharacterNameText;
+                GUI.Label(text, name, characterNameStyle);
+            }
+        }
+        if (local)
+        {
+            int medal = Profile.EquipOfSlot(EquipSlot.Medal);
+            if (medal > 0)
+            {
+                int skin = EquipCatalog.Info(medal)?.Int("medalTag") ?? 0;
+                string medalName = WzNames.Item(medal);
+                if (!string.IsNullOrEmpty(medalName) && !NativeNameTag.Draw("UI/NameTag.img/medal/"+skin,
+                    medalName,new Vector2(gui.x,plate.yMax+1),characterNameStyle,out _))
+                {
+                    NamePlateRects(new Vector2(gui.x,plate.yMax-1),new Vector2(characterNameStyle.CalcSize(new GUIContent(medalName)).x,NameFontSize),out var medalPlate,out var medalText);
+                    UiKit.Fill(new Rect(medalPlate.x,medalPlate.y+1,medalPlate.width,medalPlate.height-2),NameBg);
+                    UiKit.Fill(new Rect(medalPlate.x+1,medalPlate.y,medalPlate.width-2,1),NameBg);
+                    UiKit.Fill(new Rect(medalPlate.x+1,medalPlate.yMax-1,medalPlate.width-2,1),NameBg);
+                    characterNameStyle.normal.textColor=CharacterNameText;
+                    GUI.Label(medalText,medalName,characterNameStyle);
+                }
+            }
+        }
     }
 
     static void DrawNpcNames()
@@ -248,7 +367,7 @@ public static class NpcDialogUi
 
     static bool CanClickField => !GameWindows.AnyVisible && !ShopWindow.Visible &&
         !GameSideMenu.Blocking && !VirtualControlsEditor.Visible && !KeyConfigWindow.Visible && !VirtualControls.BlockingPointer &&
-        NpcSession.Active == null && GameLoop.I != null && !GameLoop.I.gameOver &&
+        !NpcSession.Blocking && GameLoop.I != null && !GameLoop.I.gameOver &&
         GameLoop.I.field != null && !PlayerCtrl.InputLocked;
 
     // 任务图标单击打开；先消费抬起事件，避免同一次点击继续操作刚打开的对话框。
@@ -315,7 +434,9 @@ public static class NpcDialogUi
         if (NativeUi.Button(new Rect(rect.x + closeX, rect.yMax - 26f, closeSize.x, closeSize.y), BtnRoot + "BtClose"))
         { session.Cancel(); return; }
 
-        int picked = DialogFlow.DrawPane(rect, content, ref scrollY, reservedHeight, input, ref session.Dialog.SelectedLink);
+        int picked = DialogFlow.DrawPane(rect, content, ref scrollY, reservedHeight, input, ref session.Dialog.SelectedLink,
+            session.Dialog.RevealSelection);
+        session.Dialog.RevealSelection = false;
         if (picked >= 0) { session.Reply(1, picked); return; }
 
         // 翻页按钮在 h-77 的纸面内，其余按钮在 h-26 的底栏。

@@ -23,6 +23,49 @@ public sealed class ScreenFade : MonoBehaviour
     static ScreenFade inst;
 
     float alpha;
+    System.Action changeScene;
+    int scenePhase;
+    double sceneAt;
+    bool previousInputLock;
+    public static bool Busy => inst != null && inst.scenePhase != 0;
+
+    // Present the fully black frame before synchronous IMG/catalog work starts.
+    public static void Transition(MonoBehaviour host, System.Action change)
+    {
+        if (Busy) return;
+        var fade = Attach(host);
+        fade.changeScene = change;
+        fade.previousInputLock = PlayerCtrl.InputLocked;
+        PlayerCtrl.InputLocked = true;
+        fade.scenePhase = 1;
+        fade.sceneAt = Time.realtimeSinceStartupAsDouble;
+    }
+
+    void Update()
+    {
+        if (scenePhase == 0) return;
+        double now = Time.realtimeSinceStartupAsDouble;
+        if (scenePhase == 1)
+        {
+            alpha = Mathf.Clamp01((float)(now - sceneAt) / OutSeconds);
+            if (alpha < 1f) return;
+            scenePhase = 2;
+            return;
+        }
+        if (scenePhase == 2)
+        {
+            var change = changeScene; changeScene = null;
+            try { change?.Invoke(); }
+            catch (System.Exception error) { Debug.LogException(error); }
+            finally { sceneAt = Time.realtimeSinceStartupAsDouble; scenePhase = 3; }
+            return;
+        }
+        if (now - sceneAt < HoldSeconds) return;
+        alpha = 1f - Mathf.Clamp01((float)(now - sceneAt - HoldSeconds) / InSeconds);
+        if (alpha > 0f) return;
+        scenePhase = 0;
+        PlayerCtrl.InputLocked = previousInputLock;
+    }
 
     public static float Alpha => inst != null ? inst.alpha : 0f;
 
@@ -41,17 +84,27 @@ public sealed class ScreenFade : MonoBehaviour
     // 离开原版模式时抹掉黑幕，避免下一次进来还停在半黑
     public static void Dismiss()
     {
-        if (inst != null) inst.alpha = 0f;
+        if (inst == null) return;
+        inst.alpha = 0f;
+        inst.changeScene = null;
+        if (inst.scenePhase != 0) PlayerCtrl.InputLocked = inst.previousInputLock;
+        inst.scenePhase = 0;
     }
+
+    void OnDestroy() { if (inst == this) Dismiss(); }
 
     void OnGUI()
     {
+        // IMGUI retains depth per behaviour. Restoring it after drawing makes
+        // the next event sort the fade alongside world labels instead of above them.
+        GUI.depth = -20000;
         if (alpha <= 0.0005f) return;
-
-        int prev = GUI.depth;
-        GUI.depth = -1000;          // depth 越小越靠前：压过 GameHUD / 摇杆 / 技能格
-        UiKit.Begin();
-        UiKit.Fill(new Rect(0f, 0f, UiKit.W, UiKit.H), new Color(0f, 0f, 0f, alpha));
-        GUI.depth = prev;
+        var matrix = GUI.matrix;
+        var color = GUI.color;
+        GUI.matrix = Matrix4x4.identity;
+        GUI.color = new Color(0f, 0f, 0f, alpha);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.matrix = matrix;
+        GUI.color = color;
     }
 }

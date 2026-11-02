@@ -23,30 +23,43 @@ public sealed class FieldRope
 
 public sealed class FieldPortal
 {
+    // WZ portal 列表下标（= 源端 Portal.getId()，Portal.getPortalStatus/pt 判定的另一半）。
+    // portal 脚本里 pi.getPortal().getId() 的返回就是这个值。
+    public int id = -1;
     public string name, targetName, script;
     public int type, tm = 999999999;
     public float x, y;
     public bool IsSpawn => type == 0;
     public bool Warps => tm >= 0 && tm < 999999999;
     public bool HasScript => !string.IsNullOrEmpty(script);
+    /// <summary>!openportal / !closeportal 的开关位；源端脚本 portalOnOff 也改这一位。</summary>
+    public bool enabled = true;
 
-    // 原客户端触发方式（Portal.java 的类型常量 + 客户端 Portal 处理）：
-    //   pt=1  PORTAL              隐形传送门，踩上去即传（FM 入口 in01..in22、彩色传送带）
-    //   pt=2  TELEPORT            可见门，按 ↑ 进
-    //   pt=3  TOWNPORTAL          城镇传送点，按 ↑
-    //   pt=4  SCRIPT              可见脚本门，按 ↑ 触发 enter(pi)
-    //   pt=5  SCRIPT_INVISIBLE    隐形脚本门，按 ↑
-    //   pt=6  COLLISION           碰撞门，踩上去即传
-    //   pt=7  CHANGABLE           可切换门（FM 出口 out00 / 选择之岔路），按 ↑
-    //   pt=8  CHANGABLE_INVISIBLE 隐形可切换门，按 ↑
-    //   pt=9  TOWnPORTAL_POINT    城镇传送点，按 ↑
-    //   pt=10 SCRIPT_HIDDEN       隐藏脚本门，按 ↑
-    // 除 pt=1/6 这类隐形踩踏门，其余全部要按 ↑ 才触发：pt=7 的自由市场出口
-    // out00 走上去自动传出市场是错的（源端要按上），不能按「带脚本就当踩踏门」推断。
-    public bool TouchTrigger => type == 1 || type == 6;
-    public bool PressUpTrigger => type == 2 || type == 3 || type == 4 || type == 5 ||
-                                  type == 7 || type == 8 || type == 9 || type == 10;
-    public bool Usable => (Warps || HasScript) && (TouchTrigger || PressUpTrigger);
+    // 原客户端触发方式（mapleref 类型表 + MapHelper.img/portal/editor 美术名 + BeiDou 服务端
+    // Portal.java 常量 + 用户源端实测，2026-10-30 全面纠正；旧口径「1/6 踩上即传」是错的）：
+    //   pt=0  sp  出生点，不触发
+    //   pt=1  pi  Portal Invisible   隐形门，按 ↑（自由市场 in01..in22、上下层箭头都属于这类）
+    //   pt=2  pv  Portal Visible     可见门，按 ↑
+    //   pt=3  pc  Portal Collision   碰撞门，踩上即传（自动触发）
+    //   pt=4  pg  Portal Changable   可切换门，按 ↑
+    //   pt=5  pgi Changable Invisible 按 ↑
+    //   pt=6  tp  Town Portal        神殿之门（Mystic Door），按 ↑（BeiDou 服务端 DOOR_PORTAL=6 佐证）
+    //   pt=7  ps  Portal Script      脚本门（FM 出口 out00/market00），按 ↑
+    //   pt=8  psi Script Invisible    按 ↑
+    //   pt=9  pcs Collision Script    碰撞门，踩上即触发脚本
+    //   pt=10 ph  Portal Hidden      隐藏门（靠近出现蛋形提示），按 ↑
+    //   pt=11 psh Script Hidden       隐藏脚本门，按 ↑
+    //   pt=12 pcj Collision Jump      弹簧门，踩上自动弹起
+    //   pt=13 pci Collision Custom    自定义弹跳门，踩上自动触发
+    //   pt=14 pcig 同上变体
+    // 交叉证据：① mapleref 类型表「Automatic」列（1/2/4/5/6/7/8/10/11 均非自动）；
+    // ② MapHelper.img/portal/editor 下美术按类型名排列（pi/pv/pc/pg/tp/ps/...）；
+    // ③ 经典地图站对隐藏门的口诀「stand on the spot and press up」；④ 用户在源端实测自由市场
+    // 洞口/箭头要按 ↑。踩上即传的只有碰撞类 3/9/12/13（14 编辑器占位）。
+    public bool TouchTrigger => type == 3 || type == 9 || type == 12 || type == 13;
+    public bool PressUpTrigger => type == 1 || type == 2 || type == 4 || type == 5 || type == 6 ||
+                                  type == 7 || type == 8 || type == 10 || type == 11;
+    public bool Usable => enabled && (Warps || HasScript) && (TouchTrigger || PressUpTrigger);
 }
 
 public sealed class FieldSpawn
@@ -208,8 +221,7 @@ public static class FieldCatalog
 
         var drops = Resources.Load<TextAsset>("Field/FieldDrops");
         if (drops != null)
-        {
-            var dr = MiniJson.Parse(drops.text) as Dictionary<string, object>;
+        {            var dr = MiniJson.Parse(drops.text) as Dictionary<string, object>;
             var table = dr != null && dr.ContainsKey("drops") ? dr["drops"] as Dictionary<string, object> : null;
             if (table != null)
                 foreach (var kv in table)
@@ -258,6 +270,17 @@ public static class FieldCatalog
                 }
         }
 
+        // 全量掉落表：tools/export_field_drops.py 把源端 db/migration 里所有动过
+        // drop_data / drop_data_global 的迁移按版本顺序重放，导出成
+        // `M|dropperid|item|min|max|quest|chance` / `G|continent|…` 的紧凑文本
+        //（约 2.7 万行 / 0.8MB）。有它就以它为准；FieldDrops.json 只保留 items 目录，
+        // 以及万一缺文件时的兜底。
+        var full = Resources.Load<TextAsset>("Field/FieldDropTable");
+        if (full != null && LoadFullDropTable(full.text))
+        {
+            Debug.Log("[Field] 源端掉落全量 " + Drops.Count + " 只怪 / " + GlobalDrops.Count + " 条全局");
+        }
+
         FieldPortalArt.Ensure();
 
         // 掉落表以 DB（drop_data）为准；这里把 JSON 快照交给 DropStore 当「首启种子 + 无库兜底」。
@@ -285,7 +308,30 @@ public static class FieldCatalog
         Debug.Log("[Field] 原版地图 " + Maps.Count + " 张，怪物 " + Mobs.Count + " 种，掉落表 " +
                   Drops.Count + " 份，物品 " + Items.Count + " 件");
     }
+    /// <summary>
+    /// 解析源端 drop_data 全量导出（见 tools/export_field_drops.py / DropTableText）。
+    /// 解析失败或空文件返回 false，让 FieldDrops.json 的样本继续当兜底。
+    /// </summary>
+    static bool LoadFullDropTable(string text)
+    {
+        if (!DropTableText.TryParse(text, out var mobs, out var glob)) return false;
+        Drops.Clear();
+        foreach (var kv in mobs)
+        {
+            var rows = new List<FieldDropEntry>(kv.Value.Count);
+            foreach (var e in kv.Value)
+                rows.Add(new FieldDropEntry { item = e.item, min = e.min, max = e.max, quest = e.quest, chance = e.chance });
+            Drops[kv.Key] = rows;
+        }
+        GlobalDrops.Clear();
+        foreach (var e in glob)
+            GlobalDrops.Add(new FieldDropEntry { item = e.item, min = e.min, max = e.max, quest = e.quest, chance = e.chance });
+        return true;
+    }
+
     static readonly HashSet<int> loadedMaps = new HashSet<int>();
+    public static void ResetMap(int id) { loadedMaps.Remove(id); Server.Field.MapItemService.InvalidateMapGeometry(id); }
+
     public static FieldMap GetMap(int id)
     {
         Ensure();
@@ -361,6 +407,7 @@ public static class FieldCatalog
                 if (p == null) continue;
                 m.portals.Add(new FieldPortal
                 {
+                    id = (int)Num(p, "id"),
                     name = Str(p, "pn"), targetName = Str(p, "tn"), type = (int)Num(p, "pt"),
                     tm = (int)Num(p, "tm"), x = Num(p, "x"), y = Num(p, "y"), script = Str(p, "script"),
                 });

@@ -214,10 +214,34 @@ public static class JobDefs
         return byCls.TryGetValue(cls, out int id) ? id : 0;
     }
 
+    /// <summary>
+    /// job id → 旧 cls 字符串（美术/状态栏兼容字段）。
+    /// byClsRev 只登记了一转/二转的代表 id，三转四转（121、211、412、1112…）以前会直接落到
+    /// "beginner"：于是 `@job 121` 之后职业真的变成 121，状态栏却还写着「新手」。
+    /// 这里改成沿 JobTree 的 parent 链回溯，再按 family 借用最近的一条美术线。
+    /// </summary>
     public static string ClsOf(int jobId)
     {
         Ensure();
-        return byClsRev.TryGetValue(jobId, out var cls) ? cls : "beginner";
+        if (byClsRev.TryGetValue(jobId, out var cls)) return cls;
+        if (!byId.ContainsKey(jobId)) return "beginner";
+        for (int cursor = jobId, guard = 0; guard < 8; guard++)
+        {
+            if (!byId.TryGetValue(cursor, out var def) || def.parent < 0) break;
+            cursor = def.parent;
+            if (byClsRev.TryGetValue(cursor, out var parentCls)) { byClsRev[jobId] = parentCls; return parentCls; }
+        }
+        // 骑士团/其他分支没有独立 cls：按 JobTree family 借用（thief/pirate 与旧表一致，借弓手/战士美术）
+        string borrowed;
+        switch (FamilyOf(jobId))
+        {
+            case "warrior": case "cygnus-dawnwarrior": case "cygnus-thunderbreaker": case "pirate": borrowed = "warrior"; break;
+            case "magician": case "cygnus-blazewizard": borrowed = "mage"; break;
+            case "bowman": case "thief": case "cygnus-windarcher": case "cygnus-nightwalker": borrowed = "archer"; break;
+            default: borrowed = "beginner"; break;
+        }
+        byClsRev[jobId] = borrowed;
+        return borrowed;
     }
 
     public static int Count { get { Ensure(); return byId.Count; } }

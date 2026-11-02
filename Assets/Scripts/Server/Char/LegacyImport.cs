@@ -18,7 +18,8 @@ public sealed class LegacyProfileSnapshot
     public int maxHp, maxMp;
     public int job;
     public int map;
-    public int ap, sp, meso, equipSlots = 24;
+    public int ap, sp, equipSlots = 24;
+    public long meso;
     public List<LegacySkillEntry> skills = new List<LegacySkillEntry>();
 }
 
@@ -42,7 +43,7 @@ public static class LegacyImport
             accountid = accId,
             name = string.IsNullOrEmpty(s.name) ? "Migrated" : s.name,
             level = s.level < 1 ? 1 : s.level,
-            exp = (int)(s.exp > int.MaxValue ? int.MaxValue : s.exp),
+            exp = System.Math.Max(0, s.exp),
             str = s.str, dex = s.dex, int_ = s.int_, luk = s.luk,
             hp = 50, maxhp = s.maxHp > 0 ? s.maxHp : 50,
             mp = 5, maxmp = s.maxMp > 0 ? s.maxMp : 5,

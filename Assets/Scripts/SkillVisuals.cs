@@ -58,12 +58,47 @@ public partial class SkillSystem
         TileField(s,origin,facing);
     }
     static bool UsesProjectile(SkillDef s) => s.art!="firebolt" && NativeSkillVfx.Has(s.vfx,"ball");
-    // Old projectile skills have no level lt/rb. Do not reuse the 200px melee fallback.
-    static float ProjectileRange(SkillDef s) => Mathf.Max(600/Art.PPU,Mathf.Max(-s.native.Min.x,s.native.Max.x));
-    static bool InProjectileRange(Vector3 point,SkillDef s,Vector2 origin,int facing)
+    // 95571F (snail/magic ball): 50..300px, y=feet-28 in WZ.
+    // 761845 (weapon shots): explicit range, then weapon + range-passive.
+    static float ProjectileRange(SkillDef s)
     {
-        var delta=(Vector2)point-origin;
-        return delta.x*facing>=0 && delta.x*facing<=ProjectileRange(s) && Mathf.Abs(delta.y)<=100/Art.PPU;
+        var row=SkillBook.Get(s.native.Id)?.Level(s.native.Level);
+        int range=Art.Int(row,"range");
+        if(range>0)return range/Art.PPU;
+        if(s.native.HasBounds)return Mathf.Max(-s.native.Min.x,s.native.Max.x);
+        if(!NativeProjectiles.IsRangedSkill(s.native.Id) || s.native.Magic)return 300/Art.PPU;
+        if(s.native.Id==4111003 || s.native.Id==4221003)return 300/Art.PPU;
+        var weapon=WeaponDefs.Get(Profile.equipWeapon).kind;
+        int passive=weapon==WeaponKind.claw ? (Profile.JobId/1000==1 ? 14000001 : 4000001)
+            : Profile.JobId/1000==1 ? 13000001 : 3000002;
+        int level=SkillProgress.LevelOf(passive);
+        int extra=level>0 ? Art.Int(SkillBook.Get(passive)?.Level(level),"range") : 0;
+        return (weapon==WeaponKind.bow || weapon==WeaponKind.crossbow ? 300+extra
+            : weapon==WeaponKind.claw ? 200+extra : weapon==WeaponKind.gun ? 200 : 0)/Art.PPU;
+    }
+    bool InProjectileRange(Component target,SkillDef s,Vector2 origin,int facing)
+    {
+        if(s.native.HasBounds)return InRange(target,s.native,origin,facing);
+        Rect bounds=target is EnemyUnit enemy && enemy.ProjectileBounds.HasValue
+            ? enemy.ProjectileBounds.Value : new Rect(target.transform.position.x,target.transform.position.y,0,0);
+        return ProjectileIntersects(bounds,origin,facing,ProjectileRange(s),
+            !s.native.Magic && NativeProjectiles.IsRangedSkill(s.native.Id) ? 0 : 50/Art.PPU);
+    }
+    // CMobPool::FindHitMobInRect 6789ED: forward 20px slices, expanding by distance/4.
+    internal static bool ProjectileIntersects(Rect bounds,Vector2 origin,int facing,float range,float start)
+    {
+        float y=origin.y+28/Art.PPU;
+        int limit=Mathf.RoundToInt(range*Art.PPU);
+        for(int pixels=Mathf.RoundToInt(start*Art.PPU);pixels<limit;pixels+=20)
+        {
+            float x=pixels/Art.PPU;
+            float end=Mathf.Min(pixels+20,limit)/Art.PPU;
+            float half=(pixels/4)/Art.PPU;
+            float a=origin.x+x*facing,b=origin.x+end*facing;
+            if(bounds.xMax>=Mathf.Min(a,b) && bounds.xMin<=Mathf.Max(a,b) &&
+                bounds.yMax>=y-half && bounds.yMin<=y+half)return true;
+        }
+        return false;
     }
     float Preparation(SkillDef s)
     {
@@ -152,21 +187,21 @@ public partial class SkillSystem
     }
     IEnumerator ProjectileCast(SkillDef s,Vector2 origin,int facing,bool immediate=false)
     {
+        var targets=SelectTargets(s,s.native,origin,facing);
         float launch=immediate ? 0 : NativeSkillVfx.Number(s.vfx,"ball","delay",p.SkillActionDuration*500)/1000;
         if(launch>0)yield return new WaitForSeconds(launch);
-        var targets=SelectTargets(s,s.native,origin,facing);
         bool pierce=s.art=="dragon" || s.art=="ray";
         // 无目标仍沿面向射出，不把 ball 挂在人物原地。
         if(targets.Count==0)
         {
-            Vector3 from=origin+Vector2.up*(30/Art.PPU);
+            Vector3 from=origin+Vector2.up*(28/Art.PPU);
             StartCoroutine(Fly(s,from,from+Vector3.right*facing*ProjectileRange(s),null,facing));
         }
         else if(pierce) yield return Pierce(s,origin,facing,targets);
-        else foreach(var target in targets)StartCoroutine(Fly(s,origin+Vector2.up*(30/Art.PPU),TargetAnchor(target),target,facing));
+        else foreach(var target in targets)StartCoroutine(Fly(s,origin+Vector2.up*(28/Art.PPU),TargetAnchor(target),target,facing));
     }
-    // WZ 未给旧版飞弹速度，800px/s 是明确的移植参数，不修改原图尺寸。
-    const float ProjectileSpeed=800/Art.PPU;
+    // 95445F..954511: native travel time is distance in pixels * 1.5ms.
+    const float ProjectileSpeed=(1000f/1.5f)/Art.PPU;
     IEnumerator Fly(SkillDef s,Vector3 from,Vector3 to,Component target,int facing)
     {
         var fx=Visual(s.vfx,"ball",from,facing,null,true);
@@ -183,7 +218,7 @@ public partial class SkillSystem
     IEnumerator Pierce(SkillDef s,Vector2 origin,int facing,List<Component> targets)
     {
         targets.Sort((a,b)=>Mathf.Abs(a.transform.position.x-origin.x).CompareTo(Mathf.Abs(b.transform.position.x-origin.x)));
-        Vector3 from=origin+Vector2.up*(30/Art.PPU);
+        Vector3 from=origin+Vector2.up*(28/Art.PPU);
         float distance=ProjectileRange(s);
         var fx=Visual(s.vfx,"ball",from,facing,null,true);
         int next=0;float traveled=0;
@@ -203,12 +238,12 @@ public partial class SkillSystem
     List<Component> SelectTargets(SkillDef s,NativeSkillDefinition d,Vector2 origin,int facing)
     {
         var targets=new List<Component>();
-        foreach(var b in FindObjectsOfType<BossUnit>())if(!b.dead && InProjectileRange(b.transform.position,s,origin,facing))targets.Add(b);
-        foreach(var e in EnemyUnit.All)if(!e.dead && InProjectileRange(e.transform.position,s,origin,facing))targets.Add(e);
+        foreach(var b in FindObjectsOfType<BossUnit>())if(!b.dead && InProjectileRange(b,s,origin,facing))targets.Add(b);
+        foreach(var e in EnemyUnit.All)if(!e.dead && InProjectileRange(e,s,origin,facing))targets.Add(e);
         targets.Sort((a,b)=>
         {
             if(s.art=="illusion" && (a is BossUnit)!=(b is BossUnit))return a is BossUnit ? -1 : 1;
-            return (a.transform.position-(Vector3)origin).sqrMagnitude.CompareTo((b.transform.position-(Vector3)origin).sqrMagnitude);
+            return Mathf.Abs(a.transform.position.x-origin.x).CompareTo(Mathf.Abs(b.transform.position.x-origin.x));
         });
         if(targets.Count>d.TargetCount)targets.RemoveRange(d.TargetCount,targets.Count-d.TargetCount);
         return targets;

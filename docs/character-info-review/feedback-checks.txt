@@ -1,0 +1,4 @@
+FIVE_FEEDBACK_PASS panel_occlusion_press_release_close
+FIVE_FEEDBACK_PASS skill_center_all_five_branches
+FIVE_FEEDBACK_PASS catalog_http_json information_search quest_browse original_img_icons
+Exiting batchmode successfully now!

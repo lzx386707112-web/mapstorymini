@@ -413,6 +413,133 @@ public static class PreviewShot
                 Finish(0);
                 break;
 
+            // ── 技能点洗点窗 5050001..4（-previewStart 66 单独跑这一段） ──
+            // SP 窗与 AP 窗同批：页1选来源(已加点) → 页2选目标(未满级) → 确认页摘要。
+            case 66:
+                if (!Ready()) { if (now - t0 > 120) { Note("等待游戏就绪超时"); Finish(1); } return; }
+                if (Mathf.Abs(UiKit.W - 1280f) > 8f)
+                {
+                    if (now - t0 > 120) { Note("等待画布尺寸超时"); Finish(1); }
+                    else Step(now + 0.5, 66);
+                    return;
+                }
+                ClearWindows();
+                {
+                    // 给每个转数种两个已学技能（照 NativeSpResetWindow.StageOfJob 的转数口径），
+                    // 来源页才有行可选；道具用 5050004（4转全开，页签 I..IV 都能点）。
+                    var stageOfJob = typeof(NativeSpResetWindow).GetMethod("StageOfJob");
+                    // 测试存档可能是新手（job 0）——新手线没有可洗技能。临时切到战士线（100）
+                    // 仅为让列表有数据；拍完 case 70 恢复。种子技能等级残留无害（jobId 恢复后不参战）。
+                    spSavedJobId = Profile.Data.jobId;
+                    var line = SkillBook.LineForJob(Profile.JobId);
+                    var firstOfStage = new Dictionary<int, int>();   // key: 转数(1..4)与 100+转数(每转第二个)
+                    foreach (var tabDef in SkillBook.Tabs(line))
+                    {
+                        if (!tabDef.TryGetValue("skills", out var raw)) continue;
+                        foreach (var o in (List<object>)raw)
+                        {
+                            var d = SkillBook.Get(int.Parse(o.ToString()));
+                            if (d == null || d.autoLearn || d.job == 0 || d.job == 1000) continue;
+                            int stage = (int)stageOfJob.Invoke(null, new object[] { d.job });
+                            if (stage > 4) continue;
+                            if (!firstOfStage.ContainsKey(stage)) firstOfStage[stage] = d.id;
+                            else if (!firstOfStage.ContainsKey(100 + stage)) firstOfStage[100 + stage] = d.id;
+                        }
+                    }
+                    if (firstOfStage.Count == 0)
+                    {
+                        Profile.Data.jobId = 100;
+                        line = SkillBook.LineForJob(100);
+                        var trace = new List<string>();
+                        foreach (var tabDef in SkillBook.Tabs(line))
+                        {
+                            if (!tabDef.TryGetValue("skills", out var raw)) { trace.Add("nokey"); continue; }
+                            trace.Add("n=" + ((List<object>)raw).Count);
+                            foreach (var o in (List<object>)raw)
+                            {
+                                var d = SkillBook.Get(int.Parse(o.ToString()));
+                                if (d == null) { trace.Add(o + ":null"); continue; }
+                                if (d.autoLearn) { trace.Add(d.id + ":auto"); continue; }
+                                if (d.job == 0 || d.job == 1000) { trace.Add(d.id + ":job" + d.job); continue; }
+                                int stage = (int)stageOfJob.Invoke(null, new object[] { d.job });
+                                trace.Add(d.id + ":st" + stage);
+                                if (stage > 4) continue;
+                                if (!firstOfStage.ContainsKey(stage)) firstOfStage[stage] = d.id;
+                                else if (!firstOfStage.ContainsKey(100 + stage)) firstOfStage[100 + stage] = d.id;
+                            }
+                        }
+                        Note("测试存档为新手线，已临时切 jobId=100（战士）供 SP 洗点窗种子，case 70 恢复 trace=" +
+                             string.Join(" ", trace.ToArray()));
+                    }
+                    foreach (var kv in firstOfStage)
+                    {
+                        int stage = kv.Key > 100 ? kv.Key - 100 : kv.Key;
+                        int cap = SkillBook.MasterCapOf(kv.Value);
+                        SkillProgress.SetLevel(kv.Value, Mathf.Max(1, Mathf.Min(2, cap)));
+                    }
+                    spSeeds = firstOfStage;
+                    Profile.Data.AddItem(5050004, 1);
+                    var detail = new List<string>();
+                    foreach (var kv in firstOfStage) detail.Add(kv.Key + ":" + kv.Value);
+                    Note("SP 种子：职业 " + Profile.JobId + " 技能 " + firstOfStage.Count + " 个，5050004 数量=" +
+                         Profile.ItemCount(5050004) + " 明细=" + string.Join(",", detail.ToArray()));
+                    NativeSpResetWindow.Open(5050004, 0);
+                }
+                Step(now + 0.8, 67);
+                break;
+            case 67:
+                // 指针钉在第一行 BtSpUp（131..143, 119..131 中心）
+                Pin(typeof(NativeSpResetWindow), 137f, 125f);
+                Shot("39-reset-sp-from.png");
+                Step(now + 3.0, 68);
+                break;
+            case 68:
+            {
+                // 反射翻到第 2 页：fromId = 1 转第一个已学技能；toId = 1 转第二个（无则同 from，结算会报错也是真实行为）
+                int fromId = spSeeds != null && spSeeds.ContainsKey(1) ? spSeeds[1] : 0;
+                int toId = spSeeds != null && spSeeds.ContainsKey(101) ? spSeeds[101] : fromId;
+                SetSpStage(2, 0, fromId, toId);
+                Pin(typeof(NativeSpResetWindow), 137f, 125f);
+                Shot("40-reset-sp-to.png");
+                Step(now + 3.0, 69);
+                break;
+            }
+            case 69:
+            {
+                // 翻到确认页：反射设 stage=3（摘要两组 + BtOK2/BtCancel2）
+                var t = typeof(NativeSpResetWindow);
+                const BindingFlags F = BindingFlags.NonPublic | BindingFlags.Static;
+                int fromId = (int)(t.GetField("fromId", F)?.GetValue(null) ?? 0);
+                int toId = (int)(t.GetField("toId", F)?.GetValue(null) ?? 0);
+                t.GetField("stage", F)?.SetValue(null, 3);
+                Note("SP 洗点窗 stage=3 from=" + fromId + " to=" + toId);
+                Shot("41-reset-sp-confirm.png");
+                Step(now + 3.0, 70);
+                break;
+            }
+            case 70:
+            {
+                var t = typeof(NativeSpResetWindow);
+                const BindingFlags F = BindingFlags.NonPublic | BindingFlags.Static;
+                int fromId = (int)(t.GetField("fromId", F)?.GetValue(null) ?? 0);
+                int toId = (int)(t.GetField("toId", F)?.GetValue(null) ?? 0);
+                int lvFrom = SkillProgress.LevelOf(fromId), lvTo = SkillProgress.LevelOf(toId);
+                string error = Profile.ResetSp(fromId, toId);
+                Note("SP 结算 error=" + (error ?? "null") + " " + fromId + " Lv" + lvFrom + "→" +
+                     SkillProgress.LevelOf(fromId) + " " + toId + " Lv" + lvTo + "→" +
+                     SkillProgress.LevelOf(toId) + " 5050004 " + Profile.ItemCount(5050004));
+                if (spSavedJobId >= 0 && Profile.Data.jobId != spSavedJobId)
+                {
+                    Profile.Data.jobId = spSavedJobId;   // 恢复新手职业，技能等级残留无害
+                    Note("已恢复 jobId=" + spSavedJobId);
+                }
+                Step(now + 1.0, 71);
+                break;
+            }
+            case 71:
+                Finish(0);
+                break;
+
             // ── 底栏菜单第二轮：把控件调到「非默认值」再拍（-previewStart 90） ──
             //    默认值看不出问题：邀请全是「同意」、滑块全在中位、静音全关。
             case 90:
@@ -477,17 +604,57 @@ public static class PreviewShot
                 Finish(0);
                 break;
 
+            // ── 自由市场房间（-previewStart 101 单独跑这一段）：
+            //    真实商店快照 + 真实店员动画 + signboard 店招，不摆 mock ──
+            case 101:
+                if (!Ready()) { if (now - t0 > 120) { Note("等待游戏就绪超时"); Finish(1); } return; }
+                SetupMarketRoom();
+                Step(now + 8.0, 102);     // 换图渐变 + 假人/店员同步（0.5s 周期）+ 动画首帧
+                break;
+            case 102:
+                Shot("40-fm-room-signboards.png");
+                Step(now + 1.0, 103);
+                break;
+            case 103:
+                VisitFirstShop();
+                Step(now + 3.0, 104);
+                break;
+            case 104:
+                Shot("41-fm-shop-window.png");
+                Step(now + 1.0, 105);
+                break;
+            case 105:
+                NativeMarketWindow.Close();
+                Finish(0);
+                break;
+
             default:
                 Finish(0);
                 break;
         }
     }
 
+    // ───────── 自由市场房间实拍 ─────────
+    static void SetupMarketRoom()
+    {
+        var director = UnityEngine.Object.FindObjectOfType<FieldDirector>();
+        if (director == null) { Note("找不到 FieldDirector"); return; }
+        director.WarpTo(910000001, "out00");
+        Note("传送 910000001（自由市场房间 1）");
+    }
+    static void VisitFirstShop()
+    {
+        var response = GameSession.Net.Market(new Server.Bot.MarketRequest {
+            characterId = GameSession.CharacterId, operation = Server.Bot.MarketOperation.Read });
+        int count = response?.shops.Count ?? 0;
+        Note("房间店铺 Read=" + count);
+        if (count > 0) NativeMarketWindow.Visit(response.shops[0].ownerId);
+    }
+
     // ───────── 公共：把所有窗关掉（各场景起手都先回到干净状态） ─────────
     static void ClearWindows()
     {
-        NpcSession.CloseActive();
-        EquipWindow.Visible = false;
+        NpcSession.CloseActive();        EquipWindow.Visible = false;
         InvenWindow.Visible = false;
         SkillWindow.Visible = false;
         GameOptWindow.Close();
@@ -792,7 +959,7 @@ public static class PreviewShot
         Pointer.TestPos = null;
         ClearPin();
         int before = Profile.Data.level;
-        int gained = Profile.GrantExperience(Mathf.Max(1, Profile.ExpNeeded));
+        int gained = Profile.GrantExperience(Math.Max(1L, Profile.ExpNeeded));
         Note("升级触发：Lv." + before + " → Lv." + Profile.Data.level +
              "（GrantExperience 返回 " + gained + "；真实链路 LevelSystem → Profile.LeveledUp → PlayerCtrl 播特效）");
     }
@@ -1136,6 +1303,22 @@ public static class PreviewShot
         t.GetField("from", F)?.SetValue(null, from);
         t.GetField("to", F)?.SetValue(null, to);
         Note("洗点窗 stage=" + stage + " from=" + from + " to=" + to);
+    }
+
+    // SP 洗点窗（NativeSpResetWindow）种子与反射翻页
+    static Dictionary<int, int> spSeeds;
+    static int spSavedJobId = -1;
+
+    static void SetSpStage(int stage, int tab, int fromId, int toId)
+    {
+        var t = typeof(NativeSpResetWindow);
+        const BindingFlags F = BindingFlags.NonPublic | BindingFlags.Static;
+        t.GetField("stage", F)?.SetValue(null, stage);
+        t.GetField("tab", F)?.SetValue(null, tab);
+        t.GetField("scroll", F)?.SetValue(null, 0);
+        t.GetField("fromId", F)?.SetValue(null, fromId);
+        t.GetField("toId", F)?.SetValue(null, toId);
+        Note("SP 洗点窗 stage=" + stage + " tab=" + tab + " from=" + fromId + " to=" + toId);
     }
 
     static void Pin(Type window, float lx, float ly)

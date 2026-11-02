@@ -5,18 +5,22 @@ using UnityEngine;
 public static class NativeUtilPrompt
 {
     static string text, input;
-    static int minimum, maximum;
-    static Action<int> number;
+    // 数值输入用 long：金币/经验已经超出 21 亿，若还用 int 做上下界，交易窗口就放不进全额金币。
+    static long minimum, maximum;
+    static int textMin, textMax;
+    static Action<long> number;
     static Action<bool> answer;
     static Action<string> entered;
     public static bool Visible => number != null || answer != null || entered != null;
     public static bool Drawing { get; private set; }
     public static void Number(string prompt, int value, int min, int max, Action<int> done)
+        => NumberLong(prompt, value, min, max, v => done?.Invoke((int)Math.Max(int.MinValue, Math.Min(int.MaxValue, v))));
+    public static void NumberLong(string prompt, long value, long min, long max, Action<long> done)
     { Clear(); text = prompt; input = value.ToString(); minimum = min; maximum = max; number = done; }
     public static void Confirm(string prompt, Action<bool> done)
     { Clear(); text = prompt; answer = done; }
     public static void Text(string prompt, string value, int min, int max, Action<string> done)
-    { Clear(); text = prompt; input = value ?? ""; minimum = min; maximum = max; entered = done; }
+    { Clear(); text = prompt; input = value ?? ""; textMin = min; textMax = max; entered = done; }
     public static void Clear() { number = null; answer = null; entered = null; text = input = null; }
     public static void Cancel() { var callback = answer; Clear(); callback?.Invoke(false); }
     public static void Draw()
@@ -29,7 +33,7 @@ public static class NativeUtilPrompt
         try
         {
             var style = new GUIStyle {font = UiKit.Font, fontSize = 12, wordWrap = true, padding = new RectOffset()};
-            style.normal.textColor = Color.black;
+            style.normal.textColor = answer != null ? Color.white : Color.black;
             bool numeric = number != null;
             bool edit = numeric || entered != null;
             float textHeight = Mathf.Ceil(style.CalcHeight(new GUIContent(text), edit ? 225 : 200));
@@ -52,7 +56,7 @@ public static class NativeUtilPrompt
                 UiKit.Fill(new Rect(editRect.x+1,editRect.y+1,editRect.width-2,editRect.height-2), Color.white);
                 style.wordWrap = false;
                 var contentRect=numeric ? new Rect(x+22,y+textHeight+27,224,14) : new Rect(editRect.x+2,editRect.y+2,editRect.width-4,editRect.height-4);
-                string value = GUI.TextField(contentRect, input, numeric ? 10 : maximum, style);
+                string value = GUI.TextField(contentRect, input, numeric ? 19 : textMax, style);
                 if(numeric) { input = ""; foreach (char c in value) if (c >= '0' && c <= '9') input += c; }
                 else input=value;
                 submit = NativeUi.Button(numeric ? new Rect(x + 212,y + height - 26,43,19) : new Rect(x+158,y+height-30,47,19),
@@ -72,12 +76,12 @@ public static class NativeUtilPrompt
             if (!submit) return;
             if (numeric)
             {
-                if (!int.TryParse(input, out int value) || value < minimum || value > maximum) return;
+                if (!long.TryParse(input, out long value) || value < minimum || value > maximum) return;
                 var callback = number; Clear(); callback?.Invoke(value);
             }
             else if(entered!=null)
             {
-                if(input.Length<minimum || input.Length>maximum) return;
+                if(input.Length<textMin || input.Length>textMax) return;
                 string value=input;var callback=entered;Clear();callback(value);
             }
             else { var callback = answer; Clear(); callback?.Invoke(true); }

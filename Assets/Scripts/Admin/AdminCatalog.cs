@@ -30,6 +30,7 @@ public static class AdminCatalog
 {
     public static void Register(AdminApi api)
     {
+        api.Post("/common/v1/informationSearch", ctx => AdminCatalogData.InformationSearch(ctx.Body));
         RegisterItemCatalog(api);
         RegisterEquipmentCatalog(api);
         RegisterMobCatalog(api);
@@ -61,7 +62,7 @@ public static class AdminCatalog
     {
         api.Get("/setItem/v1/item/catalog", ctx => AdminCatalogData.ItemCatalog(
             ctx.Query("keyword"), ctx.Query("category"),
-            ctx.QueryInt("pageNo", 1), ctx.QueryInt("pageSize", 60)));
+            ctx.QueryInt("pageNo", 1), ctx.QueryInt("pageSize", 60)).ToDict());
     }
 
     // —————————— 装备图鉴（源端 EquipmentCatalogService） ——————————
@@ -71,7 +72,7 @@ public static class AdminCatalog
             ctx.Query("keyword"), ctx.Query("category"),
             ctx.QueryInt("pageNo", 1), ctx.QueryInt("pageSize", 60),
             QueryNullableBool(ctx, "cash"), ctx.Query("weaponType"),
-            QueryNullableInt(ctx, "job"), QueryNullableInt(ctx, "minLevel"), QueryNullableInt(ctx, "maxLevel")));
+            QueryNullableInt(ctx, "job"), QueryNullableInt(ctx, "minLevel"), QueryNullableInt(ctx, "maxLevel")).ToDict());
     }
 
     // —————————— 怪物图鉴（源端 MobCatalogService） ——————————
@@ -80,7 +81,7 @@ public static class AdminCatalog
         api.Get("/mob/v1/catalog", ctx => AdminCatalogData.MobCatalog(
             ctx.Query("keyword"),
             ctx.QueryInt("pageNo", 1), ctx.QueryInt("pageSize", 60),
-            QueryNullableInt(ctx, "minLevel"), QueryNullableInt(ctx, "maxLevel")));
+            QueryNullableInt(ctx, "minLevel"), QueryNullableInt(ctx, "maxLevel")).ToDict());
     }
 
     // —————————— 技能图鉴（源端 SkillCatalogService） ——————————
@@ -88,7 +89,7 @@ public static class AdminCatalog
     {
         api.Get("/skill/v1/catalog", ctx => AdminCatalogData.SkillCatalog(
             ctx.Query("keyword"), QueryNullableInt(ctx, "jobId"), QueryNullableInt(ctx, "advancement"),
-            ctx.QueryInt("pageNo", 1), ctx.QueryInt("pageSize", 120)));
+            ctx.QueryInt("pageNo", 1), ctx.QueryInt("pageSize", 120)).ToDict());
 
         api.Get("/skill/v1/detail/{skillId}", ctx => AdminCatalogData.SkillDetail(ctx.ParamLong("skillId")));
 
@@ -106,6 +107,8 @@ public static class AdminCatalog
         api.Get("/assets/item-icons/{file}", ctx => IconResponse(ctx, AdminCatalogData.ItemIconPng), auth: false);
         api.Get("/assets/equipment-icons/{file}", ctx => IconResponse(ctx, AdminCatalogData.EquipmentIconPng), auth: false);
         api.Get("/assets/mob-icons/{file}", ctx => IconResponse(ctx, AdminCatalogData.MobIconPng), auth: false);
+        api.Get("/assets/npc-icons/{file}", ctx => IconResponse(ctx, AdminCatalogData.NpcIconPng), auth: false);
+        api.Get("/assets/map-icons/{file}", ctx => IconResponse(ctx, AdminCatalogData.MapIconPng), auth: false);
         api.Get("/assets/skill-icons/{file}", ctx => IconResponse(ctx, AdminCatalogData.SkillIconPng), auth: false);
     }
 

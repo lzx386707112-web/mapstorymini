@@ -39,7 +39,7 @@ info来自spec/npc与spec/script；脚本名可空（2029001快捷菜单npc99000
 状态图取`Skill/111.img/skill/1111008/mob`三帧，pos2头顶、repeat1；必须原IMG，不自行画星星。
 换图/到期/stopMonsterVac停止任务、解除本系统怪物锁和本物品增益。当前迁移在NativeMonsterVac与EnemyUnit/NativeMobController接线，Script宿主同时绑定Character与cm入口。
 
-迁移边界：Unity直接更新怪物坐标，未复现130ms网络封包插值；当前EnemyUnit没有源端fake实体标记，普通本图实体按存活/非Boss过滤。
+历史迁移边界（已由2026-10-30/31补核更新）：早期Unity直接更新怪物坐标，未复现130ms网络封包插值；当前EnemyUnit没有源端fake实体标记，普通本图实体按存活/非Boss过滤。
 眩晕原图已接入，但源端所有MonsterStatus覆盖/冲突和refreshVisual封包语义尚未逐项迁移。原端整数Point逐步取整与Unity浮点步进亦非逐位等价。
 轮回1016已连接原图腾召唤图、20分钟冷却、10分钟地图效果；MapSpawner复制mobTime>=0的刷怪点并将延迟乘0.5，换图/到期清理；实际地图视觉与Android实机仍待验证。
 
@@ -221,3 +221,116 @@ AP 分派 `0xA0C427`：`0xA14A1C()` 非 0 时用串 150「不能与别的操作�
 服务端语义（`AssignAPProcessor.APResetAction`）：APFrom 为 64/128/256/512 时对应属性必须 ≥5 才能扣 1；HP(2048)/MP(8192) 走 `getHpMpApUsed()<1` 拒绝（「你没有足够的HP、MP属性点用于AP重置。」）及洗血公式；成功后 `addStat(APTo, true)` 加 1，`UseCashItemHandler` 最后才 `remove(c,position,itemId)`，失败不扣道具。
 
 迁移状态：`NativeResetWindow`（当前只接 5050000）+ `Profile.ResetAp`。本工程 `StatWindow` 的 HP/MP 加点箭头常驻禁用、`hpMpUsed` 恒 0，所以 HP/MP 行按源端 hpMpUsed<1 分支拒绝，不伪造洗血。**5050001..3（SP 洗点，cashType24 → `0xA0C6DD`）尚未迁移**；其资源为 `Reset/SP/{backgrnd 175x289, backgrnd1 175x28, backgrnd2 175x289, backgrnd3 175x230, skill0/skill1/line→../../Skill/*, Tab/enabled|disabled}`，字符串 2934..2943。
+
+### SP 洗点窗 5050001..4（2026-10-30 第二轮逆向，同 EXE）
+
+道具实为 **5050001..5050004 四件**（上一轮写 5050001..3 漏了 4 转卷）：String.wz/Cash.img 官方中文「技能点重置卷(1转)..(3转)」+ 5050004 四转；描述确认转数语义：5050001 只洗 1 转、5050002 ≤2 转、5050003 ≤3 转、5050004 全部。服务端 `itemId > AP_RESET(5050000)` 即走 SP 分支（先 readInt SPTo、后 SPFrom），canSPAssign 只校验职业树、**不校验转数**（AssignSPProcessor.java:43-59），转数范围是纯客户端道具语义。
+
+**窗口类定位法（新）**：AP/SP 窗对象 ctor（`0xa0efbe`=AP、`0xa0f4dd`/`0xa0f30e`=SP 列表窗两变体、`0xa0f6ac`=0xCC、`0xa0f86e`=0xA0 确认页）里 `[esi]/[esi+4]/[esi+8]` 写入 vtable VA；对比 AP(0xb3f8ec) 与 SP(0xb3fa84) 槽表：**槽 3=OnCreate、槽 8=OnButton、槽 4=SP 特有**。SP OnCreate=`0x8b2cc4`、确认页 OnCreate=`0x8b5889`。
+
+SP 三页结构与坐标（`0x8b2cc4` push 常量对）：
+- 行按钮 BtSpUp 12x12 id=2002..2006 **@(131, 119+40k) 5 行**；`0x8b2f6d` 把 id-0x7DA 当行索引、`0x8b3005` 加滚动偏移 [obj+0x38] 后写 [obj+0xCC] —— **只有点行上小按钮才算选中，点行无效**。行 141x35 与技能窗同构（SkillWindow 0x8AAC69：RowX=7/RowY=99/SpUpX=131/SpUpY=20），行顶=99+40k。
+- 滚动条 id=2001 @(153,99) 高 155（=VScr5 15 宽）；BtClose (155,6)。
+- Tab 页签图 `Reset/SP/Tab/enabled|disabled/0..3` = **罗马数字 I/II/III/IV（转数）**；tab 的 x/y 未从汇编解出（0x8b2cc4 只见 `push 4; push 8` 构造 4 项数组），按底图灰带 y≈57、Tab2 底板 x=3/宽 34 推断，待实拍核对。
+- 确认页（0x8b5889）：BtOK2 id=1 **@(87,207)**、BtCancel2 id=2 **@(129,207)**、BtClose id=2 @(155,6)。87/129 差 42 与 47 宽按钮重叠 5px，与资源图矛盾——坐标按汇编保留待实拍修正。
+- 确认页底图 backgrnd3 175x230 摘要两组（像素实测）：红线 y=91/155，红线下内容区 29 高 = 图标块 (8,+1,35,28) + 文字区 (44..168)；灰条在红线上方 ~17 高，**灰条上的原端文字未解**。
+- 底图语义：backgrnd=页1「请你选择想恢复的技能」、backgrnd2=页2「你要在哪儿再分配技能点?」、backgrnd3=确认页「想这样恢复吗?」。
+- 发包序 0xA0CA71..0xA0CA82：先写 0xCC 页值(SPTo)、后写 0xD4 页值(SPFrom)，与源端 readInt 顺序一致；确认后才进 0x485BF7 操作锁。
+- `0xa0ec6b(x)`=`(x%1000)%100`、`0xa0ec84(x)`=`x/100==0x16(22) || x==2001`；`0x5a4`(1444)='BtMouseOver'（按钮 hover 图资源名）。
+
+迁移状态：`NativeSpResetWindow`（三页 + Tab 转数过滤 + VScr5 滚动）+ `Profile.ResetSp`（双向 ±1、目标满级/来源 0 级拒绝）；`PreviewShot` phase 66..71（种子每转两技能、三页实拍 + 真实结算断言）。边界：技能宏清理不适用（无技能宏）、req 前置失效照源端不校验、新手(job 0/1000)与 autoLearn 不进列表。
+
+**同批并行迁移（2026-10-30，各 detail 见 docs/parallel/*.md）**：传送石 504（`NativeTeleportWindow`，0xA0CAB0→0xA0A4AA 模态链，isVIP=itemid/1000≠0x13B0 比较结果）、黑板 537（`NativeAdBoard`，九宫格 leftW=18/cell=14/topH=19/bottomM=23、锚点 x=3−innerW/2−18、y=−(14×行数+23)，40 字=0x28）、改名 517（`NativeRenameWindow`，0xA0BA15；min4/max12 原生字节、忽略字符表 0xBE223C→0xB3726C 17 字节、Curse.img 572 条）。三者均已接入 `NativeInventoryActions`，编译 0 警告 0 错误；**视觉验收（Unity 实拍）尚待完成**。
+
+## 2026-10-30 十项反馈：吸怪插值与装备详情门控
+
+吸怪沿用上文已核实的100ms/150px服务端节奏、MoveLife130ms。EnemyUnit.MoveVac现在保留逻辑目标，视觉由当前显示位置向新目标作130ms线性移动；NativeMonsterVac下一步使用逻辑目标，避免插值未结束导致150px步幅缩水。此为移动封包表现的本机适配，尚未用原EXE逐帧轨迹比对，不宣称插值内核完全相同。
+
+装备详情门控纠正（EXE身份同binary-and-tools）：7FE17A..7FE195先取职业并除100，只在商=22或职业=2001进入创建分支，7FE208..7FE222才创建id3001/BtDetail(5,267)；此前所有职业常驻详情按钮不成立，已按条件限制。宠物装备子窗ctor7FE299，vtable B38A70（OnCreate7FFE73/Draw801474），177×181，父窗x+172/y+123；7FFE73初始化BtCashshop@(155,159)、BtPet1..3@(10+34*i,151)，仅有对应宠物时可用。已定位但尚未迁移子窗，不能以去掉详情按钮宣称第9项全部完成。
+# 2026-10-30 装备宠物子窗补查
+
+身份沿用本 skill 的 BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`。
+复现：`tools/inspect_beidou_client.py <exe> --fn 0x7FFE73` / `--fn 0x801474` / `--fn 0x8019F1`。
+
+- `0x7FE12F` 创建子窗偏移 parent+(172,123)，`0x7FE299` 尺寸 177×181，背景 `UI/UIWindow.img/Equip/pet`。
+- OnCreate `0x7FFE73`：`Equip/BtPetEquipHide` 位于 (155,159)，17×16、origin=(8,8)，id=2000。`UserInfo/BtPet1..3` 位于 (10+34i,151)，30×27、origin=(15,13)，id=2001..2003，按对应实际宠物启用。
+- OnButton `0x8019F1`：2000 → `0x7FFA84` 隐藏；2001..2003 更改选中宠物索引并失效重绘。
+- 绘制 `0x801474` 用 VA `0xBE2260` 的 bodyPart POINT 表。当前迁移表直接保留在 `EquipWindow.PetCells`，不能按看图重新排槽。
+- 无对应宠物时 (112,77)/(79,110)/(112,110) 画原 0x40FF0000 的 32×32 禁用遮罩；另有宠物能力条件遮罩 (46,11)/(112,11)。HP/MP 药水图标在 (46,43)/(112,43)，HP 数量基线 (46,31)。
+
+当前已接入实际 getPet/petSlot 查询、三宠选择、装备图标、悬浮详情/双击卸下和隐藏子窗，替换“暂未开放”。**未完成边界**：自动 HP/MP 药水及数量、宠物能力特定遮罩、宠物装备拖动目标；原控件 origin 与创建坐标的精确组合还需实画核对。不能宣称宠物装备窗全部交互已还原。
+
+
+2026-10-31 纠正此前“Schema保留V1.0.29 pets/petignores原列”的迁移状态：本次实际检查 Schema.sql 与 Resources/Schema.txt 均缺这两表，InventoryDao 虽有宠物创建代码但商城首次取出会抛异常。本次补齐两表和 cash_items.petid，定向 NativeSystemChecks 78/0 包含存取及重开存档不复制宠物；详见 cash-shop.md 的同日记录。不能把旧隔离脚本测试视作正式 Schema 已有宠物表的证据。
+
+### 2026-10-31 宠物查询及专用装备槽纠正
+
+getPet(itemId=0)曾被 NativeInventoryService 的通用物品ID校验提前拒绝，导致装备页与地图
+看不到实际召唤状态。现只放行明确的无物品ID宠物操作。宠物180..183类先走原端专用槽位及
+宠物兼容校验，Profile特殊槽读权威inventory，不混入人物Worn/纸娃娃。
+原端地址、槽位表、原IMG服装同帧和实际能力/未完成项见 [宠物地图与装备](pet-field-and-equipment.md)。
+目前实际接通服装、金币磁铁和道具袋；自动HP/MP等不能仅因能穿戴就宣称已生效。
+
+## 2026-10-31 吸怪后UI失灵修复
+
+项目调用链：StartVac→NativeBuffs.ApplyItem(2431158)保存负source ID，TemporaryStatView.Draw曾无条件
+SkillBook.Get(-2431158)，尝试打开不存在的Skill/-243.img，抛FileNotFoundException并中断GameHUD.OnGUI，
+位于其后的全部GameWindows/任务灯泡绘制与点击均跳过。现仅正source查SkillBook，负source用原物品图标。
+这属于迁移错误，不改原吸怪固定点/150px/100ms规则。验证见four-feedback-verification.md。
+
+
+## 2026-10-31 七项反馈补核
+
+吸怪插值被贴地覆盖、Java整数步进与堆叠接触免疫门控：见 [七项玩法补核](seven-gameplay-feedback-2026-10-31.md)。该记录区分原端结论、本次修复与尚未验证边界。
+
+## 2026-11-01 五转奖励物品错误面板定位
+
+原`Item/Consume/0202.img/02029006/spec`：npc9900001，script=`冒险家五六转攻击技能`，remove0，isNpc1；原npc/9900008.js以此物品作为完成五转奖励。`tools/imgdump.py Item/Consume/0202.img 02029006`可复现。当前源端scripts-zh-CN与运行资源2779脚本中均未找到该命名脚本。原NPCScriptManager.java start私有入口124行起，命名npc→BeiDouSpecial→数字npc回退；项目ScriptSource.LoadNpc同样回退，因此物品实际打开npc/9900001拍卖主菜单。这不是已实现五转技能面板；不得凭空编造缺失脚本或UI。用户要求继续从源端补充，未授权自行重写：已再查scripts、scripts-zh-CN、全部源端隐藏/忽略文件及mxd目录同名文件/压缩包，仍未找到。保持现有入口，待正确原脚本来源；不能声称已修复。
+
+### 五转女神完整链路补查（2026-11-01，用户要求）
+
+本次只做源端只读分析和知识归档，未改运行时代码/原JS，未声称完成面板迁移。源根仍为Beidou-Server。
+
+身份SHA256：
+- scripts-zh-CN/npc/9900008.js：7fda58aef4a4a9d01efbc056e9daf843f7008f777154f74453c24fee5394fe52。
+- UseItemHandler.java：c21e8c80787be722b6f9014c709e479c853e0c19997cd65259d30c85616831dc。
+- ItemInformationProvider.java：86b777480f979d7c15c469dc43e745fd10e7ecc551ba79216f54be9c2ef81ee8。
+- NPCScriptManager.java：0797dd25aa0f06362eaeba38ef69d9e5cdf80ba4331e776cd559d65ecfbf91f6。
+- AbstractScriptManager.java：a0ec9185aa2c107b0eaf864f83248936be8f195fe66e448a40db44a0d90c668b。
+- AbstractPlayerInteraction.java：223abe10c79e6e20002ac4b8782890ad5d928d74219a38ebb1fc95dfb7fcdbfc。
+- clien/Data/Item/Consume/0202.img：6935cb2063fcdb4e95e1d7c514afc3db25d43ecb9361bf21fa68529a83e185dd。
+
+1. `9900008.js:36..109`：status0按当前职业分冒险家/骑士团，选项0进入转职、1合成英雄币。冒险家白名单112/122/132/212/222/232/312/322/412/422/512/522。冒险家进入时先清除未完成却持有的2029006。
+2. `111..191 prepareExplorerFifthJob/unlockExplorerFifthJob`：180级；首次须4310060×1、2435719×100、金币500000000、cash1×10000，背包能放2029006。确认后先扣材料/金币/点券，再写角色永久扩展`explorer_fifth_job_completed=1`，再发2029006×1。**没有changeJob、teachSkill或openUI**。完成标记存在时走补领，已持有则提示，不重复扣材料；prepare仍先检查180级。get/save扩展由AbstractPlayerInteraction1437/1487交给ExtendUtil，角色ID+CHARACTER_EXTEND，不是账号标记。
+3. `194..291`骑士团分支另行调用changeJobById至1112/1212/1312/1412/1512，与冒险家奖励物品的分支不同，不可混成同一条“换五转职业ID”链。
+4. 客户端原IMG `02029006/spec`再次从**源clien/Data**核对：isNpc1/npc9900001/script冒险家五六转攻击技能/remove0。图标32×32 origin(0,32)。物品不是一次性技能书，不读取229技能书授技逻辑。
+5. `UseItemHandler88/119/218..234`：handleItemUsage→isNpc→handleShortcutMenu→getScriptedItemInfo；remove0不扣物品，发送enableActions；调用`NPCScriptManager.start(c,npc,-1,script,chr,false,"cm")`。注意明确为**itemScript=false**，不是同类的ScriptedItem重载（该重载会使用item目录/im）。此处不会因为“放快捷键”而改为另一个面板。
+6. `NPCScriptManager124..162`：false路径先npc/命名.js，再BeiDouSpecial/命名.js；均空则设置cm并回退npc/9900001.js。该数字脚本就是拍卖主菜单。当前MapleDash的NativeInventoryActions205→NpcSession.Talk→ScriptSource.LoadNpc符合此分派；当前错误面板有源端缺失文件触发回退的直接解释，不是猜测IMG应打开普通技能窗。
+7. `AbstractScriptManager52..80`：每个候选先语言目录（通常scripts-zh-CN）再scripts，文件不存在再尝试classpath同路径。已查本机源端普通/隐藏/忽略文件；新增逐一检查整个Beidou-Server下86个jar的ZIP目录，未找到五/六转命名JS或9900008.js；src/main/resources亦未找到目标。只能确定**当前这份本机源端材料缺失目标脚本**，不能据此断言用户线上运行服务端也缺失。
+
+复现：`tools/imgdump.py Item/Consume/0202.img 02029006 --data ../../Beidou-Server/clien/Data`；读取上述Java函数范围和9900008完整脚本；`rg -n 'explorer_fifth_job_completed|2029006|冒险家五六转' ... -g '*.java' -g '*.js'`仅找到女神定义（完成标记没有另一个Java消费入口）。jar核查用Python pathlib.rglob('*.jar')+zipfile.ZipFile.namelist，不执行jar。原“龙神技能面板.js”虽存在，但它是另一组技能/键位菜单，不能拿来代替缺失的冒险家五六转面板。
+
+
+## 2026-11-01 用户授权：五转完成后直接在技能窗显示五六转技能
+
+本节是用户明确要求的项目逻辑调整，不是恢复缺失的“冒险家五六转攻击技能.js”。源端 9900008.js 身份、原道具及缺失回退链路沿用上节，不修改源脚本文件。
+
+- 覆盖脚本 `content/script-overrides/npc/9900008.js` 仍使用原等级180、英雄币1、核心宝石100、金币500000000、点券10000的条件、扣费和永久键 `explorer_fifth_job_completed=1`；去掉2029006的空间检查、发放和补领，对话提示改为常规技能窗入口。骑士团和英雄币合成分支保持原脚本。
+- `ExplorerAdvancedSkills` 从真实 ScriptValue 读取角色永久完成键，按 FullCharacter 实例缓存；NpcApi 成功写入该键时失效，重新加载角色读取旧完成记录。因此既有已完成角色无需重新缴费或持有道具。
+- 按用户随后明确的页签要求，`SkillWindow.Tabs` 保留原职业链，将 JobTree 中该职业现有新增五六转技能从四转页分离，完成后追加独立“五转”页（第六页，页头“五转技能（含六转）”）；未完成不显示该页并禁止手动加点。仅复制显示用字典和列表，不修改共享技能树/洗点数据。仍沿用当前技能窗 SP/req/masterLevel 规则，不自动赠送等级。
+- 项目分组边界采用各职业原四转主动技能末ID之后的现有 IMG 列表：1121011、1221012、1321010、2121008、2221008、2321009、3121009、3221008、4121009、4221008、5121010、5221010。边界不是原缺失脚本的菜单证据；现有导出列表含追加攻击/终结组件，本次不猜造缺失脚本的筛选、五/六转分组及授予等级。
+- 验证入口：`SkillPanelChecks.Run` 的真实女神 NpcSession、永久键和实际 TabSkills 列表检查；具体本次运行结果见 `docs/four-feedback-2026-11-01.md`。未做 Android 实机验收。
+
+### 五转独立页签素材与布局补核
+
+- 项目 `Data/UI/UIWindow.img` SHA256 `b0a92de9487c221601c2b1e13cb0ab37a05915994231ce140cc5a171e5bfd423`；`Skill/Tab/{enabled,disabled}/5` 均为15×12、origin(0,0)。`UI/Basic.img` SHA256 `b70dd069f8f3cc1cfc6eddce8d12790a44b4792cb107304ba9d719edd70357e3`，复用既有Tab2三切片，不自绘页签。复现：`tools/imgdump.py UI/UIWindow.img Skill/Tab --depth 2`。
+- 原 x3/y23/34×19及EXE地址沿用 `map-and-skill-window.md`。六页时在既有168像素横向范围均分28宽，绘制与点击使用相同宽度；纠正此前仅压缩步进、命中框仍34宽造成重叠。28宽及第六页内容属于此次用户授权扩展，不声称是原EXE的五转布局。书本图标仍取当前职业原IMG。
+- 针对性回归 `SkillPanelChecks.Run` 检查未完成五页、完成六页、四/五转列表互斥、共享数据不变、原两态页签纹理可加载及28宽；日志及运行结果见本次反馈报告。
+
+### 五转页签样式及虚拟键绑定反馈（2026-11-01）
+
+实读上述UIWindow.img：`Skill/Tab/{enabled,disabled}/0..4`为白色数字（enabled带暗描边），`/5`为细黑V，两态均为15×12。此前“有第六页签资源”不能推出其样式与前五页一致。用户本次明确允许V文字匹配其他页签，因此仅第五转V采用现有UI字体、白色粗体、选中时1逻辑像素黑描边；Tab2底板不变。该文字是用户授权适配，不是原IMG，也不新增EXE布局结论。
+
+原报告截图的大蓝圈来自`VirtualControls.DrawDropTargets`：`SkillWindow.Dragging`时遍历所有按钮画青色脉动环/悬停黄色环，并非技能释放效果。本次按用户要求删除这些环，仅保留顶层拖拽图标。
+
+`TryBindSkill`此前无论按钮是否有显式key均只写`e.skillId`；而`ButtonSkill`、`SendButton`对于有key的按钮从KeyMap/QuickSlots读技能/发键，导致拖入后回显旧技能图标、实际触发旧技能。现在显式key通过`QuickBarKeys.BindSkillToKey`写同一套KeyMap/QuickSlots，清掉该按钮不用的skillId；无显式key仍保留直接技能绑定。重用快捷栏已有槽分配规则，不改变技能ID/原技能图标/原技能消耗。

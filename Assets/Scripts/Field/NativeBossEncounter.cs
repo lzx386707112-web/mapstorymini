@@ -23,6 +23,9 @@ public sealed class NativeBossEncounter : MonoBehaviour
     public void Clear() { tasks.Clear(); lucid = null; NativeSkillVideo.Stop(NativeSkillVideo.Channel.BossScene); }
     public void OnSpawn(EnemyUnit mob)
     {
+        // 副本（eim 实例地图）里的怪由事件脚本自己管：露希妲那条链是
+        // event/LucidBattle.js + LucidBossCompat，再叠一份客户端控制器就是双倍伤害。
+        if (mob.eventOwned) return;
         if (NativeBossRules.IsLucid(mob.fieldMobId))
             lucid = new NativeLucidEncounter(this,field,mob);
         if (mob.fieldMobId >= 8810118 && mob.fieldMobId <= 8810122)
@@ -39,7 +42,7 @@ public sealed class NativeBossEncounter : MonoBehaviour
             for (int id = 8810010; id <= 8810017; id++) Remove(id);
         }
     }
-    public void OnDamaged(EnemyUnit mob, int amount)
+    public void OnDamaged(EnemyUnit mob, long amount)
     {
         // Horntail body is a shared HP gauge; direct body damage is restored.
         int id = mob.fieldMobId;
@@ -89,6 +92,9 @@ public sealed class NativeBossEncounter : MonoBehaviour
 }
 
 // Ported from LucidBossCompat. Coordinates/timers are source values, not stage JSON.
+// 只服务「普通地图上直接出现的露希妲」（GM 刷怪 / 地图 life）。
+// 副本里的露希妲由 event/LucidBattle.js + LucidBossCompat（服务端控制器）驱动，
+// 两者同时跑会把伤害结算两遍，所以 OnSpawn 对 eventOwned 的怪不再建这个控制器。
 public sealed partial class NativeLucidEncounter
 {
     readonly NativeBossEncounter owner;
@@ -182,8 +188,8 @@ public sealed partial class NativeLucidEncounter
         if (Now >= rush) { Rush(); rush = Now + 20000; }
         if (Now >= glass)
         {
-            int index = glassIndex++ % GlassAreas.Length;
-            var area = GlassAreas[index];
+            int index = glassIndex++ % LucidTables.GlassAreas.Length;
+            var area = LucidTables.GlassAreas[index];
             owner.Effect("customSkill/lucid/stainedGlass" + (index == 0 ? "" : index.ToString()) + "VideoLayer");
             Hit(1260,20,area);
             Schedule(3000,() => { if (owner.Count(8880171) < 15) owner.Spawn(8880171,new Vector2(area.center.x,area.y)); });
@@ -196,7 +202,7 @@ public sealed partial class NativeLucidEncounter
         int count = Math.Min(NativeBossRules.ButterflyCount(hp),40-gauge);
         gauge += count;
         int id = phase == 1 ? 8880165 : 8880175;
-        var positions = phase == 1 ? ButterflyP1 : ButterflyP2;
+        var positions = phase == 1 ? LucidTables.ButterflyP1 : LucidTables.ButterflyP2;
         int visible = Math.Min(count,40-owner.Count(id));
         for (int i = 0; i < visible; i++) owner.Spawn(id,positions[positionIndex++ % positions.Length],false);
         if (gauge >= 40)
@@ -237,16 +243,16 @@ public sealed partial class NativeLucidEncounter
     static Vector2 RushPosition(int elapsed)
     {
         float total = 0;
-        for (int i = 1; i < RushPath.Length; i++) total += Vector2.Distance(RushPath[i-1],RushPath[i]) / RushSpeeds[i];
+        for (int i = 1; i < LucidTables.RushPath.Length; i++) total += Vector2.Distance(LucidTables.RushPath[i-1],LucidTables.RushPath[i]) / LucidTables.RushSpeeds[i];
         float target = Mathf.Clamp(elapsed,0,3000) * total / 3000, consumed = 0;
-        for (int i = 1; i < RushPath.Length; i++)
+        for (int i = 1; i < LucidTables.RushPath.Length; i++)
         {
-            float weight = Vector2.Distance(RushPath[i-1],RushPath[i]) / RushSpeeds[i];
-            if (target <= consumed + weight || i == RushPath.Length-1)
-                return Vector2.Lerp(RushPath[i-1],RushPath[i],weight == 0 ? 1 : (target-consumed)/weight);
+            float weight = Vector2.Distance(LucidTables.RushPath[i-1],LucidTables.RushPath[i]) / LucidTables.RushSpeeds[i];
+            if (target <= consumed + weight || i == LucidTables.RushPath.Length-1)
+                return Vector2.Lerp(LucidTables.RushPath[i-1],LucidTables.RushPath[i],weight == 0 ? 1 : (target-consumed)/weight);
             consumed += weight;
         }
-        return RushPath[RushPath.Length-1];
+        return LucidTables.RushPath[LucidTables.RushPath.Length-1];
     }
     void FailFury()
     {

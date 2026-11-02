@@ -21,7 +21,7 @@ namespace Server.Bot
         public int accId;
         public int gmLevel;
         public int str = 12, dex = 5, intelligence = 4, luk = 4;
-        public int meso;
+        public long meso;
         public readonly List<InventoryEntry> inventory = new List<InventoryEntry>();
 
         // 外观装备（装饰系统填充，阶段E）：slot(负) -> itemId

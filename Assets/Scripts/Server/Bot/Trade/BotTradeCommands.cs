@@ -8,13 +8,13 @@ namespace Server.Bot.Trade
         public static void StartRequest(BotActor actor, BotTradeService service) => service.Start(actor);
         public static bool SendRequest(BotActor actor, BotActor invitee, BotTradeService service) => service.Invite(actor, invitee);
         public static void WriteChat(BotActor actor, string text) => actor.trade?.Chat(text);
-        public static void SetMeso(BotActor actor, int amount)
+        public static void SetMeso(BotActor actor, long amount)
         {
             if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             actor.trade?.SetMesoBot(amount);
         }
-        public static int ReadMeso(BotActor actor) => actor.trade?.meso ?? 0;
-        public static int ReadPartnerMeso(BotActor actor) => actor.trade == null ? 0 : actor.trade.partner.meso;
+        public static long ReadMeso(BotActor actor) => actor.trade?.meso ?? 0;
+        public static long ReadPartnerMeso(BotActor actor) => actor.trade == null ? 0 : actor.trade.partner.meso;
         public static IList<InventoryEntry> LocalItems(BotActor actor) => actor.trade?.Items;
         public static IList<InventoryEntry> PartnerItems(BotActor actor) => actor.trade?.partner.Items;
         public static bool IsPartnerLocked(BotActor actor) => actor.trade != null && actor.trade.partner.locked;

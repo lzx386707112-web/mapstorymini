@@ -51,6 +51,12 @@ public static class AdminLive
 
     // —————————— 背包 ——————————
     // deleted=true 从内存移除；否则按库里的行重建那一条（数量/位置/属性都跟着变）。
+    //
+    // 注意：只改 GameSession.Character.inventory 是不够的。脚本里的 cm.haveItem / getItemQuantity
+    // 读的是 Profile 存档（Profile.ItemCount），而 Profile 只在 ApplyInventoryToProfile 时从
+    // inventory 重建。后台发放是 DB 直写，不经过 Profile.AddItem，于是出现「背包里能看到，
+    // 但转职/任务脚本判定为没有」——二转交付了黑珠却转不了职就是这么来的（英雄的证明
+    // 4031012 在背包里，cm.haveItem(4031012) 却返回 false）。这里按差额补一次存档。
     public static string SyncInventory(DbStore db, long characterId, long itemRowId, bool deleted)
     {
         if (!IsCurrentCharacter(characterId)) return null;
@@ -60,21 +66,42 @@ public static class AdminLive
         int index = inv.FindIndex(e => e.itemRowId == itemRowId);
         if (deleted)
         {
-            if (index >= 0) inv.RemoveAt(index);
+            if (index >= 0)
+            {
+                ApplyProfileDelta(inv[index].itemId, -inv[index].quantity);
+                inv.RemoveAt(index);
+            }
             return "已从当前角色背包移除该道具";
         }
 
         var row = db.Table("inventoryitems").Find(DbStore.Eq("inventoryitemid", itemRowId));
         if (row == null)
         {
-            if (index >= 0) inv.RemoveAt(index);
+            if (index >= 0)
+            {
+                ApplyProfileDelta(inv[index].itemId, -inv[index].quantity);
+                inv.RemoveAt(index);
+            }
             return null;
         }
 
         var entry = CharService.ToInventoryEntry(db, row);
+        int previous = index >= 0 ? inv[index].quantity : 0;
         if (index >= 0) inv[index] = entry;
         else inv.Add(entry);
+        ApplyProfileDelta(entry.itemId, entry.quantity - previous);
         return "当前角色背包已同步";
+    }
+
+    // 把后台改动补进 Profile 存档。只处理可堆叠物（装备走 owned/装备槽，不在这里计数）：
+    // 装备的发放本来就要重进游戏才会穿上，和转职链路无关。
+    static void ApplyProfileDelta(int itemId, int delta)
+    {
+        if (itemId <= 0 || delta == 0) return;
+        if (itemId / 1000000 == 1) return;                 // 装备
+        if (delta > 0) Profile.Data.AddItem(itemId, delta);
+        else Profile.Data.RemoveItem(itemId, -delta);
+        Profile.Save();
     }
 
     // —————————— 封停踢下线 ——————————

@@ -162,3 +162,19 @@ Unity检查入口 `NativeCashSceneChecks.Run`；只用内存商品/余额fixture
 2026-10-26 本次验证：dotnet编译0 warning/0 error；独立Unity工程副本通过800×600、1280×720场景/购买/赠送截图及分类命中、购买与赠送取消检查，未执行真实交易。检查通过SessionState抑制GameLoop自动启动，fixture不启动玩家/服务器；截图无移动操作覆盖层，不能用它宣称虚拟按键集成通过。
 
 最终增量验证：`/tmp/mapledash-cash-review-final.log`包含NativeCashSceneChecks PASS；两种分辨率均断言赠送OK进入生日输入、未请求交易。截图保存于 `docs/hud-review/cash-{scene,buy,gift,birthday}-{800,1280}.png`。以上是隔离内存fixture，不是APK验收。
+
+## 2026-10-31 商城取出、背包镜像与宠物回归
+
+本次复用上述 EXE 布局/双击结论，未新增 EXE 地址结论；仅修复移植数据链路，未更改 IMG 布局。
+
+源端依据：
+- `gms-server/src/main/java/org/gms/net/server/channel/handlers/CashOperationHandler.java` SHA256 `8a3429c557fde46f819898bdbfb57b85933293fabe1452888097b0b80a80dc38`，action `0x0D`（约297..315行）先向角色对应背包 addItem，成功再从现金仓库移除；`0x0E`（约316..345行）反向移动同一 Item，已召唤宠物禁止存回。原端 Item 身份不因普通保存而变更。
+- `V1.0.29__create_pets.sql` SHA256 `bddd167da5ad42e33b93a4fe3fa77eb6010d28958a6f0c5fe50d08bccf7ec346`：pets 主键 petid、name/level/closeness/fullness/summoned/flag；petignores 主键 id、petid/itemid。
+
+移植缺陷及修复：
+1. `InventoryDao.InsertItem` 已调用 pets，但实际 Schema.sql/Resources Schema.txt 缺 pets/petignores，宠物首次取出抛“表不存在”。补齐原列；cash_items 补 petid 默认 -1，否则只写入 DbRow 的 petid 会在存盘时被丢弃，导致下一次取出另建宠物。
+2. `BotTradeService.Persist` 原先删除整包再为所有物品分配新 inventoryitemid；`NativeCashService.Sweep` 找不到旧外键会删除 cash_items 关联。现保留当前角色原有行身份；跨角色新收到的物品仍分配新 ID。
+3. `NativeCashWindow.SyncInventory` 原先从两个快照计算计数差，无法校正已失配的 Profile 镜像（同一快照重复同步的差为0）。改为先应用响应 inventory，再经 `ApplyInventoryToProfile` 重建物品/装备镜像，不替换经验或任务进度。
+4. 商城 Draw 用 finally 恢复 GUI.matrix/GUI.enabled，异常不再将商城缩放泄漏到后续 HUD。宠物表缺失是已确定的交易异常来源；其他异常仍按日志排查。
+
+验证：`tools/server-check/NativeSystemChecks.cs` 新增整包 Persist 后现金身份与关联、宠物取出/存回/重开 DB 保留 petid 与亲密度且仅一行宠物的断言。本次定向运行该套件 **78 passed / 0 failed**（包括既有商城/社交断言），隔离临时 DB，不操作玩家存档。`dotnet build tools/unity-compile-check/Check.csproj --no-restore -p:BaseOutputPath=/tmp/mapledash-cash-compile/bin/ -p:OutputPath=/tmp/mapledash-cash-compile/bin/`：0 errors / 0 warnings。尚未运行 Android 实机双击/聊天验收；本次未扩展宠物跟随或商城分类等未迁移能力。

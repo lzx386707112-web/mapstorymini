@@ -100,6 +100,14 @@
 - 锚点由素材自证：底边 = `(-origin.y) + height`。`effect/1` 末帧 `0+337`；`effect/0` 首帧 `205+132 = 337`。两条序列底边同时落在脚点上 ⇒ **锚点 = (槽位 x, 脚点 y − 337)**，x 方向两套 origin 中心都≈0。
 - 播放语义：`effect/1` delay `150/100/100/100/3000` → 循环（亮 3 秒再重升）；`effect/0` delay `300/120/120/120/120/0` 且末帧 `a1=0` → 一次性淡出，`loop:false` 停在不可见末帧。
 - 角色 stand 动作用客户端统一时钟（所有槽位同相位），不要拿「进页时间」当起点，否则翻页会打回第 0 帧。
+- **选中槽位播走路、未选中播站立（2026-10-30）**：源端表现由用户给定（「选中角色会一直重复走路动作」）。
+  - 落地：`WzCharacter.AppearanceFrame/Appearance` 增加 `walk` 开关，取 `weapon.info/walk`（默认 1）→ `walk1`，
+    与 `Pose(recipe,"walk")` 同口径；`LoginFlow.CharPreview(rec, selected)` → `AnimatedPreview(ids, selected)`。
+  - **exe 侧未确证，别写成已定位**：已查 `SetSelectedSlot(0x5f6482)` 全文只建两套 effect，无 avatar 动作切换；
+    全局动作名表 `0xbec620`（walk1=0、stand1=2，每項 0x18，getter `0x4a8ce6`：`lea eax,[eax+eax*2]; mov eax,[eax*8+0xbec620]`）
+    的 12 个调用者、以及 `push 0x3f0`（字符串池 id 1008 = walk1）的 9 处引用，**都不在登录区 0x5f0000..0x632000**；
+    登录区引用的 332 个字符串池条目里也没有 walk1/stand1。所以「谁在切换到 walk」这一跳仍未找到。
+  - 走路是**原地循环不位移**（合成 sprite 的 pivot 锚在脚点，各帧自动对齐）。
 - 名牌两套：`nameTag/0` 高 20（半透明灰）+ 段宽 8/9/7，`nameTag/1` 高 22（实心黑）+ 8/9/10 ⇒ 选中用 `/1`、未选中用 `/0`。
 
 ### 复现
@@ -112,7 +120,8 @@ python3 tools/inspect_beidou_client.py <BeiDou.exe> --fn 0x5f6482      # SetSele
 python3 tools/imgdump.py UI/Login.img WorldSelect/channel/chSelect --depth 1
 ```
 
-回归：`LoginFlowChecks.Run` 第 8 节断言锚点常量、chgauge 宽度公式（7 / 32 / 73）与两套 effect 的底边 337。
+回归：`LoginFlowChecks.Run` 第 8 节断言锚点常量、chgauge 宽度公式（7 / 32 / 73）与两套 effect 的底边 337；
+第 9 节断言选中槽位与未选中合成的帧不是同一张、走路是多帧循环（4 帧）、站立仍是多帧（3 帧）。
 
 ### 实拍核对（2026-10-30，`LoginUiReview` 16 张）
 

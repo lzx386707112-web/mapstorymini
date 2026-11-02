@@ -68,7 +68,17 @@ namespace Server.Bot.Environment
             if (actor.trade != null) { Complete(walk, false); return; }
             if (walk.remaining-- <= 0 || Math.Abs(actor.x - walk.targetX) <= 20) { Complete(walk, true); return; }
             int x = (int)actor.x + (walk.targetX >= actor.x ? 10 : -10);
-            int y = (int)MapService.SnapToGround(actor.mapId, x, actor.y);
+            var map = MapService.Get(actor.mapId);
+            if (map == null) { Complete(walk, false); return; }
+            var geometry = MapGeometryCache.Get(map);
+            var footing = geometry.ground.Ground((int)actor.x, (int)actor.y);
+            var sample = geometry.regions.GroundSample(footing, x, (int)actor.y);
+            // A recorded walk has no falling integrator: stop at the platform edge.
+            // SnapToGround returns the old y when there is no floor, which used to send an air walk.
+            if (!sample.HasValue || sample.Value.point.x != x ||
+                Math.Abs(BotGroundIndex.YAt(footing, (int)actor.x) - actor.y) > 26)
+            { Complete(walk, true); return; }
+            int y = sample.Value.point.y - 1;
             // MovementPacketConstructor.createWalkStepPacket：stance 取 MOVING_LEFT(3)/MOVING_RIGHT(2)，
             // 不是 IDLE_LEFT/RIGHT(0/1)——传站立姿势会让假人走路时停在原地踏步。
             Send(actor, Normal(x, y, walk.left ? -100 : 100, 0, Floor(actor, x, y), walk.left ? 3 : 2, 160));

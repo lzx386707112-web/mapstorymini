@@ -85,6 +85,12 @@ def main():
     for path, obj in ((bundle / "npc_scripts.json", packed), (bundle / "script_manifest.json", manifest)):
         outputs[path] = (json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
 
+    # Java HuntTaskAutoPublisher reads this original JSON independently of JS.
+    hunt_key = "BeiDouSpecial/任务/狩猎任务配置.json"
+    hunt_raw = (args.server / "gms-server/scripts-zh-CN" / hunt_key).read_bytes()
+    outputs[bundle / "hunt_tasks.json"] = hunt_raw
+    outputs[data / "scripts" / hunt_key] = hunt_raw
+
     stale = []
     for folder in (data / "scripts", data / "script-sources"):
         stale.extend(p for p in folder.rglob("*.js") if p not in outputs)

@@ -25,9 +25,15 @@ public sealed class BotField : MonoBehaviour
     // 原端聊天气泡显示 5000ms（0x48A935 的 push 0x1388），最后 500ms 淡出。
     const float BalloonSeconds = 5f;
     const float BalloonFadeSeconds = 0.5f;
-    // MovementCommands.walkAlongX：duration=160ms、step=10px（＝62.5px/s），客户端按这个 duration
-    // 把角色从上一位置播到新位置。插值窗口必须就是 160ms；用 100ms 会「快走一段再停 60ms」，看着一顿一顿。
-    const float StepSeconds = 0.16f;
+    // MovementCommands.walkAlongX：duration=160ms、step=10px（＝62.5px/s）——那是「录制动作」包的节奏，
+    // 假人移动走的是 BotMovementService 的 50ms tick（每 tick 约 8px ≈ 160px/s）。
+    // 旧代码把 160ms 当成通用插值窗口：视图只能跑到 50px/s，永远追不上服务端，
+    // 稳态滞后几百像素，而且只能用「当前位置 → 最新目标」的直线去追，于是拐角、台阶、绳梯
+    // 全被抹平成空中直线（2026-11-02 用户报「假人在空中乱走、还没到绳子就开始爬」）。
+    // 现在位置/速度由 Update → TrackPosition 每帧按服务端真实坐标推进，不再有固定窗口。
+    // 服务端一次性换坐标（进传送门/落地纠偏）的距离阈值：超过就直接落位，
+    // 不能拿限速去滑行——那就是用户看到的「空中直线飞行」。
+    const float TeleportPx = 200f;
 
     sealed class View
     {
@@ -35,7 +41,10 @@ public sealed class BotField : MonoBehaviour
         public SpriteAnim animation;
         public string appearance;
         public NativeBotChair chair;
+        public BotActor actor;          // 每帧读服务端坐标用（见 Update）；不靠 100ms 的姿态同步
         public float previousY;
+        public bool groundedPose;
+        public string groundPose;
         public Vector3 target;
         public float speed = 0f;        // 世界单位/秒；由封包位移/时长算出来，别给默认值
         public float measured;          // 实测移动速度（px/s），用来对齐 walk 动画速率
@@ -48,6 +57,9 @@ public sealed class BotField : MonoBehaviour
         // 排版（断行 + 尺寸）只算一次：每帧对每个字 CalcSize 太浪费
         public string wrapped;
         public float innerW, innerH;
+        public int measuredRing=-1;
+        public string[] ringLines;
+        public float ringWidth;
     }
 
     readonly Dictionary<int, View> views = new Dictionary<int, View>();
@@ -97,6 +109,7 @@ public sealed class BotField : MonoBehaviour
 
     public void Synchronize(int mapId, int world, int channel)
     {
+        using var perf = Server.Bot.BotPerf.Timer("BotField.Sync");
         if (market == null) market = GetComponent<NativeMarketField>() ?? gameObject.AddComponent<NativeMarketField>();
         market.Synchronize(mapId,world,channel);
         bool sameMap = synchronized && mapId == currentMap;
@@ -146,6 +159,7 @@ public sealed class BotField : MonoBehaviour
     // budgetMs <= 0 表示只管人头数（常规增量，仍受 BotWorkPump 的共享 4ms 预算约束）。
     void CreateQueued(int limit, float budgetMs = -1f)
     {
+        using var perf = Server.Bot.BotPerf.Timer("BotField.CreateQueued");
         int created = 0;
         long begin = budgetMs > 0f ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
         while (created < limit && pending.Count > 0)
@@ -194,17 +208,8 @@ public sealed class BotField : MonoBehaviour
 
     void Apply(BotActor actor, View view)
     {
-        var target = new Vector3(actor.x / Art.PPU, -actor.y / Art.PPU, 0f);
-        float distance = Vector3.Distance(view.target, target);
-        if (distance > 0.0001f)
-        {
-            // 源端客户端按封包 duration 把上一位置播到新位置；这里按同样的节奏取速度。
-            // 注意 distance 是世界单位（1 单位 = 40px），不能拿像素范围（45~500）去夹，
-            // 否则 10px（0.25 单位）会被抬到 45 单位/秒＝1800px/s，每一步都瞬移。
-            float pixels = distance * Art.PPU;
-            view.speed = Mathf.Clamp(pixels / StepSeconds / Art.PPU, 2f / Art.PPU, 800f / Art.PPU);
-            view.target = target;
-        }
+        // 位置/速度交给 Update 每帧做（服务端 50ms 一步，100ms 同步一次会把拐角抹平）。
+        view.actor = actor;
         var bot = actor as BotCharacter;
         if (bot == null) return;
         var ids = BotAppearance.CharacterIds(bot);
@@ -222,6 +227,8 @@ public sealed class BotField : MonoBehaviour
             view.animation.Play(view.animation.Current, view.animation.IsOneShot, true);
         }
         string pose = bot.chair > 0 ? "sit" : Pose(bot.stance);
+        view.groundedPose = bot.chair <= 0 && (pose == "walk" || pose == "stand");
+        view.groundPose = pose;
         view.animation.SetBase(pose);
         if (bot.chair > 0 && view.animation.Current != "sit") view.animation.Play("sit", false, true);
         view.animation.SetFacing((bot.stance & 1) == 0 ? 1 : -1);
@@ -244,8 +251,28 @@ public sealed class BotField : MonoBehaviour
         float step = Time.deltaTime;
         foreach (var view in views.Values)
         {
+            TrackPosition(view, step);
             var before = view.root.transform.position;
             var after = Vector3.MoveTowards(before, view.target, view.speed * step);
+            if (view.groundedPose)
+            {
+                bool supported = false;
+                var map = Server.Field.MapService.Get(currentMap);
+                if (map != null)
+                {
+                    var ground = Server.Bot.Environment.MapGeometryCache.Get(map).ground;
+                    int px = Mathf.RoundToInt(after.x * Art.PPU), py = Mathf.RoundToInt(-after.y * Art.PPU);
+                    var footing = ground.Ground(px, py);
+                    if (footing != null)
+                    {
+                        int fy = Server.Bot.Environment.BotGroundIndex.YAt(footing, px);
+                        if (Mathf.Abs(fy - py) <= 26)
+                        { after.y = -(fy - 1) / Art.PPU; supported = true; }
+                    }
+                }
+                // A landing packet can arrive while the displayed feet are still in flight.
+                view.animation.SetBase(supported ? view.groundPose : "jump");
+            }
             view.root.transform.position = after;
             if (step <= 0f) continue;
             // 实测速度（px/s）→ walk 动画速率：主角 125px/s 时按 1.0 播，
@@ -260,6 +287,31 @@ public sealed class BotField : MonoBehaviour
         removed.Clear();
         foreach (var entry in balloons) if (now >= entry.Value.until) removed.Add(entry.Key);
         foreach (int id in removed) balloons.Remove(id);
+    }
+
+    // 每帧直接读服务端坐标。假人位移由 BotMovementService 的 50ms tick 推进（约 8px/步），
+    // 若只在 100ms 的姿态同步里换目标、并按 160ms 折算速度，视图就只能以 1/3 速度
+    // 沿着「当前位置→最新目标」的直线追赶 —— 拐角、台阶、平台边缘全被抹平，
+    // 人还在半空中就开始摆爬绳/跳跃姿势。这里按「两帧追平」给速度：
+    // 既不会瞬移，也不会落后到能看出抄近路。
+    void TrackPosition(View view, float step)
+    {
+        var actor = view.actor;
+        if (actor == null || view.root == null) return;
+        var next = new Vector3(actor.x / Art.PPU, -actor.y / Art.PPU, 0f);
+        float pixels = Vector3.Distance(view.target, next) * Art.PPU;
+        if (pixels < 0.01f) return;
+        view.target = next;
+        if (pixels >= TeleportPx)
+        {
+            // 传送门/换图是一次性换坐标：直接落位。用 800px/s 滑过去就是「空中直线飞行」。
+            view.root.transform.position = next; view.speed = 0f; return;
+        }
+        float window = Mathf.Max(step * 2f, 0.02f);
+        // 上限要盖住跳跃弧线（起跳/下落每 50ms 约 28px ≈ 560px/s），否则跳起来那一秒
+        // 视图永远落后服务端，落点才对上，看着就是「在空中直线飘」。
+        // 更远的位移已经由上面的 TeleportPx 直接落位，不会再走这条限速。
+        view.speed = Mathf.Clamp(pixels / Art.PPU / window, 2f / Art.PPU, 900f / Art.PPU);
     }
 
     // CharacterStance.java；其余姿势不能凭编号猜测。
@@ -301,6 +353,15 @@ public sealed class BotField : MonoBehaviour
         return (Vector2)view.root.transform.position + Vector2.up * (height * 0.5f);
     }
 
+    // 脚下名牌用：root 就是脚点（和气泡的作者头顶口径一致）。
+    public bool TryFeet(int actorId, out Vector3 feet)
+    {
+        feet = default;
+        if (!views.TryGetValue(actorId, out var view) || view.root == null) return false;
+        feet = view.root.transform.position;
+        return true;
+    }
+
     public void Clear()
     {
         if (market != null) market.Clear();
@@ -322,6 +383,9 @@ public sealed class BotField : MonoBehaviour
     }
 
     // ——————————————— 头顶聊天气泡 ———————————————
+
+    // General chat includes the local speaker; it has no BotField.View.
+    public void ShowLocalBalloon(string text) => ShowBalloon(GameSession.CharacterId, text);
 
     void ShowBalloon(int actorId, string text)
     {
@@ -380,17 +444,36 @@ public sealed class BotField : MonoBehaviour
 
     void OnGUI()
     {
-        if (!synchronized) return;
+        if (ShopWindow.Visible) return;
+        if (!synchronized && balloons.Count == 0) return;
         if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && !Pointer.Blocked && !GameWindows.AnyVisible)
         {
             var camera = Camera.main;
-            if (camera != null && market != null)
+            if (camera != null)
             {
                 var point = camera.ScreenToWorldPoint(new Vector3(Pointer.Pos.x * UiKit.Scale,
                     Screen.height - Pointer.Pos.y * UiKit.Scale,0));
-                market.TryVisit(point,id => views.TryGetValue(id,out var view) ? view.animation.Renderer : null);
+                bool visited = market != null && market.TryVisit(point,
+                    id => views.TryGetValue(id,out var view) ? view.animation.Renderer : null);
+                if (!visited)
+                {
+                    foreach (var entry in views)
+                    {
+                        var renderer = entry.Value.animation.Renderer;
+                        if (renderer != null && renderer.sprite != null &&
+                            renderer.bounds.Contains(new Vector3(point.x, point.y, renderer.bounds.center.z)))
+                        { NativeCharacterInfo.Open(BotRegistry.Get(entry.Key) as BotCharacter); break; }
+                    }
+                    if (!NativeCharacterInfo.Visible)
+                    {
+                        var renderer = GameLoop.I?.player?.GetComponentInChildren<SpriteAnim>()?.Renderer;
+                        if (renderer != null && renderer.sprite != null &&
+                            renderer.bounds.Contains(new Vector3(point.x, point.y, renderer.bounds.center.z))) NativeCharacterInfo.Open();
+                    }
+                }
             }
         }
+
         if (Event.current.type == EventType.Repaint && Pointer.RightPressed && !Pointer.Blocked && !NativeTradeWindow.Visible && !NativeUtilPrompt.Visible)
         {
             var camera = Camera.main;
@@ -424,14 +507,25 @@ public sealed class BotField : MonoBehaviour
         float now = Time.unscaledTime;
         foreach (var entry in balloons)
         {
-            if (!views.TryGetValue(entry.Key, out var view)) continue;
+            Transform root;
+            SpriteRenderer renderer;
+            if (entry.Key == GameSession.CharacterId)
+            {
+                var player = GameLoop.I?.player;
+                if (!GameSession.InGame || player == null) continue;
+                root = player.transform;
+                renderer = player.GetComponentInChildren<SpriteAnim>()?.Renderer;
+            }
+            else
+            {
+                if (!views.TryGetValue(entry.Key, out var view)) continue;
+                root = view.root.transform; renderer = view.animation.Renderer;
+            }
             var balloon = entry.Value;
             float alpha = Mathf.Clamp01((balloon.until - now) / BalloonFadeSeconds);
             // 锚点 = 角色当前站立帧的头顶（不是脚点上固定 84px：矮角色会飘一截、高角色会压脸）
-            var renderer = view.animation.Renderer;
-            float headY = view.root.transform.position.y +
-                (renderer != null && renderer.sprite != null ? renderer.sprite.bounds.max.y : 0.55f);
-            var sp = cam.WorldToScreenPoint(new Vector3(view.root.transform.position.x, headY, 0f));
+            float headY = renderer != null && renderer.sprite != null ? renderer.bounds.max.y : root.position.y + 0.55f;
+            var sp = cam.WorldToScreenPoint(new Vector3(root.position.x, headY, 0f));
             if (sp.z < 0f) continue;
             var anchor = new Vector2(sp.x / UiKit.Scale / s, (Screen.height - sp.y) / UiKit.Scale / s);
             // 正文排版：原端气泡超出宽度就断行，长消息是往下长成多行，
@@ -439,6 +533,32 @@ public sealed class BotField : MonoBehaviour
             if (balloon.wrapped == null) Measure(balloon, balloonStyle);
             float innerW = balloon.innerW;
             float innerH = balloon.innerH;
+            int ringStyle = entry.Key == GameSession.CharacterId ? NativeNameTag.RingStyle("chatBalloon") : 0;
+            if(ringStyle!=0 && balloon.measuredRing!=ringStyle)MeasureRing(balloon,balloonStyle,ringStyle);
+            var decorated = ringStyle == 0 ? null : NativeChatBalloon.Prepare(ringStyle,(int)balloon.ringWidth,balloon.ringLines.Length);
+            if (decorated != null)
+            {
+                var decoratedMatrix = GUI.matrix;
+                var decoratedColor = GUI.color;
+                GUI.matrix = decoratedMatrix * Matrix4x4.Scale(new Vector3(s,s,1f));
+                GUI.color = new Color(1,1,1,alpha);
+                var bodyRect = new Rect(anchor.x-decorated.anchorX,anchor.y-decorated.texture.height,
+                    decorated.texture.width,decorated.texture.height);
+                GUI.DrawTexture(bodyRect,decorated.texture);
+                balloonStyle.normal.textColor = decorated.color;
+                var textRect = decorated.text; textRect.position += bodyRect.position;
+                int previousSize=balloonStyle.fontSize;
+                balloonStyle.fontSize=NativeChatBalloon.FontSize(ringStyle);
+                textRect.height=decorated.lineHeight;
+                foreach(string line in balloon.ringLines)
+                {
+                    GUI.Label(textRect,line,balloonStyle);
+                    textRect.y+=decorated.lineHeight;
+                }
+                balloonStyle.fontSize=previousSize;
+                GUI.color = decoratedColor; GUI.matrix = decoratedMatrix;
+                continue;
+            }
             float w = innerW + 12f, h = innerH + 12f;
             // 尾巴几何（UI/ChatBalloon.img/0/arrow，13x13，origin=(1,0)）：
             //   0 行 x0 透明、x1 起才有像素；图像左下角是尾尖，尾尖落在角色头顶；
@@ -532,6 +652,30 @@ public sealed class BotField : MonoBehaviour
         // 下沉、下沿被下边框裁掉——表现就是「上面内边距大、下面没有」（2026-10-27 用户在对照图上指出）。
         float lineHeight = Mathf.Max(14f, style.lineHeight);
         balloon.innerH = Mathf.Max(14f, lines * lineHeight);
+    }
+
+    static void MeasureRing(Balloon balloon,GUIStyle style,int ring)
+    {
+        int previousSize=style.fontSize;
+        style.fontSize=NativeChatBalloon.FontSize(ring);
+        float limit=NativeChatBalloon.TextWidth(ring),widest=0;
+        string remaining=balloon.text ?? "";
+        var lines=new List<string>();
+        while(remaining.Length>0)
+        {
+            int end=0;
+            while(end<remaining.Length && remaining[end]!='\n' &&
+                style.CalcSize(new GUIContent(remaining.Substring(0,end+1))).x<=limit)end++;
+            if(end==0 && remaining[0]!='\n')end=1;
+            string line=remaining.Substring(0,end).TrimEnd(' ','\t','\r','\n');
+            lines.Add(line);widest=Mathf.Max(widest,style.CalcSize(new GUIContent(line)).x);
+            int next=end;
+            while(next<remaining.Length && " \t\r\n".IndexOf(remaining[next])>=0)next++;
+            remaining=remaining.Substring(next);
+        }
+        if(lines.Count==0)lines.Add("");
+        balloon.ringLines=lines.ToArray();balloon.ringWidth=Mathf.Ceil(widest);balloon.measuredRing=ring;
+        style.fontSize=previousSize;
     }
 
     // 九宫格先合成成一张整图（按尺寸缓存），再一次性画：内部不可能出现缝，

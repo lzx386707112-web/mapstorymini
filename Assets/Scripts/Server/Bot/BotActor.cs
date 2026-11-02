@@ -15,7 +15,7 @@ namespace Server.Bot
         public bool online = true;
         public FullCharacter character;
         public Trade.IBotTradeSession trade;
-        public int mesosTraded;
+        public long mesosTraded;
         public virtual bool IsBot() => false;
     }
 }

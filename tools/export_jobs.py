@@ -401,14 +401,14 @@ def main():
             "allSkills": ids,
         })
 
-    # 冒险家 0~322 的官方职业名沿用已有 JobSkills.json（原客户端名），覆盖 i18n 的偏差
-    # 例：client 100 = 剑士，i18n 100 = 战士；client 311 = 游侠，i18n 311 = 射手。
-    jj = ROOT / "Assets/Resources/UI/JobSkills.json"
-    if jj.exists():
-        official = {int(k): v for k, v in json.loads(jj.read_text(encoding="utf-8")).get("jobNames", {}).items() if v}
-        for j in jobs:
-            if j["id"] in official:
-                j["name"] = official[j["id"]]
+    # 职业名只认源端 i18n（message_zh_CN.properties 的 job.name.<id>）。
+    # 旧版这里会用 Assets/Resources/UI/JobSkills.json 的 jobNames 覆盖，直接把名字写歪：
+    #   100 剑士→应为战士、210 巫师(火毒)→应为法师（火毒）、211/212 整体提前一阶、
+    #   311 游侠→应为射手、321 狙击手→应为游侠、322 神箭手→应为箭神。
+    # 交叉校验（2026-11-01）：String/Skill.img 的 bookName 与 i18n 完全对应
+    #   （311 book=射手技能、321 book=游侠技能、211 book=巫师（火毒）技能），
+    #   BeiDou.exe 字符串池 32..50 的中文也与 i18n 一致，所以那套旧表是错的。
+    # 骑士团保留 (N转) 后缀？否 —— 上面的 re.sub 已统一去掉，UI 显示「魂骑士」。
 
     for s in skills.values():
         s["job"] = s["id"] // 10000

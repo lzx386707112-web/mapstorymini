@@ -71,10 +71,12 @@ namespace MapleDash.Js
             if (init == null) return;
             foreach (var kv in init) Props[kv.Key] = kv.Value ?? JsNull.Value;
         }
+        public bool Frozen { get; private set; }
+        public void Freeze() => Frozen = true;
         public JsValue Get(string key) => Props.TryGetValue(key, out var v) ? v : JsUndefined.Value;
-        public void Set(string key, JsValue v) => Props[key] = v ?? JsNull.Value;
+        public void Set(string key, JsValue v) { if (!Frozen) Props[key] = v ?? JsNull.Value; }
         public bool Has(string key) => Props.ContainsKey(key);
-        public void Remove(string key) => Props.Remove(key);
+        public void Remove(string key) { if (!Frozen) Props.Remove(key); }
         public override string ToString() => "[object Object]";
     }
 

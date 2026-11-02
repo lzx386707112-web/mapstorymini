@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export interface InformationSearch {
-  types: [];
+  types: string[];
   filter: string;
 }
 

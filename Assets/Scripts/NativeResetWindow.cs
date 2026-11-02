@@ -81,6 +81,7 @@ public static class NativeResetWindow
         if (!centered) Center();
         pos = NativeUi.ClampWindowPosition(pos, Size, S);
         var r = Window;
+        NativeUi.RegisterWindow("NativeResetWindow", r, () => NativeResetWindow.Visible);
         var pointer = Pointer.Pos / S;
         if (Event.current.type == EventType.Repaint && Pointer.Pressed && At(r, 0, 0, 150, 22).Contains(Pointer.Pos) && stage != 3)
         { dragging = true; centered = true; grab = Pointer.Pos / S - pos; }

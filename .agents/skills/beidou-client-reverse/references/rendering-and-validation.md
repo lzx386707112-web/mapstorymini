@@ -98,3 +98,8 @@ EnemyUnit 统一用 `BodySortingOrder=299-lane*12`，人物保持既有 `300-lan
 本节是移动输入覆盖层代码事实，不是原 EXE UI 结论；没有改原 NPC 对话素材、节点、布局或时序。
 VirtualControls.Draw 原先在 NpcSession.Blocking 时将每个按钮的配置透明度额外乘0.22，并通过 dialogFade 隐藏文字；InputBridge.Update 同时允许 dialogInput 注入，因此出现按钮近乎不可见但仍能按。现取消该额外淡化及标签隐藏，继续使用用户配置透明度、既有 GUI.depth=-300 和键位设置窗口0.42淡化。输入门控不变：对话键仍可推进，移动/攻击仍受 NPC 会话限制。
 验证：git diff --check通过，静态核对 dialogFade 已无引用；未进行 Unity 绘制或 Android 实机验证。此修改仅处理 NPC 会话分支，不宣称其他弹窗已逐一实测。
+
+
+## 2026-10-31 七项反馈补核
+
+怪物间固定Pivot/Z平局与27组原IMG换帧验证：见 [七项玩法补核](seven-gameplay-feedback-2026-10-31.md)。该记录区分原端结论、本次修复与尚未验证边界。

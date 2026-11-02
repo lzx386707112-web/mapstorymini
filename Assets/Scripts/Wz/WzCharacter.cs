@@ -74,15 +74,19 @@ public static class WzCharacter
     {
         var ids = new List<string> { (2000 + rec.skincolor).ToString("D8"),
             (12000 + rec.skincolor).ToString("D8"), rec.face.ToString("D8"), rec.hair.ToString("D8") };
-        int weapon = 0;
+        var worn = new Dictionary<int, int>();
         foreach (var item in inventory)
+            if (item.inventoryType == InventoryDao.Equipped && item.itemId > 0)
+                worn[item.position] = item.itemId;
+        foreach (int slot in EquipSlot.Appearance)
         {
-            if (item.inventoryType != InventoryDao.Equipped) continue;
-            if (item.position == EquipSlot.Weapon) weapon = item.itemId;
-            else if (Array.IndexOf(EquipSlot.Appearance, item.position) >= 0 && item.itemId > 0)
-                ids.Add(item.itemId.ToString("D8"));
+            if (slot == EquipSlot.Weapon) continue;
+            if (worn.TryGetValue(slot - 100, out int cash) || worn.TryGetValue(slot, out cash))
+                ids.Add(cash.ToString("D8"));
         }
-        if (weapon > 0) ids.Add(weapon.ToString("D8"));
+        // Keep the real weapon last: combat poses/speed/sound still use its metadata.
+        if (worn.TryGetValue(-111, out int cover)) ids.Add(cover.ToString("D8"));
+        if (worn.TryGetValue(EquipSlot.Weapon, out int weapon)) ids.Add(weapon.ToString("D8"));
         return ids.ToArray();
     }
 
@@ -90,7 +94,7 @@ public static class WzCharacter
     {
         if (!GameSession.InGame || GameSession.Character == null) return null;
         var inventory = new List<InventoryEntry>();
-        foreach (int slot in EquipSlot.Appearance)
+        foreach (int slot in EquipSlot.Worn)
         {
             int id = Profile.Data.EquipOfSlot(slot);
             if (id > 0) inventory.Add(new InventoryEntry { inventoryType = InventoryDao.Equipped,
@@ -225,7 +229,7 @@ public static class WzCharacter
         if (recipe == null) return 6;
         var ids = (List<object>)recipe["ids"];
         foreach (string id in ids)
-            if (Category(id) == "Weapon") return Equipment(id).Int("info/attackSpeed", 6);
+            if (Category(id) == "Weapon" && !IsCashWeapon(id)) return Equipment(id).Int("info/attackSpeed", 6);
         return 6; // EXE 0040A845: missing attackSpeed defaults to 6.
     }
 
@@ -417,6 +421,23 @@ public static class WzCharacter
         }
         return BaseZ(slot);
     }
+    static bool IsCashWeapon(string id) => int.TryParse(id, out int item) && item / 10000 == 170;
+
+    // Cash weapon action trees live under numeric weapon-family directories.
+    // Resolve each requested pose through the original UOL chain, as wzpy._render_root does.
+    static ImgNode RenderRoot(ImgNode root, string id, string pose)
+    {
+        if (!IsCashWeapon(id)) return root;
+        var numeric = root.Children.FindAll(n => int.TryParse(n.Name, out _));
+        numeric.Sort((a, b) => int.Parse(a.Name).CompareTo(int.Parse(b.Name)));
+        foreach (var node in numeric)
+            if (node.Get(pose + "/0")?.TryResolve() != null) return node;
+        foreach (string fallback in new[] { "stand1", "stand2" })
+            foreach (var node in numeric)
+                if (node.Get(fallback + "/0")?.TryResolve() != null) return node;
+        return numeric.Count > 0 ? numeric[0] : root;
+    }
+
     static List<Part> Placements(Dictionary<string, object> recipe, ref string pose, ref int frame)
     {
         if (recipe.ContainsKey("mount")) return MountedPlacements(recipe, pose, frame);
@@ -449,11 +470,13 @@ public static class WzCharacter
                     capHiddenHair.Add(name);
         }
         bool capCoversHair = capHidesAllHair || capHiddenHair.Count > 0;
+        bool coveredWeapon = ids.Exists(id => IsCashWeapon((string)id));
         var parts = new List<Part>();
         foreach (string id in ids)
         {
             string category = Category(id);
-            var root = Equipment(id);
+            if (coveredWeapon && category == "Weapon" && !IsCashWeapon(id)) continue;
+            var root = RenderRoot(Equipment(id), id, pose);
             var paths = new List<string> { pose + "/" + frame };
             if (category == "Face")
             {
@@ -576,6 +599,9 @@ public static class WzCharacter
         var expressed = new Dictionary<string, object>(recipe) {
             ["expression"] = expression, ["expressionFrame"] = selected.Name
         };
+        // 表情帧是「整只重合成」（Compose 内部逐像素混合 + new Texture2D + Apply）。
+        // 单独计一笔，方便在 [Bot/Perf] 里区分「普通换帧」和「表情换脸」各占多少。
+        using var perf = Server.Bot.BotPerf.Timer("WzCharacter.ExprCompose");
         return Compose(cacheKey, expressed, address[1], int.Parse(address[2]));
     }
 
@@ -619,10 +645,12 @@ public static class WzCharacter
     // 登录/选角/建号界面的预览：外观由 CHARLIST/建号选项直接给装备 ID，
     // 不经过职业配方，仍由同一套原版部件合成器拼帧。
     // Login previews use the weapon-selected native stand pose and body delays.
-    public static int AppearanceFrame(string[] ids, float elapsed)
+    public static int AppearanceFrame(string[] ids, float elapsed, bool walk = false)
     {
         var weapon = Equipment(ids[ids.Length - 1]);
-        string pose = "stand" + weapon.Int("info/stand", 1);
+        // 选角界面：选中槽位按源端口径播走路（walk1/walk2），未选中播站立。
+        // 走路与站立用武器 info/walk、info/stand 决定哪一套，与 Pose() 同一口径。
+        string pose = walk ? "walk" + weapon.Int("info/walk", 1) : "stand" + weapon.Int("info/stand", 1);
         var frames = Equipment(ids[0]).Get(pose);
         if (frames == null) return 0;
         float duration = 0f;
@@ -639,9 +667,10 @@ public static class WzCharacter
         return count - 1;
     }
 
-    public static Sprite Appearance(string key, string[] ids, int frame = 0)
+    public static Sprite Appearance(string key, string[] ids, int frame = 0, bool walk = false)
     {
-        string cacheKey = "appearance://" + key + "/stand/" + frame;
+        string action = walk ? "walk" : "stand";
+        string cacheKey = "appearance://" + key + "/" + action + "/" + frame;
         if (cache.TryGetValue(cacheKey, out var sprite)) return sprite;
         Dictionary<string, object> recipe;
         if (!appearanceRecipes.TryGetValue(key, out recipe))
@@ -651,7 +680,7 @@ public static class WzCharacter
             recipe = new Dictionary<string, object> { { "ids", list }, { "attack", "swingO1" } };
             appearanceRecipes.Add(key, recipe);
         }
-        string pose = Pose(recipe, "stand");
+        string pose = Pose(recipe, action);
         if (pose == null) return null;
         return Compose(cacheKey, recipe, pose, frame);
     }

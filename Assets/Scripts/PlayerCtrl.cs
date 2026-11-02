@@ -65,6 +65,8 @@ public class PlayerCtrl : MonoBehaviour
     // 掉落兜底：低于这个高度就说明脚下一条 foothold 都没接住（原端由服务端复位）。
     // 由 FieldDirector 按地图 VR 底部设置；不设置时保持 -∞，不影响章节模式。
     public static float FallFloor = float.NegativeInfinity;
+    // 掉出地图复位的次数（自检/诊断用；真空缺口复位不结算跌落伤害）。
+    public static int FallRecoveries;
 
     // 换图黑场期间冻结输入与物理：原版从按下 ↑ 到人物出现在新图之间是「角色已离场」的状态，
     // 本地这段黑幕有 0.3s，如果不锁住，按住方向键会让角色在黑屏里继续走/掉下平台。
@@ -208,6 +210,8 @@ public class PlayerCtrl : MonoBehaviour
     double horizontalVelocity; // px/s: preserved when leaving a foothold.
     bool flashJumpUsed;
     double soulRushUntil;
+    FieldMap teleportMap;
+    Server.Field.MapRuntime teleportGeometry;
     // 96BF52..96BF91, ordinary movement branch (96C1D3=true).
     public bool CanFlashJump => !flashJumpUsed && !grounded && !IsClimbing && vy>=0 &&
         (vis==null || !vis.IsOneShot) && (GameLoop.I?.field?.Map?.fieldLimit & 2 ?? 0)==0;
@@ -229,6 +233,28 @@ public class PlayerCtrl : MonoBehaviour
         vy=-(float)ContactImpulse(-vy*Art.PPU,-250-20*tier)/Art.PPU;
         flashJumpUsed=true;
         vis?.Play("jump",false);
+    }
+    public bool TeleportDestination(NativeSkillDefinition skill,out Vector2 destination)
+    {
+        destination=default;
+        if (!grounded || IsClimbing || vis!=null && vis.IsOneShot) return false;
+        var map=GameLoop.I?.field?.Map;
+        if(map==null) return false;
+        if (teleportMap != map)
+        {
+            teleportMap = map;
+            teleportGeometry = new Server.Field.MapRuntime { mapId = map.id, fieldLimit = map.fieldLimit,
+                left = map.vr[0], right = map.vr[2], top = map.vr[1], bottom = map.vr[3] };
+            foreach (var f in map.footholds) teleportGeometry.AddFoothold(f.x1, f.y1, f.x2, f.y2);
+        }
+        float h=TouchInput.MoveH,v=TouchInput.MoveV; bool jump=false;
+        GetComponent<NativeMobDebuffs>()?.Input(ref h,ref jump,ref v);
+        int range=Art.Int(SkillBook.Get(skill.Id)?.Level(skill.Level),"range");
+        if(!NativeTeleportMovement.Destination(teleportGeometry,
+            Mathf.RoundToInt(FeetPos.x*Art.PPU),Mathf.RoundToInt(-FeetPos.y*Art.PPU),
+            Mathf.Abs(h)>.15f ? h>0 ? 1 : -1 : 0,Mathf.Abs(v)>.15f ? v>0 ? -1 : 1 : 0,range,
+            out int x,out int y)) return false;
+        destination=new Vector2(map.WorldX(x),map.WorldY(y)); return true;
     }
     float contactWallX;
     int contactWallDirection;
@@ -258,6 +284,7 @@ public class PlayerCtrl : MonoBehaviour
     float attackBonus;
     float attackBonusUntil;
     public float SkillActionDuration { get; private set; } = 0.55f;
+    public int MeleeSkillImpactMs { get; private set; }
 
     public int   lane     = 2;
     public int   facing   = 1;
@@ -281,6 +308,7 @@ public class PlayerCtrl : MonoBehaviour
         contactWallDirection = 0;
         grounded = true;
         flashJumpUsed = false;
+        fallTracking = false;
     }
 
     // 技能系统的施法动画入口。SpriteAnim 挂在 Art.Attach 建的子节点上，
@@ -291,6 +319,23 @@ public class PlayerCtrl : MonoBehaviour
         BeginNativeAlert();
         string action = "skill_" + skill;
         if (Art.GetClip(vis.kind, vis.key, action) == null) action = "atk";
+        MeleeSkillImpactMs = 0;
+        // These source skills have no action override: the weapon attack uses
+        // CAvatar's per-frame speed quantization, not PlayOnce's raw frame delays.
+        if ((skill == "1001004" || skill.StartsWith("1001004@") ||
+            skill == "1001005" || skill.StartsWith("1001005@")) && action == "atk" && phaseDuration <= 0)
+        {
+            int weaponSpeed = WzCharacter.WeaponAttackSpeed(vis.key);
+            weaponSpeed = GetComponent<NativeBuffs>()?.AttackSpeed(weaponSpeed) ?? weaponSpeed;
+            var clip = Art.GetClip(vis.kind, vis.key, action);
+            int total = 0;
+            if (clip != null) foreach (float delay in clip.delays)
+                total += Mathf.RoundToInt(WzCharacter.AttackFrameDelay(delay, weaponSpeed) * 1000);
+            SkillActionDuration = total / 1000f;
+            MeleeSkillImpactMs = NativeMeleeImpactMs(clip?.delays, weaponSpeed, 0);
+            vis.PlayNativeAttack(action, weaponSpeed);
+            return;
+        }
         SkillActionDuration = GetSkillActionDuration(skill);
         float playbackSpeed=phaseDuration>0 ? SkillActionDuration/phaseDuration : 1;
         if(phaseDuration>0)SkillActionDuration=phaseDuration;
@@ -300,6 +345,23 @@ public class PlayerCtrl : MonoBehaviour
     public void FinishHeldSkill() { vis?.Play("stand",false,true); }
 
     public void PlayNativeSkill(int id) => PlaySkill(id.ToString());
+
+    // Action table +0xC is raw total; +0x10 is total minus its last frame.
+    // 9542C0..9542DE scales that ratio by the quantized animation duration;
+    // 9548E5..954907 adds round-to-even(abs(targetX-sourceX)*1.5) milliseconds.
+    public static int NativeMeleeImpactMs(float[] delays, int weaponSpeed, int distancePixels)
+    {
+        if (delays == null || delays.Length == 0) return 0;
+        int raw = 0, total = 0;
+        foreach (float delay in delays)
+        {
+            raw += (int)System.Math.Round(delay * 1000);
+            total += (int)System.Math.Round(WzCharacter.AttackFrameDelay(delay, weaponSpeed) * 1000);
+        }
+        int last = (int)System.Math.Round(delays[delays.Length - 1] * 1000);
+        return (raw > 0 ? total * (raw - last) / raw : 0) +
+            (int)System.Math.Round(System.Math.Abs((double)distancePixels) * 1.5);
+    }
 
     public float GetSkillActionDuration(string skill)
     {
@@ -313,6 +375,11 @@ public class PlayerCtrl : MonoBehaviour
     float laneVis;
     float vy;
     float fallSpeed = 670f / Art.PPU;
+    // 一次离地→落地之间的最高点（世界 y，向上为正）。源端 landOnGround 用
+    // position.y−fallPeakPhysY 求总落差，起跳的上升段也算在内（BotPhysicsEngine:1023/1570）。
+    float fallPeakY;
+    float fallStartY;       // 这次离地时脚底的高度：复位点必须严格低于它，否则就变成「掉下去又回原地」
+    bool fallTracking;
     float atkTimer;
     bool attackRequested;
     float laneCooldown;
@@ -430,6 +497,20 @@ public class PlayerCtrl : MonoBehaviour
         attackDamage = EffectiveAtk;
     }
 
+    // 转职专用：只把成长后的上限/攻击力同步到运行时，当前 HP/MP 按新上限夹取、不回满。
+    // 源端 Character.changeJob 之后客户端收到的是新的 maxHp/maxMp，当前血量保持原值；
+    // 用 ApplyProgression 会顺手回满，等于转职送一次满血，和源端不一致。
+    public void RefreshProgressionCaps()
+    {
+        baseAttributes = Profile.Attributes;
+        RefreshAttributes();
+        hpMax = Attributes.maxHp;
+        mpMax = Attributes.maxMp;
+        hp = Mathf.Clamp(hp, 0, hpMax);
+        mp = Mathf.Clamp(mp, 0, mpMax);
+        attackDamage = EffectiveAtk;
+    }
+
     void OnDestroy()
     {
         Profile.LeveledUp -= OnLevelUp;
@@ -442,7 +523,9 @@ public class PlayerCtrl : MonoBehaviour
     {
         if (amount <= 0) return true;
         if (mp < amount) return false;
+        float previousMp=mp;
         mp -= amount;
+        NativePetAutopot.OnLoss(this,hp,previousMp);
         return true;
     }
 
@@ -737,7 +820,7 @@ public class PlayerCtrl : MonoBehaviour
         var local=AfterimageFx.AttackBounds(WzCharacter.Afterimage(vis.key),
             Crouching ? "proneStab" : WzCharacter.AttackPoseName(vis.key));
         if (!local.HasValue) return false;
-        var target=NativeReactorView.FindTarget(GameLoop.I.field.Map.id,
+        var target=NativeReactorView.FindTarget(GameLoop.I.field.StateId,
             NativeTargetGeometry.World(local.Value,FeetPos,facing>0));
         if (target==null) return false;
         float windup=BeginSwing();
@@ -748,6 +831,9 @@ public class PlayerCtrl : MonoBehaviour
     void SwingEmpty()
     {
         if (!SpendBasicProjectile()) return;
+        // 空挥也要报给脚本：起源之塔第 14 层前三次空挥免费、之后每次扣 30 秒总时间，
+        // 源端是靠每次攻击包都走一遍 SeedTowerCompat.handleAttack 得到这个计数的。
+        SeedTowerCompat.HandleAttack(0, null);
         pending.active = false;
         float windup = BeginSwing();
         // 挥砍音效与伤害同帧：空挥没有 pending，用独立计时器到点播
@@ -777,7 +863,7 @@ public class PlayerCtrl : MonoBehaviour
         if (p.reactor != null)
         {
             var r=p.reactor;
-            if (GameLoop.I?.field?.Map?.id==r.mapId &&
+            if (GameLoop.I?.field?.StateId==r.mapId &&
                 ReferenceEquals(Server.Field.MapReactorService.Find(r.mapId,r.objectId),r))
                 Server.Field.MapReactorService.HitPlayer(r.mapId,r.objectId,GameSession.CharacterId);
         }
@@ -850,6 +936,10 @@ public class PlayerCtrl : MonoBehaviour
             AudioManager.Play("Game/Jump", 0.7f, false);
         }
         float previousY = terrainY + jumpY;
+        // 离地期间跟踪最高点：落地按「最高点 → 落点」的总落差结算（源端起跳的上升段也算在内）。
+        if (grounded) fallTracking = false;
+        else if (!fallTracking) { fallTracking = true; fallPeakY = fallStartY = previousY; }
+        else if (previousY > fallPeakY) fallPeakY = previousY;
         double oldVelocity = horizontalVelocity;
         int direction = h > .15f ? 1 : h < -.15f ? -1 : 0;
         float tangentX = 1f;
@@ -900,12 +990,17 @@ public class PlayerCtrl : MonoBehaviour
             grounded = true;
             flashJumpUsed = false;
             dropSegment = -1;      // 落到别的段上：忽略指针作废（0x9B4963）
+            // 原始 landOnGround：落地即按总落差算跌落伤害（源端 damageFrom=-3）。
+            float fallDistancePx = (fallPeakY - landing) * Art.PPU;
+            fallTracking = false;
+            int fallDamage = FallDamage.FromDistance(fallDistancePx);
+            if (fallDamage > 0) TakeFallDamage(fallDamage);
         }
         else jumpY = nextY - terrainY;
 
         // 掉到地图可视范围以下：说明一条 foothold 都没接住（真空缺口，或数据异常）。
         // 原端会由服务端把角色复位回最近地面；这里做等价兜底，避免一路掉到屏幕外卡死。
-        if (nextY < FallFloor) RecoverFromFall();
+        if (nextY < FallFloor) RecoverFromFall(fallTracking ? fallStartY : previousY);
     }
 
     // Walking and contact displacement must use the same wall/support resolution.
@@ -965,10 +1060,14 @@ public class PlayerCtrl : MonoBehaviour
         return wasGrounded && !grounded;
     }
 
-    void RecoverFromFall()
+    // 掉出地图（脚下一条段都没接住）：只在真空缺口或地图左右尽头发生。
+    // 复位点必须严格低于「离地时脚底高度」——把人往上吸会变成「掉下去又回原地」
+    // （2026-11-01 实测：魔法密林左边缘回弹过 1550px）。
+    void RecoverFromFall(float fellFromY)
     {
-        float atX;
-        float y = NearestGround(worldX, out atX);
+        float atX, y;
+        if (!GroundBelow(worldX, fellFromY, out atX, out y))
+            y = NearestGround(worldX, out atX);   // 整列都在起点上方：退回最近地面（极端兜底）
         worldX = ClampX(atX);
         terrainY = y;
         jumpY = 0f;
@@ -977,10 +1076,33 @@ public class PlayerCtrl : MonoBehaviour
         contactWallDirection = 0;
         grounded = true;
         flashJumpUsed = false;
+        fallTracking = false;
         climb = null;
         dropSegment = -1;
         grabCooldown = 0.3f;
+        FallRecoveries++;
         Debug.Log("[Player] 掉出地图，复位到 x=" + atX.ToString("F2") + " y=" + y.ToString("F2"));
+    }
+
+    // 离地点以下、水平距离最近的地面（水平距离相同取更低的）——掉落复位用。
+    static bool GroundBelow(float x, float refY, out float atX, out float y)
+    {
+        atX = x; y = float.NegativeInfinity;
+        if (Terrain == null || Terrain.Count == 0) return false;
+        float bestD = float.MaxValue;
+        for (int i = 0; i < Terrain.Count; i++)
+        {
+            var f = Terrain[i];
+            if (Mathf.Abs(f.z - f.x) < 0.01f) continue;          // 竖直段不可走
+            float lo = Mathf.Min(f.x, f.z), hi = Mathf.Max(f.x, f.z);
+            float cx = Mathf.Clamp(x, lo, hi);
+            float h = Mathf.Lerp(f.y, f.w, (cx - f.x) / (f.z - f.x));
+            if (h >= refY) continue;                              // 离地点本身及其上方都不算落点
+            float d = Mathf.Abs(cx - x);
+            if (d < bestD - 1e-4f || (Mathf.Abs(d - bestD) <= 1e-4f && h < y))
+            { bestD = d; atX = cx; y = h; }
+        }
+        return !float.IsNegativeInfinity(y);
     }
 
     bool StepClimb(float h, bool jumpReq, float dt)
@@ -1005,6 +1127,7 @@ public class PlayerCtrl : MonoBehaviour
             if (climb != null)
             {
                 flashJumpUsed=false;
+                fallTracking = false;    // 抓上绳梯 = 这次下落结束，不结算跌落伤害
                 worldX = climb.x;
                 horizontalVelocity = 0;
                 grounded = false;
@@ -1036,7 +1159,7 @@ public class PlayerCtrl : MonoBehaviour
                 if (HasSupport(worldX, top) && Mathf.Abs(top - climb.top) <= 30f / Art.PPU)
                 {
                     terrainY = top; jumpY = 0f; grounded = true;
-                    climb = null; grabCooldown = 0.2f;
+                    climb = null; grabCooldown = 0.2f; fallTracking = false;
                     return true;
                 }
             }
@@ -1063,7 +1186,7 @@ public class PlayerCtrl : MonoBehaviour
         return false;
     }
 
-    static bool FindLanding(float x, float previousY, float nextY, int skip, out float landing)
+    public static bool FindLanding(float x, float previousY, float nextY, int skip, out float landing)
     {
         landing = float.NegativeInfinity;
         if (Terrain == null || Terrain.Count == 0)
@@ -1226,6 +1349,9 @@ public class PlayerCtrl : MonoBehaviour
     // 没有额外的弧光贴片；伤害/飘字都在这一下出去。
     void HitEnemy(EnemyUnit e, DamageResult hit, int dir)
     {
+        // 起源之塔第 14 层：普攻整包交给脚本判定（RangedAttackHandler:1352 直接 return），
+        // 命中与否、扣不扣弹药都由 seedAttack 记账，这里不能再自己结算伤害。
+        if (SeedTowerCompat.HandleAttack(0, e)) return;
         if (e!=null && !e.dead && UsesRangedWeapon) GetComponent<NativeBuffs>()?.OnRangedAttack(1);
         if(e!=null&&!e.dead&&(weapon.kind==WeaponKind.bow||weapon.kind==WeaponKind.crossbow))
             GetComponent<SkillSystem>()?.NativeBasicRangedHit(e,hit,dir);
@@ -1242,10 +1368,16 @@ public class PlayerCtrl : MonoBehaviour
         b.TakeHit(hit, facing);
     }
 
+    public bool CanReceiveContact => hp>0 && Time.unscaledTime>=invulnUntil;
+
     public void TakeDamage(float dmg, int dir, bool magic = false, int attackerLevel = 1, EnemyUnit attacker = null, int damageFrom = -1, int mpAttack = 0)
     {
         if (hp <= 0f || Time.unscaledTime < invulnUntil) return;
         RefreshAttributes();
+        // Physical contact/attacks first roll avoidance; a MISS never applies knockback.
+        if(!magic && attacker!=null && dmg>0 && CombatRules.PhysicalMiss(
+            Mathf.FloorToInt(Attributes.avoidability+Attributes.dex*.25f+Attributes.luk*.5f),
+            NativeCombatData.Int(attacker.CombatStats,"acc"),Attributes.level,attackerLevel,Profile.JobId,Random.Range(0,10000000))) dmg=0;
         dmg = CombatRules.Incoming(dmg, Attributes, magic, attackerLevel, Random.value,
             GetComponent<NativeBuffs>()?.Value("INVINCIBLE") ?? 0).Amount;
         if (dmg <= 0)
@@ -1256,6 +1388,7 @@ public class PlayerCtrl : MonoBehaviour
             DamageText.Miss(DamageAnchor, 1f, "violet");
             return;
         }
+        float previousHp=hp,previousMp=mp;
         var buffs=GetComponent<NativeBuffs>();
         if (attacker!=null && buffs!=null)
         {
@@ -1288,7 +1421,7 @@ public class PlayerCtrl : MonoBehaviour
             bool magicGuard=buffs.HasStat("MAGIC_GUARD"), mesoGuard=buffs.HasStat("MESOGUARD");
             NativeBuffs.GuardLoss((int)dmg,(int)mp,Profile.gold,buffs.Value("MAGIC_GUARD"),buffs.Value("MESOGUARD"),
                 magicGuard,mesoGuard,mpAttack,
-                out int hpLoss,out int mpLoss,out int mesoLoss,out bool cancelMeso);
+                out int hpLoss,out int mpLoss,out long mesoLoss,out bool cancelMeso);
             hp=Mathf.Max(0f,hp-hpLoss); mp=Mathf.Max(0f,mp-mpLoss);
             if (mesoLoss>0) Profile.Spend(mesoLoss);
             if (cancelMeso) buffs.CancelStat("MESOGUARD");
@@ -1296,6 +1429,7 @@ public class PlayerCtrl : MonoBehaviour
             if (!magicGuard && mesoGuard) dmg=hpLoss;
         }
         else { hp = Mathf.Max(0f, hp - dmg); mp=Mathf.Max(0f,mp-mpAttack); }
+        NativePetAutopot.OnLoss(this,previousHp,previousMp);
         TickContactTint();
         contactTintStarted = Time.unscaledTime;
         contactTintActive = true;
@@ -1318,6 +1452,40 @@ public class PlayerCtrl : MonoBehaviour
         if (hp <= 0f && GameLoop.I != null) GameLoop.I.OnPlayerDead();
     }
 
+    // 跌落伤害（源端 BotContactDamage.applyFallDamage / PacketCreator.damagePlayer(damageFrom=-3)）：
+    // 不掷物理回避、不吃 Achilles/HighDefense（TakeDamageHandler 对 -3/-4 直接跳过这两项），
+    // 也不施加 270px/s 接触冲量——人已经落地了，源端落地只扣血+飘字。
+    public void TakeFallDamage(int dmg)
+    {
+        if (hp <= 0f || dmg <= 0) return;
+        RefreshAttributes();
+        float previousHp = hp, previousMp = mp;
+        var buffs = GetComponent<NativeBuffs>();
+        if (buffs != null)
+        {
+            // -3 分支仍然吃 MAGIC_GUARD / MESO_GUARD，只是跳过 Achilles 与高防。
+            bool magicGuard = buffs.HasStat("MAGIC_GUARD"), mesoGuard = buffs.HasStat("MESOGUARD");
+            NativeBuffs.GuardLoss(dmg, (int)mp, Profile.gold, buffs.Value("MAGIC_GUARD"), buffs.Value("MESOGUARD"),
+                magicGuard, mesoGuard, 0, out int hpLoss, out int mpLoss, out long mesoLoss, out bool cancelMeso);
+            hp = Mathf.Max(0f, hp - hpLoss); mp = Mathf.Max(0f, mp - mpLoss);
+            if (mesoLoss > 0) Profile.Spend(mesoLoss);
+            if (cancelMeso) buffs.CancelStat("MESOGUARD");
+            if (!magicGuard && mesoGuard) dmg = hpLoss;
+        }
+        else hp = Mathf.Max(0f, hp - dmg);
+        NativePetAutopot.OnLoss(this, previousHp, previousMp);
+        TickContactTint();
+        contactTintStarted = Time.unscaledTime;
+        contactTintActive = true;
+        // 源端落地后写 2500ms 受击冷却；这里沿用本工程 1500ms 受击免疫。
+        invulnUntil = Time.unscaledTime + 1.5f;
+        BeginNativeAlert();
+        vis?.ShowHitExpression();
+        if (vis != null && hp <= 0f) vis.PlayOnce("die");
+        DamageText.Show(DamageAnchor, dmg, "blue");
+        if (hp <= 0f && GameLoop.I != null) GameLoop.I.OnPlayerDead();
+    }
+
     // 0x9B227F..0x9B239B preserves an already faster velocity in the impulse direction.
     internal static double ContactImpulse(double velocity, double impulse)
     {
@@ -1334,7 +1502,9 @@ public class PlayerCtrl : MonoBehaviour
     public void TakeBossDamage(float value)
     {
         if (hp <= 0 || value <= 0) return;
+        float previousHp=hp;
         hp = Mathf.Max(0,hp-value);
+        NativePetAutopot.OnLoss(this,previousHp,mp);
         DamageText.Show(DamageAnchor,value,"blue");
         if (hp <= 0 && GameLoop.I != null) GameLoop.I.OnPlayerDead();
     }
@@ -1510,11 +1680,11 @@ public class PlayerCtrl : MonoBehaviour
             else basis = 1;
             maximum = (long)System.Math.Floor(basis * (double)skill.DamagePercent / 100 + .5);
         }
-        maximum = System.Math.Max(1,System.Math.Min(int.MaxValue,maximum));
+        maximum = System.Math.Max(1,maximum);   // 单段伤害是 long，不再卡 21 亿
         int mastery = Profile.JobId/100==11 ? System.Math.Min(10,(SkillProgress.LevelOf(11100000)+1)/2) : 0;
         long minimum = System.Math.Max(1,(long)System.Math.Floor(maximum*(10+mastery*5)/100.0+.5));
         var values = new DamageResult[count];
-        for(int i=0;i<count;i++) values[i]=new DamageResult((int)(close ? System.Math.Min(maximum,minimum+System.Math.Floor(Random.value*(maximum-minimum+1))) : maximum),false);
+        for(int i=0;i<count;i++) values[i]=new DamageResult((long)(close ? System.Math.Min(maximum,minimum+System.Math.Floor(Random.value*(maximum-minimum+1))) : maximum),false);
         return values;
     }
     public float EffectiveAtk
@@ -1554,6 +1724,7 @@ public class PlayerCtrl : MonoBehaviour
         contactWallDirection = 0;
         grounded = true;
         flashJumpUsed = false;
+        fallTracking = false;
         laneVis = lane;
         SyncTransform();
     }

@@ -3,12 +3,11 @@ using System.Collections.Generic;
 
 // 怪物掉落表（drop_data / drop_data_global）的运行时读取与缓存。
 //
-// 对齐源端 MonsterInformationProvider.getDrops：DB 是唯一数据源，改完要清缓存
-// （源端 dropService.modifyDropData 之后 clearDrops()）。本项目的差异只有一处：
-// FieldDrops.json（源端 drop_data SQL 的导出快照）当「首启种子」导入 DB——
-// 1) 有库且表为空 → 把 JSON 快照灌进表（一次性），之后以表为准；
-// 2) 有库且表非空 → 直接读表（后台/游戏内改掉落都落在表里）；
-// 3) 无库（编辑器自检、离线抽样）→ 回退 JSON 快照，行为与改造前一致。
+// 数据分两层（对齐源端 MonsterInformationProvider.getDrops，但避免把 2.7 万行
+// 灌进 JSON 快照库——那会让每次存档都重写一个几 MB 的 db 文件）：
+//  1) 基线：FieldDropTable.txt（tools/export_field_drops.py 从源端迁移全量重放导出的只读表）；
+//  2) 覆盖：drop_data 表里后台/游戏内改过的行，按 (怪物, 道具) 覆盖基线，
+//     新道具追加，chance<=0 视为删除。改完要清缓存（源端 clearDrops()）。
 //
 // 约束：纯 C#，不引用 UnityEngine（FieldLoot/后台/admin-check 共用）。
 public sealed class DropEntry
@@ -46,6 +45,11 @@ public static class DropStore
         lock (gate) { loaded = false; loadedDb = null; }
     }
 
+    // JDBC NPC queries used to rely on the first-run seed. The baseline table is now
+    // shipped read-only (FieldDropTable.txt), so there is nothing to seed: DB rows are
+    // pure overrides. Keep the entry point so script/database callers don't change.
+    public static void EnsureDatabase(DbStore db) { }
+
     public static List<DropEntry> ForMob(int mobId)
     {
         var all = Snapshot();
@@ -78,43 +82,47 @@ public static class DropStore
             drops = new Dictionary<int, List<DropEntry>>();
             global = new List<DropEntry>();
 
-            if (db != null && db.HasTable("drop_data"))
+            // 1) 基线：源端 drop_data 全量导出（只读）
+            var baseTable = JsonDrops != null ? JsonDrops() : null;
+            if (baseTable != null)
+                foreach (var kv in baseTable) drops[kv.Key] = new List<DropEntry>(kv.Value);
+            if (JsonGlobalDrops != null) global = new List<DropEntry>(JsonGlobalDrops());
+
+            if (db == null) return drops;
+
+            // 2) 覆盖：DB 里改过的行，按 (怪, 道具) 覆盖基线，新道具追加，chance<=0 = 删除
+            if (db.HasTable("drop_data"))
             {
-                SeedIfEmpty(db);
+                var patch = new Dictionary<int, List<DropEntry>>();
                 foreach (var row in db.Table("drop_data").rows)
                 {
                     int dropper = (int)DbStore.Long(row, "dropperid");
-                    if (!drops.TryGetValue(dropper, out var list)) drops[dropper] = list = new List<DropEntry>();
+                    if (!patch.TryGetValue(dropper, out var list)) patch[dropper] = list = new List<DropEntry>();
                     list.Add(FromRow(row, false));
                 }
-                if (db.HasTable("drop_data_global"))
-                    foreach (var row in db.Table("drop_data_global").rows)
-                        global.Add(FromRow(row, true));
-                return drops;
+                foreach (var kv in patch)
+                {
+                    if (!drops.TryGetValue(kv.Key, out var rows))
+                    {
+                        rows = new List<DropEntry>();
+                        drops[kv.Key] = rows;
+                    }
+                    foreach (var row in kv.Value)
+                    {
+                        int at = rows.FindIndex(e => e.item == row.item);
+                        if (row.chance <= 0) { if (at >= 0) rows.RemoveAt(at); continue; }
+                        if (at >= 0) rows[at] = row; else rows.Add(row);
+                    }
+                }
             }
-
-            // 无库兜底：直接用 JSON 快照
-            var json = JsonDrops != null ? JsonDrops() : null;
-            if (json != null) foreach (var kv in json) drops[kv.Key] = new List<DropEntry>(kv.Value);
-            if (JsonGlobalDrops != null) global = new List<DropEntry>(JsonGlobalDrops());
+            if (db.HasTable("drop_data_global") && db.Table("drop_data_global").rows.Count > 0)
+            {
+                global = new List<DropEntry>();
+                foreach (var row in db.Table("drop_data_global").rows)
+                    global.Add(FromRow(row, true));
+            }
             return drops;
         }
-    }
-
-    static void SeedIfEmpty(DbStore db)
-    {
-        var table = db.Table("drop_data");
-        if (table.rows.Count > 0) return;
-        var json = JsonDrops != null ? JsonDrops() : null;
-        if (json == null || json.Count == 0) return;
-
-        foreach (var kv in json)
-            foreach (var e in kv.Value)
-                table.Insert(ToRow(kv.Key, e, false));
-        if (db.HasTable("drop_data_global") && db.Table("drop_data_global").rows.Count == 0 && JsonGlobalDrops != null)
-            foreach (var e in JsonGlobalDrops())
-                db.Table("drop_data_global").Insert(ToRow(0, e, true));
-        db.Save();
     }
 
     static DropEntry FromRow(DbRow row, bool isGlobal)
@@ -130,28 +138,5 @@ public static class DropStore
             continent = isGlobal ? DbStore.Long(row, "continent", -1) : -1,
             comments = DbStore.Str(row, "comments"),
         };
-    }
-
-    static DbRow ToRow(int dropper, DropEntry e, bool isGlobal)
-    {
-        var row = new DbRow
-        {
-            ["itemid"] = (long)e.item,
-            ["minimum_quantity"] = (long)e.min,
-            ["maximum_quantity"] = (long)e.max,
-            ["questid"] = (long)e.quest,
-            ["chance"] = (long)e.chance,
-        };
-        if (isGlobal)
-        {
-            row["continent"] = e.continent;
-            if (!string.IsNullOrEmpty(e.comments)) row["comments"] = e.comments;
-        }
-        else
-        {
-            row["dropperid"] = (long)dropper;
-            if (!string.IsNullOrEmpty(e.comments)) row["comments"] = e.comments;
-        }
-        return row;
     }
 }

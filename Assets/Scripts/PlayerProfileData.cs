@@ -8,7 +8,9 @@ public sealed class PlayerProfileData
     public int version = 1;
     public CharacterAttributes attributes = new CharacterAttributes();
     public List<string> migratedLegacyWeapons = new List<string>();
-    public int gold;
+    // gold/experience 都是 long：金币与经验的累计值会突破 21 亿（等级上限 300 后
+    // 满级累计经验约 8e17），int 会把数值截在 2,147,483,647。
+    public long gold;
     public long experience;          // 当前等级内已累计的经验（原端 Character.exp）
 
     // —— 等级 / 成长（规则见 LevelSystem.cs）——
@@ -176,17 +178,17 @@ public sealed class PlayerProfileData
     }
 
     // Character.gainMeso 的宽整数运算与范围保护。
-    public void AddGold(int amount)
-        => gold = (int)Math.Max(0L, Math.Min(int.MaxValue, (long)gold + amount));
+    public void AddGold(long amount)
+        => gold = Math.Max(0L, gold + amount);
 
-    public bool TrySpend(int amount)
+    public bool TrySpend(long amount)
     {
         if (amount < 0 || gold < amount) return false;
         gold -= amount;
         return true;
     }
 
-    public bool TryBuy(string id, int catalogPrice)
+    public bool TryBuy(string id, long catalogPrice)
     {
         if (string.IsNullOrEmpty(id) || catalogPrice < 0 || owned.Count - 1 >= equipmentSlots) return false;
         if (!TrySpend(catalogPrice)) return false;

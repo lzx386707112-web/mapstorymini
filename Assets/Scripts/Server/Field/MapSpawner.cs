@@ -61,6 +61,15 @@ namespace Server.Field
 
         public int SpawnPointCount => monsterSpawn.Count;
 
+        // MapleMap.spawnAllMonsterIdFromMapSpawnList(mobId, difficulty, isPq)：把该模板的
+        // 全部刷怪点原样交出去，由调用方立刻生成（PiratePQ 第二关的波次怪每 10 秒一次）。
+        public List<SpawnPoint> SpawnPointsOf(int mobId)
+        {
+            var result = new List<SpawnPoint>();
+            foreach (var sp in monsterSpawn) if (sp.MobId == mobId) result.Add(sp);
+            return result;
+        }
+
         public List<SpawnPoint> StartFrenzy()
         {
             if(FrenzyTotemActive) return new List<SpawnPoint>();

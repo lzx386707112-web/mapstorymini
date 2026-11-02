@@ -253,7 +253,7 @@ namespace Server.Bot.Types
                 return;
             }
 
-            int offeredMesos = BotTradeCommands.ReadPartnerMeso(chr);
+            long offeredMesos = BotTradeCommands.ReadPartnerMeso(chr);
             DebugPrint("TRADE_VALIDATE: partner locked, offered=" + offeredMesos);
 
             if (offeredMesos == MediumTierCost) SelectedTier = "medium";

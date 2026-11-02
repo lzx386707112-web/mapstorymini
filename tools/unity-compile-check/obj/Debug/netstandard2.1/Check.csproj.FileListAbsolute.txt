@@ -162,3 +162,12 @@
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/obj/Debug/netstandard2.1/Check.csproj.CopyComplete
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/obj/Debug/netstandard2.1/AssemblyCSharpCheck.dll
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/unity-compile-check/obj/Debug/netstandard2.1/AssemblyCSharpCheck.pdb
+/tmp/mapledash-cash-compile/bin/AssemblyCSharpCheck.deps.json
+/tmp/mapledash-cash-compile/bin/AssemblyCSharpCheck.dll
+/tmp/mapledash-cash-compile/bin/AssemblyCSharpCheck.pdb
+/tmp/mapledash-pet-compile/bin/AssemblyCSharpCheck.deps.json
+/tmp/mapledash-pet-compile/bin/AssemblyCSharpCheck.dll
+/tmp/mapledash-pet-compile/bin/AssemblyCSharpCheck.pdb
+/tmp/mapledash-chat-compile/bin/AssemblyCSharpCheck.deps.json
+/tmp/mapledash-chat-compile/bin/AssemblyCSharpCheck.dll
+/tmp/mapledash-chat-compile/bin/AssemblyCSharpCheck.pdb

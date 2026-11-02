@@ -52,6 +52,12 @@ namespace MapleDash.Js
                     }
                     return result;
                 }));
+            objectFn.Members.Set("freeze", JsFunction.FromNative("freeze", c =>
+            {
+                if (!(c.Arg(0) is JsObject value)) throw new JsRuntimeException("Object.freeze currently requires a plain object");
+                value.Freeze(); return value;
+            }));
+            objectFn.Members.Set("isFrozen", JsFunction.FromNative("isFrozen", c => JsBoolean.Of(c.Arg(0) is JsObject value && value.Frozen)));
             scope.Declare("Object", objectFn);
             scope.Declare("Set", JsFunction.FromNative("Set", c =>
             {
@@ -491,7 +497,7 @@ namespace MapleDash.Js
             });
 
         // ————— 数字方法 —————
-        static readonly string[] NumberMethodNames = { "toString", "toFixed", "valueOf" };
+        static readonly string[] NumberMethodNames = { "toString", "toFixed", "toLocaleString", "valueOf" };
         public static bool HasNumberMethod(string name)
         {
             for (int i = 0; i < NumberMethodNames.Length; i++) if (NumberMethodNames[i] == name) return true;
@@ -505,6 +511,10 @@ namespace MapleDash.Js
                 switch (name)
                 {
                     case "toString": return new JsString(JsConvert.NumberToString(d));
+                    case "toLocaleString":
+                        // Trade scripts format integer meso costs with the zh-CN/en-US grouping convention.
+                        return new JsString(double.IsNaN(d) || double.IsInfinity(d) ? JsConvert.NumberToString(d)
+                            : d.ToString("#,0.###", System.Globalization.CultureInfo.InvariantCulture));
                     case "toFixed":
                         {
                             int digits = c.ArgCount > 0 ? JsConvert.ToInt32(c.Arg(0)) : 0;

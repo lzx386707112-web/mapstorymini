@@ -489,6 +489,14 @@ Unity batch `BotPresentationChecks.Run` 本次实际PASS（日志/mxd-bot-presen
 
 店招继续定位：50D56C以字符串3460格式化“%s's Hired Merchant”，调用5F0334，type1000，其UI/NameTag/1000不存在时走5F0E1D代码绘制默认分支。默认黑底A0000000、字宽+5/字高+4（5F12E5）、白色1px边（5F1445起）、文字x2/y0（5F15EC）。原完整边角、世界层偏移仍须沿5F1644后核对，未据此新增猜测性店招。
 
+**（2026-10-30 修正）此前「97A3FB 的 0.75 图属于人物商店展示分支，不可混用于独立雇佣对象」的判断不成立**：
+0x97A3FB 是店铺场地对象的完整构建函数（2125 条指令），一次性加载
+`Item/Cash/0503.img` 根 → `050300%02d/skin` 的 shop/backgrnd/**signboard**（166x166 悬挂店招）→
+`{permit}/employee`（含 say 帧）→ `{permit}/effect`。字段级证据：函数内字符串池访问
+3452(Item/Cash/0503.img)/3456(050300%02d/skin)/1676(shop)/5619(backgrnd)/3458(signboard)/
+3454(…/employee)/5651(say)/3455(…/effect)。即**雇佣商人头顶除名牌外还挂着 signboard 店招**，
+NativeMarketField 已补（挂在 stand 帧 80px 头顶上方、以脚点水平居中、板上写 description）。
+
 本轮新增NativeMarketField及肖像后dotnet全脚本Rebuild 0警告/0错误；5种permit店员的真实Unity检查实际PASS。此后店招新增尚需重编译及OnGUI验收。
 
 店招默认分支补核：5F1445..5F150A传入0x00FFFFFF清四角，为透明白，**并非白色边框**；其余A0000000黑底。5F1654..5F1669设置origin.x=floor(width/2)，5F1691设置origin.y=-2，脚点下2px。type1000无特殊牌时5F10C8选font0，98A74A..98A7CB确认Arial12白色，默认无NPC牌的BA粗体。NativeMarketField据此复用NpcDialogUi.NamePlateRects的同一几何，原代码绘制三块不重叠黑底、四角透明、名字“%s's Hired Merchant”；点击名牌同样访问真实shop。前述“白色1px边”解读纠正为清角；本轮只完成雇佣店名，人物商店头顶描述牌及悬浮店铺说明仍待核实。
@@ -509,3 +517,13 @@ Unity batch `BotPresentationChecks.Run` 本次实际PASS（日志/mxd-bot-presen
 
 
 Party 分类补证：`0x90B8D0` 重建三个数组，`0x90B990` 检查成员 channel==-2 归+2C离线；否则 `0x90B9A1` 比较成员 mapId 与当前 mapId，相同归+28、不同归+30（不是按同频道/异频道直接分组）。`0xA3F836` 从角色+2ED8读取id、+2EF0名字、+2F3E职业、+2F56等级、+2F6E频道、+2F8A地图，+2F86为队长ID。PacketCreator.addPartyStatus同样按id/name/job/level/channel/leader/map顺序写包，异频道地图写0、离线频道写-2。三个数组各按名字比较排序（`0x90BA13..0x90BC13`）。这些新增确定结论已归档，尚未替换临时队伍窗口。
+# 2026-10-30 用户授权的斜坡坐标纠正
+
+源 Java / 当前 C# `BotNavigationGraph.Segment.PointAt` 在 `(x-x1)/(x2-x1)` 先做整数除法，斜坡内部比例会被截为 0，返回起点高度。用户明确允许偏离此源端缺陷，要求假人贴合真实 foothold。
+
+当前只将比例改为 double 除法，保留最终坐标整数截断及端点夹紧；不要把其他 Java 整数算法一并改为浮点。`tools/server-check/BotChecks.cs` 新增正反斜坡中点与连续 16 tick 的实际 `BotGroundMotion` 行走检查，比较 `BotGroundIndex.YAt`，容差 1px，验证不误离地。地图可视插值与跨平台完整路线仍须独立验收。
+
+
+## 2026-10-31反馈补查
+
+断层录制步行与启动Reactor资源阻塞补查见 [本次确认记录](field-feedback-2026-10.md)。保留其中的原端身份、地址、资源参数与验证边界，不将静态资源扫描等同于实机验收。

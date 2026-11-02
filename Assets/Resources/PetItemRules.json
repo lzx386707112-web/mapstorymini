@@ -358,7 +358,315 @@
     "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Item/Pet/5001014.img": "af9af64d051f7470c1890f7bb447a2914ece735c19825212bf992889974d4def",
     "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Item/Pet/5001015.img": "bfdb37326500f01da4eb3895ceac5ca229949d8602ebc34c925a48c3009d093c",
     "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Item/Pet/5001016.img": "e9b886364b8f6e4d725bc09aefeff36f3ce85662f656238b109e99e1a428bc77",
-    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Item/Pet/5001017.img": "c9adcf56081acf34ddc2489059ade16928fe60115bf05fd1603360ff96016e27"
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Item/Pet/5001017.img": "c9adcf56081acf34ddc2489059ade16928fe60115bf05fd1603360ff96016e27",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802000.img": "c9a4703f43aadbf6d4dfa71e6af0b55f3a3a1f4364416810f8873b8a6be86a21",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802001.img": "5d1899c6ac92820b3f0783207b623d961979149927370c3c9377432521233c1c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802002.img": "874b415f191b2fe5d25dddb5e8b212e1a5fad41061549180a8d6dd0d0a3a5690",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802003.img": "678f3c33a73dcc787ae705fa9e2f25b35da13360b319c07f52ecf73228008bc5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802004.img": "4fc5b5ee235af780175b9df08de5f1e7cd2d8b7b6599270645fe4516746401f2",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802005.img": "daf767eb4ecf76b4d65a3b7ef05cdaf12845212ab98b5bd1b7949190cbf868e3",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802006.img": "ea5ce7698781a40a0df0db226ede90c1d1267aa0773045d8b0be895be17a450c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802007.img": "c6ce33307a15ce02f928d7ca634afd4546f14f93132a68c50ca1b016c95f4c32",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802008.img": "622b110df825d510f0f38fffaf1985c35dae2de6935a480afe8180363d7d08ac",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802009.img": "d0e06b5d5bec1a86f6a5aff6a5d7003de01a8c5b64f4d934171e4fbf64dbb75d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802010.img": "b57e8ff0994f3fd981178d2d81a6f5174f42a22510dc5c38659652a226b225f1",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802011.img": "13d2061e4107562fd6f89e74d1f99102f0d69f6b84398497bb256424f8a6b320",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802012.img": "fb1031ae38abd31d6860fb4355a23442d92cf9016106bc02eb014ad15e5e3ccc",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802013.img": "08d555344c95cb9536bf1f543ebbb2741d4b00eb9c44cddd446a4367167d3ff2",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802014.img": "e7845e1c62564a0a748c89d73b1246ab26410523f5f77001d2988801f181089c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802015.img": "02287a113c37240abc98ba4f07c42178476c705cf63bdb45879cb93395210776",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802016.img": "da17e20426a180df98e8cdbece0e194edf377e5e1c6157c79066683dcda00049",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802017.img": "26c0bcff6a68469bf2dd9249994586be05d1ac8803754bc4da052aa4ab4a3b75",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802018.img": "034ff2b209a4b090d0a46d97025e648091e8f08020632540234cd51263ec54dd",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802019.img": "e8b791965cb376125e15968909c353ff6fd70b7740f76a008d0feca7cfdc1418",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802020.img": "57fcd08616776b05aeb39cfc7075560c5f582467d908e0019958b35939a6d3ff",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802021.img": "07d609646a1a113c9b660967ba9e16befb1c29b981b68504f21cc9015a2f3b43",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802022.img": "3c821676c6d2a862a2c372b6bba5e7328a43bdff33c64c7202dfd355699c391d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802023.img": "65aeaa7330120772e0393ca030c123397c07dddd763b6abd87de1c7b04efa6e1",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802024.img": "8bda999d8ecfa4a830336b2e978caaf0121195409b8f4a0c01c87d2241048b0b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802025.img": "fa7a054262f1c1feb019c9c0f4bea48f5c07327b2e1d02d3f06315249003258b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802026.img": "2df84542c76afbee791808533024896902f07ad50e995315f95c95324f7249f6",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802027.img": "635a4c46f297df71966820a526367ea2c2b5f20bdedf92ce728a5330f4695471",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802028.img": "8dc7f1a367e6176125311ef56d76a8ad74f199859c7e6c059d355bb40b1995ad",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802029.img": "308164e77a31f654533062197e94dbb365fd0c46aba59406de749e7c629af5b5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802030.img": "93e6b675725a0d037c9649a39d67bf5c8f94c9372ff18c4f7e1360c2dcd70992",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802031.img": "086b92fdafe7eff09537e00da5dcf90f07a501ffde35f9d97145783a4a646686",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802032.img": "8a76941f5956da4f78d53d21c7caca411956d6a1cacdefa88ba4ea50325a39d3",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802033.img": "292e3813407bc14b69634b08183ede4dd91ddd69e83c3b0d503ff18d0827aae5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802034.img": "61f8c926bcd0fbf71323263ee3110b6d4e88e9bfd84c05a46e0f719b74e01b04",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802035.img": "ff70fe4a7a3fa2fa2f9cc7f9928a84f6206831e5373f1ef558a6d26619288b37",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802036.img": "cd28cedac049ddda1e3aa72d308ec278904b24457aed73a98eed042813bf1adc",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802037.img": "9761214a95183951d5b2e501ce680b306f9cb335e5ac878bb75b48ecb14d6e8b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802038.img": "088b9469a418c898cc096b34cdc9bfd3c1ca617682abdaa65804555d1f63fe1b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802039.img": "c5ec0a45fc5a7b60911453985c1232b78613f3457fcb117c4a4f91dec1ed4c28",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802040.img": "13d2296da2a8f3563fa5fe86b05ac07c63162113d08c0c12f7039a1c88ac5103",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802041.img": "cbff07141c458232c4d462ed45d99ee6ceb8162bdcbef329887b36fa9c341ad2",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802042.img": "2227f065f6829790462bf91042e4e22f6c239cf47f7dbeba3e9d9e0289286fe9",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802043.img": "9cbdbfcda402deb9cb3dd32038a5d0359e1b90ba2cca0c982b64804ac6622d84",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802044.img": "1831ef3504c282453502b938180494cc47bfd07ca6d79a60e424ce1d4b815ed3",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802045.img": "c7ded6d66e6c9929139df84d8333fd31b20ed9a62e5c6b7b4d2ea4eeeda25402",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802046.img": "5c9cc877c9138cbe22ab65be0bffb6968891fdcecf7aada78bab54b61bf0859d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802047.img": "1c8788671add8c6db1a3ecfc958e3bcda482e8af68153f496e00af53f74b28d0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802048.img": "fd7c047347d474b50448d382307ac9335b4ad8ab6c90dbbd3b7b0776798192dd",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802049.img": "8ad6bfe7a42add3409e2d7454600062d1db91a6012899454e29f89a1c4016471",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802050.img": "a2b7989cf07e3118a65438d88dee2e1db6c037079ccfdcc4e3beab9c790d5225",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802051.img": "4e8a8d71057cd92256cf32c248f6fb9282434dc290242a615c1b803144eeb87a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802052.img": "aacb18c6c5a8b7db7d0dc905807ee96299ea0c6d30fae5cb94bc1767a513b7fb",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802053.img": "c1e4bb0f846fbbf2fe9a176966aeea36fff1dc117b8e2d0550eb260781168536",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802054.img": "0022d9e94df6158b7627c36d436180ca59f5951cead9206294f1dc6e095bd798",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802055.img": "d46013ad6f2ddb76e5676c960ca03d78ca43e756f96326bf9f9f33b738a8279f",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802056.img": "2688c815772ddf68b307e389a3ee195791975aa93352c09f96ca8e5e03e6146c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802057.img": "281b7c5f6a6b99bf75b38a7e785f01f1f52476f4cc2fbd28761f1474ed079719",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802058.img": "0f0c8fd2b643d59ecf913b631910f96d6115bebf02cef85598607834d805d0c5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802059.img": "42435d085791a2994090c7c96aac92f6501242b66b2eadbc54a8ac385a03a3ab",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802060.img": "3f1a2dd24d87fe184f7b8f8ab5847d099fa4a4a046a77c671a9d739ba8441fb4",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802061.img": "18c2fe0b6de67c5395a00ea27a7e952c6c947d35731abcb95a33784f544e132f",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802062.img": "d9f84410dfad69498caa6a281f18952ceca910055ed5e1e871937fe38e32db7e",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802063.img": "4766390155e55951ef350db17838529343fac08bfb46dc5e9f15c1da1a247960",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802064.img": "655836878f407434cf17a105e439b93df8bab656d01dca86f5bdae7ceb708b86",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802065.img": "ee913c89a3c0a9dc82f486f3f62e075b13a0da1aef5cf5a84ad5e799523ac82e",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802066.img": "d15cfc7fa9a448ac8b5304934668bc8b7bc3f276d3312c85f15806d901bd07ea",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802067.img": "bee930c0cd25c21e9d58c4374a590af2af32f5f8a3ed868693b3c1749d62d21a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802068.img": "bd75d01023be58401c4ee7abee9f473236f059c0d6ed54a140e7fe7807129aeb",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802069.img": "78fd126836b427b43df8e3d48593df5eddee037f5ed6bc7a1c05939c9e642ece",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802070.img": "245228fdc95bfa0e1fd601b6709c0c19a6ffa6c872c63159ed43678524f8ccf2",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802071.img": "c80465622ac203a1c2fd815965acd7f4e8eadbd2ad22b50f59802c6106ade7d2",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802072.img": "dd8318c336e9aa8ab3523c5865097740b7e9dc87dbb891671530f7d223e4816d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802073.img": "86c2f17c1ea1a215642007f424d73d51ffab14399a4290ba08ef34512ac4ad85",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802074.img": "5fa3f4bfb70646ae93661856ea70783e1c12c0b6fc400488163b385d097dfff6",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802075.img": "e16b802376d2da41b6c9bf9f0e02dde98c1e981dc8e7b581cbc106369175fe1a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802076.img": "564ba38b5de330e4f8e97faebd9508600ba574ef0552e8c2e4b40730a979689b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802077.img": "c932876d7800a839bfe687ca416986cef765d1008d659d9de4cb944fe50b067e",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802078.img": "2380cb3fbcc24bc5cf031743325aee0d033321eb1377ce3edc79a47d3097ec19",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802079.img": "252f48804f911de2223783667c3a51b57c537caaf7708d750bd53cbc7958a130",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802080.img": "2b5364e7dc42fb080ca6785a7301aee112f525d4ad584ff7dfb6015f13c9dbaa",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802081.img": "0ed7d251da6ebebff7f3cc16d0bd495c3b7165af95f13d00cb7d6f390f6dfe24",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802082.img": "9aff4f5bc0495da35cfd089570eedb8ddb3d320fe90a26d16221225177046ccc",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802083.img": "9e4325445112e5fa2dde27a26564110b69a04f1b3f006f61f57f177e469272a6",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802084.img": "6963ac7459c5e7efb10ba01c140beeb457b62b9d83bc8a08ac9c21006c0daf8d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802085.img": "e3d259e8448cac23b88597940d27ef1680042ed199eabd4e234bec09305cf5ea",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802086.img": "532ecffd1c71a5bc928251d4e950503e8425b60aa93f033d6e544e981c59d904",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802087.img": "6dfee1639a2f229cd9612b89c46dc8095f5bc48c56943d469865f1ef2001f9a6",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802088.img": "bece8b07954f489f515dffd199bad751120d9ba209021f726643fed5e330451d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802089.img": "1fe5b663fc3b447015bb6eaa93c9f1eef716ef5481dbbf24ea301ce2f5716aa8",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802090.img": "ac6244d657ab8ee56382e0c765c8955cf85d0e9e99022a40f0a534d486077d19",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802091.img": "b695947ec0723b2878f3ca79aefb76954a25eee9117aae322815abdd4bfed701",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802092.img": "73cbed18d9299f332f5465f8751436d4066fcbccf2584c4e900ea57a609d61e5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802093.img": "3f58536b75e0dd080d99315bd025c643aaec40c4014186fc882a3e8f04394fc8",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802094.img": "cb0b031e5f16903bdba963d4f05df8de9ff01f05420a84d8421533138681008b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802095.img": "2c5efcb6a2dd303d6dc672b1aeb3e7613571e9e80fc448ec7f73a5ba4835e868",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802096.img": "7cc85e3393d83265c47933a15b0375ec89a9a2a991010676bfee87cae5f1df22",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802097.img": "d4d8849424a058892a5bd6348634abc1abe0093f725180354c6cea8df59cd65b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802098.img": "9a806187d1ebae6500295565f3cf9fd5b8f5f581824db95ca77010f719c3df49",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802099.img": "38ffd03116810f8c8b350e94085cb5413d31bbc44607a2423aee8e3f8c6c864e",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802100.img": "8f2af22241a189d944076aae16c6ae730cf482cc5f6af2c2fd3aa726a6a885ac",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802120.img": "d57713eba9ea337bce32101ce7ab93907aef8d95a53b6c00d45f2f15fd91a1d9",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802220.img": "be4235dc27532f1cbb839e4b2629e77180e03b6d72eb42252a1792651ece3652",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802221.img": "2d5412c8b1d9b9a13bf8e83c8275caf0714bcf46c75d1c9ec2faba320ab397ed",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802337.img": "faf9be6954309933f2b120163f27ad860469e74fb93de7b5a0a6bafc35463fe0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802338.img": "1ccf0bcf5e6b0fc9aa18d753c4e713da5aaafab08c22669c9b7cda69bf78cbba",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802339.img": "e1efd86e83384ad7fcac879a8e4e07e11ffc762a7f387c8fafe209f33edba374",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802340.img": "b782fa4ce72458bbe0345fb176f5504d2e5cb11c123baa87800bf42573f1c423",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802341.img": "cf7adb9c15094fcba5d6710f3237962230f377b471fba8715bfbfc5bd2596cc6",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802342.img": "e685658ff994934c491bdef58b20a143b37163d5101c1807c0c91b85f87a8b26",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802343.img": "46a566a8d50444fb033c1c8e9bbcfbe3be60235cec579b562c7993b0faec7b3a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802344.img": "64984af29fa40cd5009811d1b8e6878f6ff0428e5bd31503a5aa842547528e63",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802345.img": "7168860131b06df7baafa4450bb134895d65dfda6039a63c167eb43fb4dd6411",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802346.img": "66e51f86623b5823498fc8b63ffbc835b0c3ee76c32ac3c1e0142f456e1c12ac",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802347.img": "b9cdb7e834119637ddff167c0110b2dccd78ceac4544a07a5d8f89b99511f4bd",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802348.img": "8c8c5ae7803f700340cd7cdfe1eb5f8c3a8432c670e99040538bb5ac6e1759b6",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802349.img": "3435aa4407835ed71b74afaa2cc2b7951520ed4deb021036238a4cd8527c36eb",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802350.img": "db2c5773a629cbe656ca0a6fcf8dfd4b35a8e4d150eaf982424a841796959238",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802351.img": "5d42c5ef03744576a635a490c77950ff390facdb87860a6a8761647cc2a304b4",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802352.img": "3b29ea85884084bcb92c308d5c1046a9c9b726188db2e9e21d49367d9bd7cabb",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802353.img": "b4a734470c3d981c8401dae8d2960b27e0b605313e10ec556a14ee82cfb6534c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802354.img": "c696e2e3b7d22d589f73599b0393ca153f4d8ab052fd8b3d3cb09bfe12a180e5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802365.img": "162cc15de542f274db85d645ae1b76c066b005b2f3c17314cda4461a7a6057b8",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802366.img": "a780e122ce6fda57ef7c76079f86832a636333f048c4972e9fe9b701e598ea6e",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802367.img": "f982c03de689303051c0b57a1457660b319994b2686765da7dc1064dd54d687e",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802368.img": "dc97c751c0c3932732ed73c4aa5782ee7aabe114a813200b911467b1093e9de3",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802369.img": "3f03c2e087dd21bc322282ed82bbd6029348e0837ec97a9b4c0dc87574f34223",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802370.img": "b8f99cba2c051afa532f5b3a596d2351db601f50f3be533e9fd3a002a80e0f4a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802371.img": "dd6101db074f5c57b3b3529584a77bb7efe5c1e5b1be011328b7549d478286ec",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802372.img": "8ddcc90e86f8de8a1d008e440ec72ca1296c3aa0d23f39690d694a1339e96e25",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802373.img": "ea21041cdcb70d41b392081921eb46faf62624998ad34ec1c98f5833e7ec278a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802375.img": "dd78ecae1fff518d90d292f9d206ccb9a62a96cb984754baf453355a91c60a87",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802376.img": "be4235dc27532f1cbb839e4b2629e77180e03b6d72eb42252a1792651ece3652",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802377.img": "2d5412c8b1d9b9a13bf8e83c8275caf0714bcf46c75d1c9ec2faba320ab397ed",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802378.img": "ed7fe3c54e05ab9127686f2468604a1f93503b1f33258fa8c3a7c47f978dd122",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802379.img": "de347c455ed9685809d24ad50763ef67a97c045c0d1acb796606da5890a520e0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802380.img": "349ada0180d0fbc053dbf11326118cd67b3c9443a65458e72671ee6893990d4b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802381.img": "67f333c2c6990cbaf9f7a41ed1935d2554f49003d5e313414a6ce27a2216edf3",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802382.img": "ea2b65736f4c57b2a8f54adf0eb84cff67ed8eac16c32f21cd2a16ab607d7069",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802384.img": "3ff2b81a901beb3a1160ef4d2a085eb824af544d68ba3a9c067c3cafb12197bc",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802385.img": "b5e2b2cbf6d776ddd9eab0cb154e59ec4867a432e4246ef91e60624cc4e9838b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802386.img": "6c2d5262a6fa26103c9f2daa5d1f99ba64f6005222bb59ec64188d947fbbe160",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802388.img": "91fee8bc6850edd139a3ac9772aec42ca097bce09f289d1d202290ddbc5c10de",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802389.img": "2c73b56148b4a300252ee43d62947e4380415e6156c5c212e8467fc1c9fd946b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802390.img": "de73183f725d5b40b0f754534da4b695fa6ed171a6162186aeb3f5723dd20a82",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802391.img": "d757316517d7c372cd493fb86e79bc2da83aa2a5144f142939dd810d742aac42",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802392.img": "48f87a69a29aeb050c72ec34bd2a20e1b5d0fc3987486c5df3c57121ac4be329",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802393.img": "a7d8b6708410a434385c77617f582c2a4349efb06c652090e700b25b72490d6c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802394.img": "d5cb100ed5c946cab118db4dcc458ca41adf54370886ddb5d304f77fb43d9473",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802395.img": "4b3b494495eb8e9c7c1a2051815084acaccee001556f8ce378334d100bfae91b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802396.img": "3ebab71ddfe39d8088d24f245a39f67604ffabded0bf05f6c22284115554433c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802418.img": "1747b2bc24198f040a00c1b153d11118f4f84ab5a3a235e2796a0f73b4c61e5c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802419.img": "fad7e4a57774e63477fcf9c35304d910610c8a9d877ad99ab684c5faa44385bf",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802420.img": "09c8a8c934d34fe13eacc0610a2d2814bf9843829163b979bae47125946d380a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802421.img": "f71f881e1b08defebb8f6d2ce7f98ec3cc9b2e5f0f7ef33730ecd10f320c9dd5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802422.img": "34565f6b37941ba0d769884018ce79f0888d5e8b6a140bdafad2bb113d5e3ac7",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802423.img": "ba1494022509a7061330d2f27353dc0ef4b857daa6ac053cf695c479525e578e",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802424.img": "cbfb4e5e546341bae4aa115e66a1ffa3cef3337525c5770cfef07792a1228eba",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802425.img": "fb34eee7fd8d6d763f105aa31e9191f4f8f6ee3166502d1789f33339d29692c6",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802426.img": "5772652003d173eec1e4d84b506d0a57d74b571327f7f68c94feebaa43c04eb0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802427.img": "5e3d4cce5a333127a108b6ada4e71805d78570aa0880d4b5f8a0490216eb1382",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802428.img": "c73fd7102f01c89e44fbfc54413d6009047ed0cf4b2de4d5d33b82ec96331e8e",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802429.img": "47b0c5131c84e051ff50718b03562791f7fd517e4392943525d522ad0efd1f46",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802430.img": "9b6428bf06be194c1de08463d023b68b082ce65017a8a5b7fd72fe0701460042",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802431.img": "e188c8b723c77fd9ecdfffb1d02084b57c0cb9a66c65aec64a399ae07894835b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802432.img": "82b94669f12aac30306f4f99e60f0bbce5a39c872a38ee498d08709adc9cab42",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802433.img": "b27e8eed9dfce916b6fb80db4572d6190244bab33b31c1453eb82b7ba14ee6de",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802434.img": "9b5752efde8fdb42e403b519781642f59ce6aeb0d6d9e926dba0de11bfa3c221",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802435.img": "710a96a4c4a993abc2296d2e665b150919ac6b2fd9fecb4953a87d1edfeccbf0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802436.img": "10193e3f5ad9b3c53a72d895da869f1af921e1e1f3f202da2d943382276ddea2",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802444.img": "3a8c924877500e8238f8bf776a8bdd392f894ec84855451b2214b42b30a2ffbc",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802445.img": "79af9eac5066be3018b8c4d04d5637a3068d8c5eba622cfedd3893c9058d1c83",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802446.img": "15d790bc947a12ef80c758e1d5507db379131d73538181a4eba31f440a0e741c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802447.img": "034e9475b86dbde67895259fef119b52673b0b60e26998dd3670bce99be02181",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802448.img": "42bd9e6fdc3df4f9669f64485f4be7398929326d2c5b16ba00ab58637d424df8",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802450.img": "b555831ee9b578c0231cec1c70816f6ed21b5912866388837502e47ea7fa62bd",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802451.img": "ff1d0c06d8a31a0900a738cc9987773785653d73b6c181398f96b7ab4020663c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802452.img": "bc8a904297e45d3237220b15fd85d65ca3d745ab0e7b3ec504bad0427208cf1a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802458.img": "eb3e9a07d1259a3128bce5507c78644c1d5418d2df72e76b30874e6415d2911a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802459.img": "95d4ed77454bc9190e26e85b041e32dcbfe9022448e5f9b6acf6ea697a2d7c31",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802460.img": "a0c84c1e7cf483eae3e689d6f2604fdd171a96b7228e92032c304cfb1faac022",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802461.img": "59887f420ca22e5f6ed3101dde9b40a39dc016f371c665a758c37a21d461d3d5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802463.img": "9c9b616d43426d1f3014571b2edf35c2b1977626d66758220670dae2649f3488",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802464.img": "fb9952e1b1b6ec3df7fd1498926cd26dbaea91098450cfc04912675c0ab603a1",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802465.img": "807e8354c14ac864f34d0b2668ad87f73a609441e206b623f6833e653be033a1",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802466.img": "609b30fffa0affe37ebfa3d1e64156f575894a3afe78836bdcc37b034be695e8",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802467.img": "821b7353f25e0be780951faf4ef6127eac9b1478d534d87ddc3569371f763701",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802471.img": "60d7f7b60f440cf6ae01188746541ae92860ea8e2c577856411e620ac324cd3d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802472.img": "a01b407a78b569183db22e7f584b23e47aab4edbba2d1ecc79276707676e3490",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802473.img": "6cda88e9252f7fabd7027ef4dadd04038cb68ae22cf567275c80b2eb18d5276d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802474.img": "68912d4c16da97405f74e1c187f15bf158321827ac5a7e14480f3c8253a3662a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802475.img": "b65598bf29acb6850f52a1abe494f8ec7c76ecae181f418867a9721e0e29e7d0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802476.img": "284fb4ebbe269454760571c5497ebd4902b8d34402dc0f6055e58a69bcc573e8",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802477.img": "ba3dce667e6b57089b93aaf76c8f8ede65983323d4322a33cd6d800e31615331",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802478.img": "d6990dc88f550406cfc554a66a8f7e6773bd9f7b7f54a52f018aa527259feddd",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802479.img": "b1b71852c17af62c438ddc5b400187b203bfb1dd48ac08865130e9124c2ee7f0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802480.img": "8ec7192446fa7ba837d47a62e7a1f27f9a757200febf58b0a4206374fcde5909",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802481.img": "ede860db5f1818d05c7721f48cb1ffaa5cbf2273738a8066693e1406b5c6f4a1",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802482.img": "8ead8912d9a2b7d85d8f6c662450ff0674be47901a806871a6b997f2ed5e68f5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802483.img": "7f0512b8017df903de097df9fc4b0637e3fb1dbb50507c6be885ab9860fe2b7c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802484.img": "aa913b785c09fe7cea3d38e55aa2e96842eccfb1a37f672c354b9b1009d58b90",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802488.img": "0b25445eb2b0f8831664c56a570b5572fa2a3c4489abf6299eba379edabf8e6a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802489.img": "ea2e5fdec6e706bde397a0fbe7d2c4560174bb892fd8508a73523a4635c51886",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802490.img": "339416d373019af72e1a07a13c073fb0f3c93cd7a27b793c92746f892b7b34e5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802491.img": "ad9bb1e83f0b1ecd0762a803dba775b58651b2ac74acc3b1b3a6362a088e8f08",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802493.img": "9c3e3b6714fef562b72a994c7653372ef816d5a0195f124a9a39c7f8c55b552b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802497.img": "4d059414d5957c6bcdb4679c640e1b4fbc441866ec386f18e4eaea800d574062",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802498.img": "94a3aa89d6d8e0d0f13236c6a0e5c851edb0c59960eedde2d7aa18dd06de601d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802500.img": "ca3a8994170274d326e9dc3e71671509a7d203b4e286e6d8589c959a5545a6be",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802501.img": "3263e47757532d2fd5a46b5747db0a5aa2f23b1584e1ce2693966f7dcc5ae98a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802502.img": "c89c8d45be7a414c08d3eb454bc7c5662e5cfa33ad2ad96032c421c6dde40332",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802503.img": "98bccff82e916a30d3e66d21ddabeaf40f4353ecf08370706db2e9d7ff5dd681",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802504.img": "c01cf644c2cfd509caa929b3a0f0484a3e798c6aba9ee09657dfc2ffdf0fc126",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802505.img": "1efcc45d6098e26d820fed4521ef23b8aee077a9da14fee0998a6dcc2fef95b0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802509.img": "44d92e85f629f07ebf2f91ee392dff32850025e4170d6d15302d04104d36006b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802510.img": "eb40a5c354dbfc67d32a251869e4612f3e454f06fd3ee2e7a78cd9ab0dda4def",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802511.img": "8d10fb716e50f1a1aacc561e76a8f1a673253c79fe7795f6d7501ce4578eb599",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802512.img": "1f4852c4b9ed77bb279b6394070d7777fc6ef8e7576550750a314942ee9fd36b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802519.img": "4f7331fd612979f5e5ce879c053429f95a7b499ea15b0a04f12950e90acf4fe7",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802520.img": "ba1c48ad5668827e700f23ec025321fb5d4701bc849963f51f914172fcb46784",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802521.img": "df90d6d9bead31bb709c24e86d3190ab4be1df0b819640205893ba1cf5db21b9",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802522.img": "a5424bf0a5a41f7b7592da67228bb3121f8f442b96fc94ffe2dd59873ef6113d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802524.img": "eaa2c3d4cdb11d12e23d928ad13795cb9d8349cd088fd3fe98d224a39adb99bb",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802526.img": "6cea86cc691806da33af22d825da309c69a01b7b8bcc8f0e7b110aee4fbdd6d7",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802527.img": "faf9682ac409ff0eb3c74054bb8cf1e110d0ccb0c0273106e2c2a37f14c8ec06",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802528.img": "555dbbe9b23f2930116f21c503b2ce2642af2932db34a55514082c83c40118bb",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802529.img": "20a1e8b61952afc17992a884baf7043dcd06bef335917c18939a8c810497b7e9",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802530.img": "05591d0e54923554b80ea186efd23710ffc0379673b42381c8e3a89ee482592d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802531.img": "65e2fcccf62442c7e8ecf13bac05b6242dc62f06f8854279abac67b0447ba35d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802532.img": "ed8e57b69e62ec7d4a19ba11a73c1ff99e6c8ad80967fd3e9ceabcb7e8571b71",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802533.img": "e60309b3056795a5277428ae534b40a8e5db6f80eb75e491130da873fb021991",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802534.img": "e3ef7f32aadeaecf55564913d7e4d349a704e46f561c4f11c70096c1e26c7bae",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802535.img": "b3a1430f39a551de51c5692869337587ab62308e96b4cf6b63befcb824d21229",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802536.img": "09d836d4f8ca8b41e01ff3e027d7efb3dc0f754d98d6d2e63bbc063de6c1ca9e",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802539.img": "fff70ca883c8d5ba42a4f0f068e2ff704a41f61ad2c46a3d269e101ab3059f66",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802540.img": "794150ea9972299624c2f8c43ff3981744cbf695de713d1452a3b8ad719e54aa",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802541.img": "475c29e401c812a0014e4d872226ed037dcaba12173f0a1f4a1f310cda4323e0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802542.img": "8706127506e348dd17219b832df5898742bfb769d502389f5db305d1b35a4957",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802543.img": "97f548dcc6c2a28cedfd8bbfd2e7f6c275d4230fcc4fd45b0105f98d59703e5a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802544.img": "22d2445ffc8b1b458a8a2d36aa07e9e96411e20d2dc66a0bf9b419cc3a4f3cc0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802545.img": "91a41b59e928ee4992da35bd82751d5bb1f2377c9cb9ffa4bc8043ab84535f1d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802546.img": "062297f9342e64b2816048ed08b95ef1b05f9ed60fa27433a91418618717533b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802547.img": "2e4d8844d8b6ad5149c4e25fd01b80f7ce36432deedd6d525b2ab43633e3d1d1",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802548.img": "e73f4f45c5ccb094ae144ac4e6368f8d08844958e0bf599394616e739821a873",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802549.img": "2cfa40841960e358ea8f93240115425e36d721698213363dd19e44104a401665",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802550.img": "d5d9eb6923c8cb7d12386a5d91dabf2f087a2efeaeff4b1fa2ecfcb7033c1e89",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802551.img": "3694a71bd41642efac2c1d3573e8551a1c8614adc0da84709c597a93df415d5b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802552.img": "68f914c437dbdf894329e4f5d5b7f8160ae519ad92d742a1367c0db2c7cd0e5b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802553.img": "3d8141008034f29d0f050ba9a576ed9c014ee6a7687670c909bd855f478b518c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802554.img": "085d16851bb438dcc26cc35dc3f9edb7e1db16674f1767b05871650d10fecea3",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802555.img": "d81264cddf4b09c095e6daffd81ef1c1068c08df82e3e87842050892f1537b09",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802556.img": "3501171ac619e3e27d16b9a54d7fc91eed0779097333a83fb0061d5efedbb530",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802557.img": "b50ae3770661f57048a7200f0a712831cc05eb4e01b38175a1473e2e38f317c1",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802558.img": "1775fb74971ef3807dd916aa2a0febeb143bd4bbb34c2c6dd348f360a9d307db",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802559.img": "16e5b63440fa8eb0b793f749be27d3bbda5cddf7bde6e681610344d267450760",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802560.img": "546bf5f0570bb130a0b764a328a5453bafa349d708f5936062f10f74e2d49b5f",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802561.img": "7364de9e3ed1e375f31e8ab7b8aeec0eee5651f6bb9516e440f1dbfcc5e1e306",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802562.img": "e944f944813ac16e51c246d88574c86fb979f773c1efdd412e149c41cae6a52b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802563.img": "2b620cd0794061286ecd950f162e7af175cd26d9b33f711fa07f627034466b8b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802564.img": "d4cdab75bcef33328b0e1815c4a48ec886874a374dc6121d2fa47d794d62210f",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802565.img": "9e7d11d96e9f400e6a2c66a96675651bf243ee4462fe75e92b91c886418b8c06",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802566.img": "0635db9e02b1e2b2ecaa8d473b3d3f150ac1281aeadcc56a5939729155b9c5ad",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802567.img": "9a75469ebac4398fe47b5bc71b231451dd56bea1dc00ff23cef118e2c35055f1",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802568.img": "d6c353901ad78ae455ece30caaf877563dc0c7ad602af40ea447dfc39ef55217",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802569.img": "eca4583b6dbf23e5b6c4ce23115790693b95a6478e1af00f3a6c44112a364fb9",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802570.img": "cd24efa6c02a4d6cc1d2bca106044f052cf073eaba825a16410007537cb2feb1",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802571.img": "a3371a6779f9d85408618cc7fe62bb57d3ff8ff4014c0dc20b38dd9a7a21451d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802572.img": "c4750b029c1c14d21b8e20410a751db11d59a30355a52303ae5bf8916cc7d0f8",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802573.img": "27d91419554d21043f8a92aad5230bbd3a049ea25d01db9e1a2b8b1abbca2d32",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802574.img": "9bdc2e0056650b34a842812dbae57b39ea3a2b8eee830c4871f2ddde78fbfbe5",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802575.img": "863de1df42ed36b8c0b9e714ca729c0aacd660ebf3eaac92e806b0904404151a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802576.img": "97dc5c9e068cec795d98ff46e9e9b91dafdff63208f9b1fec2e392cbcaf9012f",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802577.img": "0d57bb0f0bf34ce275dfa239ce14121f2f361e6e83a79c0951e15da6e4cf2420",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802578.img": "3a4098f5e2d259fd8a09049865683451ac86abacea1859f45e42049f61794357",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802579.img": "bae9e5190d4ad286984ad3760760f054244d7ede5ab0641b56efce5d99bb63b6",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802580.img": "a7490801e89ffdb9a79f80b24eeccb6d0c47b9a1e559a144a6b402bbf52cb9f1",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802581.img": "7c9d572ff8b6f196f9eb7290854bef96db16661117ba53b0c41b8569b4c4033f",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802582.img": "c693e1a3a583494a8e95a595728d5e01fffa89794f4cc7ec6f28d3975103fe95",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802583.img": "ec93aa38e8fa83dd39472005fb98a129fa5cfe6a3e0bd2041fecc0b4579f0a41",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802584.img": "e36c3a01a26048ce86c0dc352f9115205d442595571b225406e9d729a2f0c0db",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802585.img": "0eb16911653ce9a917ee69bd35b7bae811eff7f80d799e35694d5d9194487571",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802586.img": "7b161bcad546a7610fac5030e65b5ff01e2f2ef0d89a7ba8b3decd950b500536",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802587.img": "c4200f1ef500f831d7b237acbb9d9f64797127bf9f3f2439eea98673af85f81e",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802588.img": "cd5cec36e363fd8edb40a9ebfd53b2dd276053aecb066e1304802793406a69aa",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802589.img": "b63c5d2d384e3ac80171da1db2ac11670742b93663d476e70e42c8c128dbce1b",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802590.img": "6b9d3930c72b2929bbdaed75c7476d031a58b58dfea48c4811b375959af8b9ef",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802591.img": "d60de8dc29271a7cdfb0c0c22a66f034c86db5839af6589d79f359db3dbc5471",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802593.img": "9efa8a3b8dbedfa0ef3832327ab6e64033a8a7e6e92ac772e2b7671f49a17dd4",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802596.img": "8ca5bd12149594739439c89e34fb536bfa984ba0d71ded0fc1fbf3cae9821ad9",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802597.img": "f69c19a1234c088e18d1aa94546451c4b323815ffd212fc16c70c97450755788",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802600.img": "212905e11921a48147d635639156b3db191bb4a3f8d01f25ff3eb9b44aefcd8c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802601.img": "e1ea4479787efa9ce02fd70d6d1b16d3659a7a7782b20c38c31be432a0d38fd9",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802602.img": "ed62e7889c707f62c1c631c3776b4d6d55374c73d52983fcef6d9aa0c583d685",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802603.img": "c24bfa7fb4ec0722d98f558961813d16e17934936e22a229c42eb82889ef4705",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802606.img": "69dc2099456ec0390f062b52cf2155077572b09c0bb01ae18c45602106667456",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01802607.img": "b1ee2aad5e8d4f2b308f20d38135d49ff35a25f6abd78db9346ec3beb2beaeb8",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01812000.img": "76463f30c55912fcbeea72ca105141ab42205f5b2591d0f294a8f6fb55974278",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01812001.img": "2c160dee00e07c9eb396237582ac84da0bea1fd0f0a5192cea66959ee5f42ee0",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01812002.img": "159dd04117700bdb15ab11c6068cdafbabdfb52b39019ebac59f0c60d5aa3ea9",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01812003.img": "1de0dc2e378915c1f723e1a3b2ecec88508734ac5008986fbab2bfc617374b15",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01812004.img": "0aeb2cbca303a4a9c13048064fc1616acd4790a0d6787cafc32e612ea6ada6b3",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01812005.img": "03f55c4da6896c86783a573d2daf5d3ba2fea1efe42d87f71c9d6d2b6c37be7a",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01812006.img": "b5f484e41373e3ac1991caabcdf93ae5b0bae62a1b06650d752ee77396ce00a3",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01812007.img": "51cb9be3936729cfa4440b5e2850de3ecf97f9727e27537509d1851caac32974",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01812008.img": "9b170787e87094c5c07e898473f9d20dd724525e6554d35e76ec65c799cb828d",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01812009.img": "8ad1360de48a7b947519a0fd2de8076f62ac1a1e9bffd127f3d369bb92fca238",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01822000.img": "4d31d9bc35568009fc6099e7931c71ad4c139a6411ee9261d92006dab579786c",
+    "/Users/lizixian/Documents/mxd/mxd-android/MapleDashResources/Data/Character/PetEquip/01832000.img": "4e803de8678d03fdbffc217ca42a7914c26a03a35fbc2251169673f3a8c9e2dc"
   },
   "tameness": [
     1,
@@ -1951,5 +2259,1573 @@
       "hungry": 2,
       "evol1": 0
     }
+  },
+  "equips": {
+    "1802000": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000101,
+      5000014,
+      5000015,
+      5000017,
+      5000018,
+      5000020,
+      5000102,
+      5000021,
+      5000022,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000027,
+      5000040,
+      5000043
+    ],
+    "1802001": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000101,
+      5000014,
+      5000015,
+      5000017,
+      5000018,
+      5000020,
+      5000102,
+      5000021,
+      5000022,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000040,
+      5000043
+    ],
+    "1802002": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000101,
+      5000014,
+      5000015,
+      5000017,
+      5000018,
+      5000020,
+      5000102,
+      5000021,
+      5000022,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000040,
+      5000043
+    ],
+    "1802003": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000101,
+      5000014,
+      5000015,
+      5000017,
+      5000020,
+      5000102,
+      5000022,
+      5000018,
+      5000021,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000040,
+      5000043
+    ],
+    "1802004": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000101,
+      5000014,
+      5000015,
+      5000017,
+      5000018,
+      5000020,
+      5000102,
+      5000021,
+      5000022,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000040,
+      5000043
+    ],
+    "1802005": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000101,
+      5000014,
+      5000015,
+      5000017,
+      5000018,
+      5000020,
+      5000102,
+      5000021,
+      5000022,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000040,
+      5000043
+    ],
+    "1802006": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000101,
+      5000014,
+      5000015,
+      5000017,
+      5000018,
+      5000020,
+      5000102,
+      5000021,
+      5000022,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000040,
+      5000043
+    ],
+    "1802007": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000101,
+      5000014,
+      5000015,
+      5000017,
+      5000018,
+      5000021,
+      5000020,
+      5000102,
+      5000022,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000040,
+      5000043
+    ],
+    "1802008": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000101,
+      5000014,
+      5000015,
+      5000017,
+      5000018,
+      5000021,
+      5000020,
+      5000102,
+      5000022,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000040,
+      5000043
+    ],
+    "1802009": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000101,
+      5000014,
+      5000015,
+      5000017,
+      5000018,
+      5000020,
+      5000102,
+      5000021,
+      5000022,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000040,
+      5000043
+    ],
+    "1802010": [
+      5000007
+    ],
+    "1802011": [
+      5000006,
+      5000018,
+      5000037
+    ],
+    "1802012": [
+      5000008
+    ],
+    "1802013": [
+      5000002,
+      5000005,
+      5000034
+    ],
+    "1802014": [
+      5000003
+    ],
+    "1802015": [
+      5000009,
+      5000010
+    ],
+    "1802016": [
+      5000006,
+      5000018,
+      5000037
+    ],
+    "1802017": [
+      5000011,
+      5000021
+    ],
+    "1802018": [
+      5000008
+    ],
+    "1802019": [
+      5000015
+    ],
+    "1802020": [
+      5000012,
+      5000101
+    ],
+    "1802021": [
+      5000013
+    ],
+    "1802022": [
+      5000011
+    ],
+    "1802023": [
+      5000011
+    ],
+    "1802024": [
+      5000012,
+      5000101
+    ],
+    "1802025": [
+      5000006,
+      5000018,
+      5000037
+    ],
+    "1802026": [
+      5000020,
+      5000102
+    ],
+    "1802027": [
+      5000006,
+      5000018,
+      5000037
+    ],
+    "1802028": [
+      5000010,
+      5000009
+    ],
+    "1802029": [
+      5000008
+    ],
+    "1802030": [
+      5000023
+    ],
+    "1802031": [
+      5000003
+    ],
+    "1802032": [
+      5000006,
+      5000018,
+      5000037
+    ],
+    "1802033": [
+      5000024
+    ],
+    "1802034": [
+      5000020,
+      5000102
+    ],
+    "1802035": [
+      5000011,
+      5000021
+    ],
+    "1802036": [
+      5000025
+    ],
+    "1802037": [
+      5000006,
+      5000018,
+      5000037
+    ],
+    "1802038": [
+      5000026
+    ],
+    "1802039": [
+      5000064
+    ],
+    "1802040": [
+      5000065
+    ],
+    "1802041": [
+      5000068
+    ],
+    "1802042": [
+      5000022
+    ],
+    "1802043": [
+      5000027
+    ],
+    "1802044": [
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033
+    ],
+    "1802045": [
+      5000036,
+      5000040
+    ],
+    "1802046": [
+      5000038
+    ],
+    "1802047": [
+      5000039,
+      5000043
+    ],
+    "1802048": [
+      5000030,
+      5000031,
+      5000032,
+      5000033
+    ],
+    "1802049": [
+      5000036
+    ],
+    "1802050": [
+      5000036
+    ],
+    "1802051": [
+      5000036
+    ],
+    "1802052": [
+      5000036
+    ],
+    "1802053": [
+      5000041
+    ],
+    "1802054": [
+      5000042,
+      5000046,
+      5000100
+    ],
+    "1802055": [
+      5000045
+    ],
+    "1802056": [
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053
+    ],
+    "1802057": [
+      5000000,
+      5000004
+    ],
+    "1802058": [
+      5000006
+    ],
+    "1802059": [
+      5000011
+    ],
+    "1802060": [
+      5000055
+    ],
+    "1802061": [
+      5000058
+    ],
+    "1802062": [
+      5000060
+    ],
+    "1802063": [
+      5000066
+    ],
+    "1802064": [
+      5000067
+    ],
+    "1802065": [
+      5000068,
+      5000238
+    ],
+    "1802066": [
+      5000070,
+      5000071,
+      5000112
+    ],
+    "1802067": [
+      5000065
+    ],
+    "1802068": [
+      5000072
+    ],
+    "1802069": [
+      5000120
+    ],
+    "1802070": [
+      5000000,
+      5000004
+    ],
+    "1802071": [
+      5000074
+    ],
+    "1802072": [
+      5000083,
+      5000077
+    ],
+    "1802073": [
+      5000076
+    ],
+    "1802074": [
+      5000011
+    ],
+    "1802075": [
+      5000088
+    ],
+    "1802076": [
+      5000081
+    ],
+    "1802077": [
+      5000075
+    ],
+    "1802078": [
+      5000084,
+      5000091
+    ],
+    "1802079": [
+      5000086,
+      5000109,
+      5000085,
+      5000108
+    ],
+    "1802080": [
+      5000089,
+      5000092
+    ],
+    "1802081": [
+      5000090,
+      5000093
+    ],
+    "1802082": [
+      5000094
+    ],
+    "1802083": [
+      5000095
+    ],
+    "1802084": [
+      5000096
+    ],
+    "1802085": [
+      5000112
+    ],
+    "1802086": [
+      5000113
+    ],
+    "1802087": [
+      5000114
+    ],
+    "1802088": [
+      5000059
+    ],
+    "1802089": [
+      5000042
+    ],
+    "1802090": [
+      5000209,
+      5000115
+    ],
+    "1802091": [
+      5000109
+    ],
+    "1802092": [
+      5000117
+    ],
+    "1802093": [
+      5000080
+    ],
+    "1802094": [
+      5000064
+    ],
+    "1802095": [
+      5000100
+    ],
+    "1802096": [
+      5000118
+    ],
+    "1802097": [
+      5000019
+    ],
+    "1802098": [
+      5000035
+    ],
+    "1802099": [
+      5000096,
+      5000073,
+      5000095
+    ],
+    "1802100": [],
+    "1802120": [
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000079,
+      5000005,
+      5000006,
+      5000007,
+      5000107,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000078,
+      5000012,
+      5000014,
+      5000015,
+      5000017,
+      5000018,
+      5000020,
+      5000102,
+      5000021,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000029,
+      5000030,
+      5000031,
+      5000032,
+      5000033,
+      5000034,
+      5000036,
+      5000037,
+      5000039,
+      5000041,
+      5000044,
+      5000045,
+      5000048,
+      5000049,
+      5000050,
+      5000051,
+      5000052,
+      5000053,
+      5000055,
+      5000058,
+      5000027,
+      5000040,
+      5000043,
+      5000070,
+      5000071,
+      5000038,
+      5000056,
+      5000117,
+      5000022,
+      5000456
+    ],
+    "1802220": [
+      5000038
+    ],
+    "1802221": [
+      5000038
+    ],
+    "1802337": [
+      5000137,
+      5000227
+    ],
+    "1802338": [
+      5000201
+    ],
+    "1802339": [
+      5000202,
+      5000207
+    ],
+    "1802340": [
+      5000203
+    ],
+    "1802341": [
+      5000204
+    ],
+    "1802342": [
+      5000205
+    ],
+    "1802343": [
+      5000206
+    ],
+    "1802344": [
+      5000211
+    ],
+    "1802345": [
+      5000210,
+      5000023
+    ],
+    "1802346": [
+      5000212
+    ],
+    "1802347": [
+      5000213
+    ],
+    "1802348": [
+      5000214
+    ],
+    "1802349": [
+      5000209
+    ],
+    "1802350": [
+      5000083,
+      5000152
+    ],
+    "1802351": [
+      5000201,
+      5000240
+    ],
+    "1802352": [
+      5000215
+    ],
+    "1802353": [
+      5000216
+    ],
+    "1802354": [
+      5000217
+    ],
+    "1802365": [
+      5000221,
+      5000430,
+      5000431
+    ],
+    "1802366": [
+      5000225
+    ],
+    "1802367": [
+      5000267
+    ],
+    "1802368": [
+      5000284
+    ],
+    "1802369": [
+      5000228,
+      5000231,
+      5000281
+    ],
+    "1802370": [
+      5000229,
+      5000232,
+      5000282
+    ],
+    "1802371": [
+      5000230,
+      5000233,
+      5000283
+    ],
+    "1802372": [
+      5000285
+    ],
+    "1802373": [
+      5000268
+    ],
+    "1802375": [
+      5000237,
+      5000468
+    ],
+    "1802376": [
+      5000038
+    ],
+    "1802377": [
+      5000038
+    ],
+    "1802378": [
+      5000239
+    ],
+    "1802379": [
+      5000247,
+      5000252,
+      5000253
+    ],
+    "1802380": [
+      5000243
+    ],
+    "1802381": [
+      5000244
+    ],
+    "1802382": [
+      5000245
+    ],
+    "1802384": [
+      5000249
+    ],
+    "1802385": [
+      5000250
+    ],
+    "1802386": [
+      5000251
+    ],
+    "1802388": [
+      5000255
+    ],
+    "1802389": [
+      5000256
+    ],
+    "1802390": [
+      5000257
+    ],
+    "1802391": [
+      5000258
+    ],
+    "1802392": [
+      5000264
+    ],
+    "1802393": [
+      5000274
+    ],
+    "1802394": [
+      5000271
+    ],
+    "1802395": [
+      5000272
+    ],
+    "1802396": [
+      5000273
+    ],
+    "1802418": [
+      5000275
+    ],
+    "1802419": [
+      5000276
+    ],
+    "1802420": [
+      5000277
+    ],
+    "1802421": [
+      5000287
+    ],
+    "1802422": [
+      5000288
+    ],
+    "1802423": [
+      5000289
+    ],
+    "1802424": [
+      5000290
+    ],
+    "1802425": [
+      5000291
+    ],
+    "1802426": [
+      5000292
+    ],
+    "1802427": [
+      5000293
+    ],
+    "1802428": [
+      5000294
+    ],
+    "1802429": [
+      5000295
+    ],
+    "1802430": [
+      5000300,
+      5000303,
+      5000306
+    ],
+    "1802431": [
+      5000301,
+      5000304,
+      5000307
+    ],
+    "1802432": [
+      5000302,
+      5000305,
+      5000308
+    ],
+    "1802433": [
+      5000296
+    ],
+    "1802434": [
+      5000297
+    ],
+    "1802435": [
+      5000298
+    ],
+    "1802436": [
+      5000171,
+      5000299
+    ],
+    "1802444": [
+      5000309
+    ],
+    "1802445": [
+      5000310
+    ],
+    "1802446": [
+      5000311
+    ],
+    "1802447": [
+      5000316
+    ],
+    "1802448": [
+      5000317
+    ],
+    "1802450": [
+      5000320
+    ],
+    "1802451": [
+      5000321
+    ],
+    "1802452": [
+      5000322
+    ],
+    "1802458": [
+      5000328
+    ],
+    "1802459": [
+      5000330
+    ],
+    "1802460": [
+      5000331
+    ],
+    "1802461": [
+      5000332
+    ],
+    "1802463": [
+      5000341
+    ],
+    "1802464": [
+      5000342
+    ],
+    "1802465": [
+      5000343
+    ],
+    "1802466": [
+      5000344
+    ],
+    "1802467": [
+      5000345
+    ],
+    "1802471": [
+      5000352
+    ],
+    "1802472": [
+      5000353
+    ],
+    "1802473": [
+      5000354
+    ],
+    "1802474": [
+      5000362,
+      5000363,
+      5000364
+    ],
+    "1802475": [
+      5000365
+    ],
+    "1802476": [
+      5000366
+    ],
+    "1802477": [
+      5000367
+    ],
+    "1802478": [
+      5000368
+    ],
+    "1802479": [
+      5000369
+    ],
+    "1802480": [
+      5000370
+    ],
+    "1802481": [
+      5000371
+    ],
+    "1802482": [
+      5000375
+    ],
+    "1802483": [
+      5000376
+    ],
+    "1802484": [
+      5000377
+    ],
+    "1802488": [
+      5000191
+    ],
+    "1802489": [
+      5000382
+    ],
+    "1802490": [
+      5001000,
+      5001001,
+      5001002,
+      5001003,
+      5001004,
+      5001005
+    ],
+    "1802491": [
+      5000383
+    ],
+    "1802493": [
+      5000385,
+      5000386,
+      5000387
+    ],
+    "1802497": [
+      5001006,
+      5001007,
+      5001008,
+      5001009,
+      5001010,
+      5001011
+    ],
+    "1802498": [
+      5000391
+    ],
+    "1802500": [
+      5000402
+    ],
+    "1802501": [
+      5000403
+    ],
+    "1802502": [
+      5000404
+    ],
+    "1802503": [
+      5000405,
+      5000406,
+      5000407
+    ],
+    "1802504": [
+      5000408,
+      5000409
+    ],
+    "1802505": [
+      5000408,
+      5000409
+    ],
+    "1802509": [
+      5000414
+    ],
+    "1802510": [
+      5000415
+    ],
+    "1802511": [
+      5000416
+    ],
+    "1802512": [
+      5000417
+    ],
+    "1802519": [
+      5000424
+    ],
+    "1802520": [
+      5000425
+    ],
+    "1802521": [
+      5000426
+    ],
+    "1802522": [
+      5000427
+    ],
+    "1802524": [
+      5000429,
+      5000432
+    ],
+    "1802526": [
+      5000433
+    ],
+    "1802527": [
+      5000434
+    ],
+    "1802528": [
+      5000435
+    ],
+    "1802529": [
+      5000437
+    ],
+    "1802530": [
+      5000443
+    ],
+    "1802531": [
+      5000444
+    ],
+    "1802532": [
+      5000445
+    ],
+    "1802533": [
+      5001012,
+      5001013,
+      5001014,
+      5001015,
+      5001016,
+      5001017
+    ],
+    "1802534": [
+      5000446
+    ],
+    "1802535": [
+      5000447
+    ],
+    "1802536": [
+      5000448
+    ],
+    "1802539": [
+      5000460
+    ],
+    "1802540": [
+      5000461
+    ],
+    "1802541": [
+      5000462
+    ],
+    "1802542": [
+      5000466
+    ],
+    "1802543": [
+      5000469
+    ],
+    "1802544": [
+      5000470
+    ],
+    "1802545": [
+      5000471
+    ],
+    "1802546": [
+      5000528
+    ],
+    "1802547": [
+      5000529
+    ],
+    "1802548": [
+      5000474
+    ],
+    "1802549": [
+      5000475
+    ],
+    "1802550": [
+      5000476
+    ],
+    "1802551": [
+      5000479
+    ],
+    "1802552": [
+      5000483
+    ],
+    "1802553": [
+      5000484
+    ],
+    "1802554": [
+      5000485,
+      5000727,
+      5000574,
+      5002052
+    ],
+    "1802555": [
+      5000486
+    ],
+    "1802556": [
+      5000490
+    ],
+    "1802557": [
+      5000491
+    ],
+    "1802558": [
+      5000492
+    ],
+    "1802559": [
+      5000494,
+      5000626,
+      5000580
+    ],
+    "1802560": [
+      5000495
+    ],
+    "1802561": [
+      5000496
+    ],
+    "1802562": [
+      5000600
+    ],
+    "1802563": [
+      5000601
+    ],
+    "1802564": [
+      5000602
+    ],
+    "1802565": [
+      5000565
+    ],
+    "1802566": [
+      5000566
+    ],
+    "1802567": [
+      5000567
+    ],
+    "1802568": [
+      5000606,
+      5000616,
+      5000617,
+      5000618,
+      5000619
+    ],
+    "1802569": [
+      5000609
+    ],
+    "1802570": [
+      5000608,
+      5000571,
+      5000597
+    ],
+    "1802571": [
+      5000607,
+      5000570,
+      5000596
+    ],
+    "1802572": [
+      5000620,
+      5000701
+    ],
+    "1802573": [
+      5000621
+    ],
+    "1802574": [
+      5000622,
+      5000703
+    ],
+    "1802575": [
+      5000624,
+      5000640
+    ],
+    "1802576": [
+      5000631,
+      5000585
+    ],
+    "1802577": [
+      5000632,
+      5000586
+    ],
+    "1802578": [
+      5000633
+    ],
+    "1802579": [
+      5000634
+    ],
+    "1802580": [
+      5000635
+    ],
+    "1802581": [
+      5000636,
+      5000587
+    ],
+    "1802582": [
+      5000637
+    ],
+    "1802583": [
+      5000638,
+      5000589
+    ],
+    "1802584": [
+      5000639,
+      5000590
+    ],
+    "1802585": [
+      5000641
+    ],
+    "1802586": [
+      5000642
+    ],
+    "1802587": [
+      5000643
+    ],
+    "1802588": [
+      5000653,
+      5000591
+    ],
+    "1802589": [
+      5000672
+    ],
+    "1802590": [
+      5000673
+    ],
+    "1802591": [
+      5000674
+    ],
+    "1802593": [
+      5000686,
+      5000592
+    ],
+    "1802596": [
+      5000697
+    ],
+    "1802597": [
+      5000707,
+      5000708,
+      5000709,
+      5000781,
+      5000782,
+      5000783,
+      5002066,
+      5002067,
+      5002068
+    ],
+    "1802600": [
+      5000718
+    ],
+    "1802601": [
+      5000719
+    ],
+    "1802602": [
+      5000720
+    ],
+    "1802603": [
+      5000721,
+      5000722,
+      5000723,
+      5000912,
+      5000913,
+      5000914,
+      5000838,
+      5000839,
+      5000840
+    ],
+    "1802606": [
+      5000741,
+      5000813
+    ],
+    "1802607": [
+      5000742,
+      5000814
+    ],
+    "1812000": [],
+    "1812001": [],
+    "1812002": [],
+    "1812003": [],
+    "1812004": [],
+    "1812005": [],
+    "1812006": [],
+    "1812007": [],
+    "1812008": [],
+    "1812009": [],
+    "1822000": [],
+    "1832000": []
   }
 }

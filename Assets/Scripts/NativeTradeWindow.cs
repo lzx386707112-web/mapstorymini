@@ -33,12 +33,14 @@ public static class NativeTradeWindow
         messages.Add((name ?? "") + " : " + message.text);
         if (messages.Count > 200) messages.RemoveAt(0);
     }
-    static BotTradeResponse Request(BotTradeOperation operation, int target = 0, int amount = 0, InventoryEntry item = null, int slot = 0, string text = null)
+    // amount 用 long：meso 已是 long，金币放进来不能再被 int 卡在 21 亿。
+    // quantity（物品数量）仍走 int，所以这里夹一次。
+    static BotTradeResponse Request(BotTradeOperation operation, int target = 0, long amount = 0, InventoryEntry item = null, int slot = 0, string text = null)
     {
         if (!GameSession.InGame || GameSession.Net == null) return null;
         state = GameSession.Net.BotTrade(new BotTradeRequest {characterId = GameSession.CharacterId, operation = operation,
             botId = target, meso = amount, inventoryType = item?.inventoryType ?? 0, inventoryPosition = item?.position ?? 0,
-            quantity = amount, slot = slot, text = text});
+            quantity = (int)System.Math.Min(int.MaxValue, amount), slot = slot, text = text});
         if (!state.ok) NativeSystemMessage.Drop(5, state.error);
         if (!state.active) { draggedItem = null; messages.Clear(); }
         return state;
@@ -81,6 +83,7 @@ public static class NativeTradeWindow
         Tick(); if (!Visible) return;
         float scale = BottomBar.S; var pointer = Pointer.Pos / scale;
         position = NativeUi.ClampWindowPosition(position, new Vector2(565,474), scale);
+        NativeUi.RegisterWindow("NativeTradeWindow", new Rect(position.x*scale,position.y*scale,565*scale,474*scale), () => NativeTradeWindow.Visible);
         var matrix = GUI.matrix;
         GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(scale,scale,1));
         try
@@ -111,7 +114,7 @@ public static class NativeTradeWindow
             if (NativeUi.Button(new Rect(116,49,60,19),"UI/UIWindow.img/TradingRoom/BtTrade",p))
                 NativeUtilPrompt.Confirm("确定要进行交易吗？",yes => { if (yes) Request(BotTradeOperation.Confirm); });
             if (NativeUi.Button(new Rect(170,244,14,14),"UI/UIWindow.img/TradingRoom/BtCoin",p))
-                NativeUtilPrompt.Number("要放入多少金币？",1,0,Profile.gold,value => Request(BotTradeOperation.OfferMeso,amount:value));
+                NativeUtilPrompt.NumberLong("要放入多少金币？",1,0,Profile.gold,value => Request(BotTradeOperation.OfferMeso,amount:value));
             GUI.enabled = enabled && !NativeUtilPrompt.Visible;
             if (NativeUi.Button(new Rect(116,71,60,19),"UI/UIWindow.img/TradingRoom/BtReset",p)) Close();
             var input = Style(); GUI.SetNextControlName("nativeTradeChat");

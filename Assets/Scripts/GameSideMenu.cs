@@ -210,13 +210,6 @@ public static class GameSideMenu
             editorWasVisible = false;
             RevealBall();
         }
-        if (g.state == GameLoop.GameState.Playing && KeyConfigWindow.Visible)
-        {
-            ResetBallPress();
-            AndroidBallGesture.Clear();
-            Pointer.Suppressed = false;
-            return;
-        }
 
         EnsureBall();
 
@@ -240,7 +233,7 @@ public static class GameSideMenu
             PollBall();
 
             if (g.state == GameLoop.GameState.Playing && !Visible
-                && !KeyConfigWindow.Visible && Input.GetKeyDown(KeyCode.F8))
+                && Input.GetKeyDown(KeyCode.F8))
                 OpenVirtualEditor();
 
             if (!Visible && !ballPressing && ballState == BallState.Full
@@ -328,7 +321,6 @@ public static class GameSideMenu
     {
         if (GameLoop.I == null || GameLoop.I.state != GameLoop.GameState.Playing) return;
         Close(true);
-        if (KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
         if (!VirtualControlsEditor.Visible) VirtualControlsEditor.Toggle();
     }
 
@@ -789,8 +781,7 @@ public static class GameSideMenu
         var g = GameLoop.I;
         if (g == null) return;
         if (g.state != GameLoop.GameState.Playing) return;
-        if (VirtualControlsEditor.Visible
-            || (g.state == GameLoop.GameState.Playing && KeyConfigWindow.Visible)) return;
+        if (VirtualControlsEditor.Visible) return;
         if (!ballPlaced) return;
 
         if (slide > 0.0001f)

@@ -3,6 +3,22 @@ using UnityEngine;
 // Shared drawing helpers; every visible bitmap comes from an original IMG node.
 public static class NativeUi
 {
+    static readonly System.Collections.Generic.Dictionary<string, (Rect rect, System.Func<bool> visible)> windows =
+        new System.Collections.Generic.Dictionary<string, (Rect, System.Func<bool>)>();
+    // Bounds are in UiKit coordinates, before per-window GUI scaling/groups.
+    // Keep the last geometry so the bottom bar can hit-test before painting windows.
+    public static void RegisterWindow(string key, Rect rect, System.Func<bool> visible)
+        => windows[key] = (rect, visible);
+    public static bool WindowAtPointer
+    {
+        get
+        {
+            foreach (var entry in windows.Values)
+                if (entry.visible() && (entry.rect.Contains(Pointer.Pos) ||
+                    (Pointer.Down || Pointer.Released) && entry.rect.Contains(Pointer.PressPosition))) return true;
+            return false;
+        }
+    }
     // Mobile presentation constraint, in the window's own IMG coordinates.
     // Keep native geometry intact; move the whole window back into the viewport.
     public static Vector2 ClampWindowPosition(Vector2 position, Vector2 size, float scale)

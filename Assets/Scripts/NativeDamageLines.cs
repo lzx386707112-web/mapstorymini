@@ -28,7 +28,7 @@ public sealed class NativeDamageLines : MonoBehaviour
         {
             long totalAmount = 0;
             foreach (var hit in values) totalAmount += hit.Amount;
-            effect.hits = new[] { new DamageResult((int)Math.Min(int.MaxValue,totalAmount),false) };
+            effect.hits = new[] { new DamageResult(totalAmount,false) };
         }
         effect.displayed = new bool[effect.hits.Length];
         effect.Tick();

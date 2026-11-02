@@ -11,8 +11,10 @@ public class EnemyUnit : MonoBehaviour
 
     public string  label = "杂兵";
     public string  artKey = "mushroom";     // 对应 art/manifest.json 里 mobs 的键
-    public float   hpMax = 40f;
-    public float   hp;
+    // 血量用 long：源端 Mob maxHP 是 int，但本工程允许怪物血量超过 21 亿；
+    // float 在 2^24 以上会吃掉小伤害，long 才有精确扣血。
+    public long    hpMax = 40L;
+    public long    hp;
     public float   damage = 8f;
     public float   speed = 1.9f;
     public float   attackRange = 1.15f;
@@ -27,11 +29,16 @@ public class EnemyUnit : MonoBehaviour
     public bool  fieldMode;
     public int   fieldMobId;
     public bool nativeFloating;
+    // 由事件实例地图（eim）生成的怪：玩法规则归脚本管，客户端不再另起一套 BOSS 控制器。
+    public bool  eventOwned;
     public float homeX;
     public float roamMin = float.NegativeInfinity, roamMax = float.PositiveInfinity;
     public float aggroRange = 8f;
     int patrolDir = 1;
 
+    static int nextVisualSequence;
+    static readonly Stack<int> freeVisualSequences = new Stack<int>();
+    readonly int visualSequence = freeVisualSequences.Count>0 ? freeVisualSequences.Pop() : ++nextVisualSequence;
     float stunUntil;
     public bool VacuumLocked { get; set; }
     float knockV;
@@ -95,6 +102,7 @@ public class EnemyUnit : MonoBehaviour
 
     void OnEnable()  => All.Add(this);
     void OnDisable() => All.Remove(this);
+    void OnDestroy() => freeVisualSequences.Push(visualSequence);
 
     public void Init(int laneIndex, float startX)
     {
@@ -108,7 +116,7 @@ public class EnemyUnit : MonoBehaviour
         lane = laneIndex;
         laneVis = laneIndex;
         var native = CombatStats;
-        hpMax = NativeCombatData.Int(native,"maxHP",40);
+        hpMax = System.Math.Max(1L,NativeCombatData.Long(native,"maxHP",40));
         damage = NativeCombatData.Int(native,"PADamage",8);
         hp = hpMax;
         terrainY = PlayerCtrl.GroundAt(startX, float.IsNaN(refY) ? PlayerCtrl.GroundY : refY);
@@ -128,6 +136,11 @@ public class EnemyUnit : MonoBehaviour
         body = vis.Renderer;
         body.sortingOrder = BodySortingOrder;
         body.color = Color.white;
+        // Stable pivot/depth breaks equal-order transparent sprite ties across IMG frames.
+        body.spriteSortPoint = SpriteSortPoint.Pivot;
+        var visualPosition = body.transform.localPosition;
+        visualPosition.z = -visualSequence * .0001f;
+        body.transform.localPosition = visualPosition;
         visHeight = Mathf.Max(0.6f, body.bounds.size.y);
 
         // 血条：底 + 条，用 scale 表现比例，不做图集。
@@ -161,6 +174,14 @@ public class EnemyUnit : MonoBehaviour
     {
         if (dead) { TickDeathFade(); return; }
         float dt = Time.deltaTime;
+        if (VacuumLocked && vacMoving)
+        {
+            float t = Mathf.Clamp01((Time.time - vacStarted) / .13f);
+            transform.position = Vector3.Lerp(vacFrom, vacTo, t);
+            terrainY = transform.position.y;
+            if (t >= 1f) vacMoving = false;
+        }
+        else if (!VacuumLocked) vacMoving = false;
         if (dt <= 0f) { SyncVisual(); return; }
 
         if (!VacuumLocked && knockV != 0f)
@@ -171,6 +192,12 @@ public class EnemyUnit : MonoBehaviour
 
         var p = GameLoop.I != null ? GameLoop.I.player : null;
         if (p == null) return;
+
+        if (ScriptControlProbe != null && !ScriptControlled && Time.time >= controlProbeAt)
+        {
+            controlProbeAt = Time.time + 0.5f;
+            ScriptControlled = ScriptControlProbe();
+        }
 
         // 层差 > 1 就打不到对方，这是「站位有意义」的代价。
         // 但敌人如果在远处层不主动靠拢，玩家不换层时它就成了打不着的幽灵，
@@ -183,7 +210,7 @@ public class EnemyUnit : MonoBehaviour
             lane += p.lane > lane ? 1 : -1;
         }
 
-        bool stunned = Time.time < stunUntil || VacuumLocked;
+        bool stunned = Time.time < stunUntil || VacuumLocked || ScriptControlled;
         bool moving = false;
         int faceDir = 1;
         float dx = p.worldX - transform.position.x;
@@ -223,12 +250,12 @@ public class EnemyUnit : MonoBehaviour
 
         // 0x94B30B checks the player's contact immunity before testing mob overlap.
         // Movement/attack cadence and mob action state do not schedule touch damage.
-        if (TouchesPlayer(p))
+        if (p.CanReceiveContact && TouchesPlayer(p))
             p.TakeDamage(NativeController != null ? NativeCombatData.Int(CombatStats,"PADamage") : damage,
                 p.worldX >= transform.position.x ? 1 : -1, false, NativeCombatData.Int(CombatStats,"level",1),this);
 
         laneVis = Mathf.Lerp(laneVis, lane, 1f - Mathf.Exp(-12f * dt));
-        if (vis != null)
+        if (vis != null && !ScriptControlled)
         {
             vis.SetBase(NativeController?.Flying==true ? "fly" : moving ? (aggro && NativeController?.HasChase==true ? "chase" : "move") : "stand");
             vis.SetFacing(NativeController != null && NativeController.Busy ? NativeController.Direction : faceDir);
@@ -236,7 +263,7 @@ public class EnemyUnit : MonoBehaviour
         if (hpBar != null)
         {
             if (hpRoot.gameObject.activeSelf != (hp < hpMax)) hpRoot.gameObject.SetActive(hp < hpMax);
-            float ratio = Mathf.Clamp01(hp / hpMax);
+            float ratio = hpMax <= 0 ? 0f : Mathf.Clamp01((float)((double)hp / hpMax));
             float w = 0.86f * ratio;
             hpBar.transform.localScale = new Vector3(w, 0.07f, 1f);
             // 左对齐递减：中心随宽度左移，视觉上血条从右往左退缩
@@ -252,6 +279,9 @@ public class EnemyUnit : MonoBehaviour
     bool Roam(float dt, out int faceDir)
     {
         faceDir = patrolDir;
+        // 零宽巡逻区兜底：再被压成单点时直接站定，绝不逐帧翻转朝向或把怪钉回出生 x。
+        // 生成侧已统一给 ±3 世界单位，这里只防回归。
+        if (!(roamMax - roamMin >= 0.01f)) return false;
         if (NativeController != null && !NativeController.CanMove) return false;
         float nx = transform.position.x + patrolDir * (NativeController!=null ? NativeController.GroundMoveSpeed(false) : speed) * dt;
         if (nx < roamMin) { nx = roamMin; patrolDir = 1; }
@@ -279,7 +309,7 @@ public class EnemyUnit : MonoBehaviour
     void SyncVisual()
     {
         // 每帧把脚下地形吸附到所在 x 的 foothold 上（击退、跟随都自然贴合）
-        if (!nativeFloating)
+        if (!nativeFloating && !VacuumLocked)
         {
             terrainY = PlayerCtrl.GroundAt(transform.position.x, terrainY);
             transform.position = new Vector3(transform.position.x, terrainY + DepthOffset, 0f);
@@ -290,6 +320,20 @@ public class EnemyUnit : MonoBehaviour
         {
             var b = body.bounds;
             visHeight = Mathf.Max(0.6f, b.size.y);
+        }
+    }
+
+    // Projectile acquisition uses the active original body frame, not feet distance.
+    public Rect? ProjectileBounds
+    {
+        get
+        {
+            var frame=vis?.FrameUri==null ? null : WzAssets.Node(vis.FrameUri);
+            var lt=frame?.Get("lt"); var rb=frame?.Get("rb");
+            if(lt==null || rb==null)return null;
+            float left=body.flipX ? -rb.X : lt.X, right=body.flipX ? -lt.X : rb.X;
+            return Rect.MinMaxRect(transform.position.x+left/Art.PPU,transform.position.y-rb.Y/Art.PPU,
+                transform.position.x+right/Art.PPU,transform.position.y-lt.Y/Art.PPU);
         }
     }
 
@@ -329,9 +373,34 @@ public class EnemyUnit : MonoBehaviour
         TakeHit(CombatRules.Resolve(dmg), fromDir);
     }
 
+    // 源端 MoveLifeHandler:75 —— SeedTowerCompat.controls() 为真的怪，客户端上报的移动会被
+    // 直接丢弃，也就是「这只怪的位移只由脚本决定」。移植端怪物移动由本地 AI 驱动，所以这里
+    // 用同一个标记冻结 AI，位移交给 SeedTowerCompat.move（ScriptMoveTo）。
+    public bool ScriptControlled { get; set; }
+    // 脚本是在 spawn 之后才写 seedControlled.<mapId>.<oid>，所以由事件地图挂一个探针，
+    // Update 里隔 0.5s 问一次（每帧拼字符串太贵）。
+    public Func<bool> ScriptControlProbe;
+    float controlProbeAt;
+    public void ScriptMoveTo(float mapX, float mapY, bool flying)
+    {
+        ScriptControlled = true;
+        if (flying) nativeFloating = true;
+        float fromX = transform.position.x;
+        transform.position = new Vector3(mapX / Art.PPU, -mapY / Art.PPU, transform.position.z);
+        terrainY = -mapY / Art.PPU;
+        if (vis != null)
+        {
+            vis.SetBase(flying ? "fly" : "move");
+            vis.SetFacing(mapX >= fromX * Art.PPU ? 1 : -1);
+        }
+    }
+
     // nativeHit：技能已经用原版 hit 部件打了爆点，这里就不再叠占位的黄色柔光
     public void TakeHit(DamageResult hit, int fromDir, bool nativeHit = false, bool magic = false)
     {
+        // MapleMap.damageMonster:1508 先问 SeedTowerCompat.protectsTarget ——
+        // 第 14 层的靶子、第 8/13 层的火柱/落石是脚本道具，玩家伤害一律不结算。
+        if (SeedTowerCompat.ProtectsTarget(this)) return;
         if (NativeController != null) hit = NativeController.FilterHit(hit, magic);
         ApplyHit(hit, fromDir, nativeHit, true);
     }
@@ -339,6 +408,7 @@ public class EnemyUnit : MonoBehaviour
     public long TakeReplayHit(DamageResult[] hits, int direction, bool magic, bool indexed, int interval, bool total = false, int ordinarySkill = -1)
     {
         if (dead) return 0;
+        if (SeedTowerCompat.ProtectsTarget(this)) return 0;
         var filtered = new DamageResult[hits.Length];
         long sum = 0; bool critical = false;
         for (int i = 0; i < hits.Length; i++)
@@ -347,14 +417,14 @@ public class EnemyUnit : MonoBehaviour
             sum += filtered[i].Amount; critical |= filtered[i].Critical;
         }
         NativeDamageLines.Show(this, filtered, indexed, interval, total, ordinarySkill);
-        ApplyHit(new DamageResult((int)System.Math.Min(int.MaxValue, sum), critical), direction, true, false);
-        return System.Math.Min(int.MaxValue,sum);
+        ApplyHit(new DamageResult(sum, critical), direction, true, false);
+        return sum;
     }
 
     // Server-owned periodic damage is already resolved; do not re-roll mob filtering.
-    public void TakeReplayDot(int amount) => ApplyHit(new DamageResult(amount,false),0,true,true,false);
+    public void TakeReplayDot(long amount) => ApplyHit(new DamageResult(amount,false),0,true,true,false);
 
-    public void TakeBotHit(int actorId,int damage,int fromDir)
+    public void TakeBotHit(int actorId,long damage,int fromDir)
     {
         if (dead) return;
         HasBotContribution=true;
@@ -366,7 +436,7 @@ public class EnemyUnit : MonoBehaviour
         if (dead) return;
         if (hit.Amount <= 0) { if (showNumber && hit.Amount == 0) DamageText.Miss(DamageAnchor + Vector3.up * (15f / Art.PPU)); return; }
         bool crit = hit.Critical;
-        float real = hit.Amount;
+        long real = hit.Amount;
         if (fieldMode && (attackerId!=0 || GameSession.InGame))
         {
             int source=attackerId!=0 ? attackerId : GameSession.CharacterId;
@@ -374,7 +444,7 @@ public class EnemyUnit : MonoBehaviour
             DamageContributions.TryGetValue(source,out long previous); DamageContributions[source]=previous+actual;
         }
         if (NativeController != null) NativeController.ApplyDamage(hit.Amount);
-        else hp = Mathf.Max(0f, hp - real);
+        else hp = System.Math.Max(0L, hp - real);
         if (attackerId==0) NativeController?.OnPlayerDamage();
 
         if (react)
@@ -383,7 +453,7 @@ public class EnemyUnit : MonoBehaviour
             // 距离基准仍是面板上的 HitFeel.Knockback（0.9 单位 ≈ 36px 行程，衰减 26/s）。
             // （原版普攻本身不推怪，这里保留一小段滑动是本地手感选择。）
             int pushed = NativeCombatData.Int(CombatStats, "pushed", 1);
-            knockV = fromDir * HitFeel.Knockback * 6.1f * Mathf.Clamp01(1f / Mathf.Max(1f, pushed));
+            knockV = VacuumLocked ? 0 : fromDir * HitFeel.Knockback * 6.1f * Mathf.Clamp01(1f / Mathf.Max(1f, pushed));
             if (!fieldMode) Fx.Flash(body, Color.white);
             if (vis != null) vis.PlayOnce("hit");
             if (!fieldMode && !nativeHit)
@@ -399,7 +469,7 @@ public class EnemyUnit : MonoBehaviour
         if (showNumber) DamageText.Show(DamageAnchor + Vector3.up * (15f / Art.PPU), real, crit ? "cri" : "red");
         if (!fieldMode && crit) HitFeel.Punch(1.35f);
 
-        if (hp <= 0f) Die();
+        if (hp <= 0L) Die();
     }
 
     // 数字从头顶冒出来：素材 1:1 时 bounds 就是实际贴图范围
@@ -418,10 +488,17 @@ public class EnemyUnit : MonoBehaviour
     public float SkillsSealedUntil { get; private set; }
     public void SealSkills(float seconds) => SkillsSealedUntil = Time.unscaledTime + Mathf.Max(0, seconds);
 
+    Vector3 vacFrom, vacTo;
+    float vacStarted;
+    bool vacMoving;
+    public Vector3 VacuumPosition => vacMoving ? vacTo : transform.position;
     public void MoveVac(Vector3 position)
     {
-        transform.position = position;
-        terrainY = position.y;
+        knockV = 0;
+        vacFrom = transform.position;
+        vacTo = position;
+        vacStarted = Time.time;
+        vacMoving = true;
     }
     public void PullTowards(float x)
     {

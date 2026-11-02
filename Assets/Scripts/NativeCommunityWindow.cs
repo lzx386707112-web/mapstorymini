@@ -4,6 +4,7 @@ using UnityEngine;
 public static class NativeCommunityWindow {
     public static bool Visible;
     static GameAction action;
+    public static bool SchoolVisible => Visible && action == GameAction.School;
     static CommunityResponse state;
     static string name = "", text = "", rank = "5", logo = "0", logoColor = "0", background = "0", backgroundColor = "0";
     static string[] titles = new string[5];
@@ -31,20 +32,23 @@ public static class NativeCommunityWindow {
         } else BottomBar.Toast(state.error);
         return state;
     }
-    public static void Toggle(GameAction next) {
-        // 家族是 UserList 主窗的 tab2，走原版窗口；学院 / 聊天记录仍用本文的紧凑面板
+    public static void Toggle(GameAction next, string familyTarget = null) {
+        // 家族是 UserList tab2；学院按入口显式区分本人页面与指定角色关系树。
         if (next == GameAction.Family) { NativeGuildWindow.Toggle(); return; }
-        if (Visible && action == next) { Visible = false; return; }
+        if (Visible && action == next && familyTarget == null) { Visible = false; return; }
         action = next; state = Request(CommunityOperation.Read); Visible = true; scroll = Vector2.zero;
         text = next == GameAction.School ? state.precepts : state.board;
+        if (next == GameAction.School) NativeFamilyWindow.Open(familyTarget);
         titles = (string[])state.titles.Clone();
     }
     public static void Reset() { Visible = false; state = null; board = ""; NativeGuildWindow.Reset(); NativeGuildGradeWindow.Reset(); }
     static int Int(string value) { int.TryParse(value, out int n); return n; }
     public static void Draw() {
         if (!Visible || state == null) return;
+        if (action == GameAction.School) { NativeFamilyWindow.Draw(state); return; }
         float w = Mathf.Min(570, UiKit.W - 24), h = Mathf.Min(490, UiKit.H - BottomBar.Height - 24);
         var rect = new Rect((UiKit.W - w) / 2, 12, w, h);
+        NativeUi.RegisterWindow("NativeCommunityWindow", rect, () => NativeCommunityWindow.Visible);
         GUI.Box(rect, "");
         GUILayout.BeginArea(new Rect(rect.x + 12, rect.y + 10, rect.width - 24, rect.height - 20));
         var oldFont = GUI.skin.font; GUI.skin.font = UiKit.Font;

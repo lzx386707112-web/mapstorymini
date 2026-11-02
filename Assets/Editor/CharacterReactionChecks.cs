@@ -122,8 +122,8 @@ public static class CharacterReactionChecks
             int invinciblePercent=hidden.Value("INVINCIBLE");
             Require(invinciblePercent>0,"INVINCIBLE state must read original x");
             var attributes=p.Attributes;
-            int physical=CombatRules.Incoming(10000,attributes,false,attributes.level,.5).Amount;
-            int reduced=CombatRules.Incoming(10000,attributes,false,attributes.level,.5,invinciblePercent).Amount;
+            long physical=CombatRules.Incoming(10000,attributes,false,attributes.level,.5).Amount;
+            long reduced=CombatRules.Incoming(10000,attributes,false,attributes.level,.5,invinciblePercent).Amount;
             Require(reduced<physical,"INVINCIBLE must reduce physical incoming damage");
             Require(CombatRules.Incoming(10000,attributes,true,attributes.level,.5).Amount==
                 CombatRules.Incoming(10000,attributes,true,attributes.level,.5,invinciblePercent).Amount,

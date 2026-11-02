@@ -241,8 +241,8 @@ public sealed class NativeBuffs : MonoBehaviour
         if (winners.TryGetValue(stat,out var effect)) Cancel(effect.Id);
     }
     // TakeDamageHandler: Magic Guard takes priority; Meso Guard uses integer damage / 2.
-    public static void GuardLoss(int damage,int availableMp,int availableMeso,int magicGuard,int mesoGuard,
-        bool hasMagicGuard,bool hasMesoGuard,int mpAttack,out int hpLoss,out int mpLoss,out int mesoLoss,out bool cancelMeso)
+    public static void GuardLoss(int damage,int availableMp,long availableMeso,int magicGuard,int mesoGuard,
+        bool hasMagicGuard,bool hasMesoGuard,int mpAttack,out int hpLoss,out int mpLoss,out long mesoLoss,out bool cancelMeso)
     {
         hpLoss=damage; mpLoss=mpAttack; mesoLoss=0; cancelMeso=false;
         if (hasMagicGuard && mpAttack==0)
@@ -253,7 +253,7 @@ public sealed class NativeBuffs : MonoBehaviour
         else if (hasMesoGuard)
         {
             hpLoss=damage/2;
-            int cost=(int)(hpLoss*(mesoGuard/100.0));
+            long cost=(long)(hpLoss*(mesoGuard/100.0));
             cancelMeso=availableMeso<cost;
             mesoLoss=Math.Min(availableMeso,cost);
         }

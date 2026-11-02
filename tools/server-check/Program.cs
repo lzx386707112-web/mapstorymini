@@ -89,6 +89,13 @@ public static class Program
         Check(hasGuide, "新手指南 4161001 在 ETC");
         Check(hasSword, "武器 1302000 在位置 -11");
 
+        var adminLogin=LoginService.Login(db,"admin","admin-test-only");
+        var adminChar=CharFactory.CreateCharacter(db,adminLogin.accountId,0,"GameMaster",1,
+            20000,30300,0,0,1040002,1060002,1072001,1302000,0);
+        Check(CharactersDao.FindById(db,adminChar.characterId).gm==6,"admin 账号新角色默认 GM6");
+        db.Table("characters").Update(DbStore.Eq("id",(long)adminChar.characterId),new DbRow {["gm"]=0L});
+        Check(CharactersDao.FindById(db,adminChar.characterId).gm==6,"admin 旧角色读档补 GM6");
+        Check(CharactersDao.FindById(db,(int)c0.id).gm==0,"普通账号不提升 GM 权限");
         Console.WriteLine("== 4. 建号校验 ==");
         Check(CharFactory.CreateCharacter(db, accId, 0, "BadFace", CharFactory.JobGroupAdventurer,
             99999, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0).code != 0, "非法脸型拒绝");
@@ -159,7 +166,7 @@ public static class Program
         Check(d1.expLost == 0 && d1.noExpLoss, "新手不扣经验");
         // 7.2 城镇 1%
         var adv = CharactersDao.FindById(db, (int)c0.id); adv.job = 100; adv.exp = 1000; adv.level = 10;
-        int need = ServerExpTable.GetExpNeededForLevel(adv.level);
+        long need = ServerExpTable.GetExpNeededForLevel(adv.level);
         var d2 = DeathService.PlayerDead(adv, 10000, mapInfo, 0);
         Check(d2.expLost == need / 100, "城镇扣 1%（" + need / 100 + "）");
         // 7.3 野外 LUK<50 扣 10%
@@ -280,6 +287,17 @@ public static class Program
             20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0);
         int second = makeBuddy.characterId;
         Check(makeBuddy.code == 0, "创建好友申请目标");
+        socialDb.Table("cash_wishlist").Insert(new DbRow { ["characterid"] = (long)first, ["sn"] = 123456L });
+        socialDb.Table("monsterbook").Insert(new DbRow { ["charid"] = (long)first, ["cardid"] = 2380000L, ["level"] = 1L });
+        socialDb.Table("monsterbook").Insert(new DbRow { ["charid"] = (long)first, ["cardid"] = 2388000L, ["level"] = 1L });
+        var info = social.Handle(new SocialRequest { characterId = first, operation = SocialOperation.CharacterInfo }).characterInfo;
+        Check(info != null && info.wishes.Count == 1 && info.wishes[0] == 123456 && info.normalCards == 1 && info.specialCards == 1,
+            "角色资料独立读取愿望与普通/特殊手册统计");
+        var buddyInfo = social.Handle(new SocialRequest { characterId = second, operation = SocialOperation.CharacterInfo }).characterInfo;
+        Check(buddyInfo.wishes.Count == 0 && buddyInfo.normalCards == 0 && buddyInfo.specialCards == 0,
+            "角色资料不会把上一位玩家的扩展数据泄漏给另一角色");
+        Check(!social.Handle(new SocialRequest { characterId = first, operation = SocialOperation.CharacterInfo, memberId = second }).ok,
+            "角色资料拒绝查询离线角色");
         SocialResponse Social(int id, SocialOperation op, string target = "", int cardId = 0)
             => social.Handle(new SocialRequest { characterId = id, operation = op, target = target, cardId = cardId });
         Check(social.Handle(new SocialRequest { characterId=first, operation=SocialOperation.SetBuddyCapacity, buddyCapacity=30 }).capacity==30,
@@ -337,8 +355,13 @@ public static class Program
 
         Console.WriteLine();
         NativeSystemChecks.Run(Check);
+        GmCommandChecks.Run(Check);
         BotChecks.Run(Check);
         BotPerfChecks.Run();
+        DropChecks.Run(Check);
+        InventoryOrganizeChecks.Run(Check);
+        PqChecks.Run(Check);
+        DueyChecks.Run(Check);
         Console.WriteLine("通过 " + passed + " / 失败 " + failed);
         File.Delete(dbPath);
         return failed == 0 ? 0 : 1;

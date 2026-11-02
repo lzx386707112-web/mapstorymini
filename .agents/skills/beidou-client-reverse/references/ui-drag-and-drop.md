@@ -101,3 +101,26 @@ KeyConfigWindow沿用现有原键帽命中与草稿提交，底栏沿用SlotRect
 内部QuickSlots以负物品ID区分，但进出数据库边界还原type2/正ID，不用ID数值范围猜技能或物品。
 放下动作消费当次按下和随后的释放，避免绑定药水时顺带喝掉；右键/Esc取消，不扣物品。
 光标11/12仍继承本页的项目映射待核实边界，没有新增它们是原端确定编号的结论。
+
+2026-11-01补核：技能窗与虚拟控制层曾重复绘制拖拽图标，现仅顶层绘制；技能行与VScr4相交处让滚动条先消费按下。未改按下拿起/再次按下放下语义，证据见[五项补核](five-issues-followup-2026-11-01.md)。
+
+## 背包物品丢到地上（2026-11-02）
+
+**源端没有独立的 ITEM_DROP 包**（`RecvOpcode` 里 `0x49 CANCEL_ITEM_EFFECT` 之后直接是 `0x4B USE_SUMMON_BAG`，`0x4A` 空位）。丢弃是 `ITEM_MOVE(0x47)` 的一个分支：
+
+```
+ItemMoveHandler.java:44
+  } else if (action == 0) {
+      InventoryManipulator.drop(c, type, src, quantity);
+```
+
+包体：`int tick` → `byte type` → `short src` → `short action` → `short quantity`；`src<0` 视为已装备栏（先脱再丢）。`InventoryManipulator.drop`（:835）的判定顺序：
+
+1. `chr.isGM() && gmLevel < minimum_gm_level_to_drop` → 拒绝；交易/小游戏中或该格不存在 → 直接返回。
+2. `(!ItemConstants.isRechargeable(itemId) && source.quantity < quantity) || quantity < 0` → 返回（**不改背包**）。`isRechargeable` = `itemId/10000 == 207`。
+3. `quantity < source.quantity` 且非可充能 → 复制一份 `quantity` 丢出去，原格 `quantity -= 数量`，回包只改这一格。
+4. 否则整格 `removeSlot`（已装备栏先 `unequippedItem` 再删，并 `equipChanged()`）。
+5. 落地一律 `map.spawnItemDrop(chr, chr, item, dropPos, true, true)`：`dropper=owner=本人`、`playerDrop=true`、`ffaDrop=true` → dropType 2（谁都能捡）；`dropPos = chr.getPosition()`（脚下，不是鼠标点）。`isDisappearingItemDrop`（untradeable 且开 `use_erase_untradeable_drop`）才走 disappearing 支路。
+6. 收尾：若丢的是正在生效的 item effect / 黑板 / 阿里安特宝石，分别清效果、关黑板、更新分数。
+
+迁移：客户端 `NativeInventoryActions.PickFromInventory`（背包格点一下拿起，装备也允许携带）→ 落在窗口与底栏之外的地面时 `DropToField`，可堆叠道具先问「扔掉多少？」（字符串池 885）；服务端 `NativeInventoryService.DropToField` 照抄上面 2~5。回归 `tools/server-check` 的 `DropChecks`（19 项：拆堆/整堆/超量/0/负数/装备行连带删除/dropType2/归属）。

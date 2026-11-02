@@ -531,3 +531,57 @@ Java互操作通过显式类注册迁移原API，不依赖JVM或任意反射，�
 ### 截图重建例外（2026-10-28，用户明确授权）
 
 用户授权按截图编写透德/彼特两条独立任务。数据使用Resources/Quests/screenshot_training.json，本地ID900001/900002；JS在content/script-overrides/quest，随sync_npc_scripts.py打包且保留来源。其余源端脚本仍原样同步，原端WZ不改。两任务各杀5只不同怪物回各自NPC交付；未展示的奖励不猜填。详见reverse skill的quest-window-and-alarm记录。
+
+## 技能参数全量对齐（2026-11-01）
+
+问题起点：魔法双击打出三段伤害。查证结果不是本工程算错，而是**源端数据本身**如此：
+
+- 客户端 `Skill.wz/200.img/skill/2001005/level/1..20/attackCount` 全为 **3**；
+  服务端 `gms-server/wz/Skill.wz/200.img.xml` 同名节点也是 **3**；`Effect.wz/SkillName2.img.xml` 只有音效名。
+- `String.wz/Skill.img/2001005/desc` 写的是「消耗MP,对同一个怪物连续攻击两次」——这是北斗自己的旧文案。
+  骑士团同名技能 `12001003`（魔法双击）的 attackCount 才等于 2，与它自己的说明一致。
+- 结论：按源端数据保留 3 段（用户 2026-11-01 确认）。**不改 WZ，不改说明文字**。
+
+### 真正有偏差的一处：段数漏读 bulletCount
+
+源端 `AbstractDealDamageHandler:1103` 允许的段数是 `max(bulletCount, attackCount)`。
+本工程 `NativeSkillDefinition.HitCount` 原来只读 `attackCount`，于是**只带 bulletCount 的老技能全被压成 1 段**：
+
+| 技能 | id | 旧 | 新 |
+|---|---|---|---|
+| 二连射 / 骑士团二连射 | 3001005 / 13001003 | 1 | 2 |
+| 双飞斩 / 骑士团双飞斩 | 4001344 / 14001004 | 1 | 2 |
+| 双弹射击 | 5001003 | 1 | 2 |
+| 三连环光击破 / 骑士团 | 4121007 / 14111005 | 1 | 3 |
+| 三连射杀 | 5210000 | 1 | 3 |
+| 急速射 | 5221007 | 1 | 3 |
+| 箭扫射（弓/弩/骑士团） | 3111006 / 3211006 / 13111001 | 1 | 4 / 5 / 4 |
+| 疾风扫射 | 13111007 | 1 | 3 |
+| 风转奇想 | 13121003 | 5 | 10 |
+| 挑釁契約VI | 4121019 | 2 | 6 |
+| 暗影吞噬 / 暗影蝙蝠 | 14121003 / 14121016 | 8 / 1 | 10 / 3 |
+
+改动：`Assets/Scripts/NativeSkillCatalog.cs` 的 `HitCount` 改为
+`max(1, max(attackCount, bulletCount))`（`Art.Num` 会解析 WZ 里以字符串形式存的数字）。
+`attackCount` 与 `bulletCount` 相等的技能（3121010 箭雨、5121014 海龍衝鋒 等）不受影响。
+
+### 全量核对工具
+
+- `tools/audit_skill_params.py`：直读 `clien/Data/Skill.wz` + `String.wz`，把
+  `Assets/Resources/UI/JobTree.json` 的 731 个技能、17646 条等级行**逐字段**比对
+  （maxLevel/masterLevel/req/invisible/名字/每一级的每个数值与 lt·rb），
+  当前结果 **字段差异 0 / 缺失 0 / 多出 0**；另外报源端自洽告警（desc 与 attackCount 矛盾等）。
+- `tools/skill-param-check`：`dotnet run`，引用 `tools/unity-compile-check` 编出的
+  `AssemblyCSharpCheck.dll` 调**真实运行时类型**，逐级验证段数换算。
+  当前 PASS 731 技能 / 17646 行 / 17663 断言。
+  主工程被 Unity 编辑器占用时 `-batchmode -executeMethod` 起不来，这条是替代验证路径。
+- `GameplayChecks.Run` 增加 `CheckSkillHitCounts()`（同口径 + 17 个定点技能）。
+
+### 已核对但未建模的字段（不算对齐完成）
+
+`mastery`（魔法技能逐级熟练度，57 个技能）、`dot/dotInterval/dotTime`、`madprop`、
+`ignoreMobpdpR`、`bdR`、`damagepc`、`subTime`、`cr`、`6thCount` 目前运行时不消费；
+`type` 判定里 1211003/1211004/1211005/1211006/1211007/1211008（烈焰之剑等属性强化）、
+1221003/1221004、4120005/4220005/14110004（武器用毒液）、11111007、15101006
+仍按 `attack` 处理（源端它们是有 damage/mad 的 buff），施放时会多打一段、且 buff 只吃到 `mad` 数值。
+这些属于行为差异，不在本次「参数对齐」范围内，未擅自改。

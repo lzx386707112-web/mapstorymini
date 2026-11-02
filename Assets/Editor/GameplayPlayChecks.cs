@@ -170,7 +170,7 @@ public static class GameplayPlayChecks
     static void CheckShop()
     {
         Profile.AddGold(1000);
-        int before = Profile.gold;
+        long before = Profile.gold;
         string equipped = Profile.equipWeapon;
         Require(!Profile.TryBuyWeapon(11000,0,"1382000") && Profile.gold==before,"shop identity rejects tampering");
         Require(Profile.TryBuyWeapon(11000,0,"1302000") && Profile.gold==before-50,"native SQL price charged");

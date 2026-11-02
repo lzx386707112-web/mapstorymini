@@ -288,6 +288,8 @@ public static class ItemTooltip
         int capacity = hoverItem != null && hoverItem.maxStar > 0
             ? hoverItem.maxStar
             : StarCapacity(info.Int("reqLevel"));
+        // 原「武器星之力强化」validateEquip/isWeapon excludes armour and cash weapons.
+        if (id < 1302000 || id >= 1493000 || info.Int("cash") != 0) { stars = 0; capacity = 0; }
         if (stars > capacity) capacity = stars;
         float starBar = capacity > 0 ? (capacity > 15 ? 42f : 27f) : 0f;
         // 星条画在**顶部**（源端 DLL 把星星 layer 锚在框顶，第一列 y=6、第二列 y=21），

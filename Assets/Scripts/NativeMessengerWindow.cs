@@ -97,6 +97,8 @@ public static class NativeMessengerWindow
         float scale = BottomBar.S;
         Vector2 size = SizeOf(mode);
         position = NativeUi.ClampWindowPosition(position,size,scale);
+        NativeUi.RegisterWindow("NativeMessengerWindow", new Rect(position.x * scale, position.y * scale, size.x * scale, size.y * scale),
+            () => NativeSocialWindow.MessengerVisible);
         var pointer = Pointer.Pos / scale;
         var matrix = GUI.matrix; bool enabled = GUI.enabled;
         GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(scale,scale,1));

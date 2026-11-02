@@ -25,12 +25,28 @@ public static class NativeCashWindow {
     const string CashRoot = "UI/CashShop.img/";
     static readonly int[] currencies = { 1, 2, 4 };
     public static void Toggle() {
+        if (ScreenFade.Busy || GameLoop.I?.field?.Warping == true) return;
+        if (GameLoop.I != null) { ScreenFade.Transition(GameLoop.I, ToggleNow); return; }
+        ToggleNow();
+    }
+    static void ToggleNow() {
         if (ShopWindow.Visible) { Request(CashOperation.Close); Reset(); return; }
         NativeNpcShopWindow.Close();
         var result = Request(CashOperation.Open); ShopWindow.Visible = result != null && result.ok;
         if (ShopWindow.Visible) { category = 1; subcategory = page = lockerRow = inventoryRow = 0; previousTimeScale = Time.timeScale; Time.timeScale = 0; }
     }
     public static void Reset() { if (ShopWindow.Visible && Time.timeScale == 0) Time.timeScale = previousTimeScale; ShopWindow.Visible = false; state = null; giftVisible = purchaseVisible = birthdayVisible = false; }
+    public static void GiftWish(int sn, string recipient)
+    {
+        if (!ShopWindow.Visible && GameLoop.I != null) {
+            if (!ScreenFade.Busy) ScreenFade.Transition(GameLoop.I, () => { ToggleNow(); GiftWish(sn, recipient); });
+            return;
+        }
+        if (!ShopWindow.Visible) Toggle();
+        if (!ShopWindow.Visible || state == null) return;
+        selected = sn; target = recipient; message = messageSecond = "";
+        giftVisible = true; purchaseVisible = birthdayVisible = false;
+    }
     static CashResponse Request(CashOperation operation, long itemId = 0, int inventory = 0, int[] wishes = null) {
         if (!GameSession.InGame) { BottomBar.Toast("请先选择角色"); return null; }
         // 目录解析在 OnGUI 里做，解析失败不能让整个 HUD 每帧抛异常。
@@ -45,21 +61,12 @@ public static class NativeCashWindow {
         if (!state.ok) BottomBar.Toast(state.error);
         return state;
     }
-    // Apply deltas only: unrelated ground loot and quest progress are not overwritten by opening CS.
+    // Inventory is server-owned; rebuild its Profile mirror without replacing quests or XP.
     public static void SyncInventory(FullCharacter full) {
         if (full == null || GameSession.Character == null) return;
-        var counts = new Dictionary<int, int>();
-        foreach (var item in GameSession.Character.inventory) if (item.position > 0) { counts.TryGetValue(item.itemId, out int n); counts[item.itemId] = n - item.quantity; }
-        foreach (var item in full.inventory) if (item.position > 0) { counts.TryGetValue(item.itemId, out int n); counts[item.itemId] = n + item.quantity; }
-        foreach (var pair in counts) { if (pair.Value > 0) Profile.Data.AddItem(pair.Key, pair.Value); else if (pair.Value < 0) Profile.Data.RemoveItem(pair.Key, Math.Min(Profile.ItemCount(pair.Key), -pair.Value)); }
-        foreach (int slot in EquipSlot.Worn) {
-            int previous = 0, next = 0;
-            foreach (var it in GameSession.Character.inventory) if (it.position == slot && it.inventoryType == 1) previous = it.itemId;
-            foreach (var it in full.inventory) if (it.position == slot && it.inventoryType == 1) next = it.itemId;
-            if (previous != next) Profile.Data.SetEquipSlot(slot, next);
-        }
         GameSession.Character.inventory = full.inventory;
         GameSession.Character.record = full.record;
+        GameSession.ApplyInventoryToProfile();
         Profile.Data.gold = full.record.meso; Profile.Data.equipmentSlots = full.record.equipslots; Profile.Save();
     }
     static float nextExpiryCheck;
@@ -163,24 +170,26 @@ public static class NativeCashWindow {
         UiKit.Fill(new Rect(0,scene.yMax,UiKit.W,UiKit.H - scene.yMax),Color.black);
         GUI.matrix = previous * Matrix4x4.TRS(scene.position, Quaternion.identity, new Vector3(scale, scale, 1));
         bool enabled = GUI.enabled;
-        GUI.enabled = enabled && !giftVisible && !purchaseVisible;
-        Image(BackgroundNode(state.character != null ? state.character.record.job : 0).Substring(CashRoot.Length), 0, 0);
-        DrawPreview();
-        DrawCategories();
-        var entries = state.catalog.FindAll(x => category == 9 ? state.wishes.Contains(x.sn) :
-            x.sn / 10000000 == category && x.sn / 100000 % 100 == subcategory);
-        page = Mathf.Clamp(page, 0, Mathf.Max(0, (entries.Count - 1) / 10));
-        DrawCatalog(new Vector2(275, 95), entries);
-        // Native page selector occupies the strip below the ten commodity cells.
-        DrawPages(entries.Count);
-        DrawStorage();
-        DrawBalances();
-        bool exit = Button("CSStatus/BtExit",632,545);
-        GUI.enabled = enabled;
-        if (giftVisible) { GUI.enabled = enabled && !birthdayVisible; DrawGift(); GUI.enabled = enabled; }
-        if (birthdayVisible) DrawBirthday();
-        if (purchaseVisible) DrawPurchase();
-        GUI.matrix = previous;
+        bool exit = false;
+        try {
+            GUI.enabled = enabled && !giftVisible && !purchaseVisible;
+            Image(BackgroundNode(state.character != null ? state.character.record.job : 0).Substring(CashRoot.Length), 0, 0);
+            DrawPreview();
+            DrawCategories();
+            var entries = state.catalog.FindAll(x => category == 9 ? state.wishes.Contains(x.sn) :
+                x.sn / 10000000 == category && x.sn / 100000 % 100 == subcategory);
+            page = Mathf.Clamp(page, 0, Mathf.Max(0, (entries.Count - 1) / 10));
+            DrawCatalog(new Vector2(275, 95), entries);
+            // Native page selector occupies the strip below the ten commodity cells.
+            DrawPages(entries.Count);
+            DrawStorage();
+            DrawBalances();
+            exit = Button("CSStatus/BtExit",632,545);
+            GUI.enabled = enabled;
+            if (giftVisible) { GUI.enabled = enabled && !birthdayVisible; DrawGift(); GUI.enabled = enabled; }
+            if (birthdayVisible) DrawBirthday();
+            if (purchaseVisible) DrawPurchase();
+        } finally { GUI.enabled = enabled; GUI.matrix = previous; }
         if (exit) Toggle();
     }
     static void DrawCategories() {
@@ -264,8 +273,14 @@ public static class NativeCashWindow {
         string[] expansion = { "BtExEquip", "BtExConsume", "BtExInstall", "BtExEtc", "BtExTrunk" };
         for (int i = 0; i < expansion.Length; i++)
             if (Button("CSInventory/" + expansion[i], 176, 453 + 27 * i)) {
-                if (i < 4) Request(CashOperation.ExpandInventory, 0, i + 1);
-                else BottomBar.Toast("当前服务端尚未接入仓库扩充");
+                if (i < 4) {
+                    var result = Request(CashOperation.ExpandInventory, 0, i + 1);
+                    if (result != null && result.ok) BottomBar.Toast("道具栏已扩充4格");
+                }
+                else {
+                    var result=Request(CashOperation.ExpandStorage);
+                    if(result!=null && result.ok)BottomBar.Toast("仓库已扩充4格");
+                }
             }
         if (Event.current.type == EventType.ScrollWheel) {
             if (new Rect(0,318,256,104).Contains(pointer)) { lockerRow += Event.current.delta.y > 0 ? 1 : -1; Event.current.Use(); }

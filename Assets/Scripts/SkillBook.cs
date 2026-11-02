@@ -44,6 +44,7 @@ public static class SkillBook
 {
     // StatEffect.isCrash/loadFromData: all three share SEAL_SKILL + debuffMob.
     public static string SpecialKind(int id) => id==1111007 || id==1211009 || id==1311007 ? "Dispel" :
+        NativeTeleportMovement.IsSkill(id) ? "Teleport" :
         id==4121003 || id==4221003 ? "Attack" :
         id==4111006 || id==14101004 || id==11101005 ? "FlashJump" : null;
     public static bool Ready { get; private set; }
@@ -88,9 +89,11 @@ public static class SkillBook
                 foreach (var item in reqList)
                     if (item is List<object> reqPair && reqPair.Count >= 2)
                         s.req.Add(new[] { int.Parse(reqPair[0].ToString()), int.Parse(reqPair[1].ToString()) });
-            // 有 mad（魔法攻击力）的技能就是魔法技能，原版伤害公式按这个分流
+            // Extended physical skills also carry mad. The compat dispatch, not
+            // the presence of that field, selects their physical/magic handler.
             foreach (var row in s.levels.Values)
                 if (row is Dictionary<string, object> rd && rd.ContainsKey("mad")) { s.magic = true; break; }
+            s.magic = MagicDamageOf(s.id, s.magic);
             byId[s.id] = s;
         }
 
@@ -151,6 +154,7 @@ public static class SkillBook
             if (row.ContainsKey("mad")) d.magic=true;
         }
         if (d.maxLevel==0) return null;
+        d.magic=MagicDamageOf(id,d.magic);
         var first=d.Level(1);
         if (node.Get("summon")!=null) d.type="summon";
         else if (first.ContainsKey("damage") || first.ContainsKey("fixdamage") || first.ContainsKey("mad") || first.ContainsKey("attackCount")) d.type="attack";
@@ -164,6 +168,18 @@ public static class SkillBook
     {
         var d = Get(id);
         return d == null ? 0 : d.maxLevel;
+    }
+
+    // BeiDouSkillCompatCore 6728149A..672818F9: explorer warrior/thief/
+    // pirate extensions dispatch physically; 212/222/232 and Blaze Wizard
+    // dispatch to 96928B. Hidden replay components use the same server family.
+    static bool MagicDamageOf(int id, bool original)
+    {
+        if (ExplorerAdvancedSkills.IsAdvanced(id)) return id / 1000000 == 2;
+        int job = id / 10000;
+        if (job == 1112 || job == 1212 || job == 1312 || job == 1412 || job == 1512)
+            return job == 1212;
+        return original;
     }
 
     /// <summary>源端 Skill.isFourthJob()：技能所属职业 job%10==2（112/212/312…）。</summary>
@@ -194,7 +210,24 @@ public static class SkillBook
     public static Dictionary<string, object> LineForJob(int jobId)
     {
         Ensure();
-        if (lineByJob.TryGetValue(jobId, out var line)) return line;
+        return lineByJob.TryGetValue(jobId, out var line) ? line : lines.Count > 0 ? lines[0] : null;
+    }
+
+    public static Dictionary<string, object> TreeForJob(int jobId)
+    {
+        Ensure();
+        if (lineByJob.TryGetValue(jobId, out var line))
+        {
+            // Keep every acquired job book, using the exported source parent chain.
+            var tabs = new List<object>();
+            var visited = new HashSet<int>();
+            for (int job = jobId; job >= 0 && visited.Add(job); job = JobDefs.ParentOf(job))
+                if (lineByJob.TryGetValue(job, out var ancestor))
+                    tabs.Insert(0, ((List<object>)ancestor["tabs"])[0]);
+            var result = new Dictionary<string, object>(line);
+            result["tabs"] = tabs;
+            return result;
+        }
         var known = new List<string>();
         foreach (var l in lines) known.Add(l.TryGetValue("id", out var id) ? id.ToString() : "?");
         Debug.LogWarning("[SkillBook] 没有职业线 " + jobId + "，可用：" + string.Join(",", known.ToArray()));
@@ -287,6 +320,58 @@ public static class SkillBookItems
 //   一转起每级 +3，转职另按 JobSystem 授予（一转 +1、四转 +3）；
 //   一转时 resetStats 按 1+(等级-10)*3 重算（法师 1+(等级-8)*3）。
 // 本地为兼容旧存档保留「新手虚拟 SP」：等级-1、封顶 6（旧公式，见 docs 适配表）。
+// 用户授权适配：原五转入口道具改为常规技能窗；完成标记仍来自原女神脚本。
+public static class ExplorerAdvancedSkills
+{
+    public const string CompletionKey = "explorer_fifth_job_completed";
+    static FullCharacter character;
+    static bool loaded, unlocked;
+
+    // 各职业原四转主动技能末项；其后的新增技能沿用 JobTree/IMG 列表及原加点数据。
+    public static bool IsAdvanced(int id)
+    {
+        int last;
+        switch (id / 10000)
+        {
+            case 112: last = 1121011; break;
+            case 122: last = 1221012; break;
+            case 132: last = 1321010; break;
+            case 212: last = 2121008; break;
+            case 222: last = 2221008; break;
+            case 232: last = 2321009; break;
+            case 312: last = 3121009; break;
+            case 322: last = 3221008; break;
+            case 412: last = 4121009; break;
+            case 422: last = 4221008; break;
+            case 512: last = 5121010; break;
+            case 522: last = 5221010; break;
+            default: return false;
+        }
+        return id > last;
+    }
+
+    public static void Invalidate() { loaded = false; }
+
+    public static bool Unlocked
+    {
+        get
+        {
+            if (!GameSession.InGame || GameSession.Character == null) return false;
+            if (!loaded || !ReferenceEquals(character, GameSession.Character))
+            {
+                var response = GameSession.Net.ScriptValue(new ScriptValueRequest {
+                    characterId = GameSession.CharacterId, name = CompletionKey });
+                character = GameSession.Character;
+                unlocked = response.value == "1";
+                loaded = true;
+            }
+            return unlocked;
+        }
+    }
+
+    public static bool Visible(int id) => !IsAdvanced(id) || Unlocked;
+}
+
 public static class SkillProgress
 {
     public const int SpPerLevel = 3;   // 源端 level_up_sp_gain
@@ -375,8 +460,10 @@ public static class SkillProgress
     public static bool CanRaise(SkillData d)
     {
         if (d == null || d.autoLearn) return false;
+        if (!ExplorerAdvancedSkills.Visible(d.id)) return false;
         if (LevelOf(d.id) >= SkillBook.MasterCapOf(d.id)) return false;
-        if (AvailableSp <= 0) return false;
+        bool beginner = IsBeginnerSkill(d.id);
+        if ((beginner ? BeginnerSp - BeginnerSpent : AvailableSp) <= 0) return false;
         if (Profile.JobId == 0 && d.id != 1000 && d.id != 1001 && d.id != 1002) return false;
         foreach (var r in d.req)
             if (LevelOf(r[0]) < r[1]) return false;
@@ -387,9 +474,10 @@ public static class SkillProgress
     {
         if (!CanRaise(d)) return false;
         SetLevel(d.id, LevelOf(d.id) + 1);
-        if (Profile.JobId != 0) Profile.AddSp(-1);
+        if (!IsBeginnerSkill(d.id)) Profile.AddSp(-1);
         return true;
     }
+    static bool IsBeginnerSkill(int id) => id % 10000000 >= 1000 && id % 10000000 <= 1002;
 
     // 重置当前职业技能等级，已花费 SP 返还（源端 resetSkillsAndResetSP(returnSp=true)）
     public static void Reset()
@@ -540,6 +628,11 @@ public static class QuickBarKeys
     {
         var key = Of(displayIndex);
         if (key == KeyCode.None) { BottomBar.Toast("请先在键盘设置中为此快捷格选择按键"); return false; }
+        return BindSkillToKey(key, skillId);
+    }
+
+    public static bool BindSkillToKey(KeyCode key, int skillId)
+    {
         int slot = SkillSlot(key);
         if (slot < 0)
             for (int i = 0; i < QuickSlots.Count; i++)

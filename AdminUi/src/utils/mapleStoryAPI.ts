@@ -12,7 +12,9 @@ export function getIconUrl(
   version = '83'
 ): string {
   if (!id || id <= 0) return '';
-  return `https://maplestory.io/api/${location}/${version}/${category}/${id}/icon`;
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+  const kind = category === 'item' && Number(id) < 2000000 ? 'equipment' : category;
+  return `${apiBase}/assets/${kind}-icons/${id}.png`;
 }
 
 export function getEquipmentPreviewUrl(id: string | number): string {
@@ -22,16 +24,6 @@ export function getEquipmentPreviewUrl(id: string | number): string {
 
 export function handleEquipmentPreviewError(event: Event, id: number) {
   const image = event.target as HTMLImageElement;
-  if (!image.dataset.previewFallback) {
-    image.dataset.previewFallback = 'modern';
-    image.src = getIconUrl('item', id, 'GMS', '255');
-    return;
-  }
-  if (image.dataset.previewFallback === 'modern') {
-    image.dataset.previewFallback = 'legacy';
-    image.src = getIconUrl('item', id, 'GMS', '83');
-    return;
-  }
   image.style.visibility = 'hidden';
 }
 

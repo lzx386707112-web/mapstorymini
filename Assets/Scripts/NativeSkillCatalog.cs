@@ -19,7 +19,10 @@ public sealed class NativeSkillDefinition
         MpCost = (int)Art.Num(level, "mpCon"); Cooldown = Art.Num(level, "cooltime");
         HpCost = (int)Art.Num(level, "hpCon");
         FixedDamage = (int)Art.Num(level, "fixdamage", -1);
-        HitCount = (int)Art.Num(level, "attackCount", 1);
+        // AbstractDealDamageHandler:1103 —— 一次攻击允许的段数 = max(bulletCount, attackCount)。
+        // 二连射/双飞斩/三连环光击破/箭扫射/急速射/三连射杀这类旧技能只有 bulletCount，
+        // 没有 attackCount；只读 attackCount 会把它们降成 1 段。
+        HitCount = Mathf.Max(1, Mathf.Max((int)Art.Num(level, "attackCount"), (int)Art.Num(level, "bulletCount")));
         TargetCount = (int)Art.Num(level, "mobCount", 1);
         DamagePercent = Art.Num(level, "damage"); MagicAttack = Art.Num(level, "mad");
         Duration = Art.Num(level, "time"); Probability = Art.Num(level, "prop", 100) / 100f;

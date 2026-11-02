@@ -432,6 +432,12 @@ public sealed class NativeBuffRenderProbe : MonoBehaviour
         var edgeCast=new SkillDef(new ClassSkill {art="1001004",name="BBox edge probe"},edgeDef);
         Require((int)typeof(SkillSystem).GetMethod("HitAt",flags).Invoke(system,
             new object[]{edgeCast,edgeDef,Vector2.zero,1,null,null})==1,"Skill touching the body must select a monster whose feet are outside the attack rectangle");
+        var replayTargets=typeof(SkillSystem).GetMethod("ReplayTargets",flags);
+        Require(((List<Component>)replayTargets.Invoke(system,new object[]{edgeDef,Vector2.zero,1,15,false,false,false})).Contains(victim),
+            "Replay omitted a monster whose body overlaps the attack rectangle");
+        var leftOrigin=new Vector2(edge.xMin+edgeRight,0);
+        Require(((List<Component>)replayTargets.Invoke(system,new object[]{edgeDef,leftOrigin,-1,15,false,false,false})).Contains(victim),
+            "Left-facing replay did not mirror the original attack rectangle");
         player.hp=previousHp; player.hpMax=previousMax;
         UnityEngine.Object.DestroyImmediate(victim.gameObject);
         var manaVictim=field.SpawnNativeMob(3000002,Vector3.zero); manaVictim.NativeController.enabled=false;

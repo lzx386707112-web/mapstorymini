@@ -24,6 +24,17 @@ namespace Server.Bot.Environment
         readonly Dictionary<string, Dictionary<string, object>> shardCache =
             new Dictionary<string, Dictionary<string, object>>();
         readonly List<string> shardOrder = new List<string>();
+        // 常驻分片：组队任务四副本共 40 张图散在 7 个分片里，副本内逐阶段换图会不停
+        // 跨分片。若不 pin，MaxCachedShards=2 会把它们互相挤出 shardCache，而 Adopt 又
+        // BotWarmup.Release 掉了预热表引用 —— 两道门同时关上，下次访问就得重新
+        // PlatformRes.LoadText 一个 0.3~1.4MB 的 TextAsset（Unity 只能在主线程读），
+        // 表现就是「进图/换阶段反复卡几秒」。pin 的分片不参与 LRU 驱逐。
+        // 代价是这 7 个分片常驻（约 35~70MB），用一次性内存换掉反复卡顿。
+        readonly HashSet<string> pinnedShards = new HashSet<string>();
+
+        public void PinShard(string resource) { if (!string.IsNullOrEmpty(resource)) pinnedShards.Add(resource); }
+        public bool IsPinned(string resource) => pinnedShards.Contains(resource);
+        public int PinnedCount => pinnedShards.Count;
 
         public BotNavigationMapLoader(string json, Func<string, string> readResource = null)
         {
@@ -164,11 +175,18 @@ namespace Server.Bot.Environment
             if (root == null) return;
             shardCache[resource] = root;
             TouchShard(resource);
-            BotWarmup.Release(resource);             // 引用交给这里的 LRU，别再在预热表里挂一份
+            BotWarmup.Release(resource);             // 引用交给这里的缓存，别再在预热表里挂一份
+            // 只驱逐「没被 pin」的最老分片。旧实现无条件驱逐 shardOrder[0]，
+            // 组队任务的 7 个分片会互相挤出，配合上面的 Release 形成「重读 TextAsset」死循环。
+            // 全是 pin 的分片时直接停下，不把队列打空。
             while (shardOrder.Count > MaxCachedShards)
             {
-                var oldest = shardOrder[0];
-                shardOrder.RemoveAt(0);
+                int victim = -1;
+                for (int i = 0; i < shardOrder.Count; i++)
+                    if (!pinnedShards.Contains(shardOrder[i])) { victim = i; break; }
+                if (victim < 0) break;
+                var oldest = shardOrder[victim];
+                shardOrder.RemoveAt(victim);
                 shardCache.Remove(oldest);
             }
         }

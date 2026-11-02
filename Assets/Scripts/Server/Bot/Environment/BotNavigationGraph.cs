@@ -28,8 +28,8 @@ namespace Server.Bot.Environment
             {
                 int clamped = ClampX(x);
                 if (x1 == x2) return new Point(clamped, Math.Min(y1, y2));
-                // 源Java表达式两操作数均int，先整数除法再赋double；不得悄悄改为线性浮点插值。
-                double ratio = (clamped - x1) / (x2 - x1);
+                // 用户授权修正源 Java 的整数除法：中间点必须落在真实 foothold 斜坡上。
+                double ratio = (double)(clamped - x1) / (x2 - x1);
                 return new Point(clamped, BotGroundPhysics.JavaRound(y1 + (y2 - y1) * ratio));
             }
         }

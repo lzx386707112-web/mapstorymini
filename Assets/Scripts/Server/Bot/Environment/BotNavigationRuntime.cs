@@ -179,7 +179,10 @@ namespace Server.Bot.Environment
                     if (BotRopeMotion.CanGrab(pos, targetRope)) motion.Attach(targetRope, pos.y);
                     else if (TopAttach(edge, targetRope)) motion.Attach(targetRope, edge.endPoint.y);
                     else if (TopGrab(edge, targetRope)) motion.QueueRopeEntry(targetRope, edge.endPoint.y);
-                    else if (GroundRopeJump(edge)) motion.Jump(edge.launchStepX, climbIntent: true);
+                    // 离绳还远且脚下能继续走 → 先走到绳子下方，别隔着空地起跳抓绳
+                    // （用户报的「还有一定距离就开始做爬的动作」）。
+                    else if (GroundRopeJump(edge) && (Math.Abs(pos.x - targetRope.x) <= BotRopeMotion.GrabRange || !CanWalkTowardRope(targetRope)))
+                        motion.Jump(edge.launchStepX, climbIntent: true);
                     else { blockedReason = "climb-reach"; return false; }
                     blockedReason = null; return true;
                 case EdgeType.Portal:
@@ -280,9 +283,18 @@ namespace Server.Bot.Environment
         }
         bool CanClimbEntry(Edge edge, MapRope rope) => rope != null && (BotRopeMotion.CanGrab(motion.Position, rope) || TopAttach(edge, rope) || TopGrab(edge, rope) || GroundRopeJump(edge));
         bool GroundRopeJump(Edge edge) => edge.ContainsLaunchX(motion.Position.x) && Math.Abs(motion.Position.y - edge.startPoint.y) <= 60;
-        bool TopAttach(Edge edge, MapRope rope) => Math.Abs(motion.Position.x - rope.x) <= 8 && edge.endPoint.y == BotRopeMotion.FirstClimbableY(rope)
+        // 脚下还能朝绳子方向走一步 → 先走过去再抓。走不过去（平台边缘/墙）才允许跳抓。
+        bool CanWalkTowardRope(MapRope rope)
+        {
+            if (rope == null) return false;
+            var pos = motion.Position; int dx = rope.x - pos.x; if (dx == 0) return false;
+            int step = Math.Sign(dx) * motion.physics.WalkStep(motion.profile);
+            if (Math.Abs(step) > Math.Abs(dx)) step = dx;
+            return groundMotion.CanStep(pos, step);
+        }
+        bool TopAttach(Edge edge, MapRope rope) => Math.Abs(motion.Position.x - rope.x) <= BotRopeMotion.GrabRange && edge.endPoint.y == BotRopeMotion.FirstClimbableY(rope)
             && motion.Position.y < rope.Top && rope.Top - motion.Position.y <= 16;
-        bool TopGrab(Edge edge, MapRope rope) => edge.startPoint.y <= rope.Top + 30 && Math.Abs(motion.Position.x - rope.x) <= 8;
+        bool TopGrab(Edge edge, MapRope rope) => edge.startPoint.y <= rope.Top + 30 && Math.Abs(motion.Position.x - rope.x) <= BotRopeMotion.GrabRange;
         bool CanClimbExit(Edge edge)
         {
             var pos = motion.Position; var rope = Rope(graph.GetRegion(edge.fromRegionId));

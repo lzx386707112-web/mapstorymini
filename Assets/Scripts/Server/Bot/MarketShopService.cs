@@ -122,16 +122,16 @@ namespace Server.Bot
             var item = stock.item.Copy(); item.quantity = unchecked((short)(item.quantity * quantity));
             if (item.quantity <= 0 || item.isEquip && item.quantity > 1 || stock.price < 0) return MarketPurchaseResult.InvalidQuantity;
             int price = MarketEconomy.JavaInt(Math.Min((float)stock.price * quantity, int.MaxValue));
-            int balance = actor is BotCharacter bot ? bot.meso : actor.character?.record.meso ?? 0;
+            long balance = actor is BotCharacter bot ? bot.meso : actor.character?.record.meso ?? 0;
             if (balance < price) return MarketPurchaseResult.InsufficientMeso;
             var seller = shop.playerStore ? BotRegistry.Get(shop.ownerId) as BotCharacter : null;
             // PlayerShop checks capacity against the gross price, before its trade fee.
-            if (shop.playerStore && (seller == null || (long)seller.meso + price > int.MaxValue)) return MarketPurchaseResult.OwnerMesoFull;
+            if (shop.playerStore && (seller == null || seller.meso + price < seller.meso)) return MarketPurchaseResult.OwnerMesoFull;
             TradeItemRules.ApplyKarma(item);
             if (!trades.Purchase(actor, item, price)) return MarketPurchaseResult.InventoryFull;
-            int proceeds = price - BotTradeService.Fee(price);
+            long proceeds = price - BotTradeService.Fee(price);
             if (shop.playerStore) seller.meso += proceeds;
-            else shop.merchantMeso = (int)Math.Min((long)shop.merchantMeso + proceeds, int.MaxValue);
+            else shop.merchantMeso += proceeds;
             shop.sold.Add(new MarketSoldItem {buyer = actor.name, itemId = item.itemId,
                 quantity = shop.playerStore ? quantity : item.quantity, meso = proceeds});
             stock.bundles -= quantity;

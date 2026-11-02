@@ -82,6 +82,7 @@ public static class QuestWindow
         var origin = new Vector2((UiKit.W - (showDetail ? 550 : 245) * scale) / 2f,
             Mathf.Max(0, (UiKit.H - BottomBar.Height - 396 * scale) / 2f));
         QuestUi.Begin(origin, scale);
+        NativeUi.RegisterWindow("QuestWindow", new Rect(origin.x,origin.y,(showDetail ? 550 : 245)*scale,396*scale), () => QuestWindow.Visible);
         QuestUi.Image("Quest/backgrnd", 0, 0);
         if (QuestUi.Button("UI/Basic.img/BtClose", 229, 6)) { Visible = false; return; }
         DrawTabs();

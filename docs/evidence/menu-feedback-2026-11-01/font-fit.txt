@@ -1,0 +1,48 @@
+SHA256 1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2
+# function 0x48ed5a: 46 instructions, 0x48ed5a..0x48edc3
+0048ed5a mov      eax, 0xa80bd8
+0048ed5f call     0xa60b98
+0048ed64 push     ebx
+0048ed65 push     esi
+0048ed66 push     edi
+0048ed67 mov      ebx, ecx
+0048ed69 mov      eax, dword ptr [ebp + 8]
+0048ed6c and      dword ptr [ebp - 4], 0
+0048ed70 test     eax, eax
+0048ed72 je       0x48ed78
+0048ed74 mov      eax, dword ptr [eax]
+0048ed76 jmp      0x48ed7a
+0048ed78 xor      eax, eax
+0048ed7a mov      esi, dword ptr [ebp + 0x10]
+0048ed7d mov      ecx, dword ptr [ebx]
+0048ed7f lea      edx, [ebp + 0x10]
+0048ed82 push     edx
+0048ed83 sub      esp, 0x10
+0048ed86 mov      edi, esp
+0048ed88 push     dword ptr [ebp + 0xc]
+0048ed8b movsd    dword ptr es:[edi], dword ptr [esi]
+0048ed8c movsd    dword ptr es:[edi], dword ptr [esi]
+0048ed8d movsd    dword ptr es:[edi], dword ptr [esi]
+0048ed8e push     eax
+0048ed8f push     ebx
+0048ed90 movsd    dword ptr es:[edi], dword ptr [esi]
+0048ed91 call     dword ptr [ecx + 0x24]
+0048ed94 test     eax, eax
+0048ed96 jge      0x48eda4
+0048ed98 push     0xbd83c0
+0048ed9d push     ebx
+0048ed9e push     eax
+0048ed9f call     0xa5fdf2
+0048eda4 mov      ecx, dword ptr [ebp + 8]
+0048eda7 test     ecx, ecx
+0048eda9 mov      esi, dword ptr [ebp + 0x10]
+0048edac je       0x48edb3
+0048edae call     0x402ea5
+0048edb3 mov      ecx, dword ptr [ebp - 0xc]
+0048edb6 pop      edi
+0048edb7 mov      eax, esi
+0048edb9 pop      esi
+0048edba mov      dword ptr fs:[0], ecx
+0048edc1 pop      ebx
+0048edc2 leave    
+0048edc3 ret      0xc

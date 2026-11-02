@@ -91,12 +91,56 @@ public static class GameplayChecks
             Check(NativeSkillCatalog.Get("magnet").Kind == "Pull", "magnet not damage");
             Check(NativeSkillCatalog.Get("libra").Kind == "Summon", "libra not screen nova");
             Check(NativeSkillCatalog.Get("illusion_slash") != null && NativeSkillCatalog.Get("illusion_explosion") != null, "illusion replay children");
+            CheckSkillHitCounts();
             CheckCombatExtension();
             CheckStorage();
             Debug.Log("[GameplayChecks] PASS " + assertions + " assertions");
             EditorApplication.Exit(0);
         }
         catch (Exception ex) { Debug.LogException(ex); EditorApplication.Exit(1); }
+    }
+
+    // 段数口径：源端 AbstractDealDamageHandler:1103 允许的段数 = max(bulletCount, attackCount)。
+    // 旧职业的二连射/双飞斩/三连环/箭扫射/急速射/三连射杀只有 bulletCount，没有 attackCount，
+    // 只读 attackCount 会把它们降成单段，这里逐技能核对运行时读出来的段数。
+    static void CheckSkillHitCounts()
+    {
+        var asset = Resources.Load<TextAsset>("UI/JobTree");
+        Check(asset != null, "JobTree asset");
+        var root = (System.Collections.Generic.Dictionary<string, object>)MiniJson.Parse(asset.text);
+        var skills = (System.Collections.Generic.Dictionary<string, object>)root["skills"];
+        int scanned = 0;
+        foreach (var pair in skills)
+        {
+            var data = (System.Collections.Generic.Dictionary<string, object>)pair.Value;
+            int id = Convert.ToInt32(data["id"]);
+            var rows = (System.Collections.Generic.Dictionary<string, object>)data["levels"];
+            var first = (System.Collections.Generic.Dictionary<string, object>)rows["1"];
+            int expected = Math.Max(1, Math.Max((int)Art.Num(first, "attackCount"), (int)Art.Num(first, "bulletCount")));
+            var native = SkillBook.Native(id, 1);
+            Check(native != null, "native row missing " + id);
+            Check(native.HitCount == expected, "hit lines " + id + " expected " + expected + " got " + native.HitCount);
+            scanned++;
+        }
+        foreach (var row in new[]
+                 {
+                     (id: 3001005, hits: 2, name: "二连射"), (id: 13001003, hits: 2, name: "骑士团二连射"),
+                     (id: 4001344, hits: 2, name: "双飞斩"), (id: 14001004, hits: 2, name: "骑士团双飞斩"),
+                     (id: 5001003, hits: 2, name: "双弹射击"), (id: 4121007, hits: 3, name: "三连环光击破"),
+                     (id: 14111005, hits: 3, name: "骑士团三连环"), (id: 5210000, hits: 3, name: "三连射杀"),
+                     (id: 5221007, hits: 3, name: "急速射"), (id: 13111007, hits: 3, name: "骑士团疾风扫射"),
+                     (id: 3111006, hits: 4, name: "箭扫射"), (id: 13111001, hits: 4, name: "骑士团箭扫射"),
+                     (id: 3211006, hits: 5, name: "弩弓箭扫射"), (id: 2001005, hits: 3, name: "魔法双击"),
+                     (id: 12001003, hits: 2, name: "骑士团魔法双击"), (id: 1001004, hits: 1, name: "强力攻击单段"),
+                     (id: 1111003, hits: 1, name: "狂乱之剑单段"),
+                 })
+        {
+            var native = SkillBook.Native(row.id, 1);
+            Check(native != null && native.HitCount == row.hits, row.name + " expects " + row.hits + " lines");
+        }
+        // 满级仍按同一口径（bulletCount 会随等级变）。
+        Check(SkillBook.Native(3211006, SkillBook.MaxLevelOf(3211006)).HitCount == 5, "箭扫射 max level lines");
+        Debug.Log("[GameplayChecks] skill hit lines aligned for " + scanned + " skill level-1 rows");
     }
 
     static void CheckCombatExtension()

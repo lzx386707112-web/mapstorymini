@@ -34,7 +34,19 @@ public sealed class NpcSession
     {
         request.characterId = scriptCharacterId;
         request.sessionId = scriptSessionId;
-        return scriptTransport != null ? scriptTransport.Script(request) : offlineScripts.Handle(request);
+        var timer=System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            using var profileSaves=Profile.DeferSaves();
+            using var databaseSaves=GameServer.Local?.Db.DeferSaves();
+            return scriptTransport != null ? scriptTransport.Script(request) : offlineScripts.Handle(request);
+        }
+        finally
+        {
+            if(timer.ElapsedMilliseconds>=100)
+                Debug.LogWarning("[NPC slow] npc="+NpcId+" quest="+QuestId+" script="+ScriptName+
+                    " operation="+request.operation+" function="+request.function+" elapsedMs="+timer.ElapsedMilliseconds);
+        }
     }
 
     void CallScript(string function, params JsValue[] arguments)
@@ -47,6 +59,8 @@ public sealed class NpcSession
         scriptSessionId = 0;
     }
     public readonly NativeScriptRoute Route = new NativeScriptRoute();
+    // 正在跑的传送门脚本（AbstractPlayerInteraction.getPortal()）。
+    public FieldPortal Portal;
     JsHostObject cm;
     int pendingWarp = -1;
     string pendingWarpPortal;
@@ -57,6 +71,9 @@ public sealed class NpcSession
     bool localKeepsSession;
 
     public static bool Blocking => Active != null && !Active.Closed && Active.Dialog.Visible;
+    // 静默模式：组队任务的自动代点用。脚本、状态机、物品发放全部照跑，
+    // 只是不要把这层对话框画到屏幕上（画布开关在 NpcDialogUi.Draw）。
+    public static bool Silent;
 
     public static NpcSession Choose(int npcId, string text, Action<int> choose)
     {
@@ -144,6 +161,8 @@ public sealed class NpcSession
     public static NpcSession Talk(int npcId, string scriptName)
     {
         CloseActive();
+        // NPCTalkHandler：DUEY(9010009) 不走脚本，直接开快递窗口。
+        if (npcId == 9010009 && string.IsNullOrEmpty(scriptName)) { NativeDeliveryWindow.Open(false); return null; }
         string scriptKey;
         string source = ScriptSource.LoadNpc(npcId, scriptName, out scriptKey);
         if (string.IsNullOrEmpty(source))
@@ -169,6 +188,7 @@ public sealed class NpcSession
         if (string.IsNullOrEmpty(source) || !source.Contains("function enter")) return false;
         CloseActive();
         var session = new NpcSession(0, 0, false, false);
+        session.Portal = portal;
         Active = session;
         session.Begin(source, "portal/" + portal.script, "enter");
         session.FinishInvocation();

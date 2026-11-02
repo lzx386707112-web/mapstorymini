@@ -122,7 +122,7 @@ public static class NativeBuffChecks
             Require(!buffs.HasSource(1101004) && buffs.HasSource(1101005),"Singleton booster retained previous source");
             buffs.Cancel(1101005); Require(buffs.Value("BOOSTER")==0,"Singleton incorrectly restored cancelled source");
             var permanent=new NativeBuffs.Effect { DurationMs=int.MaxValue,Until=now+int.MaxValue/1000.0 };
-            NativeBuffs.GuardLoss(101,100,100,80,50,true,true,0,out int h,out int m,out int g,out bool cancel);
+            NativeBuffs.GuardLoss(101,100,100,80,50,true,true,0,out int h,out int m,out long g,out bool cancel);
             Require(h==21 && m==80 && g==0 && !cancel,"Magic Guard priority/truncation");
             NativeBuffs.GuardLoss(101,30,100,80,50,true,true,0,out h,out m,out g,out cancel);
             Require(h==71 && m==30 && g==0,"Magic Guard insufficient MP spillover");

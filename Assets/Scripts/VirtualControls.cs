@@ -628,7 +628,7 @@ public static class VirtualControls
         UpdateLift();
 
         // 门控关闭（大厅/暂停/编辑器/键位窗口/商城浮窗/整层隐藏）：全部松开，别把状态带进下一局
-        if (!feed || !Shown || !Application.isFocused)
+        if (!feed || !Shown || SkillWindow.Dragging || !Application.isFocused)
         {
             ReleaseAll();
             return;
@@ -725,7 +725,7 @@ public static class VirtualControls
         {
             var g = GameLoop.I;
             return g != null && g.state == GameLoop.GameState.Playing
-                   && Shown && !VirtualControlsEditor.Visible && !KeyConfigWindow.Visible
+                   && Shown && !SkillWindow.Dragging && !VirtualControlsEditor.Visible
                    && !GameSideMenu.Blocking;
         }
     }
@@ -759,7 +759,9 @@ public static class VirtualControls
     {
         // 后画的优先（列表尾部优先），与绘制顺序一致
         for (int i = elems.Count - 1; i >= 0; i--)
-            if ((!NpcSession.Blocking || elems[i].type == VCElemType.Button &&
+            if ((!KeyConfigWindow.Visible || SkillWindow.Dragging || elems[i].type == VCElemType.Button &&
+                NativeKeyActions.Of(EffectiveAction(elems[i]))?.Type == 4) &&
+                (!NpcSession.Blocking || elems[i].type == VCElemType.Button &&
                 NativeKeyActions.AvailableDuringNpcDialog(EffectiveAction(elems[i]))) && elems[i].Hit(p)) return elems[i];
         return null;
     }
@@ -784,8 +786,15 @@ public static class VirtualControls
         if (data.IsPassive) { BottomBar.Toast("被动技能不能绑定到按键"); return true; }
         if (SkillProgress.LevelOf(skillId) <= 0) { BottomBar.Toast("先给技能加点，才能绑到按键"); return true; }
 
-        bool replaced = e.skillId > 0 && e.skillId != skillId;
-        e.skillId = skillId;
+        int previous = ButtonSkill(e);
+        bool replaced = previous > 0 && previous != skillId;
+        if (e.key != KeyCode.None)
+        {
+            // Explicit keys display and cast through KeyMap/QuickSlots, so update that same binding.
+            if (!QuickBarKeys.BindSkillToKey(e.Key, skillId)) return true;
+            e.skillId = 0;
+        }
+        else e.skillId = skillId;
         SaveActive();
         BottomBar.Toast((replaced ? "已替换为 " : "已绑定 ") + data.name + " → " + ElementCaption(e));
         return true;
@@ -837,6 +846,13 @@ public static class VirtualControls
 
     static void SendButton(VCElem e, bool down)
     {
+        if(e.key==KeyCode.Return || e.key==KeyCode.KeypadEnter)
+        {
+            if(down && BottomBar.QueueChatEnter()) return;
+            if(!down && BottomBar.ChatFocused) return;
+        }
+        // Keep the virtual Enter available to submit/close chat without firing skills.
+        if (down && BottomBar.ChatFocused && e.key != KeyCode.Return && e.key != KeyCode.KeypadEnter) return;
         // 绑了技能的按键直接施放（原端"技能拖进快捷格，再按键出手"的屏上等价物）。
         // 这里必须 return：继续往下发动作会让快捷格那条通道再放一次，
         // 表现就是一次点击连放两个技能、第二个报"技能冷却中"。
@@ -1002,34 +1018,11 @@ public static class VirtualControls
         if (ShowDebug) DrawDebug();
     }
 
-    // —————————— 拖技能时的可放置目标 ——————————
-    // 技能窗拖起图标后，每个按钮亮一圈蓝环；指针悬停的那个换成黄环。
-    // 这一层要画在浮窗之后（GameHUD 在 GameWindows.DrawAll 之后调用），
-    // 否则被键盘设定窗口盖住的按键就没人看得见 —— 那正是"拖不进去"的由来。
+    // 拖拽图标保持在窗口上方；选择技能不再改变虚拟按键的外观。
     public static void DrawDropTargets()
     {
-        if (!SkillWindow.Dragging) return;
-        Ensure();
-
-        foreach (var e in elems)
-        {
-            if (e.type != VCElemType.Button) continue;
-            var c = Center(e);
-            bool hover = e.Hit(Pointer.Pos);
-            float pulse = 0.55f + 0.30f * Mathf.Sin(Time.unscaledTime * 7f);
-            if (hover)
-                DrawAnnulus(c, e.R - 2f, e.R + 10f, new Color(1f, 0.86f, 0.32f, 0.95f), false);
-            else
-                DrawAnnulus(c, e.R + 1f, e.R + 7f, new Color(0.35f, 0.88f, 1f, pulse), false);
-        }
-
-        // 拖拽图标重画一遍，保证压在窗口/按键之上
-        var d = SkillBook.Get(SkillWindow.DragSkillId);
-        var icon = d != null && !string.IsNullOrEmpty(d.icon) ? Art.Tex(d.icon) : null;
-        if (icon == null) return;
-        float s = 32f;
-        GUI.DrawTexture(new Rect(Pointer.Pos.x - s * 0.5f, Pointer.Pos.y - s * 0.5f, s, s),
-            icon, ScaleMode.ScaleToFit);
+        // Only the topmost input layer paints the carried skill, at the window's scale.
+        SkillWindow.DrawDragGhost();
     }
 
     // F9：把每个虚拟键的真实状态摊在屏幕上（键名/映射动作/是否按下/游戏是否收到）

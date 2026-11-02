@@ -1,0 +1,19 @@
+SHA256 1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2
+# function 0x48bba5: 17 instructions, 0x48bba5..0x48bbc7
+0048bba5 push     ebp
+0048bba6 mov      ebp, esp
+0048bba8 push     ecx
+0048bba9 mov      eax, dword ptr [ecx + 0xdc]
+0048bbaf and      dword ptr [ebp - 4], 0
+0048bbb3 test     eax, eax
+0048bbb5 push     esi
+0048bbb6 mov      esi, dword ptr [ebp + 8]
+0048bbb9 mov      dword ptr [esi], eax
+0048bbbb je       0x48bbc3
+0048bbbd mov      ecx, dword ptr [eax]
+0048bbbf push     eax
+0048bbc0 call     dword ptr [ecx + 4]
+0048bbc3 mov      eax, esi
+0048bbc5 pop      esi
+0048bbc6 leave    
+0048bbc7 ret      4

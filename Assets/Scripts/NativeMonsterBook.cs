@@ -152,6 +152,7 @@ public static class NativeMonsterBook
         position.x = Mathf.Clamp(position.x, 0, Mathf.Max(0, UiKit.W - GroupW));
         position.y = Mathf.Clamp(position.y, 0, Mathf.Max(0, UiKit.H - WinH));
         var pointer = Pointer.Pos / s;
+        NativeUi.RegisterWindow("NativeMonsterBook", new Rect(position.x*s,position.y*s,GroupW*s,WinH*s), () => NativeMonsterBook.Visible);
         var matrix = GUI.matrix;
         GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(s, s, 1));
         try

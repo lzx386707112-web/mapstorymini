@@ -206,3 +206,9 @@ Tab 条：控件 x6 / y23 / 宽 270（`0x919D34`），非等宽分支 `0x4DE15F`
 `0x4DE15F` 对 mode0 使用 leading12、间隔13、trailing6；宽度分配还取决于+0x34的等宽开关，不能直接划成五个54px按钮。
 `0x4DD903` 在每段右端绘制 middle，最后一段绘制 right，fill逐像素平铺；middle状态由本段或下一段是否选中决定。
 位图标签由enabled/disabled节点提供，居中复制在段内；mode0不增加额外竖直偏移。该控件分析尚未作为完整家族界面交付。
+
+## 2026-10-30 用户反馈：切换位移与缺页签底板
+
+沿用本文EXE身份，实际重新核对4DD903（递归下降）和4DE572：left以首段是否选中取0/1；middle在本段选中时1、下段选中时2、否则0；最后right以本段是否选中取0/1；fill对应本段选中。Basic.img/Tab原图实读left6×24、middle13×24、right12×24、fill1×24。原先只画标签、没有原Tab切片底板，确属迁移遗漏。NativeSocialWindow.DrawUserTabs现供好友/组员/家族共同调用，段宽仍标签宽−4，leading6/间隔13；使用全部五张原标签，不自绘页签。
+
+NativeGuildWindow原来每次以视口居中计算主窗，组员页则使用(60,40)可拖位置，导致切tab跳动；现共用NativeSocialWindow.Position，并使键盘打开两个页面时互斥。家族资料子窗布局不在本次范围。实际验证：guild-check原有几何/权限断言通过；新页签绘制、点击/拖动仍待真实OnGUI与Android验收。

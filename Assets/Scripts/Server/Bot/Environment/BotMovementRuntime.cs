@@ -101,12 +101,17 @@ namespace Server.Bot.Environment
         {
             if (travel.Speed == 0 && BotGroundPhysics.JavaRound(travel.X) != Position.x) travel = new BotGroundPhysics.Travel(Position.x, 0, travel.CarryMs);
             var foothold = ground.Ground(Position.x, Position.y);
-            if (foothold == null) { Fall(0); return; }
+            if (foothold == null || BotGroundIndex.YAt(foothold, Position.x) - Position.y > 16 ||
+                BotGroundIndex.YAt(foothold, Position.x) - Position.y < -26)
+            { Fall(0); return; }
             if (pendingRope != null)
             {
-                var rope = pendingRope; pendingRope = null;
-                if (Math.Abs(Position.x - rope.x) <= 8) Attach(rope, pendingRopeY);
-                return;
+                // 预约抓绳：走到绳子 10px 内才抓。以前无论远近都清掉预约并空转一 tick，
+                // 表现是「走到绳边不动」；现在距离还远就继续走（落回下面的走路逻辑），
+                // 只有已经走过头（离开抓取范围 4 倍）才放弃这颗预约。
+                var rope = pendingRope;
+                if (Math.Abs(Position.x - rope.x) <= BotRopeMotion.GrabRange) { pendingRope = null; Attach(rope, pendingRopeY); return; }
+                if (Math.Abs(Position.x - rope.x) > BotRopeMotion.GrabRange * 4) { pendingRope = null; return; }
             }
             if (downJumpPending)
             {
@@ -197,7 +202,7 @@ namespace Server.Bot.Environment
         {
             if (!climbUpIntent) return false;
             foreach (var rope in map.ropes)
-                if (!SameRope(blockedRope, rope) && Math.Abs(rope.x - Position.x) <= 8 && Position.y >= rope.Top && Position.y <= rope.Bottom + 2)
+                if (!SameRope(blockedRope, rope) && Math.Abs(rope.x - Position.x) <= BotRopeMotion.GrabRange && Position.y >= rope.Top && Position.y <= rope.Bottom + 2)
                 { Attach(rope, Position.y); return true; }
             return false;
         }

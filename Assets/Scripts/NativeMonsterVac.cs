@@ -7,6 +7,7 @@ public sealed class NativeMonsterVac : MonoBehaviour
     double expires, nextPull;
     int mapId;
     Vector3 target;
+    readonly List<EnemyUnit> released = new List<EnemyUnit>();
     readonly Dictionary<EnemyUnit,NativeImgAnimation> locked = new Dictionary<EnemyUnit,NativeImgAnimation>();
     public bool Active => expires > NativeBuffs.Now;
     public static NativeMonsterVac For(PlayerCtrl player) => player.GetComponent<NativeMonsterVac>() ?? player.gameObject.AddComponent<NativeMonsterVac>();
@@ -39,6 +40,15 @@ public sealed class NativeMonsterVac : MonoBehaviour
         locked.Clear();
         GetComponent<NativeBuffs>()?.Cancel(-2431158);
     }
+    // MonsterVacCompat.stepToward uses integer WZ pixels and Java Math.round.
+    internal static Vector3 StepToward(Vector3 from, Vector3 to)
+    {
+        double dx = (to.x-from.x)*Art.PPU, dy = -(to.y-from.y)*Art.PPU;
+        double distance = System.Math.Sqrt(dx*dx+dy*dy);
+        if (distance <= 150) return to;
+        return from + new Vector3((float)System.Math.Floor(dx*150/distance+.5)/Art.PPU,
+            -(float)System.Math.Floor(dy*150/distance+.5)/Art.PPU,0);
+    }
     void OnDestroy() => StopVac();
     void Update()
     {
@@ -47,12 +57,21 @@ public sealed class NativeMonsterVac : MonoBehaviour
         if (NativeBuffs.Now < nextPull) return;
         nextPull = NativeBuffs.Now + .1;
         bool stun = GameServer.Local == null || GameConfigDao.GetBool(GameServer.Local.Db, "monster_vac_stun_enabled", true);
+        released.Clear();
+        foreach (var entry in locked)
+            if (entry.Key == null || entry.Key.dead) released.Add(entry.Key);
+        foreach (var mob in released)
+        {
+            if (locked[mob] != null) locked[mob].Remove();
+            if (mob != null) mob.VacuumLocked = false;
+            locked.Remove(mob);
+        }
         foreach (var mob in EnemyUnit.All)
         {
             if (mob == null || !mob.fieldMode || mob.dead || mob.IsBoss) continue;
-            var from = mob.transform.position;
+            var from = mob.VacuumPosition;
             if ((from-target).sqrMagnitude > 64f/(Art.PPU*Art.PPU))
-                mob.MoveVac(Vector3.MoveTowards(from,target,150f/Art.PPU));
+                mob.MoveVac(StepToward(from,target));
             mob.VacuumLocked = true;
             if (!locked.ContainsKey(mob)) locked[mob] = null;
             if (stun && locked[mob] == null)

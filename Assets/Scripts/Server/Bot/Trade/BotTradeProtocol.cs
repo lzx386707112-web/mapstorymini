@@ -6,7 +6,8 @@ namespace Server.Bot.Trade
     public enum BotTradeOperation { Read, Invite, OfferItem, OfferMeso, Confirm, Cancel, Chat, Accept }
     public sealed class BotTradeRequest
     {
-        public int characterId, botId, inventoryType, inventoryPosition, quantity, slot, meso;
+        public int characterId, botId, inventoryType, inventoryPosition, quantity, slot;
+        public long meso;
         public string text;
         public BotTradeOperation operation;
     }
@@ -15,7 +16,8 @@ namespace Server.Bot.Trade
         public bool ok = true, active, accepted, locked, partnerLocked, incomingInvitation;
         public string error, partnerName;
         public string[] partnerAppearance;
-        public int partnerId, meso, partnerMeso;
+        public int partnerId;
+        public long meso, partnerMeso;
         public FullCharacter character;
         public List<InventoryEntry> items = new List<InventoryEntry>(), partnerItems = new List<InventoryEntry>();
     }

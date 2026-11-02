@@ -1,0 +1,6 @@
+[Build] SDK=/Users/lizixian/Library/Android/sdk
+[Build] 读回：arch=ARM64 backend=IL2CPP minSdk=26 active=Android
+[Build] 构建场景列表已设置：Assets/Scenes/Main.unity
+[Build] 开始构建：backend=IL2CPP arch=ARM64
+[Build] manifest 已注入 networkSecurityConfig（仅放行 127.0.0.1 明文 HTTP）；Android Data 独立部署，已从生成的 Gradle 工程排除完整 Data。
+[Build] 结果=Succeeded APK大小=39.4MB 耗时=166s 错误=0

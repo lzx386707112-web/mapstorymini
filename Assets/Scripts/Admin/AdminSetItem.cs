@@ -629,15 +629,17 @@ public static class AdminSetItem
 
     // ≡ SetItemManager.applyDamage（MapleMap 收到攻击后调用）：
     // percent = Damage% + (Boss? BossDamage% : NormalDamage%)，再叠 FinalDamage%
-    public static int ApplyDamage(Dictionary<string, int> bonus, bool boss, int damage)
+    // 伤害是 long：不再按 int.MaxValue 截断（单段伤害允许超过 21 亿）。
+    public static long ApplyDamage(Dictionary<string, int> bonus, bool boss, long damage)
     {
-        if (damage <= 0 || damage == int.MaxValue) return damage;
+        if (damage <= 0 || damage == long.MaxValue) return damage;
         bonus.TryGetValue("Damage", out int percent);
         bonus.TryGetValue(boss ? "BossDamage" : "NormalDamage", out int extra);
         percent += extra;
         bonus.TryGetValue("FinalDamage", out int finalPct);
-        long result = (long)Math.Round(damage * (100.0 + percent) / 100.0 * (100.0 + finalPct) / 100.0);
-        return (int)Math.Min(int.MaxValue, Math.Max(1L, result));
+        double scaled = Math.Round(damage * (100.0 + percent) / 100.0 * (100.0 + finalPct) / 100.0);
+        if (scaled >= long.MaxValue) return long.MaxValue;
+        return Math.Max(1L, (long)scaled);
     }
 
     // 倍率类（getExpRate/getDropRate/getMesoRate 的套装部分）：rate × (100 + X) / 100

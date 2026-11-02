@@ -83,3 +83,11 @@ EXE SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，
 ## 最终收尾结果
 
 隔离33 `InventoryPortalChecks.Run PASS215`，日志 `docs/skill-regression/inventory-items-isolated33-2026-10-30.txt`。包括宠物进化、亲密度、跨角色饥饿、宠物任务条件、领头任务奖励、原点心任务及8类券普通双击不消费/不误开流程；无脚本异常/未迁移接口错误。未进行Android实机验证。按用户指示，到此停止扩展。
+
+## 2026-10-30 第二批进度（并行批次 + 505 收尾）
+
+- **505 全部完成并实拍验收**：AP（NativeResetWindow，phase 60..65）三页布局修正后重拍通过（六行对齐/灰化/数值右对齐），结算断言 error=null STR 12→11 DEX 5→6；SP（新增 NativeSpResetWindow + Profile.ResetSp，phase 66..71）三页实拍通过（页签 I..IV=转数、列表行/加号选中/VScr5 滚动、确认页摘要「生命恢复 Lv.2→Lv.1 / 生命加强 Lv.2→Lv.3」），结算断言 error=null 来源 Lv2→1 目标 Lv2→3、5050004 已扣。道具为 5050001..4 四件（含 4 转卷）。确认页 BtOK2/BtCancel2 汇编常量 (87,207)/(129,207) 与 47 宽按钮重叠，实拍证实后按 AP 同构改为 (70,207)/(119,207)，原端真实 x 待再逆。
+- **并行批次（3 个子代理，各只出新文件 + 接入补丁）**：504 传送石 NativeTeleportWindow、537 黑板 NativeAdBoard、517 改名 NativeRenameWindow，均已合入 NativeInventoryActions/GameWindows（537 的 Draw 接在 NativeCommunityWindow.DrawBoard 之后）。文档在 docs/parallel/{504-teleport,537-adboard,517-rename}.md。三者**代码级完成、编译 0 警告 0 错误，视觉验收（实拍）未做**。
+- 教训（已修）：`d.job <= 1000` 会把所有普通职业（100..522）过滤掉——排除新手要写 `d.job == 0 || d.job == 1000`（骑士团 1100+ 必须保留）。
+- 实拍基建：PreviewShot 新增 SetSpStage/SP 种子（新手存档临时切 jobId=100 拍完恢复）、phase 69 反射切确认页。
+- 下一步：504/537/517 的 PreviewShot 接线与实拍验收 → 按清单继续 501 持续特效、502 飞行、商店/喇叭、543/540 角色卡、553 礼包、5060002 孵化器、158 券、82 特殊消耗品。

@@ -152,6 +152,7 @@ public static class NativeNpcShopWindow
         if (!GameSession.InGame || Profile.LastMapId != state.mapId) { Close(); return; }
         float scale = BottomBar.S;
         position = NativeUi.ClampWindowPosition(position, new Vector2(463, 339), scale);
+        NativeUi.RegisterWindow("NativeNpcShopWindow", new Rect(position.x*scale,position.y*scale,463*scale,339*scale), () => NativeNpcShopWindow.Visible);
         var pointer = Pointer.Pos / scale; var matrix = GUI.matrix;
         GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(scale, scale, 1));
         try

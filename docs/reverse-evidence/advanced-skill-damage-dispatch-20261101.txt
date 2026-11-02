@@ -1,0 +1,307 @@
+SHA256 3882737456d7c95795b2afe63ad91703cd70ef299c6b83fefe5f6f70764b466f
+# function 0x6728149a: 304 instructions, 0x6728149a..0x672818f9
+6728149a cmp      esi, 0x111af4
+672814a0 jb       0x672814ae
+672814a2 cmp      esi, 0x111b06
+672814a8 jbe      0x67281871
+672814ae cmp      esi, 0x12a197
+672814b4 jb       0x672814c2
+672814b6 cmp      esi, 0x12a1a8
+672814bc jbe      0x67281871
+672814c2 cmp      esi, 0x142833
+672814c8 jb       0x672814d6
+672814ca cmp      esi, 0x142842
+672814d0 jbe      0x67281871
+672814d6 cmp      esi, 0x205d31
+672814dc jb       0x672814ea
+672814de cmp      esi, 0x205d4c
+672814e4 jbe      0x67281884
+672814ea cmp      esi, 0x21e3d1
+672814f0 jb       0x672814fe
+672814f2 cmp      esi, 0x21e3e7
+672814f8 jbe      0x67281884
+672814fe cmp      esi, 0x236a7c
+67281504 jb       0x67281550
+67281506 je       0x672818aa
+6728150c cmp      esi, 0x236a7e
+67281512 je       0x67281550
+67281514 cmp      esi, 0x236a7f
+6728151a je       0x67281550
+6728151c cmp      esi, 0x236a81
+67281522 je       0x67281550
+67281524 cmp      esi, 0x236a82
+6728152a je       0x67281550
+6728152c cmp      esi, 0x236a83
+67281532 je       0x67281550
+67281534 cmp      esi, 0x236a84
+6728153a je       0x67281550
+6728153c cmp      esi, 0x236a8c
+67281542 je       0x67281550
+67281544 cmp      esi, 0x236a94
+6728154a jbe      0x67281897
+67281550 cmp      esi, 0x2f9f72
+67281556 jb       0x672815c4
+67281558 cmp      esi, 0x2f9f73
+6728155e je       0x672815c4
+67281560 cmp      esi, 0x2f9f74
+67281566 je       0x672815c4
+67281568 cmp      esi, 0x2f9f75
+6728156e je       0x672815c4
+67281570 cmp      esi, 0x2f9f76
+67281576 je       0x672815c4
+67281578 cmp      esi, 0x2f9f77
+6728157e je       0x672815c4
+67281580 cmp      esi, 0x2f9f78
+67281586 je       0x672815c4
+67281588 cmp      esi, 0x2f9f7c
+6728158e je       0x672815c4
+67281590 cmp      esi, 0x2f9f7d
+67281596 je       0x672815c4
+67281598 cmp      esi, 0x2f9f80
+6728159e je       0x672815c4
+672815a0 cmp      esi, 0x2f9f81
+672815a6 je       0x672818b0
+672815ac cmp      esi, 0x2f9f82
+672815b2 je       0x672818c2
+672815b8 cmp      esi, 0x2f9f89
+672815be jbe      0x672818de
+672815c4 cmp      esi, 0x312611
+672815ca jb       0x67281680
+672815d0 cmp      esi, 0x312613
+672815d6 je       0x67281680
+672815dc cmp      esi, 0x312614
+672815e2 je       0x67281680
+672815e8 cmp      esi, 0x312616
+672815ee je       0x67281680
+672815f4 cmp      esi, 0x312617
+672815fa je       0x67281680
+67281600 cmp      esi, 0x312618
+67281606 je       0x67281680
+67281608 cmp      esi, 0x312619
+6728160e je       0x67281680
+67281610 cmp      esi, 0x31261a
+67281616 je       0x67281680
+67281618 cmp      esi, 0x31261b
+6728161e je       0x67281680
+67281620 cmp      esi, 0x31261c
+67281626 je       0x67281680
+67281628 cmp      esi, 0x31261d
+6728162e je       0x67281680
+67281630 cmp      esi, 0x31261e
+67281636 je       0x67281680
+67281638 cmp      esi, 0x31261f
+6728163e je       0x67281680
+67281640 cmp      esi, 0x312620
+67281646 je       0x67281680
+67281648 cmp      esi, 0x312621
+6728164e je       0x67281680
+67281650 cmp      esi, 0x312622
+67281656 je       0x67281680
+67281658 cmp      esi, 0x312623
+6728165e je       0x67281680
+67281660 cmp      esi, 0x312624
+67281666 je       0x67281680
+67281668 cmp      esi, 0x312625
+6728166e je       0x672818b6
+67281674 cmp      esi, 0x31262b
+6728167a jbe      0x672818de
+67281680 cmp      esi, 0x3ee1b2
+67281686 jb       0x672816c4
+67281688 cmp      esi, 0x3ee1b2
+6728168e je       0x672816c4
+67281690 cmp      esi, 0x3ee1b4
+67281696 je       0x672816c4
+67281698 cmp      esi, 0x3ee1b5
+6728169e je       0x672816c4
+672816a0 cmp      esi, 0x3ee1b6
+672816a6 je       0x672816c4
+672816a8 cmp      esi, 0x3ee1b7
+672816ae je       0x672816c4
+672816b0 cmp      esi, 0x3ee1bd
+672816b6 je       0x672816c4
+672816b8 cmp      esi, 0x3ee1c5
+672816be jbe      0x672818de
+672816c4 cmp      esi, 0x406851
+672816ca jb       0x672816d8
+672816cc cmp      esi, 0x406865
+672816d2 jbe      0x67281871
+672816d8 cmp      esi, 0x4e23f3
+672816de je       0x6728172c
+672816e0 cmp      esi, 0x4e23f4
+672816e6 je       0x6728172c
+672816e8 cmp      esi, 0x4e23f5
+672816ee je       0x6728172c
+672816f0 cmp      esi, 0x4e23fb
+672816f6 je       0x6728172c
+672816f8 cmp      esi, 0x4e23fc
+672816fe je       0x6728172c
+67281700 cmp      esi, 0x4e23fd
+67281706 je       0x6728172c
+67281708 cmp      esi, 0x4e23fe
+6728170e je       0x6728172c
+67281710 cmp      esi, 0x4e23ff
+67281716 je       0x6728172c
+67281718 cmp      esi, 0x4e23f3
+6728171e jb       0x6728172c
+67281720 cmp      esi, 0x4e240c
+67281726 jbe      0x67281871
+6728172c cmp      esi, 0x4faa93
+67281732 jb       0x67281780
+67281734 cmp      esi, 0x4faa98
+6728173a je       0x67281780
+6728173c cmp      esi, 0x4faa99
+67281742 je       0x67281780
+67281744 cmp      esi, 0x4faa9a
+6728174a je       0x67281780
+6728174c cmp      esi, 0x4faa9b
+67281752 je       0x67281780
+67281754 cmp      esi, 0x4faa9c
+6728175a je       0x67281780
+6728175c cmp      esi, 0x4faa9d
+67281762 je       0x67281780
+67281764 cmp      esi, 0x4faaa4
+6728176a je       0x67281780
+6728176c cmp      esi, 0x4faaa5
+67281772 je       0x67281780
+67281774 cmp      esi, 0x4faaab
+6728177a jbe      0x672818de
+67281780 cmp      esi, 0xe6ba68
+67281786 jb       0x672817a3
+67281788 cmp      esi, 0xe6ba89
+6728178e ja       0x672817a3
+67281790 pushfd   
+67281791 pushal   
+67281792 push     esi
+67281793 call     0x67286366
+67281798 add      esp, 4
+6728179b popal    
+6728179c popfd    
+6728179d push     0x9690ae
+672817a2 ret      
+672817a3 cmp      esi, 0xc835eb
+672817a9 jb       0x672817b7
+672817ab cmp      esi, 0xc835ff
+672817b1 jbe      0x67281855
+672817b7 cmp      esi, 0xd7782b
+672817bd jb       0x672817c7
+672817bf cmp      esi, 0xd7784c
+672817c5 jbe      0x67281839
+672817c7 cmp      esi, 0xb8f3a8
+672817cd jb       0x672817d7
+672817cf cmp      esi, 0xb8f3cc
+672817d5 jbe      0x67281826
+672817d7 cmp      esi, 0xa9b16d
+672817dd jb       0x672817ef
+672817df cmp      esi, 0xa9b174
+672817e5 ja       0x672817ef
+672817e7 cmp      esi, 0xa9b172
+672817ed jne      0x672817fb
+672817ef cmp      esi, 0x407
+672817f5 push     0x9678ff
+672817fa ret      
+672817fb cmp      esi, 0xa9b16d
+67281801 je       0x67281813
+67281803 cmp      esi, 0xa9b16e
+67281809 je       0x67281813
+6728180b cmp      esi, 0xa9b170
+67281811 jne      0x67281820
+67281813 pushfd   
+67281814 pushal   
+67281815 push     esi
+67281816 call     0x67286027
+6728181b add      esp, 4
+6728181e popal    
+6728181f popfd    
+67281820 push     0x9690ae
+67281825 ret      
+67281826 pushfd   
+67281827 pushal   
+67281828 push     esi
+67281829 call     0x67286027
+6728182e add      esp, 4
+67281831 popal    
+67281832 popfd    
+67281833 push     0x96928b
+67281838 ret      
+67281839 pushfd   
+6728183a pushal   
+6728183b push     esi
+6728183c call     0x67286027
+67281841 add      esp, 4
+67281844 push     esi
+67281845 call     0x67285dad
+6728184a add      esp, 4
+6728184d popal    
+6728184e popfd    
+6728184f push     0x9690e9
+67281854 ret      
+67281855 pushfd   
+67281856 pushal   
+67281857 push     esi
+67281858 call     0x67286027
+6728185d add      esp, 4
+67281860 push     esi
+67281861 call     0x67285dad
+67281866 add      esp, 4
+67281869 popal    
+6728186a popfd    
+6728186b push     0x9690e9
+67281870 ret      
+67281871 pushfd   
+67281872 pushal   
+67281873 push     esi
+67281874 call     0x67286027
+67281879 add      esp, 4
+6728187c popal    
+6728187d popfd    
+6728187e push     0x9690ae
+67281883 ret      
+67281884 pushfd   
+67281885 pushal   
+67281886 push     esi
+67281887 call     0x67286027
+6728188c add      esp, 4
+6728188f popal    
+67281890 popfd    
+67281891 push     0x96928b
+67281896 ret      
+67281897 pushfd   
+67281898 pushal   
+67281899 push     esi
+6728189a call     0x67286366
+6728189f add      esp, 4
+672818a2 popal    
+672818a3 popfd    
+672818a4 push     0x96928b
+672818a9 ret      
+672818aa push     0x9689df
+672818af ret      
+672818b0 push     0x9689df
+672818b5 ret      
+672818b6 push     0x9689df
+672818bb ret      
+        !! uncovered 0x672818bc..0x672818c2
+672818c2 pushfd   
+672818c3 pushal   
+672818c4 push     esi
+672818c5 call     0x67286027
+672818ca add      esp, 4
+672818cd push     esi
+672818ce call     0x67285dad
+672818d3 add      esp, 4
+672818d6 popal    
+672818d7 popfd    
+672818d8 push     0x9690e9
+672818dd ret      
+672818de pushfd   
+672818df pushal   
+672818e0 push     esi
+672818e1 call     0x67286027
+672818e6 add      esp, 4
+672818e9 push     esi
+672818ea call     0x67285dad
+672818ef add      esp, 4
+672818f2 popal    
+672818f3 popfd    
+672818f4 push     0x9690e9
+672818f9 ret      

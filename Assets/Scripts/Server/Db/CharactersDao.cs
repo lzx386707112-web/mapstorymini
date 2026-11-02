@@ -9,9 +9,13 @@ public sealed class CharRecord
     public long id;
     public int accountid, world;
     public string name;
-    public int level, exp, gachaexp;
+    public int level, gachaexp;
+    // exp / meso / damageCap 用 long：经验与金币都会超过 21 亿（等级上限 300 后
+    // 满级累计经验 ~8e17），int 会静默截断；DB 列同步成 BIGINT。
+    public long exp;
     public int str, dex, luk, int_;
-    public int hp, mp, maxhp, maxmp, meso, hpMpUsed;
+    public int hp, mp, maxhp, maxmp, hpMpUsed;
+    public long meso;
     public int job, skincolor, gender, fame, fquest, hair, face, ap;
     public string sp = "0,0,0,0,0,0,0,0,0,0";
     public int map, spawnpoint, gm, party, buddyCapacity = 25;
@@ -27,7 +31,8 @@ public sealed class CharRecord
     public string dataString;
     public string lastLogoutTime = "2015-01-01 05:00:00", lastExpGainTime = "2015-01-01 05:00:00";
     public int partySearch = 1, jailexpire;
-    public int fishLevel = 1, damageSkinId, damageCap = 19999999;
+    public int fishLevel = 1, damageSkinId;
+    public long damageCap = DamageCap.Initial;
 
     // —————————————————— 行 ↔ 记录 ——————————————————
 
@@ -37,10 +42,10 @@ public sealed class CharRecord
         c.id = L(r, "id");
         c.accountid = I(r, "accountid"); c.world = I(r, "world");
         c.name = S(r, "name");
-        c.level = I(r, "level"); c.exp = I(r, "exp"); c.gachaexp = I(r, "gachaexp");
+        c.level = I(r, "level"); c.exp = L(r, "exp"); c.gachaexp = I(r, "gachaexp");
         c.str = I(r, "str"); c.dex = I(r, "dex"); c.luk = I(r, "luk"); c.int_ = I(r, "int");
         c.hp = I(r, "hp"); c.mp = I(r, "mp"); c.maxhp = I(r, "maxhp"); c.maxmp = I(r, "maxmp");
-        c.meso = I(r, "meso"); c.hpMpUsed = I(r, "hpMpUsed");
+        c.meso = L(r, "meso"); c.hpMpUsed = I(r, "hpMpUsed");
         c.job = I(r, "job"); c.skincolor = I(r, "skincolor"); c.gender = I(r, "gender");
         c.fame = I(r, "fame"); c.fquest = I(r, "fquest"); c.hair = I(r, "hair"); c.face = I(r, "face");
         c.ap = I(r, "ap"); c.sp = S(r, "sp");
@@ -61,7 +66,7 @@ public sealed class CharRecord
         c.reborns = I(r, "reborns"); c.PQPoints = I(r, "PQPoints"); c.dataString = S(r, "dataString");
         c.lastLogoutTime = S(r, "lastLogoutTime"); c.lastExpGainTime = S(r, "lastExpGainTime");
         c.partySearch = I(r, "partySearch"); c.jailexpire = I(r, "jailexpire");
-        c.fishLevel = I(r, "fishLevel"); c.damageSkinId = I(r, "damageSkinId"); c.damageCap = I(r, "damageCap");
+        c.fishLevel = I(r, "fishLevel"); c.damageSkinId = I(r, "damageSkinId"); c.damageCap = L(r, "damageCap");
         return c;
     }
 
@@ -70,10 +75,10 @@ public sealed class CharRecord
         return new DbRow
         {
             ["accountid"] = (long)accountid, ["world"] = (long)world, ["name"] = name,
-            ["level"] = (long)level, ["exp"] = (long)exp, ["gachaexp"] = (long)gachaexp,
+            ["level"] = (long)level, ["exp"] = exp, ["gachaexp"] = (long)gachaexp,
             ["str"] = (long)str, ["dex"] = (long)dex, ["luk"] = (long)luk, ["int"] = (long)int_,
             ["hp"] = (long)hp, ["mp"] = (long)mp, ["maxhp"] = (long)maxhp, ["maxmp"] = (long)maxmp,
-            ["meso"] = (long)meso, ["hpMpUsed"] = (long)hpMpUsed, ["job"] = (long)job,
+            ["meso"] = meso, ["hpMpUsed"] = (long)hpMpUsed, ["job"] = (long)job,
             ["skincolor"] = (long)skincolor, ["gender"] = (long)gender, ["fame"] = (long)fame, ["fquest"] = (long)fquest,
             ["hair"] = (long)hair, ["face"] = (long)face, ["ap"] = (long)ap, ["sp"] = sp,
             ["map"] = (long)map, ["spawnpoint"] = (long)spawnpoint, ["gm"] = (long)gm, ["party"] = (long)party,
@@ -93,7 +98,7 @@ public sealed class CharRecord
             ["reborns"] = (long)reborns, ["PQPoints"] = (long)PQPoints, ["dataString"] = dataString ?? "",
             ["lastLogoutTime"] = lastLogoutTime, ["lastExpGainTime"] = lastExpGainTime,
             ["partySearch"] = (long)partySearch, ["jailexpire"] = (long)jailexpire,
-            ["fishLevel"] = (long)fishLevel, ["damageSkinId"] = (long)damageSkinId, ["damageCap"] = (long)damageCap,
+            ["fishLevel"] = (long)fishLevel, ["damageSkinId"] = (long)damageSkinId, ["damageCap"] = damageCap,
         };
     }
 
@@ -150,6 +155,7 @@ public static class CharactersDao
         foreach (var r in db.Table("characters").Select(DbStore.Eq("accountid", (long)accountId)))
         {
             var c = CharRecord.FromRow(r);
+            c.gm = Math.Max(c.gm, AccountsDao.DefaultGmLevel(db, c.accountid));
             if (world == 0 || c.world == world) outp.Add(c);
         }
         outp.Sort((a, b) => a.id.CompareTo(b.id));
@@ -159,7 +165,10 @@ public static class CharactersDao
     public static CharRecord FindById(DbStore db, int id)
     {
         var r = db.Table("characters").Find(DbStore.Eq("id", (long)id));
-        return r == null ? null : CharRecord.FromRow(r);
+        if (r == null) return null;
+        var c = CharRecord.FromRow(r);
+        c.gm = Math.Max(c.gm, AccountsDao.DefaultGmLevel(db, c.accountid));
+        return c;
     }
 
     public static bool NameTaken(DbStore db, string name)

@@ -122,6 +122,41 @@ public static class ScriptSource
         }
     }
 
+    // 某一类下有哪几个脚本（不带目录前缀、只取本层，不含子目录）。
+    // 用途：Channel.getEvents() 会把 scripts/event 下所有 .js 名字都交给 EventScriptManager.init()，
+    // 移植端要复刻这条启动链，就得能枚举 event/ 的脚本名。
+    public static List<string> Keys(string kind)
+    {
+        var keys = new List<string>();
+        string dir = Path.Combine(Root, kind);
+        try
+        {
+            if (Directory.Exists(dir))
+                foreach (string file in Directory.GetFiles(dir, "*.js"))
+                {
+                    string name = Path.GetFileNameWithoutExtension(file);
+                    if (!keys.Contains(name)) keys.Add(name);
+                }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[Script] 枚举目录失败 " + dir + ": " + e.Message);
+        }
+        var map = Packed;
+        if (map != null)
+        {
+            string prefix = kind + "/";
+            foreach (var key in map.Keys)
+            {
+                if (!key.StartsWith(prefix, StringComparison.Ordinal)) continue;
+                string name = key.Substring(prefix.Length);
+                if (name.Length == 0 || name.IndexOf('/') >= 0) continue;
+                if (!keys.Contains(name)) keys.Add(name);
+            }
+        }
+        return keys;
+    }
+
     // 调试用：改完脚本/重新导入 JSON 后清一次，避免旧内容一直缓存着
     public static void ClearCache()
     {

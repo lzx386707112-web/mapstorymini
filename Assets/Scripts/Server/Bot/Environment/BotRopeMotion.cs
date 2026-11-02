@@ -17,7 +17,10 @@ namespace Server.Bot.Environment
             public bool climbing;
         }
         public static int FirstClimbableY(MapRope rope) => Math.Min(rope.Bottom, rope.Top + 1);
-        public static bool CanGrab(Point position, MapRope rope) => rope != null && Math.Abs(position.x - rope.x) <= 8 &&
+        // 抓绳水平容差：与真人 PlayerCtrl.StepClimb 的 10px 对齐。假人原来取 8px，
+        // 走到绳子旁边差 9px 时 CanGrab 判失败 → 停在绳边不动（或反复跳抓）。
+        public const int GrabRange = 10;
+        public static bool CanGrab(Point position, MapRope rope) => rope != null && Math.Abs(position.x - rope.x) <= GrabRange &&
             position.y >= FirstClimbableY(rope) && position.y <= rope.Bottom;
         public static State Attach(MapRope rope, int y) => new State { rope = rope, climbing = true,
             position = new Point(rope.x, Math.Max(FirstClimbableY(rope), Math.Min(rope.Bottom, y))) };

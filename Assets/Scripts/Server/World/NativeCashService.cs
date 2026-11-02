@@ -22,7 +22,7 @@ public interface INativeCashCatalog {
     int EquipSlot(int itemId);
     string CanEquip(int itemId, CharRecord character);
 }
-public enum CashOperation { Open, Close, Read, Buy, Gift, ClaimGifts, Withdraw, Deposit, WishList, ExpandInventory, ExpandCharacters, Equip, Unequip, AdjustBalance, RedeemCode }
+public enum CashOperation { Open, Close, Read, Buy, Gift, ClaimGifts, Withdraw, Deposit, WishList, ExpandInventory, ExpandCharacters, Equip, Unequip, AdjustBalance, RedeemCode, ExpandStorage }
 public sealed class CashRequest {
     public int characterId, sn, currency = 1, birthday, inventoryType, amount;
     public long itemId;
@@ -38,7 +38,7 @@ public sealed class CashStock {
 public sealed class CashResponse {
     public bool ok = true, opened;
     public string error = "";
-    public int credit, points, prepaid, gifts;
+    public int credit, points, prepaid, gifts, storageSlots;
     public List<CashCommodity> catalog = new List<CashCommodity>();
     public List<CashStock> stock = new List<CashStock>();
     public List<int> wishes = new List<int>();
@@ -114,6 +114,7 @@ public sealed class NativeCashService {
     public CashResponse Handle(CashRequest r) {
         lock (db) {
             var c = CharactersDao.FindById(db, r.characterId); if (c == null) return new CashResponse { ok = false, error = "角色不存在" };
+            Storage(c);
             ImportCommodities();
             Sweep();
             string error; db.BeginTransaction();
@@ -246,10 +247,17 @@ public sealed class NativeCashService {
                 string currency = Currency(r.currency); if (currency == null) return "无效余额类型";
                 if (r.inventoryType < 1 || r.inventoryType > 4) return "不能扩充此道具栏";
                 int current = Limit(c, r.inventoryType); if (current + 4 > 96) return "道具栏已达上限";
-                if (DbStore.Int(account, currency) < 4000) return "余额不足，扩充4格需要4000点";
-                Charge(account, r.currency, 4000);
+                if (DbStore.Int(account, currency) < 2000) return "余额不足，扩充4格需要2000点";
+                Charge(account, r.currency, 2000);
                 string col = r.inventoryType == 1 ? "equipslots" : r.inventoryType == 2 ? "useslots" : r.inventoryType == 3 ? "setupslots" : "etcslots";
                 db.Table("characters").Update(x => DbStore.Int(x, "id") == cid, new DbRow { [col] = (long)(current + 4) }); return null;
+            case CashOperation.ExpandStorage:
+                string storageCurrency=Currency(r.currency);if(storageCurrency==null)return "无效余额类型";
+                var storage=Storage(c);
+                int storageSlots=DbStore.Int(storage,"slots");
+                if(storageSlots+4>48)return "仓库已达48格上限";
+                if(DbStore.Int(account,storageCurrency)<2000)return "余额不足，扩充4格需要2000点";
+                Charge(account,r.currency,2000);storage["slots"]=(long)(storageSlots+4);return null;
             case CashOperation.ExpandCharacters:
                 invalid = CanBuy(c, item, account, r.currency); if (invalid != null) return invalid;
                 if (item.itemId != 5430000) return "该商品不是角色栏扩充券";
@@ -292,9 +300,17 @@ public sealed class NativeCashService {
     }
     int Limit(CharRecord c, int type) => type == 1 ? c.equipslots : type == 2 ? c.useslots : type == 3 ? c.setupslots : type == 4 ? c.etcslots : 96;
     int FreeSlot(int cid, int type, int max) { var used = new HashSet<int>(); foreach (var row in InventoryDao.ItemsByCharacter(db, cid)) if (DbStore.Int(row, "inventorytype") == type) used.Add(DbStore.Int(row, "position")); for (int i = 1; i <= max; i++) if (!used.Contains(i)) return i; return 0; }
+    DbRow Storage(CharRecord c)
+    {
+        var table=db.Table("storages");
+        var storage=table.Find(row=>DbStore.Int(row,"accountid")==c.accountid && DbStore.Int(row,"world")==c.world);
+        if(storage!=null)return storage;
+        long id=table.Insert(new DbRow {["accountid"]=(long)c.accountid,["world"]=(long)c.world,["slots"]=4L,["meso"]=0L});
+        return table.Find(row=>DbStore.Long(row,"storageid")==id);
+    }
     CashResponse Read(CharRecord c) {
         var account = AccountsDao.FindById(db, c.accountid);
-        var result = new CashResponse { opened = opened.Contains((int)c.id), credit = DbStore.Int(account, "nxCredit"), points = DbStore.Int(account, "maplePoint"), prepaid = DbStore.Int(account, "nxPrepaid"), character = CharService.Load(db, (int)c.id) };
+        var result = new CashResponse { storageSlots=DbStore.Int(Storage(c),"slots"), opened = opened.Contains((int)c.id), credit = DbStore.Int(account, "nxCredit"), points = DbStore.Int(account, "maplePoint"), prepaid = DbStore.Int(account, "nxPrepaid"), character = CharService.Load(db, (int)c.id) };
         // 商城列表读 modified_cash_item（数据库），不直接遍历 WZ；残缺商品不展示。
         if (Catalog != null) foreach (var row in db.Table("modified_cash_item").Select(x => true)) {
             var item = Commodity(row, DbStore.Int(row, "sn"));

@@ -25,10 +25,12 @@ public static class NativeSocialWindow
 
     public static bool Visible { get; private set; }
     static GameAction action;
+    public static bool MessengerVisible => Visible && action == GameAction.Messenger;
     static SocialResponse state;
     static string target = "", group = "Default Group", minimum = "1", maximum = "30";
     static Vector2 scroll;                  // 仅好友 tab 的 GUILayout 用
-    static Vector2 position = new Vector2(60, 40), grab;
+    public static Vector2 Position = new Vector2(60, 40);
+    static Vector2 grab;
     static bool dragging;
     static double nextRefresh;
     static int partyInvitation, messengerInvitation;
@@ -39,7 +41,8 @@ public static class NativeSocialWindow
         if (!GameSession.InGame || GameSession.Net == null)
             return new SocialResponse { ok = false, error = "请先进入角色" };
         // Party level validation must see current gameplay progress.
-        if (operation == SocialOperation.CreateParty || operation == SocialOperation.SearchParty) GameSession.SaveToDb();
+        if (operation == SocialOperation.CreateParty || operation == SocialOperation.SearchParty ||
+            operation == SocialOperation.SendChat && NativeGmCommands.IsCommand(GameSession.Character.record, text)) GameSession.SaveToDb();
         int.TryParse(minimum, out int min); int.TryParse(maximum, out int max);
         state = GameSession.Net.Social(new SocialRequest { characterId = GameSession.CharacterId,
             operation = operation, target = name, group = group, partyId = partyId, messengerRoom = messengerRoom,
@@ -64,6 +67,7 @@ public static class NativeSocialWindow
     public static void Toggle(GameAction next)
     {
         if (Visible && action == next) { Close(); return; }
+        if (next != GameAction.Messenger) NativeGuildWindow.Reset();
         action = next; Visible = true; scroll = Vector2.zero; selectedId = 0;
         state = Request(SocialOperation.Read);
         if (next == GameAction.Messenger) Run(SocialOperation.OpenMessenger);
@@ -119,21 +123,22 @@ public static class NativeSocialWindow
     {
         float scale = BottomBar.S;
         var size = new Vector2(WindowW, WindowH);
-        position = NativeUi.ClampWindowPosition(position, size, scale);
+        Position = NativeUi.ClampWindowPosition(Position, size, scale);
+        NativeUi.RegisterWindow("NativeSocialWindow", new Rect(Position.x*scale,Position.y*scale,size.x*scale,size.y*scale), () => NativeSocialWindow.Visible);
         var pointer = Pointer.Pos / scale;
         var matrix = GUI.matrix; bool enabled = GUI.enabled;
         GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(scale, scale, 1));
         try
         {
             if (Event.current.type == EventType.Repaint && Pointer.Pressed &&
-                new Rect(position.x, position.y, size.x - 44, 22).Contains(pointer))
-            { dragging = true; grab = pointer - position; }
-            if (dragging && Pointer.Down) position = NativeUi.ClampWindowPosition(pointer - grab, size, scale);
+                new Rect(Position.x, Position.y, size.x - 44, 22).Contains(pointer))
+            { dragging = true; grab = pointer - Position; }
+            if (dragging && Pointer.Down) Position = NativeUi.ClampWindowPosition(pointer - grab, size, scale);
             if (!Pointer.Down) dragging = false;
-            GUI.BeginGroup(new Rect(position.x, position.y, size.x, size.y));
+            GUI.BeginGroup(new Rect(Position.x, Position.y, size.x, size.y));
             try
             {
-                var p = pointer - position;
+                var p = pointer - Position;
                 // 标题「玩家列表 & 家族」和红分隔线烘死在 backgrnd 上，不再自绘文字。
                 // 三张同尺寸底图分工不同（2026-10-30 导出核对）：backgrnd 纯列表面板（组员 tab）、
                 // backgrnd2 带内嵌列表区（家族 tab）、backgrnd3 带「管理朋友」横幅（好友 tab）。
@@ -153,28 +158,42 @@ public static class NativeSocialWindow
     }
 
     // Tab/0 好友、Tab/1 组员、Tab/2 家族、Tab/3-4 拒绝列表。
-    // 非等宽分支 0x4DE15F：段宽 = 标签 canvas 宽 − 4，首段 leading 6，段间 13。
-    static readonly string[] TabNames = { "好友", "组员", "家族", "拒绝列表" };
-    static readonly int[] TabCanvas = { 0, 1, 2, 4 };
-    static readonly int[] TabCanvasWidth = { 27, 27, 27, 52 };
+    // CCtrlTab mode0 (4DD903/4DE15F): original 24px slices and label widths.
+    public static void DrawUserTabs(Rect window, float scale, int current, System.Action<int> select, Vector2? pointer = null)
+    {
+        const string root = "UI/Basic.img/Tab/";
+        var widths = new float[5];
+        for (int i = 0; i < widths.Length; i++)
+        {
+            var label = Art.Tex("wz://UI/UIWindow.img/UserList/Tab/" + (i == current ? "enabled/" : "disabled/") + i);
+            widths[i] = label == null ? 23 : label.width - 4;
+        }
+        float x = 6;
+        void Slice(string name, float at, float width = 0)
+        {
+            var image = Art.Tex("wz://" + root + name);
+            if (image != null) GUI.DrawTexture(new Rect(window.x + at * scale, window.y + 23 * scale,
+                (width > 0 ? width : image.width) * scale, image.height * scale), image);
+        }
+        Slice("left" + (current == 0 ? 1 : 0), x);
+        x += 6;
+        for (int i = 0; i < widths.Length; i++)
+        {
+            Slice("fill" + (i == current ? 1 : 0), x, widths[i]);
+            var label = Art.Tex("wz://UI/UIWindow.img/UserList/Tab/" + (i == current ? "enabled/" : "disabled/") + i);
+            if (label != null) GUI.DrawTexture(new Rect(window.x + (x + (widths[i] - label.width) / 2) * scale,
+                window.y + (23 + (24 - label.height) / 2f) * scale, label.width * scale, label.height * scale), label);
+            var hit = new Rect(window.x + x * scale, window.y + 23 * scale, widths[i] * scale, 24 * scale);
+            if (Event.current.type == EventType.Repaint && GUI.enabled && !NativeUtilPrompt.Visible && !NativeDlgInput.Visible && Pointer.Clicked && hit.Contains(pointer ?? Pointer.Pos))
+            { Pointer.ConsumeClick(); select(i); return; }
+            x += widths[i];
+            if (i == widths.Length - 1) Slice("right" + (i == current ? 1 : 0), x);
+            else { Slice("middle" + (i == current ? 1 : i + 1 == current ? 2 : 0), x); x += 13; }
+        }
+    }
     static void DrawTabs(Vector2 p)
     {
-        int current = action == GameAction.Buddy ? 0 : 1;
-        float x = ListX + 6;
-        for (int i = 0; i < TabNames.Length; i++)
-        {
-            var tex = Art.Tex("wz://UI/UIWindow.img/UserList/Tab/" + (i == current ? "enabled" : "disabled") + "/" + TabCanvas[i]);
-            // 段长 = 当前真正画出来的那张标签 canvas 宽 − 4（源端非等宽分支 0x4DE15F）；
-            // 不能写死一组宽度：enabled/disabled 的 canvas 宽差 1~2px，写死会让后段整体漂移。
-            float w = (tex != null ? tex.width : TabCanvasWidth[i]) - 4;
-            var slot = new Rect(x, 23, w, 20);
-            if (tex != null)
-                GUI.DrawTexture(new Rect(slot.center.x - tex.width / 2f, slot.y + (slot.height - tex.height) / 2f,
-                    tex.width, tex.height), tex);
-            if (Event.current.type == EventType.Repaint && Pointer.Clicked && slot.Contains(p))
-            { Pointer.ConsumeClick(); SwitchTab(i); return; }
-            x += w + 13;
-        }
+        DrawUserTabs(new Rect(), 1, action == GameAction.Buddy ? 0 : 1, SwitchTab, p);
     }
     static void SwitchTab(int index)
     {
@@ -182,7 +201,7 @@ public static class NativeSocialWindow
         if (index == 0) { action = GameAction.Buddy; state = Request(SocialOperation.Read); return; }
         if (index == 1) { action = GameAction.Party; state = Request(SocialOperation.Read); return; }
         if (index == 2) { Close(); NativeCommunityWindow.Toggle(GameAction.Family); return; }
-        BottomBar.Toast("拒绝列表尚未开放");
+        BottomBar.Toast(index == 3 ? "家族联盟尚未开放" : "拒绝列表尚未开放");
     }
 
     // ————— 组员 tab —————
@@ -215,7 +234,7 @@ public static class NativeSocialWindow
         }
         var style = RowStyle(selected);
         GUI.Label(new Rect(ColNameX, row.y + 2, NameClip, 14), member.name, style);
-        GUI.Label(new Rect(ColJobX, row.y + 2, 70, 14), JobDefs.NameOf(member.job), style);
+        GUI.Label(new Rect(ColJobX, row.y + 2, 78, 14), JobDefs.NameOf(member.job), style);
         GUI.Label(new Rect(ColLevelX, row.y + 2, 40, 14), member.level.ToString(), style);
         if (Event.current.type == EventType.Repaint && Pointer.Clicked && row.Contains(p))
         { Pointer.ConsumeClick(); selectedId = member.id; }

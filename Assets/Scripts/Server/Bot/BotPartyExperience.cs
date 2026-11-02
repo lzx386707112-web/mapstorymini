@@ -7,12 +7,14 @@ namespace Server.Bot
     {
         public readonly struct Award
         {
-            public readonly int personal, party, reputationCalls;
+            // 经验是 long：单只怪的结算值可以超过 21 亿，float/double 也不该是终点
+            public readonly long personal, party;
+            public readonly int reputationCalls;
             public readonly bool eligible;
-            public Award(int personal,int party,bool eligible,int reputationCalls=1)
+            public Award(long personal,long party,bool eligible,int reputationCalls=1)
             { this.personal=personal; this.party=party; this.eligible=eligible; this.reputationCalls=eligible ? reputationCalls : 0; }
         }
-        static int Rounded(float value) => value >= int.MaxValue ? int.MaxValue : value <= int.MinValue ? int.MinValue : (int)Math.Floor((double)value+.5);
+        static long Rounded(double value) => value >= long.MaxValue ? long.MaxValue : value <= long.MinValue ? long.MinValue : (long)Math.Floor(value+.5);
         public static Award Calculate(DbStore db,BotPartyService parties,BotActor player,int mobLevel,int mobExp,long totalHp,
             IReadOnlyDictionary<int,long> damage,float personalRate=1,float partyRate=1,
             int holySymbol=0,bool fullHolySymbol=false,int expIncrease=0,bool expBuff=false,int showdown=0)
@@ -23,7 +25,7 @@ namespace Server.Bot
             if (party==null)
             {
                 damage.TryGetValue(player.id,out dealt);
-                float solo=dealt*((float)mobExp/totalHp);
+                double solo=dealt*((double)mobExp/totalHp);
                 solo*=StatusMultiplier(holySymbol,false,fullHolySymbol,showdown); solo*=personalRate;
                 solo+=expIncrease; if (expBuff) solo*=2;
                 return new Award(Rounded(solo),0,dealt>0);
@@ -46,14 +48,14 @@ namespace Server.Bot
                 totalLevel+=actor.level; count++; if (actor.id==player.id) eligible=true;
             }
             if (!eligible || totalLevel<=0) return default;
-            float share=(float)GameConfigDao.GetFloat(db,"exp_split_common_mod",.8)*player.level/totalLevel;
-            if (mvp==player.id) share+=(float)GameConfigDao.GetFloat(db,"exp_split_mvp_mod",.2);
-            float personal=share*(dealt*((float)mobExp/totalHp));
-            float bonus=count>1 ? .05f*count*personal : 0;
+            double share=(double)GameConfigDao.GetFloat(db,"exp_split_common_mod",.8)*player.level/totalLevel;
+            if (mvp==player.id) share+=(double)GameConfigDao.GetFloat(db,"exp_split_mvp_mod",.2);
+            double personal=share*(dealt*((double)mobExp/totalHp));
+            double bonus=count>1 ? .05*count*personal : 0;
             float status=StatusMultiplier(holySymbol,count>1,fullHolySymbol,showdown);
             personal*=status; personal*=personalRate; personal+=expIncrease;
             if (expBuff) personal*=2;
-            bonus*=status; bonus*=partyRate; bonus*=(float)GameConfigDao.GetFloat(db,"party_bonus_exp_rate",1);
+            bonus*=status; bonus*=partyRate; bonus*=GameConfigDao.GetFloat(db,"party_bonus_exp_rate",1);
             return new Award(Rounded(personal),Rounded(bonus),true,2);
         }
         public static float StatusMultiplier(int percent,bool sharers,bool full,int showdown)

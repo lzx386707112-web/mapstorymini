@@ -182,6 +182,7 @@ public static class NativeMapWindows
         // CreateWnd 009EB594: 666 x 524. Draw 009EBA31: BaseImg at (13,35).
         float s = Mathf.Min(BottomBar.S, (UiKit.W - 32) / 666, (UiKit.H - 64) / 524);
         var panel = new Rect((UiKit.W - 666 * s) / 2, 20, 666 * s, 524 * s);
+        NativeUi.RegisterWindow("NativeMapWindows", panel, () => NativeMapWindows.WorldVisible);
         DrawWorldFrame(panel, s);
         var baseImage = frames.Get("0");
         var baseOrigin = baseImage != null ? WzAssets.Origin(baseImage) : Vector2.zero;

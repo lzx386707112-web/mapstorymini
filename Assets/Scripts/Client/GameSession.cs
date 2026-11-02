@@ -27,6 +27,7 @@ public static class GameSession
     {
         if (Server != null) return;
         Server = GameServer.Start();
+        Server.Social.Commands.Host = NativeGmCommandHost.Execute;
         Server.MapInfo = new FieldMapInfo();
         Server.Community.CanFamilyTravel = NativeCommunityMaps.CanTravel;
         Server.Cash.CanEnter = NativeCommunityMaps.CanEnterCash;
@@ -35,9 +36,23 @@ public static class GameSession
         global::Server.Field.MapReactorService.ScriptSource = global::ScriptSource.LoadKey;
         global::Server.Field.MapReactorService.ScriptMessage = (map,type,text)=>
         {
-            if(GameLoop.I?.field?.Map?.id==map) NativeSystemMessage.Drop(type,text);
+            if(GameLoop.I?.field?.StateId==map) NativeSystemMessage.Drop(type,text);
         };
-        global::Server.Field.MapReactorService.EventInstance = map=>GameLoop.I?.field?.Map?.id==map ? NativeEventScripts.Instance() : MapleDash.Js.JsNull.Value;
+        global::Server.Field.MapReactorService.EventInstance = map=>GameLoop.I?.field?.StateId==map ? NativeEventScripts.Instance() : MapleDash.Js.JsNull.Value;
+        // ReactorActionManager.getPlayer()：单机只有一个真实角色，owner 就是它。
+        global::Server.Field.MapReactorService.Player = owner=>NpcApi.BuildPlayer(NpcSession.MapContext());
+        // EnterMTSHandler.enterMTS：源端默认 use_mts=false，此时拍卖入口只是重开 9900001 主菜单。
+        Server.Scripts.EnterMTS = EnterMtsFromMenu;
+        // —— 远征队（Expedition.java）——
+        // 单机只有一个真实角色：广播/私聊/倒计时全部落在本地玩家身上。
+        Expedition.LocalPlayerId = () => CharacterId;
+        Expedition.Notice = (type,text) => NativeSystemMessage.Drop(type,text);
+        Expedition.DropMessage = (type,text) => NativeSystemMessage.Drop(type,text);
+        Expedition.ShowClock = seconds => NativeEventClock.Show(seconds);
+        Expedition.HideClock = NativeEventClock.Hide;
+        Expedition.ChangeMap = (mapId,portal) => NpcSession.MapContext().RequestWarp(mapId,null,portal);
+        Expedition.ConfigBool = name => Server != null && GameConfigDao.GetBool(Server.Db,name);
+        Expedition.Log = text => UnityEngine.Debug.Log("[Expedition] " + text);
         global::Server.Field.MapReactorService.ScriptError = error=>UnityEngine.Debug.LogError("[ReactorScript] "+error.Message);
         global::Server.Field.NativeReactorDrops.NeedsQuestItem = (owner,quest,item)=>owner!=CharacterId || QuestLogic.NeedQuestItem(quest,item);
         global::Server.Field.NativeReactorDrops.Rates = owner=>
@@ -218,7 +233,7 @@ public static class GameSession
         // 属于源端新手引导链路的客户端侧问候；这里进游戏时按同样的文案与黄色补上。
         BottomBar.AddChat("[欢迎] 欢迎光临冒险岛ONLINE世界。", BottomBar.ChatYellow);
         NativeSocialWindow.Reset();
-        NativeTradeWindow.Reset(); NativeCharacterMenu.Close();
+        NativeTradeWindow.Reset(); NativeCharacterMenu.Close(); NativeCharacterInfo.Close();
         NativeMarketWindow.Reset();
         NativeUtilPrompt.Clear();
         NativeCommunityWindow.Reset();
@@ -226,6 +241,7 @@ public static class GameSession
         NativeCashWindow.Reset();
         NativeVegaWindow.Close();
         NativeNpcShopWindow.Reset();
+        NativeDeliveryWindow.Reset();
         NativeMapWindows.WorldVisible = false;
         NativeMonsterBook.Visible = false;
         InGame = true;
@@ -234,13 +250,43 @@ public static class GameSession
         return true;
     }
 
-    /// <summary>只放开当前角色、保留账号登录态（退出战斗回选角用）。</summary>
-    public static void DeselectChar()
+    // EnterMTSHandler.java:59-151 的 enterMTS 全流程。
+    // 关键点：源端默认配置 use_mts=false（V1.7.0__create_game_config.sql:51），
+    // 此时 handlePacket 直接走 openCenterScript → NPCScriptManager.start(c, BEI_DOU_NPC_BASE=9900001, null)，
+    // 也就是「拍卖系统」这个选项在北斗默认配置下就是回到主菜单，根本没有 MTS 界面。
+    // 打开真正的 MTS 需要整套界面 + mts_items 交易，未迁移 —— 明确报缺失，不拿商城顶替。
+    static void EnterMtsFromMenu()
     {
+        if (Server != null && GameConfigDao.GetBool(Server.Db, "use_mts"))
+            throw new MapleDash.Js.JsRuntimeException("Unmigrated MTS: use_mts=true");
+
+        if (!(NativeEventScripts.Instance() is MapleDash.Js.JsNull))
+        {
+            NativeSystemMessage.Drop(5, "Entering Cash Shop or MTS are disabled when registered on an event.");
+            return;
+        }
+        var player = GameLoop.I?.player;
+        if (player == null || player.hp <= 0) return;
+        var map = FieldCatalog.GetMap(Profile.LastMapId);
+        if (map != null && (map.fieldLimit & 0x10) != 0)   // FieldLimit.CANNOTMIGRATE
+        {
+            NativeSystemMessage.Drop(1, "You can't do it here in this map.");
+            return;
+        }
+        if (Profile.level < 10) return;
+        NpcSession.Talk(9900001);
+    }
+
+    /// <summary>只放开当前角色、保留账号登录态（退出战斗回选角用）。</summary>
+    public static void DeselectChar()    {
         if (InGame) SaveToDb();
         NativeCashWindow.Reset();
         NativeVegaWindow.Close();
         NativeNpcShopWindow.Reset();
+        NativeDeliveryWindow.Reset();
+        // 源端断线由 Channel 通知事件实例（Client.java:969）；单机在这里补同一次回调，
+        // 必须在 Character 置空之前，事件实例才反查得到玩家。
+        if (InGame) global::NativeEventScripts.PlayerDisconnected();
         Net?.EndSocialSession(CharacterId);
         InGame = false;
         Character = null;
@@ -253,6 +299,8 @@ public static class GameSession
         NativeCashWindow.Reset();
         NativeVegaWindow.Close();
         NativeNpcShopWindow.Reset();
+        NativeDeliveryWindow.Reset();
+        if (InGame) global::NativeEventScripts.PlayerDisconnected();
         Net?.EndSocialSession(CharacterId);
         InGame = false;
         Character = null;
@@ -264,8 +312,33 @@ public static class GameSession
 
     // —————————————————— DB → 现有玩法数据 ——————————————————
 
+    public static void ReloadAfterCommand()
+    {
+        var fresh = CharService.Load(Server.Db, CharacterId);
+        if (fresh == null) return;
+        // Preserve session identity: map/event scripts use this object to detect character changes.
+        Character.record = fresh.record;
+        Character.inventory = fresh.inventory;
+        Character.skills = fresh.skills;
+        Character.quests = fresh.quests;
+        Character.keymap = fresh.keymap;
+        Character.quickslotKeymap = fresh.quickslotKeymap;
+        ApplyToProfile();
+        var player = GameLoop.I?.player;
+        if (player != null)
+        {
+            player.ApplyProgression();
+            player.hp = Mathf.Clamp(fresh.record.hp, 0, player.hpMax);
+            player.mp = Mathf.Clamp(fresh.record.mp, 0, player.mpMax);
+            player.RefreshFieldAppearance();
+            if (player.hp <= 0 && !GameLoop.I.gameOver) GameLoop.I.OnPlayerDead();
+        }
+    }
+
     public static void ApplyToProfile()
     {
+        // Loading N learned skills must commit one snapshot, not N synchronous disk flushes.
+        using var profileSaves = Profile.DeferSaves();
         var d = Profile.Data;
         var rec = Character.record;
         d.playerName = rec.name;
@@ -319,7 +392,15 @@ public static class GameSession
         // 背包（ETC/USE 等非装备物品同步到现有 itemIds/itemCounts）
         d.itemIds.Clear();
         d.itemCounts.Clear();
-        foreach (var it in Character.inventory)
+        // 投影顺序必须按 (页, 槽位)：整理/合并改的是服务端 position，若照 DB 行序追加，
+        // 客户端看不出任何变化。源端背包本来就是按槽位画的。
+        var ordered = new List<InventoryEntry>(Character.inventory);
+        ordered.Sort((a, b) =>
+        {
+            int byType = a.inventoryType.CompareTo(b.inventoryType);
+            return byType != 0 ? byType : a.position.CompareTo(b.position);
+        });
+        foreach (var it in ordered)
         {
             // 装备：EQUIPPED 行（源端 inventoryitems 的 position 为 -1/-5/-6/-7/-8/-9/-10/-11）。
             // 以当前角色的数据库装备为准。
@@ -339,10 +420,10 @@ public static class GameSession
         if (player != null && previousAppearance != WzCharacter.CurrentAppearanceKey())
             player.RefreshFieldAppearance();
     }
-    public static void ApplyGroundPickup(Server.Bot.BotActor actor,int mesoDelta)
+    public static void ApplyGroundPickup(Server.Bot.BotActor actor,long mesoDelta)
         => ApplyTradeInventory(actor,mesoDelta);
 
-    static void ApplyTradeInventory(Server.Bot.BotActor actor,int mesoDelta)
+    static void ApplyTradeInventory(Server.Bot.BotActor actor,long mesoDelta)
     {
         if (!InGame || Character==null || actor.id!=CharacterId) return;
         // Preserve XP, quests and gameplay earnings; only apply the committed trade delta.
@@ -390,7 +471,7 @@ public static class GameSession
         var d = Profile.Data;
         var rec = Character.record;
         rec.level = d.level;
-        rec.exp = (int)Mathf.Min(int.MaxValue, d.experience);
+        rec.exp = d.experience;   // long：300 级累计经验约 8e17，不能再截到 int
         rec.str = d.attributes.str;
         rec.dex = d.attributes.dex;
         rec.int_ = d.attributes.intelligence;
@@ -413,7 +494,7 @@ public static class GameSession
         var previousSkills=Character.skills;
         Character.skills=new List<SkillEntry>();
         foreach (var kv in SkillProgress.AllLearned())
-            Character.skills.Add(new SkillEntry { skillId = kv.Key, skillLevel = kv.Value, masterLevel = previousSkills.Find(s=>s.skillId==kv.Key)?.masterLevel ?? SkillBook.Get(kv.Key)?.masterLevel ?? 0 });
+            Character.skills.Add(new SkillEntry { skillId = kv.Key, skillLevel = kv.Value, masterLevel = previousSkills.Find(s=>s.skillId==kv.Key)?.masterLevel ?? SkillBook.Get(kv.Key)?.masterLevel ?? 0, expiration = previousSkills.Find(s=>s.skillId==kv.Key)?.expiration ?? -1 });
         foreach(var skill in previousSkills)
             if(skill.masterLevel>0 && !Character.skills.Exists(s=>s.skillId==skill.skillId))
                 Character.skills.Add(new SkillEntry {skillId=skill.skillId,skillLevel=0,masterLevel=skill.masterLevel,expiration=skill.expiration});

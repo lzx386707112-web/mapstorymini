@@ -60,3 +60,11 @@ UI 布局确认不能推导出宏组合施放状态机已经还原。技能逐�
 上次仅补通用 `effect` 的修复不足，不能描述为全部技能特效已修复。原 IMG 实读示例：2001004（`Skill/200.img/skill/2001004`）无 `effect`，有 `ball` 直属 Canvas 帧及 `hit/0`、`hit/1`；3001004 同样含 `ball` 和 `hit/0`。非20个已配置 key 的技能仍未进入弹道管线。资源事实不能推出这些技能完整原端发射/命中时序，须结合实际问题技能继续核实。
 
 本轮实际运行 Unity `SkillVfxChecks.RunAssets`：PASS 76 clips / 942 loaded frames and exact pivots（退出码0）。仅证明既有清单素材可加载及轴心正确，未验证上述 ID 施放、屏幕可见性或 Android；不得拿该结果声称用户反馈已修复。待用户提供具体技能与运行平台定位。
+
+## 2026-10-30 用户十项反馈：技能书与滚动条修正
+
+当前实现缺陷：SkillWindow用LegacyCls查询职业，且SkillBook每职业只保存单tab，转职会替换旧技能页。现在UI单独使用TreeForJob，以JobTree原parent链由新手至当前职业组合页签；LineForJob保留既有单职业消费语义，不连带修改洗点/重置。轮回1016学到后加入job0显示页；不把所有隐藏技能无条件列出。
+
+原AssignSPProcessor.java SHA256 e7e131e6cff0813609d1ecec7ddae87ca81f4c5f337e0510871903de9d2f6413，SPAssignAction71..88以skillid%10000000=1000..1002决定新手虚拟SP及不扣常规SP，与角色是否已转职无关；SkillProgress同步此门控，避免新增新手页后消耗职业SP。
+
+IMG实读VScr4/enabled：prev/next15×13，thumb15×25，base15×13；SkillWindow恢复固定25高滑块和13高箭头，去掉按条目比例拉长滑块。窗口滚动条范围仍复用已记录(153,99,15,155)，没有更改原图。编译/家族纯几何检查通过不等于技能窗实际OnGUI/Android已验证。

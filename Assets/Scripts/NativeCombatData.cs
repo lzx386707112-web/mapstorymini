@@ -15,6 +15,9 @@ public static class NativeCombatData
     }
     public static int Int(Dictionary<string, object> d, string key, int fallback = 0)
         => d != null && d.TryGetValue(key, out var v) ? System.Convert.ToInt32(v) : fallback;
+    // maxHP 这类数值要能超过 21 亿，走 long 读取（double 在 2^53 以内仍是精确整数）
+    public static long Long(Dictionary<string, object> d, string key, long fallback = 0)
+        => d != null && d.TryGetValue(key, out var v) ? System.Convert.ToInt64(v) : fallback;
 }
 
 [System.Serializable]

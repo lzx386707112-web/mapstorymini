@@ -68,6 +68,10 @@ public static class AccountsDao
         return (int)t.Insert(row);
     }
 
+    // 本地默认管理员账号；权限属于账号，不能根据角色名判断。
+    public static int DefaultGmLevel(DbStore db, int accountId)
+        => string.Equals(DbStore.Str(FindById(db, accountId), "name"), "admin", StringComparison.Ordinal) ? 6 : 0;
+
     public static int Count(DbStore db) => db.Table("accounts").rows.Count;
 
     public static void UpdateLoginState(DbStore db, int accountId, bool loggedIn)

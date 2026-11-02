@@ -50,7 +50,7 @@ public static class BattleRewards
                 mobs.Add((string)mob["key"], mob);
         }
         if (!mobs.TryGetValue(artKey, out var entry)) return; // 自定义怪物没有原端映射，不能猜奖励。
-        Profile.GrantExperience((int)Art.Num(entry, "exp"));
+        Profile.GrantExperience((long)Art.Num(entry, "exp"));
         var meso = (Dictionary<string, object>)entry["meso"];
         int min = (int)Art.Num(meso, "minimum"), max = (int)Art.Num(meso, "maximum");
         int amount = RewardRules.RollMeso((int)Art.Num(meso, "chance"), min, max,

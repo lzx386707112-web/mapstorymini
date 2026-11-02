@@ -1270,7 +1270,7 @@ public class LoginFlow : MonoBehaviour
                 // 光柱在角色身后循环播放（末帧 delay 3000 → 亮 3 秒再重升）。
                 if (selected) DrawAnimationAt(UI + "CharSelect/effect/1", fx, fy, true, startedAt: selectionStartedAt);
                 DrawAnimationAt(UI + "CharSelect/character/0", x, y, true);
-                DrawCharacter(CharPreview(rec), x, y, 1f);
+                DrawCharacter(CharPreview(rec, selected), x, y, 1f);
                 DrawNameTag(x, y + 2, rec.name, selected);
                 // 星点在角色前面，一次性爆开：末帧 a1 = 0 且 delay 0，播完停在不可见帧。
                 if (selected) DrawAnimationAt(UI + "CharSelect/effect/0", fx, fy, true, loop: false, startedAt: selectionStartedAt);
@@ -1299,7 +1299,9 @@ public class LoginFlow : MonoBehaviour
         DrawAt(UI + "CharSelect/charInfo", sx + 18, sy + 30);
 
         float x = sx + 18, y = sy + 30;
-        Label(R(x + 43, y + 2, 60, 16), JobDefs.NameOf(rec.job), _brown);
+        // 职业名最长的有 6 个全角字（「魔导师（火毒）」），60px 会削掉半个括号；
+        // charInfo 面板 183 宽，放到 100 仍不会压到右侧。
+        Label(R(x + 43, y + 2, 100, 16), JobDefs.NameOf(rec.job), _brown);
         Label(R(x + 43, y + 20, 50, 16), rec.level.ToString(), _brown);
         Label(R(x + 132, y + 20, 40, 16), rec.fame.ToString(), _brown);
         Label(R(x + 43, y + 38, 50, 16), rec.str.ToString(), _brown);
@@ -1309,10 +1311,10 @@ public class LoginFlow : MonoBehaviour
         Label(R(x + 14, y + 101, 183, 16), "排名 " + rec.rank + "    人气 " + rec.fame, _brownC);
     }
 
-    Sprite CharPreview(CharRecord rec)
+    Sprite CharPreview(CharRecord rec, bool selected)
     {
         string[] ids = GameSession.PreviewAppearance(rec);
-        return AnimatedPreview(ids);
+        return AnimatedPreview(ids, selected);
     }
 
     void EnterGame()
@@ -1884,23 +1886,24 @@ public class LoginFlow : MonoBehaviour
 
     // —————————————————— 角色预览 ——————————————————
 
-    Sprite AnimatedPreview(string[] ids)
+    Sprite AnimatedPreview(string[] ids, bool walk = false)
     {
         string appearance = string.Join("_", ids);
         // 选角/建号预览的 stand 动画走客户端统一时钟（源端所有槽位读同一个时间基），
         // 不能拿 pageStartedAt 当起点：翻页、切子页会把角色打回第 0 帧，看上去像卡一下。
-        int frame = WzCharacter.AppearanceFrame(ids, Time.unscaledTime);
-        string key = appearance + "/" + frame;
-        if (!previewSprites.ContainsKey(key)) AddPreview(key, ids, frame);
+        // 选中槽位按源端口径改播走路（原地踏步，不位移），未选中仍是站立。
+        int frame = WzCharacter.AppearanceFrame(ids, Time.unscaledTime, walk);
+        string key = appearance + "/" + (walk ? "walk" : "stand") + "/" + frame;
+        if (!previewSprites.ContainsKey(key)) AddPreview(key, ids, frame, walk);
         return previewSprites.TryGetValue(key, out var sprite) ? sprite : null;
     }
 
-    void AddPreview(string key, string[] ids, int frame)
+    void AddPreview(string key, string[] ids, int frame, bool walk)
     {
         if (previewSprites.ContainsKey(key)) return;
         try
         {
-            var sprite = WzCharacter.Appearance(string.Join("_", ids), ids, frame);
+            var sprite = WzCharacter.Appearance(string.Join("_", ids), ids, frame, walk);
             previewSprites[key] = sprite;
         }
         catch (Exception e)

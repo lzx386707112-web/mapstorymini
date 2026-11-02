@@ -132,6 +132,15 @@ namespace MapleDash.Js
                     arrays.Set("asList", Fn("asList", c => c.ArgCount == 1 && c.Arg(0) is JsArray a ? new JsArray(a.Items) : new JsArray(c.Args)));
                     return arrays;
             }
+            // Java.type("org.gms.net.server.world.PartyCharacter[]")：源脚本把它当
+            // Java.to(array, type) 的目标类型用（CommerciVoyage.getEligibleParty）。移植端
+            // 集合本身就是 JS 数组，转换是恒等操作，这里只给类型名一个占位对象，不能报缺类。
+            if (name.EndsWith("[]", StringComparison.Ordinal))
+            {
+                var arrayType = new JsObject();
+                arrayType.Set("__javaArrayType", new JsString(name));
+                return arrayType;
+            }
             var value = it.ResolveHostType?.Invoke(name);
             if (value != null && !(value is JsNull) && !(value is JsUndefined)) return value;
             throw new JsRuntimeException("Java interop: class not migrated: " + name);

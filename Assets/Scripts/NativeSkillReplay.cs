@@ -43,7 +43,7 @@ public static class NativeSkillReplay
     }
 
     // Java Math.round for nonnegative damage; preserve each captured critical flag.
-    public static DamageResult[] Adapt(IReadOnlyList<DamageResult> source, int count, double fromPercent, double toPercent,int damageCap=CombatRules.InitialDamageCap)
+    public static DamageResult[] Adapt(IReadOnlyList<DamageResult> source, int count, double fromPercent, double toPercent,long damageCap=CombatRules.InitialDamageCap)
     {
         if (source.Count == 0) return Array.Empty<DamageResult>();
         var result = new DamageResult[Math.Max(1, Math.Min(15, count))];
@@ -51,7 +51,7 @@ public static class NativeSkillReplay
         {
             var value = source[i % source.Count];
             double scaled = fromPercent > 0 ? Math.Floor(value.Amount * toPercent / fromPercent + .5) : value.Amount;
-            result[i] = new DamageResult((int)Math.Max(0, Math.Min(damageCap, scaled)), value.Critical);
+            result[i] = new DamageResult((long)Math.Max(0, Math.Min(damageCap, scaled)), value.Critical);
         }
         return result;
     }
@@ -157,7 +157,7 @@ public partial class SkillSystem
                 return delta.x>=-140/Art.PPU && delta.x<140/Art.PPU && delta.y>-140/Art.PPU && delta.y<=140/Art.PPU;
             }
             if (unbounded && !fistFinish && !bounds.HasBounds) return true;
-            if (!fistFinish) return InRange(t.transform.position, bounds, origin, facing);
+            if (!fistFinish) return InRange(t, bounds, origin, facing);
             var d = (Vector2)t.transform.position - origin;
             return d.x >= -1000 / Art.PPU && d.x < 1000 / Art.PPU && d.y > -200 / Art.PPU && d.y <= 450 / Art.PPU;
         }

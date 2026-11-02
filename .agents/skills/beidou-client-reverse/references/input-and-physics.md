@@ -54,6 +54,36 @@ Unity `NativeCombinationChecks.Run` 已通过攻速2/6/10的逐帧时长、90ms�
 - 已接：`FieldFoothold.forbidFallDown` → `Art.Stage.ForbidFallDown`（与 `Footholds` 同序）→ `PlayerCtrl.SetTerrain(t, forbidFallDown)` → `BeginDownJump` 命中该段时拒绝下跳。
 - 回归：`NativeCombinationChecks.CheckDownJump` 覆盖「穿得下去 / 落得到下一层 / 下方无落点时不把人送进虚空 / 不按↓仍是普通跳 / forbidFallDown 段不许穿」。
 
+## 高处跌落与跌落伤害（2026-11-01）
+
+二进制身份同本文 EXE SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`；源端服务端 `~/Documents/mxd/Beidou-Server`。
+
+### 源端口径（已核实）
+
+- **客户端 exe 里没有跌落伤害**：整个 `BeiDou.exe` 搜不到 `890.0f` / `0.013f` / `0.0024f` 这几个常量，也没有对应的伤害分支；玩家 HP 由服务端裁决，客户端只按 `damagePlayer` 包显示。所以「玩家从高处掉下来掉血」在源端不是客户端行为。
+- 跌落伤害只存在于源端假人物理端口 `soloMapling/ArtificialPlayer/GCMoveSystem/`：
+  - `BotContactDamage`：`FALL_DIST_THRESHOLD_PX=890`、`FALL_DMG_SAT=28`、`FALL_KNEE_SHARPNESS=0.013f`、`FALL_DMG_PER_PX_TAIL=0.0024f`；
+    `fallDamageFromDistance()`：`u=dist-890; dmg=28*(1-e^(-0.013u))+0.0024u`，`Math.round`，最少 1；不到 890 返回 0。
+  - `BotPhysicsEngine.landOnGround()`：`fallDistance = 落点 y - fallPeakPhysY`（地图坐标 y 向下为正，所以**起跳的上升段也计入总落差**）；空中一路记录 `physY < fallPeakPhysY` 的最高点；落地后 `applyFallDamage`，并把 `fallPeakPhysY` 重置。
+  - 门槛：`GCMovement.isMapObserved(mapId)` 才结算；`mobHitCooldownMs > 0`（2500ms 受击冷却）跳过；伤害用 `PacketCreator.damagePlayer(damageFrom=-3, …, direction 0, airVelX=-facing*1.5*TICK_MS/8)` 广播。
+  - `TakeDamageHandler`：`damagefrom=-3/-4` 分支跳过 Achilles 与 HighDefense（MAGIC_GUARD / MESO_GUARD 仍生效）。
+- 参考值（float 常量宽化成 double：`(double)0.013f=0.013000000268220901`、`(double)0.0024f=0.002400000113993883`）：
+  890→0、890.5→1、900→3、950→15、1000→22、1100→27、1200→28、1500→29、2000→31、3000→33、5000→38。
+
+### 迁移（本工程决定，非源端既有分支）
+
+- 新增 `Assets/Scripts/FallDamage.cs`（纯 C#）：公式逐字照搬源端 + Java `Math.round` 口径。
+- `PlayerCtrl` 离地期间记录 `fallPeakY`（最高点）与 `fallStartY`（离地时脚底高度）；落到 foothold 时按 `(fallPeakY-落点)*PPU` 结算，`>890px` 才扣血。抓绳梯、梯顶出口、`PlaceAt`、`ResetTerrain`、掉出地图复位都会清 tracking。
+- `PlayerCtrl.TakeFallDamage` 按 `damageFrom=-3` 口径单独走：不掷物理回避、不吃 Achilles/高防、**不施加 270px/s 接触冲量**（源端落地只扣血+飘字；套普通受击会把角色弹离地），只扣血、飘字、受击脸，并沿用本工程 1500ms 受击免疫。
+- **掉出地图复位不再「取最近地面」**：旧 `RecoverFromFall` 用 `NearestGround`（只看水平距离），在魔法密林左边缘能把角色往上吸 1550px，表现为用户反馈的「掉落会回原地」。现改为 `GroundBelow(x, 离地高度)`：要求落点严格低于离地点，水平最近优先、同距取更低。
+- 假人侧的 `BotMovementService.ApplyFallDamage` 钩子仍未接（本工程假人没有 HP，不在本次范围）。
+
+### 验证
+
+- `FallChecks.Run`（Unity batchmode）：公式 16 组参考值 + 单调性；30/60/120Hz 合成地形 1200px→28 点 / 400px→0 / 900px→3 且落地后不被弹起；掉出地图复位必须向下；原图 101000000/101010000/101020000/100040000/100050000 逐个真边缘走空掉落。
+- 实测（2026-11-01，隔离 Unity 副本，退出码 0）：原图真边缘 466 处，最大落差 5575px，扣血 41 次，真空复位 8 次，**最大回弹 0px**（修复前同一地图组最大回弹 1550px）。
+- 边界：`isMapObserved`、2500ms 受击冷却、假人 `airVelX` 冲量未迁移；未做 Android 实机手感验收。
+
 ## 系统菜单（Esc）与面板
 
 - 原端 Esc 只对应系统菜单动作，关窗口靠各窗口的 X，没有「Esc 逐层关窗」的行为。

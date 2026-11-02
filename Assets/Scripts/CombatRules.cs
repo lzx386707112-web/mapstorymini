@@ -2,23 +2,28 @@ using System;
 
 public readonly struct DamageResult
 {
-    public readonly int Amount;
+    // 单段伤害是 long：源端 DamageCapService 的个人上限之外，本工程允许突破 21 亿，
+    // int 会把飘字/累计伤害静默截断在 2,147,483,647。
+    public readonly long Amount;
     public readonly bool Critical;
-    public DamageResult(int amount, bool critical) { Amount = amount; Critical = critical; }
+    public DamageResult(long amount, bool critical) { Amount = amount; Critical = critical; }
 }
 
 // 接受本地攻击方已计算的伤害；不在受击方重新抽暴击。
 // 原端 DamageCapService 的初始个人上限；成长突破尚未接入。
 public static class CombatRules
 {
-    public const int InitialDamageCap = 19999999;
+    public const long InitialDamageCap = DamageCap.Initial;
 
     public static DamageResult Resolve(double rolledDamage, bool critical = false,
-                                       int damageCap = InitialDamageCap)
+                                       long damageCap = InitialDamageCap)
     {
         if (double.IsNaN(rolledDamage) || rolledDamage <= 0) return new DamageResult(0, false);
-        var cap = Math.Max(InitialDamageCap, damageCap);
-        return new DamageResult((int)Math.Min(cap, Math.Floor(rolledDamage)), critical);
+        long cap = Math.Max(InitialDamageCap, damageCap);
+        double rolled = Math.Floor(rolledDamage);
+        // double 能精确表示的整数上限是 2^53；超过时直接按 long 上限截断（不会再被 21 亿卡住）
+        if (rolled >= cap) return new DamageResult(cap, critical);
+        return new DamageResult((long)rolled, critical);
     }
 
     // Character.calculateMaxBaseDamage；实际攻击随机分布不由此方法推定。
@@ -34,7 +39,7 @@ public static class CombatRules
     // 原服务端只收客户端结果；下列随机/防御系数尚不能据服务端证明为当前 EXE 常量。
     public static DamageResult Attack(CharacterAttributes a, WeaponDef w, int watk, int matk,
         System.Collections.Generic.Dictionary<string, object> target, NativeSkillDefinition skill,
-        double roll, double critRoll, double hitRoll,int damageCap=InitialDamageCap)
+        double roll, double critRoll, double hitRoll,long damageCap=InitialDamageCap)
     {
         bool magic = skill != null && skill.Magic;
         int diff = Math.Max(0, NativeCombatData.Int(target,"level",1) - a.level);
@@ -61,7 +66,7 @@ public static class CombatRules
         // ≡ MapleMap 收到攻击后 SetItemManager.applyDamage：套装 Damage%/Boss|NormalDamage%/FinalDamage%
         if (damage > 0 && a.setItemBonus != null)
             damage = AdminSetItem.ApplyDamage(a.setItemBonus, NativeCombatData.Int(target,"boss",0) != 0,
-                (int)Math.Min(int.MaxValue, Math.Ceiling(damage)));
+                (long)Math.Ceiling(damage));
         return Resolve(damage,critical,damageCap);
     }
 
@@ -76,6 +81,18 @@ public static class CombatRules
         return 1;
     }
 
+    // BeiDou 79286E; roll is the native uint remainder modulo 10,000,000.
+    public static bool PhysicalMiss(int totalAvoid,int accuracy,int level,int mobLevel,int job,int roll)
+    {
+        int avoid=Math.Max(0,Math.Min(999,totalAvoid)-Math.Max(0,mobLevel-level)/2);
+        accuracy=Math.Max(0,Math.Min(999,accuracy));
+        double chance=avoid/(accuracy*4.5)*100;
+        if(double.IsNaN(chance))return false;
+        bool thief=job%1000/100==4;
+        chance=Math.Max(thief ? 5 : 2,Math.Min(thief ? 95 : 80,chance));
+        return chance>(roll%10000000)*(100.0/9999999);
+    }
+
     public static DamageResult Incoming(double attack, CharacterAttributes a, bool magic, int attackerLevel, double roll,int invincible=0)
     {
         if (double.IsNaN(attack) || attack <= 0) return new DamageResult(0,false);
@@ -83,7 +100,7 @@ public static class CombatRules
         double value = attack * System.Math.Max(0,1-.01*System.Math.Max(0,a.level-attackerLevel)) * (.85 + .3 * Math.Max(0,Math.Min(1,roll))) - defense * (magic ? .6 : .5);
         // 0x7933B2..0x7933E6: physical damage, after defense, before minimum/integer conversion.
         if (!magic) value=InvincibleDamage(value,invincible);
-        return Resolve(Math.Max(1,value),false,int.MaxValue);
+        return Resolve(Math.Max(1,value),false,long.MaxValue);
     }
 
     public static double InvincibleDamage(double damage,int percent)

@@ -4,7 +4,9 @@ using UnityEngine;
 
 public sealed class SkillDef
 {
-    public readonly string name, icon, art, hint, vfx, action;
+    public readonly string name, icon, art, hint, action;
+    string visualKey;
+    public string vfx => visualKey ?? (visualKey = NativeSkillVfx.Key(native.Id, native.Level, art));
     public readonly NativeSkillDefinition native;
     public float cd => native.Cooldown;
     public SkillDef(ClassSkill presentation, NativeSkillDefinition definition)
@@ -13,7 +15,6 @@ public sealed class SkillDef
         icon = string.IsNullOrEmpty(presentation.icon) ? art : presentation.icon;
         native = definition;
         action = native.Id + "@" + native.Level;
-        vfx = NativeSkillVfx.Key(native.Id, native.Level, art);
         hint = "Lv." + native.Level;
     }
 }
@@ -133,6 +134,9 @@ public partial class SkillSystem : MonoBehaviour
         if (s.native == null) return Reject("技能等级数据缺失");
         if (s.native.Kind == "Passive" && !InstantSelfSkill(s.native.Id)) return Reject("被动技能无需施放");
         if (s.native.Kind=="FlashJump" && !p.CanUseFlashJump(s.native.Id)) return Reject("当前无法使用二段跳");
+        Vector2 teleportDestination = default;
+        if (s.native.Kind=="Teleport" && !p.TeleportDestination(s.native,out teleportDestination))
+            return Reject("当前方向没有可瞬移的落脚点");
         bool frenzy=s.native.Id==4121023&&fourSeasonsFrenzy;
         if (!frenzy && State(s.native.Id).Remaining(Time.realtimeSinceStartupAsDouble) > 0) return Reject("技能冷却中");
         // 原端 TryUseSkill：MP 不够直接拒绝，扣蓝在施法成功之后。
@@ -182,12 +186,14 @@ public partial class SkillSystem : MonoBehaviour
         if (ranged && !NativeProjectiles.Spend(projectile)) return Reject("弹药扣除失败");
         if (!frenzy && !State(s.native.Id).TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
         p.TrySpendMp(mpCost);
+        float previousHp=p.hp;
         p.hp -= s.native.HpCost;
+        NativePetAutopot.OnLoss(p,previousHp,p.mp);
         if (s.native.Id==4111004)
         {
             int money=Art.Int(costRow,"moneyCon");
             if (money>0)
-                Profile.Spend(Mathf.Min(Profile.gold,money+Random.Range(0,money/2)));
+                Profile.Spend(System.Math.Min(Profile.gold,(long)money+Random.Range(0,money/2)));
         }
         if (continuousShot)
         {
@@ -198,10 +204,21 @@ public partial class SkillSystem : MonoBehaviour
         ApplyInstantSelf(s.native);
         NativeSkillVideo.PlaySkill(s.native.Id, p);
 
+        if (s.native.Kind=="Teleport")
+        {
+            NativeImgAnimation.Spawn("Effect/BasicEff.img/Teleport",null,p.FeetPos,p.SortingOrder+1,p.facing>0);
+            p.PlaceAt(teleportDestination.x,teleportDestination.y);
+            actionUntil=Time.unscaledTime+.12f; // 9580A8: native teleport deadline +120ms.
+            AudioManager.Play("Skill/"+s.native.Id+"/Use",0.9f);
+            return true;
+        }
+
         if (s.native.Kind=="FlashJump")
         {
             p.ApplyFlashJump(s.native.Level,s.native.Id);
             BeginVisuals(s);
+            foreach (var clip in NativeSkillVfx.Parts(s.vfx,"movement"))
+                Visual(s.vfx,clip.path,p.FeetPos,p.facing);
             AudioManager.Play("Skill/"+s.native.Id+"/Use",0.9f);
             return true;
         }
@@ -212,7 +229,8 @@ public partial class SkillSystem : MonoBehaviour
         {
             p.PlaySkill(preparation > 0 ? s.action + "_prepare" : s.action, preparation);
             // 无冷却技能仍受角色动作时长限制，不允许一帧多次施法。
-            actionUntil = Time.unscaledTime + Mathf.Max(p.SkillActionDuration, preparation + p.GetSkillActionDuration(s.action));
+            actionUntil = Time.unscaledTime + (NativeWarriorMelee(s.native.Id) ? p.SkillActionDuration :
+                Mathf.Max(p.SkillActionDuration, preparation + p.GetSkillActionDuration(s.action)));
             BeginVisuals(s);
         }
         else
@@ -283,6 +301,20 @@ public partial class SkillSystem : MonoBehaviour
     // 特效由原资源目录驱动；判定仍保留原端剑影子技能时间轴。
     IEnumerator Cast(SkillDef s,Vector2 origin,int facing)
     {
+        if (NativeWarriorMelee(s.native.Id))
+        {
+            // Original close attack captures targets before scheduling each mob's
+            // hit, so walking out of the rectangle during windup cannot retarget it.
+            var targets = SelectTargets(s, s.native, origin, facing, null, null);
+            int count = Mathf.Min(s.native.TargetCount, targets.Count);
+            for (int i = 0; i < count; i++)
+            {
+                int distance = Mathf.RoundToInt(Mathf.Abs(targets[i].transform.position.x - origin.x) * Art.PPU);
+                int impactDelay = p.MeleeSkillImpactMs + (int)System.Math.Round(distance * 1.5);
+                StartCoroutine(MeleeTarget(s, targets[i], origin, facing, impactDelay / 1000f));
+            }
+            yield break;
+        }
         float preparation = Preparation(s);
         if (preparation > 0) yield return new WaitForSeconds(preparation);
         if (s.native.Kind == "Buff" || s.native.Kind == "Summon") yield break;
@@ -296,6 +328,13 @@ public partial class SkillSystem : MonoBehaviour
             (SkillFxPlan.Get(s.art)?.impact ?? 0);
         if (delay > 0) yield return new WaitForSeconds(delay);
         HitAt(s,s.native,origin,facing);
+    }
+
+    static bool NativeWarriorMelee(int id) => id == 1001004 || id == 1001005;
+    IEnumerator MeleeTarget(SkillDef skill, Component target, Vector2 origin, int facing, float delay)
+    {
+        if (delay > 0) yield return new WaitForSeconds(delay);
+        if (target != null) HitAt(skill, skill.native, origin, facing, null, target);
     }
 
     IEnumerator Rush(SkillDef s)
@@ -336,12 +375,9 @@ public partial class SkillSystem : MonoBehaviour
         return attack.Overlaps(enemy.SelectionBounds.Value);
     }
 
-    internal int HitAt(SkillDef s, NativeSkillDefinition d, Vector2 origin, int facing,
-                       HashSet<int> struck = null, Component onlyTarget = null)
+    List<Component> SelectTargets(SkillDef s, NativeSkillDefinition d, Vector2 origin, int facing,
+        HashSet<int> struck, Component onlyTarget)
     {
-        if (d == null || p == null || p.hp <= 0 || GameLoop.I == null || GameLoop.I.gameOver ||
-            GameLoop.I.state != GameLoop.GameState.Playing) return 0;
-        if (p.GetComponent<NativeMobDebuffs>()?.BlocksSkill == true) return 0;
         var targets = new List<Component>();
         foreach (var b in FindObjectsOfType<BossUnit>()) if (!b.dead && (onlyTarget == b || (onlyTarget == null && InRange(b, d, origin, facing)))) targets.Add(b);
         foreach (var e in EnemyUnit.All) if (!e.dead && (onlyTarget == e || (onlyTarget == null && InRange(e, d, origin, facing)))) targets.Add(e);
@@ -351,6 +387,20 @@ public partial class SkillSystem : MonoBehaviour
             return (a.transform.position - (Vector3)origin).sqrMagnitude.CompareTo((b.transform.position - (Vector3)origin).sqrMagnitude);
         });
         targets.RemoveAll(t => struck != null && struck.Contains(t.GetInstanceID()));
+        return targets;
+    }
+
+    internal int HitAt(SkillDef s, NativeSkillDefinition d, Vector2 origin, int facing,
+                       HashSet<int> struck = null, Component onlyTarget = null)
+    {
+        if (d == null || p == null || p.hp <= 0 || GameLoop.I == null || GameLoop.I.gameOver ||
+            GameLoop.I.state != GameLoop.GameState.Playing) return 0;
+        if (p.GetComponent<NativeMobDebuffs>()?.BlocksSkill == true) return 0;
+        using var profileSaves=Profile.DeferSaves();
+        using var databaseSaves=GameServer.Local?.Db.DeferSaves();
+        var targets = SelectTargets(s, d, origin, facing, struck, onlyTarget);
+        // 起源之塔第 14 层只允许普通攻击：技能包同样要走 handleAttack 才会回「本层只能使用普通攻击」。
+        if (SeedTowerCompat.HandleAttack(d.Id, targets.Count > 0 ? targets[0] as EnemyUnit : null)) return 0;
         int count = d.Kind == "Summon" ? NativeSummon.AttackInfo(d)?.Int("mobCount", 1) ?? 1 : d.TargetCount;
         if (struck != null) count = Mathf.Max(0,count-struck.Count);
         int hits = Mathf.Min(count, targets.Count);
@@ -397,7 +447,7 @@ public partial class SkillSystem : MonoBehaviour
             // cannot discard later lines; each line keeps its own index and Miss.
             if (e != null)
             {
-                totalDamage=System.Math.Min(int.MaxValue,totalDamage+e.TakeReplayHit(rawHits.ToArray(), direction, d.Magic, false, 120, false, d.Id));
+                totalDamage+=e.TakeReplayHit(rawHits.ToArray(), direction, d.Magic, false, 120, false, d.Id);
                 int heal=DrainRecovery(d.Id,totalDamage,e.NativeController?.MaximumHp ?? (long)e.hpMax,(int)p.hpMax,
                     Art.Int(SkillBook.Get(d.Id)?.Level(d.Level),"x"));
                 // AbstractDealDamageHandler uses addHP, independent of ZOMBIFY/heal skill modifiers.

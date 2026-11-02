@@ -25,6 +25,7 @@ public static class NativeCharacterMenu
         var pointer = Pointer.Pos / scale;
         int rows = party ? 6 : 5;
         var rect = new Rect(position.x, position.y,100,(rows + 2) * 15);
+        NativeUi.RegisterWindow("NativeCharacterMenu", new Rect(rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale), () => Visible);
         var matrix = GUI.matrix; bool enabled = GUI.enabled;
         GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(scale,scale,1));
         try
@@ -48,7 +49,7 @@ public static class NativeCharacterMenu
                 GUI.enabled = enabled && active && !NativeUtilPrompt.Visible;
                 return NativeUi.Button(new Rect(position.x+9,position.y+y,85,15),"UI/UIWindow.img/ContextMenu/"+name,pointer);
             }
-            Button("BtInfo",24,false);
+            if (Button("BtInfo",24)) { NativeCharacterInfo.Open(target); Close(); return; }
             if (Button("BtSave",39)) { NativeSocialWindow.Request(SocialOperation.AddBuddy,target.name); Close(); return; }
             if (Button("BtTrade",54)) { NativeTradeWindow.Invite(target.id); Close(); return; }
             if (Button("BtWhisper",69)) { BottomBar.FocusChat(NativeChatChannel.Whisper,target.name); Close(); return; }

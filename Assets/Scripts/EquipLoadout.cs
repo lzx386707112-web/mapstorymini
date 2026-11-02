@@ -33,7 +33,8 @@ public static class EquipSlot
 
     // Paper-doll layers and stat-bearing equipped slots have different consumers.
     public static readonly int[] Appearance = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon };
-    public static readonly int[] Worn = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon, Medal, FaceAccessory, EyeAccessory, Earring, -12, -13, -15, -16, -17, -50, -20, -55, -56, -54, -53, -51 };
+    public static readonly int[] Worn = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon, Medal, FaceAccessory, EyeAccessory, Earring, -12, -13, -15, -16, -17, -18, -19, -50, -20, -55, -56, -54, -53, -51,
+        -101, -102, -103, -104, -105, -106, -107, -108, -109, -110, -111, -112, -113, -115, -116, -117, -118, -119, -120, -149, -150, -151, -153, -154, -155, -156 };
 
     public static string NameOf(int slot)
     {
@@ -165,10 +166,20 @@ public static class EquipLoadout
     /// <summary>穿上一件（槽位由物品 id 决定）。返回 null 表示成功，否则是原因。</summary>
     public static string Equip(int itemId, CharacterAttributes attrs, int inventoryPosition = 0)
     {
+        if(NativePetItems.IsEquipment(itemId))
+        {
+            if(!GameSession.InGame) return "请先进入游戏";
+            int index=EquipWindow.SelectedPet;
+            var pet=GameSession.Net.ChangeInventory(new InventoryChangeRequest {characterId=GameSession.CharacterId,getPet=true,petSlot=index}).pet;
+            if(pet==null || !NativePetItems.EquipmentFits(itemId,pet.itemId)) return "请先召唤并选择可以穿戴此装备的宠物";
+            int target=NativePetItems.EquipmentSlot(itemId,index);
+            if(target==0) return "此宠物装备的槽位尚未核实";
+            return MoveEquipment(itemId,target,false,inventoryPosition,index);
+        }
         int slot = EquipSlot.SlotOf(itemId);
         if (slot == 0) return "这不是可装备的物品";
-        if (slot == -12)
-            foreach (int ringSlot in new[] { -12, -13, -15, -16 })
+        if (slot == -12 || slot == -112)
+            foreach (int ringSlot in slot == -112 ? new[] { -112, -113, -115, -116 } : new[] { -12, -13, -15, -16 })
                 if (Profile.EquipOfSlot(ringSlot) == 0) { slot = ringSlot; break; }
         if (slot == EquipSlot.Weapon)
         {
@@ -184,11 +195,11 @@ public static class EquipLoadout
         return MoveEquipment(itemId, slot, false, inventoryPosition);
     }
 
-    static string MoveEquipment(int itemId, int slot, bool unequip, int inventoryPosition = 0)
+    static string MoveEquipment(int itemId, int slot, bool unequip, int inventoryPosition = 0, int petSlot = 0)
     {
         if (!GameSession.InGame) return "请先进入游戏";
         var response = GameSession.Net.ChangeInventory(new InventoryChangeRequest {
-            characterId = GameSession.CharacterId, itemId = itemId, equipSlot = slot, sourcePosition = inventoryPosition, equip = true, quantity = unequip ? 0 : 1 });
+            characterId = GameSession.CharacterId, itemId = itemId, equipSlot = slot, sourcePosition = inventoryPosition, petSlot=petSlot, equip = true, quantity = unequip ? 0 : 1 });
         if (!response.ok) return response.error;
         GameSession.Character.inventory = response.inventory;
         GameSession.ApplyInventoryToProfile();

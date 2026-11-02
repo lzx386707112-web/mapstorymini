@@ -124,6 +124,7 @@ public static class CharFactory
         var rec = new CharRecord
         {
             accountid = accountId,
+            gm = AccountsDao.DefaultGmLevel(db, accountId),
             world = world,
             name = name,
             level = 1,

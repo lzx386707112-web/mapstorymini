@@ -1,0 +1,102 @@
+111
+1
+mode=--run files=889 ok=790 parseFail=0 runFail=27 javaInterop=72 dialogs=1218 disposed=746
+  RUN   1002003.js :: TypeError: getCapacity is not a function (undefined)
+  JAVA  1012100.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  JAVA  1022000.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  JAVA  1032001.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  JAVA  1032001_nextLevel.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  JAVA  1052001.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  RUN   1061009.js :: TypeError: getId is not a function (undefined)
+  JAVA  1061014.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  JAVA  1063000.js :: Java interop: class not migrated: org.gms.client.inventory.InventoryType
+  JAVA  1063001.js :: Java interop: class not migrated: org.gms.client.inventory.InventoryType
+  JAVA  1063002.js :: Java interop: class not migrated: org.gms.client.inventory.InventoryType
+  RUN   1063017.js :: TypeError: getMap is not a function (undefined)
+  JAVA  1090000.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  JAVA  11000.js :: Java interop: class not migrated: org.gms.server.ShopFactory
+  JAVA  1101001.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  JAVA  1102003.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  RUN   1104200.js :: TypeError: countPlayers is not a function (undefined)
+  JAVA  1202010.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  JAVA  2006.js :: Java interop: class not migrated: org.gms.server.ItemInformationProvider
+  JAVA  2010007.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  2010008.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  2012027.js :: Java interop: class not migrated: org.gms.util.PacketCreator
+  JAVA  2012028.js :: Java interop: class not migrated: org.gms.util.PacketCreator
+  JAVA  2012029.js :: Java interop: class not migrated: org.gms.util.PacketCreator
+  JAVA  2012030.js :: Java interop: class not migrated: org.gms.util.PacketCreator
+  JAVA  2012031.js :: Java interop: class not migrated: org.gms.util.PacketCreator
+  JAVA  2012032.js :: Java interop: class not migrated: org.gms.util.PacketCreator
+  JAVA  2012033.js :: Java interop: class not migrated: org.gms.util.PacketCreator
+  JAVA  2030013.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  RUN   2040046.js :: TypeError: getCapacity is not a function (undefined)
+  JAVA  2042000.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  2042001.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  2042002.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  2081005.js :: Java interop: class not migrated: org.gms.client.BuffStat
+  JAVA  2082014.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  2083000.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  2083004.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  JAVA  2091005.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  2091005_old.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  RUN   2091009.js :: TypeError: countPlayers is not a function (undefined)
+  JAVA  2101014.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  RUN   2101015.js :: TypeError: getAriantRewardTier is not a function (undefined)
+  RUN   2101016.js :: TypeError: getAriantScore is not a function (undefined)
+  JAVA  2101017.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  JAVA  2112000.js :: Java interop: class not migrated: org.gms.server.life.LifeFactory
+  JAVA  2112010.js :: Java interop: class not migrated: org.gms.server.life.LifeFactory
+  JAVA  2141001.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  JAVA  2143003.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  JAVA  2143004.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  RUN   9000012.js :: TypeError: addLimit is not a function (undefined)
+  JAVA  9000017.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  RUN   9000018.js :: TypeError: replace is not a function (undefined)
+  JAVA  9000019.js :: Java interop: class not migrated: org.gms.client.inventory.InventoryType
+  JAVA  9000036.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  9000040.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  9000040_1.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  9000055.js :: Java interop: class not migrated: org.gms.server.life.LifeFactory
+  RUN   9001000.js :: TypeError: getCustomData is not a function (undefined)
+  JAVA  9020002.js :: Java interop: class not migrated: org.gms.constants.game.ExpTable
+  RUN   9040006.js :: TypeError: getState is not a function (undefined)
+  JAVA  9071000.js :: Java interop: class not migrated: org.gms.util.ExtendUtil
+  JAVA  9120201.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  JAVA  9130000.js :: Java interop: class not migrated: org.gms.server.quest.Quest
+  JAVA  9201002.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  9201011.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  9201101.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  JAVA  9201113.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  RUN   9201123.js :: TypeError: getId is not a function (undefined)
+  RUN   9201124.js :: TypeError: getId is not a function (undefined)
+  RUN   9201125.js :: TypeError: getId is not a function (undefined)
+  RUN   9201126.js :: TypeError: getId is not a function (undefined)
+  RUN   9201127.js :: TypeError: getId is not a function (undefined)
+  RUN   9209000.js :: TypeError: getId is not a function (undefined)
+  RUN   9209100.js :: TypeError: getPosition is not a function (undefined)
+  RUN   9220004.js :: TypeError: size is not a function (undefined)
+  JAVA  9270047.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  JAVA  9310005.js :: Java interop: class not migrated: org.gms.server.quest.Quest
+  JAVA  9330045.js :: Java interop: class not migrated: org.gms.util.packets.Fishing
+  JAVA  9900001.js :: Java interop: class not migrated: org.gms.client.SkillFactory
+  JAVA  9900002.js :: Java interop: class not migrated: org.gms.server.life.LifeFactory
+  RUN   9900008.js :: TypeError: getId is not a function (undefined)
+  JAVA  9977777.js :: Java interop: class not migrated: org.gms.util.PacketCreator
+  JAVA  MagatiaPassword.js :: Java interop: class not migrated: org.gms.util.PacketCreator
+  JAVA  akayrumbattle.js :: Java interop: class not migrated: org.gms.server.expeditions.ExpeditionType
+  JAVA  commands.js :: Java interop: class not migrated: org.gms.client.command.CommandsExecutor
+  RUN   cpqchallenge.js :: TypeError: size is not a function (undefined)
+  RUN   cpqchallenge2.js :: TypeError: size is not a function (undefined)
+  JAVA  gachaponInfo.js :: Java interop: class not migrated: org.gms.server.gachapon.Gachapon
+  JAVA  mPark_in00.js :: Java interop: class not migrated: org.gms.util.ExtendUtil
+  JAVA  mPark_in01.js :: Java interop: class not migrated: org.gms.util.ExtendUtil
+  JAVA  mPark_in02.js :: Java interop: class not migrated: org.gms.util.ExtendUtil
+  JAVA  mPark_welcome.js :: Java interop: class not migrated: org.gms.util.ExtendUtil
+  JAVA  mapleTV.js :: Java interop: class not migrated: org.gms.config.GameConfig
+  RUN   out272000410.js :: TypeError: size is not a function (undefined)
+  RUN   out272000410b.js :: TypeError: size is not a function (undefined)
+  RUN   outAkayrum.js :: TypeError: size is not a function (undefined)
+  JAVA  rank_user.js :: Java interop: class not migrated: org.gms.constants.game.GameConstants
+  RUN   waterOfLife.js :: TypeError: size is not a function (undefined)
+  JAVA  坐骑领取.js :: Java interop: class not migrated: org.gms.client.inventory.InventoryType

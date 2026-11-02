@@ -17,7 +17,7 @@ public static class TemporaryStatView
         {
             var effect=effects[i];
             var rect=Slot(i,effects.Count,UiKit.W);
-            var skill=SkillBook.Get(effect.Id);
+            var skill=effect.Id>0 ? SkillBook.Get(effect.Id) : null;
             if (skill==null && effect.Id>0) continue;
             var previous=GUI.color;
             int remaining=effect.RemainingMs(NativeBuffs.Now);

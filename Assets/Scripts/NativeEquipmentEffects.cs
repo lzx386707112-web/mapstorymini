@@ -35,12 +35,12 @@ public sealed class NativeEquipmentEffects : MonoBehaviour
         { character=GameSession.CharacterId; pendant=current; equippedAt=now; notified=0; }
         return pendant==0 ? 0 : Math.Min(3,(int)((now-equippedAt)/3600));
     }
-    public static int PendantBonus(int gain)
+    public static long PendantBonus(long gain)
     {
         var player=GameLoop.I?.player;
         if(player==null || gain<=0) return 0;
         var effects=player.GetComponent<NativeEquipmentEffects>();
-        return effects==null ? 0 : (int)Math.Min(int.MaxValue,(long)(gain/10)*effects.PendantStage(NativeBuffs.Now));
+        return effects==null ? 0 : (gain/10)*effects.PendantStage(NativeBuffs.Now);
     }
     public static void EquipmentChanged()
         => GameLoop.I?.player?.GetComponent<NativeEquipmentEffects>()?.PendantStage(NativeBuffs.Now);
@@ -59,7 +59,7 @@ public sealed class NativeEquipmentEffects : MonoBehaviour
                 break;
             }
         var pets=GameSession.Net.ChangeInventory(new InventoryChangeRequest {characterId=GameSession.CharacterId,itemId=5000000,petTick=true});
-        if(pets.ok)
+        if(pets.ok && pets.inventoryChanged)
         {
             GameSession.Character.inventory=pets.inventory;GameSession.ApplyInventoryToProfile();
             if(!string.IsNullOrEmpty(pets.message)) NativeSystemMessage.Drop(6,pets.message);

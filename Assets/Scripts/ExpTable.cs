@@ -1,13 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 升级所需经验：直接读 tools/wz_exp.py 从原服务端 ExpTable.java 导出的表。
-// 原端 getExpNeededForLevel(level) = exp[Math.min(level, exp.length - 1)]，
-// 也就是超过表尾的等级一律取最后一项，这里保持同样的 clamp。
+// 升级所需经验：读 Field/ExpTable.json（源端 ExpTable.java 的 0..199 级真实值），
+// 200 级以上的扩展与 300 级上限由 ExpCurve 现算（见 ExpCurve.cs）。
+//
+// 宽整数：源端表尾 2,100,000,000 被 int 削平；本工程 200 级起每级 +20%，
+// 300 级需求已是 1e17 量级，整条链路（表 / 存档 / DB / 经验条）一律用 long。
 public static class ExpTable
 {
-    static int[] exp;
-    static int maxLevel = 255;
+    static long[] exp;
+    static int maxLevel = ExpCurve.CapLevel;
     public static bool Ready { get; private set; }
 
     public static int MaxLevel { get { Ensure(); return maxLevel; } }
@@ -21,8 +23,8 @@ public static class ExpTable
         var asset = Resources.Load<TextAsset>("Field/ExpTable");
         if (asset == null)
         {
-            Debug.LogError("[Exp] 缺少 Resources/Field/ExpTable.json（运行 tools/wz_exp.py）");
-            exp = new[] { 0, 15, 34 };
+            Debug.LogError("[Exp] 缺少 Resources/Field/ExpTable.json");
+            exp = ExpCurve.Build(new long[] { 0, 15, 34 });
             return;
         }
 
@@ -30,29 +32,30 @@ public static class ExpTable
         if (root == null)
         {
             Debug.LogError("[Exp] ExpTable.json 解析失败");
-            exp = new[] { 0, 15, 34 };
+            exp = ExpCurve.Build(new long[] { 0, 15, 34 });
             return;
         }
 
-        maxLevel = Mathf.Max(1, (int)Art.Num(root, "maxLevel", 255));
+        maxLevel = Mathf.Clamp((int)Art.Num(root, "maxLevel", ExpCurve.CapLevel), 1, ExpCurve.CapLevel);
         var list = root.ContainsKey("exp") ? root["exp"] as List<object> : null;
         if (list == null || list.Count == 0)
         {
             Debug.LogError("[Exp] ExpTable.json 没有 exp 数组");
-            exp = new[] { 0, 15, 34 };
+            exp = ExpCurve.Build(new long[] { 0, 15, 34 });
             return;
         }
 
-        exp = new int[list.Count];
+        // 源端值都 < 2.1e9，double 能精确表示；200 级以上的大数由 ExpCurve 在 long 里算，
+        // 不经过 JSON 的 double 通道（否则 1e17 会被截掉低位）。
+        var source = new long[list.Count];
         for (int i = 0; i < list.Count; i++)
-            exp[i] = System.Convert.ToInt32(list[i], System.Globalization.CultureInfo.InvariantCulture);
+            source[i] = System.Convert.ToInt64(System.Math.Round(System.Convert.ToDouble(list[i], System.Globalization.CultureInfo.InvariantCulture)), System.Globalization.CultureInfo.InvariantCulture);
+        exp = ExpCurve.Build(source);
     }
 
-    // 原端返回 int；本地保持同一宽度（表尾 2,100,000,000 仍在 int 范围内）
-    public static int Needed(int level)
+    public static long Needed(int level)
     {
         Ensure();
-        if (exp == null || exp.Length == 0) return 15;
-        return exp[Mathf.Clamp(level, 0, exp.Length - 1)];
+        return ExpCurve.Needed(exp, level);
     }
 }

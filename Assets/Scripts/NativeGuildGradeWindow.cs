@@ -68,6 +68,7 @@ public static class NativeGuildGradeWindow
         float x = right + WinW * s <= UiKit.W - 4 ? right : mainX - WinW * s - 4;
         x = Mathf.Max(4, Mathf.Min(x, UiKit.W - WinW * s - 4));
         var win = new Rect(x, 26, WinW * s, WinH * s);
+        NativeUi.RegisterWindow("NativeGuildGradeWindow", win, () => NativeGuildGradeWindow.Visible);
         var frame = Art.Tex("wz://" + Root + "backgrnd");
         if (frame != null) GUI.DrawTexture(win, frame);
 

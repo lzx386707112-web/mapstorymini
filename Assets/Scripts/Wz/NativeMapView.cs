@@ -80,7 +80,8 @@ public sealed class NativeMapView : MonoBehaviour
             m.ropes.Add(new FieldRope { x = r.Int("x"), y1 = r.Int("y1"), y2 = r.Int("y2"),
                 ladder = r.Int("l") != 0, upperExit = r.Int("uf") != 0 });
         foreach (var p in Children(n.Get("portal")))
-            m.portals.Add(new FieldPortal { name = p.Text("pn"), targetName = p.Text("tn"), type = p.Int("pt"),
+            m.portals.Add(new FieldPortal { id = int.TryParse(p.Name, out int portalId) ? portalId : m.portals.Count,
+                name = p.Text("pn"), targetName = p.Text("tn"), type = p.Int("pt"),
                 tm = p.Int("tm", 999999999), x = p.Int("x"), y = p.Int("y"), script = p.Text("script") });
         foreach (var life in Children(n.Get("life")))
         {
@@ -258,7 +259,7 @@ public sealed class NativeMapView : MonoBehaviour
     readonly Dictionary<Server.Field.MapNpcPosition,FieldNpc> dynamicNpcs = new Dictionary<Server.Field.MapNpcPosition,FieldNpc>();
     public void SyncDynamicNpcs(FieldMap field)
     {
-        var runtime=Server.Field.MapService.Get(field.id);
+        var runtime=Server.Field.MapService.Get(NativeEventScripts.ResolveMap(field.id)?.Scope ?? field.id);
         if(runtime==null)return;
         foreach(var spawn in runtime.npcs)
         {
@@ -284,7 +285,7 @@ public sealed class NativeMapView : MonoBehaviour
 
     public void Show(int id)
     {
-        gameObject.AddComponent<NativeReactorView>().Bind(id);
+        gameObject.AddComponent<NativeReactorView>().Bind(NativeEventScripts.ResolveMap(id)?.Scope ?? id);
         var map = MapRoot(id); displayedMap = map;
         var body = new GameObject("MapLayers"); body.transform.SetParent(transform, false);
         body.AddComponent<UnityEngine.Rendering.SortingGroup>().sortingOrder = -400;

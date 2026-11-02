@@ -1,0 +1,139 @@
+SHA256 1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2
+# linear sweep: instruction boundaries drift after a switch table; use --fn for large functions
+00942ee0 push     ss
+00942ee1 lodsd    eax, dword ptr [esi]
+00942ee2 inc      esi
+00942ee4 inc      ebp
+00942ee5 cld      
+00942ee6 add      ecx, dword ptr [ebp + 0x54ebec4d]
+00942eec xor      eax, eax
+00942eee mov      al, byte ptr [esi + 0x11ba]
+00942ef4 push     eax
+00942ef5 xor      eax, eax
+00942ef7 mov      ax, word ptr [esi + 0x11b8]
+00942efe push     eax
+00942eff xor      eax, eax
+00942f01 mov      al, byte ptr [esi + 0x11b6]
+00942f07 push     eax
+00942f08 xor      eax, eax
+00942f0a mov      ax, word ptr [esi + 0x11b4]
+00942f11 push     eax
+00942f12 push     ebx
+00942f13 push     0x3ec
+00942f18 push     ecx
+00942f19 mov      ecx, esp
+00942f1b mov      dword ptr [ebp - 0x24], esp
+00942f1e push     edi
+00942f1f call     0x444efa
+00942f24 push     ecx
+00942f25 lea      eax, [esi + 0x1150]
+00942f2b mov      ecx, esp
+00942f2d mov      dword ptr [ebp - 0x1c], esp
+00942f30 push     eax
+00942f31 call     0x4145ab
+00942f36 mov      byte ptr [ebp - 4], 3
+00942f3a lea      ecx, [esi + 0x11b0]
+00942f40 call     0x428226
+00942f45 push     eax
+00942f46 mov      ecx, esi
+00942f48 call     0x5f0334
+00942f4d mov      eax, dword ptr [esi + 0x169]
+00942f53 mov      dword ptr [esi + 0x1f28], eax
+00942f59 mov      ecx, dword ptr [0xbe78d8]
+00942f5f push     eax
+00942f60 lea      eax, [ebp - 0x20]
+00942f63 push     eax
+00942f64 call     0x5cf63e
+00942f69 mov      eax, dword ptr [esi + 0x1f28]
+00942f6f cmp      eax, ebx
+00942f71 mov      byte ptr [ebp - 4], 0xa
+00942f75 mov      dword ptr [ebp - 0x1c], ebx
+00942f78 je       0x942fff
+00942f7e mov      ecx, dword ptr [0xbe78d8]
+00942f84 push     eax
+00942f85 lea      eax, [ebp - 0x10]
+00942f88 push     eax
+00942f89 call     0x5da83c
+00942f8e cmp      dword ptr [ebp - 0x10], ebx
+00942f91 mov      byte ptr [ebp - 4], 0xb
+00942f95 je       0x942fee
+00942f97 push     ebx
+00942f98 push     ecx
+00942f99 mov      eax, esp
+00942f9b mov      dword ptr [ebp - 0x24], esp
+00942f9e push     0x978
+00942fa3 push     eax
+00942fa4 call     0x79e805
+00942fa9 mov      ecx, eax
+00942fab call     0x406292
+00942fb0 lea      eax, [ebp - 0x34]
+00942fb3 push     eax
+00942fb4 lea      ecx, [ebp - 0x10]
+00942fb7 mov      byte ptr [ebp - 4], 0xb
+00942fbb call     0x40263b
+00942fc0 mov      ecx, eax
+00942fc2 call     0x403935
+00942fc7 push     eax
+00942fc8 mov      byte ptr [ebp - 4], 0xd
+00942fcc call     0x414d40
+00942fd1 mov      dword ptr [ebp - 0x1c], eax
+00942fd4 lea      eax, [ebp - 0x34]
+00942fd7 push     eax
+00942fd8 mov      byte ptr [ebp - 4], 0xb
+00942fdc call     0x40291d
+00942fe1 add      esp, 0xc
+00942fe4 cmp      eax, ebx
+00942fe6 jge      0x942fee
+00942fe8 push     eax
+00942fe9 call     0xa5fde4
+00942fee mov      eax, dword ptr [ebp - 0x10]
+00942ff1 cmp      eax, ebx
+00942ff3 mov      byte ptr [ebp - 4], 0xa
+00942ff7 je       0x942fff
+00942ff9 mov      ecx, dword ptr [eax]
+00942ffb push     eax
+00942ffc call     dword ptr [ecx + 8]
+00942fff push     ebx
+00943000 push     ebx
+00943001 push     ebx
+00943002 push     ebx
+00943003 push     dword ptr [ebp - 0x1c]
+00943006 push     0x3ee
+0094300b push     ecx
+0094300c mov      ecx, esp
+0094300e mov      dword ptr [ebp - 0x24], esp
+00943011 push     edi
+00943012 call     0x444efa
+00943017 push     ecx
+00943018 lea      eax, [esi + 0x1150]
+0094301e mov      ecx, esp
+00943020 mov      dword ptr [ebp - 0x1c], esp
+00943023 push     eax
+00943024 call     0x4145ab
+00943029 lea      ecx, [ebp - 0x20]
+0094302c mov      byte ptr [ebp - 4], 0xa
+00943030 call     0x428226
+00943035 push     eax
+00943036 mov      ecx, esi
+00943038 call     0x5f0334
+0094303d lea      ecx, [ebp - 0x20]
+00943040 mov      byte ptr [ebp - 4], 3
+00943044 call     0x4062df
+00943049 lea      ecx, [ebp - 0x14]
+0094304c mov      byte ptr [ebp - 4], 2
+00943050 call     0x4062df
+00943055 or       dword ptr [ebp - 4], 0xffffffff
+00943059 lea      ecx, [ebp - 0x18]
+0094305c call     0x4062df
+00943061 mov      ecx, dword ptr [ebp - 0xc]
+00943064 pop      edi
+00943065 pop      esi
+00943066 mov      dword ptr fs:[0], ecx
+0094306d pop      ebx
+0094306e leave    
+0094306f ret      
+00943070 push     dword ptr [ecx + 0x1ed8]
+00943076 add      ecx, 0x1ed0
+0094307c push     ecx
+0094307d .byte    0xe8
+0094307e loope    0x9430b4

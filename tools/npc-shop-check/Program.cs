@@ -51,7 +51,7 @@ static class Program
             var equipmentShop = Send(NpcShopOperation.OpenShop, 11000);
             int equipment = equipmentShop.items.FindIndex(x => x.itemId / 1000000 == 1 && x.price > 0);
             var equip = equipmentShop.items[equipment];
-            int equipBalance = CharService.Load(db, cid).record.meso;
+            long equipBalance = CharService.Load(db, cid).record.meso;
             db.Table("characters").Update(DbStore.Eq("id", (long)cid), new DbRow { ["equipslots"] = 0L });
             Check(!Send(NpcShopOperation.Buy, index: equipment, item: equip.itemId).ok && CharService.Load(db, cid).record.meso == equipBalance, "full equipment inventory rolls back without debit");
             db.Table("characters").Update(DbStore.Eq("id", (long)cid), new DbRow { ["equipslots"] = 24L });
@@ -69,7 +69,7 @@ static class Program
             int rechargeCost = (int)Math.Ceiling(service.UnitPrice(2070000) * 10);
             var recharged = Send(NpcShopOperation.Recharge, type: 2, slot: throwing.position);
             Check(recharged.ok && Count(recharged.character, 2070000) == throwing.quantity && recharged.character.record.meso == stars.character.record.meso - rechargeCost, "recharge stack and price");
-            int balance = recharged.character.record.meso;
+            long balance = recharged.character.record.meso;
             Check(Send(NpcShopOperation.Recharge, type: 2, slot: throwing.position).character.record.meso == balance, "full recharge no double debit");
             Send(NpcShopOperation.Close);
             Check(!Send(NpcShopOperation.Buy, index: potion, item: 2000000).ok, "closed session cannot buy");

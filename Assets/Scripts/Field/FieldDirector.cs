@@ -19,9 +19,14 @@ using Server.Field;
 public sealed class FieldDirector : MonoBehaviour
 {
     public FieldMap Map { get; private set; }
+    public NativeEventMap EventMap {get;private set;}
+    public int StateId=>EventMap?.Scope ?? Map?.id ?? -1;
     public int AliveCount { get; private set; }
 
     FieldView view;
+    static System.Action<System.Exception> hookedStartupError;
+    // 地图分片后台解析中只记一次日志，别每帧刷。
+    bool pendingMapLogged;
     MapSpawner spawner;                       // 后端刷怪调度（Server.Field）
     readonly List<Point> points = new List<Point>();
     readonly Dictionary<SpawnPoint, Point> bySpawn = new Dictionary<SpawnPoint, Point>();
@@ -35,6 +40,7 @@ public sealed class FieldDirector : MonoBehaviour
     NativeImgAnimation frenzyImage;
     Vector3 frenzyPosition;
     int frenzyFacing;
+    int frenzyOrder;
     public bool FrenzyActive => frenzyExpires>NowMs();
 
     public string ActivateFrenzy(PlayerCtrl owner)
@@ -48,12 +54,13 @@ public sealed class FieldDirector : MonoBehaviour
         if(!floor) return "当前位置无法放置轮回碑石。";
         frenzyPosition=new Vector3(x/Art.PPU,-(DropToFoothold(x,y)-1)/Art.PPU,0);
         frenzyFacing=owner.facing;
+        frenzyOrder=owner.SortingOrder-1;
         foreach(var sp in spawner.StartFrenzy())
         {
             var point=new Point {sp=sp}; points.Add(point); bySpawn[sp]=point; frenzyPoints.Add(point);
         }
         frenzyExpires=NowMs()+600000;
-        frenzyImage=NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/summon/summoned",transform,frenzyPosition,owner.SortingOrder-1,flip:owner.facing>0);
+        frenzyImage=NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/summon/summoned",transform,frenzyPosition,frenzyOrder,flip:owner.facing>0);
         NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/effect",owner.transform,owner.FeetPos,owner.SortingOrder+1,flip:owner.facing>0);
         respawnTimer=0; TickRespawn(0);
         return null;
@@ -69,7 +76,7 @@ public sealed class FieldDirector : MonoBehaviour
         }
         frenzyPoints.Clear();
         frenzyImage?.Remove(); frenzyImage=null;
-        NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/summon/die",transform,frenzyPosition,GameLoop.I?.player?.SortingOrder ?? 100,flip:frenzyFacing>0);
+        NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/summon/die",transform,frenzyPosition,frenzyOrder,flip:frenzyFacing>0);
     }
     FieldPortal nearPortal;      // 当前脚下可用的传送门（HUD 用来提示「按 ↑ 进入」）
     float portalLock;
@@ -107,16 +114,107 @@ public sealed class FieldDirector : MonoBehaviour
     int pendingWarpPortalIndex = -1;   // cm.warp(map, portalId)：目标图 portal 下标（= 源端 Portal.getId）
     int deferredWarpMap = -1;    // 过场图（0 号）进场后自动续跳的目标（注释见 Enter 里 view.Show 之后）
 
-    bool Warping => warpState != WarpState.None;
+    public bool Warping => warpState != WarpState.None;
 
+    sealed class CachedField
+    {
+        public MapSpawner spawner;
+        public readonly List<Point> points=new List<Point>();
+    }
+    readonly Dictionary<int,CachedField> cachedFields=new Dictionary<int,CachedField>();
+    object cachedCharacter;
+
+    // ——————————————— 野外 BOSS（event/AreaBoss*.js / map/onUserEnter） ———————————————
+    // 源端这些 Boss 不在任何一张图的 life 里：AreaBoss*.js 由 EventScriptManager.init() 启动后自己
+    // 排程，到点检查目标图有没有该 Boss，没有就 map.spawnMonsterOnGroundBelow 刷进去（MapleMap 常驻内存，
+    // 玩家进图时 Boss 一定在）。移植端地图是按需加载的，脚本往「当前不在的图」刷时只能先登记，
+    // 等玩家进这张图再真正生成；这本册子同时也是脚本 getMonsterById(别的图) 的权威状态，
+    // 否则每个检测周期都会重复登记，一进图就叠出好几只。
+    sealed class WildBoss
+    {
+        public int mapId, mobId;
+        public float x, y;
+        public bool alive = true;
+    }
+    static readonly List<WildBoss> wildBosses = new List<WildBoss>();
+    // 脚本刷过 Boss 的地图：玩家正好站在这张图时，下一帧就把 Boss 生出来
+    static readonly HashSet<int> wildDirty = new HashSet<int>();
+
+    public static void ResetWildBosses() { wildBosses.Clear(); wildDirty.Clear(); }
+
+    // 脚本 map.spawnMonsterOnGroundBelow(mob, point)（≡ MapleMap.spawnMonsterOnGroundBelow）
+    public static void SpawnWildBoss(int mapId, int mobId, float x, float y)
+    {
+        var boss = wildBosses.Find(b => b.mapId == mapId && b.mobId == mobId);
+        if (boss == null)
+        {
+            boss = new WildBoss { mapId = mapId, mobId = mobId };
+            wildBosses.Add(boss);
+        }
+        boss.x = x; boss.y = y; boss.alive = true;
+        wildDirty.Add(mapId);
+    }
+
+    // 脚本 map.getMonsterById(id)：别的图只能看册子；本图走真实存活怪物（BuildMap 里那条）。
+    public static bool HasWildBoss(int mapId, int mobId)
+        => wildBosses.Exists(b => b.mapId == mapId && b.mobId == mobId && b.alive);
+
+    // MonsterListener.monsterKilled：这本册子里的 Boss 死掉后要放掉，AreaBoss 下次检测才会重新刷。
+    static void MarkWildBossKilled(int mapId, int mobId)
+    {
+        var boss = wildBosses.Find(b => b.mapId == mapId && b.mobId == mobId);
+        if (boss != null) boss.alive = false;
+    }
+
+    // 进图后把登记册里属于本图的 Boss 真正生成出来（回图时缓存已经恢复过的点不重复建）。
+    // mobTime=-1：只这一次，别让 SpawnPoint 自己按秒重生——重生节奏归 AreaBoss*.js（BossTime）。
+    void MaterializeWildBosses(FieldMap map)
+    {
+        foreach (var boss in wildBosses)
+            if (boss.alive && boss.mapId == map.id) SpawnWildBossHere(boss.mobId, boss.x, boss.y);
+    }
+    void SpawnWildBossHere(int mobId, float x, float y)
+    {
+        if (Map == null) return;
+        Point stale = null;
+        foreach (var p in points)
+        {
+            if (p.sp == null || p.sp.MobId != mobId) continue;
+            if (p.mob != null && !p.mob.dead) return;    // 已经在场，别叠第二只
+            stale = p;                                    // 打死后留下的空点，直接复用
+        }
+        if (stale != null) { SpawnAt(stale); return; }
+        FieldCatalog.LoadMob(mobId);
+        if (!FieldCatalog.Mobs.ContainsKey(mobId)) return;
+        AddScriptMonsterSpawn(mobId, x, y, -1, -1);
+    }
+
+    void PreserveSpawnState()
+    {
+        if(EventMap!=null){EventMap.Detach();return;}
+        if(Map==null || spawner==null)return;
+        StopFrenzy();
+        var state=new CachedField {spawner=spawner};
+        foreach(var point in points)
+        {
+            point.restoreAlive=point.mob!=null && !point.mob.dead;
+            point.restoreHp=point.restoreAlive ? point.mob.NativeController?.CurrentHp ?? (long)point.mob.hp : 0;
+            state.points.Add(point);
+        }
+        cachedFields[Map.id]=state;
+    }
     sealed class Point
     {
         public SpawnPoint sp;        // 后端刷怪点（Server.Field）
         public EnemyUnit mob;
+        public bool restoreAlive;
+        public long restoreHp;
     }
 
     public void Begin(int startMapId)
     {
+        if(!ReferenceEquals(cachedCharacter,GameSession.Character))
+        { ClearMobs(); Map=null; cachedFields.Clear(); ResetWildBosses(); cachedCharacter=GameSession.Character; }
         FieldCatalog.Ensure();
         PlayerCtrl.InputLocked = false;      // 防止上一次留在半途的渐变把输入锁死
         warpState = WarpState.None;
@@ -136,23 +234,29 @@ public sealed class FieldDirector : MonoBehaviour
         var backdrop = FindObjectOfType<Backdrop>();
         if (backdrop != null) backdrop.gameObject.SetActive(false);
         Enter(startMapId, null);
+        // 源端频道启动就会 init 全部事件脚本，AreaBoss* 靠这一步才把野外 Boss 刷进地图。
+        NativeEventScripts.QueueWildBossEvents();
     }
 
     public void Enter(int mapId, string spawnPortalName, int spawnPortalIndex = -1)
     {
+        var entryWatch=System.Diagnostics.Stopwatch.StartNew();
         FieldCatalog.Ensure();
         BlockedPortalScripts.Clear();   // 源端 changeMap → resetPortals
         FieldMap map;
-        if ((map = FieldCatalog.GetMap(mapId)) == null)
+        var enteringEvent=NativeEventScripts.ResolveMap(mapId);
+        if ((map = enteringEvent?.Template ?? FieldCatalog.GetMap(mapId)) == null)
         {
             Debug.LogWarning("[Field] 没有地图 " + mapId);
             return;
         }
 
+        long dataMs=entryWatch.ElapsedMilliseconds;
         // Resolve artwork before discarding the current scene; full Data can contain dangling links.
         try { view.Show(map); }
         catch (System.Exception e) { Debug.LogError("[Field] 无法进入地图 " + mapId + ": " + e.Message); return; }
 
+        long artMs=entryWatch.ElapsedMilliseconds;
         // 0 号图（原版 Maple Road : Entrance）是「踏入旅途」开场演出的黑场舞台：
         //   info/onUserEnter = goAdventure、背景 bS 为空、整屏 allblackTile，图里没有 NPC 也没有门，
         //   唯一出路是 info/returnMap（10000 小蘑菇）。原版靠客户端播完
@@ -162,6 +266,7 @@ public sealed class FieldDirector : MonoBehaviour
         deferredWarpMap = map.id == 0 && map.returnMap > 0 && map.returnMap != map.id ? map.returnMap : -1;
         // 换图打一条分隔线：看分享出来的日志时，能立刻知道掉帧发生在哪张图
         FileLog.Note("进入地图 " + mapId);
+        PreserveSpawnState();
         ClearMobs();
         // 章节/大厅遗留的 EnemyUnit 也会进 EnemyUnit.All：玩家会自动去打它们，
         // 它们也会照常攻击玩家（彩虹村这种 town 图本不该有怪）。原版模式下只留本图刷的怪。
@@ -179,6 +284,7 @@ public sealed class FieldDirector : MonoBehaviour
 
         bool appearanceChanged = (Map != null && Map.fieldType == 82) != (map.fieldType == 82);
         Map = map;
+        EventMap=enteringEvent;
         NativeEventScripts.ChangedMap(map.id,false);
         nextEnvironmentDamage=Time.realtimeSinceStartupAsDouble+EnvironmentInterval();
         NpcField.Bind(map);
@@ -191,7 +297,18 @@ public sealed class FieldDirector : MonoBehaviour
         // Sound/Weapon/Mob/Skill 等音效由各系统按需播放，这里只管地图音乐。
         AudioManager.PlayBgm(map.bgm);
 
-        BuildPoints(map);
+        long geometryMs=entryWatch.ElapsedMilliseconds;
+        if(EventMap!=null)
+        {
+            points.Clear();byMob.Clear();bySpawn.Clear();spawner=null;EventMap.Attach(this);
+        }
+        else
+        {
+            BuildPoints(map);
+            wildDirty.Remove(map.id);
+            MaterializeWildBosses(map);
+        }
+        long mobsMs=entryWatch.ElapsedMilliseconds;
 
         respawnTimer = RespawnInterval;
         portalLock = 0.4f;
@@ -204,6 +321,9 @@ public sealed class FieldDirector : MonoBehaviour
         if(NativeMapIntro.Active(this))deferredWarpMap=-1;
         NativeEventScripts.ChangedMap(map.id,true);
 
+        FileLog.Note("[Field/Enter] map="+map.id+" data_ms="+dataMs+" art_ms="+(artMs-dataMs)+
+            " geometry_ms="+(geometryMs-artMs)+" mobs_ms="+(mobsMs-geometryMs)+
+            " scripts_ms="+(entryWatch.ElapsedMilliseconds-mobsMs));
         Debug.Log("[Field] 进入 " + map.id + " " + map.name + "：刷怪点 " + points.Count +
                   "，传送门 " + map.portals.Count);
     }
@@ -274,10 +394,31 @@ public sealed class FieldDirector : MonoBehaviour
         byMob.Clear();
         bySpawn.Clear();
 
+        if(cachedFields.TryGetValue(map.id,out var cached))
+        {
+            spawner=cached.spawner;
+            foreach(var point in cached.points)
+            {
+                points.Add(point); bySpawn[point.sp]=point;
+                if(point.restoreAlive)
+                {
+                    SpawnAt(point,false);
+                    point.mob?.NativeController?.RestoreFieldHp(point.restoreHp);
+                }
+                else if(point.sp.ShouldSpawn(NowMs())) SpawnAt(point);
+            }
+            return;
+        }
         spawner = new MapSpawner();
         spawner.Clock = NowMs;                 // 与帧时钟对齐（源端 Server.getCurrentTime）
         spawner.SetMobInterval(Map.createMobInterval); // MapFactory info/createMobInterval (ms)
-        spawner.SetRandomRefresh(true);        // use_monster_random_refresh_position（与原客户端一致）
+        if (GameServer.Local != null)
+        {
+            var db=GameServer.Local.Db;
+            spawner.BossRespawnMobTimeRate=GameConfigDao.GetFloat(db,"boss_respawn_mob_time_rate",1);
+            spawner.FullRespawn=GameConfigDao.GetBool(db,"use_enable_full_respawn",false);
+        }
+        spawner.SetRandomRefresh(GameServer.Local == null || GameConfigDao.GetBool(GameServer.Local.Db,"use_monster_random_refresh_position",true));        // use_monster_random_refresh_position（与原客户端一致）
 
         foreach (var s in map.spawns)
         {
@@ -308,6 +449,17 @@ public sealed class FieldDirector : MonoBehaviour
         }
     }
 
+    // Script MapleMap.addMonsterSpawn uses the same scheduler as WZ life.
+    public void AddScriptMonsterSpawn(int id, float x, float y, int mobTime, int team)
+    {
+        if (Map == null || spawner == null) return;
+        FieldCatalog.LoadMob(id);
+        var sp=spawner.AddMonsterSpawn(new SpawnPointDef {mob=id,x=x,y=DropToFoothold(x,y)-1,
+            mobTime=mobTime,team=team,isBoss=IsBossMob(id)});
+        var point=new Point {sp=sp}; points.Add(point); bySpawn[sp]=point;
+        if (sp.ShouldSpawn(NowMs()) || sp.MobTime==-1) SpawnAt(point);
+    }
+
     // 源端 MapleMap.calcPointBelow：在 mapX 处找脚下（y>=mapY 且最接近）的 foothold 的 y。
     // 地图像素坐标，y 向下为正；找不到下方 foothold 时返回原 y（不掉落）。
     float DropToFoothold(float mapX, float mapY)
@@ -332,7 +484,7 @@ public sealed class FieldDirector : MonoBehaviour
     // 当前毫秒时钟（与 Unity Time.realtimeSinceStartup 一致），注入后端 MapSpawner.Clock。
     static long NowMs() => (long)(Time.realtimeSinceStartupAsDouble * 1000.0);
 
-    void SpawnAt(Point p)
+    void SpawnAt(Point p, bool markSpawned = true)
     {
         var sd = p.sp.Def;                       // 后端刷怪点定义
         if (!FieldCatalog.Mobs.TryGetValue(sd.mob, out var mdef)) return;
@@ -367,20 +519,31 @@ public sealed class FieldDirector : MonoBehaviour
         e.BindNative(this);
 
         p.mob = e;
-        p.sp.MarkSpawned(NowMs());              // ≡ SpawnPoint.getMonster：占用该刷怪点
+        if(markSpawned) p.sp.MarkSpawned(NowMs());              // ≡ SpawnPoint.getMonster：占用该刷怪点
         byMob[e.GetInstanceID()] = p;
     }
 
     // Monster.killBy revives / MobSkill.summonMonsters share the field lifecycle.
-    public EnemyUnit SpawnNativeMob(int mobId, Vector3 position, bool ground = true, bool floating = false)
+    public EnemyUnit SpawnNativeMob(int mobId, Vector3 position, bool ground = true, bool floating = false,bool eventOwned=false)
     {
         if (Map == null) return null;
+        if(EventMap!=null && !eventOwned)
+        {
+            var spawned=EventMap.SpawnDynamic(mobId,position,ground);
+            if(spawned!=null)spawned.nativeFloating=floating;
+            return spawned;
+        }
         FieldCatalog.LoadMob(mobId);
         if (!FieldCatalog.Mobs.TryGetValue(mobId, out var def)) return null;
         var go = new GameObject("Mob_" + mobId);
         var e = go.AddComponent<EnemyUnit>();
         e.artKey = def.artKey; e.fieldMode = true; e.fieldMobId = mobId; e.label = def.name;
-        e.homeX = position.x; e.roamMin = position.x; e.roamMax = position.x;
+        e.eventOwned = eventOwned;
+        // 与 SpawnAt 的「无 rx0/rx1」分支保持同一口径：±3 世界单位。
+        // 之前把动态怪压成单点，EnemyUnit.Roam 会在零宽区间里每帧翻转 patrolDir
+        // 并把 transform.x 钉回出生点，表现为起源之塔怪物「原地闪」
+        //（原地播走路动画 + 逐帧左右镜像翻转），且永远走不出刷怪点。
+        e.homeX = position.x; e.roamMin = position.x - 3f; e.roamMax = position.x + 3f;
         e.aggroRange = AggroRangePx / Art.PPU;
         e.Init(2, position.x, position.y);
         e.nativeFloating = floating;
@@ -395,7 +558,7 @@ public sealed class FieldDirector : MonoBehaviour
     void ApplyStats(EnemyUnit e, FieldMob def)
     {
         var s = def.stats;
-        e.hpMax = Mathf.Max(1, Art.Num(s, "maxHP", 1));
+        e.hpMax = System.Math.Max(1L, (long)Art.Num(s, "maxHP", 1));
         e.hp = e.hpMax;
         e.damage = Mathf.Max(0, Art.Num(s, "PADamage", 0));
         // 服务端不推动怪物移动；原客户端用 WZ speed（相对 100% 的百分比偏移）决定行走快慢。
@@ -436,10 +599,13 @@ public sealed class FieldDirector : MonoBehaviour
         if (player == null) return;
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
+        (GetComponent<NativePetField>() ?? gameObject.AddComponent<NativePetField>()).Tick(player,dt);
 
         portalLock = Mathf.Max(0f, portalLock - dt);
         CheckPortals(player, dt);
         TickRespawn(dt);
+        // 事件脚本往「玩家正在的这张图」刷了 Boss（玩家原地等的那 60 分钟里也可能发生）
+        if (EventMap==null && wildDirty.Count > 0 && wildDirty.Remove(Map.id)) MaterializeWildBosses(Map);
         TickEnvironment(player,Time.realtimeSinceStartupAsDouble);
 
         AliveCount = 0;
@@ -490,10 +656,49 @@ public sealed class FieldDirector : MonoBehaviour
         // 一旦在这里 new BotRuntime，BotItemCatalog/BotResources 会 Join 后台线程，
         // 把整段解析时间堵在进图那一帧（就是「进游戏后卡一会儿才能动」）。
         if (!Server.Bot.BotWarmup.Ready("Bot/Items") || !Server.Bot.BotWarmup.Ready("Bot/SoloMapling") ||
-            !Server.Bot.BotWarmup.Ready("Bot/Maps")) return;
+            !Server.Bot.BotWarmup.Ready("Bot/Maps") ||
+            !Server.Bot.BotWarmup.Ready("Bot/ReactorTemplates") || !Server.Bot.BotWarmup.Ready("Bot/ReactorDrops")) return;
         var player = GameLoop.I.player;
         var bots = GameServer.Local.Bots;
-        bots.SynchronizePlayer(GameSession.Character, Map.id, player.transform.position.x * Art.PPU, -player.transform.position.y * Art.PPU, GameSession.Channel);
+        if (hookedStartupError == null)
+        {
+            // 假人环境启动泵的步骤异常：曾经静默吞掉，表现为「自由市场只有一半假人/店铺」。
+            // 接进 FileLog 后，真机上 adb logcat 或日志分享文件里能直接看到失败步骤。
+            hookedStartupError = e => FileLog.Note("[Bot/Environment] 启动步骤异常（已跳过）：\n" + e);
+            Server.Bot.Environment.BotEnvironment.StartupError = hookedStartupError;
+            // 组队任务假人（入口凑队 + 副本自动通关）需要的能力全在前端：
+            // 传送真实角色、静默点 NPC、把道具落进背包、粉色系统提示。Server/ 不引用 UnityEngine，
+            // 所以这里一次性把钩子接齐（重复赋值是幂等的）。
+            Server.Bot.Types.Pq.PqDirector.LocalPlayerId = () => GameSession.CharacterId;
+            Server.Bot.Types.Pq.PqDirector.LocalMapId = () => StateId;
+            Server.Bot.Types.Pq.PqDirector.WarpLocalPlayer = target => { if (target > 0) { pendingWarpMap = -1; WarpTo(target); } };
+            Server.Bot.Types.Pq.PqDirector.GrantItem = (itemId, count) => Profile.AddItem(itemId, count);
+            Server.Bot.Types.Pq.PqDirector.TalkNpc = (npcId, openOnly, prefer, done) =>
+                PqNpcDriver.Begin(npcId, openOnly ? PqNpcPolicy.OpenOnly : PqNpcPolicy.Complete, prefer, done);
+            Server.Bot.Types.Pq.PqDirector.Notice = text => NativeSystemMessage.Drop(5, text);
+        }
+        // 当前图的导航几何分片还在后台解析时，这一帧就不碰假人系统。
+        // 绝不能让 SynchronizePlayer → GetMap → BotWarmup.Root() 在主线程 Join 解析线程：
+        // 一个 0.3~1.4MB 分片现场解析就是「进图卡几秒」的来源。分片已 Ready 时 TryGetMap
+        // 会先把它登记进 MapService，后面的 GetMap 直接命中，不会再走阻塞分支。
+        var mapState = bots.TryGetMap(StateId, out _, false);
+        if (mapState == Server.Bot.Environment.BotMapState.Pending)
+        {
+            if (!pendingMapLogged)
+            {
+                pendingMapLogged = true;
+                FileLog.Note("[Bot/PQ] 地图 " + StateId + " 的几何分片后台解析中，本帧不铺新假人（不阻塞主线程）");
+            }
+            // 只跳过「需要几何」的铺摊与状态机推进；视图同步照常做，
+            // 否则玩家会看到假人和气泡整个冻住几秒（分片解析窗口内）。
+            if (botField == null) botField = GetComponent<BotField>() ?? gameObject.AddComponent<BotField>();
+            botField.Synchronize(StateId, GameSession.World, GameSession.Channel);
+            return;
+        }
+        pendingMapLogged = false;
+        bots.SynchronizePlayer(GameSession.Character, StateId, player.transform.position.x * Art.PPU, -player.transform.position.y * Art.PPU, GameSession.Channel);
+        // 换图是组队任务假人唯一的权威信号（铺摊 / 收摊都看它），内部自己判重，每帧调无开销。
+        Server.Bot.Types.Pq.PqDirector.OnLocalMap(StateId);
         // 组件只取一次：以前每帧 4 次 GetComponent（含 AddComponent 兜底），纯浪费。
         if (botCombat == null) botCombat = GetComponent<BotCombatField>() ?? gameObject.AddComponent<BotCombatField>();
         botCombat.Bind(this, bots);
@@ -504,7 +709,7 @@ public sealed class FieldDirector : MonoBehaviour
         view.SyncDynamicNpcs();
         if (botField == null) botField = GetComponent<BotField>() ?? gameObject.AddComponent<BotField>();
         // 假人视图的增删本身也降到 10Hz（BotField 内部节流），纸娃娃合成改在 BotField.Update 里按预算出队。
-        botField.Synchronize(Map.id, GameSession.World, GameSession.Channel);
+        botField.Synchronize(StateId, GameSession.World, GameSession.Channel);
     }
 
     // debug_frame_log=1（一次有效）时，每 2 秒把掉帧情况打到 logcat：
@@ -537,7 +742,7 @@ public sealed class FieldDirector : MonoBehaviour
         if(frenzyExpires!=0)
         {
             if(NowMs()>=frenzyExpires) StopFrenzy();
-            else if(frenzyImage==null) frenzyImage=NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/summon/stand",transform,frenzyPosition,GameLoop.I?.player?.SortingOrder ?? 100,flip:frenzyFacing>0,repeat:true);
+            else if(frenzyImage==null) frenzyImage=NativeImgAnimation.Spawn("Skill/000.img/skill/0001016/summon/stand",transform,frenzyPosition,frenzyOrder,flip:frenzyFacing>0,repeat:true);
         }
         respawnTimer -= dt;
         if (respawnTimer > 0f) return;
@@ -738,6 +943,7 @@ public sealed class FieldDirector : MonoBehaviour
             // 源端 MonsterListener.monsterKilled：mobTime>0 按秒、mobTime==0 按死亡动画时长
             p.sp.OnKilled((long)(DeathAnimSeconds(e) * 1000.0), NowMs());
         }
+        if (Map != null) MarkWildBossKilled(Map.id, e.fieldMobId);
 
         FieldMob mob;
         if (!FieldCatalog.Mobs.TryGetValue(e.fieldMobId, out mob)) return;
@@ -758,7 +964,7 @@ public sealed class FieldDirector : MonoBehaviour
             reputationCalls=award.reputationCalls;
             questCredit=award.eligible && GameLoop.I?.player!=null && GameLoop.I.player.hp>0;
             if (GameLoop.I?.player!=null && GameLoop.I.player.hp>0 && award.eligible)
-                Profile.GrantExperience((int)System.Math.Min(int.MaxValue,(long)award.personal+award.party));
+                Profile.GrantExperience((long)award.personal+award.party);
         }
         else if (exp > 0)
         {
@@ -772,7 +978,7 @@ public sealed class FieldDirector : MonoBehaviour
             personal*=(float)AdminSetItem.ApplyRate(set,"ExpRate",rates.expRate);
             personal+=buffs?.Value("EXP_INCREASE") ?? 0;
             if (buffs?.HasStat("EXP_BUFF")==true) personal*=2;
-            Profile.GrantExperience(personal>=int.MaxValue ? int.MaxValue : (int)System.Math.Floor((double)personal+.5));
+            Profile.GrantExperience((long)System.Math.Floor((double)personal+.5));
         }
 
         for (int rep=0; GameSession.InGame && rep<reputationCalls; rep++)
@@ -787,12 +993,14 @@ public sealed class FieldDirector : MonoBehaviour
         if (logKills)
             Debug.Log("[Field] 击杀 " + mob.name + "(" + mob.id + ") 经验+" + exp +
                       " 掉落 " + dropped + " 件 金币 " + mesos);
+        EventMap?.Killed(e,true);
     }
 
     // MapleMap.killMonster(monster, null, false): release spawn capacity without rewards/revive/quest credit.
     public void OnEnemyExpired(EnemyUnit e)
     {
         if (e==null) return;
+        EventMap?.Killed(e,false);
         dynamicMobs.Remove(e);
         if (byMob.TryGetValue(e.GetInstanceID(),out var point))
         {
@@ -836,7 +1044,7 @@ public sealed class FieldDirector : MonoBehaviour
             }
             n++;
             var landing = pos + Offset(d);
-            MapItemService.CalcDropPos(Map.id, landing.x * Art.PPU, -landing.y * Art.PPU,
+            MapItemService.CalcDropPos(StateId, landing.x * Art.PPU, -landing.y * Art.PPU,
                 pos.x * Art.PPU, -pos.y * Art.PPU, out float dropX, out float dropY);
             GroundItem.Spawn(itemId, qty, new Vector3(dropX / Art.PPU, -dropY / Art.PPU, 0), from: pos);
         }, rng, dropRate, QuestLogic.NeedQuestItem);
@@ -869,6 +1077,17 @@ public sealed class FieldDirector : MonoBehaviour
     // 脚本 cm.warp(mapId[, 名字|下标])：和传送门一样走黑场过渡，而不是瞬间切图。
     // 注意地图 id 0 是合法地图（Data/Map/Map/Map0/000000000.img，原版 Maple Road : Entrance
     // 的开场过场舞台），不能用 <=0 当「无效」的哨兵——2101.js 送新手出训练营就是 cm.warp(0)。
+    // GM reloadmap resets this field's population rather than preserving its cached cooldowns.
+    public void ReloadCurrentMap()
+    {
+        if (Map == null || Warping) throw new System.ArgumentException("地图正在切换");
+        int id=Map.id;
+        ClearMobs(); cachedFields.Remove(id); Map=null;
+        FieldCatalog.ResetMap(id);
+        var scripts=GetComponent<NativeMapScripts>(); if(scripts!=null)scripts.Reload();
+        Enter(id,null);
+    }
+
     public void WarpTo(int mapId, string portalName = null, int portalIndex = -1)
     {
         if (Warping || mapId < 0) return;
@@ -877,6 +1096,16 @@ public sealed class FieldDirector : MonoBehaviour
         pendingWarpPortal = portalName;
         pendingWarpPortalIndex = portalIndex;
         StartWarp(null);
+    }
+
+    // MapleMap.movePlayer(Character, Point)：图内瞬移，不进黑场、不换图。
+    // 入参是地图像素坐标（Y 向下），与脚本 side 的 Point 同一口径。
+    public void TeleportLocalPlayer(float x, float y)
+    {
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        if (player == null || Map == null) return;
+        float worldX = x / Art.PPU, groundY = -y / Art.PPU;
+        player.PlaceAt(worldX, groundY);
     }
 
     // 原版死亡复活同样是黑场过渡（回到本图 returnMap 的出生门），不是瞬间跳回来

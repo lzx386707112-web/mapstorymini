@@ -5,6 +5,8 @@ using UnityEngine;
 // Coordinates verified against BeiDou.exe and ijl15.dll; see docs/original-hud-port.md.
 public static class BottomBar
 {
+    static bool PointerAvailable => !NpcSession.Blocking && !NativeUtilPrompt.Visible &&
+        !NativeUi.WindowAtPointer && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer;
     public const float NativeWidth = 1281f;
     // 本项目按视口整体适配；允许高分辨率放大，内部仍使用原端坐标。
     public static float ScaleFor(float width, float height) => Mathf.Min(width / NativeWidth, height / 600f);
@@ -109,6 +111,7 @@ public static class BottomBar
         if (GameLoop.I.state != GameLoop.GameState.Playing) return;
 
         DrawPlate();
+        DrawChat();
         // 左段（LV/名字/HP/MP/EXP）画在底板之上；顺序反了会被整条底板盖掉
         StatusBar.Draw();
         // 通知槽 (573,515)：两个白槽常驻，左槽是领取按钮，右槽是便签图标
@@ -133,21 +136,45 @@ public static class BottomBar
         // 右缘落在 572，正好让 (573,515) 的通知槽和 (573,543) 的商城按钮接上。
         var left = T("backgrnd2_full");
         if (left != null) GUI.DrawTexture(new Rect(PlateX * S, UiKit.H - BarH * S, 570 * S, BarH * S), left);
-        DrawChat();
     }
 
     public static bool ChatFocused;
     static bool focusChat;
+    static bool enterPending;
     public static NativeChatChannel ChatChannel { get; private set; }
     static string whisperTarget = "";
     static readonly string[] ChatNames = { "所有人", "悄悄话", "组队", "好友", "家族", "联盟", "夫妻", "讯息" };
-    public static void FocusChat() { ChatFocused = true; focusChat = true; }
+    static TouchScreenKeyboard chatKeyboard;
+    static void CloseChatKeyboard()
+    {
+        if (chatKeyboard != null) chatKeyboard.active = false;
+        chatKeyboard = null;
+    }
+    public static bool QueueChatEnter()
+    {
+        var game=GameLoop.I;
+        if(game==null || game.state!=GameLoop.GameState.Playing || game.player==null ||
+            NpcSession.Blocking || ShopWindow.Visible || NativeUtilPrompt.Visible || KeyConfigWindow.Visible ||
+            VirtualControlsEditor.Visible || GameSideMenu.Blocking) return false;
+        enterPending = true;
+        return true;
+    }
+    public static void FocusChat()
+    {
+        ChatFocused = true; focusChat = true;
+        if (Application.isMobilePlatform && (chatKeyboard == null || !chatKeyboard.active))
+            chatKeyboard = TouchScreenKeyboard.Open(chatInput, TouchScreenKeyboardType.Default,
+                false, false, false, false, "", 127);
+    }
     public static void FocusChat(NativeChatChannel channel, string target = "")
     { ChatChannel = channel; whisperTarget = target; FocusChat(); }
     public static void ResetChat()
     {
+        CloseChatKeyboard();
+        enterPending = false;
         ChatFocused = focusChat = false; chatInput = whisperTarget = ""; chatLines.Clear();
         ChatChannel = NativeChatChannel.All; channelOpen = false;
+        NativeGainNotice.Clear();
         chatExpanded = false; panelH = ChatPanelDefaultH; chatScroll = 0;
     }
     static string chatInput = "";
@@ -180,14 +207,36 @@ public static class BottomBar
 
     public static bool SubmitChat(string text, NativeChatChannel channel, string target = "")
     {
+        // !mutemap：源端只禁当前地图的普通聊天，GM 指令不受影响。
+        bool isCommand = !string.IsNullOrEmpty(text) &&
+                         (text[0] == '@' || (text[0] == '!' && (GameSession.Character?.record?.gm ?? 0) > 0));
+        if (GameMute.MapMuted && !isCommand)
+        {
+            AddChat("当前地图已被 GM 禁言", ChatPink);
+            return false;
+        }
         var result = NativeSocialWindow.Request(SocialOperation.SendChat, target, text, channel);
         // 源端发送失败走 serverNotice(5, …)：聊天窗粉色，不是浮层提示。
         // 所有人频道的行没有频道前缀（源端截图：「ieskk : 11222」）。
         string label = channel == NativeChatChannel.All
             ? Profile.playerName + " : " + text
             : "[" + ChatNames[(int)channel] + "] " + Profile.playerName + " : " + text;
-        if (result.ok) AddChat(label, ChatWhite);
-        else AddChat(result.error, ChatPink);
+        if (result.command != null)
+        {
+            if (result.command.changed) GameSession.ReloadAfterCommand();
+            foreach (var line in result.command.messages) NativeSystemMessage.Drop(6, line);
+        }
+        if (result.ok && result.command == null)
+        {
+            AddChat(label, ChatWhite);
+            if (channel == NativeChatChannel.All && GameLoop.I?.field != null)
+            {
+                var field = GameLoop.I.field;
+                (field.GetComponent<BotField>() ?? field.gameObject.AddComponent<BotField>())
+                    .ShowLocalBalloon(Profile.playerName + ": " + text);
+            }
+        }
+        else if (!result.ok) AddChat(result.error, ChatPink);
         return result.ok;
     }
 
@@ -206,9 +255,29 @@ public static class BottomBar
     const int ChatPanelMaxH = 507;
     const int ChatPanelDefaultH = 76;   // 默认 5 行
     static bool chatExpanded;
+    public static bool ChatExpanded => chatExpanded;
     static int panelH = ChatPanelDefaultH;
     static int chatScroll;              // 底部起被滚走的行数
     static bool draggingHeight, draggingThumb;
+
+    static void FinishChat()
+    {
+        if (!string.IsNullOrWhiteSpace(chatInput)) SubmitChat(chatInput, ChatChannel, whisperTarget);
+        enterPending = false;
+        chatInput = ""; ChatFocused = false; focusChat = false;
+        GUI.FocusControl(null); CloseChatKeyboard();
+    }
+    static void ReadChatKeyboard(string text, TouchScreenKeyboard.Status status)
+    {
+        chatInput = text ?? "";
+        if (status == TouchScreenKeyboard.Status.Done) FinishChat();
+        else if (status == TouchScreenKeyboard.Status.Canceled ||
+                 status == TouchScreenKeyboard.Status.LostFocus && !enterPending)
+        {
+            enterPending = false; ChatFocused = focusChat = false;
+            GUI.FocusControl(null); CloseChatKeyboard();
+        }
+    }
 
     static void DrawChat()
     {
@@ -217,8 +286,19 @@ public static class BottomBar
         //   展开态：上方拉出半透明黑面板，消息都在面板里（带 VScr5 滚动条），
         //           白条变空白、频道按钮常驻，右端 BtMin(−)（最小高度时仍显示 BtMax）。
         var e = Event.current;
-        if (!NpcSession.Blocking && !ChatFocused && e.type == EventType.KeyDown && e.keyCode == KeyCode.Return)
-        { ChatFocused = true; focusChat = true; e.Use(); }
+        // Android may expose its final composition together with Done/Enter.
+        // Read it before consuming the queued key, on every GUI event, not just Repaint.
+        if (chatKeyboard != null) ReadChatKeyboard(chatKeyboard.text, chatKeyboard.status);
+        // InputBridge captures physical and virtual Enter before EndFrame clears its edge.
+        if (enterPending) {
+            enterPending = false;
+            if (!NpcSession.Blocking) {
+                if (!ChatFocused) FocusChat();
+                else FinishChat();
+            }
+        }
+        if (!NpcSession.Blocking && !NativeUtilPrompt.Visible && e.type == EventType.KeyDown &&
+            (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter)) e.Use();
 
         float stripTop = UiKit.H - 64 * S;
         var strip = new Rect(2 * S, stripTop, 566 * S, 20 * S);
@@ -233,30 +313,20 @@ public static class BottomBar
         if (groove != null) GUI.DrawTexture(new Rect(2 * S, UiKit.H - 43 * S, 566 * S, 5 * S), groove);
 
         if (ChatFocused || channelOpen) DrawChatInput(stripTop, targetRect, strip);
-        else if (panelOn) DrawTargetButton(targetRect);   // 展开且没在打字：白条空白，只有频道按钮
+        else if (panelOn)
+        {
+            DrawTargetButton(targetRect);
+            if (PointerAvailable && e.type == EventType.Repaint && Pointer.Clicked &&
+                strip.Contains(Pointer.Pos) && Pointer.Pos.x >= targetRect.xMax && Pointer.Pos.x < 549f * S) FocusChat();
+        } // 展开且没在打字：白条空白，只有频道按钮
         else DrawCollapsedChat(strip);
 
         if (panelOn) DrawChatPanel(panel);
         DrawExpandButton(stripTop);
         if (!panelOn) DrawCollapsedArrows(stripTop);
 
-        if (!NpcSession.Blocking && e.type == EventType.KeyDown && e.keyCode == KeyCode.Return)
-        {
-            if (ChatFocused)
-            {
-                if (!string.IsNullOrWhiteSpace(chatInput))
-                {
-                    SubmitChat(chatInput, ChatChannel, whisperTarget);
-                }
-                chatInput = "";
-                GUI.FocusControl(null);
-                ChatFocused = false;
-            }
-            else { GUI.FocusControl("NativeChat"); ChatFocused = true; }
-            e.Use();
-        }
         if (ChatFocused && e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
-        { GUI.FocusControl(null); ChatFocused = false; e.Use(); }
+        { GUI.FocusControl(null); ChatFocused = false; CloseChatKeyboard(); e.Use(); }
 
         DrawChannelList(targetRect);
     }
@@ -274,7 +344,7 @@ public static class BottomBar
                 last.text, text);
         }
         // 点击条进入输入态；右端 549 起是 +/− 按钮与那对灰色箭头，点到它们不算点条。
-        if (!NpcSession.Blocking && Event.current.type == EventType.Repaint && Pointer.Clicked &&
+        if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.Clicked &&
             strip.Contains(Pointer.Pos) && Pointer.Pos.x < 549f * S)
             FocusChat();
     }
@@ -333,9 +403,9 @@ public static class BottomBar
                 if (thumb != null) GUI.DrawTexture(thumbRect, thumb);
                 if (clickable && ev.type == EventType.Repaint)
                 {
-                    if (Pointer.Clicked && prevRect.Contains(Pointer.Pos)) chatScroll = Mathf.Min(maxScroll, chatScroll + 1);
-                    else if (Pointer.Clicked && nextRect.Contains(Pointer.Pos)) chatScroll = Mathf.Max(0, chatScroll - 1);
-                    else if (Pointer.Clicked && thumbRect.Contains(Pointer.Pos)) draggingThumb = true;
+                    if (PointerAvailable && Pointer.Clicked && prevRect.Contains(Pointer.Pos)) chatScroll = Mathf.Min(maxScroll, chatScroll + 1);
+                    else if (PointerAvailable && Pointer.Clicked && nextRect.Contains(Pointer.Pos)) chatScroll = Mathf.Max(0, chatScroll - 1);
+                    else if (PointerAvailable && Pointer.Clicked && thumbRect.Contains(Pointer.Pos)) draggingThumb = true;
                     if (draggingThumb)
                     {
                         if (!Pointer.Down) draggingThumb = false;
@@ -365,7 +435,7 @@ public static class BottomBar
         if (ev.type != EventType.Repaint || NpcSession.Blocking) return;
         var edge = new Rect(panel.x, panel.y - 4f * S, panel.width, 8f * S);
         bool over = edge.Contains(Pointer.Pos);
-        if (Pointer.Clicked && over) draggingHeight = true;
+        if (PointerAvailable && Pointer.Clicked && over) draggingHeight = true;
         if (draggingHeight)
         {
             if (!Pointer.Down) draggingHeight = false;
@@ -397,7 +467,7 @@ public static class BottomBar
         string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
         var t = T(key + "_" + state) ?? T(key + "_normal");
         if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
-        if (!NpcSession.Blocking && Event.current.type == EventType.Repaint && Pointer.Released && hover)
+        if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.Released && hover)
         {
             if (minus) chatExpanded = false;                       // − → 收起，回到正常状态
             else if (chatExpanded) { panelH = ChatPanelDefaultH; } // 最小高度的 + → 展开到默认高度
@@ -422,10 +492,10 @@ public static class BottomBar
         if (comb != null) GUI.DrawTexture(targetRect, comb, ScaleMode.StretchToFill);
         // 频道名：原版这张深蓝按钮上就是白字，这里用同一套字体居中
         ShadowLabel(targetRect, ChatNames[(int)ChatChannel], Style(11, Color.white, TextAnchor.MiddleCenter));
-        if (!NpcSession.Blocking && Event.current.type == EventType.Repaint && Pointer.Clicked && overTarget)
+        if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.Clicked && overTarget)
         {
             channelOpen = !channelOpen;
-            if (channelOpen) { ChatFocused = false; GUI.FocusControl(null); }
+            if (channelOpen) { ChatFocused = false; GUI.FocusControl(null); CloseChatKeyboard(); }
         }
     }
 
@@ -477,7 +547,12 @@ public static class BottomBar
             inputW -= 158f;
         }
         GUI.SetNextControlName("NativeChat");
-        if (ChatFocused) chatInput = GUI.TextField(new Rect(inputX * S, y, inputW * S, 20 * S), chatInput, 127, style);
+        if (ChatFocused)
+        {
+            var inputRect=new Rect(inputX*S,y,inputW*S,20*S);
+            if(chatKeyboard!=null) GUI.Label(inputRect,chatInput,style);
+            else chatInput=GUI.TextField(inputRect,chatInput,127,style);
+        }
         if (focusChat && Event.current.type == EventType.Repaint)
         { GUI.FocusControl("NativeChat"); focusChat = false; }
     }
@@ -503,16 +578,17 @@ public static class BottomBar
             var tex = T("combo_" + (i == (int)ChatChannel ? "pressed" : over ? "mouseOver" : "normal")) ?? T("combo_normal");
             if (tex != null) GUI.DrawTexture(r, tex, ScaleMode.StretchToFill);
             ShadowLabel(r, ChatNames[i], Style(11, Color.white, TextAnchor.MiddleCenter));
-            if (Event.current.type == EventType.Repaint && Pointer.Clicked && over)
+            if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.Clicked && over)
             {
                 ChatChannel = (NativeChatChannel)i;
                 channelOpen = false;
+                Pointer.ConsumeClick();
                 return;
             }
         }
 
         var e = Event.current;
-        if (e.type == EventType.Repaint && Pointer.Clicked && !block.Contains(Pointer.Pos) && !anchor.Contains(Pointer.Pos))
+        if (PointerAvailable && e.type == EventType.Repaint && Pointer.Clicked && !block.Contains(Pointer.Pos) && !anchor.Contains(Pointer.Pos))
             channelOpen = false;
         else if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
         { channelOpen = false; e.Use(); }
@@ -556,7 +632,7 @@ public static class BottomBar
             string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
             var t = T(keys[i] + "_" + state) ?? T(keys[i] + "_normal");
             if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
-            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) PressBig(i);
+            if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.Released && hover) PressBig(i);
         }
     }
 
@@ -598,7 +674,7 @@ public static class BottomBar
         string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
         var t = T("BtClaim_" + state) ?? T("BtClaim_normal");
         if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
-        if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer &&
+        if (PointerAvailable &&
             Event.current.type == EventType.Repaint && Pointer.Released && hover)
         {
             AudioManager.Play("UI/BtMouseClick", 0.7f, false);
@@ -616,7 +692,7 @@ public static class BottomBar
             string state = Pointer.Down && hover ? "pressed" : hover ? "mouseOver" : "normal";
             var t = T(keys[i] + "_" + state) ?? T(keys[i] + "_normal");
             if (t != null) GUI.DrawTexture(r, t, ScaleMode.StretchToFill);
-            if (!KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Released && hover) { PressSmall(i); }
+            if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.Released && hover) { PressSmall(i); }
         }
     }
 
@@ -680,7 +756,7 @@ public static class BottomBar
                 GUI.DrawTexture(new Rect(cell.x, cell.y,
                     nameTex.width * S, nameTex.height * S), nameTex);
             }
-            if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.RightPressed && r.Contains(Pointer.Pos))
+            if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.RightPressed && r.Contains(Pointer.Pos))
                 { if (skillSlot >= 0) QuickSlots.Clear(skillSlot); }
             // 手上拿着技能时点快捷格 = 放下绑定（由 SkillWindow 处理），不再当作施放
             if (SkillWindow.Dragging || NativeInventoryActions.Carrying)
@@ -689,7 +765,7 @@ public static class BottomBar
                     SkillWindow.CancelSkillDrag();
                 continue;
             }
-            if (!NpcSession.Blocking && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !VirtualControls.BlockingPointer && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
+            if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
             {
                 AudioManager.Play("UI/BtMouseClick", 0.7f, false);
                 if (id != 0) QuickSlots.Cast(skillSlot);

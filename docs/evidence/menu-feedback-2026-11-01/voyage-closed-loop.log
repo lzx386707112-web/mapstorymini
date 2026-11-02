@@ -1,0 +1,25 @@
+[CommerciVoyage] 通过 交易所主菜单按原脚本显示舰船/能量/船舱/凯梅尔兹金币
+[CommerciVoyage] 通过 买货：金币扣款、船舱装载、每日库存与状态落库（areaInfo_32010）
+[CommerciVoyage] 通过 船舱上限按 cargoCap 拦截超装
+[CommerciVoyage] 通过 出航：能量/货物/active 存档按原脚本写入并进入航线私有图
+[CommerciVoyage] 通过 第一波刷怪与 3 分钟计时按原脚本
+[CommerciVoyage] 通过 三波逐波推进：清波 → 2 秒换波 → 末波清完提前到港
+[CommerciVoyage] 通过 全清结算写入 pendingCoins/PendingExp/完成次数并清 active
+[CommerciVoyage] 通过 finishVoyage → end → playerExit 回大厅并释放航线图
+[CommerciVoyage] 通过 NPC 领取：重登后 pending 仍在，领取发币并累加舰船经验
+[CommerciVoyage] 通过 重复领取被原脚本拦截（不会重复发币）
+[CommerciVoyage] 通过 超时到港：按剩余波数 70% 折算奖励，不复制货物
+[CommerciVoyage] 通过 超时 end(eim) 回大厅
+[CommerciVoyage] 通过 满背包：领取被拒且 pending 不被清空
+[CommerciVoyage] 通过 空间恢复后按原脚本补领成功
+[CommerciVoyage] 通过 兑换：按原价扣币并发放装备
+[CommerciVoyage] 通过 跨天：日期/能量/每日库存按 loadState 重置
+[CommerciVoyage] 通过 六条航线的地图/波数/首波数量与 routeWaves 表一致
+[CommerciVoyage] 通过 航线解锁：按原脚本校验前置完成次数并扣凯梅尔兹金币
+[CommerciVoyage] 通过 每日库存售罄按原脚本拒绝
+[CommerciVoyage] 通过 升级前置：低阶/低等级按原脚本拦截
+[CommerciVoyage] 通过 船只升阶：重置等级、扣 1000 万金币
+[CommerciVoyage] 通过 船舱/能量上限：按原公式扣凯梅尔兹金币并提升上限
+[CommerciVoyage] 通过 中途离图：changedMap 摘人，最后一人离开直接结束实例，回大厅按原逻辑清理 active
+[CommerciVoyage] 通过 组队重载（party, map, difficulty）用本地队长起实例并刷波
+[CommerciVoyage] 结果：通过 24 项，退出码 0

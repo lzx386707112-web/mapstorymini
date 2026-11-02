@@ -56,6 +56,15 @@ public static class NativeSkillVfx
             Read(node, specific != null ? path + "/level/" + level + "/" + branch : path + "/" + branch,
                 branch, clips, meta, new HashSet<ImgNode>());
         }
+        // 96C052..96C166: movement effects live outside Skill.wz.
+        string movementEffect = id == 4111006 ? "Flying" : id == 14101004 ? "Flying1" :
+            id == 11101005 ? "SoulRush" : null;
+        if (movementEffect != null)
+        {
+            string effectPath = "Effect/BasicEff.img/" + movementEffect;
+            var effectNode = WzAssets.Node(effectPath);
+            if (effectNode != null) Read(effectNode, effectPath, "movement", clips, meta, new HashSet<ImgNode>());
+        }
         skills.Add(key, clips); metadata.Add(key, meta);
         return key;
     }

@@ -34,6 +34,8 @@ public sealed class InventoryEntry
     public bool isEquip;
     // 装备属性（inventoryequipment 行；非装备为 0）
     public int str, dex, int_, luk, hp, mp, watk, matk, wdef, mdef, acc, avoid, hands, speed, jump, upgradeslots;
+    // inventoryequipment.level：源端 Equip.getLevel()，背包整理里装备的副排序键。
+    public int equipLevel;
     // 星之力（源端 Equip.java 的 maxStar/starLevel/starCount，DB 列同名）：
     //   starLevel 当前星级、starCount 连续失败次数（满 5 必成）、maxStar 上限（按需求等级表算）。
     public int maxStar, starLevel, starCount;
@@ -139,6 +141,7 @@ public static class CharService
             e.acc = (int)Convert(eq, "acc"); e.avoid = (int)Convert(eq, "avoid");
             e.hands = (int)Convert(eq, "hands"); e.speed = (int)Convert(eq, "speed");
             e.jump = (int)Convert(eq, "jump"); e.upgradeslots = (int)Convert(eq, "upgradeslots");
+            e.equipLevel = (int)Convert(eq, "level");
             e.maxStar = (int)Convert(eq, "maxStar");
             e.starLevel = (int)Convert(eq, "starLevel");
             e.starCount = (int)Convert(eq, "starCount");

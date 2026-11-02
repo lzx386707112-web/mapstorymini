@@ -20,15 +20,24 @@
 
 复现：`python3 tools/imgdump.py "Map/Map/Map9/910000000.img" portal --depth 4`。
 
-### 触发规则（已确定）
+### 触发规则（2026-10-30 全面纠正；旧口径「1/6 踩上即传」是错的）
 
-- **pt=1 / pt=6**：隐形门、碰撞门——角色踩到即传，不需要按键。自由市场的 `in01..in22`、上下层箭头都属于这类。
+类型名与编号（mapleref 类型表 + `MapHelper.img/portal/editor` 美术名一一对应）：
+0=sp、1=pi、2=pv、3=pc、4=pg、5=pgi、6=tp、7=ps、8=psi、9=pcs、10=ph、11=psh、12=pcj、13=pci、14=pcig。
+
+- **踩上即触发（Automatic）**：只有碰撞类 **3(pc)/9(pcs)/12(pcj)/13(pci)**。
+- **必须按 ↑**：**1(pi)/2(pv)/4(pg)/5(pgi)/6(tp)/7(ps)/8(psi)/10(ph)/11(psh)** —— 包括隐形门 pt=1
+  （自由市场 `in01..in22`、上下层箭头都属于这类）和 pt=6 神殿之门（Mystic Door）。
 - **pt=0 出生点**：不触发。
-- **其余（2/3/4/5/7/8/9/10）**：必须站在门上按↑才触发。
 
-上一版把 **pt=7 当成「碰上去就触发」**，导致自由市场入口中央的 `out00`（market00 脚本）在玩家从出生点走下来时自动把角色传出市场。用户在源端实测该门要按↑，与类型语义（CHANGABLE＝可切换门，如选择之岔路）一致，已按此修正。
+证据链：① mapleref 类型表 Automatic 列；② `portal/editor` 下美术名按类型名排列（pi/pv/pc/pg/tp/ps/...），
+与编号顺序吻合；③ BeiDou 服务端 `Portal.java` 的 `DOOR_PORTAL=6`（6 是门不是碰撞）；④ 经典地图站对隐藏门
+的口诀「stand on the spot and press up」；⑤ 用户在源端实测自由市场洞口/上下层箭头要按↑。
+历史教训：上一版按「Portal 类型常量记忆」把 1/6 当踩踏门、3 当按↑门，正好大面积颠倒——用户实测 out00(pt=7)
+与 in01..22(pt=1) 才暴露。**「隐形门＝踩上即传」是错误直觉，v83 隐形门也要按↑。**
 
-- MapleDash：`Field/FieldCatalog.cs` 的 `FieldPortal.TouchTrigger`（1/6）与 `PressUpTrigger`（2/3/4/5/7/8/9/10）；`Field/FieldDirector.CheckPortals` 只在按↑门等按键。
+- MapleDash：`Field/FieldCatalog.cs` 的 `FieldPortal.TouchTrigger`（3/9/12/13）与 `PressUpTrigger`
+  （1/2/4/5/6/7/8/10/11）；`Field/FieldDirector.CheckPortals` 只在按↑门等按键。
 - HUD 只对 `PressUpTrigger` 的门提示「按 ↑ / W 进入传送门」（`GameHUD.cs`），踩踏门不提示。
 
 ### 待核实
@@ -99,6 +108,41 @@ Unity batch `UiIssueChecks.Run` 48项通过/0失败（含5项名牌几何检查�
 目录脚本run检查889条：parseFail=0、runFail=47、javaInterop=73，失败包括缺少getCapacity/getId等宿主接口；
 该harness不编译本次修改的NpcDialogUi/UiIssueChecks，不能将其失败归因于这次绘制变更，也不声称全脚本通过。
 未完成Android实机与原端同场景逐像素对照。
+
+## 角色脚下名牌（type=1000，2026-10-31 补）
+
+用户反馈「角色底下没显示角色昵称」：此前只画了 NPC 名牌（type=1001），玩家与假人都没有名牌。
+二进制身份同本文（`1b91cf5b…f134b2`）。
+
+### 调用链
+
+- 本地角色：`0x942DDC` 起（角色名变化/进图重建名牌）→ 取 `+0x11A4`（图层）、`+0x1150`（位置对象）、
+  `+0x11AC`（名字串）→ `push 0x3E8` → `call 0x5F0334`。
+  随后同一函数用 `0x3ED`(1005)、`0x3EF`(1007) 再建公会/勋章附加行（附加行本轮未迁移）。
+- 其他角色：`0x942F48`、`0x943038` 同样以 `0x3E8` 调用 `0x5F0334`。
+- 复现：`inspect_beidou_client.py <exe> --start 0x942D00 --end 0x942F80`（该函数边界为 `0x942DCC` 起）。
+
+### 已核实的绘制参数（type=1000，无名牌皮肤时）
+
+| 项目 | 依据 |
+| --- | --- |
+| 分支入口 | `0x5F0E1D` 先写默认底色 `A0000000`；`type==0x3E8` 且 `arg+0x18!=0`（有皮肤）才置 `[ebp-0x48]=1`；无皮肤走 `0x5F10C8` |
+| 字体 | `0x5F10C8` → `0x98A707(索引0)`；索引 0 分支 `0x98A74A`：字体名串 `0x582`、size `0xC`、ARGB **`0xFFFFFFFF`（白）**、样式串 `0xBF6300` 为空 ⇒ **不加粗** |
+| 有皮肤时 | `0x5F1024`：字色 `0xFF000000`、底色 `0xFF2C80AD`（`UI/NameTag/%d` 装饰牌分支，本工程没有名牌道具） |
+| 尺寸 | `0x5F12E5`：`width = 文字宽 + 5`、`height = 字体高(12) + 4 = 16`（与 type1001 相同） |
+| 角落 | `0x5F1445..0x5F150A`：四角各清 1×1（`0x00FFFFFF`）；`0x5F1522` 的白线只在**有皮肤**分支 |
+| 绘字 | `0x5F15EC`：`DrawText(2,0)` |
+| 原点 | `0x5F1654` x = width/2；`0x5F1691` y = **-2**（脚点下 2px） |
+
+### 迁移与边界
+
+`NpcDialogUi.DrawCharacterNames()`（由 `DrawField()` 在最前面调用）复用 NPC 名牌的
+`NamePlateRects`，只把字改成白色、不加粗；对象是本地角色（`PlayerCtrl.FeetPos`）与
+同图假人（`BotField.TryFeet` 取 root 脚点，root 就是脚点，和气球同一口径）。
+名字宽度按字符串缓存，避免几十个假人每帧 `CalcSize`。
+
+待核实/未迁移：`+0x1150` 位置对象的确切语义未逐指令确认（按脚点处理，与源端截图一致）；
+`UI/NameTag/<skin>` 装饰牌与 `NameTag.img/medal` 勋章行未迁移（本工程没有名牌道具与勋章槽）。
 
 ## 头顶聊天气泡
 
@@ -270,3 +314,10 @@ portal29 为配对 h_east01，(2894,423)。节点已被 NativeMapView.LoadMap �
 复现：`tools/imgdump.py Map/Map/Map1/104000000.img portal --depth 3`；`--fn 0x712C57`、`--fn 0x712D35`、`--fn 0x71259D --fields 0x71259D --pool <字符串池JSON>`、`--fn 0x71332C`。
 迁移：NativeMapView为pt10保存隐藏门三段原动画，未靠近时隐藏，靠近后Start→Continue、离开Exit；保留节点坐标与原origin。
 pt11自定义image与ph共享Continue的原端细节尚需继续逐图核对，本轮未扩展pt11渲染，不将默认ph/psh相同推广为任意自定义图形相同。
+
+### 2026-10-31 主角普通聊天接入
+
+此前仅假人OnOutput的Chat/Bubble可创建并绘制气泡。现BottomBar在普通All频道发送成功后调用
+BotField.ShowLocalBalloon，沿用本节原IMG/尺寸/折行/5000ms时长；主角使用实际SpriteAnim
+世界bounds.max.y为头顶，非假人View。假人预热/视图未同步时也可显示；地图Clear清除。
+输入法发送时序及本次验证见[聊天消息](chat-and-system-messages.md)末节。

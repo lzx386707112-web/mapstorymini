@@ -3,7 +3,7 @@
 // GiveResourceReqDTO：worldId/playerId/type/id/quantity + 装备属性一整套（str…jump、
 // upgradeSlot、expire）。type 取值与源端 GiveService.give 一致：
 //   0 点券 / 1 信用点 / 2 抵用券 → accounts.nxCredit|nxPrepaid|maplePoint（0..int.Max 钳制）
-//   3 金币 → characters.mesos（0..int.Max 钳制）      4 经验 → characters.exp（最低清零）
+//   3 金币 → characters.meso（long，最低清零）      4 经验 → characters.exp（最低清零）
 //   5 物品（非装备；宠物按 quantity 天数）             6 装备（含属性/卷位/expire）
 //   7/8/9/10 倍率 → 单机版不接（exp/meso/drop_rate 只影响世界列表显示，见 docs/admin-console.md）
 //   11 GM 等级（0..127）                              12 声望 fame
@@ -84,11 +84,14 @@ public static class AdminGive
     static void AddMesos(DbStore db, long characterId, long quantity)
     {
         var character = db.Table("characters").Find(DbStore.Eq("id", characterId));
-        long value = DbStore.Long(character, "mesos") + quantity;
-        if (value < 0) value = 0;
-        if (value > int.MaxValue) value = int.MaxValue;
-        db.Table("characters").Update(DbStore.Eq("id", characterId), new DbRow { ["mesos"] = value });
-        SyncCharacterField(characterId, "mesos", value);
+        long balance = DbStore.Long(character, "meso");
+#if UNITY_EDITOR || UNITY_5_3_OR_NEWER
+        if (GameSession.InGame && GameSession.CharacterId == characterId) balance = Profile.Data.gold;
+#endif
+        long value = quantity > 0 && balance > long.MaxValue - quantity ? long.MaxValue :
+            quantity < 0 && quantity < -balance ? 0 : balance + quantity;
+        db.Table("characters").Update(DbStore.Eq("id", characterId), new DbRow { ["meso"] = value });
+        SyncCharacterField(characterId, "meso", value);
     }
 
     static void AddExp(DbStore db, long characterId, long quantity)
@@ -103,6 +106,9 @@ public static class AdminGive
     {
         long value = Math.Max(0, Math.Min(127, level));                        // 源端 0-127
         db.Table("characters").Update(DbStore.Eq("id", characterId), new DbRow { ["gm"] = value });
+        // 必须同步在线角色：SaveToDb 会把内存里的 record.gm 整行写回（ToUpdateRow 含 gm），
+        // 不同步的话后台抬的 GM 等级会被下一次存档悄悄覆盖回 0，表现就是「@job 还是没权限」。
+        SyncCharacterField(characterId, "gm", value);
     }
 
     static void SetFame(DbStore db, long characterId, long fame)
@@ -176,8 +182,9 @@ public static class AdminGive
             if (GameSession.InGame && GameSession.CharacterId == (int)characterId &&
                 GameSession.Character != null && GameSession.Character.record != null)
             {
-                if (field == "meso") GameSession.Character.record.meso = (int)value;
+                if (field == "meso") { GameSession.Character.record.meso = value; Profile.Data.gold = value; }
                 if (field == "exp") GameSession.Character.record.exp = (int)value;
+                if (field == "gm") GameSession.Character.record.gm = (int)value;
             }
         }
         catch (Exception) { }

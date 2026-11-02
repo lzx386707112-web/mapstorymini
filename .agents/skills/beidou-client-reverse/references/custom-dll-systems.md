@@ -269,3 +269,19 @@ WEATHER_EFFECTS_PASS snow_seed_melt snow_footprint_idle_gate puddle_seed_promote
 - `0x67285F0A..67286026`检查native window `0x6728DB80`和target window `0x6728DB8C`均未过期、targetCount `0x6728DB94`>0；原子递增`0x6728DB88`按targetCount取余，读取`0x6728DBA0+index*8` x/y写入目标，travel参数若>0x294则夹为 **660ms**。与旧cpp的AssignNativeRangedProjectileTarget合同一致，已核当前二进制。
 - 原EXE `0x95445F..954511`按起终点欧氏距离×常量`0xAFE808` **1.5ms/px** 计算普通弹道时长（个别原技能另分支）；`0x954683..95469B`将start/end及时间传给magicBulletManager`0x435DF3`。`0x953D9D..953DAA`起始Y取角色位置−28px；`0x953DCD..953DDE`起始X还含调用参数的有向偏移，**该调用参数的所有施放/远程回放消费者仍待追踪**，不能自行假定永远0。
 - 原CUser local射击过程与服务器回放RANGED_ATTACK(0xBB)的远程处理不能混为一谈；当前Java replayTargetedAttack确实向自身sendPacket再向地图广播，未延迟服务器HP结算到飞弹落点。故飞弹呈现迁移不可改变已确定的服务器伤害时间点。
+
+## 2026-10-30 勇士部落飘枫叶切图卡顿反馈
+
+用户明确地图为勇士部落、天气为飘枫叶，运行平台尚未提供。代码检查发现NativeWeatherField.MountLayers为NativeWeatherGround取得foothold而再次调用完整NativeMapView.LoadMap，重复枚举life并取NPC头高；现只从相同MapRoot的foothold构建天气需要的平台几何，不加载NPC/怪物/传送门无关数据。该优化不改变天气原节点或布局。此为确定的重复工作修正，不能据此断言卡顿根因已确认或已消失；尚需同场景帧耗时采样及实际切图回归。
+
+## 2026-11-01 五六转按钮图标/施放反馈
+
+本次重新核对源`BeiDouSkillCompatCore.dll` SHA256仍为`3882737456d7c95795b2afe63ad91703cd70ef299c6b83fefe5f6f70764b466f`，可复用本记录`0x67286027`视频入口及39项当前表。没有新增或改写视频映射、原始MCV、播放器和服务端回放时序。
+
+确定的客户端问题是技能拖入有显式键的虚拟按钮时只写按钮skillId，显示/触发却从KeyMap/QuickSlots走另一条链。现已让绑定写入与显示和按键施放相同的技能ID通道，详见物品使用记录“页签样式及虚拟键绑定反馈”。普通键盘设定仍使用原DropSkill/skillDraft规则。
+
+新验证入口：Unity Play模式 `AdvancedSkillFeedbackChecks.Run`。真实临时角色、原IMG数据，以1221029正义崛起、1221030圣狮之主、1221015圣十字架验证拖入显式键→原图标身份→虚拟输入映射→TryCastBoundSkill。1221030确实由BeginCast触发原`Video/dominus-obrion.mcv`，原生解码获得帧；检查NativeSkillReplay原1221030调度存在。验证不等于全职业所有V/VI/组件技能的战斗正确，也不验证每个目标HP/伤害时间轴或Android APK。原有缺口继续有效，不将此次绑定修复描述为全部DLL迁移完成。
+
+实测日志和截图随`docs/advanced-skill-feedback-2026-11-01.md`归档，截图来自真实Play/OnGUI，不是重绘示意图。
+
+2026-11-01补核：当前DLL攻击家族分派不能由`mad`字段存在性替代；39视频技能目录与圣骑双MCV回归见[五项补核](five-issues-followup-2026-11-01.md)。既有专属状态机迁移边界仍有效。

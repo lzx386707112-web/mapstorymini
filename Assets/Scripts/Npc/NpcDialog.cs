@@ -36,6 +36,7 @@ public sealed class NpcDialog
     // 当前选的是哪一项，所以菜单一打开就默认落到第一个可选项。改动只影响初值，
     // 上下键改写（0x9AC104/0x9AC347）和鼠标/触摸改写（0x9ABE86）行为照旧。
     public int SelectedLink = -1;
+    public bool RevealSelection;
 
     // 默认选中：按显示顺序的第一个可选项（分组标题 HeaderArt 不算选项）。
     // 必须在 Content 组装完成后调用——NpcField 的程序化菜单是在 Set() 之后才追加 Selections 的。

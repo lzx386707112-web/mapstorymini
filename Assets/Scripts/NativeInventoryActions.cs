@@ -5,14 +5,23 @@ using System.Collections.Generic;
 public static class NativeInventoryActions
 {
     static int carriedItem,carriedPosition;
-    static bool swallowDrop;
+    static bool swallowDrop,carriedFromInventory;
     public static bool Carrying => carriedItem != 0;
-    public static void Pick(int id,int inventoryPosition=0)
+    public static void Pick(int id,int inventoryPosition=0) => Pick(id,inventoryPosition,false);
+    public static void PickFromInventory(int id,int inventoryPosition=0) => Pick(id,inventoryPosition,true);
+    static void Pick(int id,int inventoryPosition,bool fromInventory)
     {
         // Native keymap item bindings are for consumables, usable setup and cash items.
-        if (id / 1000000 != 2 && id / 10000 != 301 && id / 1000000 != 5 && !(NativeVegaWindow.Visible && id/1000000==1)) return;
+        // 背包格多一条：源端把「格子里的东西丢到地上」实现成 ITEM_MOVE(action=0)，
+        // 任何背包页都能丢，所以从背包拿起时装备/材料也允许携带（它们只是不能绑键位）。
+        // 但已经穿在身上的（装备页 position<0）不能拿：InventoryManipulator.drop 只认
+        // position>0，源端同样要求先脱下，否则拿起后落到地面会被服务端拒绝、光标上的
+        // 道具凭空消失。
+        if (id / 1000000 != 2 && id / 10000 != 301 && id / 1000000 != 5 &&
+            !(NativeVegaWindow.Visible && id/1000000==1) &&
+            !(fromInventory && id > 0 && inventoryPosition >= 0)) return;
         SkillWindow.CancelSkillDrag();
-        carriedItem = id;carriedPosition=inventoryPosition;
+        carriedItem = id;carriedPosition=inventoryPosition;carriedFromInventory=fromInventory;
     }
     public static void CarryStep()
     {
@@ -31,7 +40,8 @@ public static class NativeInventoryActions
         if (!Pointer.Pressed) return;
         int id = carriedItem;
         carriedItem = 0;
-        bool placed=NativeVegaWindow.Drop(Pointer.Pos,id,carriedPosition);
+        bool placed=EquipWindow.DropPetPotion(Pointer.Pos,id);
+        if(!placed) placed=NativeVegaWindow.Drop(Pointer.Pos,id,carriedPosition);
         if(!placed && (id/10000==204 || IsCashEquipment(id)))
         {
             var target=EquipWindow.EquipmentAt(Pointer.Pos) ?? InvenWindow.EquipmentAt(Pointer.Pos);
@@ -41,7 +51,51 @@ public static class NativeInventoryActions
         if (!placed && id/1000000!=1 && !KeyConfigWindow.Visible)
             for (int i = 0; i < QuickSlots.Count; i++)
                 if (BottomBar.SlotRect(i).Contains(Pointer.Pos)) { QuickBarKeys.BindSkill(i, -id); placed = true; break; }
+        if (!placed && carriedFromInventory && FieldAcceptsDrop(Pointer.Pos)) placed = DropToField(id, carriedPosition);
         if (placed) { swallowDrop = true; Pointer.ConsumeClick(); Pointer.Pressed = false; }
+    }
+
+    // 源端「丢到地上」= ITEM_MOVE(0x47) 且 action==0（ItemMoveHandler → InventoryManipulator.drop）。
+    // 交互沿用本项目的点击口径：点一次从背包拿起，再点一次落在窗口/底栏/虚拟按键之外的地面就丢。
+    static bool FieldAcceptsDrop(Vector2 pointer)
+        => !NativeUi.WindowAtPointer && !VirtualControls.BlockingPointer && pointer.y < UiKit.H - 80f * BottomBar.S;
+
+    static bool DropToField(int itemId, int position)
+    {
+        var loop = GameLoop.I;
+        var player = loop == null ? null : loop.player;
+        var field = loop == null ? null : loop.field;
+        if (player == null || field == null || field.StateId < 0 || GameSession.Character == null) return false;
+        var entry = GameSession.Character.inventory.Find(x => x.itemId == itemId && x.position > 0 &&
+            (position == 0 || x.position == position));
+        if (entry == null) return false;
+        // 源端对可堆叠道具先问「扔掉多少？」（字符串池 885），装备/单件直接丢。
+        if (entry.quantity > 1 && itemId / 1000000 != 1)
+        {
+            NativeUtilPrompt.Number("扔掉多少？", 1, 1, entry.quantity, value => DropToField(itemId, position, (int)value));
+            return true;
+        }
+        DropToField(itemId, position, 1);
+        return true;
+    }
+
+    static void DropToField(int itemId, int position, int quantity)
+    {
+        var loop = GameLoop.I;
+        var player = loop == null ? null : loop.player;
+        var field = loop == null ? null : loop.field;
+        if (player == null || field == null || field.StateId < 0) return;
+        // 源端 dropPos 取 Character.getPosition()（脚下），落点吸附在服务端 CalcItemDropPos 里做。
+        var response = GameSession.Net.ChangeInventory(new InventoryChangeRequest
+        {
+            characterId = GameSession.CharacterId, itemId = itemId, sourcePosition = position,
+            dropToField = true, dropQuantity = quantity, dropMapId = field.StateId,
+            dropX = Mathf.RoundToInt(player.transform.position.x * Art.PPU),
+            dropY = Mathf.RoundToInt(-player.transform.position.y * Art.PPU),
+        });
+        if (!response.ok) { BottomBar.Toast(string.IsNullOrEmpty(response.error) ? "无法丢弃这件物品" : response.error); return; }
+        GameSession.Character.inventory = response.inventory;
+        GameSession.ApplyInventoryToProfile(); Profile.Save();
     }
     static bool IsCashEquipment(int id)=>id==5060000 || id==5060001 || id>=5061000 && id<=5061003 || id/10000==550 || id/10000==552 || id/10000==557;
     public static void DrawCarry()
@@ -60,7 +114,7 @@ public static class NativeInventoryActions
     }
 
     // StatEffect: item time is milliseconds; Alchemist scales duration by y.
-    static bool UseStatPotion(int id,PlayerCtrl player)
+    public static bool UseStatPotion(int id,PlayerCtrl player,int count=1)
     {
         var spec=NativeItemSource.Node(id)?.Get("spec");
         if (spec==null) return false;
@@ -99,9 +153,9 @@ public static class NativeInventoryActions
         }
         int hpRate=(int)(player.hpMax*(spec.Int("hpR")/100.0));
         if (player.GetComponent<NativeMobDebuffs>()?.Has(133)==true) { hp/=2; hpRate/=2; }
-        if (!Profile.RemoveItem(id,1)) return false;
-        player.hp=Mathf.Clamp(player.hp+hp+hpRate,0,player.hpMax);
-        player.mp=Mathf.Clamp(player.mp+mp+(int)(player.mpMax*(spec.Int("mpR")/100.0)),0,player.mpMax);
+        if (count<=0 || !Profile.RemoveItem(id,count)) return false;
+        player.hp=Mathf.Clamp(player.hp+(hp+(long)hpRate)*count,0,player.hpMax);
+        player.mp=Mathf.Clamp(player.mp+(mp+(long)(player.mpMax*(spec.Int("mpR")/100.0)))*count,0,player.mpMax);
         var diseases=player.GetComponent<NativeMobDebuffs>();
         if(spec.Int("poison")>0) diseases?.Clear(125);
         if(spec.Int("seal")>0) diseases?.Clear(120);
@@ -240,6 +294,16 @@ public static class NativeInventoryActions
             if(family==515 || family==522 || family==525 || family==538 || family==542 || family==546 || family==549) return null;
             if(itemId==5610000 || itemId==5610001) {NativeVegaWindow.Open(itemId);return null;}
             if(itemId==5050000) {NativeResetWindow.Open(itemId,inventoryPosition);return null;}
+            // 505 SP 洗点：cashType24 → 0xA0C6DD；5050001..4 = 1..4 转技能点重置卷
+            if(itemId>=5050001 && itemId<=5050004) {NativeSpResetWindow.Open(itemId,inventoryPosition);return null;}
+            // 快速投递券（itemType 533）：只开寄件窗口，券在真正寄出时才扣（DueyProcessor.dueySendItem）。
+            if(itemId/10000==533) {NativeDeliveryWindow.Open(true);return null;}
+            // 传送石：cashType22 → 0xA0CAB0；5040000..4 普通 / 5041000 VIP
+            if(itemId/10000==504) {NativeTeleportWindow.Open(itemId,inventoryPosition);return null;}
+            // 改名（领头宠物）：0xA0BA15 → 7A06F3 过滤链；服务端 getPet(0) 无宠物不消耗
+            if(itemId/10000==517) {NativeRenameWindow.Open(itemId,inventoryPosition);return null;}
+            // 黑板：cashType32 → 0xA0CE2E（CUtilDlgEx type3 max40）
+            if(itemId/10000==537) {NativeAdBoard.Open(itemId);return null;}
             if(itemId==5510000) return "死亡后可在复活确认窗口使用原地复活术";
             if(itemId/1000==5000)
             {

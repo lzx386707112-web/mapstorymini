@@ -29,6 +29,11 @@ namespace Server.Bot.Environment
     public static class BotEnvironment
     {
         public static Action PopulateMarketRooms;
+        // 启动泵步骤异常钩子：Server/ 禁 UnityEngine，前端（FieldDirector/自检）注入打印。
+        public static Action<Exception> StartupError;
+        // 本次会话累计失败的步骤数（观测用：>0 说明有假人/店铺没生成出来）。
+        public static int StartupErrorCount => startupErrorCount;
+        static int startupErrorCount;
         const int FMEntrance = 910000000;
         const int Henesys = 100000000;
         const int HenesysMarket = 100000100;
@@ -107,11 +112,16 @@ namespace Server.Bot.Environment
                 lock (steps) step = steps.Count > 0 ? steps.Dequeue() : null;
                 if (step == null) { FinishStartup(); return; }
                 try { using (Server.Bot.BotPerf.Timer("BotEnvironment.Step")) step(); }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    // ≡ catch (RuntimeException)：回滚状态，允许再次请求（allowMarketStartupRetry）
-                    AbortStartup();
-                    return;
+                    // 端口差异（对源端 catch(RuntimeException) 整段中止的修正）：
+                    // 源端整段跑在后台线程，一步 RuntimeException 全灭后由 GM allowMarketStartupRetry 重来；
+                    // 本端口是游戏内自动启动，没人触发重试——一步报废整轮的表现就是
+                    // 「自由市场只有一半假人/店铺，剩下的永远不来」（曾复现：93 家店后静默全灭）。
+                    // 每个步骤都是独立的假人/店铺，一步失败不影响其它：跳过失败步骤，继续推进。
+                    // Server/ 禁 UnityEngine，诊断走 StartupError 钩子（前端注入打印/FileLog）。
+                    startupErrorCount++;
+                    StartupError?.Invoke(e);
                 }
                 if (yieldRequested) { yieldRequested = false; EnsurePump(); return; }
                 // 预算用完就让位给渲染：剩下的步骤下一帧继续，绝不把主线程一次吃干。
@@ -146,6 +156,7 @@ namespace Server.Bot.Environment
                 startupComplete = false;
                 limitDisableScheduled = false;
                 marketEntranceBotCount = 0;
+                startupErrorCount = 0;
             }
             // 分步生成还没走完就退服时，残留的步骤必须在下次进游戏前清掉。
             lock (steps) steps.Clear();

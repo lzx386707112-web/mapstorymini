@@ -13,14 +13,14 @@ namespace Server.Bot.Trade
     {
         BotActor actor { get; }
         IBotTradeSession partner { get; }
-        int meso { get; }
+        long meso { get; }
         bool locked { get; }
         IList<InventoryEntry> Items { get; }
         Action<TradeResult> ResultCallback { get; set; }
         bool AddItem(InventoryEntry item, int slot);
         bool SwapItem(InventoryEntry item, int slot);
         void Chat(string text);
-        void SetMesoBot(int amount);
+        void SetMesoBot(long amount);
         void Accept();
         void Confirm();
         void Decline();

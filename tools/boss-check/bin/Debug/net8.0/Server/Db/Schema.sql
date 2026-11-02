@@ -13,7 +13,7 @@
 --   savedlocations    ← V1.0.39__create_savedlocations.sql
 --   world_prop        ← V1.3.0__create_world_prop.sql
 --   game_config       ← V1.7.0__create_game_config.sql（只取本项目消费的参数）
--- 未建表的源端对象（guilds/family/duey/mts/pets/bosslog…）当前玩法不消费，
+-- 未建表的源端对象（guilds/family/duey/mts/bosslog…）当前玩法不消费，
 -- 需要时按同一迁移文件补进本文件即可，DbStore 不需要改。
 --
 -- 说明：源端是 MySQL(InnoDB, AUTO_INCREMENT, TIMESTAMP 默认值)。本地嵌入式存储
@@ -61,7 +61,7 @@ CREATE TABLE characters
     world                INTEGER NOT NULL DEFAULT 0,
     name                 TEXT    NOT NULL DEFAULT '',
     level                INTEGER NOT NULL DEFAULT 1,
-    exp                  INTEGER NOT NULL DEFAULT 0,
+    exp                  BIGINT  NOT NULL DEFAULT 0,   -- 等级上限 300：满级累计经验约 8e17，INTEGER 会截断
     gachaexp             INTEGER NOT NULL DEFAULT 0,
     str                  INTEGER NOT NULL DEFAULT 12,
     dex                  INTEGER NOT NULL DEFAULT 5,
@@ -71,7 +71,7 @@ CREATE TABLE characters
     mp                   INTEGER NOT NULL DEFAULT 5,
     maxhp                INTEGER NOT NULL DEFAULT 50,
     maxmp                INTEGER NOT NULL DEFAULT 5,
-    meso                 INTEGER NOT NULL DEFAULT 0,
+    meso                 BIGINT  NOT NULL DEFAULT 0,   -- 金币不再受 21 亿限制
     hpMpUsed             INTEGER NOT NULL DEFAULT 0,
     job                  INTEGER NOT NULL DEFAULT 0,
     skincolor            INTEGER NOT NULL DEFAULT 0,
@@ -132,7 +132,7 @@ CREATE TABLE characters
     jailexpire           INTEGER NOT NULL DEFAULT 0,
     fishLevel            INTEGER NOT NULL DEFAULT 1,
     damageSkinId         INTEGER NOT NULL DEFAULT 0,
-    damageCap            INTEGER NOT NULL DEFAULT 19999999
+    damageCap            BIGINT  NOT NULL DEFAULT 19999999
 );
 
 CREATE TABLE keymap
@@ -401,6 +401,7 @@ CREATE TABLE modified_cash_item (
  package_sn INTEGER
 );
 CREATE TABLE cash_items (
+ petid INTEGER NOT NULL DEFAULT -1,
  id INTEGER PRIMARY KEY AUTOINCREMENT,
  accountid INTEGER NOT NULL,
  world INTEGER NOT NULL,
@@ -412,6 +413,21 @@ CREATE TABLE cash_items (
  characterid INTEGER DEFAULT 0,
  inventoryitemid INTEGER DEFAULT 0,
  giftFrom TEXT DEFAULT ''
+);
+-- V1.0.29__create_pets.sql: pet identity survives cash locker round trips.
+CREATE TABLE pets (
+ petid INTEGER PRIMARY KEY AUTOINCREMENT,
+ name TEXT,
+ level INTEGER NOT NULL,
+ closeness INTEGER NOT NULL,
+ fullness INTEGER NOT NULL,
+ summoned INTEGER NOT NULL DEFAULT 0,
+ flag INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE petignores (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ petid INTEGER NOT NULL,
+ itemid INTEGER NOT NULL
 );
 CREATE TABLE cash_wishlist (
  id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -554,6 +570,8 @@ CREATE TABLE command_info (
 -- template 指向 BotAppearanceTemplates 的模板下标 —— 外观模板被同模板假人共享，
 -- 纸娃娃纹理才能一份多用（这才是联机客户端同屏几十人也不爆显存的原因）。
 -- map_id 是「档案归属地图」：0 表示自由分配，>0 表示这只只会出现在该图。
+-- level/job 是身份的一部分（对齐联机：账号的角色有自己的等级职业），生成时优先于模板。
+-- 覆盖模式下按「等级 1..N × 该等级可转职业」铺满，保证每个职业每个等级都有人。
 CREATE TABLE bot_profile (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     name         TEXT NOT NULL,
@@ -561,7 +579,9 @@ CREATE TABLE bot_profile (
     map_id       INTEGER NOT NULL DEFAULT 0,
     channel      INTEGER NOT NULL DEFAULT 1,
     bound        INTEGER NOT NULL DEFAULT 0,
-    enabled      INTEGER NOT NULL DEFAULT 1
+    enabled      INTEGER NOT NULL DEFAULT 1,
+    level        INTEGER NOT NULL DEFAULT 0,
+    job          INTEGER NOT NULL DEFAULT 0
 );
 
 -- 钓鱼系统物品配置表 ← 源端 V1.9.9__insert_fishing_items.sql + V2.0.2__update_fishing_items.sql。

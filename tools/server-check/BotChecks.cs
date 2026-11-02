@@ -43,7 +43,7 @@ static class BotChecks
     {
         public BotActor actor { get; set; }
         public IBotTradeSession partner { get; set; }
-        public int meso { get; set; }
+        public long meso { get; set; }
         public bool locked { get; set; }
         public IList<InventoryEntry> Items { get; } = new System.Collections.Generic.List<InventoryEntry>();
         public Action<TradeResult> ResultCallback { get; set; }
@@ -54,7 +54,7 @@ static class BotChecks
         public bool SwapItem(InventoryEntry item, int slot)
         { for (int i = Items.Count - 1; i >= 0; i--) if (Items[i].position == slot) Items.RemoveAt(i); return AddItem(item, slot); }
         public void Chat(string text) => chat.Add(text);
-        public void SetMesoBot(int amount) => meso = amount;
+        public void SetMesoBot(long amount) => meso = amount;
         public void Accept() => accepted++;
         public void Confirm()
         {
@@ -314,7 +314,7 @@ static class BotChecks
             var player=runtime.SynchronizePlayer(CharService.Load(db,id),910000000,0,0);
             var stale=CharService.Load(db,id);
             var seller=BotGeneration.CreateBotPollReadiness(0,0,910000000,true,false);
-            int mirroredDelta=0; server.TradeInventoryCommitted+=(actor,delta)=> { if(actor.id==id) mirroredDelta+=delta; };
+            long mirroredDelta=0; server.TradeInventoryCommitted+=(actor,delta)=> { if(actor.id==id) mirroredDelta+=delta; };
             runtime.trades.Invite(player,seller);
             var local=(BotTradeService.Session)player.trade;
             local.Accept(); local.SetMeso(50);
@@ -531,7 +531,7 @@ static class BotChecks
         var quote = protocol.Handle(new BotTradeRequest { characterId = id, operation = BotTradeOperation.Read });
         check(quote.accepted && quote.partnerId == seller.id && quote.partnerItems.Count == 1,
             "运行时交易读取已接受窗口及商人真实上架物品");
-        int payment = selling.tradeWants.mesoWanted, balance = player.character.record.meso;
+        long payment = selling.tradeWants.mesoWanted, balance = player.character.record.meso;
         var offered = protocol.Handle(new BotTradeRequest { characterId = id, operation = BotTradeOperation.OfferMeso, meso = payment });
         check(offered.ok && player.character.record.meso == balance-payment,"客户端交易协议实际托管金币而非假报价");
         runtime.RemovePlayer(id);
@@ -629,8 +629,9 @@ static class BotChecks
         selling = new MerchantBot(seller,false,pool,economy,ambient,random);
         BotStore.AddActiveBot(seller.id,selling); selling.running = true;
         selling.UpdateState(); selling.UpdateState();
-        int purchasedId = selling.CurrentItem.itemId, quotedPrice = selling.tradeWants.mesoWanted;
-        int cashBeforeSale = player.character.record.meso;
+        int purchasedId = selling.CurrentItem.itemId;
+        long quotedPrice = selling.tradeWants.mesoWanted;
+        long cashBeforeSale = player.character.record.meso;
         check(protocol.Handle(new BotTradeRequest { characterId=id,botId=seller.id,operation=BotTradeOperation.Invite }).ok,
             "取消后同一商人可重新建立交易");
         selling.CheckForTrades();
@@ -834,7 +835,8 @@ static class BotChecks
         visitor.online = false;
         check(!protocol.Handle(new MarketRequest {characterId = buyer.id}).ok, "离线角色不能操作商店协议");
         visitor.online = true;
-        var seller = new BotCharacter {id = 810011, meso = int.MaxValue, online = true}; BotRegistry.Add(seller);
+        // 金币是 long：满仓不再是 21 亿，改测 long 的溢出边界
+        var seller = new BotCharacter {id = 810011, meso = long.MaxValue, online = true}; BotRegistry.Add(seller);
         try
         {
             var stall = new MarketShop {ownerId = seller.id, open = true, playerStore = true, mapId = buyer.mapId, world = 0, channel = 1};
@@ -989,6 +991,14 @@ static class BotChecks
             ShowInventoryFull = () => full++,
         });
 
+        player.character.record.meso = 10000000000L;
+        looter.GainMeso(123);
+        check(player.character.record.meso == 10000000123L &&
+            CharService.Load(db, player.id).record.meso == 10000000123L,
+            "100亿余额拾取金币后不截断，内存与持久化保持64位");
+        player.character.record.meso = 0;
+        looter.Commit();
+
         // —— 落点算法（源端 calcDropPos/calcPointBelow）——
         MapItemService.CalcDropPos(700000000, 50, 200, 50, 200, out float dropX, out float dropY);
         check(dropX == 50 && dropY == 300, "掉落物吸附到下方平台（calcPointBelow 线性插值等价源端三角公式）");
@@ -1079,7 +1089,8 @@ static class BotChecks
 
         // —— botLoot 只摘除不入背包（源端 DropCommands.pickItemDrop 语义）——
         MapItemService.ClearMap(700000000);
-        int before = player.character.inventory.Count, mesoBefore = player.character.record.meso;
+        int before = player.character.inventory.Count;
+        long mesoBefore = player.character.record.meso;
         var botDropped = DropCommands.BotThrowItemNoExpire(dropper, 4000003, 0, 250);
         DropCommands.BotLoot(dropper, 0, 300, 10000);
         check(botDropped.pickedUp && MapItemService.DroppedItemCount(700000000) == 0
@@ -1406,6 +1417,30 @@ static class BotChecks
             regions.GroundSample(walk.footholds[0], 22, 1)?.point.x == 20 &&
             regions.GroundSample(walk.footholds[0], 23, 1) == null,
             "区域地面采样优先包含x的平台，缝隙只允许2px且不跨越区域");
+        // Regression: a sloped region used to truncate its interpolation ratio to zero.
+        // Check actual walking against foothold geometry, including both slope directions.
+        foreach (int endY in new[] { 80, -80 })
+        {
+            var slopeMap = new MapRuntime();
+            var slope = new FootholdSegment(-100, 0, 100, endY) { id = 1 };
+            slopeMap.footholds.Add(slope);
+            var slopeGround = new BotGroundIndex(slopeMap);
+            var slopeRegions = new BotWalkRegions(slopeMap);
+            var slopeMotion = new BotGroundMotion(slopeMap, slopeGround, slopeRegions,
+                new BotAirCollision(slopeMap, slopeGround), new BotGroundPhysics());
+            var slopePoint = new BotNavigationGraph.Point(-80, BotGroundIndex.YAt(slope, -80));
+            var slopeTravel = new BotGroundPhysics.Travel(-80);
+            bool supported = true;
+            for (int tick = 0; tick < 16; tick++)
+            {
+                var result = slopeMotion.Step(slopePoint, slope, 1, slopeTravel, BotMovementProfile.Base);
+                slopePoint = result.point; slopeTravel = result.travel;
+                supported &= !result.lostGround && Math.Abs(slopePoint.y - BotGroundIndex.YAt(slope, slopePoint.x)) <= 1;
+            }
+            check(supported && slopePoint.x > -80, "假人连续行走贴合真实" + (endY > 0 ? "下坡" : "上坡") + "，不悬空或误离地");
+            check(new BotNavigationGraph.Segment(slope).PointAt(0).y == endY / 2,
+                "斜坡中点采用真实插值，不被整数除法压成水平面");
+        }
         var field = new MapRuntime { left = -1000, right = 1000, top = -1000, bottom = 1000 };
         field.AddFoothold(-100, 0, 100, 0); field.footholds[0].id = 1;
         var fieldGround = new BotGroundIndex(field); var airCollision = new BotAirCollision(field, fieldGround);
@@ -1428,9 +1463,11 @@ static class BotChecks
             "二段跳在原速度阈值触发，550px/s转换每tick并按Java舍入");
         var ropeMotion = new BotRopeMotion(fieldGround);
         var rope = new MapRope { x = 0, y1 = 0, y2 = 100 };
-        check(!BotRopeMotion.CanGrab(new BotNavigationGraph.Point(0, 0), rope) &&
-            BotRopeMotion.CanGrab(new BotNavigationGraph.Point(8, 1), rope) &&
-            !BotRopeMotion.CanGrab(new BotNavigationGraph.Point(9, 1), rope), "抓绳范围保留首可攀爬高度top+1及8px横向边界");
+        // 水平容差与真人 PlayerCtrl.StepClimb 的 `10f / Art.PPU` 一致，9px 仍在范围内、11px 出界。
+        check(BotRopeMotion.GrabRange == 10 &&
+            !BotRopeMotion.CanGrab(new BotNavigationGraph.Point(0, 0), rope) &&
+            BotRopeMotion.CanGrab(new BotNavigationGraph.Point(9, 1), rope) &&
+            !BotRopeMotion.CanGrab(new BotNavigationGraph.Point(11, 1), rope), "抓绳范围保留首可攀爬高度top+1及10px横向边界");
         var climb = BotRopeMotion.Attach(rope, 10); climb.direction = -1;
         check(ropeMotion.Step(climb) == BotRopeMotion.Result.Climb && climb.position.y == 5 &&
             ropeMotion.Step(climb) == BotRopeMotion.Result.Land && climb.position.y == 0 && !climb.climbing,
@@ -1657,10 +1694,30 @@ static class BotChecks
 
     static void CheckMovementRuntime(Action<bool, string> check)
     {
+        var teleportMap = new MapRuntime { left = -500, right = 500 };
+        teleportMap.footholds.Add(new FootholdSegment(-500,0,500,0) { id=1 });
+        teleportMap.footholds.Add(new FootholdSegment(-100,-200,100,-200) { id=2 });
+        teleportMap.footholds.Add(new FootholdSegment(-100,250,100,250) { id=3 });
+        check(NativeTeleportMovement.Destination(teleportMap,0,-1,1,0,350,out int tx,out int ty) && tx==350 && ty==-1,
+            "快速移动按原IMG射程向右落地");
+        check(NativeTeleportMovement.Destination(teleportMap,0,-1,0,-1,350,out tx,out ty) && ty==-201,
+            "快速移动向上寻找射程内平台，排除当前支持段");
+        check(NativeTeleportMovement.Destination(teleportMap,0,-1,0,1,350,out tx,out ty) && ty==249,
+            "快速移动向下选择不同支持段");
+        check(!NativeTeleportMovement.Destination(teleportMap,0,-1,0,0,350,out tx,out ty) &&
+            !NativeTeleportMovement.Destination(teleportMap,400,-1,1,0,350,out tx,out ty),
+            "快速移动无方向/无落点拒绝");
+        teleportMap.fieldLimit=2;
+        check(!NativeTeleportMovement.Destination(teleportMap,0,-1,1,0,350,out tx,out ty),"地图禁移动技能时拒绝快速移动");
         var map = new MapRuntime { mapId = 77, left = -300, right = 300, top = -300, bottom = 300 };
         map.AddFoothold(-250, 100, 250, 100); map.footholds[0].id = 1;
         var bot = new BotCharacter { id = 20777, mapId = 77, x = 0, y = 100, facing = 1 };
         var motion = new BotMovementRuntime(bot, map);
+        bot.y = 0;
+        motion.Tick(new BotNavigationGraph.Point(200, 100), 0);
+        check(motion.InAir && (bot.stance & ~1) == 6,
+            "脚下平台仍在100px以下时必须下落，不把findBelow结果当支撑继续空中行走");
+        motion.Teleport(new BotNavigationGraph.Point(0, 100));
         check(motion.CalcStep(80) == 0 && motion.CalcStep(81) > 0 && motion.CalcStep(31) > 0 && motion.CalcStep(30) == 0,
             "原地面停止30/启动80像素迟滞边界通过执行器保持");
         int broadcasts = 0; motion.Broadcast = (_, bytes) => broadcasts++;
@@ -2358,6 +2415,14 @@ static class BotChecks
         check(!BotRecordedActions.IsMoving(actor) && actor.x == before, "假人离图取消封包步行且不运行旧回调");
         check(!FMBot.ShouldPurchaseItem(121, 100, new FirstChoiceRandom()) && FMBot.ShouldPurchaseItem(70, 100, new FirstChoiceRandom()),
             "保留原市场估价辅助函数的1.2拒买边界和0.7必买档");
+        BotRecordedActions.Cancel(actor);
+        var gapMap=new MapRuntime {mapId=910000099};
+        gapMap.AddFoothold(0,34,20,34); gapMap.footholds[0].id=1;
+        gapMap.AddFoothold(40,34,100,34); gapMap.footholds[1].id=2;
+        MapService.Register(gapMap); BotRegistry.EnterMap(actor,gapMap.mapId); actor.x=20; actor.y=33;
+        BotRecordedActions.WalkAlongX(actor,100,18,null);
+        check(actor.x==20 && !BotRecordedActions.IsMoving(actor),"封包步行遇平台缺口停止，不能悬空跨过20px断层");
+        MapService.Unregister(gapMap.mapId);
         BotGeneration.RemoveBotFromServer(actor); BotTasks.Stop(); MapService.Unregister(map.mapId);
         var mappedActor = new BotCharacter { id = 20884 };
         check(BotTypeManager.CreateAndSetBot(mappedActor, BotType.FM_BOT) is FMBot, "FM_BOT已替换通用占位类型");

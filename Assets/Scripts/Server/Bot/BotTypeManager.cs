@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Server.Bot.Social;
 using Server.Bot.Types;
 using Server.Bot.Types.Blackjack;
+using Server.Bot.Types.Pq;
 using Server.Bot.Decorator;
 using Server.Bot.Trade;
 
@@ -28,6 +29,7 @@ namespace Server.Bot
         BLACKJACK_DEALER,
         DROP_GAME_BOT,
         OPQ_BOT,
+        PQ_BOT,
         SOCIAL_BOT,
         TOWN_WANDERER_BOT,
         COMPANION_GRIND_BOT,
@@ -84,6 +86,7 @@ namespace Server.Bot
                     BotConfig.HenesysBotsChangeMapsEnabled(BotClient.GetBotClient()?.db)),
                 BotType.BLACKJACK_DEALER => new BlackjackDealerBot(c, Messages),
                 BotType.OPQ_BOT => new OpqBot(c),
+                BotType.PQ_BOT => new PqBot(c),
                 BotType.HENESYS_JQ_BOT => new HenesysJQBot(c),
                 BotType.DROP_GAME_BOT => new DropGameBot(c, Parties),
                 BotType.TUTORIAL_BOT => new TutorialBot(c, TradeService),
@@ -105,8 +108,12 @@ namespace Server.Bot
             BotStateMachine bot = BotStore.GetBotById(c.id);
             if (bot == null || bot.running) return;
             bot.running = true;
-            // 延迟首 tick 越过出生动画窗口（对齐源端），随机错峰
-            long initialDelay = BotGeneration.SpawnChoreographyMaxMs + rng.Next(0, 3000);
+            // 默认延迟越过出生动画窗口（对齐源端），随机错峰。
+            // 跳过出生编舞的类型只做短错峰：12 个入口假人同一帧动会显得很假，但绝不能
+            // 让它们白等 7~10 秒才第一次 UpdateState。
+            long initialDelay = bot.SkipsSpawnChoreography
+                ? rng.Next(250, 1100)
+                : BotGeneration.SpawnChoreographyMaxMs + rng.Next(0, 3000);
             bot.StartScheduledTask(initialDelay);
         }
 

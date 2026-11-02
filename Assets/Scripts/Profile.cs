@@ -8,18 +8,18 @@ public static class Profile
     // 对外可读：Client/GameSession 需要把整份存档写回数据库（Server 层不认识 Unity 存档）。
     // 读写后请调用 Save()，否则改动不会落到本地盘。
     public static PlayerProfileData Data { get { Load(); return data; } }
-    public static int gold => Data.gold;
+    public static long gold => Data.gold;
     public static CharacterAttributes Attributes => Data.attributes.Copy();
     public static long experience => Data.experience;
     public static int level => Data.level;
     public static int ap => Data.ap;
     public static string playerName => Data.playerName;
-    public static int ExpNeeded => ExpTable.Needed(Data.level);
+    public static long ExpNeeded => ExpTable.Needed(Data.level);
     public static float ExpRatio
     {
         get
         {
-            int need = ExpNeeded;
+            long need = ExpNeeded;
             return need <= 0 ? 0f : UnityEngine.Mathf.Clamp01((float)((double)Data.experience / need));
         }
     }
@@ -74,12 +74,23 @@ public static class Profile
         // 自动化测试用：临时覆盖职业，只影响本次运行，绝不写回存档。
         // 注意光在这里改 data.cls 是不够的 —— 游戏过程中任何一次 Save() 都会把
         // 覆盖后的职业写进真实存档（截图脚本跑完，玩家职业就被换掉了）。
+        //
+        // 2026-10-31：这个键必须「读一次就删」。旧写法只在 PlaySmokeTest.Finish() 里清，
+        // 一旦冒烟/截图跑到一半被打断（编辑器崩溃、直接 Cmd+Q），键就永久留在 PlayerPrefs，
+        // 之后每次启动都把玩家职业强改成 debug_cls（warrior→110 剑客），于是：
+        //   * 技能窗按 Profile.JobId 取职业链 → 新手冒烟看到「剑士/剑客」两本转职技能书；
+        //   * debugOverride=true 又让 Profile.Save() 全部静默空转 → 玩家进度压根不落盘。
+        // 与 debug_level 一样一次性消费，是这种「调试覆盖」唯一安全的形式。
         string debugCls = PlayerPrefs.GetString("debug_cls", "");
         if (!string.IsNullOrEmpty(debugCls) && ClassDefs.Get(debugCls).id == debugCls)
         {
+            PlayerPrefs.DeleteKey("debug_cls");
+            PlayerPrefs.Save();
             data.cls = debugCls;
             data.jobId = JobDefs.JobIdOf(debugCls);
             debugOverride = true;
+            UnityEngine.Debug.LogWarning("[Profile] 本次运行职业被调试键 debug_cls 覆盖 → " + debugCls +
+                                         "（job " + data.jobId + "），本次不落盘；键已删除，下次启动恢复存档职业");
         }
 
         int gained = LevelSystem.Reconcile(data);
@@ -129,12 +140,26 @@ public static class Profile
     // 覆盖期间整段禁用落盘：自动化测试不产生任何存档副作用。
     static bool debugOverride;
 
+    static int saveBatchDepth;
+    static bool saveBatchPending;
+    public static System.IDisposable DeferSaves() {saveBatchDepth++;return new SaveBatch();}
+    sealed class SaveBatch : System.IDisposable
+    {
+        bool disposed;
+        public void Dispose()
+        {
+            if(disposed)return;disposed=true;
+            if(--saveBatchDepth==0 && saveBatchPending) {saveBatchPending=false;Save();}
+        }
+    }
+
     public static void Save()
     {
         if (debugOverride) { LastSaveSucceeded = true; return; }
+        if(saveBatchDepth>0) {saveBatchPending=true;return;}
         LastSaveSucceeded = LocalProfileStore.Save(Data);
     }
-    public static void AddGold(int amount) { Data.AddGold(amount); Save(); }
+    public static void AddGold(long amount) { Data.AddGold(amount); Save(); }
 
     public static int ItemCount(int id) => Data.ItemCount(id);
     public static void AddItem(int id, int count)
@@ -204,19 +229,23 @@ public static class Profile
         set { PlayerPrefs.SetInt("mxd.fieldmap", value); PlayerPrefs.Save(); }
     }
     // 返回本次结算升了几级（默认升级保护开启，所以通常是 0 或 1）。
-    public static int GrantExperience(int amount)
+    public static int GrantExperience(long amount)
     {
-        amount=(int)System.Math.Min(int.MaxValue,(long)amount+NativeEquipmentEffects.PendantBonus(amount));
+        // !toggleexp（源端 ToggleExpCommand → Character.gainExp 直接 return）。
+        if (GameServer.Local != null && !GameConfigDao.GetBool(GameServer.Local.Db, "exp_enabled", true)) return 0;
+        // 经验是 long：300 级需求已到 1.6e17，不能再钳到 int.MaxValue
+        amount+=NativeEquipmentEffects.PendantBonus(amount);
         if (GameLoop.I?.player?.GetComponent<NativeMobDebuffs>()?.Has(124) == true) amount /= 2;
         if (amount <= 0) return 0;
         int before = Data.level;
         int levels = LevelSystem.AddExperience(Data, amount, LevelSystem.LevelUpProtect);
+        NativeGainNotice.Experience(amount);
         Save();
         if (levels > 0 && Data.level > before)
             LeveledUp?.Invoke(Data.level);
         return levels;
     }
-    public static bool Spend(int amount)
+    public static bool Spend(long amount)
     {
         if (!Data.TrySpend(amount)) return false;
         Save();
@@ -271,7 +300,12 @@ public static class Profile
     { Data.SetBaseStats(str, dex, intl, luk, ap, sp); Save(); }
 
     // 防具槽位（与 EquipSlot 常量对应；源端在 inventoryitems 表里，单机走本地 JSON，DB 表结构仍对齐）
-    public static int EquipOfSlot(int slot) => Data.EquipOfSlot(slot);
+    public static int EquipOfSlot(int slot)
+    {
+        if(GameSession.InGame && NativePetItems.IsPetSlot(slot))
+            return GameSession.Character.inventory.Find(x=>x.inventoryType==InventoryDao.Equipped && x.position==slot)?.itemId ?? 0;
+        return Data.EquipOfSlot(slot);
+    }
     public static void SetEquipSlot(int slot, int itemId) { Data.SetEquipSlot(slot, itemId); Save(); }
 
     public static bool AutomaticAp => JobId == 0 && level <= 10;
@@ -291,6 +325,74 @@ public static class Profile
         else Data.attributes.luk++;
         Data.ap--;
         Save();
+        return true;
+    }
+    // CUIStat::AutoAp (8C8692) -> CBasicStat plan (7939BA), default server client-plan mode.
+    // Array order is STR, DEX, INT, LUK; the secondary goal is filled before the primary.
+    public static int[] AutoApPlan(bool brawler = false)
+    {
+        if (AutomaticAp || ap <= 0) return null;
+        return BuildAutoApPlan(JobId, level, ap, Data.attributes, brawler);
+    }
+    public static int[] BuildAutoApPlan(int jobId, int lv, int points, CharacterAttributes attributes, bool brawler = false)
+    {
+        if (points <= 0 || attributes == null) return null;
+        int job = jobId % 1000, secondary, primary, goal, mainGoal;
+        switch (job / 100)
+        {
+            case 0:
+                if (jobId != 0 && jobId != 2001) return null;
+                secondary = 1; primary = 0; goal = lv; mainGoal = lv * 4 + 12; break;
+            case 1:
+                secondary = 1; primary = 0; goal = lv <= 30 ? lv * 2 : lv + 30;
+                mainGoal = lv * 5 + 12 - goal; break;
+            case 2:
+                secondary = 3; primary = 2; goal = lv + 3; mainGoal = lv * 5 + 12 - goal; break;
+            case 3:
+                if (job == 300 || job >= 310 && job <= 312) goal = lv + 5;
+                else if (job >= 320 && job <= 322) goal = lv;
+                else return null;
+                secondary = 0; primary = 1; mainGoal = lv * 5 + 12 - goal; break;
+            case 4:
+                secondary = 1; primary = 3; goal = lv <= 40 ? lv * 2 : lv + 40;
+                mainGoal = lv * 5 + 12 - goal; break;
+            case 5:
+                bool fighter = job / 10 == 51 || jobId == 1500 || job == 500 && brawler;
+                if (fighter)
+                {
+                    secondary = 1; primary = 0; goal = lv <= 20 ? lv * 2 : lv + 20;
+                    mainGoal = lv * 5 + 12 - goal;
+                }
+                else if (job / 10 == 52 || job == 500)
+                { secondary = 0; primary = 1; goal = lv; mainGoal = lv * 4 + 12; }
+                else return null;
+                break;
+            default: return null;
+        }
+        var a = attributes;
+        int[] values = { a.str, a.dex, a.intelligence, a.luk }, gain = new int[4];
+        int first = System.Math.Min(points, System.Math.Max(0, goal - values[secondary]));
+        int second = System.Math.Min(points - first, System.Math.Max(0, mainGoal - values[primary]));
+        second += points - first - second;
+        gain[secondary] = System.Math.Min(first, System.Math.Max(0, 32767 - values[secondary]));
+        gain[primary] = System.Math.Min(second, System.Math.Max(0, 32767 - values[primary]));
+        return gain;
+    }
+    public static bool AssignAutoAp(int[] plan)
+    {
+        if (plan == null || plan.Length != 4 || AutomaticAp) return false;
+        var a = Data.attributes;
+        int[] values = { a.str, a.dex, a.intelligence, a.luk };
+        long spent = 0;
+        for (int i = 0; i < 4; i++)
+        {
+            if (plan[i] < 0 || values[i] + (long)plan[i] > 32767) return false;
+            spent += plan[i];
+        }
+        if (spent <= 0 || spent > ap) return false;
+        a.str += plan[0]; a.dex += plan[1]; a.intelligence += plan[2]; a.luk += plan[3];
+        Data.ap -= (int)spent; Save();
+        GameLoop.I?.player?.RefreshBuffAttributes();
         return true;
     }
     // —— 能力值洗点（源端 AssignAPProcessor.APResetAction / UseCashItemHandler175..235）——
@@ -332,6 +434,26 @@ public static class Profile
         }
         Save();
         GameLoop.I?.player?.RefreshBuffAttributes();
+        return null;
+    }
+    // —— 技能点洗点（源端 UseCashItemHandler 175..235 的 SP 分支 / AssignSPProcessor.canSPAssign）——
+    // 原端请求先 SPTo 后 SPFrom（窗口 NativeSpResetWindow 已按此序准备）；规则：
+    // 目标技能 curLevel < maxLevel（四转受 masterLevel，本工程 SkillBook.MasterCapOf 已合并处理）、
+    // 来源技能 curLevel > 0，双向各 ±1；来源归 0 时原端还会清理技能宏 —— 本工程无技能宏，不适用。
+    // canSPAssign 只校验技能在本职业树；洗点窗列表本就来自 LineForJob，天然满足。
+    public static string ResetSp(int spFromId, int spToId)
+    {
+        var from = SkillBook.Get(spFromId);
+        var to = SkillBook.Get(spToId);
+        if (from == null || to == null) return "技能数据缺失";
+        if (spFromId == spToId) return "AP/SP重置操作执行失败。";
+        int fromLv = SkillProgress.LevelOf(spFromId);
+        int toLv = SkillProgress.LevelOf(spToId);
+        int cap = SkillBook.MasterCapOf(spToId);
+        if (fromLv <= 0) return "你没有可以恢复的技能点。";
+        if (toLv >= cap) return "目标技能等级已达到上限。";
+        SkillProgress.SetLevel(spFromId, fromLv - 1);
+        SkillProgress.SetLevel(spToId, toLv + 1);
         return null;
     }
     public static int InventoryCapacity(int tab)

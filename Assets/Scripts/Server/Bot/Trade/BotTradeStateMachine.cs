@@ -119,7 +119,7 @@ namespace Server.Bot.Trade
         }
         public string WantsMessage()
         {
-            int mesos = parent.tradeWants.mesoWanted;
+            long mesos = parent.tradeWants.mesoWanted;
             var wanted = parent.tradeWants.itemsWanted;
             var text = new StringBuilder("我想要");
             if (mesos > 0)
@@ -133,12 +133,13 @@ namespace Server.Bot.Trade
             if (mesos == 0 && wanted.Count == 0) text.Append("先看看货");
             return text.ToString();
         }
-        public static string FormatPrice(int price, int decimalPlaces = 1)
+        // 金币是 long：显示沿用千进位后缀，并补上 t（万亿）一档，避免大额被截成 "1000b"
+        public static string FormatPrice(long price, int decimalPlaces = 1)
         {
             if (price < 1000) return price.ToString(CultureInfo.InvariantCulture);
-            string[] suffixes = { "", "k", "m", "b" };
+            string[] suffixes = { "", "k", "m", "b", "t" };
             int index = 0; decimal value = price;
-            while (value >= 1000 && index < 3) { value /= 1000; index++; }
+            while (value >= 1000 && index < suffixes.Length - 1) { value /= 1000; index++; }
             if (decimalPlaces <= 0) return decimal.Floor(value + .5m).ToString(CultureInfo.InvariantCulture) + suffixes[index];
             // Java Formatter 使用 HALF_UP，避免C#默认银行家舍入。
             string text = decimal.Round(value, decimalPlaces, MidpointRounding.AwayFromZero)

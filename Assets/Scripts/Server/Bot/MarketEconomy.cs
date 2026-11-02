@@ -94,18 +94,22 @@ namespace Server.Bot
             while (last >= 0 && digits[last] == '0') last--;
             if (last < 0) return number;
             for (int i = last + 1; i < digits.Length; i++) digits[i] = digits[last];
-            return int.Parse(new string(digits), CultureInfo.InvariantCulture);
+            // 尾数填充可能越过 int 范围（如 2147000000 → 2147777777）抛 OverflowException，
+            // 曾把整轮假人环境启动炸停（自由市场假人/店铺半路全灭）。Java 源端这里 parseInt
+            // 同样会抛 NumberFormatException；本端口收敛到 int 边界而不是让启动报废。
+            long parsed = long.Parse(new string(digits), CultureInfo.InvariantCulture);
+            return parsed > int.MaxValue ? int.MaxValue : parsed < int.MinValue ? int.MinValue : (int)parsed;
         }
         public int Style(int number)
         {
             int style = random.Next(3); number = CleanNumber(number);
             return style == 1 ? unchecked(number - 1) : style == 2 ? TrailingDigit(number) : number;
         }
-        public static string Shorthand(int price, int decimals = 1)
+        public static string Shorthand(long price, int decimals = 1)
         {
             if (price < 1000) return price.ToString(CultureInfo.InvariantCulture);
-            string[] suffix = { "", "k", "m", "b" }; int index = 0; double amount = price;
-            while (amount >= 1000 && index < 3) { amount /= 1000; index++; }
+            string[] suffix = { "", "k", "m", "b", "t" }; int index = 0; double amount = price;
+            while (amount >= 1000 && index < suffix.Length - 1) { amount /= 1000; index++; }
             if (decimals <= 0) return Math.Floor(amount + .5).ToString(CultureInfo.InvariantCulture) + suffix[index];
             return decimal.Round((decimal)amount, decimals, MidpointRounding.AwayFromZero)
                 .ToString("F" + decimals, CultureInfo.InvariantCulture).TrimEnd('0').TrimEnd('.') + suffix[index];

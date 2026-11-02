@@ -49,6 +49,8 @@ public class GameLoop : MonoBehaviour
         if (UnityEditor.SessionState.GetBool("NativeBuffRenderChecks", false) ||
             UnityEditor.SessionState.GetBool("NativeSkillNodeChecks", false) ||
             UnityEditor.SessionState.GetBool("NativeCashSceneChecks", false) ||
+            UnityEditor.SessionState.GetBool("NativeCharacterInfoSceneChecks", false) ||
+            UnityEditor.SessionState.GetBool("NativePetSceneChecks", false) ||
             UnityEditor.SessionState.GetBool("NativeNpcShopSceneChecks", false) ||
             UnityEditor.SessionState.GetBool("NativeViewportChecks", false)) return;
 #endif
@@ -369,6 +371,7 @@ public class GameLoop : MonoBehaviour
 
     void Update()
     {
+        NativeHuntRuntime.Tick();
         if (state != GameState.Playing) return;
 
         if (gameOver)
@@ -413,7 +416,7 @@ public class GameLoop : MonoBehaviour
         float sc = elite ? 1.15f : 1f;          // 只做等比缩放
         go.transform.localScale = new Vector3(sc, sc, 1f);
         var e = go.AddComponent<EnemyUnit>();
-        e.hpMax = elite ? 150f + elapsed * 2.5f : 42f + elapsed * 1.6f;
+        e.hpMax = (long)(elite ? 150f + elapsed * 2.5f : 42f + elapsed * 1.6f);
         e.damage = elite ? 16f : 8f;
         e.speed = elite ? 1.35f : Random.Range(1.6f, 2.4f);
         e.elite = elite;
@@ -439,38 +442,38 @@ public class GameLoop : MonoBehaviour
         switch (type)
         {
             case "slime":
-                e.hpMax = 30f; e.damage = 6f; e.speed = 2.3f;
+                e.hpMax = 30L; e.damage = 6f; e.speed = 2.3f;
                 tint = new Color(0.42f, 0.8f, 0.52f);
                 artKey = "slime";
                 break;
             case "mushroom":
-                e.hpMax = 44f; e.damage = 9f; e.speed = 1.85f;
+                e.hpMax = 44L; e.damage = 9f; e.speed = 1.85f;
                 tint = new Color(0.85f, 0.42f, 0.45f);
                 artKey = "mushroom";
                 break;
             case "greenmush":
-                e.hpMax = 52f; e.damage = 10f; e.speed = 1.75f;
+                e.hpMax = 52L; e.damage = 10f; e.speed = 1.75f;
                 artKey = "greenmush";
                 break;
             case "bat":
-                e.hpMax = 34f; e.damage = 7f; e.speed = 2.7f;
+                e.hpMax = 34L; e.damage = 7f; e.speed = 2.7f;
                 tint = new Color(0.55f, 0.5f, 0.78f);
                 break;
             case "crab":
-                e.hpMax = 60f; e.damage = 11f; e.speed = 1.5f;
+                e.hpMax = 60L; e.damage = 11f; e.speed = 1.5f;
                 tint = new Color(0.92f, 0.55f, 0.35f);
                 break;
             case "pig":
-                e.hpMax = 52f; e.damage = 10f; e.speed = 1.75f;
+                e.hpMax = 52L; e.damage = 10f; e.speed = 1.75f;
                 tint = new Color(0.95f, 0.72f, 0.68f);
                 artKey = "pig";
                 break;
             case "snail":
-                e.hpMax = 26f; e.damage = 5f; e.speed = 1.3f;
+                e.hpMax = 26L; e.damage = 5f; e.speed = 1.3f;
                 artKey = "snail";
                 break;
             default:
-                e.hpMax = 42f; e.damage = 8f; e.speed = 2.0f;
+                e.hpMax = 42L; e.damage = 8f; e.speed = 2.0f;
                 break;
         }
 

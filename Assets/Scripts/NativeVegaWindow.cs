@@ -105,6 +105,7 @@ public static class NativeVegaWindow
         if(!Visible) return;
         position=NativeUi.ClampWindowPosition(position,new Vector2(178,235),S);
         var r=Window;
+        NativeUi.RegisterWindow("NativeVegaWindow", r, () => NativeVegaWindow.Visible);
         bool repaint=Event.current.type==EventType.Repaint;
         if(repaint && Pointer.Pressed && !NativeInventoryActions.Carrying && At(r,0,0,150,22).Contains(Pointer.Pos))
         {dragging=true;grab=Pointer.Pos/S-position;}

@@ -9,6 +9,7 @@ static class NativeSystemChecks {
             [101] = new CashCommodity { sn = 101, itemId = 1000000, price = 200, count = 1, period = -1, onSale = 1 },
             [102] = new CashCommodity { sn = 102, itemId = 9100000, price = 250, count = 1, period = 90, onSale = 1 },
             [103] = new CashCommodity { sn = 103, itemId = 5030000, price = 10, count = 1, period = 1, onSale = 1 },
+            [105] = new CashCommodity { sn = 105, itemId = 5000000, price = 0, count = 1, period = 90, onSale = 1 },
             [104] = new CashCommodity { sn = 104, itemId = 5430000, price = 300, count = 1, period = -1, onSale = 1 }
         };
         public IEnumerable<CashCommodity> All => entries.Values;
@@ -57,6 +58,14 @@ static class NativeSystemChecks {
             Check(C(leader, CommunityOperation.SetBoard, text: "hello").board == "hello" && InventoryDao.CountOf(db, leader, 5370000) == 1, "黑板展示且不消耗道具");
             Check(C(leader, CommunityOperation.CloseBoard).board == "", "黑板关闭");
             Check(C(leader, CommunityOperation.InviteFamily, "Player1").ok && C(junior, CommunityOperation.AcceptFamily).family.Count == 2, "学院登记与接受建立关系树");
+            var pedigree = C(ids[2], CommunityOperation.ReadFamilyTree, "Player1");
+            Check(pedigree.ok && pedigree.treeTarget == junior && pedigree.familyTree.Count == 2 && pedigree.family.Count == 0 && pedigree.familyId == 0,
+                "查看他人学院关系树不覆盖自己的学院状态");
+            Check(!C(leader, CommunityOperation.ReadFamilyTree, "Player6").ok && !C(leader, CommunityOperation.ReadFamilyTree, "missing").ok,
+                "关系树拒绝离线或不存在的目标");
+            community.SameChannel = (_, __) => false;
+            Check(!C(leader, CommunityOperation.ReadFamilyTree, "Player1").ok, "关系树拒绝跨频道查询");
+            community.SameChannel = null;
             Check(!C(junior, CommunityOperation.FamilyPrecepts, text: "无权").ok, "非首领不能改家训");
             Check(C(leader, CommunityOperation.FamilyPrecepts, text: "努力冒险").ok && C(junior).precepts == "努力冒险", "学院家训共享");
             community.GiveReputation(junior, 800);
@@ -87,6 +96,12 @@ static class NativeSystemChecks {
             long stock = bought.stock[0].id;
             var taken = S(leader, CashOperation.Withdraw, item: stock);
             Check(taken.ok && taken.stock.Find(x => x.id == stock).characterId == leader && taken.character.inventory.Exists(x => x.itemId == 5370000), "从账号现金仓库取出到角色道具栏");
+            long heldIdentity = taken.character.inventory.Find(x => x.itemId == 5370000).itemRowId;
+            var persistence = new Server.Bot.Trade.BotTradeService(db, Server.Bot.BotItemCatalog.Shared);
+            persistence.Persist(new Server.Bot.BotActor { id = leader, character = taken.character });
+            Check(S(leader).stock.Exists(x => x.id == stock && x.characterId == leader) &&
+                CharService.Load(db, leader).inventory.Exists(x => x.itemRowId == heldIdentity),
+                "拾取/交易整包持久化保留现金道具身份与仓库关联");
             Check(!S(ids[6], CashOperation.Withdraw, item: stock).ok, "其他账号不能取出现金道具");
             Check(S(leader, CashOperation.Deposit, item: stock).ok && S(leader).stock.Find(x => x.id == stock).characterId == 0, "现金道具可存回仓库且不复制");
             Check(S(junior, CashOperation.Open).stock.Exists(x => x.id == stock), "同账号同职业角色共享现金仓库");
@@ -143,6 +158,39 @@ static class NativeSystemChecks {
             db.Save(); var reopened = DbStore.Open(path); var reCash = new NativeCashService(reopened) { Catalog = new Catalog() };
             Check(reCash.Handle(new CashRequest { characterId = leader }).wishes.Count == 2 && new NativeCommunityService(reopened).Handle(new CommunityRequest { characterId = leader }).guild.Count == 6, "重开存档恢复商城清单与家族成员");
             Check(CharService.Load(reopened, leader).inventory.Exists(x => x.itemId == 1142000 && x.position == -49), "重开存档恢复已装备勋章");
+            var petPurchase = S(leader, CashOperation.Buy, 105);
+            long petStock = petPurchase.stock.Find(x => x.itemId == 5000000).id;
+            var petTaken = S(leader, CashOperation.Withdraw, item: petStock);
+            var petItem = petTaken.character.inventory.Find(x => x.itemId == 5000000);
+            Check(petTaken.ok && petItem != null && petItem.petId > 0 && petItem.petData != null,
+                "商城宠物取出创建原版pets数据并进入现金背包");
+            int petId = petItem.petId;
+            var petRow = db.Table("pets").Find(x => DbStore.Int(x,"petid") == petId); petRow["summoned"] = 1L;
+            var exclude = NativeInventoryService.Handle(db,new InventoryChangeRequest {characterId=leader,petId=petId,
+                writePetExclusions=true,petExclusions=new[] {4000000,int.MaxValue,4000000}});
+            Check(exclude.ok && exclude.petExclusions.Count==2, "宠物过滤完整列表去重持久化");
+            Check(!NativePetItems.ExcludesPickup(db,leader,0), "未装备过滤器不应用宠物排除配置");
+            InventoryDao.InsertItem(db,leader,1812007,-1,-46,1);
+            Check(NativePetItems.ExcludesPickup(db,leader,0) && NativePetItems.ExcludesPickup(db,leader,4000000) &&
+                !NativePetItems.ExcludesPickup(db,leader,4000001), "过滤器对金币和指定物品生效");
+            Check(!NativeInventoryService.Handle(db,new InventoryChangeRequest {characterId=junior,petId=petId,readPetExclusions=true}).ok,
+                "不能读取其他角色宠物排除配置");
+            Check(!NativeInventoryService.Handle(db,new InventoryChangeRequest {characterId=leader,petId=petId,writePetExclusions=true,petExclusions=new[] {-1}}).ok &&
+                NativePetItems.ExcludesPickup(db,leader,0), "非法过滤列表不覆盖已有配置");
+            var reduced = NativeInventoryService.Handle(db,new InventoryChangeRequest {characterId=leader,petId=petId,writePetExclusions=true,petExclusions=new[] {4000000}});
+            Check(reduced.ok && !NativePetItems.ExcludesPickup(db,leader,0) && NativePetItems.ExcludesPickup(db,leader,4000000), "删除过滤金币后恢复金币拾取");
+            petRow["summoned"] = 0L;
+            db.Table("pets").Find(x => DbStore.Int(x, "petid") == petId)["closeness"] = 123L;
+            Check(S(leader, CashOperation.Deposit, item: petStock).ok, "宠物可以存回现金仓库");
+            db.Save();
+            var petReopened = DbStore.Open(path);
+            var petCash = new NativeCashService(petReopened) { Catalog = new Catalog() };
+            petCash.Handle(new CashRequest { characterId = leader, operation = CashOperation.Open });
+            var petAgain = petCash.Handle(new CashRequest { characterId = leader, operation = CashOperation.Withdraw, itemId = petStock });
+            var samePet = petAgain.character.inventory.Find(x => x.itemId == 5000000);
+            Check(petAgain.ok && samePet.petId == petId && Convert.ToInt32(samePet.petData["closeness"]) == 123 &&
+                petReopened.Table("pets").rows.Count == 1,
+                "重开存档后宠物取出仍保留同一petid和亲密度且不复制");
             // A transaction must restore mutations to existing rows, not only additions/deletions.
             var original = AccountsDao.FindById(db, account); long before = DbStore.Long(original, "nxCredit");
             db.BeginTransaction(); original["nxCredit"] = -100L; db.Rollback();

@@ -34,7 +34,11 @@ namespace MapleDash.Js
 
         public void ResetSteps() => steps = 0;
 
-        public double Random() => rng.NextDouble();
+        public double Random() => RandomSource?.Invoke() ?? rng.NextDouble();
+        // 回归注入缝：源端大量概率分支（航海 BOSS 追加币、塔内随层奖励、商店折扣…）只看 Math.random()，
+        // 要让「命中/不命中」都变成可复现断言，就得能把这一个出口钉成定值。
+        // 与 JsDate.Clock 同一套约定：回归里赋值、finally 里恢复 null。
+        internal static Func<double> RandomSource;
 
         // ————— 提升：函数声明/var 必须在执行前就位（源端脚本大量依赖这个行为） —————
         public void Hoist(List<JsNode> body, JsScope scope)

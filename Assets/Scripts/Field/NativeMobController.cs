@@ -223,6 +223,25 @@ public sealed class NativeMobController : MonoBehaviour
     }
     bool Buffed(int id) => buffs.TryGetValue(id, out var b) && Now < b.until;
     void Buff(int id, int value, long duration) => buffs[id] = new BuffValue { value = value, until = Now + duration };
+    // SeedTowerCompat.spiderWeb：源端是
+    //   applyMonsterBuff({WEAPON_REFLECT,MAGIC_REFLECT,WEAPON_IMMUNITY,MAGIC_IMMUNITY}=1,
+    //                    duration 4000, cooltime 6000, MobSkill(PHYSICAL_AND_MAGIC_COUNTER,1), [4000])
+    // 反伤数值在 AbstractDealDamageHandler:665-682 是取 MobSkill 145 的 x/y，FilterHit 也按
+    // skills 里 id==145 找数值。所以这里必须先把该等级登记进 skills —— 只挂 buff 会变成
+    // 「攻击被免疫但玩家不掉血」，和源端的蛛网反伤不是一回事。
+    public void ScriptReflect(long millis)
+    {
+        if (!skills.Exists(c => c.id == 145))
+        {
+            var data = WzAssets.FileRoot("Skill/MobSkill.img").Get("145/level/1");
+            if (data == null) { Debug.LogWarning("[MobSkill] Missing 145/1 for spider web"); return; }
+            skills.Add(new Cast { id = 145, level = 1, x = data.Int("x", 1), y = data.Int("y", 1),
+                count = data.Int("count", 1), duration = data.Int("time") * 1000L,
+                cooldown = data.Int("interval") * 1000L, cast = true });
+        }
+        Buff(143, 1, millis); Buff(144, 1, millis);
+        Buff(140, 1, millis); Buff(141, 1, millis);
+    }
 
     int showdown;
     long showdownUntil;
@@ -568,10 +587,14 @@ public sealed class NativeMobController : MonoBehaviour
             foreach (var c in skills)
                 if (c.id == 145) GameLoop.I?.player?.TakeBossDamage(Math.Max(0,magic ? c.y : c.x));
         if (Buffed(reflect) || Buffed(magic ? 141 : 140)) return new DamageResult(1,false);
-        if (mob.IsBoss && GameSession.InGame && hit.Amount != int.MaxValue)
+        if (mob.IsBoss && GameSession.InGame && hit.Amount != long.MaxValue)
         {
             double multiplier = GameSession.Net.Boss(new BossRequest { characterId=GameSession.CharacterId }).multiplier;
-            return new DamageResult((int)Math.Min(int.MaxValue,Math.Floor(hit.Amount*multiplier+.5)),hit.Critical);
+            double scaled = Math.Floor(hit.Amount*multiplier+.5);
+            long boosted=scaled>=long.MaxValue?long.MaxValue:(long)scaled;
+            if(boosted>hit.Amount)NativeSystemMessage.Drop(5,"[BOSS伤害] 本次额外造成 +"+
+                (boosted-hit.Amount).ToString("N0",System.Globalization.CultureInfo.InvariantCulture)+" 伤害。");
+            return new DamageResult(boosted, hit.Critical);
         }
         return hit;
     }
@@ -595,10 +618,10 @@ public sealed class NativeMobController : MonoBehaviour
         foreach (int id in ids) if (Buffed(id))
         { result[key] = (int)Math.Min(int.MaxValue,NativeCombatData.Int(result,key) * (long)buffs[id].value / 100); break; }
     }
-    public void ApplyDamage(int damage)
+    public void ApplyDamage(long damage)
     {
         long applied = health.Damage(damage); mob.hp = health.Current;
-        encounter.OnDamaged(mob,(int)applied);
+        encounter.OnDamaged(mob,applied);
         if (destructionHp>=0 && health.Current<=destructionHp) { deathAction=destructionAction; health.Damage(health.Current); mob.hp=0; }
     }
     static int RecoveryInterval() => GameServer.Local==null ? 10000 : Math.Max(1,GameConfigDao.GetInt(GameServer.Local.Db,"respawn_interval",10000));
@@ -610,13 +633,22 @@ public sealed class NativeMobController : MonoBehaviour
         if (amount>0) state.TryUse("mp-eater",Now,amount,0,false);
         return amount;
     }
+    // Reattach a field view without treating map departure as a monster death.
+    public void RestoreFieldHp(long current)
+    {
+        health.Damage(Math.Max(0,health.Current-Math.Max(1,current))); mob.hp=health.Current;
+    }
     public void SetHpPercent(int percent) { health.SetPercent(percent); mob.hp = health.Current; }
-    public void FakeDamage(int damage) { health.Damage(Math.Min(damage,Math.Max(0,health.Current-1))); mob.hp = health.Current; }
+    public void FakeDamage(long damage) { health.Damage(Math.Min(damage,Math.Max(0,health.Current-1))); mob.hp = health.Current; }
     public void OnKilled()
     {
         if (GameSession.InGame && GameLoop.I?.player != null && GameLoop.I.player.hp > 0)
-            GameSession.Net.Boss(new BossRequest { characterId=GameSession.CharacterId,mobId=mob.fieldMobId,
+        {
+            var result=GameSession.Net.Boss(new BossRequest { characterId=GameSession.CharacterId,mobId=mob.fieldMobId,
                 operation=BossOperation.RecordKill,encounter=killId });
+            if(result.ok && !string.IsNullOrEmpty(result.message))NativeSystemMessage.Drop(5,result.message);
+            NativeHuntRuntime.MonsterKilled(mob.fieldMobId);
+        }
         encounter.OnKilled(mob);
         if (revives.Count == 0) return;
         // Monster.killBy broadcasts before the delayed revive; timeMob hours are
@@ -625,7 +657,18 @@ public sealed class NativeMobController : MonoBehaviour
             NativeSystemMessage.DropMap(6,field.Map.timeMobMessage);
         Vector3 pos = mob.transform.position;
         encounter.Schedule(mob, Math.Max(0,ServerDeathMillis), () => {
-            foreach (int id in revives) field.SpawnNativeMob(id,pos);
+            var spawned=new System.Collections.Generic.List<EnemyUnit>();
+            foreach (int id in revives) spawned.Add(field.SpawnNativeMob(id,pos));
+            // EventInstanceManager.reviveMonster → 脚本 monsterRevive(eim, mob)。
+            // 源端 MapleMap.reviveMonster 没有任何调用点（`monsterRevive` 在源端是死代码），
+            // 但客户端真的按 Mob.wz/info/revives 刷后继形态（露希妲 8880141 → 8880152），
+            // 不把这次回调补上，露希妲第三阶段的控制器永远不会启动。
+            if (field.EventMap==null) return;
+            foreach (var unit in spawned)
+            {
+                var revived=NativeEventMap.FindByVisible(unit);
+                if (revived!=null) field.EventMap.Instance.ReviveMonster(revived.Host);
+            }
         }, true);
     }
 }

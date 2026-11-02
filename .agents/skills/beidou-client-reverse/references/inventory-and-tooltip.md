@@ -278,3 +278,43 @@ NativeInventoryActions原先无条件提示“椅子使用功能尚未接入”�
 FullBackgrnd没有图腾格，不另绘新格；小窗使用原图的图腾格。未改变背景或新增自定义UI。
 饰品持久化用PlayerProfileData平行列表，纸娃娃Appearance与属性Worn分开，避免把无纸娃娃层的图腾/吊坠传给衣帽合成器。
 2029001/2029006的spec/isNpc入口已接线；其他缺口以新审计报告为准，不能把脚本入口存在视为完整物品效果通过。
+
+
+## 2026-10-31反馈补查
+
+ItemNo数字图与原坐标补查见 [本次确认记录](field-feedback-2026-10.md)。保留其中的原端身份、地址、资源参数与验证边界，不将静态资源扫描等同于实机验收。
+
+## 2026-10-31 双击闪烁
+
+InvenWindow.Draw双击时在绘制cell循环内break，导致该帧后续所有物品没画；现继续画已取得的entries/equipment
+快照，Pointer.ConsumeClick保证只执行一次物品动作。物品变化下帧自然可见，不重建或清空全窗贴图。
+这是项目绘制错误修复，不修改已记录原IMG布局。验证见docs/pet-review/four-feedback-verification.md。
+
+## 2026-11-01 背包金币样式补核
+
+EXE SHA256仍为 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`。`81DC20`绘制入口，`81DC67..81DC84`读meso并调用`988690`（参数1，每三位逗号）；`81DCB8`用font24测量，`81DCD8`以138减文字宽；`81DD31..81DD73`取font25在(x,266)绘制。`98A707`跳表`98CB81`中24/25分别到`98B618/98B6B7`，两者12px，24白色(-1)、25黑色(FF000000)，字体串5527。复现用inspect_beidou_client.py的上述--start/--end与PE DWORD跳表读取，不把跳表当指令。
+
+InventoryWindow金币由未分组11px中线对齐改为InvariantCulture N0、12px黑色、上对齐、右界138；保持原IMG金币框与图标。Unity字形不等同Windows字体，Android视觉尚未验收。
+
+## 2026-11-02 背包整理 / 合并（ITEM_SORT2 / ITEM_SORT）
+
+源端依据：
+- `net/server/channel/handlers/InventorySortHandler.java`（`PacketProcessor:299` → `RecvOpcode.ITEM_SORT2`）
+- `net/server/channel/handlers/InventoryMergeHandler.java`（`PacketProcessor:180` → `RecvOpcode.ITEM_SORT`）
+- `client/inventory/Inventory.java:264-303`（`move`）、`manipulator/InventoryManipulator.java:489-529`
+
+算法（照抄，不能换实现）：
+- 排序用 `PairedQuicksort`：先按主键全排 → USE 栏对 `itemId/10000` 为 206/207/233 的三段各做**一次** `PartitionByProjectileAtk`（不递归，源端的近似倒序，key = `info/incPAD`）→ 再按 itemId 分组、组内用副键排。主键 = `use_item_sort_by_name ? 名称 : itemId`；副键 = 装备(3)按 `inventoryequipment.level`，其余(1)按数量。**这是不稳定快排**，用 OrderBy 会让相同 itemId 的堆叠保持原序，与源端不同。
+- 合并 = `InventoryManipulator.move` 的完整分支：dst 空 → 移动；同 id **且非 207 充能且 owner 相同** → 相加（超 `slotMax` 时 dst 填满、源留余量）；否则 **swap 槽位**。`Merge` 只按 itemId 预过滤，owner 不同仍会走 swap。第二段把后面的物品前移填洞。
+- 两个 handler 都受 `game_config.use_item_sort`（默认 true）总开关控制，关闭时只回 enableActions / 不动背包。
+
+客户端按钮语义：
+- `0x81E3A6..0x81E521` 按状态值 0/1 **二选一**创建同一槽位的按钮：0 → 字符串 1851 `Item/BtGather` + id 0x7D3，1 → 字符串 1852 `Item/BtSort` + id 0x7D4，坐标都是内部宽-15、y=6（origin 6,6 中心）。
+- 内部宽 = 窗宽-20，所以小窗 155-15=140、展开 583-15=568。项目按 `width-35` 传（175/603），**两者数值一致**，位置无需再改；BtFull 的 `width-50` 同理对应内部宽-30。
+- **待核实**：0x7D3/0x7D4 的消息分派分支没有反编译出来。当前实现按语义推定「状态 0 画 BtGather → 发 ITEM_SORT(合并)，状态 1 画 BtSort → 发 ITEM_SORT2(排序)」，点击后翻转状态。要确认得继续追背包窗的消息处理函数里对 0x7D3/0x7D4 的比较分支。
+
+迁移与验证：
+- `Assets/Scripts/Server/World/NativeInventorySort.cs`：`Sort` / `Merge` 全量移植；`NativeInventoryService` 加 `sortItems` / `mergeItems` / `sortInventoryType` 分派；`InventoryEntry.equipLevel` 承接 `inventoryequipment.level`。
+- `GameWindows.InvenWindow.Organize` 接真实请求，回包整份背包覆盖内存并投影 Profile；`ApplyInventoryToProfile` 改为按 `(inventoryType, position)` 排序投影，否则服务端改 position 后界面看不出变化。
+- 回归 `tools/server-check/InventoryOrganizeChecks.cs`（14 项：主键 itemId、副键数量、装备按 level、合并/超上限留余量/紧排、装备栏不合并、开关关闭、页号越界）→ `dotnet run --project tools/server-check` = **759 通过 / 0 失败**；`tools/unity-compile-check` 0 warning / 0 error。
+- 边界：`Profile.itemIds` 是 id→数量的扁平结构，同 id 多格在界面上本来就会并成一格总数，所以「合并」在 UI 上的可见度有限，服务端数据层的槽位与数量是准的；未做 Android 实机验收。

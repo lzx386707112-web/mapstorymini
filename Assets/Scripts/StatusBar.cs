@@ -83,7 +83,10 @@ public static class StatusBar
     static void DrawIdentity()
     {
         string name = string.IsNullOrEmpty(Profile.playerName) ? Profile.DefaultName : Profile.playerName;
-        string job = ClassDefs.Get(Profile.cls).name;
+        // 源端这一行是 String/Job.img/<jobid>/name，也就是完整职业名（剑士/准骑士/骑士…）。
+        // 旧写法读 ClassDefs（章节模式 6 个玩具职业），三转四转一律显示「新手」，
+        // 于是 `@job 121` 改完职业状态栏还是新手 —— 看起来像指令没生效。
+        string job = JobDefs.NameOf(Profile.JobId);
 
         // 参考图：两行均为浅灰常规字，字号一致，共用左对齐线。
         var identity = Style(12, new Color32(192, 198, 200, 255), TextAnchor.UpperLeft, FontStyle.Normal);
@@ -102,7 +105,7 @@ public static class StatusBar
         float mpMax = p != null ? Mathf.Max(1f, p.mpMax) : Profile.Attributes.maxMp;
         float[] ratio = { Mathf.Clamp01(hp / hpMax), Mathf.Clamp01(mp / mpMax), Profile.ExpRatio };
 
-        TrackGauges(ratio);
+        TrackGauges(ratio, hp, hpMax, mp, mpMax);
 
         float x = GaugeX;
         for (int i = 0; i < 3; i++)
@@ -124,7 +127,7 @@ public static class StatusBar
                 GUI.DrawTexture(At(x, barY, gw, BarH), frames[i], ScaleMode.StretchToFill);
 
             // 原版受击反馈：hpFlash / mpFlash 是 5 帧（0/1 交替，109×18），叠在槽体上
-            if (i < 2) DrawFlash(i, x, barY, ratio[i]);
+            if (i < 2) DrawFlash(i, x, barY);
             // Native tempExp is banked Gacha EXP, not a timed recent-gain flash.
             if (i == 2) DrawTemporaryExp(x, barY);
 
@@ -141,11 +144,11 @@ public static class StatusBar
 
     // ————— 原版受击闪烁 / 经验增量 —————
     // 掉血掉蓝：客户端里 hpFlash、mpFlash 各 5 帧（引用 0/1 两张图交替），
-    // 每帧 100ms，走完 0.5 秒收工。只在数值下降时触发，升级/回血不闪。
-    const float FlashFrame = 0.1f;
+    // 原 IMG 每帧 130ms；8D850B 仅在警报线以下数值下降时创建有限动画。
+    const float FlashFrame = 0.13f;
     const int FlashFrames = 5;
     static float hpFlashAt = -99f, mpFlashAt = -99f;
-    static float lastHp = 1f, lastMp = 1f;
+    static float lastHp, lastMp;
     static bool gaugeInit;
     // CUIStatusBar::SetNumberValue 8D8BAC/8D932C: HP/MP vectors move over 700ms.
     const float GaugeDuration = .7f;
@@ -153,12 +156,14 @@ public static class StatusBar
     static float GaugeRatio(int index, float now) => Mathf.Lerp(gaugeFrom[index], gaugeTo[index],
         Mathf.Clamp01((now - gaugeAt[index]) / GaugeDuration));
 
-    static void TrackGauges(float[] ratio)
+    static void TrackGauges(float[] ratio, float hp, float hpMax, float mp, float mpMax)
     {
         float now = Time.unscaledTime;
         if (!gaugeInit)
         {
-            gaugeInit = true; lastHp = ratio[0]; lastMp = ratio[1];
+            gaugeInit = true;
+            lastHp = WarningValue(hp, hpMax, ClientSettings.HpAlarm);
+            lastMp = WarningValue(mp, mpMax, ClientSettings.MpAlarm);
             for (int i = 0; i < 3; i++) gaugeFrom[i] = gaugeTo[i] = ratio[i];
             return;
         }
@@ -167,26 +172,25 @@ public static class StatusBar
             { gaugeFrom[i] = GaugeRatio(i, now); gaugeTo[i] = ratio[i]; gaugeAt[i] = now; }
         // EXP's base fill updates immediately; temporary EXP is a separate stat.
         gaugeFrom[2] = gaugeTo[2] = ratio[2];
-        if (ratio[0] < lastHp - 0.0005f) hpFlashAt = now;
-        if (ratio[1] < lastMp - 0.0005f) mpFlashAt = now;
-        lastHp = ratio[0]; lastMp = ratio[1];
+        if (AdvanceWarning(hp, hpMax, ClientSettings.HpAlarm, ref lastHp)) hpFlashAt = now;
+        if (AdvanceWarning(mp, mpMax, ClientSettings.MpAlarm, ref lastMp)) mpFlashAt = now;
     }
 
-    static void DrawFlash(int index, float x, float barY, float ratio)
+    static float WarningValue(float current, float maximum, int alarm)
+        => alarm > 0 && Mathf.FloorToInt(current * 100 / Mathf.Max(1, maximum)) < alarm
+            ? current : Mathf.Floor(alarm * maximum / 100);
+
+    static bool AdvanceWarning(float current, float maximum, int alarm, ref float previous)
     {
-        // 系统设置里的 HP/MP 警报：低于阈值就一直闪（每 1 秒闪 0.5 秒），
-        // 和受击闪烁共用同一组 flash 图，只是驱动方式不同。
-        int alarm = index == 0 ? ClientSettings.HpAlarm : ClientSettings.MpAlarm;
-        float since;
-        if (alarm > 0 && Mathf.RoundToInt(ratio * 100f) <= alarm)
-        {
-            since = Mathf.Repeat(Time.unscaledTime, 1f);
-        }
-        else
-        {
-            since = Time.unscaledTime - (index == 0 ? hpFlashAt : mpFlashAt);
-            if (since < 0f || since >= FlashFrame * FlashFrames) return;
-        }
+        bool flash = alarm > 0 && Mathf.FloorToInt(current * 100 / Mathf.Max(1, maximum)) < alarm && previous > current;
+        previous = WarningValue(current, maximum, alarm);
+        return flash;
+    }
+
+    static void DrawFlash(int index, float x, float barY)
+    {
+        float since = Time.unscaledTime - (index == 0 ? hpFlashAt : mpFlashAt);
+        if (since < 0f || since >= FlashFrame * FlashFrames) return;
         int frame = Mathf.Clamp(Mathf.FloorToInt(since / FlashFrame), 0, FlashFrames - 1) % 2;
         var tex = Art.Tex("ui/statusbar/" + (index == 0 ? "hp" : "mp") + "flash_" + frame + ".bytes");
         if (tex == null) return;

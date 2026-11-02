@@ -145,7 +145,7 @@ public partial class SkillSystem
             while(Time.realtimeSinceStartupAsDouble<next)yield return null;
         }
     }
-    IEnumerator WindDot(Component target,int amount,long generation,FieldDirector field,FieldMap map)
+    IEnumerator WindDot(Component target,long amount,long generation,FieldDirector field,FieldMap map)
     {
         double start=Time.realtimeSinceStartupAsDouble;
         for(int tick=1;tick<=FollowupInt("MERCILESS_WINDS_DOT_TICKS");tick++)

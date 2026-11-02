@@ -19,7 +19,7 @@ public sealed class BotCombatField : MonoBehaviour
     List<BotGrindMob> Snapshot(int mapId,int world,int channel)
     {
         var result=new List<BotGrindMob>(); targets.Clear();
-        if (field==null || field.Map==null || field.Map.id!=mapId || world!=GameSession.World || channel!=GameSession.Channel) return result;
+        if (field==null || field.Map==null || field.StateId!=mapId || world!=GameSession.World || channel!=GameSession.Channel) return result;
         foreach (var enemy in EnemyUnit.All)
         {
             if (enemy==null || !enemy.fieldMode || enemy.dead) continue;
@@ -32,7 +32,7 @@ public sealed class BotCombatField : MonoBehaviour
     }
     void Hit(BotCharacter bot,BotGrindMob mob,int damage,BotAttack.Skill skill,int[] lines)
     {
-        if (!targets.TryGetValue(mob.id,out var enemy) || enemy==null || enemy.dead || field.Map==null || field.Map.id!=bot.mapId ||
+        if (!targets.TryGetValue(mob.id,out var enemy) || enemy==null || enemy.dead || field.Map==null || field.StateId!=bot.mapId ||
             bot.world!=GameSession.World || bot.channel!=GameSession.Channel) return;
         if (skill.id>0)
         {

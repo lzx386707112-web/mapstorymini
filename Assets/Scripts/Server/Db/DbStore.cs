@@ -404,8 +404,25 @@ public sealed class DbStore
 
     // —————————————————— 持久化 ——————————————————
 
+    int saveBatchDepth;
+    bool saveBatchPending;
+    // Coalesce only a synchronous gameplay operation; outer Dispose flushes before return.
+    public IDisposable DeferSaves() {saveBatchDepth++;return new SaveBatch(this);}
+    sealed class SaveBatch : IDisposable
+    {
+        DbStore store;
+        public SaveBatch(DbStore store) {this.store=store;}
+        public void Dispose()
+        {
+            var current=store;if(current==null)return;store=null;
+            if(--current.saveBatchDepth==0 && current.saveBatchPending)
+            {current.saveBatchPending=false;current.Save();}
+        }
+    }
+
     public void Save()
     {
+        if(saveBatchDepth>0) {saveBatchPending=true;return;}
         var sb = new StringBuilder();
         sb.Append("{\"version\":").Append(SchemaVersion).Append(",\"tables\":{");
         bool first = true;

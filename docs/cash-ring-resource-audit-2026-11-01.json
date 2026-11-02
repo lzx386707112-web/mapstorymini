@@ -1,0 +1,9337 @@
+{
+  "scope": "Static original item metadata and style node existence only; no runtime effect validation",
+  "rings": [
+    {
+      "id": 1112000,
+      "name": "闪光戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112001,
+      "name": "恋人戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112002,
+      "name": "纯爱恋人戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112003,
+      "name": "丘比特戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112005,
+      "name": "维纳斯戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112006,
+      "name": "圣十字架戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112007,
+      "name": "许愿情侣戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112012,
+      "name": "红玫瑰戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112013,
+      "name": "愛情紅線戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112014,
+      "name": "热吻情侣戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "expRate": 1.2000000476837158
+      }
+    },
+    {
+      "id": 1112015,
+      "name": "白金戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112016,
+      "name": "雪花情侣戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "expRate": 1.2000000476837158
+      }
+    },
+    {
+      "id": 1112023,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112100,
+      "name": "白色名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112101,
+      "name": "水晶蓝名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 3
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112102,
+      "name": "蓝色名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 4
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112103,
+      "name": "嫩黄名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 5
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112104,
+      "name": "星星名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 6
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112105,
+      "name": "粉红绸带名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 8
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112106,
+      "name": "蓝绸带名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 9
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112107,
+      "name": "骷髅名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 7
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112108,
+      "name": "蝴蝶名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 10
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112109,
+      "name": "闪电背景名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 11
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112110,
+      "name": "篮球队名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 12
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112111,
+      "name": "篮球队名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 13
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112112,
+      "name": "海滩名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 14
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112113,
+      "name": "巧克力名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 15
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112114,
+      "name": "粉红糖果名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 16
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112115,
+      "name": "枫叶钻石名片",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 20
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112116,
+      "name": "白云名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 17
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112117,
+      "name": "彩虹名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 18
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112118,
+      "name": "可乐名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 19
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112119,
+      "name": "可乐(红色)名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 21
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112120,
+      "name": "可乐(白色)名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 22
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112121,
+      "name": "饼干名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 23
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112122,
+      "name": "彩云名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 24
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112123,
+      "name": "红笔笔名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 25
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112124,
+      "name": "蓝笔笔名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 26
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112125,
+      "name": "绿笔笔名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 27
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112126,
+      "name": "熊宝宝名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 28
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112127,
+      "name": "Welcome Back",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 20
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112134,
+      "name": "小竹林名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 58
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112135,
+      "name": "水墨花名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 59
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112136,
+      "name": "香肠名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 36
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112138,
+      "name": "绿钻巨戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 37,
+        "accountSharable": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112139,
+      "name": "金色VIP戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 38,
+        "accountSharable": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112140,
+      "name": "银色VIP戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 39,
+        "accountSharable": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112141,
+      "name": "红玫瑰名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 40
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112142,
+      "name": "木乃伊名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 41,
+        "accountSharable": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112143,
+      "name": "奢华珍珠名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 112,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112144,
+      "name": "虎喵名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 113
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112145,
+      "name": "浪漫花边名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 42
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112146,
+      "name": "青苹果名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 43
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112148,
+      "name": "胡子先生名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 115
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112149,
+      "name": "Naver名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 116
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112150,
+      "name": "天使降临名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 117,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112151,
+      "name": "草莓蛋糕名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 118,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112152,
+      "name": "蓝莓名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 119
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112153,
+      "name": "草莓名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 120
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112154,
+      "name": "压岁钱名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 121
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112155,
+      "name": "青蛙名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 122
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112156,
+      "name": "猪猪名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 123
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112157,
+      "name": "我爱胡子名片戒指(蓝色)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 124,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112158,
+      "name": "我爱胡子名片戒指(红色)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 125
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112159,
+      "name": "非洲之星名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 126
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112160,
+      "name": "西瓜物语名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 127
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112161,
+      "name": "小黄鸭名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 128
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112162,
+      "name": "鸥巴名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 129
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112163,
+      "name": "星星名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 130
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112164,
+      "name": "夏日甜心名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 131
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112165,
+      "name": "绿光森林名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 137
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112166,
+      "name": "乖宝贝名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 138
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112170,
+      "name": "明星名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "noMoveToLocker": 1,
+        "tradeBlock": 1,
+        "nameTag": 142
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112171,
+      "name": "狗狗名片戒指(白)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 143
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112172,
+      "name": " 狗狗名片戒指（棕）",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 144
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112173,
+      "name": "奶白兔名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 157
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112174,
+      "name": "白色足球名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 146
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112175,
+      "name": "足球名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 147
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112176,
+      "name": "旋律音符名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 148,
+        "tradeBlock": 1,
+        "isDonor": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112177,
+      "name": "名签戒指(进击的巨人)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 149
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112178,
+      "name": "梦境雪景名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 150
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112179,
+      "name": "雪花圣诞名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 151
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112180,
+      "name": "血盟友情名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 152
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112181,
+      "name": "云朵羊咩咩名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 155
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112182,
+      "name": "婴儿名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 156,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112183,
+      "name": "羊咩咩名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 158
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112184,
+      "name": "活力品克缤名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "tradeBlock": 1,
+        "nameTag": 159
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112190,
+      "name": "爱吃胡萝卜兔名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 165
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112191,
+      "name": "蜜蜂名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 166
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112192,
+      "name": "菠萝甜心名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 167
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112193,
+      "name": "公主日记名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 168
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112194,
+      "name": "咕噜噜名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 169
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112195,
+      "name": "绿恐龙名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 170
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112196,
+      "name": "彩糖名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 171
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112197,
+      "name": "晚安小怪兽名片戒指\r\n",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 172
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112198,
+      "name": "吃货小怪兽名片戒指\r\n",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 173
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112199,
+      "name": "雪人的红围巾名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 177
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1112200,
+      "name": "粉红聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112201,
+      "name": "粉红心型聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 3
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112202,
+      "name": "蓝色聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 2
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112203,
+      "name": "蝇蝇聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 5
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112204,
+      "name": "梅花聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 6
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112205,
+      "name": "蓝花聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 7
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112206,
+      "name": "粉红绸带聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 8
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112207,
+      "name": "蓝绸带聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 9
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112208,
+      "name": "骷髅聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 10
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112209,
+      "name": "蓝心型聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 11
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112210,
+      "name": "黄金聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 12
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112211,
+      "name": "粉红小姐聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 13
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112212,
+      "name": "银蓝色聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 14
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112213,
+      "name": "黄金聊天戒指2",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 15
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112214,
+      "name": "粉红小姐聊天戒指2",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 16
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112215,
+      "name": "沧海聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 17
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112216,
+      "name": "小猫聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 18
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112217,
+      "name": "小狗脚样聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 19
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112218,
+      "name": "小熊猫聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 20
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112219,
+      "name": "闪电聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 21
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112220,
+      "name": "篮球队聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 22
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112221,
+      "name": "篮球队聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 23
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112222,
+      "name": "樱花聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 24
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112223,
+      "name": "海滩聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 25
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112224,
+      "name": "巧克力聊天戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 26
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112225,
+      "name": "粉红糖果聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 27
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112226,
+      "name": "白云聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 28
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112227,
+      "name": "彩虹聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 29
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112228,
+      "name": "可乐聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 30
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112229,
+      "name": "可乐(红色)聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 32
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112230,
+      "name": "可乐(白色)聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 33
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112231,
+      "name": "饼干聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 34
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112232,
+      "name": "彩云聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 35
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112233,
+      "name": "红本本聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 36
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112234,
+      "name": "蓝本本聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 37
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112235,
+      "name": "绿本本聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 38
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112236,
+      "name": "熊宝宝聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 39
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112237,
+      "name": "小竹林聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 58
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112238,
+      "name": "水墨花聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 59
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112239,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 41
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112244,
+      "name": "蝙蝠聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 42
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112245,
+      "name": "钻石VIP聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 43,
+        "accountSharable": 1
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112246,
+      "name": "黄金VIP聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 44,
+        "accountSharable": 1
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112247,
+      "name": "白银VIP聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 45,
+        "accountSharable": 1
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112248,
+      "name": "[MS特制]粉红聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112249,
+      "name": "[MS特制]蓝花聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 7
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112250,
+      "name": "[MS特制]梅花聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 6
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112251,
+      "name": "彩色铅笔聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 46
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112252,
+      "name": "红玫瑰聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 47
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112253,
+      "name": "木乃伊对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 48,
+        "accountSharable": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112254,
+      "name": "奢华珍珠聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 113
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112256,
+      "name": "虎喵聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 114
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112257,
+      "name": "浪漫花边聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 49
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112258,
+      "name": "青苹果对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 50
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112259,
+      "name": "胡子先生对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 115
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112260,
+      "name": "家族成员对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "chatBalloon": 116,
+        "cash": 1,
+        "noMoveToLocker": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112261,
+      "name": "Naver对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 117
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112262,
+      "name": "天使聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 118,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112263,
+      "name": "草莓蛋糕聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 119,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112264,
+      "name": "蓝莓聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 120
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112265,
+      "name": "草莓聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 121
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112266,
+      "name": "压岁钱聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 122
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112267,
+      "name": "青蛙聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 123
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112268,
+      "name": "猪猪聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 124
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112269,
+      "name": "我爱胡子聊天戒指(蓝色)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 125
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112270,
+      "name": "我爱胡子聊天戒指(红色)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 126
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112271,
+      "name": "非洲之星聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 127
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112272,
+      "name": "西瓜物语聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 128
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112273,
+      "name": "小黄鸭聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 129
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112274,
+      "name": "鸥巴聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 130
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112275,
+      "name": "星星聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 131
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112276,
+      "name": "夏日甜心聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 132
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112277,
+      "name": "绿光森林聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 133
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112278,
+      "name": "乖宝贝聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 134
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112282,
+      "name": "明星聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "noMoveToLocker": 1,
+        "tradeBlock": 1,
+        "chatBalloon": 138
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112283,
+      "name": "狗狗聊天戒指(白)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 139
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112284,
+      "name": "狗狗聊天戒指(棕)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 140
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112285,
+      "name": "奶白兔聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 156,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112286,
+      "name": "白色足球聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 146
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112287,
+      "name": "足球聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 147
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112288,
+      "name": "旋律音符聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 148,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112289,
+      "name": "对话框戒指(进击的巨人)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 149
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112290,
+      "name": "梦境雪景对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 150
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112291,
+      "name": "雪花圣诞聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 151
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112292,
+      "name": "银色家族成员对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "chatBalloon": 152,
+        "cash": 1,
+        "noMoveToLocker": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112293,
+      "name": "血盟友情对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 153
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112294,
+      "name": "云朵羊咩咩聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "noMoveToLocker": 1,
+        "tradeBlock": 1,
+        "chatBalloon": 154
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112295,
+      "name": "婴儿对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 155,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112296,
+      "name": "羊咩咩聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 157
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1112585,
+      "name": "天使的祝福",
+      "info": {
+        "cash": 1,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqLUK": 0,
+        "reqSTR": 0,
+        "vslot": "Ri"
+      }
+    },
+    {
+      "id": 1112724,
+      "name": "我是新人戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 20
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1112725,
+      "name": "龙魂之戒—龙神(智)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 30,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 2,
+        "incDEX": 2,
+        "incLUK": 2,
+        "incMMP": 100,
+        "incPAD": 2,
+        "incMAD": 2,
+        "incMHP": 100,
+        "incINT": 2,
+        "setItemID": 88
+      }
+    },
+    {
+      "id": 1112729,
+      "name": "龙魂之戒—双刀(运)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 30,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 2,
+        "incDEX": 2,
+        "incLUK": 2,
+        "incMMP": 100,
+        "incPAD": 2,
+        "incMAD": 2,
+        "incMHP": 100,
+        "incINT": 2,
+        "setItemID": 89
+      }
+    },
+    {
+      "id": 1112730,
+      "name": "龙魂之戒—豹弩(敏)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 30,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 2,
+        "incDEX": 2,
+        "incLUK": 2,
+        "incMMP": 100,
+        "incPAD": 2,
+        "incMAD": 2,
+        "incMHP": 100,
+        "incINT": 2,
+        "setItemID": 90
+      }
+    },
+    {
+      "id": 1112731,
+      "name": "龙魂之戒—唤灵(智)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 30,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 2,
+        "incDEX": 2,
+        "incLUK": 2,
+        "incMMP": 100,
+        "incPAD": 2,
+        "incMAD": 2,
+        "incMHP": 100,
+        "incINT": 2,
+        "setItemID": 91
+      }
+    },
+    {
+      "id": 1112732,
+      "name": "龙魂之戒—双弩(敏)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 30,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 2,
+        "incDEX": 2,
+        "incLUK": 2,
+        "incMMP": 100,
+        "incPAD": 2,
+        "incMAD": 2,
+        "incMHP": 100,
+        "incINT": 2,
+        "setItemID": 92
+      }
+    },
+    {
+      "id": 1112733,
+      "name": "龙魂之戒—恶魔(力)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 30,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 2,
+        "incDEX": 2,
+        "incLUK": 2,
+        "incMMP": 100,
+        "incPAD": 2,
+        "incMAD": 2,
+        "incMHP": 100,
+        "incINT": 2,
+        "setItemID": 93
+      }
+    },
+    {
+      "id": 1112734,
+      "name": "龙魂之戒—神圣(全)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 30,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 2,
+        "incDEX": 2,
+        "incLUK": 2,
+        "incMMP": 100,
+        "incPAD": 2,
+        "incMAD": 2,
+        "incMHP": 100,
+        "incINT": 2,
+        "setItemID": 94
+      }
+    },
+    {
+      "id": 1112741,
+      "name": "老手回归戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112745,
+      "name": "幻影守护之戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 30,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 2,
+        "incDEX": 2,
+        "incLUK": 2,
+        "incMMP": 100,
+        "incPAD": 2,
+        "incMAD": 2,
+        "incMHP": 100,
+        "incINT": 2,
+        "setItemID": 109
+      }
+    },
+    {
+      "id": 1112757,
+      "name": "骷髅魔戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "tuc": 0,
+        "price": 0,
+        "cash": 1,
+        "incLUK": 1,
+        "incINT": 1,
+        "incDEX": 1,
+        "incSTR": 1,
+        "incPAD": 1,
+        "incMAD": 1,
+        "tradeBlock": 1,
+        "timeLimited": 1
+      }
+    },
+    {
+      "id": 1112785,
+      "name": "钻石VIP戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "accountSharable": 1
+      }
+    },
+    {
+      "id": 1112786,
+      "name": "黄金VIP戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "accountSharable": 1
+      }
+    },
+    {
+      "id": 1112787,
+      "name": "白银VIP戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "accountSharable": 1
+      }
+    },
+    {
+      "id": 1112800,
+      "name": "四叶挚友戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112801,
+      "name": "雏菊挚友戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112802,
+      "name": "闪星挚友戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112803,
+      "name": "月长石结婚戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "slotMax": 1,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "tradeBlock": 1,
+        "only": 1,
+        "notSale": 1,
+        "incMDD": 30,
+        "tuc": 3,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112806,
+      "name": "闪耀新星结婚戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "slotMax": 1,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "tradeBlock": 1,
+        "only": 1,
+        "notSale": 1,
+        "incMDD": 30,
+        "tuc": 3,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112807,
+      "name": "金心结婚戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "slotMax": 1,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "tradeBlock": 1,
+        "only": 1,
+        "notSale": 1,
+        "incMDD": 10,
+        "tuc": 2,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112808,
+      "name": "枫叶钻石聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 31
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1112809,
+      "name": "银翼结婚戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "slotMax": 1,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "tradeBlock": 1,
+        "only": 1,
+        "notSale": 1,
+        "incMDD": 10,
+        "tuc": 2,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112810,
+      "name": "圣诞夜响叮当",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112811,
+      "name": "圣诞华丽派对",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112812,
+      "name": "我的麻吉好友",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112816,
+      "name": "雪晶球戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112817,
+      "name": "蝴蝶挚友戒指30天权",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "bestFriendPartyBonusExp": 10,
+        "incSTR": 1,
+        "incDEX": 1,
+        "incLUK": 1,
+        "incINT": 1
+      }
+    },
+    {
+      "id": 1112820,
+      "name": "龙凤呈祥戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112822,
+      "name": "梦幻悬浮戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112823,
+      "name": "纯爱恋人戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112900,
+      "name": "音符环绕戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112901,
+      "name": "闪星环绕戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112902,
+      "name": "蓝心环绕戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112903,
+      "name": "爱心环绕戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112904,
+      "name": "彩虹星环绕戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112905,
+      "name": "超大心环绕戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112906,
+      "name": "心心祝福戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112908,
+      "name": "极光戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 1,
+        "incDEX": 1,
+        "incLUK": 1,
+        "incINT": 1
+      }
+    },
+    {
+      "id": 1112909,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 3,
+        "incDEX": 3,
+        "incLUK": 3,
+        "incINT": 3
+      }
+    },
+    {
+      "id": 1112910,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 5,
+        "incDEX": 5,
+        "incLUK": 5,
+        "incINT": 5
+      }
+    },
+    {
+      "id": 1112916,
+      "name": "寂寞单身戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112917,
+      "name": "新报到戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112918,
+      "name": "回归戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112919,
+      "name": "永远的冒险家戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112924,
+      "name": "黄色流星戒指 90天",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112925,
+      "name": "蓝色闪烁之星戒指(90天权)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112926,
+      "name": "红色闪烁之星戒指(90天权)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112928,
+      "name": "粉色流星戒指 90天",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112929,
+      "name": "尼凯的守护",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112930,
+      "name": "西红柿效果-90天",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112935,
+      "name": "啦啦啦音符戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112937,
+      "name": "催眠曲戒指(90天)",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112940,
+      "name": "Mapler戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112941,
+      "name": "WelcomeBack戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112943,
+      "name": "时尚周戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112945,
+      "name": "자나깨나 BBQ 탕수육 생각",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112946,
+      "name": "彩虹宝石",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112947,
+      "name": "梦幻悬浮戒指（单人版）",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112949,
+      "name": "旋律戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "isDonor": 1,
+        "tradeBlock": 1
+      }
+    },
+    {
+      "id": 1112953,
+      "name": "蓝色闪烁之星戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "noMoveToLocker": 1,
+        "cashForceCharmExp": 0,
+        "tradeBlock": 1
+      }
+    },
+    {
+      "id": 1112954,
+      "name": "红色闪烁之星戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "noMoveToLocker": 1,
+        "cashForceCharmExp": 0,
+        "tradeBlock": 1
+      }
+    },
+    {
+      "id": 1112955,
+      "name": "挚友戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112956,
+      "name": "闪耀之星戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112957,
+      "name": "西红柿效果-90天",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112958,
+      "name": "小蜜蜂特效戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112959,
+      "name": "蝶恋花特效戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112960,
+      "name": "记忆中的向导戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1",
+        "tradeBlock": 1,
+        "isDonor": 1
+      }
+    },
+    {
+      "id": 1112961,
+      "name": "快乐怪物戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1",
+        "tradeBlock": 1
+      }
+    },
+    {
+      "id": 1112964,
+      "name": "喜庆雪景悬浮戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112965,
+      "name": "梦境蝴蝶戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "setItemID": 637
+      }
+    },
+    {
+      "id": 1112967,
+      "name": "旋律戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "noMoveToLocker": 1,
+        "iconRaw": "../info/icon"
+      }
+    },
+    {
+      "id": 1112968,
+      "name": "灵魂密友友情戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "groupEffectID": 6,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112969,
+      "name": "云之彼岸特效戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112970,
+      "name": "雨天娃娃悬浮戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112971,
+      "name": "晴天娃娃悬浮戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112972,
+      "name": "冬夜极光戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112973,
+      "name": "星座之夜悬浮戒指（紫）",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112974,
+      "name": "星座之夜悬浮戒指（蓝）",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112975,
+      "name": "春节饭局达人",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "groupEffectID": 9,
+        "tradeBlock": 1,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1112976,
+      "name": "盗梦空间悬浮特效戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112977,
+      "name": "卟噜噜彩虹鱼特效戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1112978,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1113003,
+      "name": "黑暗小恶魔戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 30,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incSTR": 2,
+        "incDEX": 2,
+        "incLUK": 2,
+        "incMMP": 100,
+        "incPAD": 2,
+        "incMAD": 2,
+        "incMHP": 100,
+        "incINT": 2
+      }
+    },
+    {
+      "id": 1113021,
+      "name": "爱情加速器",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "incPAD": 3,
+        "incMAD": 3,
+        "noMoveToLocker": 1
+      }
+    },
+    {
+      "id": 1113220,
+      "name": "幽暗戒指",
+      "info": {
+        "islot": "Be",
+        "vslot": "Be",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "price": 0,
+        "cash": 1,
+        "notSale": 1,
+        "baseLevel": 1
+      }
+    },
+    {
+      "id": 1113228,
+      "name": "内面暴风",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "onlyEquip": 1
+      }
+    },
+    {
+      "id": 1113284,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "groupEffectID": 3
+      }
+    },
+    {
+      "id": 1113289,
+      "name": "企鹅银河戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1113290,
+      "name": "平衡喵戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "cash": 1,
+        "only": 1,
+        "tuc": 0,
+        "onlyEquip": 1
+      }
+    },
+    {
+      "id": 1113294,
+      "name": "老手回归戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "iconRaw": "../info/icon"
+      }
+    },
+    {
+      "id": 1113298,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "iconRaw": "../info/icon"
+      }
+    },
+    {
+      "id": 1113299,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "partyExpCashRing": 50,
+        "iconRaw": "../info/icon"
+      }
+    },
+    {
+      "id": 1114000,
+      "name": "血盟戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "tuc": 0,
+        "price": 1,
+        "bloodAllianceExpRate": 10,
+        "bloodAlliancePartyExpRate": 5,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1114317,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "tuc": 0,
+        "onlyEquip": 1,
+        "expRate": 10
+      }
+    },
+    {
+      "id": 1114400,
+      "name": "斗燃戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "tuc": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1114401,
+      "name": "苦行戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "tuc": 0,
+        "cash": 1
+      }
+    },
+    {
+      "id": 1115003,
+      "name": "爱吃胡萝卜兔聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 165
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115004,
+      "name": "蜜蜂聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 166
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115005,
+      "name": "菠萝甜心聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 167
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115006,
+      "name": "公主日记聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 168
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115007,
+      "name": "咕噜噜聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 169
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115008,
+      "name": "绿恐龙聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 170
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115009,
+      "name": "彩糖聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 171
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115010,
+      "name": "晚安小怪兽聊天戒指\r\n",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 172
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115011,
+      "name": "吃货小怪兽聊天戒指\r\n",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 173
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115012,
+      "name": "MVP对话框戒指（白银）",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 174
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115013,
+      "name": "MVP对话框戒指（黄金）",
+      "info": {
+        "icon": "iconRaw",
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 175
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115014,
+      "name": "MVP对话框戒指（钻石）",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 176
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115015,
+      "name": "雪人的红围巾聊天戒指\r\n",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 177
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115016,
+      "name": "雪龟岛聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 178
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115017,
+      "name": "圣诞对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 180,
+        "noMoveToLocker": 1
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115018,
+      "name": "猴子聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 179
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115019,
+      "name": "戴米安聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 181
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115020,
+      "name": "超越石聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 182,
+        "noMoveToLocker": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115021,
+      "name": "黑魔法师聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 183
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115022,
+      "name": "兔子布贴聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 184
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115023,
+      "name": "阳光牧场聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 185
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115024,
+      "name": "彩色毛毛虫聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 186,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115025,
+      "name": "热浪鲨鱼聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 187,
+        "iconRaw": "icon"
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115026,
+      "name": "猫咪的线团聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 188,
+        "iconRaw": "icon"
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115027,
+      "name": "祥云聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 189,
+        "iconRaw": "../info/icon"
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115028,
+      "name": "V聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 190
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115029,
+      "name": "DJ吉姆对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "chatBalloon": 191,
+        "cash": 1
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115030,
+      "name": "好吃的巧克力聊天戒指",
+      "info": {
+        "iconRaw": "../info/icon",
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 192
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115031,
+      "name": "活力品克缤聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 193,
+        "iconRaw": "../info/icon"
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115032,
+      "name": "蜘蛛聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 194
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115033,
+      "name": "认真聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 195
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115034,
+      "name": "冰晶雪花聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 196
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115035,
+      "name": "浪漫星空聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 197,
+        "notSale": 1,
+        "tradeBlock": 1,
+        "isDonor": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115036,
+      "name": "BEYOND聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 198
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115037,
+      "name": "圣诞花环聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 200,
+        "notSale": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115038,
+      "name": "小鸡聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 199,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115039,
+      "name": "瓢啊瓢聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 202
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115040,
+      "name": "女巫炼药聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 201,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115041,
+      "name": "山茶花聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 203,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115042,
+      "name": "小胡子聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 204
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115043,
+      "name": "治安官对话框戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 205
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115044,
+      "name": "闪亮的埃尔露娜聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 206
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115045,
+      "name": "NOVA聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 207
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115046,
+      "name": "蜂蜜打翻了聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 208,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115047,
+      "name": "果酱打翻了聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 209,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115048,
+      "name": "万圣节幽灵聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 210,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115049,
+      "name": "浪花聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 211
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115050,
+      "name": "蝶梦聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 212
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115051,
+      "name": "椰树聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 213
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115052,
+      "name": "月亮兔聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 214
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115053,
+      "name": "呀！豌豆聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 215
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115054,
+      "name": "血族聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 216
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115055,
+      "name": "骨碌骨碌聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "tradeBlock": 1,
+        "chatBalloon": 217
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115056,
+      "name": "影魂聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 218
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115057,
+      "name": "小泰迪聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 219
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115058,
+      "name": "柯基聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 220
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115059,
+      "name": "梅花物语聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 221
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115060,
+      "name": "白色情人节聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 222
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115061,
+      "name": "甜蜜巧克力聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "tradeBlock": 1,
+        "chatBalloon": 223
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115062,
+      "name": "欢乐城堡聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 224
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115063,
+      "name": "黄小叽聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 225,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115064,
+      "name": "椰树聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 213
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115065,
+      "name": "守护骑士聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 226
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115066,
+      "name": "笔记本聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 227,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115068,
+      "name": "樱吹雪聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 229,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115069,
+      "name": "桃花狐聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 230,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "chatBalloonResourceExists": true
+    },
+    {
+      "id": 1115070,
+      "name": "记忆守护者聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 231
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115071,
+      "name": "黄金猪猪聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 232
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115072,
+      "name": "小心心聊天戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 233
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115073,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 235
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115074,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 236
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115075,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 237
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115076,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 238
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115077,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 239
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115078,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 240
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115079,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 234
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115080,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 241
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115081,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 242
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115082,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 243
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115083,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 244
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115084,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 246
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115086,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 247
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115087,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 248
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115088,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 249
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115089,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 250
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115090,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1",
+        "chatBalloon": 251
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115091,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "chatBalloon": 252
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115092,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "chatBalloon": 253,
+        "cash": 1
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115094,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "chatBalloon": 257,
+        "cash": 1,
+        "noMoveToLocker": 1
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115097,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "chatBalloon": 258,
+        "cash": 1
+      },
+      "chatBalloonResourceExists": false
+    },
+    {
+      "id": 1115100,
+      "name": "MVP名片戒指（白银）",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 174
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115101,
+      "name": "MVP名片戒指（黄金）",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 175
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115102,
+      "name": "MVP名片戒指（钻石）",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 176
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115103,
+      "name": "雪龟岛名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 178
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115104,
+      "name": "圣诞名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 180,
+        "noMoveToLocker": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115105,
+      "name": "猴子名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 179
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115108,
+      "name": "戴米安名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 183
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115109,
+      "name": "超越石名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 184
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115110,
+      "name": "黑魔法师名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 185
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115111,
+      "name": "兔子布贴名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 186,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115112,
+      "name": "阳光牧场名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 187,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115113,
+      "name": "彩色毛毛虫名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 188,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115114,
+      "name": "热浪鲨鱼名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 189,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115115,
+      "name": "猫咪的线团名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 190,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115116,
+      "name": "祥云名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 191,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115117,
+      "name": "V名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 192
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115118,
+      "name": "DJ吉姆名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 193,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115119,
+      "name": "好吃的巧克力名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 194,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115120,
+      "name": "活力品克缤名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 195,
+        "cash": 1,
+        "iconRaw": "../info/icon"
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115121,
+      "name": "蜘蛛名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 196,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115122,
+      "name": "认真名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 197
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115123,
+      "name": "冰晶雪花名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 198,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115124,
+      "name": "浪漫星空名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 199,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115125,
+      "name": "BEYOND名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 200
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115126,
+      "name": "圣诞花环名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 202,
+        "notSale": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115127,
+      "name": "小鸡名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 201,
+        "cash": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115128,
+      "name": "瓢啊瓢名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 204,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115129,
+      "name": "女巫炼药名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 203,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115130,
+      "name": "山茶花名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 205,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115131,
+      "name": "小胡子名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 206
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115132,
+      "name": "治安官名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 207
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115133,
+      "name": "闪亮的埃尔露娜名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 208,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115134,
+      "name": "NOVA名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 209
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115135,
+      "name": "蜂蜜打翻了名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 210,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115136,
+      "name": "果酱打翻了名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 211,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115137,
+      "name": "万圣节幽灵名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 212,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115138,
+      "name": "浪花名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 213
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115139,
+      "name": "蝶梦名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 214,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115140,
+      "name": "椰树名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 215
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115141,
+      "name": "月亮兔名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 216,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115142,
+      "name": "呀！豌豆名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 217
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115143,
+      "name": "血族名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 218
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115144,
+      "name": "骨碌骨碌名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "tradeBlock": 1,
+        "nameTag": 219
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115145,
+      "name": "影魂名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 220
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115146,
+      "name": "小泰迪名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 221
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115147,
+      "name": "柯基名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 222
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115148,
+      "name": "梅花物语名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 223
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115149,
+      "name": "白色情人节名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 224
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115150,
+      "name": "甜蜜巧克力名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "tradeBlock": 1,
+        "nameTag": 225
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115151,
+      "name": "欢乐城堡名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 226
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115152,
+      "name": "黄小叽名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 227,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115153,
+      "name": "椰树名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 215
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115154,
+      "name": "守护骑士名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 228
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115155,
+      "name": "笔记本名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 229,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115157,
+      "name": "樱吹雪名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 231,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115158,
+      "name": "桃花狐名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 232,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115159,
+      "name": "记忆守护者名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 233
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115160,
+      "name": "黄金猪猪名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 234,
+        "cash": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115161,
+      "name": "小心心名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 235
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115162,
+      "name": "大冒险名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 237,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115163,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 238,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115164,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 239,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115165,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 240,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115166,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 241,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115167,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "nameTag": 242,
+        "cash": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115168,
+      "name": "死神名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 236,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115169,
+      "name": "春风兔名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 243
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115170,
+      "name": "熟睡兔名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 244,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115171,
+      "name": "小猪仔名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 245
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115172,
+      "name": "花雨名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 246
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115173,
+      "name": "彩虹云朵朵名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 250
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115175,
+      "name": "初恋名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 251,
+        "isDonor": 1,
+        "tradeBlock": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115176,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 252
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115177,
+      "name": "夜之魔法师名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 253,
+        "tradeBlock": 1,
+        "isDonor": 1
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115178,
+      "name": "秋日浪漫名片戒指",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 254
+      },
+      "nameTagResourceExists": true
+    },
+    {
+      "id": 1115179,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1",
+        "nameTag": 255
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115180,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 256
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115193,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 269
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115195,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 273,
+        "noMoveToLocker": 1
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1115198,
+      "name": null,
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "cash": 1,
+        "nameTag": 274
+      },
+      "nameTagResourceExists": false
+    },
+    {
+      "id": 1118000,
+      "name": "灵魂戒指1",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118001,
+      "name": "灵魂戒指2",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118002,
+      "name": "灵魂戒指3",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118003,
+      "name": "灵魂戒指4",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118004,
+      "name": "灵魂戒指5",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118005,
+      "name": "灵魂戒指6",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118006,
+      "name": "灵魂戒指7",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118007,
+      "name": "灵魂戒指8",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118008,
+      "name": "灵魂戒指9",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118009,
+      "name": "灵魂戒指10",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118010,
+      "name": "灵魂戒指11",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118011,
+      "name": "灵魂戒指12",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118012,
+      "name": "灵魂戒指13",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118013,
+      "name": "灵魂戒指14",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118014,
+      "name": "灵魂戒指15",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118015,
+      "name": "灵魂戒指16",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118016,
+      "name": "灵魂戒指17",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118017,
+      "name": "灵魂戒指18",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118018,
+      "name": "灵魂戒指19",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118019,
+      "name": "灵魂戒指20",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118020,
+      "name": "灵魂戒指21",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118021,
+      "name": "灵魂戒指22",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118022,
+      "name": "灵魂戒指23",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118023,
+      "name": "灵魂戒指24",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118024,
+      "name": "灵魂戒指25",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118025,
+      "name": "灵魂戒指26",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118026,
+      "name": "灵魂戒指27",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118027,
+      "name": "灵魂戒指28",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118028,
+      "name": "灵魂戒指29",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118029,
+      "name": "灵魂戒指30",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118030,
+      "name": "灵魂戒指31",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118031,
+      "name": "灵魂戒指32",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118032,
+      "name": "灵魂戒指33",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118033,
+      "name": "灵魂戒指34",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118034,
+      "name": "灵魂戒指35",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118035,
+      "name": "灵魂戒指36",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118036,
+      "name": "灵魂戒指37",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118037,
+      "name": "灵魂戒指38",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118038,
+      "name": "灵魂戒指39",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118039,
+      "name": "灵魂戒指40",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118040,
+      "name": "灵魂戒指41",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118041,
+      "name": "灵魂戒指42",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118042,
+      "name": "灵魂戒指43",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118043,
+      "name": "苍穹霸主戒1",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118044,
+      "name": "苍穹霸主戒2",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118045,
+      "name": "苍穹霸主戒3",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118046,
+      "name": "苍穹霸主戒4",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118047,
+      "name": "苍穹霸主戒5",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118048,
+      "name": "苍穹霸主戒6",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118049,
+      "name": "苍穹霸主戒7",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118050,
+      "name": "苍穹霸主戒8",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118051,
+      "name": "苍穹霸主戒9",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118052,
+      "name": "苍穹霸主戒10",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118053,
+      "name": "苍穹霸主戒11",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118054,
+      "name": "苍穹霸主戒12",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118055,
+      "name": "苍穹霸主戒13",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118056,
+      "name": "苍穹霸主戒14",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118057,
+      "name": "苍穹霸主戒15",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118058,
+      "name": "苍穹霸主戒16",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118059,
+      "name": "苍穹霸主戒17",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118060,
+      "name": "苍穹霸主戒18",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118061,
+      "name": "苍穹霸主戒19",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118062,
+      "name": "苍穹霸主戒20",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118063,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118064,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118065,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118066,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118067,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118068,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118069,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118070,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118071,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118072,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118073,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118074,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118075,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118076,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118077,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    },
+    {
+      "id": 1118078,
+      "name": "至高无上·逼王戒",
+      "info": {
+        "islot": "Ri",
+        "vslot": "Ri",
+        "reqJob": 0,
+        "reqLevel": 0,
+        "reqSTR": 0,
+        "reqDEX": 0,
+        "reqINT": 0,
+        "reqLUK": 0,
+        "incSTR": 0,
+        "incDEX": 0,
+        "incLUK": 0,
+        "incINT": 0,
+        "cash": "1"
+      }
+    }
+  ]
+}

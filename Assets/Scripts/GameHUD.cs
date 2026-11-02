@@ -91,9 +91,15 @@ public class GameHUD : MonoBehaviour
         }
 
         NativeInventoryActions.CarryStep();
+        GmTimers.Tick();
         // 原版底部栏：底板 → 左段状态条 → 右侧按钮 + 快捷格（都在 BottomBar 里按顺序画）
         NpcDialogUi.DrawField();
         BottomBar.Draw();
+        NativeGainNotice.Draw();
+        NativeBossHpBar.Draw();
+        NativeEventClock.Draw();
+        // showEffect 屏幕特效（事件 clear 等）：盖在人物上、UI 窗口下。
+        NativeScreenEffect.Draw();
         QuestAlarm.Draw();
         TemporaryStatView.Draw();
 

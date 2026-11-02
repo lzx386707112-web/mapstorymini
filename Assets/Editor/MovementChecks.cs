@@ -61,7 +61,7 @@ public static class MovementChecks
         try
         {
             var horizontal = typeof(PlayerCtrl).GetMethod("MoveHorizontal", BindingFlags.NonPublic | BindingFlags.Instance);
-            var landing = typeof(PlayerCtrl).GetMethod("FindLanding", BindingFlags.NonPublic | BindingFlags.Static);
+            var landing = typeof(PlayerCtrl).GetMethod("FindLanding", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             var movement = typeof(PlayerCtrl).GetMethod("StepMovement", BindingFlags.NonPublic | BindingFlags.Instance);
             foreach (float dt in new[] { 1f / 30, 1f / 60, 1f / 120 })
             foreach (int dir in new[] { -1, 1 })

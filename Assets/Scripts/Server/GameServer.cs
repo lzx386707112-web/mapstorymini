@@ -9,7 +9,7 @@ public sealed class GameServer
     public ITransport Transport { get; private set; }
     public IMapInfo MapInfo { get; set; }   // 客户端注入（FieldCatalog 数据）
     Server.Bot.BotRuntime bots;
-    public event Action<Server.Bot.BotActor,int> TradeInventoryCommitted;
+    public event Action<Server.Bot.BotActor,long> TradeInventoryCommitted;
     public Server.Bot.BotActor ActiveBotPlayer(int id) => bots?.Player(id);
     public Server.Bot.BotRuntime Bots
     {
@@ -49,6 +49,8 @@ public sealed class GameServer
         srv.Social = new NativeSocialService(srv.Db);
         srv.Social.ChatAccepted = srv.RouteBotChat;
         srv.Community = new NativeCommunityService(srv.Db);
+        srv.Community.SameChannel = (a, b) => srv.Social.Parties.Get(a) is Server.Bot.BotActor viewer &&
+            srv.Social.Parties.Get(b) is Server.Bot.BotActor target && viewer.channel == target.channel;
         srv.Cash = new NativeCashService(srv.Db);        srv.Bosses = new NativeBossService(srv.Db);
         srv.NpcShops = new NativeNpcShopService(srv.Db) { Player = srv.ActiveBotPlayer };
         srv.Transport = new InProcessTransport(srv);
@@ -56,8 +58,12 @@ public sealed class GameServer
         // 就不用把 8.6MB+3.3MB 的 JSON 卡在当前帧。
         Server.Bot.BotWarmup.Start("Bot/Items");
         Server.Bot.BotWarmup.Start("Bot/SoloMapling");
+        Server.Bot.BotWarmup.Start("Bot/ReactorTemplates");
+        Server.Bot.BotWarmup.Start("Bot/ReactorDrops");
         Server.Bot.BotWarmup.Start("Bot/Maps");     // 导航/世界图共用这一份
         Local = srv;
+        DropStore.DbProvider = () => Local?.Db;
+        DropStore.Invalidate();
         return srv;
     }
 
@@ -70,11 +76,15 @@ public sealed class GameServer
         srv.Social = new NativeSocialService(db);
         srv.Social.ChatAccepted = srv.RouteBotChat;
         srv.Community = new NativeCommunityService(db);
+        srv.Community.SameChannel = (a, b) => srv.Social.Parties.Get(a) is Server.Bot.BotActor viewer &&
+            srv.Social.Parties.Get(b) is Server.Bot.BotActor target && viewer.channel == target.channel;
         srv.Cash = new NativeCashService(db);
         srv.Bosses = new NativeBossService(db);
         srv.NpcShops = new NativeNpcShopService(srv.Db) { Player = srv.ActiveBotPlayer };
         srv.Transport = new InProcessTransport(srv);
         Local = srv;
+        DropStore.DbProvider = () => Local?.Db;
+        DropStore.Invalidate();
         return srv;
     }
 

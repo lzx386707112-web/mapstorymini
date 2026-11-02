@@ -20,6 +20,12 @@ namespace Server.Field
         public static Func<string,string> ScriptSource;
         public static Action<int,int,string> ScriptMessage;
         public static Func<int,MapleDash.Js.JsValue> EventInstance;
+        // ReactorActionManager.getPlayer()（起源之塔第 18 层 reactor/9922003.js 传给 seedCoconut 的玩家）。
+        // Server 层不引用 NpcApi，由客户端宿主按 owner 注入。
+        public static Func<int,MapleDash.Js.JsValue> Player;
+        // Reactor.hitReactor 的 SeedTowerCompat.allowReactorHit 钩子。Server 层不引用 UnityEngine，
+        // 由事件宿主注入（SeedTowerCompat 在 Field 层）。
+        public static Func<MapReactor,bool> AllowHit;
         public static Action<Exception> ScriptError;
         sealed class ItemActivation { public MapReactor reactor; public MapItem item; public long at; }
         static readonly List<ItemActivation> itemActivations = new List<ItemActivation>();
@@ -154,6 +160,9 @@ namespace Server.Field
         public static bool HitPlayer(int mapId, int objectId, int ownerId)
         {
             var reactor = Find(mapId, objectId);
+            // Reactor.hitReactor:384 先问 SeedTowerCompat.allowReactorHit：
+            // 第 2 层石碑禁止直接打，第 18 层由 seedReactorHit 做 500ms 节流与重生锁。
+            if (reactor != null && AllowHit != null && !AllowHit(reactor)) return false;
             var events = reactor?.template?.Events(reactor.state);
             if (reactor == null || !reactor.alive || events == null || events.Count == 0 || events[0].type != 0)
                 return false;
@@ -244,6 +253,17 @@ namespace Server.Field
             reactor.previousState = -1; reactor.visualRevision++;
             reactor.lastHitAt = Now();
             reactor.respawnAt = 0;
+            Changed?.Invoke(reactor);
+        }
+
+        /// <summary>源端 Reactor.resetReactorActions(state)：直接置状态并清受击锁（不触发 WZ 状态机）。</summary>
+        public static void ResetActions(int mapId, MapReactor reactor, int state)
+        {
+            if (reactor == null) return;
+            reactor.previousState = reactor.state;
+            reactor.state = Math.Max(0, state);
+            reactor.visualRevision++;
+            reactor.lastHitAt = 0;
             Changed?.Invoke(reactor);
         }
 

@@ -39,7 +39,7 @@
 
 同一 SHA256 的 `CUtilDlgEx`：`+7C` 原生类型，`+80/+84` 正文原点，`+88` 测量高度，`+8C` 正文区高，`+90` 滚动像素，`+94` 启用滚动，`+98/+9C` 窗口尺寸；`+A4=0` 是有 NPC 肖像的普通窗口，`+6E4=0` 为左肖像。
 
-- `0x9A3CAE/0x9A3D07/0x9A3D71/0x9A3DC1`：普通类型 0/1/4 的窗口宽 529、测量宽 341、正文区最小 120、最大 240。输入类型 2/3 的上限不是 240，不能直接外推；小窗、头像和图片类型另有分支。
+- `0x9A3CAE/0x9A3D07/0x9A3D71/0x9A3DC1`：普通类型 0/1/4 的窗口宽 529、测量宽 341、正文区最小 120、EXE未补丁最大240（当前ijl15将上限改480，见末尾2026-11-01补核）。输入类型 2/3 的上限不是 240，不能直接外推；小窗、头像和图片类型另有分支。
 - `0x9AC552` 调 `0x99DD54` 排版，类型 4 测量后增加 24；`0x9AC6D0/0x9AC6FD` 的 prev/next 标记增加 18。
 - `0x9ACC20`：`(contentHeight-240)/8 > 1` 才启用滚动（整数除法）；否则正文区 `max(120,contentHeight)`。窗口高 `body+86`。不滚动时正文原点 `(157, 28+trunc((body-contentHeight-6)/2))`，滚动时 `(155,22)`。这里的 contentHeight 包括上述保留高度。
 - `0x9A3E9F`：裁剪从正文原点右下各 1，宽 339、高 `body-2`；内容仍按原点画。
@@ -688,3 +688,16 @@ compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0。�
 迁移NativeNpcStyleWindow使用原IMG及WzCharacter合成，NpcDialog.Style保留ID数组/索引、回复MessageType7，原脚本不改。正在运行1012103原脚本两阶段款式/颜色、wrap与精确ID持久化断言；尚无新PASS或窗口截图。样式名未知时为空，不捏造通用发型名；中文字体仍是Unity替代。长正文滚动与所有预览装备特殊层尚待核对，不能称逐像素完成。
 
 样式选择业务回归更新：隔离15 PASS166（docs/skill-regression/inventory-items-isolated15-2026-10-30.txt）含原1012103款式→颜色→精确40083保存、前后循环与预览真实ID，原JS未改；未做窗口截图与Android验收。
+
+
+## 2026-10-31 七项反馈补核
+
+不可见Active输入门控与同步保存/慢调用定位：见 [七项玩法补核](seven-gameplay-feedback-2026-10-31.md)。该记录区分原端结论、本次修复与尚未验证边界。
+
+## 2026-11-01 拍卖/NPC对话高度：ijl15扩展纠正
+
+此前只取EXE240上限，漏掉运行时DLL补丁。EXE身份仍为1b91cf5b…f134b2；`clien/ijl15.dll` SHA256 `87c0d58d53b4294acf53f053191c67739d1fa1ab2e9532fd764ba6b251f85c7e`，ImageBase10000000。`10015C58`初始化调用`1000FC30`；后者push480(1E0)、push9A3D81并call10016550。`10016550..100165B3`以可选VirtualProtect包装写入4字节DWORD；EXE`9A3D80`原为mov eax,240，其立即数地址9A3D81因此改成480。该调用处无窗口/脚本条件，所以是普通NPC对话共同上限，不仅是拍卖。最小120、宽529/正文341、原IMG/字体/布局不变，9ACC20整数滚动门槛用已补丁的最大高度计算。
+
+复现：inspect_beidou_client.py对ijl15 --start 0x1000fc30 --end 0x1000fc40，--start 0x10015c2b --end 0x10015c62，--start 0x10016550 --end 0x100165b4；对EXE --start 0x9a3d71 --end 0x9a3d99。`DialogFlow.MaxBodyHeight=480`补齐此原端扩展，QuestNpcChecks覆盖400正文保持400、700限480、495/496滚动门槛。此前段落中的240及326是未打DLL补丁EXE的历史结论，当前clien应按480/566。不是用户授权的任意屏幕拉伸。
+
+本轮验证：compile-check Rebuild0错误0警告；QuestNpcChecks24472通过/4失败，本次480与495/496门槛断言通过，四项失败是2300传送/forceStartQuest及1021/QuestClear动画，不能称全量通过。日志与范围见docs/four-feedback-2026-11-01.md。

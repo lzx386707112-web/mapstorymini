@@ -117,6 +117,13 @@ public static class QuestCatalog
         UnityEngine.Debug.Log("[Quest] Quest.wz 任务 " + allIds.Count + " 个，涉及 NPC " + byNpc.Count + " 个");
     }
 
+    // Quest.clearCache([id]): invalidate built definitions; preserve the original IMG provider.
+    public static void ClearCache(int id = -1)
+    {
+        if (id >= 0) { cache.Remove(id); return; }
+        cache.Clear(); allIds.Clear(); byNpc.Clear(); tried=false; Ready=false;
+    }
+
     public static QuestDef Get(int id)
     {
         Ensure();

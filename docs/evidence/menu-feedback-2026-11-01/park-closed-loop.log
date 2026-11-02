@@ -1,0 +1,15 @@
+[MonsterPark] 通过 大厅原脚本菜单（园区 / 课程 / 每日次数）
+[Field] 原版地图 6336 张，怪物 11 种，掉落表 9 份，物品 126 件
+[MonsterPark] 通过 六张私有课程图按原 life 独立刷怪（16/16/16/16/16/15）
+[MonsterPark] 通过 实例计时按 eventTime=10 分钟启动
+[MonsterPark] 通过 每日次数按园区真实记账（MPARK_BASIC=1）
+[MonsterPark] 通过 每日次数用完按原脚本拦截（不新建实例）
+[MonsterPark] 通过 五道 next00 门都要求本图清空，清完才逐关推进（私有图互不影响）
+[MonsterPark] 通过 末图结算：经验 24000 / 金币 16000 / 纪念币 1 / 每日勋章任务完成 / 回大厅
+[MonsterPark] 通过 通关 event_lobby_delay 后实例释放并回收六张私有图
+[MonsterPark] 通过 满背包：经验/金币照发，纪念币按原提示不发
+[MonsterPark] 通过 超时：scheduledTimeout → end(eim) → 回大厅并释放地图
+[MonsterPark] 通过 关内主动退出：mPark_retire 确认后回大厅
+[MonsterPark] 通过 组队重载拒绝没有真实角色的远端队长
+[MonsterPark] 通过 组队重载（party, map）用本地队长起实例并刷六图
+[MonsterPark] 结果：通过 13 项，退出码 0

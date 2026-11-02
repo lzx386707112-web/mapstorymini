@@ -1,0 +1,229 @@
+{
+  "__COMMENTS": {
+    "HUNT_CONFIG": {
+      "TASK_INTERVAL": "任务发布间隔时间，单位：秒，默认3600秒（1小时）"
+    },
+    "REWARD_INFO": {
+      "GOLD_REWARD": "完成任务奖励的金币数量",
+      "EXP_REWARD": "完成任务奖励的经验值",
+      "CASH_REWARD": "完成任务奖励的点券数量",
+      "REWARD_ITEMS": "奖励物品集合，每个物品包含itemId(物品ID)、count(数量)、chance(概率0-1)、name(显示名称)"
+    },
+    "HUNT_ITEMS": {
+      "说明": "狩猎任务物品列表，支持两种任务类型",
+      "type_1": "收集物品任务：玩家需要收集指定数量的物品提交",
+      "type_2": "BOSS狩猎任务：第一个击杀指定BOSS的玩家获得奖励",
+      "itemId": "任务需要的物品ID（仅type=1时有效）",
+      "needCount": "任务需要的物品数量（仅type=1时有效）",
+      "bossId": "目标BOSS的怪物ID（仅type=2时有效）",
+      "type": "任务类型：1=收集物品，2=打BOSS",
+      "name": "物品或BOSS的名称（用于显示）"
+    }
+  },
+  "HUNT_CONFIG": {
+    "TASK_INTERVAL": 3600
+  },
+  "REWARD_INFO": {
+    "GOLD_REWARD": 10000000,
+    "EXP_REWARD": 5000000,
+    "CASH_REWARD": 2000,
+    "REWARD_ITEMS": [
+      {
+        "itemId": 4032133,
+        "count": 3,
+        "chance": 0.3,
+        "name": "红钻"
+      },
+      {
+        "itemId": 2049115,
+        "count": 3,
+        "chance": 0.3,
+        "name": "正向混沌"
+      }
+    ]
+  },
+  "HUNT_ITEMS": [
+    {
+      "itemId": 4000082,
+      "needCount": 10,
+      "type": 1,
+      "name": "僵尸弄丢的金齿"
+    },
+    {
+      "itemId": 4000179,
+      "needCount": 150,
+      "type": 1,
+      "name": "刺鳍鱼串"
+    },
+    {
+      "bossId": 2220000,
+      "type": 2,
+      "name": "红蜗牛王"
+    },
+    {
+      "bossId": 3220000,
+      "type": 2,
+      "name": "树妖王"
+    },
+    {
+      "bossId": 6220000,
+      "type": 2,
+      "name": "鳄鱼多尔"
+    },
+    {
+      "bossId": 5220002,
+      "type": 2,
+      "name": "浮士德"
+    },
+    {
+      "bossId": 5220000,
+      "type": 2,
+      "name": "巨居蟹"
+    },
+    {
+      "bossId": 6130101,
+      "type": 2,
+      "name": "蘑菇王"
+    },
+    {
+      "bossId": 6300005,
+      "type": 2,
+      "name": "僵尸蘑菇王"
+    },
+    {
+      "bossId": 9400205,
+      "type": 2,
+      "name": "蓝蘑菇王"
+    },
+    {
+      "bossId": 5220003,
+      "type": 2,
+      "name": "闹钟提莫"
+    },
+    {
+      "bossId": 4130103,
+      "type": 2,
+      "name": "战甲吹泡泡鱼"
+    },
+    {
+      "bossId": 3220001,
+      "type": 2,
+      "name": "仙人掌大宇"
+    },
+    {
+      "bossId": 7220000,
+      "type": 2,
+      "name": "肯德熊"
+    },
+    {
+      "bossId": 7220002,
+      "type": 2,
+      "name": "妖怪禅师"
+    },
+    {
+      "bossId": 7220001,
+      "type": 2,
+      "name": "九尾狐"
+    },
+    {
+      "bossId": 8220000,
+      "type": 2,
+      "name": "艾利杰"
+    },
+    {
+      "bossId": 8220001,
+      "type": 2,
+      "name": "驮狼雪人"
+    },
+    {
+      "bossId": 8220002,
+      "type": 2,
+      "name": "吉米拉"
+    },
+    {
+      "bossId": 5220004,
+      "type": 2,
+      "name": "蜈蚣王"
+    },
+    {
+      "bossId": 6220001,
+      "type": 2,
+      "name": "外星人朱诺"
+    },
+    {
+      "bossId": 8130100,
+      "type": 2,
+      "name": "蝙蝠怪"
+    },
+    {
+      "bossId": 8180000,
+      "type": 2,
+      "name": "喷火龙"
+    },
+    {
+      "bossId": 8180001,
+      "type": 2,
+      "name": "格瑞芬多"
+    },
+    {
+      "bossId": 8220003,
+      "type": 2,
+      "name": "大海兽"
+    },
+    {
+      "bossId": 9400575,
+      "type": 2,
+      "name": "大脚"
+    },
+    {
+      "bossId": 9400575,
+      "type": 2,
+      "name": "大脚和无头骑士"
+    },
+    {
+      "bossId": 9400121,
+      "type": 2,
+      "name": "御姐"
+    },
+    {
+      "bossId": 8520000,
+      "type": 2,
+      "name": "鱼王左"
+    },
+    {
+      "bossId": 8510000,
+      "type": 2,
+      "name": "鱼王右"
+    },
+    {
+      "bossId": 9400014,
+      "type": 2,
+      "name": "天狗"
+    },
+    {
+      "bossId": 9400405,
+      "type": 2,
+      "name": "甲胄武士"
+    },
+    {
+      "bossId": 9400409,
+      "type": 2,
+      "name": "枫城天皇蟾蜍"
+    },
+    {
+      "bossId": 8220004,
+      "type": 2,
+      "name": "时间神殿多多"
+    },
+    {
+      "bossId": 8220005,
+      "type": 2,
+      "name": "时间神殿玄冰独角兽"
+    },
+    {
+      "bossId": 8220006,
+      "type": 2,
+      "name": "时间神殿雷卡"
+    }
+  ]
+}

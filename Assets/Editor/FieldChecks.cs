@@ -243,25 +243,27 @@ public static class FieldChecks
         Debug.Log("[FieldCheck] 地面相接端点 " + joinedEnds + " 个全部可走；绳梯 " + ropeCount +
                   " 条，底部悬空 " + ropeNoFoot + "，顶端无平台 " + ropeNoTop);
 
-        // 掉落表：每条记录都要能落到导出的物品上
-        int dropRows = 0, zeroChance = 0;
+        // 掉落表：全量源端数据（1584 只怪 / 2.7 万行），这里只校验数值语义。
+        // 不再要求「怪物/物品都导出过」——FieldMobs/FieldDrops.json 只是新手区样本，
+        // 拿它当全集会把整张源端表判成错误。
+        int dropRows = 0, zeroChance = 0, unknownMob = 0, unknownItem = 0;
         foreach (var kv in FieldCatalog.Drops)
         {
-            Check(FieldCatalog.Mobs.ContainsKey(kv.Key), "掉落表怪物 " + kv.Key + " 未导出");
+            if (!FieldCatalog.Mobs.ContainsKey(kv.Key)) unknownMob++;
             foreach (var row in kv.Value)
             {
                 dropRows++;
                 // chance=0 在 drop_data 里表示「永不掉落」（Randomizer.nextInt(999999) < 0 恒假），不是非法值
                 if (row.chance == 0) { zeroChance++; continue; }
                 if (row.item == 0) continue;
-                Check(FieldCatalog.Items.ContainsKey(row.item), "掉落物品 " + row.item + " 未导出名称");
+                if (!FieldCatalog.Items.ContainsKey(row.item)) unknownItem++;
                 Check(row.chance > 0 && row.chance <= FieldCatalog.ChanceDenominator,
                       "掉落概率越界 " + row.item + " chance=" + row.chance);
                 Check(row.max >= row.min && row.min >= 1, "掉落数量区间非法 " + row.item);
             }
         }
-        foreach (var g in FieldCatalog.GlobalDrops)
-            Check(FieldCatalog.Items.ContainsKey(g.item), "全局掉落物品 " + g.item + " 未导出");
+        Debug.Log("[FieldCheck] 掉落表 " + FieldCatalog.Drops.Count + " 只怪 / " + dropRows + " 行（chance=0 " +
+                  zeroChance + " 行；未在样本怪物表里的怪 " + unknownMob + " 只、未在样本物品表里的道具 " + unknownItem + " 件）");
 
         // 怪物属性：HP/经验必须来自 Mob.wz，不能是 0
         foreach (var kv in FieldCatalog.Mobs)
@@ -309,19 +311,32 @@ public static class FieldChecks
     }
 
     // —————————— 等级 / 经验 / HP·MP ——————————
-    // 数值全部来自原服务端：ExpTable.java（表长 250、上限 255）、Character.levelUp（成长区间）。
+    // 0..199 级数值来自原服务端 ExpTable.java；200 级(含)以上按项目需求每级 +20%，
+    // 上限 300（ExpCurve），所以整张表是 long 且长度 = 上限 + 1。
     static void CheckProgression()
     {
         ExpTable.Ensure();
-        Check(ExpTable.Count == 250, "经验表长度 " + ExpTable.Count + " != 250（ExpTable.java）");
-        Check(ExpTable.MaxLevel == 255, "等级上限 " + ExpTable.MaxLevel + " != 255（mxj_max_level）");
+        Check(ExpTable.Count == ExpCurve.CapLevel + 1, "经验表长度 " + ExpTable.Count + " != " + (ExpCurve.CapLevel + 1));
+        Check(ExpTable.MaxLevel == 300, "等级上限 " + ExpTable.MaxLevel + " != 300");
         // 原表 exp[level]：1→2 需 15，2→3 需 34，3→4 需 57，4→5 需 92
         Check(ExpTable.Needed(1) == 15, "Lv1 升级经验 " + ExpTable.Needed(1) + " != 15");
         Check(ExpTable.Needed(2) == 34, "Lv2 升级经验 " + ExpTable.Needed(2) + " != 34");
         Check(ExpTable.Needed(3) == 57, "Lv3 升级经验 " + ExpTable.Needed(3) + " != 57");
         Check(ExpTable.Needed(4) == 92, "Lv4 升级经验 " + ExpTable.Needed(4) + " != 92");
-        // 表尾 clamp：超过 249 的等级一律取最后一项 2,100,000,000
-        Check(ExpTable.Needed(255) == ExpTable.Needed(249), "Lv255 经验未按表尾 clamp");
+        // 199 级及以下仍是源端值（199→200 = 1,608,855,764）
+        Check(ExpTable.Needed(199) == 1608855764L, "Lv199 升级经验 " + ExpTable.Needed(199) + " != 1608855764");
+        // 200 级(含)以上：每级 = 上一级 ×1.2（+20%）
+        long previous = ExpTable.Needed(199);
+        bool growthOk = true;
+        for (int level = ExpCurve.GrowthFromLevel; level <= ExpTable.MaxLevel; level++)
+        {
+            long expected = previous + previous / 100 * ExpCurve.GrowthPercent + previous % 100 * ExpCurve.GrowthPercent / 100;
+            if (ExpTable.Needed(level) != expected) { growthOk = false; Debug.Log("[FieldCheck] Lv" + level + " 需求 " + ExpTable.Needed(level) + " != " + expected); break; }
+            previous = expected;
+        }
+        Check(growthOk, "200 级以上升级需求未按每级 +20% 递增");
+        // 21 亿不再是天花板：300 级需求已是 1e17 量级
+        Check(ExpTable.Needed(ExpTable.MaxLevel) > int.MaxValue, "Lv300 升级经验 " + ExpTable.Needed(ExpTable.MaxLevel) + " 仍是 int 量级");
 
         // 成长区间（isBeginner/warrior/magician/bowman/thief 与 Character.levelUp 一致）
         int hpMin, hpMax, mpMin, mpMax;
@@ -340,12 +355,22 @@ public static class FieldChecks
         var d = new PlayerProfileData();
         LevelSystem.EnsureBaseline(d);
         int hp0 = d.baseMaxHp, mp0 = d.baseMaxMp;
+        int str0 = d.attributes.str;
         int levels = LevelSystem.AddExperience(d, ExpTable.Needed(1), true);
         Check(levels == 1 && d.level == 2, "15 经验应升到 2 级，实际 " + d.level + " 级（升 " + levels + "）");
         Check(d.experience == 0, "升级后剩余经验 " + d.experience + " != 0");
         Check(d.baseMaxHp > hp0, "升级后 HP 上限没涨 " + hp0 + " → " + d.baseMaxHp);
         Check(d.baseMaxMp > mp0, "升级后 MP 上限没涨 " + mp0 + " → " + d.baseMaxMp);
-        Check(d.ap == LevelSystem.ApPerLevel, "升级后 AP " + d.ap + " != " + LevelSystem.ApPerLevel);
+        // 上面这个 d 是新手（jobId=0）：Character.levelUp 对前 10 次升级走自动分配，
+        // 直接加 STR/DEX，不给 AP；AP 只发给已转职的角色。
+        Check(d.ap == 0, "新手升级不该发 AP，实际 " + d.ap);
+        Check(d.attributes.str == str0 + 5, "新手 1→2 级应自动 +5 STR，实际 " + str0 + " → " + d.attributes.str);
+        // 非新手每级 +5 AP（level_up_ap_gain）
+        var w0 = new PlayerProfileData();
+        LevelSystem.EnsureBaseline(w0);
+        w0.jobId = JobDefs.JobIdOf("warrior");
+        LevelSystem.AddExperience(w0, ExpTable.Needed(1), true);
+        Check(w0.ap == LevelSystem.ApPerLevel, "战士升级后 AP " + w0.ap + " != " + LevelSystem.ApPerLevel);
 
         // 升级保护：一次给一大笔经验也只升 1 级（原端 use_level_up_protect=true）
         var e = new PlayerProfileData();
@@ -360,9 +385,30 @@ public static class FieldChecks
         f.attributes.level = f.level;
         LevelSystem.AddExperience(f, 1000000, true);
         Check(f.level == ExpTable.MaxLevel, "满级后等级越界到 " + f.level);
-        long cap = (long)ExpTable.Needed(f.level) * 99 / 100;
+        long cap = LevelSystem.ExpCap(f.level);
         // 封顶只在 total 超过 cap 时生效；这里给的是 1000000，必然被压到 cap 以下
         Check(f.experience <= cap, "满级经验 " + f.experience + " 超过 99% 上限 " + cap);
+
+        // 250 级以上也能正常升级（证明 AddExperience 的 long 通道没被 int 截断）
+        var h = new PlayerProfileData();
+        LevelSystem.EnsureBaseline(h);
+        h.level = 250; h.attributes.level = 250;
+        int climbed = LevelSystem.AddExperience(h, ExpTable.Needed(250), true);
+        Check(climbed == 1 && h.level == 251, "Lv250→251 升级失败（升 " + climbed + " 级到 " + h.level + "）");
+
+        // 满级（300）的经验条 99% 上限已经是 long 量级：这就是必须用 long 的原因
+        var m = new PlayerProfileData();
+        LevelSystem.EnsureBaseline(m);
+        m.level = ExpTable.MaxLevel; m.attributes.level = m.level;
+        long maxCap = LevelSystem.ExpCap(m.level);
+        Check(maxCap > int.MaxValue, "满级 99% 上限 " + maxCap + " 仍在 int 范围内（应超过 21 亿）");
+        // 封顶越大越要有溢出保护：1.6e17 × 99 会翻负，ExpCap 必须是「先除后乘」
+        Check(maxCap > 0, "满级 99% 上限 " + maxCap + " 为负，long 乘法溢出");
+        var capped = new PlayerProfileData();
+        LevelSystem.EnsureBaseline(capped);
+        capped.level = ExpTable.MaxLevel; capped.attributes.level = capped.level;
+        LevelSystem.AddExperience(capped, long.MaxValue / 2, true);
+        Check(capped.experience == maxCap, "满级吃下巨额经验后应封顶到 " + maxCap + "，实际 " + capped.experience);
 
         // 老存档迁移：本地实测存档 experience=469、level=1，按原曲线应补到 6 级、余 136
         var g = new PlayerProfileData();
@@ -384,7 +430,8 @@ public static class FieldChecks
             }
         Check(skills > 0, "没有任何技能读到等级数据");
         Check(missingMp == 0, "有 " + missingMp + " 个技能缺 mpCon");
-        Debug.Log("[FieldCheck] 等级：经验表 250 项，上限 255；技能 MP 消耗 " + skills + " 条全部可读");
+        Debug.Log("[FieldCheck] 等级：经验表 " + ExpTable.Count + " 项，上限 " + ExpTable.MaxLevel +
+                  "（200 级起每级 +20%，满级需求 " + ExpTable.Needed(ExpTable.MaxLevel) + "）；技能 MP 消耗 " + skills + " 条全部可读");
     }
 
     // —————————— 原版状态栏素材 ——————————

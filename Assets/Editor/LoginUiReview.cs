@@ -235,6 +235,12 @@ public class LoginUiReviewProbe : MonoBehaviour
         typeof(LoginFlow).GetMethod("EnterCharSelect", Priv).Invoke(flow, null);
         yield return new WaitForSecondsRealtime(1f);
         yield return Shot("charselect");
+        // 选中槽位播走路：连拍覆盖一个走路循环，用来确认「一直在动」而不是偶发一帧。
+        for (int i = 0; i < 4; i++)
+        {
+            yield return new WaitForSecondsRealtime(0.12f);
+            yield return Shot("walk" + i);
+        }
         // 选中光柱 3.45s 一个循环、首帧只有 1px 宽，随机时刻截图可能正好落在空档。
         // 这里把选中时刻钉在「现在」，0.3s 后再拍一张，确保拍到光柱升起 + 星点。
         typeof(LoginFlow).GetField("selectionStartedAt", Priv).SetValue(flow, Time.unscaledTime);

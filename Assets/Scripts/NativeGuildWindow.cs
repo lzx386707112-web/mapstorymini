@@ -61,6 +61,8 @@ public static class NativeGuildWindow
     static int scroll;
     static double nextRefresh;
     static bool dragging;
+    static bool windowDragging;
+    static Vector2 windowGrab;
     static float dragFromY;
     static int dragFromScroll;
 
@@ -94,12 +96,13 @@ public static class NativeGuildWindow
     {
         if (Visible) { Reset(); return; }
         if (!GameSession.InGame) { BottomBar.Toast("请先选择角色"); return; }
+        NativeSocialWindow.Close();
         tab = 2; selectedId = 0; scroll = 0; dragging = false;
         NativeCommunityWindow.Request(CommunityOperation.Read);
         Visible = true;
     }
 
-    public static void Reset() { Visible = false; selectedId = 0; scroll = 0; dragging = false; CloseInput(); NativeGuildGradeWindow.Reset(); }
+    public static void Reset() { Visible = false; selectedId = 0; scroll = 0; dragging = false; windowDragging = false; CloseInput(); NativeGuildGradeWindow.Reset(); }
 
     static void Tick()
     {
@@ -115,10 +118,21 @@ public static class NativeGuildWindow
         if (st == null) { Visible = false; return; }
         if (!NativeDlgInput.Visible) Tick();
         float s = S;
-        var win = new Rect(Mathf.Max(4, (UiKit.W - WinW * s) / 2f), 26, WinW * s, WinH * s);
+        var size = new Vector2(WinW, WinH);
+        var position = NativeUi.ClampWindowPosition(NativeSocialWindow.Position, size, s);
+        var pointer = Pointer.Pos / s;
+        if (Event.current.type == EventType.Repaint && Pointer.Pressed &&
+            new Rect(position.x, position.y, WinW - 44, 22).Contains(pointer))
+        { windowDragging = true; windowGrab = pointer - position; }
+        if (windowDragging && Pointer.Down) position = NativeUi.ClampWindowPosition(pointer - windowGrab, size, s);
+        if (!Pointer.Down) windowDragging = false;
+        NativeSocialWindow.Position = position;
+        var win = new Rect(position.x * s, position.y * s, WinW * s, WinH * s);
+        NativeUi.RegisterWindow("NativeGuildWindow", win, () => NativeGuildWindow.Visible);
         string background = tab == 2 || tab == 3 ? "backgrnd2" : tab == 0 ? "backgrnd3" : "backgrnd";
         var texture = Art.Tex("wz://" + Root + background);
         if (texture != null) GUI.DrawTexture(win, texture);
+        if (NativeUi.Button(At(win, WinW - 19, 5, 12, 12), "UI/Basic.img/BtClose")) { Reset(); return; }
 
         DrawTabs(win);
         if (tab == 2) DrawGuild(win, st);
@@ -129,25 +143,7 @@ public static class NativeGuildWindow
     // ————————————————— 页签 —————————————————
     static void DrawTabs(Rect win)
     {
-        int total = TabGap * (TabNames.Length - 1);
-        var widths = new int[TabNames.Length];
-        for (int i = 0; i < TabNames.Length; i++) { widths[i] = TabWidth(i); total += widths[i]; }
-        int x = TabX + (TabW - total) / 2;
-        for (int i = 0; i < TabNames.Length; i++)
-        {
-            var tex = Art.Tex("wz://" + Root + "Tab/" + (i == tab ? "enabled/" : "disabled/") + i);
-            if (tex != null)
-                GUI.DrawTexture(At(win, x + (widths[i] - tex.width) / 2f, TabY + (TabH - tex.height) / 2f, tex.width, tex.height), tex);
-            var hit = At(win, x, TabY, widths[i], TabH);
-            if (!NativeDlgInput.Visible && hit.Contains(Pointer.Pos) && Pointer.Clicked) { Pointer.ConsumeClick(); SwitchTab(i); }
-            x += widths[i] + TabGap;
-        }
-    }
-
-    static int TabWidth(int index)
-    {
-        var tex = Art.Tex("wz://" + Root + "Tab/enabled/" + index);
-        return tex != null ? Mathf.Max(tex.width, 27) : 27;
+        NativeSocialWindow.DrawUserTabs(win, S, tab, SwitchTab);
     }
 
     static void SwitchTab(int index)

@@ -10,6 +10,7 @@ public sealed class GroundItem : MonoBehaviour
     public int amount;
     public Server.Field.MapItem bound;
     public static System.Func<Server.Field.MapItem, bool> AuthoritativePickup;
+    public static System.Func<Server.Field.MapItem, int, bool> AuthoritativePetPickup;
 
     SpriteRenderer sr;
     Sprite[] frames;
@@ -17,6 +18,7 @@ public sealed class GroundItem : MonoBehaviour
     int sourceX, sourceY, targetX, targetY;
     int landingTick = -1;
     double born, removedAt = -1;
+    double lastPetRequest=double.NegativeInfinity;
     double expiresAt=double.PositiveInfinity;
     bool resting, picking, removing;
     System.Func<Vector2?> pickupTarget;
@@ -186,16 +188,35 @@ public sealed class GroundItem : MonoBehaviour
         return false;
     }
 
-    bool Pickup()
+    // CDropPool::TryPetPickup 50483A: same half-open 25/50/10px
+    // rectangle, resting drops only, and a 3000ms request retry per drop.
+    public static bool TryPetPickup(Vector2 feet,int slot,bool meso,bool items,System.Func<Vector2?> target)
+    {
+        int x=(int)(feet.x*Art.PPU),y=(int)(-feet.y*Art.PPU);
+        double now=Time.realtimeSinceStartupAsDouble;
+        foreach(var drop in All)
+        {
+            if(drop==null || !drop.enabled || drop.removing || !drop.resting || drop.amount<=0 ||
+                (drop.itemId==0 ? !meso : !items) || now-drop.lastPetRequest<3) continue;
+            if(!NativeDropMotion.InPickupRange(x,y,drop.targetX,drop.targetY)) continue;
+            drop.lastPetRequest=now;
+            return drop.Pickup(slot,target);
+        }
+        return false;
+    }
+
+    bool Pickup(int petSlot=-1,System.Func<Vector2?> petTarget=null)
     {
         if (bound != null)
         {
             // Synchronous Removed event starts the visual; a refused request leaves it on the ground.
-            return AuthoritativePickup != null && AuthoritativePickup(bound);
+            return petSlot>=0 ? AuthoritativePetPickup!=null && AuthoritativePetPickup(bound,petSlot)
+                : AuthoritativePickup != null && AuthoritativePickup(bound);
         }
         if (itemId == 0)
         {
-            if ((long)Profile.gold + amount > int.MaxValue) return false;
+            // 金币上限是 long 的上限，不再卡在 21 亿
+            if (amount > 0 && Profile.gold > long.MaxValue - amount) return false;
             Profile.AddGold(amount);
             lastPickup = "+" + amount + " 金币";
         }
@@ -208,11 +229,19 @@ public sealed class GroundItem : MonoBehaviour
             {
                 if (!NativeMonsterBook.Collect(itemId, amount)) return false;
             }
+            else if (Server.Field.MapItemPickup.IsNxCard(itemId))
+            {
+                var result = GameSession.Net.Cash(new CashRequest { characterId=GameSession.CharacterId,
+                    operation=CashOperation.AdjustBalance, currency=1,
+                    amount=checked((itemId==Server.Field.MapItemPickup.NxCard100 ? 100 : 250)*amount) });
+                if (!result.ok) return false;
+            }
             else Profile.AddItem(itemId, amount);
             lastPickup = name + " x" + amount;
         }
+        NativeGainNotice.Pickup(itemId, amount);
         lastPickupAt = Time.realtimeSinceStartupAsDouble;
-        Remove(2, LocalPickupTarget, true);
+        Remove(petSlot>=0 ? 5 : 2,petSlot>=0 ? petTarget : LocalPickupTarget, true);
         return true;
     }
 

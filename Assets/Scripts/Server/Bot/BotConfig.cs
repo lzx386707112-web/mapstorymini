@@ -81,6 +81,12 @@ public static class BotConfig
     public static bool HenesysGameZoneCrowdEnabled(DbStore db) => GetBool(db, "solo_mapling_feature_henesys_game_zone_crowd_enabled", true);
     public static bool GachaBotsEnabled(DbStore db) => GetBool(db, "solo_mapling_feature_gacha_bots_enabled", true);
     public static bool OpqLobbyBotsEnabled(DbStore db) => GetBool(db, "solo_mapling_feature_opq_lobby_bots_enabled", true);
+    // 组队任务入口假人（废弃都市 / 玩具塔101 / 毒雾森林 / 海盗船）。
+    // 关掉之后招募图一个假人都不会铺，关键词也不再有人接话。
+    public static bool PqLobbyBotsEnabled(DbStore db) => GetBool(db, "solo_mapling_feature_pq_lobby_bots_enabled", true);
+    // 每个招募图铺几个（需求是 10~15，默认取中位 12）。
+    public static int PqLobbyBotCount(DbStore db)
+        => Math.Max(3, Math.Min(15, GetInt(db, "solo_mapling_pq_lobby_bot_count", 12)));
     public static bool BlackjackTablesEnabled(DbStore db) => GetBool(db, "solo_mapling_feature_blackjack_tables_enabled", true);
     public static bool CasinoNpcEnabled(DbStore db) => GetBool(db, "solo_mapling_feature_casino_npc_enabled", true);
     public static bool ConversationEnabled(DbStore db) => GetBool(db, "solo_mapling_feature_conversation_enabled", true);

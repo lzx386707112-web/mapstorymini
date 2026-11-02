@@ -14,6 +14,9 @@ public sealed class BossResponse
     public string error = "";
     public double multiplier = 1;
     public double dropRate = 1;
+    public int questCount, monsterCardCount;
+    public double questBonusPercent, bossBonusPercent, monsterCardBonusPercent, bonusPercent;
+    public string message;
 }
 
 // BossDamageGrowth / ExpeditionBossLog, persistence on the local server.
@@ -34,6 +37,11 @@ public sealed class NativeBossService
         {9400273,new Growth("tokyo_nibergen",3.4)}, {9400266,new Growth("tokyo_nux",3.6)},
         {9400294,new Growth("tokyo_dunas2",3.8)}, {9400289,new Growth("tokyo_aufheben",4)},
         {8840000,new Growth("vonleon",4.2)} };
+    static readonly Dictionary<int,string> GrowthNames=new Dictionary<int,string> {
+        {8500002,"帕普拉图斯"},{9420544,"狮熊双王"},{9600025,"武林妖僧"},{9420522,"克雷塞尔"},
+        {8800002,"扎昆"},{9400300,"昭和大头老板"},{8810018,"暗黑龙王"},{8820001,"品克缤"},
+        {9400265,"贝尔加莫特"},{9400270,"都纳斯"},{9400273,"尼贝隆"},{9400266,"努克斯"},
+        {9400294,"再生都纳斯"},{9400289,"欧碧拉"},{8840000,"狮子王"} };
     static readonly Dictionary<string,int> Entries = new Dictionary<string,int> {
         {"ZAKUM",3},{"CHAOS_ZAKUM",5},{"HORNTAIL",3},{"CHAOS_HORNTAIL",5},
         {"CYGNUS",1},{"AKAYRUM",1},{"LUCID",1},{"PINKBEAN",3},{"SCARGA",1},{"PAPULATUS",2} };
@@ -41,6 +49,7 @@ public sealed class NativeBossService
     public BossResponse Handle(BossRequest r)
     {
         lock (db)
+        using (db.DeferSaves())
         {
             var character = CharactersDao.FindById(db,r.characterId);
             if (character == null) return new BossResponse { ok=false,error="角色不存在" };
@@ -53,10 +62,14 @@ public sealed class NativeBossService
                 string unique = r.characterId + ":" + r.encounter;
                 if (recorded.Add(unique))
                 {
-                    var row = db.Table("boss_growth").Find(x => DbStore.Int(x,"characterid") == r.characterId && DbStore.Str(x,"boss") == growth.key);
-                    if (row == null) db.Table("boss_growth").Insert(new DbRow { ["characterid"]=(long)r.characterId,["boss"]=growth.key,["kills"]=1L });
-                    else row["kills"] = Math.Min(int.MaxValue,DbStore.Long(row,"kills") + 1);
+                    int previous=KillCount(r.characterId,growth.key);
+                    new NativeScriptValues(db).Handle(new ScriptValueRequest {characterId=r.characterId,write=true,
+                        name="boss_growth_kill_"+growth.key,value=(previous==int.MaxValue?previous:previous+1).ToString(System.Globalization.CultureInfo.InvariantCulture)});
                     cache.Remove(r.characterId);
+                    int effective=Math.Min(10,previous==int.MaxValue?previous:previous+1);
+                    result.message="[BOSS记录] 击败"+GrowthNames[r.mobId]+"，进度 "+effective+"/10，BOSS伤害 +"+
+                        (effective/10.0*growth.maximum).ToString("F1",System.Globalization.CultureInfo.InvariantCulture)+
+                        "% / +"+growth.maximum.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)+"%。";
                     db.Save();
                 }
             }
@@ -75,13 +88,25 @@ public sealed class NativeBossService
                     db.Save();
                 }
             }
-            result.multiplier = Multiplier(r.characterId);
+            FillGrowth(r.characterId,result);
             return result;
         }
     }
     public static double Bonus(int quests, double bossPercent, int cards)
         => Math.Min(100,Math.Min(1,Math.Max(0,quests)/1000.0)*30 + Math.Min(40,Math.Max(0,bossPercent)) + Math.Min(1,Math.Max(0,cards)/300.0)*30);
-    double Multiplier(int cid)
+    int KillCount(int cid,string key)
+    {
+        var value=new NativeScriptValues(db).Handle(new ScriptValueRequest {characterId=cid,name="boss_growth_kill_"+key}).value;
+        if(value!=null)return int.TryParse(value,out int count)?Math.Max(0,count):0;
+        // Preserve progress from the earlier local-only table, then use the source extend key.
+        var legacy=db.Table("boss_growth").Find(x=>DbStore.Int(x,"characterid")==cid && DbStore.Str(x,"boss")==key);
+        int kills=(int)Math.Min(int.MaxValue,Math.Max(0,DbStore.Long(legacy,"kills")));
+        if(legacy!=null)new NativeScriptValues(db).Handle(new ScriptValueRequest {characterId=cid,write=true,
+            name="boss_growth_kill_"+key,value=kills.ToString(System.Globalization.CultureInfo.InvariantCulture)});
+        return kills;
+    }
+    public void Invalidate(int cid)=>cache.Remove(cid);
+    void FillGrowth(int cid,BossResponse result)
     {
         int quests = db.Table("queststatus").Select(x => DbStore.Int(x,"characterid") == cid && DbStore.Int(x,"status") == 2).Count;
         int cards = db.Table("monsterbook").Select(x => DbStore.Int(x,"charid") == cid).Count;
@@ -93,12 +118,15 @@ public sealed class NativeBossService
             bonus = 0;
             foreach (var growth in Growths.Values)
             {
-                var row = db.Table("boss_growth").Find(x => DbStore.Int(x,"characterid") == cid && DbStore.Str(x,"boss") == growth.key);
-                bonus += Math.Min(1,Math.Max(0,DbStore.Long(row,"kills"))/10.0)*growth.maximum;
+                bonus += Math.Min(1,KillCount(cid,growth.key)/10.0)*growth.maximum;
             }
             cache[cid] = (now+300000,bonus);
         }
-        return 1 + Bonus(quests,bonus,cards)/100;
+        result.questCount=quests;result.monsterCardCount=cards;
+        result.questBonusPercent=Math.Min(1,quests/1000.0)*30;
+        result.monsterCardBonusPercent=Math.Min(1,cards/300.0)*30;
+        result.bossBonusPercent=Math.Min(40,Math.Max(0,bonus));
+        result.bonusPercent=Bonus(quests,bonus,cards);result.multiplier=1+result.bonusPercent/100;
     }
     public void DeleteCharacter(int cid)
     {

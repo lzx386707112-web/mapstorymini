@@ -354,3 +354,27 @@ call 0x79e805         ; GetString
 
 顺带：`0x8DB070` 里对类型号做了 `cmp esi,0xE / 0xF / 0x12 / 0x13` 的判断（14/15/18/19 号
 不缩进），说明聊天日志的类型号范围比 0..6 宽得多，**包里的 type 只是它的一个子集**。
+
+## 2026-10-31 APK发送后无回显/主角气泡补接
+
+本次复用既有UI/ChatBalloon.img/0原图、九宫格/文字布局和5000ms显示记录；不新增设计。
+源端GeneralChatHandler.handlePacket：普通聊天（非CommandsExecutor命令、非Boss触发、首字非/）
+调用PacketCreator.getChatText(chr.id,s,chr.whiteChat,show)广播整图；隐藏角色仅广播GM。
+聊天窗行与角色气泡属于普通聊天展示，命令执行结果不应生成普通发言气泡。
+源文件SHA256 `a0cf3bcd54b32fb16d844052ad220862c46bf59167cc81afb02b5acd1232bec2`。
+
+迁移缺口：BottomBar.SubmitChat成功时已有AddChat，但没有为自己创建气泡；BotField.OnGUI
+只从views（假人）取锚点。现成功All频道发言另外创建自己的气泡，复用原绘制器，从主角
+SpriteAnim.Renderer.bounds.max.y取实际头顶；即使假人尚未同步也可绘制，Clear随地图回收。
+失败/非All频道/命令分支不创建该气泡。没有把主角塞入假人视图或重复追加聊天记录。
+
+Android输入时序纠正：旧DrawChat先消费enterPending并清空chatInput/关闭键盘，随后才在
+Repaint读取TouchScreenKeyboard.text；输入法最终文本与Enter/Done同时到达时有丢失窗口。
+现每个GUI事件先读取键盘快照，再消费Enter；Done与Enter同时到达只FinishChat一次，
+清掉待消费Enter，避免再次打开/重复发送；Canceled不发送。此为Unity输入生命周期修复，
+尚非Android实机复现与验收。验证结果在本次完成后追加，不沿用仅检查焦点开关的旧PASS。
+
+本次验证：NativePetSceneChecks最终53项通过（进程0），实际发送后历史全文和数量、主角气泡正文、
+Done+Enter同帧、最新Visible文本、Canceled、拒绝发送粉色原因且不替换气泡、Clear均通过。
+编译0错误0警告，截图docs/chat-send-review/chat-sent-balloon.png已目视核对聊天回显与主角气泡同时存在。
+日志与交付记录见docs/chat-send-review/verification.md；没有连接Android设备，不称实机验收。

@@ -106,7 +106,7 @@ public static class InventoryItemFunctionChecks
         GameSession.ApplyInventoryToProfile();
         var worldQuest=NpcSession.UseItem(2430681);
         Require(worldQuest!=null && worldQuest.Dialog.RawText.Contains("世界任务1"),"World quest did not resolve original item context");
-        int goldBefore=Profile.gold;
+        long goldBefore=Profile.gold;
         worldQuest.Reply(1);
         Require(string.IsNullOrEmpty(worldQuest.LastError),"WorldQuest failed after reward: "+worldQuest.LastError);
         Require(Profile.IsQuestCompleted(200001),"Original WorldQuest did not persist completion");

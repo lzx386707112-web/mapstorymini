@@ -88,7 +88,7 @@ public sealed class PlayerDeadRequest
 
 public sealed class PlayerDeadResponse
 {
-    public int expLost;
+    public long expLost;
     public bool usedSafetyCharm;
     public bool noExpLoss;
 }
@@ -146,6 +146,7 @@ public interface ITransport
     CashResponse Cash(CashRequest req);
     bool HasNpcShop(int npcId);
     NpcShopResponse NpcShop(NpcShopRequest req);
+    DueyResponse Duey(DueyRequest req);
     Server.Bot.PartyGrindResponse PartyGrind(Server.Bot.PartyGrindRequest req);
     Server.Bot.Trade.BotTradeResponse BotTrade(Server.Bot.Trade.BotTradeRequest req);
     Server.Bot.MarketResponse Market(Server.Bot.MarketRequest req);
@@ -176,6 +177,7 @@ public sealed class InProcessTransport : ITransport
     public SlotRemoveResponse RemoveSlot(SlotRemoveRequest r) => NativeEquipService.RemoveSlot(server.Db, r);
     public bool HasNpcShop(int npcId) => server.NpcShops.HasNpc(npcId);
     public NpcShopResponse NpcShop(NpcShopRequest r) => server.NpcShops.Handle(r);
+    public DueyResponse Duey(DueyRequest r) => NativeDueyService.Handle(server.Db, r);
     public CashResponse Cash(CashRequest r) => server.Cash.Handle(r);
     public void EndSocialSession(int characterId) { NativePetItems.EndSession(server.Db,characterId); server.EndBotSession(characterId); server.Scripts.EndSession(characterId); server.Social.EndSession(characterId); server.Community.EndSession(characterId); server.Cash.EndSession(characterId); server.NpcShops.EndSession(characterId); }
 

@@ -332,10 +332,10 @@ public class BossUnit : MonoBehaviour
         long sum = 0; bool critical = false;
         foreach (var hit in hits) { sum += hit.Amount; critical |= hit.Critical; }
         NativeDamageLines.Show(this, hits, indexed, interval, total, ordinarySkill);
-        ApplyHit(new DamageResult((int)System.Math.Min(int.MaxValue, sum), critical), direction, true, false);
+        ApplyHit(new DamageResult(sum, critical), direction, true, false);
     }
 
-    public void TakeReplayDot(int amount) => ApplyHit(new DamageResult(amount,false),0,true,true,false);
+    public void TakeReplayDot(long amount) => ApplyHit(new DamageResult(amount,false),0,true,true,false);
 
     void ApplyHit(DamageResult hit, int fromDir, bool nativeHit, bool showNumber, bool react = true)
     {

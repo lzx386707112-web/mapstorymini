@@ -36,8 +36,8 @@ public static class StatWindow
     static Vector2 pos = new Vector2(220, 80);
     static bool detail = true, dragging;
     const int WinW = 208, WinH = 347;
-    // 六个加点箭头共用右列 x=185（原端 11+ 版式）。
-    const int ApArrowX = 185;
+    // CUIStat::Create (8C7B19..8C7CDA)：六个箭头共用 x=153。
+    const int ApArrowX = 153;
     static Vector2 grab;
     static float S => BottomBar.S;
     static Rect At(Rect r, float x, float y, float w, float h) => new Rect(r.x + x * S, r.y + y * S, w * S, h * S);
@@ -55,11 +55,28 @@ public static class StatWindow
     }
     public static void Toggle() { Visible = !Visible; }
 
+    static void DrawAuto(Rect r, string node, int y, bool brawler)
+    {
+        var texture = Tex(node + "/normal/0");
+        if (texture == null) return;
+        var rect = At(r, 97, y, texture.width, texture.height);
+        var plan = Profile.AutoApPlan(brawler);
+        bool enabled = plan != null && System.Array.Exists(plan, n => n > 0);
+        if (!enabled) { Image(r, node + "/disabled/0", 97, y); return; }
+        if (!NativeUi.Button(rect, "UI/UIWindow.img/Stat/" + node)) return;
+        string[] names = { "力量", "敏捷", "智力", "运气" };
+        string text = "    能力点将按如下方式分配：\n\n";
+        for (int i = 0; i < 4; i++) text += "     " + names[i] + " : +" + plan[i] + "\n";
+        int job = Profile.JobId;
+        NativeUtilPrompt.Confirm(text, yes => { if (yes && Profile.JobId == job) Profile.AssignAutoAp(plan); });
+    }
+
     public static void Draw()
     {
         if (!Visible || GameLoop.I == null || GameLoop.I.player == null) return;
         pos = NativeUi.ClampWindowPosition(pos, new Vector2(WinW, WinH), S);
         var r = new Rect(pos.x * S, pos.y * S, WinW * S, WinH * S);
+        NativeUi.RegisterWindow("StatWindow", r, () => StatWindow.Visible);
         if (Event.current.type == EventType.Repaint && Pointer.Pressed && At(r, 0, 0, WinW - 24, 22).Contains(Pointer.Pos))
         { dragging = true; grab = Pointer.Pos / S - pos; }
         if (dragging && Pointer.Down)
@@ -78,10 +95,21 @@ public static class StatWindow
             Profile.experience + " (" + (Profile.ExpRatio * 100).ToString("0.##") + "%)", "0" };
         int[] textY = { 33, 55, 79, 96, 115, 133, 151, 169 };
         for (int i = 0; i < values.Length; i++) Text(r, values[i], 61, textY[i]);
-        // 职业名拆成两张图：main 11 高画在 53，sub 10 高画在 64（两图共用 x=62）。
-        int job = Profile.cls == "knight" ? 112 : Profile.cls == "warrior" ? 132 : Profile.cls == "mage" ? 212 : Profile.cls == "priest" ? 232 : Profile.cls == "archer" ? 312 : 0;
-        Image(r, "Job/main/" + job / 100, 62, 53);
-        Image(r, "Job/sub/" + job / 100 + "/" + job, 62, 64);
+        // 职业两行图：源端 CUIStat::Draw 在 y=0x37 处调 0x8C7FB6（职业名 helper，
+        // 素材路径就写在该函数里：main / sub/%d，GM 走 main/premium 分支）。
+        // 常规职业取 Stat/Job/main/<jobId/100>（11 高，画在 53）与
+        // Stat/Job/sub/<jobId/100>/<jobId>（10 高，画在 64），两图共用 x=62。
+        // 这里**必须用真实 jobId**：以前按 Profile.cls 猜四转（mage→212），
+        // 于是没二转的法师也显示「火毒魔导师」。
+        // 骑士团（jobId/100 = 11..15）与 GM（9xx）在素材里没有图，退回一行文本。
+        int job = Profile.JobId;
+        string jobSub = "Job/sub/" + job / 100 + "/" + job;
+        if (Tex(jobSub) != null)
+        {
+            Image(r, "Job/main/" + job / 100, 62, 53);
+            Image(r, jobSub, 62, 64);
+        }
+        else Text(r, JobDefs.NameOf(job), 61, 55);
 
         if (Profile.AutomaticAp) Image(r, "basicStat", 8, 195);
         else
@@ -89,14 +117,20 @@ public static class StatWindow
             var apStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(11 * S), alignment = TextAnchor.MiddleRight };
             apStyle.normal.textColor = Color.black;
             GUI.Label(At(r, 61, 213, 26, 16), Profile.ap.ToString(), apStyle);
-            // 原端 11+ 版式：AP 数字右侧是自动分配控件（100×35 原图按 73×35 显示）
-            var auto = Tex("BtAuto/disabled/0");
-            if (auto != null) GUI.DrawTexture(At(r, 97, 197, 73, 35), auto);
+            // 8C7D5C: BtAuto at (97,197), native 100x35; pirate beginner has two choices.
+            if (Profile.JobId == 500)
+            {
+                DrawAuto(r, "BtAuto1", 197, true);
+                DrawAuto(r, "BtAuto2", 217, false);
+            }
+            else DrawAuto(r, "BtAuto", 197, false);
             int[] stats = { attrs.str, attrs.dex, attrs.intelligence, attrs.luk };
             for (int i = 0; i < stats.Length; i++)
             {
                 // 未转职新手只开放 STR/DEX，INT/LUK 用原端 Disabled 素材压住标签
-                if (Profile.cls == "beginner" && i >= 2)
+                // （判 jobId==0 而不是 cls=="beginner"：cls 只是大类字符串，
+                //   骑士团初心者 1000 与冒险家新手共用它，能力点规则却不同）
+                if (Profile.JobId == 0 && i >= 2)
                     Image(r, "Disabled/" + (i == 2 ? "INT" : "LUK"), 8, 244 + i * 18);
                 Text(r, stats[i].ToString(), 61, 244 + i * 18);
                 var up = At(r, ApArrowX, 247 + i * 18, 12, 12);
@@ -136,7 +170,7 @@ public static class StatWindow
 // 槽位网格实测（两张底图共用）：左上 (5,35)，格子 32×32，步长 33，小窗 5 列、展开态 6 列，
 // 各 7 行；5+4*33+32=169、5+5*33+32=202，与底图右边距 6 一致。
 // BtDetail 46×19 于 (5,267)（0x7FE222 push 0x10B / 5），点击在两种底图之间切换。
-// BtPetEquipShow 67×18 于 (102,280)（0x7FE0F3 push 0x118 / 0x66），宠物装备本项目未实现。
+// BtPetEquipShow 67×18 于 (102,280)（0x7FE0F3 push 0x118 / 0x66），子窗偏移 (172,123)。
 public static class EquipWindow
 {
     public static InventoryEntry EquipmentAt(Vector2 pointer)
@@ -145,6 +179,14 @@ public static class EquipWindow
         int w=expanded ? FullW : SmallW,h=expanded ? FullH : SmallH;
         var origin=NativeUi.ClampWindowPosition(pos,new Vector2(w,h),S)*S;
         var r=new Rect(origin.x,origin.y,w*S,h*S);
+        if (petVisible)
+        {
+            var pet = At(r,172,123,177,181);
+            for (int i=0;i<PetCells.GetLength(0);i++)
+                if ((PetCells[i,3]<0 || PetCells[i,3]==petIndex) &&
+                    At(pet,PetCells[i,1],PetCells[i,2],32,32).Contains(pointer))
+                    return GameSession.Character.inventory.Find(item=>item.inventoryType==1 && item.position==-PetCells[i,0]);
+        }
         var cells=expanded ? FullCells : SmallCells;
         for(int row=0;row<cells.GetLength(0);row++) for(int col=0;col<cells.GetLength(1);col++)
             if(cells[row,col]!=0 && At(r,GridX+col*Step,GridY+row*Step,Cell,Cell).Contains(pointer))
@@ -153,7 +195,11 @@ public static class EquipWindow
     }
     public static bool Visible;
     static Vector2 pos = new Vector2(200, 100);
-    static bool expanded, dragging;
+    static bool expanded, dragging, petVisible;
+    static int petIndex;
+    public static int SelectedPet => petIndex;
+    static double petReadAt;
+    static readonly InventoryEntry[] pets = new InventoryEntry[3];
     static Vector2 grab;
     static float S => BottomBar.S;
     const int SmallW = 175, SmallH = 304, FullW = 208, FullH = 291;
@@ -190,7 +236,7 @@ public static class EquipWindow
         { 0, 0, 0, 0, 0, 0 },
     };
 
-    public static void Toggle() { Visible = !Visible; }
+    public static void Toggle() { Visible = !Visible; if (!Visible) petVisible = false; }
 
     public static void Draw()
     {
@@ -198,6 +244,7 @@ public static class EquipWindow
         int w = expanded ? FullW : SmallW, h = expanded ? FullH : SmallH;
         pos = NativeUi.ClampWindowPosition(pos, new Vector2(w, h), S);
         var r = new Rect(pos.x * S, pos.y * S, w * S, h * S);
+        NativeUi.RegisterWindow("EquipWindow", r, () => EquipWindow.Visible);
         bool press = Event.current.type == EventType.Repaint && Pointer.Pressed;
         bool release = Event.current.type == EventType.Repaint && Pointer.Released;
         if (press && At(r, 0, 0, w - 24, 22).Contains(Pointer.Pos)) { dragging = true; grab = Pointer.Pos / S - pos; }
@@ -234,9 +281,101 @@ public static class EquipWindow
                 }
             }
 
-        if (NativeUi.Button(At(r, 5, 267, 46, 19), "UI/UIWindow.img/Equip/BtDetail")) { expanded = !expanded; return; }
+        if ((Profile.JobId / 100 == 22 || Profile.JobId == 2001) &&
+            NativeUi.Button(At(r, 5, 267, 46, 19), "UI/UIWindow.img/Equip/BtDetail")) { expanded = !expanded; return; }
         if (!expanded && NativeUi.Button(At(r, 102, 280, 67, 18), "UI/UIWindow.img/Equip/BtPetEquipShow"))
-            BottomBar.Toast("宠物装备暂未开放");
+        { petVisible = !petVisible; petReadAt = 0; }
+        if (petVisible) DrawPet(r);
+    }
+
+    // Native CUIEquipPet window at parent+(172,123), 177x181 (7FE12F / 7FE299).
+    // Slot coordinates are the original POINT table BE2260 indexed by body part - 1.
+    static readonly int[,] PetCells =
+    {
+        {14,112,77,0},{21,79,110,0},{22,13,44,0},{23,46,44,0},
+        {24,13,11,-1},{25,79,11,-1},{26,79,77,0},{27,13,110,0},{28,46,77,0},{29,112,110,0},
+        {30,112,77,1},{31,79,110,1},{32,112,110,1},{33,13,44,1},{34,46,44,1},{35,79,77,1},{36,13,110,1},{37,46,77,1},
+        {38,112,77,2},{39,79,110,2},{40,112,110,2},{41,13,44,2},{42,46,44,2},{43,79,77,2},{44,13,110,2},{45,46,77,2},
+        {46,13,77,0},{47,13,77,1},{48,13,77,2}
+    };
+    public static bool DropPetPotion(Vector2 pointer,int id)
+    {
+        if(!Visible || !petVisible || !GameSession.InGame) return false;
+        var r=At(new Rect(pos.x*S,pos.y*S,0,0),172,123,177,181);
+        for(int i=0;i<2;i++)
+        {
+            if(!At(r,i==0 ? 46 : 112,11,32,32).Contains(pointer)) continue;
+            var spec=NativeItemSource.Node(id)?.Get("spec");
+            bool hp=i==0;
+            if(Profile.EquipOfSlot(hp ? -24 : -25)<=0 || spec==null ||
+                id/1000000!=2 || (spec.Int(hp ? "hp" : "mp")<=0 && spec.Int(hp ? "hpR" : "mpR")<=0)) return true;
+            KeyMap.BindPetPotion(hp,id);
+            return true;
+        }
+        return false;
+    }
+    static void DrawPet(Rect parent)
+    {
+        if (!GameSession.InGame) return;
+        if (Time.realtimeSinceStartupAsDouble >= petReadAt)
+        {
+            petReadAt = Time.realtimeSinceStartupAsDouble + .25;
+            for (int i = 0; i < 3; i++)
+                pets[i] = GameSession.Net.ChangeInventory(new InventoryChangeRequest
+                { characterId = GameSession.CharacterId, getPet = true, petSlot = i }).pet;
+            if (pets[petIndex] == null) petIndex = 0;
+        }
+        var r = At(parent, 172, 123, 177, 181);
+        ImagePet("pet", 0, 0);
+        void ImagePet(string path, int x, int y)
+        {
+            var t = Tex(path);
+            if (t != null) GUI.DrawTexture(At(r, x, y, t.width, t.height), t);
+        }
+        if (NativeUi.Button(At(r,155,159,17,16), "UI/UIWindow.img/Equip/BtPetEquipHide"))
+        { petVisible = false; return; }
+        bool enabled = GUI.enabled;
+        for (int i = 0; i < 3; i++)
+        {
+            GUI.enabled = enabled && pets[i] != null;
+            string path = "UI/UIWindow.img/UserInfo/BtPet" + (i + 1);
+            var t = Art.Tex("wz://" + path + "/normal/0");
+            if (t != null && NativeUi.Button(At(r,10+34*i,151,t.width,t.height),path)) petIndex = i;
+        }
+        GUI.enabled = enabled;
+        for(int i=0;i<2;i++)
+        {
+            int id=KeyMap.PetPotion(i==0);
+            var cell=At(r,i==0 ? 46 : 112,11,32,32);
+            var icon=id>0 ? NativeItemSource.Icon(id) : null;
+            var origin=id>0 ? NativeItemSource.IconNode(id)?.Get("origin") : null;
+            if(icon!=null) GUI.DrawTexture(At(r,(i==0 ? 46 : 112)-(origin?.X??0),43-(origin?.Y??0),icon.width,icon.height),icon);
+            if(id>0 && Event.current.type==EventType.Repaint && cell.Contains(Pointer.Pos))
+            {
+                ItemTooltip.SetHover(id,false);
+                if(Pointer.DoubleClicked) { Pointer.ConsumeClick(); KeyMap.BindPetPotion(i==0,0); }
+            }
+        }
+        // Native Draw uses 0x40FF0000 rectangles for unavailable pet-specific slots.
+        if (pets[petIndex] == null)
+            foreach (var p in new[] {new Vector2(112,77),new Vector2(79,110),new Vector2(112,110),new Vector2(46,11),new Vector2(112,11)})
+                UiKit.Fill(At(r,p.x,p.y,32,32),new Color32(255,0,0,64));
+        for (int i = 0; i < PetCells.GetLength(0); i++)
+        {
+            if (PetCells[i,3] >= 0 && PetCells[i,3] != petIndex) continue;
+            int slot = -PetCells[i,0], id = Profile.EquipOfSlot(slot);
+            if (id <= 0) continue;
+            var icon = NativeItemSource.Icon(id);
+            var origin = NativeItemSource.IconNode(id)?.Get("origin");
+            int x = PetCells[i,1], y = PetCells[i,2];
+            if (icon != null) GUI.DrawTexture(At(r,x-(origin?.X??0),y+32-(origin?.Y??0),icon.width,icon.height),icon);
+            var cell = At(r,x,y,32,32);
+            if (Event.current.type == EventType.Repaint && cell.Contains(Pointer.Pos))
+            {
+                ItemTooltip.SetHover(id,true);
+                if (Pointer.DoubleClicked) { Pointer.ConsumeClick(); EquipLoadout.Unequip(slot); }
+            }
+        }
     }
 
     static Texture2D IconOf(int slot, int id)
@@ -292,6 +431,29 @@ public static class InvenWindow
     }
     public static void Toggle() { Visible = !Visible; }
 
+    // ITEM_SORT2(sort) / ITEM_SORT(merge)：服务端真实整理，回包带整份背包。
+    // 源端改完 position 后是「全部移除再按顺序 addItem」，这里用同一份回包覆盖内存背包，
+    // 再投影到 Profile，界面顺序才跟着服务端槽位走。
+    static void Organize(bool merge)
+    {
+        if (!GameSession.InGame) return;
+        var response = GameSession.Net.ChangeInventory(new InventoryChangeRequest
+        {
+            characterId = GameSession.CharacterId,
+            mergeItems = merge, sortItems = !merge,
+            sortInventoryType = tab + 1,
+        });
+        if (response == null || !response.ok)
+        {
+            BottomBar.Toast(response == null || string.IsNullOrEmpty(response.error) ? "无法整理背包" : response.error);
+            return;
+        }
+        GameSession.Character.inventory = response.inventory;
+        GameSession.ApplyInventoryToProfile();
+        Profile.Save();
+        scroll = 0;
+    }
+
     // 页签底板：Tab2 左右各 4×19 + 1×19 平铺中段
     static void TabPlate(Rect r, bool on)
     {
@@ -311,6 +473,7 @@ public static class InvenWindow
         int width = expanded ? 603 : 175;
         pos = NativeUi.ClampWindowPosition(pos, new Vector2(width, 289), S);
         var r = new Rect(pos.x * S, pos.y * S, width * S, 289 * S);
+        NativeUi.RegisterWindow("InvenWindow", r, () => InvenWindow.Visible);
         bool press = Event.current.type == EventType.Repaint && Pointer.Pressed;
         bool release = Event.current.type == EventType.Repaint && Pointer.Released;
         if (press && At(r, 0, 0, width - 50, 22).Contains(Pointer.Pos)) { dragging = true; grab = Pointer.Pos / S - pos; }
@@ -340,7 +503,9 @@ public static class InvenWindow
         if (tab == 0 && GameSession.InGame)
         {
             equipment = GameSession.Character.inventory.FindAll(item => item.inventoryType == 1 && item.position > 0);
-            equipment.Sort((left, right) => sorted ? left.itemId.CompareTo(right.itemId) : left.position.CompareTo(right.position));
+            // 显示顺序 = 服务端槽位。整理后 position 变了，这里必须跟着变，
+            // 不能再按 itemId 本地排（那会让服务端的整理结果看不见）。
+            equipment.Sort((left, right) => left.position.CompareTo(right.position));
             foreach (var item in equipment) entries.Add(item.itemId);
         }
         else if (tab == 0)
@@ -354,7 +519,6 @@ public static class InvenWindow
             }
         }
         if (equipment == null) entries.AddRange(Profile.InventoryItems(tab));
-        if (sorted && equipment == null) entries.Sort();
         if (!expanded && maxScroll > 0 && Event.current.type == EventType.Repaint && At(r, 8, 50, 148, 202).Contains(Pointer.Pos))
         {
             float wheel = Input.mouseScrollDelta.y;
@@ -367,7 +531,7 @@ public static class InvenWindow
             int index = expanded ? cell : scroll * 4 + cell;
             int block = expanded ? cell / 24 : 0;
             int local = cell % 24;
-            float x = (expanded ? 7 : 8) + block * (expanded ? 149 : 0) + local % 4 * 36;
+            float x = 8 + block * (expanded ? 149 : 0) + local % 4 * 36;
             float y = 50 + local / 4 * 34;
             var slot = At(r, x, y, 32, 32);
             if (index >= capacity) { Image(r, "disabled", x, y); continue; }
@@ -376,19 +540,29 @@ public static class InvenWindow
             if(Event.current.type==EventType.Repaint && equipment!=null) equipmentTargets.Add(new KeyValuePair<Rect,InventoryEntry>(slot,equipment[index]));
             var icon = NativeItemSource.Icon(id);
             if (icon != null) GUI.DrawTexture(slot, icon, ScaleMode.ScaleToFit);
-            if (tab != 0) Text(At(r, x, y + 20, 31, 12), Profile.ItemCount(id).ToString(), true, 9);
+            if (tab != 0)
+            {
+                float digitX = x;
+                foreach (char digit in Profile.ItemCount(id).ToString())
+                {
+                    var image = Art.Tex("wz://UI/Basic.img/ItemNo/" + digit);
+                    if (image == null) continue;
+                    GUI.DrawTexture(At(r, digitX, y + 20, image.width, image.height), image);
+                    digitX += image.width;
+                }
+            }
             if (Event.current.type == EventType.Repaint && id > 0 && slot.Contains(Pointer.Pos)) ItemTooltip.SetHover(id, false, equipment == null ? null : equipment[index]);
             if (press && NativeTradeWindow.CanOffer && slot.Contains(Pointer.Pos))
             {
                 var offered = equipment == null ? GameSession.Character.inventory.Find(item => item.itemId == id && item.inventoryType == tab + 1 && item.position > 0) : equipment[index];
                 NativeTradeWindow.BeginItemDrag(offered);
             }
-            if (press && !NativeTradeWindow.CanOffer && slot.Contains(Pointer.Pos)) NativeInventoryActions.Pick(id,equipment==null ? 0 : equipment[index].position);
+            if (press && !NativeTradeWindow.CanOffer && slot.Contains(Pointer.Pos)) NativeInventoryActions.PickFromInventory(id,equipment==null ? 0 : equipment[index].position);
             if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && slot.Contains(Pointer.Pos))
             {
                 Pointer.ConsumeClick();
                 if (!NativeTradeWindow.CanOffer) NativeInventoryActions.DoubleClick(id, equipment == null ? 0 : equipment[index].position);
-                break; // The action can change the inventory and open another window.
+                // Finish drawing this snapshot; stopping here blanks all later cells.
             }
         }
 
@@ -418,11 +592,25 @@ public static class InvenWindow
 
         // 金币：BtCoin (7,266) 14×14，数字框 backgrnd 自带于 (25,267)-(142,280)
         Image(r, "BtCoin/normal/0", 7, 266);
-        Text(At(r, 25, 267, 115, 14), Profile.gold.ToString(), true);
+        // 81DC84: comma grouping; 81DCD8/81DD5F: right edge138, y266, font25 (black,12px).
+        var mesoStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(12 * S),
+            alignment = TextAnchor.UpperRight, clipping = TextClipping.Clip };
+        mesoStyle.normal.textColor = Color.black;
+        GUI.Label(At(r, 25, 266, 113, 16), Profile.gold.ToString("N0", System.Globalization.CultureInfo.InvariantCulture), mesoStyle);
 
         // 81CE50 / 81E47D：内部宽 W-20，再分别减30/15；基类负责最右侧关闭。
         if (NativeUi.Button(At(r, width - 50, 6, 12, 12), "UI/UIWindow.img/Item/" + (expanded ? "BtSmall" : "BtFull"))) { expanded = !expanded; scroll = 0; return; }
-        if (NativeUi.Button(At(r, width - 35, 6, 12, 12), "UI/UIWindow.img/Item/" + (sorted ? "BtSort" : "BtGather"))) sorted = !sorted;
+        // 源端 BtGather / BtSort 是同一条控件槽位的两种状态（EXE 0x81E3A6 按状态值 0/1
+        // 二选一创建，id 0x7D3/0x7D4，坐标同为 (W-15,6) 中心）：
+        //   状态 0 画 BtGather → 点击发 ITEM_SORT  → InventoryMergeHandler（聚拢）
+        //   状态 1 画 BtSort   → 点击发 ITEM_SORT2 → InventorySortHandler（排序）
+        // 状态与图的对应按语义推定；EXE 的消息分派分支未反编译出来，记录在 reference 待核实。
+        if (NativeUi.Button(At(r, width - 35, 6, 12, 12), "UI/UIWindow.img/Item/" + (sorted ? "BtSort" : "BtGather")))
+        {
+            Organize(merge: !sorted);
+            sorted = !sorted;
+            return;
+        }
         if (NativeUi.Button(At(r, width - 20, 6, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
         if (expanded && NativeUi.Button(At(r, 449, 258, 93, 18), "UI/UIWindow.img/Item/BtCashshop"))
             BottomBar.Toast("容量扩充需在商城购买：2000点券增加4格，最多96格");
@@ -565,7 +753,7 @@ public static class BottomMenu
         if (bg != null) GUI.DrawTexture(panel, bg, ScaleMode.StretchToFill);
 
         var buttons = Buttons(kind);
-        bool blocking = NpcSession.Blocking || KeyConfigWindow.Visible || VirtualControlsEditor.Visible;
+        bool blocking = NpcSession.Blocking || VirtualControlsEditor.Visible;
 
         for (int i = 0; i < buttons.Length; i++)
         {
@@ -649,7 +837,7 @@ public static class GameWindows
         NativeCommunityWindow.Visible || NativeGuildWindow.Visible || NativeGuildGradeWindow.Visible ||
         NativeMedalWindow.Visible || ShopWindow.Visible || GameOptWindow.Visible ||
         SysOptWindow.Visible || ChannelWindow.Visible ||
-        NativeVegaWindow.Visible || NativeResetWindow.Visible || NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible || NativeNpcShopWindow.Visible;
+        NativeVegaWindow.Visible || NativeResetWindow.Visible || NativeSpResetWindow.Visible || NativeTeleportWindow.Visible || NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterInfo.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible || NativeNpcShopWindow.Visible || NativeDeliveryWindow.Visible;
 
     // ——————————————— Esc 分层关闭 ———————————————
     // 原版 Esc 是「系统菜单」键，但用户要求：只要有面板开着，Esc 先关面板。
@@ -659,7 +847,7 @@ public static class GameWindows
     enum Panel
     {
         Stat, Equip, Inven, Shop, Quest, Shortcut, Help, GameMenu, Skill,
-        World, Social, MonsterBook, Community, Guild, Medal, NpcShop,
+        World, Social, MonsterBook, Community, Guild, Medal, NpcShop, Delivery,
         GameOpt, SysOpt, Channel,
     }
     static readonly Panel[] panels = (Panel[])System.Enum.GetValues(typeof(Panel));
@@ -675,6 +863,7 @@ public static class GameWindows
             case Panel.Inven: return InvenWindow.Visible;
             case Panel.Shop: return ShopWindow.Visible;
             case Panel.NpcShop: return NativeNpcShopWindow.Visible;
+            case Panel.Delivery: return NativeDeliveryWindow.Visible;
             case Panel.Quest: return QuestWindow.Visible;
             case Panel.Shortcut: return ShortcutWindow.Visible;
             case Panel.Help: return HelpWindow.Visible;
@@ -703,6 +892,7 @@ public static class GameWindows
             // 商城开着的期间 timeScale=0，必须走 Reset 才会把时间轴还回去
             case Panel.Shop: NativeCashWindow.Reset(); return;
             case Panel.NpcShop: NativeNpcShopWindow.Close(); return;
+            case Panel.Delivery: NativeDeliveryWindow.Close(); return;
             case Panel.Quest: QuestWindow.Visible = false; return;
             case Panel.Shortcut: ShortcutWindow.Visible = false; return;
             case Panel.Help: HelpWindow.Visible = false; return;
@@ -739,9 +929,13 @@ public static class GameWindows
         if (NativeUtilPrompt.Visible) { NativeUtilPrompt.Cancel(); return true; }
         if (NativeVegaWindow.Visible) { if(!NativeVegaWindow.Busy) NativeVegaWindow.Close(); return true; }
         if (NativeResetWindow.Visible) { NativeResetWindow.Close(); return true; }
+        if (NativeSpResetWindow.Visible) { NativeSpResetWindow.Close(); return true; }
+        if (NativeTeleportWindow.Visible) { NativeTeleportWindow.Close(); return true; }
         if (NativeCharacterMenu.Visible) { NativeCharacterMenu.Close(); return true; }
+        if (NativeCharacterInfo.Visible) { NativeCharacterInfo.Close(); return true; }
         if (NativeTradeWindow.Visible) { NativeTradeWindow.Close(); return true; }
         if (NativeMarketWindow.Visible) { NativeMarketWindow.Close(); return true; }
+        if (NativeDeliveryWindow.Visible) { NativeDeliveryWindow.Close(); return true; }
         TrackPanels();
         if (openOrder.Count == 0) return false;
         var top = openOrder[openOrder.Count - 1];
@@ -756,6 +950,7 @@ public static class GameWindows
         TrackPanels();
         ItemTooltip.Reset();
         NativeCashWindow.Tick();
+        NativeDeliveryWindow.Tick();
         bool enabled = GUI.enabled;
         GUI.enabled &= !NativeUtilPrompt.Visible;
         try
@@ -772,6 +967,7 @@ public static class GameWindows
         NativeSocialWindow.Draw();
         NativeMonsterBook.Draw();
         NativeCommunityWindow.DrawBoard();
+        NativeAdBoard.Draw();   // 黑板：原端 0x48A935 type1003 → 0x4890C4 气泡布局（旧占位框与新黑板同画会重叠，故替换位置紧随其后）
         NativeCommunityWindow.Draw();
         NativeGuildWindow.Draw();
         NativeGuildGradeWindow.Draw();   // BtInfo 的附属窗，必须跟着主窗一起进绘制链
@@ -779,6 +975,8 @@ public static class GameWindows
         NativeTradeWindow.Draw();
         NativeMarketWindow.Draw();
         NativeNpcShopWindow.Draw();
+        NativeDeliveryWindow.Draw();
+        NativeCharacterInfo.Draw();
         NativeCharacterMenu.Draw();
         // 目录菜单里开出来的三个窗（源端只有底图，实现见 NativeSettingsWindows.cs）
         GameOptWindow.Draw();
@@ -789,6 +987,8 @@ public static class GameWindows
         ShortcutWindow.Draw();
         NativeVegaWindow.Draw();
         NativeResetWindow.Draw();
+        NativeSpResetWindow.Draw();
+        NativeTeleportWindow.Draw();
         ItemTooltip.Flush();
         }
         finally { GUI.enabled = enabled; }

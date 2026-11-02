@@ -147,7 +147,9 @@ public sealed class AudioManager : MonoBehaviour
             Debug.LogWarning("[Audio] BGM 未在 SoundIndex 登记：" + key);
             return;
         }
-        if (I.bgmKey == key && (I.bgmA.isPlaying || I.bgmB.isPlaying)) return;
+        if (I.bgmKey == key && (I.bgmCo != null ||
+            (I.bgmA.isPlaying && I.bgmA.clip == I.Cached(key)) ||
+            (I.bgmB.isPlaying && I.bgmB.clip == I.Cached(key)))) return;
         I.bgmKey = key;
         if (I.bgmCo != null) { I.StopCoroutine(I.bgmCo); I.bgmCo = null; }
         I.bgmCo = I.StartCoroutine(I.CrossFadeBgm(key, e));
@@ -163,6 +165,9 @@ public sealed class AudioManager : MonoBehaviour
 
     IEnumerator CrossFadeBgm(string key, Entry e)
     {
+        // StartCoroutine can finish synchronously for a cached clip. Yield once so
+        // bgmCo is assigned before this routine clears it on completion.
+        yield return null;
         // 一首歌第一次进图时还没解码完，必须等 Load 协程跑完再播。
         // 旧实现在「加载中返回 null」时直接 yield break，于是每首歌第一次进图都是静音，
         // 只有再次进入同一首 BGM 的地图才会出声——这就是「BGM 没生效」的根因。
@@ -209,24 +214,28 @@ public sealed class AudioManager : MonoBehaviour
     {
         if (fadeCo != null) { StopCoroutine(fadeCo); fadeCo = null; }
         if (bgmA.isPlaying || bgmB.isPlaying)
-            StartCoroutine(Fade(bgmA.isPlaying ? bgmA : null, null, fade));
+            fadeCo = StartCoroutine(Fade(bgmA.isPlaying ? bgmA : bgmB, null, fade));
     }
 
     IEnumerator Fade(AudioSource from, AudioSource to, float seconds)
     {
         float t = 0f;
         float v0 = from != null ? from.volume : 0f;
-        float v1 = to != null ? BgmVolume : 0f;
+        var other = to == null ? (from == bgmA ? bgmB : bgmA) : null;
+        float otherVolume = other != null ? other.volume : 0f;
         while (t < seconds)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             float k = Mathf.Clamp01(t / seconds);
-            if (from != null) from.volume = Mathf.Lerp(v0, 0f, k);
-            if (to != null) to.volume = Mathf.Lerp(0f, v1, k);
+            if (from != null) from.volume = BgmMuted ? 0f : Mathf.Lerp(v0, 0f, k);
+            if (other != null) other.volume = BgmMuted ? 0f : Mathf.Lerp(otherVolume, 0f, k);
+            if (to != null) to.volume = BgmMuted ? 0f : Mathf.Lerp(0f, BgmVolume, k);
             yield return null;
         }
         if (from != null) { from.Stop(); from.clip = null; }
-        if (to != null) to.volume = v1;
+        if (other != null) { other.Stop(); other.clip = null; }
+        if (to != null) to.volume = BgmMuted ? 0f : BgmVolume;
+        TrimBgmCache(to != null ? to.clip : null);
         fadeCo = null;
     }
 
@@ -234,7 +243,8 @@ public sealed class AudioManager : MonoBehaviour
     {
         var drop = new List<string>();
         foreach (var kv in clips)
-            if (kv.Value != keep && kv.Key.StartsWith("Bgm", StringComparison.Ordinal))
+            if (kv.Value != keep && kv.Value != bgmA.clip && kv.Value != bgmB.clip &&
+                kv.Key.StartsWith("Bgm", StringComparison.Ordinal))
                 drop.Add(kv.Key);
         foreach (var k in drop) { Destroy(clips[k]); clips.Remove(k); }
     }
@@ -303,9 +313,10 @@ public sealed class AudioManager : MonoBehaviour
     IEnumerator Load(string key, Entry e)
     {
         loading.Add(key);
-        string url = "file://" + Path.Combine(WzAssets.DataRoot, e.path);
+        string url = new Uri(Path.GetFullPath(Path.Combine(WzAssets.DataRoot, e.path))).AbsoluteUri;
         using (var req = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.MPEG))
         {
+            req.timeout = (int)BgmLoadTimeout;
             yield return req.SendWebRequest();
             bool err = req.result != UnityWebRequest.Result.Success;
             if (err)

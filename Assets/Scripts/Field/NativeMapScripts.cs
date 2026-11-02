@@ -18,12 +18,36 @@ public sealed class NativeMapScripts : MonoBehaviour
         if (!ReferenceEquals(host.character,GameSession.Character))
         {
             host.scripts.EndCharacter(host.characterId);
+            host.scripts.Reload();
             host.timers.Clear();
             host.character=GameSession.Character; host.characterId=GameSession.CharacterId;
         }
-        host.Run(field.Map.onFirstUserEnter,true);
-        host.Run(field.Map.onUserEnter,false);
+        host.Run(ScriptName(field.Map.id,field.Map.onFirstUserEnter),true);
+        host.Run(ScriptName(field.Map.id,field.Map.onUserEnter),false);
     }
+    public void Reload() { scripts.Reload(); timers.Clear(); }
+
+    // 源端 onUserEnter/onFirstUserEnter 的默认值是「地图 id 字符串」而不是空串
+    // （MapFactory.java:193-197：取不到就 String.valueOf(mapid)），所以 MapleMap.addPlayer 对
+    // **每一张**图都会尝试 map/onUserEnter/<mapid>.js（文件不存在时 runMapScript 返回 false）。
+    // 移植端原来只在 WZ 里写了 onUserEnter 才跑，于是 map/onUserEnter/677000003.js 这类
+    // 「按图 id 命名」的脚本（野外 Boss 现身、过场）全都成了死代码。
+    static string ScriptName(int mapId,string declared)
+    {
+        if(!string.IsNullOrEmpty(declared)) return declared;
+        // 这 3 张图的 onUserEnter 只写在服务端 wz 里，客户端 IMG 的 info 没有；
+        // 全量对比 1518 张带进入脚本的地图，只有这 3 张不一致（都是枫城的野外 Boss）。
+        if(ServerOnlyEnterScripts.TryGetValue(mapId,out string name)) return name;
+        return mapId.ToString();
+    }
+    static readonly System.Collections.Generic.Dictionary<int,string> ServerOnlyEnterScripts=
+        new System.Collections.Generic.Dictionary<int,string>
+        {
+            {800040208,"armoredSamuraiBoss"},   // 甲胄武士
+            {800040401,"emperorToadBoss"},      // 枫城天皇蟾蜍（天守阁 2 阶）
+            {800040410,"emperorToadBoss"},      // 同上（最上层）
+        };
+
     void Run(string name,bool first)
     {
         if (string.IsNullOrEmpty(name)) return;

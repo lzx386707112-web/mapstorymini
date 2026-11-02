@@ -16,7 +16,7 @@ public static class QuestAlarm
     {
         if (!Profile.IsQuestStarted(id)) return;
         if (!tracked.Contains(id)) { if (!CanTrack(QuestCatalog.Get(id))) return; tracked.Add(id); }
-        updated[id] = Time.unscaledTime; visible = true;
+        updated[id] = Time.unscaledTime; visible = true; expanded = true;
     }
     public static void Progress(int id)
     {

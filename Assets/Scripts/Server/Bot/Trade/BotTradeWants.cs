@@ -12,7 +12,8 @@ namespace Server.Bot.Trade
     // BotTradeWants.java。重复需求逐条核验，不擅自合并改变源端规则。
     public sealed class BotTradeWants
     {
-        public int mesoWanted = 1, mesoOffering;
+        public long mesoWanted = 1;
+        public int mesoOffering;
         public readonly List<ItemQuantity> itemsWanted = new List<ItemQuantity>(9);
         public void AddItemWanted(int id, int quantity = 1) => itemsWanted.Add(new ItemQuantity(id, quantity));
         public ItemQuantity? GetItemQuantityAt(int index)
@@ -23,23 +24,23 @@ namespace Server.Bot.Trade
             foreach (var item in itemsWanted) ids.Add(item.itemId);
             return ids;
         }
-        public void SetWants(int mesos, IEnumerable<int> ids)
+        public void SetWants(long mesos, IEnumerable<int> ids)
         {
             Reset(); mesoWanted = mesos;
             foreach (int id in ids) AddItemWanted(id);
         }
-        public void SetWants(int mesos, int id) => SetWants(mesos, new[] { id });
+        public void SetWants(long mesos, int id) => SetWants(mesos, new[] { id });
         public void SetWants(int id) => SetWants(0, id);
         public void SetWants(IEnumerable<int> ids) => SetWants(0, ids);
-        public bool VerifyTrade(int mesos, IList<InventoryEntry> offered)
+        public bool VerifyTrade(long mesos, IList<InventoryEntry> offered)
             => VerifySufficientMeso(mesos) && VerifySufficientItems(offered);
-        public bool VerifySufficientMeso(int mesos)
+        public bool VerifySufficientMeso(long mesos)
         {
             if (mesos >= mesoWanted) return true;
             double tolerance = mesoWanted >= 1000000000 ? .01 : mesoWanted >= 100000000 ? .02
                 : mesoWanted >= 10000000 ? .05 : mesoWanted >= 1000000 ? .10
                 : mesoWanted >= 100000 ? .15 : mesoWanted >= 10000 ? .20 : 0;
-            return unchecked(mesoWanted - mesos) <= (int)(mesoWanted * tolerance);
+            return mesoWanted - mesos <= (long)(mesoWanted * tolerance);
         }
         public bool VerifySufficientItems(IList<InventoryEntry> offered)
         {

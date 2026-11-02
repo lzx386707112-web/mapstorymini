@@ -88,6 +88,63 @@ public static class AdminCatalogData
         t.Start();
     }
 
+    // CommonInformation.searchXML: search the original String IMG, including empty type = all.
+    public static List<object> InformationSearch(object body)
+    {
+        string filter = AdminJson.GetString(body, "filter");
+        if (string.IsNullOrEmpty(filter)) throw new AdminApiException("filter不能为空");
+        var types = AdminJson.GetList(body, "types");
+        if (types == null || types.Count == 0)
+            types = new List<object> { "cash", "consume", "eqp", "etc", "ins", "map", "mob", "npc", "pet", "skill" };
+        int filterType = AdminJson.GetInt(body, "filterType");
+        bool full = AdminJson.GetBool(body, "fullMatch");
+        var results = new List<object>();
+        foreach (var value in types)
+        {
+            string type = Convert.ToString(value, CultureInfo.InvariantCulture);
+            string file;
+            switch (type)
+            {
+                case "cash": file = "Cash"; break;
+                case "consume": file = "Consume"; break;
+                case "eqp": file = "Eqp"; break;
+                case "etc": file = "Etc"; break;
+                case "ins": file = "Ins"; break;
+                case "map": file = "Map"; break;
+                case "mob": file = "Mob"; break;
+                case "npc": file = "Npc"; break;
+                case "pet": file = "Pet"; break;
+                case "skill": file = "Skill"; break;
+                default: throw new AdminApiException("不支持的资料类型: " + type);
+            }
+            var root = OpenRoot("String/" + file + ".img");
+            if (type == "etc") root = root.Get("Etc");
+            if (type == "eqp") root = root.Get("Eqp");
+            if (type == "map" || type == "eqp")
+            {
+                foreach (var group in root.Children) AddInformation(results, type, group, filter, filterType, full);
+            }
+            else AddInformation(results, type, root, filter, filterType, full);
+        }
+        return results;
+    }
+
+    static void AddInformation(List<object> results, string type, ImgNode root, string filter, int filterType, bool full)
+    {
+        foreach (var node in root.Children)
+        {
+            if (!int.TryParse(node.Name, out var id)) continue;
+            string name = node.Text(type == "map" ? "mapName" : "name");
+            bool matchId = (filterType == 0 || filterType == 1) &&
+                (full ? node.Name == filter : node.Name.Contains(filter));
+            bool matchName = (filterType == 0 || filterType == 2) &&
+                (full ? name == filter : name.Contains(filter));
+            if (matchId || matchName)
+                results.Add(AdminJson.Obj("type", type, "id", id, "name", name,
+                    "desc", node.Text(type == "map" ? "streetName" : "desc")));
+        }
+    }
+
     // —————————— 关键词匹配（源端 ItemCatalogService 的 matches/matchRank 语义） ——————————
     // 精确(=0) > id 前缀(=1) > name 前缀(=2) > 其余 contains(=3)；同 rank 再 id 升序。
     public static string Normalize(string keyword)
@@ -713,6 +770,10 @@ public static class AdminCatalogData
     // —————————— 技能图鉴 ——————————
     // 职业名 / 转职次数表照抄源端 SkillCatalogService（String/Skill.img 的 bookName
     // 是「冒险的技术」这类技能书名，不是职业名，所以用内置表）。
+    // 注意：源端这张表本身与 i18n job.name.* 有偏差（212 大魔导师(火毒)、312 箭神、
+    // 322 神射手、412 夜使者、422 暗影神偷、520 枪手、1300 风行者…），
+    // 2026-11-01 逐条比对 102/102 一致，因此这里**保持与源端相同**、不做“修正”。
+    // 游戏内（状态栏 / 能力值窗 / 角色资料）显示的职业名走 JobDefs.NameOf → i18n。
     static readonly Dictionary<int, string> JobNames = new Dictionary<int, string>
     {
         { 0, "初心者" },
@@ -1022,6 +1083,21 @@ public static class AdminCatalogData
         }
         return root.Get("stand/0");
     });
+
+    public static byte[] NpcIconPng(long id) => IconPng("npc:" + id, () =>
+    {
+        var root = WzAssets.FileRoot("Npc/" + id.ToString("D7", CultureInfo.InvariantCulture) + ".img");
+        for (int i = 0; i < 64; i++)
+        {
+            string link = root.Text("info/link");
+            if (string.IsNullOrEmpty(link)) break;
+            root = WzAssets.FileRoot("Npc/" + long.Parse(link, CultureInfo.InvariantCulture).ToString("D7", CultureInfo.InvariantCulture) + ".img");
+        }
+        return root.Get("stand/0");
+    });
+
+    public static byte[] MapIconPng(long id) => IconPng("map:" + id,
+        () => WzAssets.FileRoot(WzAssets.MapPath((int)id)).Get("miniMap/canvas"));
 
     public static byte[] SkillIconPng(long id) => IconPng("skill:" + id, () =>
     {

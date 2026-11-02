@@ -15,7 +15,7 @@ namespace Server.Bot.Trade
         public Action<BotActor, TradeResult> ResultOutput;
         public Action<Exception> OnError;
         public Action<BotActor, BotActor> Invited;
-        public event Action<BotActor,int> InventoryCommitted;
+        public event Action<BotActor,long> InventoryCommitted;
         public BotTradeService(DbStore db, BotItemCatalog catalog) { this.db = db; rules = new TradeItemRules(db, catalog); }
         public Session Start(BotActor actor)
         {
@@ -49,14 +49,14 @@ namespace Server.Bot.Trade
                 }
                 else session.invitationTicks++;
         }
-        public static int Fee(long amount) => amount >= 100000000 ? (int)(amount * 6 / 100)
-            : amount >= 25000000 ? (int)(amount * 5 / 100) : amount >= 10000000 ? (int)(amount * 4 / 100)
-            : amount >= 5000000 ? (int)(amount * 3 / 100) : amount >= 1000000 ? (int)(amount * 18 / 1000)
-            : amount >= 100000 ? (int)(amount * 8 / 1000) : 0;
+        public static long Fee(long amount) => amount >= 100000000 ? amount * 6 / 100
+            : amount >= 25000000 ? amount * 5 / 100 : amount >= 10000000 ? amount * 4 / 100
+            : amount >= 5000000 ? amount * 3 / 100 : amount >= 1000000 ? amount * 18 / 1000
+            : amount >= 100000 ? amount * 8 / 1000 : 0;
         static List<InventoryEntry> Inventory(BotActor actor) => actor is BotCharacter bot ? bot.inventory
             : actor.character?.inventory ?? throw new InvalidOperationException("Trade actor has no loaded inventory");
-        static int Balance(BotActor actor) => actor is BotCharacter bot ? bot.meso : actor.character.record.meso;
-        static void Balance(BotActor actor, int value)
+        static long Balance(BotActor actor) => actor is BotCharacter bot ? bot.meso : actor.character.record.meso;
+        static void Balance(BotActor actor, long value)
         { if (actor is BotCharacter bot) bot.meso = value; else actor.character.record.meso = value; }
         static List<InventoryEntry> Clone(List<InventoryEntry> source)
         { var copy = new List<InventoryEntry>(); foreach (var item in source) copy.Add(item.Copy()); return copy; }
@@ -72,7 +72,11 @@ namespace Server.Bot.Trade
             foreach (var item in items)
             {
                 var row = new DbRow(); if (item.itemData != null) foreach (var pair in item.itemData) row[pair.Key] = pair.Value;
-                row.Remove("inventoryitemid"); row["characterid"] = cid; row["type"] = item.itemId / 1000000;
+                // Preserve identities owned by this character, including cash_items foreign keys.
+                // Incoming trade items receive a new local identity.
+                if (ids.Contains(item.itemRowId)) row["inventoryitemid"] = item.itemRowId;
+                else row.Remove("inventoryitemid");
+                row["characterid"] = cid; row["type"] = item.itemId / 1000000;
                 row["itemid"] = item.itemId; row["inventorytype"] = item.inventoryType; row["position"] = item.position;
                 row["quantity"] = item.quantity; row["flag"] = item.flag; row["owner"] = item.owner;
                 row["giftFrom"] = item.giftFrom; row["petid"] = item.petId; row["expiration"] = item.expiration;
@@ -90,10 +94,10 @@ namespace Server.Bot.Trade
             }
             db.Table("characters").Update(DbStore.Eq("id", (long)cid), new DbRow { ["meso"] = Balance(actor) });
         }
-        void CommitInventories(Session first, List<InventoryEntry> left, int leftBalance, Session second, List<InventoryEntry> right, int rightBalance)
+        void CommitInventories(Session first, List<InventoryEntry> left, long leftBalance, Session second, List<InventoryEntry> right, long rightBalance)
         {
-            var oldLeft = Clone(Inventory(first.actor)); int oldLeftBalance = Balance(first.actor);
-            var oldRight = second == null ? null : Clone(Inventory(second.actor)); int oldRightBalance = second == null ? 0 : Balance(second.actor);
+            var oldLeft = Clone(Inventory(first.actor)); long oldLeftBalance = Balance(first.actor);
+            var oldRight = second == null ? null : Clone(Inventory(second.actor)); long oldRightBalance = second == null ? 0 : Balance(second.actor);
             db.BeginTransaction();
             try
             {
@@ -110,7 +114,7 @@ namespace Server.Bot.Trade
             PublishInventory(first.actor,leftBalance-oldLeftBalance);
             if (second!=null) PublishInventory(second.actor,rightBalance-oldRightBalance);
         }
-        void PublishInventory(BotActor actor,int mesoDelta)
+        void PublishInventory(BotActor actor,long mesoDelta)
         {
             if (actor.IsBot()) return;
             actor.character.tradeRevision++;
@@ -118,10 +122,10 @@ namespace Server.Bot.Trade
             catch (Exception e) { OnError?.Invoke(e); }
         }
         // 商店复用同一背包持久化与UI修订通知；不建立虚假的交易会话。
-        public bool Purchase(BotActor actor, InventoryEntry item, int price)
+        public bool Purchase(BotActor actor, InventoryEntry item, long price)
         {
             if (actor == null || actor.trade != null || price < 0 || Balance(actor) < price) return false;
-            var before = Clone(Inventory(actor)); var after = Clone(before); int balance = Balance(actor);
+            var before = Clone(Inventory(actor)); var after = Clone(before); long balance = Balance(actor);
             if (!rules.Receive(actor, after, item)) return false;
             db.BeginTransaction();
             try
@@ -143,7 +147,7 @@ namespace Server.Bot.Trade
             bool ended;
             public BotActor actor { get; }
             public IBotTradeSession partner => other;
-            public int meso { get; private set; }
+            public long meso { get; private set; }
             public bool locked { get; private set; }
             public bool FullTrade { get; private set; }
             public bool IsIncoming { get; internal set; }
@@ -183,14 +187,14 @@ namespace Server.Bot.Trade
                 catch { items.RemoveAt(items.Count - 1); throw; }
                 return true;
             }
-            public void SetMeso(int amount)
+            public void SetMeso(long amount)
             {
                 if (locked) throw new InvalidOperationException("Trade is locked");
                 if (ended || amount < 0 || Balance(actor) < amount) return;
                 service.CommitInventories(this, Clone(Inventory(actor)), Balance(actor) - amount, null, null, 0);
                 meso = unchecked(meso + amount);
             }
-            public void SetMesoBot(int amount) { if (actor.IsBot() && !ended && !locked && amount >= 0) meso = amount; }
+            public void SetMesoBot(long amount) { if (actor.IsBot() && !ended && !locked && amount >= 0) meso = amount; }
             public void Chat(string text) { if (!ended) service.ChatOutput?.Invoke(actor, text); }
             public void Accept()
             {
@@ -209,9 +213,9 @@ namespace Server.Bot.Trade
             }
             void Complete()
             {
-                long leftMeso = (long)Balance(actor) + other.meso - Fee(other.meso);
-                long rightMeso = (long)Balance(other.actor) + meso - Fee(meso);
-                if (leftMeso < 0 || leftMeso > int.MaxValue || rightMeso < 0 || rightMeso > int.MaxValue)
+                long leftMeso = Balance(actor) + other.meso - Fee(other.meso);
+                long rightMeso = Balance(other.actor) + meso - Fee(meso);
+                if (leftMeso < 0 || rightMeso < 0)
                 { Cancel(TradeResult.UNSUCCESSFUL); return; }
                 var left = Clone(Inventory(actor)); var right = Clone(Inventory(other.actor));
                 if (!BuildIncoming(this, left, other.items) || !BuildIncoming(other, right, items)) return;
@@ -220,10 +224,10 @@ namespace Server.Bot.Trade
                 // 原端先local再else-if partner，只有选中的一方累计。
                 Session limited = maxLevel != -1 && actor.level <= maxLevel ? this
                     : maxLevel != -1 && other.actor.level <= maxLevel ? other : null;
-                int received = limited == this ? other.meso : meso;
-                if (limited != null && maxMeso != -1 && (long)limited.actor.mesosTraded + received > maxMeso)
+                long received = limited == this ? other.meso : meso;
+                if (limited != null && maxMeso != -1 && limited.actor.mesosTraded + received > maxMeso)
                 { limited.Cancel(TradeResult.NO_RESPONSE); return; }
-                try { service.CommitInventories(this, left, (int)leftMeso, other, right, (int)rightMeso); }
+                try { service.CommitInventories(this, left, leftMeso, other, right, rightMeso); }
                 catch (Exception e) { service.OnError?.Invoke(e); Cancel(TradeResult.UNSUCCESSFUL); return; }
                 if (limited != null) limited.actor.mesosTraded += received;
                 meso = 0; other.meso = 0; items.Clear(); other.items.Clear();

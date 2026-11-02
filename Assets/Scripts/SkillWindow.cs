@@ -32,7 +32,7 @@ public static class SkillWindow
     const int SpUpX = 131, SpUpY = 20, SpUpSize = 12;
 
     // 列表右侧滚动条（Basic.img/VScr4，15 宽）
-    const int ScrollX = 153, ScrollW = 15, ScrollTop = 99, ScrollBottom = 254;
+    const int ScrollX = 153, ScrollW = 15, ScrollArrowH = 13, ScrollTop = 99, ScrollBottom = 254;
 
     // 底栏：白色数字框 (57,265)-(115,282)，右侧是「宏指令」按钮
     const int FooterX = 58, FooterY = 265, FooterW = 52, FooterH = 17;
@@ -86,8 +86,31 @@ public static class SkillWindow
         }
     }
 
-    static Dictionary<string, object> Line => SkillBook.LineFor(Profile.cls);
-    static List<Dictionary<string, object>> Tabs => SkillBook.Tabs(Line);
+    static Dictionary<string, object> Line => SkillBook.TreeForJob(Profile.JobId);
+    static List<Dictionary<string, object>> Tabs
+    {
+        get
+        {
+            var tabs = SkillBook.Tabs(Line);
+            Dictionary<string, object> fifth = null;
+            for (int i = 0; i < tabs.Count; i++)
+            {
+                if (!(tabs[i]["skills"] is List<object> skills)) continue;
+                var regular = new List<object>();
+                var advanced = new List<object>();
+                foreach (var raw in skills)
+                    (ExplorerAdvancedSkills.IsAdvanced(int.Parse(raw.ToString())) ? advanced : regular).Add(raw);
+                if (advanced.Count == 0) continue;
+                var source = tabs[i];
+                tabs[i] = new Dictionary<string, object>(source) { ["skills"] = regular };
+                if (Art.Int(source, "job") == Profile.JobId && ExplorerAdvancedSkills.Unlocked)
+                    fifth = new Dictionary<string, object>(source) {
+                        ["name"] = "五转", ["book"] = "五转技能（含六转）", ["skills"] = advanced };
+            }
+            if (fifth != null) tabs.Add(fifth);
+            return tabs;
+        }
+    }
 
     static List<int> TabSkills()
     {
@@ -100,7 +123,14 @@ public static class SkillWindow
         tab = Mathf.Clamp(tab, 0, tabs.Count - 1);
         var list = new List<int>();
         if (tabs[tab].TryGetValue("skills", out var raw))
-            foreach (var o in (List<object>)raw) list.Add(int.Parse(o.ToString()));
+            foreach (var o in (List<object>)raw)
+            {
+                int id = int.Parse(o.ToString());
+                if (ExplorerAdvancedSkills.Visible(id)) list.Add(id);
+            }
+        // Character.equippedItem grants Frenzy outside the fixed beginner display list.
+        if (Art.Int(tabs[tab], "job") == 0 && SkillProgress.LevelOf(1016) > 0 && !list.Contains(1016))
+            list.Add(1016);
         return list;
     }
 
@@ -129,6 +159,7 @@ public static class SkillWindow
         HandleWindowDrag(win);
         // All input and both attached panels must use this frame's drag position.
         win.position = pos * S;
+        NativeUi.RegisterWindow("SkillWindow", macroVisible ? Rect.MinMaxRect(win.x, win.y, MacroRect.xMax, win.yMax) : win, () => SkillWindow.Visible);
 
         var tabs = Tabs;
         var list = TabSkills();
@@ -163,7 +194,6 @@ public static class SkillWindow
         DrawFooter(win);
         DrawTooltip(win, list, hover);
         DrawTip();
-        DrawDragGhost();
     }
 
     // —— 窗口拖动 ——
@@ -194,14 +224,15 @@ public static class SkillWindow
     }
 
     // 原端 CCtrlTab：x=3、y=23、单页宽34；页签连续排列，保留六阶页签空间。
-    static float TabLeft(int i, int n) => TabX + i * Mathf.Min(TabW, 168f / Mathf.Max(1, n));
+    static float TabWidth(int n) => Mathf.Min(TabW, 168f / Mathf.Max(1, n));
+    static float TabLeft(int i, int n) => TabX + i * TabWidth(n);
 
     static void HandleTabInput(Rect win, List<Dictionary<string, object>> tabs)
     {
         if (Event.current.type != EventType.Repaint || !Pointer.Pressed) return;
         for (int i = 0; i < tabs.Count && i < 6; i++)
         {
-            var hit = At(win, TabLeft(i, tabs.Count), TabY, TabW, TabH);
+            var hit = At(win, TabLeft(i, tabs.Count), TabY, TabWidth(tabs.Count), TabH);
             if (!hit.Contains(Pointer.Pos)) continue;
             if (tab != i)
             {
@@ -237,8 +268,22 @@ public static class SkillWindow
         for (int i = 0; i < tabs.Count && i < 6; i++)
         {
             bool on = i == tab;
-            var plate = At(win, TabLeft(i, tabs.Count), TabY, TabW, TabH);
+            var plate = At(win, TabLeft(i, tabs.Count), TabY, TabWidth(tabs.Count), TabH);
             DrawTabPlate(plate, on);
+
+            // 用户授权：原IMG的细黑V改为与其他页签匹配的白色描边文字；底板仍用Tab2。
+            if (i == 5 && (string)tabs[i]["name"] == "五转")
+            {
+                var label = new Rect(plate.x, plate.y + TabGlyphY * S, plate.width, 12f * S);
+                var style = Style(12, Color.black, TextAnchor.MiddleCenter);
+                style.fontStyle = FontStyle.Bold;
+                if (on)
+                    foreach (var offset in new[] { Vector2.left, Vector2.right, Vector2.up, Vector2.down })
+                        GUI.Label(new Rect(label.position + offset * S, label.size), "V", style);
+                style.normal.textColor = Color.white;
+                GUI.Label(label, "V", style);
+                continue;
+            }
 
             var glyph = Wz("UI/UIWindow.img/Skill/Tab/" + (on ? "enabled" : "disabled") + "/" + i);
             if (glyph == null) continue;
@@ -271,6 +316,7 @@ public static class SkillWindow
     // —— 列表 ——
     static int RowAt(Rect win, List<int> list)
     {
+        if (At(win, ScrollX, ScrollTop, ScrollW, ScrollBottom - ScrollTop).Contains(Pointer.Pos)) return -1;
         for (int i = 0; i < Rows; i++)
         {
             int index = scroll + i;
@@ -308,6 +354,7 @@ public static class SkillWindow
     static void HandleRows(Rect win, List<int> list)
     {
         if (Event.current.type != EventType.Repaint) return;
+        if (At(win, ScrollX, ScrollTop, ScrollW, ScrollBottom - ScrollTop).Contains(Pointer.Pos)) return;
 
         // 双击 = 直接施放（原版技能窗里双击技能就是这么用的）。
         // 必须放在单击处理之前：双击的第二下也会产生 Pressed，先判 DoubleClicked
@@ -605,16 +652,17 @@ public static class SkillWindow
     static bool scrollDrag;
     static float scrollDragGrab;
 
-    static Rect ScrollPrevRect(Rect win) => At(win, ScrollX, ScrollTop, ScrollW, ScrollW);
-    static Rect ScrollNextRect(Rect win) => At(win, ScrollX, ScrollBottom - ScrollW, ScrollW, ScrollW);
+    static Rect ScrollPrevRect(Rect win) => At(win, ScrollX, ScrollTop, ScrollW, ScrollArrowH);
+    static Rect ScrollNextRect(Rect win) => At(win, ScrollX, ScrollBottom - ScrollArrowH, ScrollW, ScrollArrowH);
     static Rect ScrollTrackRect(Rect win)
-        => At(win, ScrollX, ScrollTop + ScrollW, ScrollW, Mathf.Max(0f, ScrollBottom - ScrollTop - ScrollW * 2));
+        => At(win, ScrollX, ScrollTop + ScrollArrowH, ScrollW, Mathf.Max(0f, ScrollBottom - ScrollTop - ScrollArrowH * 2));
 
     static Rect ScrollThumbRect(Rect win, List<int> list)
     {
         var track = ScrollTrackRect(win);
         if (list.Count <= Rows) return track;
-        float h = Mathf.Max(24f * S, track.height * (float)Rows / list.Count);
+        var thumb = Wz("UI/Basic.img/VScr4/enabled/thumb0");
+        float h = Mathf.Min(track.height, (thumb != null ? thumb.height : ScrollW) * S);
         float maxScroll = Mathf.Max(1, list.Count - Rows);
         float t = Mathf.Clamp01((float)scroll / maxScroll);
         return new Rect(track.x, track.y + (track.height - h) * t, track.width, h);
@@ -627,13 +675,15 @@ public static class SkillWindow
 
         if (Event.current.type == EventType.Repaint && Pointer.Pressed)
         {
-            if (ScrollPrevRect(win).Contains(Pointer.Pos)) { scroll = Mathf.Max(0, scroll - 1); return; }
-            if (ScrollNextRect(win).Contains(Pointer.Pos)) { scroll = Mathf.Min(max, scroll + 1); return; }
+            if (ScrollPrevRect(win).Contains(Pointer.Pos)) { scroll = Mathf.Max(0, scroll - 1); Pointer.ConsumeClick(); Pointer.Pressed = false; return; }
+            if (ScrollNextRect(win).Contains(Pointer.Pos)) { scroll = Mathf.Min(max, scroll + 1); Pointer.ConsumeClick(); Pointer.Pressed = false; return; }
             var thumb = ScrollThumbRect(win, list);
             if (thumb.Contains(Pointer.Pos))
             {
                 scrollDrag = true;
                 scrollDragGrab = Pointer.Pos.y - thumb.y;
+                Pointer.ConsumeClick();
+                Pointer.Pressed = false;
                 return;
             }
         }
@@ -935,7 +985,7 @@ public static class SkillWindow
 
         var tabs = Tabs;
         if (tabs.Count == 0) return 0;
-        int job = Art.Int(tabs[0], "job", 0);
+        int job = Profile.JobId;
         int root = job / 100 * 100;
         if (!recommend.TryGetValue(root.ToString(), out var node)) return 0;
         var table = node as Dictionary<string, object>;
@@ -996,7 +1046,7 @@ public static class SkillWindow
         return placed;
     }
 
-    static void DrawDragGhost()
+    public static void DrawDragGhost()
     {
         if (!Dragging) return;
         var d = SkillBook.Get(dragId);

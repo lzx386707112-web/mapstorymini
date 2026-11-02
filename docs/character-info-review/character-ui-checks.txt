@@ -1,0 +1,1 @@
+[NativeCharacterInfoSceneChecks] PASS 11 rendered panels, pet/mount/book expand, medal scroll, search occlusion and original close-button hits; no transactions

@@ -114,3 +114,8 @@ oracle 依赖 pefile/unicorn（本机 `/tmp/mapledash-reverse-venv/bin/python`�
 EnemyUnit.ApplyHit 在 fieldMode 下不再叠 Fx.Flash 或 Fx.Burst；后者使用 FxTex.Glow 在运行时生成64×64柔光，并非源IMG。不改变原怪物 hit 动画或技能自身 hit 部件。仅清理已定位的自制反馈，不代表原端普攻武器命中特效已还原；武器命中资源选择、坐标与触发时序仍待核实，不得据此断言原端没有命中特效。
 
 验证：git diff --check通过；未运行Unity或Android实机。怪物受攻击击退的既有近似仍保留，未据本次清理宣称对齐。
+
+
+## 2026-10-31 七项反馈补核
+
+79286E物理回避/MISS与击退分支，3600组x86对照及未迁移魔法/被动边界：见 [七项玩法补核](seven-gameplay-feedback-2026-10-31.md)。该记录区分原端结论、本次修复与尚未验证边界。

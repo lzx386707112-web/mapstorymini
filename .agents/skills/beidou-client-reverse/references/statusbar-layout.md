@@ -361,3 +361,29 @@ Desc 为「更改游戏设置和察看游戏情况」。其余项的 Title（物
 列表框画在 `t` 片里，行底图 `channel0/1/2`（68×20，普通/灰选中/蓝选中）、
 `ch/0..9`（20×10 的「CH.N」）。本机只有一个频道，所以只画当前一行 + 蓝选中底，
 `BtChange` 恒 `disabled`（该皮肤自带灰色「变更频道」字样，不需要另外写文字）。
+
+
+### 2026-10-31 Enter 打开聊天同帧冲突（移植修复）
+
+未改原端布局/IMG，也未产生新的 EXE 地址结论。移植的 InputBridge.Update 可先经 NativeKeyActions.Execute(Chat) 调 FocusChat；随后 BottomBar.DrawChat 的同一个 Return KeyDown 又执行发送/关闭，表现为 Enter 打不开。FocusChat 记录 Time.frameCount；只有在后续帧 Enter 才允许发送/关闭，并兼容 KeypadEnter。物理 Enter 未经动作分派时仍由原 OnGUI 入口打开。此变更为输入消费修复，尚未执行 Android 实机验收。
+
+### 2026-10-31 APK Enter 仍失效的纠正
+
+上节仅用 frameCount 避免同帧开关，不足以修复 Android 屏幕 Enter：VirtualControls.SendButton
+产生的虚拟按键边沿可能在 OnGUI 前被 InputHub.EndFrame 清掉；DrawPlate 的资源早退也会跳过聊天绘制。
+现 VirtualControls.SendButton 对有效聊天场景直接 QueueChatEnter，InputBridge.Update 对物理
+Return/KeypadEnter 同样排队；DrawChat 消费一次，打开或发送关闭。DrawChat 从 DrawPlate 移到
+BottomBar.Draw 的独立调用，避免底板资源早退。NPC/模态输入不排队、不吞其原 Enter。
+这是移动端输入生命周期修复，没有新增原端 UI 布局/IMG 推断。
+NativePetSceneChecks 通过真实 SendButton → EndFrame → OnGUI 验证打开、松手保持、再次发送关闭；
+编辑器通过不能代替 Android 输入法/实体键盘实机验收。
+
+### 2026-10-31 Enter能打开后发送文本仍丢失
+
+仅焦点开/关的旧回归未断言实际回显。本次补查Android键盘最终文本应在消费待处理Enter前读取，
+Done同帧Enter要合并为一次发送；见chat-and-system-messages.md同日条目。此处不改变底栏布局。
+
+
+## 2026-10-31 七项反馈补核
+
+8D850B低血下降单次130ms×5警告，纠正周期低血闪烁：见 [七项玩法补核](seven-gameplay-feedback-2026-10-31.md)。该记录区分原端结论、本次修复与尚未验证边界。

@@ -26,6 +26,56 @@ public static class NativePetItems
         var pets=ActivePets(db,cid);
         return slot>=0 && slot<pets.Count ? pets[slot] : null;
     }
+    // PetExcludeItemsHandler: only the owner's active pet; replace the full nonnegative set.
+    public static InventoryChangeResponse Exclusions(DbStore db, InventoryChangeRequest request)
+    {
+        var active = ActivePets(db, request.characterId);
+        if (!active.Exists(p => p.petId == request.petId))
+            return new InventoryChangeResponse { ok = false, error = "宠物未召唤或不属于当前角色" };
+        var table = db.Table("petignores");
+        if (request.writePetExclusions)
+        {
+            if (request.petExclusions == null || request.petExclusions.Length > byte.MaxValue || Array.Exists(request.petExclusions, id => id < 0))
+                return new InventoryChangeResponse { ok = false, error = "无效宠物拾取过滤列表" };
+            var wanted = new HashSet<int>(request.petExclusions);
+            table.Delete(row => DbStore.Int(row, "petid") == request.petId && !wanted.Contains(DbStore.Int(row, "itemid")));
+            foreach (var row in table.Select(row => DbStore.Int(row, "petid") == request.petId)) wanted.Remove(DbStore.Int(row, "itemid"));
+            foreach (int id in wanted) table.Insert(new DbRow { ["petid"] = (long)request.petId, ["itemid"] = (long)id });
+            db.Save();
+        }
+        var result = new InventoryChangeResponse { petExclusions = new List<int>() };
+        foreach (var row in table.Select(row => DbStore.Int(row, "petid") == request.petId)) result.petExclusions.Add(DbStore.Int(row, "itemid"));
+        return result;
+    }
+    public static bool ExcludesPickup(DbStore db, int cid, int itemId)
+    {
+        if (!CharService.Load(db,cid).inventory.Exists(item => item.inventoryType == -1 && item.itemId == 1812007)) return false;
+        var active = ActivePets(db, cid);
+        return db.Table("petignores").Find(row => DbStore.Int(row, "itemid") == (itemId == 0 ? int.MaxValue : itemId) &&
+            active.Exists(p => p.petId == DbStore.Int(row, "petid"))) != null;
+    }
+    public static bool IsEquipment(int id)=>id/10000>=180 && id/10000<=183;
+    public static bool IsPetSlot(int slot)=>slot==-14 || slot<=-21 && slot>=-48 && slot!=-49;
+    // CUIEquipPet / 4F0D83: ordinary clothing and pet ability body parts.
+    public static int EquipmentSlot(int id,int petSlot)
+    {
+        if(petSlot<0 || petSlot>2) return 0;
+        if(id/10000==180) return -new[] {14,30,38}[petSlot];
+        if(id==1822000) return -24;
+        if(id==1832000) return -25;
+        int ability=id-1812000;
+        if(ability<0 || ability>7) return 0;
+        int[,] slots={{23,34,42},{22,33,41},{24,24,24},{25,25,25},
+            {26,35,43},{27,36,44},{28,37,45},{46,47,48}};
+        return -slots[ability,petSlot];
+    }
+    public static bool EquipmentFits(int id,int petId)
+    {
+        rules ??= (Dictionary<string,object>)MiniJsonDb.Parse(PlatformRes.LoadText("PetItemRules"));
+        if(!((Dictionary<string,object>)rules["equips"]).TryGetValue(id.ToString(),out var value)) return false;
+        var allowed=(List<object>)value;
+        return id/10000!=180 || allowed.Exists(x=>Convert.ToInt32(x)==petId);
+    }
     public static InventoryChangeResponse GainTameness(DbStore db,int cid,int increase,bool leaderOnly=false)
     {
         rules ??= (Dictionary<string,object>)MiniJsonDb.Parse(PlatformRes.LoadText("PetItemRules"));
@@ -143,6 +193,7 @@ public static class NativePetItems
         }
         if(changed) db.Save();
         var response=Snapshot(db,cid);
+        response.inventoryChanged=changed;
         if(returned) response.message="您的宠物饿了！给它一些宠物食物以保持它的健康！";
         return response;
     }

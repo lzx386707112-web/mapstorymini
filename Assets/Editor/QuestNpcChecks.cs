@@ -918,7 +918,7 @@ public static class QuestNpcChecks
                 deliveryMenu != null && deliveryMenu.Dialog.Mode == NpcDialogMode.Simple,
                 "截图问候接取后，昨日酣睡必须显示可完成任务提示及混合菜单");
             int welcomeDelivery = NpcField.ChoicesFor(2104).FindIndex(c => c.welcome && c.complete);
-            int beforeWelcomeGold = Profile.gold;
+            long beforeWelcomeGold = Profile.gold;
             deliveryMenu?.Reply(1, welcomeDelivery);
             Check(NpcSession.Active != null && NpcSession.Active.Dialog.Mode == NpcDialogMode.Ok &&
                 NpcSession.Active.Dialog.RawText.Contains("10000") && Profile.LastMapId == 4,
@@ -1325,7 +1325,9 @@ public static class QuestNpcChecks
         var imageLink = DialogText.Parse("#L7##fUI/UIWindow.img/UtilDlgEx/list0##l");
         Check(imageLink.Runs.Count == 2 && imageLink.Runs[0].Link == 7 && imageLink.Runs[1].Link == 7, "#L 内图片必须保留点击索引");
         Check(DialogFlow.ContentWidth(529f) == 341f && DialogFlow.BodyHeight(50f) == 120f &&
-              DialogFlow.BodyHeight(400f) == 240f, "普通对话框必须采用原端测量宽与正文区上下限");
+              DialogFlow.BodyHeight(400f) == 400f && DialogFlow.BodyHeight(700f) == 480f &&
+              !DialogFlow.NeedsScroll(495f) && DialogFlow.NeedsScroll(496f),
+              "普通对话框必须采用ijl15扩展后的480正文上限及原端滚动门槛");
         var icon = DialogText.Parse("#i04000000#");
         Check(icon.Runs.Count == 1 && icon.Runs[0].Kind == DialogRunKind.Icon, "#i 应该产生图标节点");
         Check(!string.IsNullOrEmpty(icon.Runs[0].Art), "#i 的道具图标路径没有解析出来");

@@ -8,6 +8,21 @@ using UnityEngine;
 // Personal 允许改的是：背景色、背景图、自定义 logo、动画模式、Draw Mode；
 // 限制是 Unity logo 必须留、Overlay Opacity 最低 0.5。
 //
+// 想彻底去掉只有两条路：Unity 6（6000.0+，Personal 也能关）或 Pro/Enterprise 许可证。
+// 2026-10-30 试过升级 Unity 6，本机走不通：download.unity3d.com 按出口 IP 302 到
+// download.unitychina.cn，中国 CDN 上 6000.x 全部 NoSuchKey（2022.3.62f3c1 能下、6000.3.27f1 404）；
+// 本机 Unity Hub 3.3.7 的 releases.json 里 official 只有 2020.3.49f1c1 / 2021.3.45f2c1 /
+// 2022.3.62f3c1 三个中国定制版，列表里根本没有 Unity 6；Hub 3.3.7 也没有 headless CLI。
+// 要装只能自己从国际网下 pkg：
+//   https://download.unity3d.com/download_unity/672d562a42a7/MacEditorInstallerArm64/Unity-6000.3.27f1.pkg
+// 装完在 Hub 里勾 Android Build Support，再把工程升到 6000.x，之后
+// PlayerSettings.SplashScreen.show = false 即可（本文件 Apply() 里的写法要跟着改）。
+//
+// 现状取舍（ProjectSettings.asset，构建不会打回，因为 Personal 只强制 logo 显示）：
+//   - m_SplashScreenAnimation = 0（Static）：不做 Dolly 推近，画面是静止标题卡；
+//   - blurSplashScreenBackground = 0：纯色背景没有模糊的必要；
+//   - m_ShowUnitySplashScreen / m_ShowUnitySplashLogo 保持 1，别手改 0，改了也会被构建打回。
+//
 // 这里做成"游戏自己的标题卡"：
 //   - 背景用纯色 .055/.07/.09（= WzAndroidLoader 里 bootCam 的底色），
 //     Android 12+ 的系统启动窗也吃这个色，点图标到出图之间不会白闪；

@@ -1,0 +1,1657 @@
+Unity Editor version:    2022.3.62f3c1 (1623fc0bbb97)
+Branch:                  2022.3/china_unity/release
+Build type:              Release
+Batch mode:              YES
+macOS version:           Version 26.5.1 (Build 25F80)
+Darwin version:          25.5.0
+Architecture:            x86_64
+Running under Rosetta:   YES
+Available memory:        16384 MB
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-lizixian" at "2026-11-01T04:08:57.771047Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 27257, path: "/Applications/Unity/Unity.app/Contents/Frameworks/UnityLicensingClient.app/Contents/MacOS/Unity.Licensing.Client")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.16.2+bdef8f5
+  Session Id:              4310776c513844e5bc66546abac9475a
+  Correlation Id:          3b94f86680639c7d844aace8b4df52cd
+  External correlation Id: 5012829733972225892
+  Machine Id:              0iZ0kpWja62cZEg/y+bW0rsQ2uY=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-lizixian" (connect: 0.00s, validation: 0.01s, handshake: 0.35s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-lizixian-notifications" at "2026-11-01T04:08:58.134781Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully updated license
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Serial number assigned to: "F4-33J6-Q4Y3-2FBJ-V3FU-XXXX"
+Pro License: NO
+[Licensing::Client] Successfully resolved entitlement details
+Launching external process: /Applications/Unity/Unity.app/Contents/Resources/PackageManager/Server/UnityPackageManager
+
+COMMAND LINE ARGUMENTS:
+/Applications/Unity/Unity.app/Contents/MacOS/Unity
+-batchmode
+-nographics
+-quit
+-projectPath
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash
+-executeMethod
+QuestNpcChecks.Run
+-logFile
+/tmp/mxd-four-feedback-quest-20261101.log
+Successfully changed project path to: /Users/lizixian/Documents/mxd/mxd-android/MapleDash
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [8751087168]  Target information:
+
+Player connection [8751087168]  * "[IP] 10.90.194.21 [Port] 55504 [Flags] 2 [Guid] 872064836 [EditorId] 872064836 [Version] 1048832 [Id] OSXEditor(0,lizixiandeMacBook-Pro.local) [Debug] 1 [PackageName] OSXEditor [ProjectName] Editor" 
+
+Player connection [8751087168] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [8751087168] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[PhysX] Initialized MultithreadedTaskDispatcher with 8 workers.
+[Package Manager] UpmClient::Connect -- Connected to IPC stream "Upm-84433" after 0.4 seconds.
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 15 packages:
+  Built-in packages:
+    com.unity.modules.androidjni@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.androidjni@1.0.0)
+    com.unity.modules.animation@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.animation@1.0.0)
+    com.unity.modules.audio@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.audio@1.0.0)
+    com.unity.modules.imageconversion@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.imageconversion@1.0.0)
+    com.unity.modules.imgui@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.imgui@1.0.0)
+    com.unity.modules.jsonserialize@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.jsonserialize@1.0.0)
+    com.unity.modules.particlesystem@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.particlesystem@1.0.0)
+    com.unity.modules.physics2d@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.physics2d@1.0.0)
+    com.unity.modules.ui@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.ui@1.0.0)
+    com.unity.modules.uielements@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.uielements@1.0.0)
+    com.unity.modules.unitywebrequest@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.unitywebrequest@1.0.0)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.unitywebrequestaudio@1.0.0)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.unitywebrequestwww@1.0.0)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.unitywebrequestassetbundle@1.0.0)
+    com.unity.modules.assetbundle@1.0.0 (location: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Library/PackageCache/com.unity.modules.assetbundle@1.0.0)
+[Subsystems] No new subsystems found in resolved package list.
+Package Manager log level set to [2]
+[Package Manager] Done registering packages in 0.16 seconds
+[Licensing::Client] Successfully resolved entitlement details
+Refreshing native plugins compatible for Editor in 0.27 ms, found 1 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 2022.3.62f3c1 (1623fc0bbb97)
+[Subsystems] Discovering subsystems at path /Applications/Unity/Unity.app/Contents/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path /Users/lizixian/Documents/mxd/mxd-android/MapleDash/Assets
+Forcing GfxDevice: Null
+GfxDevice: creating device client; threaded=0; jobified=0
+NullGfxDevice:
+    Version:  NULL 1.0 [1.0]
+    Renderer: Null Device
+    Vendor:   Unity Technologies
+[Licensing::Client] Successfully resolved entitlement details
+Initialize mono
+Mono path[0] = '/Applications/Unity/Unity.app/Contents/Managed'
+Mono path[1] = '/Applications/Unity/Unity.app/Contents/MonoBleedingEdge/lib/mono/unityjit-macos'
+Mono config path = '/Applications/Unity/Unity.app/Contents/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56433
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: /Applications/Unity/Unity.app/Contents/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: /Applications/Unity/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+Register platform support module: /Applications/Unity/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll
+Registered in 0.001775 seconds.
+- Loaded All Assemblies, in  0.626 seconds
+Native extension for Android target not found
+Android Extension - Scanning For ADB Devices 263 ms
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  1.484 seconds
+Domain Reload Profiling: 2112ms
+	BeginReloadAssembly (219ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (3ms)
+	RebuildCommonClasses (44ms)
+	RebuildNativeTypeToScriptingClass (12ms)
+	initialDomainReloadingComplete (154ms)
+	LoadAllAssembliesAndSetupDomain (197ms)
+		LoadAssemblies (217ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (193ms)
+			TypeCache.Refresh (190ms)
+				TypeCache.ScanAssembly (176ms)
+			ScanForSourceGeneratedMonoScriptInfo (0ms)
+			ResolveRequiredComponents (2ms)
+	FinalizeReload (1486ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (1372ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (631ms)
+			SetLoadedEditorAssemblies (12ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (12ms)
+			ProcessInitializeOnLoadAttributes (506ms)
+			ProcessInitializeOnLoadMethodAttributes (211ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (1ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://unix:/tmp/ilpp.sock-e75d72e93a238a8d2102b5a2604abb0e
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Content root path: /Users/lizixian/Documents/mxd/mxd-android/MapleDash/
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc -
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+[40m[32minfo[39m[22m[49m: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc - - 200 - application/grpc 175.3145ms
+Starting: /Applications/Unity/Unity.app/Contents/bee_backend --ipc --defer-dag-verification --dagfile="Library/Bee/1300b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: /Users/lizixian/Documents/mxd/mxd-android/MapleDash
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 0s328ms
+*** Tundra build success (0.23 seconds), 0 items updated, 109 evaluated
+Total cache size 0
+Total cache size after purge 0
+AssetDatabase: script compilation time: 2.323717s
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  0.551 seconds
+Refreshing native plugins compatible for Editor in 0.25 ms, found 1 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Refreshing native plugins compatible for Editor in 0.25 ms, found 1 plugins.
+Native extension for Android target not found
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  1.221 seconds
+Domain Reload Profiling: 1775ms
+	BeginReloadAssembly (367ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (46ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (53ms)
+	RebuildCommonClasses (45ms)
+	RebuildNativeTypeToScriptingClass (12ms)
+	initialDomainReloadingComplete (67ms)
+	LoadAllAssembliesAndSetupDomain (60ms)
+		LoadAssemblies (186ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (50ms)
+			TypeCache.Refresh (43ms)
+				TypeCache.ScanAssembly (35ms)
+			ScanForSourceGeneratedMonoScriptInfo (4ms)
+			ResolveRequiredComponents (2ms)
+	FinalizeReload (1223ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (787ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (61ms)
+			SetLoadedEditorAssemblies (13ms)
+			RefreshPlugins (0ms)
+			BeforeProcessingInitializeOnLoad (72ms)
+			ProcessInitializeOnLoadAttributes (535ms)
+			ProcessInitializeOnLoadMethodAttributes (106ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (12ms)
+Asset Pipeline Refresh (id=96aada986e8bb4b07a4ee5e5b0722fd0): Total: 4.461 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=308 ms
+		Asset DB Callback time: managed=38 ms, native=0 ms
+		Scripting: domain reloads=1, domain reload time=1781 ms, compile time=2327 ms, other=5 ms
+		Project Asset Count: scripts=619, non-scripts=189
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 1
+	InvokeBeforeRefreshCallbacks: 0.314ms
+	ApplyChangesToAssetFolders: 0.042ms
+	Scan: 30.235ms
+	OnSourceAssetsModified: 0.006ms
+	GetAllGuidsForCategorization: 0.091ms
+	CategorizeAssets: 7.941ms
+	ImportOutOfDateAssets: 1229.575ms (-1100.328ms without children)
+		CompileScripts: 2327.488ms
+		ReloadNativeAssets: 0.000ms
+		UnloadImportedAssets: 1.911ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.236ms
+		InitializingProgressBar: 0.002ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.000ms
+		OnDemandSchedulerStart: 0.265ms
+	PostProcessAllAssets: 38.223ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.009ms
+	UnloadStreamsBegin: 0.443ms
+	PersistCurrentRevisions: 0.025ms
+	UnloadStreamsEnd: 0.004ms
+	GenerateScriptTypeHashes: 0.003ms
+	Untracked: 3154.175ms
+Application.AssetDatabase Initial Refresh End
+Scanning for USB devices : 0.283ms
+Initializing Unity extensions:
+[Licensing::Client] Successfully resolved entitlement details
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-未来岛
+[PhysX] Initialized MultithreadedTaskDispatcher with 8 workers.
+ProgressiveSceneManager::Cancel()
+Unloading 3 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 22 unused Assets / (371.2 KB). Loaded Objects now: 1033.
+Memory consumption went from 89.5 MB to 89.2 MB.
+Total: 2.815875 ms (FindLiveObjects: 0.066125 ms CreateObjectMapping: 0.013125 ms MarkObjects: 2.524958 ms  DeleteObjects: 0.210750 ms)
+
+[QuestNpcCheck] 脚本包 npc=889 quest=470 解析失败=0
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestNpcChecks:CheckScriptPack () (at Assets/Editor/QuestNpcChecks.cs:1262)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:38)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 1262)
+
+[Quest] Quest.wz 任务 3425 个，涉及 NPC 798 个
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestCatalog:Ensure () (at Assets/Scripts/Quest/QuestCatalog.cs:117)
+QuestNpcChecks:CheckQuestCatalog () (at Assets/Editor/QuestNpcChecks.cs:1270)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:39)
+
+(Filename: Assets/Scripts/Quest/QuestCatalog.cs Line: 117)
+
+[QuestNpcCheck] Quest.wz 任务 3425 个
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestNpcChecks:CheckQuestCatalog () (at Assets/Editor/QuestNpcChecks.cs:1274)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:39)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 1274)
+
+[QuestNpcCheck] 1021 罗杰和苹果 start=q1021s end=q1021e npc=2000 lv>=0
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestNpcChecks:CheckQuestCatalog () (at Assets/Editor/QuestNpcChecks.cs:1283)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:39)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 1283)
+
+[Quest] 接取 900001 透德的打猎法 (NPC 9101002)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Start (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:230)
+NpcApi:StartQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:968)
+NpcApi/<>c__DisplayClass18_0:<Build>b__104 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:327)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckTrainingQuestProgress () (at Assets/Editor/QuestNpcChecks.cs:1506)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:46)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 230)
+
+[Quest] 接取 900002 彼特的打猎法 (NPC 9101003)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Start (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:230)
+NpcApi:StartQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:968)
+NpcApi/<>c__DisplayClass18_0:<Build>b__104 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:327)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckTrainingQuestProgress () (at Assets/Editor/QuestNpcChecks.cs:1506)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:46)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 230)
+
+[Quest] 完成 900001 透德的打猎法 (NPC 9101002)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__105 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:328)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Begin (string,string,string) (at Assets/Scripts/Npc/NpcSession.cs:319)
+NpcSession:Begin (string,string) (at Assets/Scripts/Npc/NpcSession.cs:294)
+NpcSession:TalkQuest (QuestDef,int,bool) (at Assets/Scripts/Npc/NpcSession.cs:205)
+QuestNpcChecks:CheckTrainingQuestProgress () (at Assets/Editor/QuestNpcChecks.cs:1524)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:46)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 完成 900002 彼特的打猎法 (NPC 9101003)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__105 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:328)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Begin (string,string,string) (at Assets/Scripts/Npc/NpcSession.cs:319)
+NpcSession:Begin (string,string) (at Assets/Scripts/Npc/NpcSession.cs:294)
+NpcSession:TalkQuest (QuestDef,int,bool) (at Assets/Scripts/Npc/NpcSession.cs:205)
+QuestNpcChecks:CheckTrainingQuestProgress () (at Assets/Editor/QuestNpcChecks.cs:1531)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:46)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[KeyMap] Left=LeftArrow Right=RightArrow Up=UpArrow Down=DownArrow Menu=Escape Equip=E Inven=I Stat=S Skill=K Buddy=R WorldMap=W Chat=C Minimap=M Quest=Q KeySet=Backslash ChatAll=Alpha1 ChatWhisper=H ChatParty=Alpha2 ChatBuddy=Alpha3 Interface=LeftBracket Shortcut=RightBracket ChatRoom=Quote Family=G ChatFamily=Alpha4 Party=P Messenger=L ChatSpouse=Alpha6 MonsterBook=B Shop=BackQuote ChatAlliance=Alpha5 PartySearch=O School=F Medal=Semicolon Pickup=Z Sit=X Attack=LeftControl Jump=LeftAlt NpcTalk=Space FaceHit=F1 FaceSmile=F2 FaceTroubled=F3 FaceCry=F4 FaceAngry=F5 FaceBewildered=F6 FaceStunned=F7 Slot1=LeftShift 
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+KeyMap:Ensure () (at Assets/Scripts/InputHub.cs:73)
+KeyMap:Of (GameAction) (at Assets/Scripts/InputHub.cs:160)
+QuestNpcChecks:CheckRepeatedTalkPresses () (at Assets/Editor/QuestNpcChecks.cs:431)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:49)
+
+(Filename: Assets/Scripts/InputHub.cs Line: 73)
+
+[BirthTrace] group=0 map=130030000 job=1000 guide=4161047
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestNpcChecks:CheckBirthRoutes () (at Assets/Editor/QuestNpcChecks.cs:872)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:50)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 872)
+
+[BirthTrace] group=1 map=10000 job=0 guide=4161001
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestNpcChecks:CheckBirthRoutes () (at Assets/Editor/QuestNpcChecks.cs:872)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:50)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 872)
+
+[Field] 传送门动画 8 帧
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+FieldPortalArt:Ensure () (at Assets/Scripts/Field/FieldCatalog.cs:495)
+FieldCatalog:Ensure () (at Assets/Scripts/Field/FieldCatalog.cs:271)
+FieldCatalog:GetMap (int) (at Assets/Scripts/Field/FieldCatalog.cs:303)
+QuestNpcChecks:CheckWelcomePersistence (ITransport,FullCharacter,string) (at Assets/Editor/QuestNpcChecks.cs:914)
+QuestNpcChecks:CheckBirthRoutes () (at Assets/Editor/QuestNpcChecks.cs:873)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:50)
+
+(Filename: Assets/Scripts/Field/FieldCatalog.cs Line: 495)
+
+[Field] 原版地图 6336 张，怪物 11 种，掉落表 9 份，物品 126 件
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+FieldCatalog:Ensure () (at Assets/Scripts/Field/FieldCatalog.cs:295)
+FieldCatalog:GetMap (int) (at Assets/Scripts/Field/FieldCatalog.cs:303)
+QuestNpcChecks:CheckWelcomePersistence (ITransport,FullCharacter,string) (at Assets/Editor/QuestNpcChecks.cs:914)
+QuestNpcChecks:CheckBirthRoutes () (at Assets/Editor/QuestNpcChecks.cs:873)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:50)
+
+(Filename: Assets/Scripts/Field/FieldCatalog.cs Line: 295)
+
+[BirthTrace] group=2 map=914000000 job=2000 guide=4161048
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestNpcChecks:CheckBirthRoutes () (at Assets/Editor/QuestNpcChecks.cs:872)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:50)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 872)
+
+[QuestNpcCheck] 失败：源端 quest/2300.js 确认后必须传送到 106020000
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+QuestNpcChecks:Check (bool,string) (at Assets/Editor/QuestNpcChecks.cs:24)
+QuestNpcChecks:CheckNewCharacterMarkers () (at Assets/Editor/QuestNpcChecks.cs:1098)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:51)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 24)
+
+[QuestNpcCheck] 失败：warp 后脚本仍需执行 forceStartQuest
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+QuestNpcChecks:Check (bool,string) (at Assets/Editor/QuestNpcChecks.cs:24)
+QuestNpcChecks:CheckNewCharacterMarkers () (at Assets/Editor/QuestNpcChecks.cs:1100)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:51)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 24)
+
+[Quest] 接取 30001 你好，我是莎丽 (NPC 2100)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Start (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:230)
+NpcApi:StartQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:968)
+NpcApi/<>c__DisplayClass18_0:<Build>b__104 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:327)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckNewCharacterMarkers () (at Assets/Editor/QuestNpcChecks.cs:1144)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:51)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 230)
+
+[Quest] 接取 1021 罗杰和苹果 (NPC 2000)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Start (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:230)
+NpcApi:StartQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:968)
+NpcApi/<>c__DisplayClass18_0:<Build>b__104 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:327)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckRogerApplePresentation () (at Assets/Editor/QuestNpcChecks.cs:132)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:52)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 230)
+
+[QuestNpcCheck] 失败：原始1021脚本结束须实际创建新手引导原IMG动画
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+QuestNpcChecks:Check (bool,string) (at Assets/Editor/QuestNpcChecks.cs:24)
+QuestNpcChecks:CheckRogerApplePresentation () (at Assets/Editor/QuestNpcChecks.cs:136)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:52)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 24)
+
+[Quest] 接取 1032 妮娜弟弟珊 (NPC 2102)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Start (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:230)
+NpcSession/<>c__DisplayClass53_0:<BeginDataQuest>b__1 (int,int) (at Assets/Scripts/Npc/NpcSession.cs:272)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:359)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckNinaCandyChain () (at Assets/Editor/QuestNpcChecks.cs:974)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:54)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 230)
+
+[Quest] 完成 1032 妮娜弟弟珊 (NPC 2001)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcSession/<>c__DisplayClass53_0:<BeginDataQuest>b__1 (int,int) (at Assets/Scripts/Npc/NpcSession.cs:271)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:359)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckNinaCandyChain () (at Assets/Editor/QuestNpcChecks.cs:989)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:54)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 接取 1033 珊想吃的东西 (NPC 2001)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Start (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:230)
+NpcSession/<>c__DisplayClass53_0:<BeginDataQuest>b__1 (int,int) (at Assets/Scripts/Npc/NpcSession.cs:272)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:359)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckNinaCandyChain () (at Assets/Editor/QuestNpcChecks.cs:974)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:54)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 230)
+
+[Quest] 完成 1033 珊想吃的东西 (NPC 2102)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcSession/<>c__DisplayClass53_0:<BeginDataQuest>b__1 (int,int) (at Assets/Scripts/Npc/NpcSession.cs:271)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:359)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckNinaCandyChain () (at Assets/Editor/QuestNpcChecks.cs:989)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:54)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 接取 1034 好吃的蘑菇棒棒糖 (NPC 2102)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Start (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:230)
+NpcSession/<>c__DisplayClass53_0:<BeginDataQuest>b__1 (int,int) (at Assets/Scripts/Npc/NpcSession.cs:272)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:359)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckNinaCandyChain () (at Assets/Editor/QuestNpcChecks.cs:974)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:54)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 230)
+
+[Quest] 补发任务道具 1034 道具 4031792 x6
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:RestoreLostItems (QuestDef) (at Assets/Scripts/Quest/QuestLogic.cs:282)
+NpcSession:BeginDataQuest (QuestDef,int,bool) (at Assets/Scripts/Npc/NpcSession.cs:225)
+NpcSession:TalkQuest (QuestDef,int,bool) (at Assets/Scripts/Npc/NpcSession.cs:200)
+QuestNpcChecks:CheckNinaCandyChain () (at Assets/Editor/QuestNpcChecks.cs:981)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:54)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 282)
+
+[Quest] 完成 1034 好吃的蘑菇棒棒糖 (NPC 2001)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcSession/<>c__DisplayClass53_0:<BeginDataQuest>b__1 (int,int) (at Assets/Scripts/Npc/NpcSession.cs:271)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:359)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckNinaCandyChain () (at Assets/Editor/QuestNpcChecks.cs:989)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:54)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 接取 8142 透德的打猎方法 (NPC 9101002)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Start (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:230)
+QuestNpcChecks:CheckQuestPresentation () (at Assets/Editor/QuestNpcChecks.cs:84)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:55)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 230)
+
+[Quest] 完成 8142 透德的打猎方法 (NPC 9101003)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+QuestNpcChecks:CheckQuestPresentation () (at Assets/Editor/QuestNpcChecks.cs:89)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:55)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[QuestNpcCheck] 失败：交付完成须实际创建QuestClear原IMG动画
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+QuestNpcChecks:Check (bool,string) (at Assets/Editor/QuestNpcChecks.cs:24)
+QuestNpcChecks:CheckQuestPresentation () (at Assets/Editor/QuestNpcChecks.cs:91)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:55)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 24)
+
+[QuestNpcCheck] 全地图扫描 maps=6336 visibleNpcs=5214 questLinkedNpcs=1944 settledNpcs=5129 matchesCy=4615 errors=0
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestNpcChecks:CheckAllMapQuestLinks () (at Assets/Editor/QuestNpcChecks.cs:1228)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:56)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 1228)
+
+[Quest] 完成 2293 最后演奏的歌曲 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__105 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:328)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:639)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 完成 3927 秘密组织的存在 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__105 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:328)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:659)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 接取 20008 骑士之路 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Start (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:230)
+NpcApi:StartQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:968)
+NpcApi/<>c__DisplayClass18_0:<Build>b__104 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:327)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:674)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 230)
+
+[Quest] 完成 20008 骑士之路 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__105 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:328)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:674)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 接取 20020 5条岔路 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Start (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:230)
+NpcApi:StartQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:968)
+NpcApi/<>c__DisplayClass18_0:<Build>b__104 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:327)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:695)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 230)
+
+[Quest] 完成 20020 5条岔路 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__105 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:328)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:695)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 完成 3953 说服莫哈莫德 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__105 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:328)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:735)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 完成 3953 说服莫哈莫德 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__105 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:328)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:742)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 完成 3301 蒙特鸠协会会长的考试 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__105 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:328)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:765)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[NPC slow] npc=0 quest=2001 script=2001 operation=Call function=end elapsedMs=122
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:47)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:777)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Npc/NpcSession.cs Line: 47)
+
+[Quest] 完成 2001 酋长盖房子 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__103 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:326)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:783)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 完成 3414 白外星人之星的历史 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__103 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:326)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:783)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[Quest] 完成 3414 白外星人之星的历史 (NPC 0)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestLogic:Complete (QuestDef,int,bool) (at Assets/Scripts/Quest/QuestLogic.cs:242)
+NpcApi:CompleteQuest (int,int) (at Assets/Scripts/Npc/NpcApi.cs:975)
+NpcApi/<>c__DisplayClass18_0:<Build>b__103 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:326)
+NpcApi/<>c__DisplayClass5_0:<Fn>b__0 (MapleDash.Js.JsCall) (at Assets/Scripts/Npc/NpcApi.cs:16)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:100)
+MapleDash.Js.JsCallExpr:Eval (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:613)
+MapleDash.Js.JsExprStmt:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:161)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:170)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsIf:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:171)
+MapleDash.Js.JsBlock:Exec (MapleDash.Js.JsInterpreter,MapleDash.Js.JsScope) (at Assets/Scripts/Scripting/JsAst.cs:97)
+MapleDash.Js.JsInterpreter:Call (MapleDash.Js.JsValue,MapleDash.Js.JsValue,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsInterpreter.cs:123)
+MapleDash.Js.JsEngine:Call (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Scripting/JsEngine.cs:42)
+NativeScriptService:Handle (ScriptRequest) (at Assets/Scripts/Server/Scripting/NativeScriptService.cs:116)
+NpcSession:Dispatch (ScriptRequest) (at Assets/Scripts/Npc/NpcSession.cs:42)
+NpcSession:CallScript (string,MapleDash.Js.JsValue[]) (at Assets/Scripts/Npc/NpcSession.cs:53)
+NpcSession:Respond (int,int,int) (at Assets/Scripts/Npc/NpcSession.cs:369)
+NpcSession:Reply (int,int) (at Assets/Scripts/Npc/NpcSession.cs:378)
+QuestNpcChecks:CheckQuestOptionScripts () (at Assets/Editor/QuestNpcChecks.cs:783)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:58)
+
+(Filename: Assets/Scripts/Quest/QuestLogic.cs Line: 242)
+
+[QuestNpcCheck] 通过 24472 项，失败 4 项
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Volumes/jenkins1/sharedspace/ra_2022.3/Runtime/Export/Scripting/StackTrace.cs:37)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+QuestNpcChecks:Run () (at Assets/Editor/QuestNpcChecks.cs:60)
+
+(Filename: Assets/Editor/QuestNpcChecks.cs Line: 60)
+
+Killing ADB server in 2.329039 seconds.
+[PhysX] Initialized MultithreadedTaskDispatcher with 8 workers.
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-lizixian-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-lizixian channel disconnected successfully.
+Cleanup mono
+[40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+debugger-agent: Unable to listen on 48
+[Performance] Application.InitializeProject                                                                                  :        1 samples, Peak.  7.54 s (1.0x), Avg.  7.54 s, Total. 7.536 s (18.2%)
+[Performance] Application.PackageManager.StartServer                                                                         :        1 samples, Peak.  1.31 ms (1.0x), Avg.  1.31 ms, Total. 1.310 ms (0.0%)
+[Performance] Application.AcquireProjectLock                                                                                 :        1 samples, Peak.  11.9 ms (1.0x), Avg.  11.9 ms, Total. 11.87 ms (0.0%)
+[Performance] Application.InitializeEngineNoGraphics                                                                         :        1 samples, Peak.  47.2 ms (1.0x), Avg.  47.2 ms, Total. 47.18 ms (0.1%)
+[Performance] Application.PackageManager.Initialize                                                                          :        1 samples, Peak.   390 ms (1.0x), Avg.   390 ms, Total. 390.3 ms (0.9%)
+[Performance] Connecting to Package Manager                                                                                  :       40 samples, Peak.  93.2 us (23.4x), Avg.  3.99 us, Total. 159.5 us (0.0%)
+[Performance] Application.EngineGraphics.Initialize                                                                          :        1 samples, Peak.  35.2 ms (1.0x), Avg.  35.2 ms, Total. 35.19 ms (0.1%)
+[Performance] Application.GI.Initialize                                                                                      :        1 samples, Peak.  1.56 ms (1.0x), Avg.  1.56 ms, Total. 1.560 ms (0.0%)
+[Performance] Application.LoadAllDefaultResourcesFromEditor                                                                  :        1 samples, Peak.  1.69 ms (1.0x), Avg.  1.69 ms, Total. 1.689 ms (0.0%)
+[Performance] Application.LoadMonoAssemblies                                                                                 :        1 samples, Peak.  2.15 s (1.0x), Avg.  2.15 s, Total. 2.146 s (5.2%)
+[Performance] RestoreManagedReferences                                                                                       :        2 samples, Peak.   262 ms (2.0x), Avg.   131 ms, Total. 261.6 ms (0.6%)
+[Performance] InitializeOnLoad DrivenRectTransformUndo                                                                       :        2 samples, Peak.  3.52 ms (1.1x), Avg.  3.22 ms, Total. 6.433 ms (0.0%)
+[Performance] InitializeOnLoad SceneSearch                                                                                   :        2 samples, Peak.   876 us (1.0x), Avg.   839 us, Total. 1.677 ms (0.0%)
+[Performance] InitializeOnLoad CloudBuild                                                                                    :        2 samples, Peak.  42.5 us (1.7x), Avg.  24.6 us, Total. 49.17 us (0.0%)
+[Performance] InitializeOnLoad NativeFormatImporterUtility                                                                   :        2 samples, Peak.  10.2 ms (1.2x), Avg.  8.28 ms, Total. 16.55 ms (0.0%)
+[Performance] InitializeOnLoad SearchService                                                                                 :        2 samples, Peak.   624 us (1.1x), Avg.   571 us, Total. 1.141 ms (0.0%)
+[Performance] InitializeOnLoad SettingsService                                                                               :        2 samples, Peak.  14.7 us (1.1x), Avg.  13.6 us, Total. 27.25 us (0.0%)
+[Performance] InitializeOnLoad WindowLayout                                                                                  :        2 samples, Peak.  1.13 ms (1.0x), Avg.  1.09 ms, Total. 2.188 ms (0.0%)
+[Performance] InitializeOnLoad AssetStoreContext                                                                             :        2 samples, Peak.   126 ms (1.7x), Avg.  73.1 ms, Total. 146.2 ms (0.4%)
+[Performance] InitializeOnLoad PoolManager                                                                                   :        2 samples, Peak.  1.86 ms (1.0x), Avg.  1.84 ms, Total. 3.688 ms (0.0%)
+[Performance] InitializeOnLoad MixerEffectDefinitionReloader                                                                 :        2 samples, Peak.  8.42 ms (1.1x), Avg.  7.55 ms, Total. 15.10 ms (0.0%)
+[Performance] InitializeOnLoad ProjectSearch                                                                                 :        2 samples, Peak.   241 us (1.1x), Avg.   218 us, Total. 435.6 us (0.0%)
+[Performance] InitializeOnLoad UISystemProfilerRenderService                                                                 :        2 samples, Peak.  14.5 us (1.0x), Avg.  14.4 us, Total. 28.79 us (0.0%)
+[Performance] InitializeOnLoad EditMode                                                                                      :        2 samples, Peak.  2.92 ms (1.0x), Avg.  2.80 ms, Total. 5.602 ms (0.0%)
+[Performance] InitializeOnLoad UnityConnect                                                                                  :        2 samples, Peak.   345 us (1.1x), Avg.   308 us, Total. 616.8 us (0.0%)
+[Performance] InitializeOnLoad ManagedDebugger                                                                               :        2 samples, Peak.  6.73 ms (1.1x), Avg.  5.89 ms, Total. 11.77 ms (0.0%)
+[Performance] InitializeOnLoad ShortcutIntegration                                                                           :        2 samples, Peak.   983 us (1.3x), Avg.   735 us, Total. 1.470 ms (0.0%)
+[Performance] InitializeOnLoad AddComponentWindow                                                                            :        2 samples, Peak.   580 us (1.3x), Avg.   453 us, Total. 906.7 us (0.0%)
+[Performance] InitializeOnLoad ManagedDebuggerWindow                                                                         :        2 samples, Peak.   790 us (1.3x), Avg.   611 us, Total. 1.221 ms (0.0%)
+[Performance] InitializeOnLoad CacheServerWindow                                                                             :        2 samples, Peak.  15.7 us (1.0x), Avg.  15.1 us, Total. 30.12 us (0.0%)
+[Performance] InitializeOnLoad PlayModeDownload                                                                              :        2 samples, Peak.  9.43 ms (1.9x), Avg.  5.05 ms, Total. 10.11 ms (0.0%)
+[Performance] InitializeOnLoad MenuItems                                                                                     :        2 samples, Peak.   571 us (1.3x), Avg.   439 us, Total. 877.5 us (0.0%)
+[Performance] InitializeOnLoad PrefabInstanceChangedListener                                                                 :        2 samples, Peak.   854 us (1.1x), Avg.   744 us, Total. 1.487 ms (0.0%)
+[Performance] InitializeOnLoad ObjectSelectorSearch                                                                          :        2 samples, Peak.   227 us (1.4x), Avg.   165 us, Total. 330.1 us (0.0%)
+[Performance] InitializeOnLoad EditorMonitor                                                                                 :        2 samples, Peak.  2.16 ms (1.3x), Avg.  1.72 ms, Total. 3.438 ms (0.0%)
+[Performance] InitializeOnLoad RetainedMode                                                                                  :        2 samples, Peak.  10.4 ms (1.0x), Avg.  10.3 ms, Total. 20.59 ms (0.0%)
+[Performance] InitializeOnLoad EditorShaderLoader                                                                            :        2 samples, Peak.  3.85 ms (1.1x), Avg.  3.35 ms, Total. 6.701 ms (0.0%)
+[Performance] InitializeOnLoad EditorDelegateRegistration                                                                    :        2 samples, Peak.  2.56 ms (1.1x), Avg.  2.28 ms, Total. 4.552 ms (0.0%)
+[Performance] InitializeOnLoad UIDocumentHierarchyWatcher                                                                    :        2 samples, Peak.   427 us (1.1x), Avg.   398 us, Total. 796.0 us (0.0%)
+[Performance] InitializeOnLoad LiveReloadTrackerCreator                                                                      :        2 samples, Peak.   434 us (1.2x), Avg.   376 us, Total. 751.6 us (0.0%)
+[Performance] InitializeOnLoad UxmlObjectEditorFactories                                                                     :        2 samples, Peak.  1.31 ms (1.0x), Avg.  1.28 ms, Total. 2.562 ms (0.0%)
+[Performance] InitializeOnLoad UXMLEditorFactories                                                                           :        2 samples, Peak.   277 ms (1.1x), Avg.   254 ms, Total. 507.3 ms (1.2%)
+[Performance] InitializeOnLoad PurchasingService                                                                             :        2 samples, Peak.  29.4 ms (1.1x), Avg.  27.1 ms, Total. 54.25 ms (0.1%)
+[Performance] InitializeOnLoad CloudBuildPoller                                                                              :        2 samples, Peak.   712 us (1.2x), Avg.   579 us, Total. 1.158 ms (0.0%)
+[Performance] InitializeOnLoad EditorGameServicesAnalytics                                                                   :        2 samples, Peak.  7.58 ms (1.1x), Avg.  6.96 ms, Total. 13.93 ms (0.0%)
+[Performance] InitializeOnLoad AnalyticsService                                                                              :        2 samples, Peak.  1.09 ms (1.1x), Avg.   977 us, Total. 1.953 ms (0.0%)
+[Performance] InitializeOnLoad BuildService                                                                                  :        2 samples, Peak.  1.02 ms (1.0x), Avg.  1.00 ms, Total. 2.004 ms (0.0%)
+[Performance] InitializeOnLoad AdsService                                                                                    :        2 samples, Peak.  1.61 ms (1.1x), Avg.  1.53 ms, Total. 3.057 ms (0.0%)
+[Performance] InitializeOnLoad UDPService                                                                                    :        2 samples, Peak.   694 us (1.1x), Avg.   621 us, Total. 1.243 ms (0.0%)
+[Performance] InitializeOnLoad CrashService                                                                                  :        2 samples, Peak.   571 us (1.0x), Avg.   570 us, Total. 1.139 ms (0.0%)
+[Performance] InitializeOnLoad ServicesRepository                                                                            :        2 samples, Peak.  4.33 us (1.8x), Avg.  2.40 us, Total. 4.793 us (0.0%)
+[Performance] InitializeOnLoad SearchWindow                                                                                  :        2 samples, Peak.   494 us (1.0x), Avg.   493 us, Total. 986.5 us (0.0%)
+[Performance] InitializeOnLoad CustomIndexers                                                                                :        2 samples, Peak.  69.9 ms (1.0x), Avg.  67.7 ms, Total. 135.4 ms (0.3%)
+[Performance] InitializeOnLoad SearchMonitor                                                                                 :        2 samples, Peak.  3.11 ms (1.1x), Avg.  2.80 ms, Total. 5.606 ms (0.0%)
+[Performance] InitializeOnLoad ParameterControllerEditor                                                                     :        2 samples, Peak.  37.3 us (1.4x), Avg.  27.4 us, Total. 54.79 us (0.0%)
+[Performance] InitializeOnLoad LayerSettingsWindow                                                                           :        2 samples, Peak.  26.6 us (1.7x), Avg.  15.5 us, Total. 31.04 us (0.0%)
+[Performance] InitializeOnLoad PackageManagerHookGUIDConverter.RegisterPackagesEventHandler                                  :        2 samples, Peak.  2.76 ms (1.7x), Avg.  1.61 ms, Total. 3.213 ms (0.0%)
+[Performance] InitializeOnLoad EditorDragAndDrop.RegisterEditorClient                                                        :        2 samples, Peak.  1.51 ms (1.3x), Avg.  1.13 ms, Total. 2.260 ms (0.0%)
+[Performance] InitializeOnLoad EditorEventCallbacks.InitializeFontAssetResourceChangeCallBacks                               :        2 samples, Peak.  5.25 ms (1.0x), Avg.  5.16 ms, Total. 10.31 ms (0.0%)
+[Performance] InitializeOnLoad SceneTemplateService.Init                                                                     :        2 samples, Peak.  8.30 ms (1.1x), Avg.  7.80 ms, Total. 15.59 ms (0.0%)
+[Performance] InitializeOnLoad DiagnosticSwitchesConsoleMessage.Init                                                         :        2 samples, Peak.  14.2 ms (1.6x), Avg.  8.82 ms, Total. 17.64 ms (0.0%)
+[Performance] InitializeOnLoad MemoryProfilerCompilationGuard.InjectCompileGuard                                             :        2 samples, Peak.   763 us (1.1x), Avg.   703 us, Total. 1.406 ms (0.0%)
+[Performance] InitializeOnLoad EditorWindow.Initialize                                                                       :        2 samples, Peak.  2.54 ms (1.1x), Avg.  2.31 ms, Total. 4.630 ms (0.0%)
+[Performance] InitializeOnLoad AssetPostprocessingInternal.RefreshCustomDependencies                                         :        2 samples, Peak.  15.5 ms (1.0x), Avg.  14.9 ms, Total. 29.75 ms (0.1%)
+[Performance] InitializeOnLoad SysrootManager.Initialize                                                                     :        2 samples, Peak.   110 us (1.1x), Avg.   104 us, Total. 208.3 us (0.0%)
+[Performance] InitializeOnLoad PackageManagerWindow.EditorInitializedInSafeMode                                              :        2 samples, Peak.   141 ms (2.0x), Avg.  70.9 ms, Total. 141.7 ms (0.3%)
+[Performance] InitializeOnLoad ToolShortcutContext.Init                                                                      :        2 samples, Peak.  1.08 ms (1.2x), Avg.   866 us, Total. 1.733 ms (0.0%)
+[Performance] InitializeOnLoad SceneVisibilityManager.Initialize                                                             :        2 samples, Peak.  14.4 ms (1.5x), Avg.  9.39 ms, Total. 18.78 ms (0.0%)
+[Performance] InitializeOnLoad ScopedRegistryAddedPopup.SubscribeToRegistriesAdded                                           :        2 samples, Peak.  47.7 ms (2.0x), Avg.  24.1 ms, Total. 48.13 ms (0.1%)
+[Performance] AssemblyReloadEvents.afterAssemblyReload: UnityEditor.SceneTemplate.SceneTemplateService.AfterAssemblyReload   :        2 samples, Peak.  9.92 ms (1.7x), Avg.  5.72 ms, Total. 11.43 ms (0.0%)
+[Performance] ProcessService.EditorAfterLoadAllAssemblies                                                                    :        2 samples, Peak.  1.38 ms (1.1x), Avg.  1.27 ms, Total. 2.533 ms (0.0%)
+[Performance] Application.ReadLicenseInfo                                                                                    :        1 samples, Peak.  24.1 ms (1.0x), Avg.  24.1 ms, Total. 24.10 ms (0.1%)
+[Performance] Application.InitialRefresh                                                                                     :        1 samples, Peak.  4.46 s (1.0x), Avg.  4.46 s, Total. 4.463 s (10.8%)
+[Performance] Compiling Scripts                                                                                              :        1 samples, Peak.  2.32 s (1.0x), Avg.  2.32 s, Total. 2.324 s (5.6%)
+[Performance] AssemblyReloadEvents.beforeAssemblyReload: UnityEditor.SceneTemplate.SceneTemplateService.BeforeAssemblyReload :        1 samples, Peak.  2.32 ms (1.0x), Avg.  2.32 ms, Total. 2.318 ms (0.0%)
+[Performance] InitializeOnLoad ExpressionChecks                                                                              :        1 samples, Peak.  4.38 ms (1.0x), Avg.  4.38 ms, Total. 4.378 ms (0.0%)
+[Performance] InitializeOnLoad GameplayPlayChecks                                                                            :        1 samples, Peak.  1.26 ms (1.0x), Avg.  1.26 ms, Total. 1.261 ms (0.0%)
+[Performance] InitializeOnLoad NativeCashSceneChecks.Hook                                                                    :        1 samples, Peak.  3.73 ms (1.0x), Avg.  3.73 ms, Total. 3.726 ms (0.0%)
+[Performance] InitializeOnLoad NativeSkillNodeChecks.Hook                                                                    :        1 samples, Peak.  1.29 ms (1.0x), Avg.  1.29 ms, Total. 1.294 ms (0.0%)
+[Performance] InitializeOnLoad PreviewShot.Hook                                                                              :        1 samples, Peak.  1.46 ms (1.0x), Avg.  1.46 ms, Total. 1.458 ms (0.0%)
+[Performance] InitializeOnLoad PartyShot.Hook                                                                                :        1 samples, Peak.   524 us (1.0x), Avg.   524 us, Total. 524.1 us (0.0%)
+[Performance] InitializeOnLoad HairShot.Hook                                                                                 :        1 samples, Peak.   627 us (1.0x), Avg.   627 us, Total. 627.2 us (0.0%)
+[Performance] InitializeOnLoad PlaySmokeTest.Hook                                                                            :        1 samples, Peak.   876 us (1.0x), Avg.   876 us, Total. 876.0 us (0.0%)
+[Performance] InitializeOnLoad TooltipPreview.Hook                                                                           :        1 samples, Peak.   263 us (1.0x), Avg.   263 us, Total. 263.2 us (0.0%)
+[Performance] InitializeOnLoad PanelRestorationChecks.Hook                                                                   :        1 samples, Peak.   195 us (1.0x), Avg.   195 us, Total. 194.9 us (0.0%)
+[Performance] InitializeOnLoad LoginUiReview.Hook                                                                            :        1 samples, Peak.   141 us (1.0x), Avg.   141 us, Total. 140.5 us (0.0%)
+[Performance] InitializeOnLoad NativeBuffRenderChecks.Hook                                                                   :        1 samples, Peak.   733 us (1.0x), Avg.   733 us, Total. 733.0 us (0.0%)
+[Performance] InitializeOnLoad CursorLobbyChecks.Hook                                                                        :        1 samples, Peak.   685 us (1.0x), Avg.   685 us, Total. 684.7 us (0.0%)
+[Performance] InitializeOnLoad NativeViewportChecks.Hook                                                                     :        1 samples, Peak.   632 us (1.0x), Avg.   632 us, Total. 632.2 us (0.0%)
+[Performance] InitializeOnLoad NativeUiReview.Hook                                                                           :        1 samples, Peak.   594 us (1.0x), Avg.   594 us, Total. 593.7 us (0.0%)
+[Performance] InitializeOnLoad QuestWindowEntryChecks.Hook                                                                   :        1 samples, Peak.   535 us (1.0x), Avg.   535 us, Total. 534.7 us (0.0%)
+[Performance] InitializeOnLoad BottomBarReview.Hook                                                                          :        1 samples, Peak.   476 us (1.0x), Avg.   476 us, Total. 475.9 us (0.0%)
+[Performance] InitializeOnLoad NativeCharacterInfoSceneChecks.Hook                                                           :        1 samples, Peak.   438 us (1.0x), Avg.   438 us, Total. 437.7 us (0.0%)
+[Performance] InitializeOnLoad NativePetSceneChecks.Hook                                                                     :        1 samples, Peak.   386 us (1.0x), Avg.   386 us, Total. 385.8 us (0.0%)
+[Performance] InitializeOnLoad NativeNpcShopSceneChecks.Hook                                                                 :        1 samples, Peak.   390 us (1.0x), Avg.   390 us, Total. 390.1 us (0.0%)
+[Performance] DidReloadScriptsAdvancedDropdownWindow.OnScriptReload                                                          :        1 samples, Peak.   678 us (1.0x), Avg.   678 us, Total. 678.2 us (0.0%)
+[Performance] SyncVS.PostprocessSyncProject                                                                                  :        1 samples, Peak.  7.45 ms (1.0x), Avg.  7.45 ms, Total. 7.453 ms (0.0%)
+[Performance] Application.ImportPackagesAndSetTemplateWhenCreatingProject                                                    :        1 samples, Peak.  20.3 ms (1.0x), Avg.  20.3 ms, Total. 20.28 ms (0.0%)
+[Performance] Application.SyncCurrentColorSpace                                                                              :        1 samples, Peak.  6.62 ms (1.0x), Avg.  6.62 ms, Total. 6.617 ms (0.0%)
+[Performance] Application.OnUsbDevicesChanged                                                                                :        1 samples, Peak.   330 us (1.0x), Avg.   330 us, Total. 329.5 us (0.0%)
+[Performance] Application.AssetInstanceCacheUpdate                                                                           :        1 samples, Peak.   666 ns (1.0x), Avg.   666 ns, Total. 666.0 ns (0.0%)
+[Performance] Application.UnityExtensions.Initialize                                                                         :        1 samples, Peak.  1.67 ms (1.0x), Avg.  1.67 ms, Total. 1.671 ms (0.0%)
+[Performance] CodeEditorProjectSync.SyncEditorProject                                                                        :        1 samples, Peak.   388 us (1.0x), Avg.   388 us, Total. 387.7 us (0.0%)
+[Performance] Application.ExecuteStartups                                                                                    :        1 samples, Peak.  47.0 ms (1.0x), Avg.  47.0 ms, Total. 46.98 ms (0.1%)
+[Performance] Menu.RegisterMenuInterface                                                                                     :       26 samples, Peak.   625 ns (3.6x), Avg.   175 ns, Total. 4.542 us (0.0%)
+[Performance] Gizmo.RebuildRenderers                                                                                         :        1 samples, Peak.  46.5 ms (1.0x), Avg.  46.5 ms, Total. 46.51 ms (0.1%)
+[Performance] Gizmo.AddGizmoRenderers                                                                                        :       26 samples, Peak.  4.23 ms (13.5x), Avg.   312 us, Total. 8.115 ms (0.0%)
+[Performance] Application.editorInitializingProject                                                                          :        1 samples, Peak.  15.8 ms (1.0x), Avg.  15.8 ms, Total. 15.78 ms (0.0%)
+[Performance] Application.InitializeMenu                                                                                     :        1 samples, Peak.   148 ms (1.0x), Avg.   148 ms, Total. 147.9 ms (0.4%)
+[Performance] Menu.RebuildAll                                                                                                :        1 samples, Peak.   148 ms (1.0x), Avg.   148 ms, Total. 147.9 ms (0.4%)
+[Performance] Menu.BuildRegisteredMenuInterfaces                                                                             :        1 samples, Peak.   146 ms (1.0x), Avg.   146 ms, Total. 146.0 ms (0.4%)
+[Performance] Menu.FilterMenuItem                                                                                            :      476 samples, Peak.  42.7 ms (472.1x), Avg.  90.5 us, Total. 43.07 ms (0.1%)
+[Performance] UpdateAllMenus                                                                                                 :        1 samples, Peak.  1.79 ms (1.0x), Avg.  1.79 ms, Total. 1.791 ms (0.0%)
+[Performance] EditorSceneManager.sceneClosing: UnityEditor.SceneVisibilityManager.EditorSceneManagerOnSceneClosing           :        1 samples, Peak.  1.03 ms (1.0x), Avg.  1.03 ms, Total. 1.031 ms (0.0%)
+[Performance] GUIView.RepaintAll.PlayerLoopController                                                                        :        1 samples, Peak.  34.3 us (1.0x), Avg.  34.3 us, Total. 34.25 us (0.0%)
+[Performance] EditorSceneManager.newSceneCreated: UnityEditor.SceneTemplate.SceneTemplateService.OnNewSceneCreated           :        1 samples, Peak.   589 us (1.0x), Avg.   589 us, Total. 588.9 us (0.0%)
+[Performance] EditorSceneManager.newSceneCreated: UnityEditor.SceneVisibilityManager.EditorSceneManagerOnNewSceneCreated     :        1 samples, Peak.   690 us (1.0x), Avg.   690 us, Total. 689.5 us (0.0%)
+[Performance] EditorSceneManager.newSceneCreated: UnityEditor.SceneManagement.StageNavigationManager.OnNewSceneCreated       :        1 samples, Peak.   241 us (1.0x), Avg.   241 us, Total. 241.3 us (0.0%)
+[Performance] Application.InvokeFinishedLoadingProject                                                                       :        1 samples, Peak.  1.70 ms (1.0x), Avg.  1.70 ms, Total. 1.698 ms (0.0%)
+[Performance] ProcessService.OnProjectLoaded                                                                                 :        1 samples, Peak.   156 us (1.0x), Avg.   156 us, Total. 156.2 us (0.0%)
+[Performance] VersionControl.Task.Wait                                                                                       :        1 samples, Peak.  19.8 us (1.0x), Avg.  19.8 us, Total. 19.83 us (0.0%)
+[Performance] SceneDataContainer.TransformHierarchyChangedSetParentCallback                                                  :        9 samples, Peak.  16.0 us (7.0x), Avg.  2.30 us, Total. 20.67 us (0.0%)
+[Performance] SceneVisibilityState.IsFlagSetInParents                                                                        :        9 samples, Peak.  1.00 us (2.9x), Avg.   347 ns, Total. 3.127 us (0.0%)
+[Performance] Application.Shutdown.SaveDefaultWindowPreferences                                                              :        1 samples, Peak.  1.53 ms (1.0x), Avg.  1.53 ms, Total. 1.528 ms (0.0%)
+[Performance] Application.Shutdown.SaveSceneManagerSetup                                                                     :        1 samples, Peak.  1.28 ms (1.0x), Avg.  1.28 ms, Total. 1.283 ms (0.0%)
+[Performance] Application.Shutdown.CleanupAllContainerWindows                                                                :        1 samples, Peak.   252 us (1.0x), Avg.   252 us, Total. 252.0 us (0.0%)
+[Performance] EditorApplication.quitting: callback in UnityEditor.TextCore.Text.EditorEventCallbacks                         :        1 samples, Peak.  58.0 ms (1.0x), Avg.  58.0 ms, Total. 57.96 ms (0.1%)
+[Performance] Killing ADB server                                                                                             :        1 samples, Peak.  2.33 s (1.0x), Avg.  2.33 s, Total. 2.333 s (5.6%)
+[Performance] Application.Shutdown.PauseProfilerSession                                                                      :        1 samples, Peak.  1.63 ms (1.0x), Avg.  1.63 ms, Total. 1.630 ms (0.0%)
+[Performance] Application.Shutdown.PauseAssetImportWorkers                                                                   :        1 samples, Peak.   712 us (1.0x), Avg.   712 us, Total. 711.9 us (0.0%)
+[Performance] Application.Shutdown.SaveAssets                                                                                :        1 samples, Peak.  34.0 ms (1.0x), Avg.  34.0 ms, Total. 34.05 ms (0.1%)
+[Performance] BuilderAssetModificationProcessor.OnWillSaveAssets                                                             :        1 samples, Peak.  3.68 ms (1.0x), Avg.  3.68 ms, Total. 3.683 ms (0.0%)
+[Performance] TerrainModificationProcessor.OnWillSaveAssets                                                                  :        1 samples, Peak.  2.81 ms (1.0x), Avg.  2.81 ms, Total. 2.809 ms (0.0%)
+[Performance] AssetDatabase.ImportAssets                                                                                     :        2 samples, Peak.  2.92 us (1.9x), Avg.  1.50 us, Total. 3.001 us (0.0%)
+[Performance] Application.Shutdown.CleanupRenderPipeline                                                                     :        1 samples, Peak.   237 us (1.0x), Avg.   237 us, Total. 237.1 us (0.0%)
+[Performance] Application.Shutdown.StopPreloadManager                                                                        :        1 samples, Peak.  11.3 ms (1.0x), Avg.  11.3 ms, Total. 11.25 ms (0.0%)
+[Performance] Application.Shutdown.DestroyWorld                                                                              :        1 samples, Peak.  6.27 ms (1.0x), Avg.  6.27 ms, Total. 6.265 ms (0.0%)
+[Performance] Application.Shutdown.CleanupAfterLoad                                                                          :        1 samples, Peak.  2.21 s (1.0x), Avg.  2.21 s, Total. 2.205 s (5.3%)
+[Performance] Application.Shutdown.Progress                                                                                  :        1 samples, Peak.   511 us (1.0x), Avg.   511 us, Total. 511.3 us (0.0%)
+[Performance] Application.Shutdown.GICleanupManagers                                                                         :        1 samples, Peak.  6.59 ms (1.0x), Avg.  6.59 ms, Total. 6.594 ms (0.0%)
+[Performance] Application.Shutdown.MenuCleanupClass                                                                          :        1 samples, Peak.   621 us (1.0x), Avg.   621 us, Total. 621.3 us (0.0%)
+[Performance] Application.Shutdown.ADBSaveStateBeforeShutdown                                                                :        1 samples, Peak.  92.7 us (1.0x), Avg.  92.7 us, Total. 92.71 us (0.0%)
+[Performance] Application.Shutdown.RemoteShutdown                                                                            :        1 samples, Peak.   626 us (1.0x), Avg.   626 us, Total. 625.8 us (0.0%)
+[Performance] Application.Shutdown.CleanupVCProvider                                                                         :        1 samples, Peak.   230 us (1.0x), Avg.   230 us, Total. 230.5 us (0.0%)
+[Performance] Application.Shutdown.InputShutdown                                                                             :        1 samples, Peak.  4.54 ms (1.0x), Avg.  4.54 ms, Total. 4.539 ms (0.0%)
+[Performance] Application.Shutdown.GizmoManagerDestroy                                                                       :        1 samples, Peak.   906 us (1.0x), Avg.   906 us, Total. 906.2 us (0.0%)
+[Performance] Application.Shutdown.ProfilerSession                                                                           :        1 samples, Peak.  2.29 ms (1.0x), Avg.  2.29 ms, Total. 2.294 ms (0.0%)
+[Performance] Application.Shutdown.ReleaseGfxWindowOnAllGUIViews                                                             :        1 samples, Peak.  5.96 us (1.0x), Avg.  5.96 us, Total. 5.958 us (0.0%)
+[Performance] Application.Shutdown.CleanupEngine                                                                             :        1 samples, Peak.   286 ms (1.0x), Avg.   286 ms, Total. 285.6 ms (0.7%)
+[Performance] Application.Shutdown.CleanupAssetDatabase                                                                      :        1 samples, Peak.  4.79 ms (1.0x), Avg.  4.79 ms, Total. 4.794 ms (0.0%)
+[Performance] Application.Shutdown.ScriptCompilationCleanUp                                                                  :        1 samples, Peak.   207 us (1.0x), Avg.   207 us, Total. 207.1 us (0.0%)
+[Performance] Application.Shutdown.DestroyJobSystem                                                                          :        1 samples, Peak.   880 us (1.0x), Avg.   880 us, Total. 879.8 us (0.0%)
+[Performance] Application.Shutdown.CleanupPersistentManager                                                                  :        1 samples, Peak.  4.54 ms (1.0x), Avg.  4.54 ms, Total. 4.540 ms (0.0%)
+[Performance] Application.Shutdown.CleanupAsyncReadManager                                                                   :        1 samples, Peak.   216 us (1.0x), Avg.   216 us, Total. 216.4 us (0.0%)
+[Performance] Application.Shutdown.CleanupMono                                                                               :        1 samples, Peak.  2.33 s (1.0x), Avg.  2.33 s, Total. 2.330 s (5.6%)
+[Performance] Application.Shutdown.CleanupStdConverters                                                                      :        1 samples, Peak.  24.3 us (1.0x), Avg.  24.3 us, Total. 24.29 us (0.0%)
+[Performance] Application.Shutdown.UnloadAllPlatformSupportModuleNativeDlls                                                  :        1 samples, Peak.   191 us (1.0x), Avg.   191 us, Total. 190.6 us (0.0%)
+[Performance] Application.Shutdown.UnloadAllPlatformSupportNativeLibraries                                                   :        1 samples, Peak.  2.58 us (1.0x), Avg.  2.58 us, Total. 2.583 us (0.0%)
+[Performance] Application.Shutdown.CleanupAutoDocumentation                                                                  :        1 samples, Peak.   448 us (1.0x), Avg.   448 us, Total. 447.9 us (0.0%)
+[Performance] Application.Shutdown.ShaderNameManagerDestroy                                                                  :        1 samples, Peak.   332 us (1.0x), Avg.   332 us, Total. 331.5 us (0.0%)
+[Performance] Application.Shutdown.CleanupCacheServer                                                                        :        1 samples, Peak.  2.58 us (1.0x), Avg.  2.58 us, Total. 2.583 us (0.0%)
+[Performance] Application.Shutdown.Virtualization_Shutdown                                                                   :        1 samples, Peak.  5.79 us (1.0x), Avg.  5.79 us, Total. 5.791 us (0.0%)
+[Performance] Application.Shutdown.DevConnections                                                                            :        1 samples, Peak.   313 us (1.0x), Avg.   313 us, Total. 312.5 us (0.0%)
+[Package Manager] Server::Kill -- Server was shutdown
+Checking for leaked weakptr:
+  Found no leaked weakptrs.
+Memory Statistics:
+[ALLOC_TEMP_TLS] TLS Allocator
+  StackAllocators : 
+    [ALLOC_TEMP_CurlRequest]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_MAIN]
+      Initial Block Size 16.0 MB
+      Current Block Size 16.0 MB
+      Peak Allocated Bytes 9.4 MB
+      Overflow Count 1
+    [ALLOC_TEMP_Background Job.Worker 8]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 4]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 5.1 KB
+      Overflow Count 1
+    [ALLOC_TEMP_BakingJobs.Worker 5]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 11]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 3]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 68 B
+      Overflow Count 0
+    [ALLOC_TEMP_BatchDeleteObjects]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_CoreBusinessMetricsCache]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 7.9 KB
+      Overflow Count 0
+    [ALLOC_TEMP_REST Message Handler]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_AssetDatabase.IOService]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 2]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 68 B
+      Overflow Count 0
+    [ALLOC_TEMP_Loading.PreloadManager]
+      Initial Block Size 32.0 MB
+      Current Block Size 32.0 MB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Profiler.Dispatcher]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 3]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 5.3 KB
+      Overflow Count 1
+    [ALLOC_TEMP_BakingJobs.Worker 7]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 5]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 101 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 13]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 2]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 5.3 KB
+      Overflow Count 1
+    [ALLOC_TEMP_BakingJobs.Worker 6]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 0]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 5.2 KB
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 5]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 5.1 KB
+      Overflow Count 1
+    [ALLOC_TEMP_Job.Worker 6]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 5.1 KB
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 9]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_BakingJobs.Worker 1]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Loading.AsyncRead]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 128 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 10]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 6]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 1]
+      Initial Block Size 32.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 205.5 KB
+      Overflow Count 4
+    [ALLOC_TEMP_AUDIO_FMOD stream thread]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_BakingJobs.Worker 2]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 7]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 15]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 1]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 5.3 KB
+      Overflow Count 1
+    [ALLOC_TEMP_BakingJobs.Worker 0]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_BakingJobs.Worker 3]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_EditorTaskManager]
+      Initial Block Size 64.0 KB
+      Current Block Size 68.0 KB
+      Peak Allocated Bytes 64.0 KB
+      Overflow Count 0
+    [ALLOC_TEMP_BakingJobs.Worker 4]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 12]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_HTTP REST Server]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 69 B
+      Overflow Count 0
+    [ALLOC_TEMP_AssetGarbageCollectorHelper] x 7
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 0]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_AUDIO_Audio Mixer Thread]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 4]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 14]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 0 B
+      Overflow Count 0
+    [ALLOC_TEMP_CloudJob.Worker 0] x 2
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 2.4 KB
+      Overflow Count 0
+[ALLOC_MEMORYPROFILER]
+  Requested Block Size 1.0 MB
+  Peak Block count 1
+  Peak Allocated memory 95.4 KB
+  Peak Large allocation bytes 0 B
+[ALLOC_DEFAULT] Dual Thread Allocator
+  Peak main deferred allocation count 29
+    [ALLOC_BUCKET]
+      Large Block size 32.0 MB
+      Used Block count 1
+      Peak Allocated bytes 4.8 MB
+    [ALLOC_DEFAULT_MAIN]
+      Requested Block Size 16.0 MB
+      Peak Block count 4
+      Peak Allocated memory 186.4 MB
+      Peak Large allocation bytes 171.1 MB
+    [ALLOC_DEFAULT_THREAD]
+      Requested Block Size 16.0 MB
+      Peak Block count 1
+      Peak Allocated memory 404.6 MB
+      Peak Large allocation bytes 404.5 MB
+[ALLOC_TEMP_JOB_1_FRAME]
+  Initial Block Size 2.0 MB
+  Used Block Count 0
+  Overflow Count (too large) 0
+  Overflow Count (full) 0
+[ALLOC_TEMP_JOB_2_FRAMES]
+  Initial Block Size 2.0 MB
+  Used Block Count 0
+  Overflow Count (too large) 0
+  Overflow Count (full) 0
+[ALLOC_TEMP_JOB_4_FRAMES (JobTemp)]
+  Initial Block Size 2.0 MB
+  Used Block Count 1
+  Overflow Count (too large) 1
+  Overflow Count (full) 0
+[ALLOC_TEMP_JOB_ASYNC (Background)]
+  Initial Block Size 1.0 MB
+  Used Block Count 1
+  Overflow Count (too large) 5
+  Overflow Count (full) 0
+[ALLOC_GFX] Dual Thread Allocator
+  Peak main deferred allocation count 0
+    [ALLOC_BUCKET]
+      Large Block size 32.0 MB
+      Used Block count 1
+      Peak Allocated bytes 4.8 MB
+    [ALLOC_GFX_MAIN]
+      Requested Block Size 16.0 MB
+      Peak Block count 1
+      Peak Allocated memory 10.0 MB
+      Peak Large allocation bytes 0 B
+    [ALLOC_GFX_THREAD]
+      Requested Block Size 16.0 MB
+      Peak Block count 0
+      Peak Allocated memory 0 B
+      Peak Large allocation bytes 0 B
+[ALLOC_CACHEOBJECTS] Dual Thread Allocator
+  Peak main deferred allocation count 71
+    [ALLOC_BUCKET]
+      Large Block size 32.0 MB
+      Used Block count 1
+      Peak Allocated bytes 4.8 MB
+    [ALLOC_CACHEOBJECTS_MAIN]
+      Requested Block Size 4.0 MB
+      Peak Block count 4
+      Peak Allocated memory 23.9 MB
+      Peak Large allocation bytes 11.6 MB
+    [ALLOC_CACHEOBJECTS_THREAD]
+      Requested Block Size 4.0 MB
+      Peak Block count 0
+      Peak Allocated memory 0 B
+      Peak Large allocation bytes 0 B
+[ALLOC_TYPETREE] Dual Thread Allocator
+  Peak main deferred allocation count 497
+    [ALLOC_BUCKET]
+      Large Block size 32.0 MB
+      Used Block count 1
+      Peak Allocated bytes 4.8 MB
+    [ALLOC_TYPETREE_MAIN]
+      Requested Block Size 2.0 MB
+      Peak Block count 2
+      Peak Allocated memory 2.5 MB
+      Peak Large allocation bytes 0 B
+    [ALLOC_TYPETREE_THREAD]
+      Requested Block Size 2.0 MB
+      Peak Block count 0
+      Peak Allocated memory 0 B
+      Peak Large allocation bytes 0 B
+[ALLOC_PROFILER]
+  Requested Block Size 16.0 MB
+  Peak Block count 1
+  Peak Allocated memory 412.8 KB
+  Peak Large allocation bytes 0 B
+    [ALLOC_PROFILER_BUCKET]
+      Large Block size 32.0 MB
+      Used Block count 1
+      Peak Allocated bytes 4.1 KB
+[ALLOC_PROFILER_EDITOR]
+  Requested Block Size 1.0 MB
+  Peak Block count 0
+  Peak Allocated memory 0 B
+  Peak Large allocation bytes 0 B
+    [ALLOC_PROFILER_BUCKET]
+      Large Block size 32.0 MB
+      Used Block count 1
+      Peak Allocated bytes 4.1 KB
+##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1793506179135,"processId":84433,"allocatedMemory":7752497,"memoryLabels":[{"Default":20031},{"Permanent":15536},{"Thread":1083348},{"Manager":28982},{"VertexData":12},{"Geometry":280},{"Texture":176},{"Shader":68396},{"Material":24},{"GfxDevice":37880},{"Animation":312},{"Audio":3904},{"FontEngine":288},{"Physics":513},{"Serialization":748},{"Input":9248},{"JobScheduler":33192},{"Mono":40},{"ScriptingNativeRuntime":192016},{"BaseObject":1627212},{"Resource":952},{"Renderer":2312},{"Transform":24},{"File":732},{"WebCam":40},{"Culling":40},{"Terrain":1025},{"Wind":24},{"String":14704},{"DynamicArray":61072},{"HashMap":60427},{"Utility":2659758},{"Curl":1056},{"PoolAlloc":1496},{"AI":96},{"TypeTree":5061},{"ScriptManager":640},{"RuntimeInitializeOnLoadManager":80},{"SpriteAtlas":128},{"GI":3520},{"Director":7880},{"CloudService":352},{"WebRequest":816},{"VR":45705},{"SceneManager":576},{"Video":1096},{"LazyScriptCache":40},{"NativeArray":12},{"Camera":25},{"Secure":9785},{"SerializationCache":1576},{"APIUpdating":11856},{"Subsystems":392},{"VirtualTexturing":57512},{"StaticSafetyDebugInfo":327680},{"EditorGui":56},{"EditorUtility":9767},{"VersionControl":4},{"Undo":720},{"AssetDatabase":1292835},{"RestService":1310},{"EditorGi":376},{"License":3584},{"UnityConnect":25544},{"Collab":641},{"Upm":1912},{"DrivenProperties":96},{"LocalIPC":220},{"ProfilerEditor":10975},{"CoreBusinessMetrics":3749},{"AssetReference":40},{"IPCStream":40}]}

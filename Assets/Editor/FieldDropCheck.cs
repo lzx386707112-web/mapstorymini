@@ -9,11 +9,14 @@ using UnityEngine;
 // 而不是靠打几只怪肉眼判断。判定标准：
 //   1. 每条掉落行的实测命中率与 chance/999999 的偏差必须在 4σ 内（σ = sqrt(p(1-p)/n)）
 //   2. 金币必须落在 [Min, Max-1]，物品数量必须落在 [Min, Max]
-//   3. 掉出来的 itemId 必须都在 FieldDrops.json 导出的物品表里
+//   3. 二转测试图的黑色大理石（4031013）必须在掉落表里（这条曾经整张表只有 9 只怪，
+//      二转地图什么也不掉）
 //   4. 全局掉落不得生成金币（原服 dropGlobalItems 对 itemId=0 直接跳过）
 public static class FieldDropCheck
 {
     const int Trials = 50000;
+    // 全量掉落表现在有两万多行，逐只怪跑 5 万次会跑到天荒地老，按固定步长抽样。
+    const int SampleMobs = 24;
 
     public static void Run()
     {
@@ -24,7 +27,16 @@ public static class FieldDropCheck
         var hits = new Dictionary<int, int>();     // 物品 id → 命中次数（便于汇总打印）
         var rng = new System.Random(20251021);
 
-        foreach (var kv in FieldCatalog.Drops)
+        // 关键任务道具先断言：二转测试图（108000100/200/300）的怪必须掉 4031013
+        foreach (int testMob in new[] { 9000001, 9000002, 9000100, 9000200, 9000300 })
+        {
+            var rows0 = FieldCatalog.Drops.TryGetValue(testMob, out var r0) ? r0 : null;
+            bool found = rows0 != null && rows0.Exists(e => e.item == 4031013 && e.chance > 0);
+            if (found) pass++;
+            else { fail++; Debug.LogError("[DropCheck] 二转测试怪 " + testMob + " 没有 4031013 掉落行"); }
+        }
+
+        foreach (var kv in SampleForCheck())
         {
             int mobId = kv.Key;
             var rows = kv.Value;
@@ -73,8 +85,12 @@ public static class FieldDropCheck
                 if (row.chance == 0) continue;      // 永不掉落，不参与统计
 
                 double p = (double)row.chance / FieldCatalog.ChanceDenominator;
-                double expCount = p * Trials;                              // 期望命中次数
-                double sd = System.Math.Sqrt(expCount * (1 - p));
+                // 同一个 itemId 也可能出现在全局掉落里（例如 4001006），实测命中是两者之和
+                double globalP = 0;
+                foreach (var g in FieldCatalog.GlobalDrops) if (g.item == row.item) globalP += (double)g.chance / FieldCatalog.ChanceDenominator;
+                double pTotal = p + globalP;
+                double expCount = pTotal * Trials;                          // 期望命中次数
+                double sd = System.Math.Sqrt(expCount * (1 - pTotal));
                 // 小概率行（期望次数很少）用正态近似会误判，标准差之外再放宽 3 次吸收离散
                 double tolCount = 4 * sd + 3;
                 double obsCount = rowHits[i];
@@ -112,13 +128,6 @@ public static class FieldDropCheck
                                        qtyMin[i] + "," + qtyMax[i] + "] 超出原服 [" + Mathf.Max(1, row.min) + "," + row.max + "]");
                     }
                     else pass++;
-
-                    if (!FieldCatalog.Items.ContainsKey(row.item))
-                    {
-                        fail++;
-                        Debug.LogError("[DropCheck] " + name + "(" + mobId + ") item=" + row.item + " 不在物品表里");
-                    }
-                    else pass++;
                 }
             }
 
@@ -137,5 +146,24 @@ public static class FieldDropCheck
 
         Debug.Log("[DropCheck] 通过 " + pass + " 项，失败 " + fail + " 项，样本 " + Trials + " 次/怪");
         EditorApplication.Exit(fail == 0 ? 0 : 1);
+    }
+
+    // 全量表两万多行，等距抽样若干只怪（外加新手区与二转测试怪）跑统计。
+    static Dictionary<int, List<FieldDropEntry>> SampleForCheck()
+    {
+        var ids = new List<int>(FieldCatalog.Drops.Keys);
+        ids.Sort();
+        var picked = new List<int>();
+        foreach (int must in new[] { 100100, 1210102, 9000001, 9000002, 9000100, 9000200, 9000300 })
+            if (FieldCatalog.Drops.ContainsKey(must)) picked.Add(must);
+        if (ids.Count > 0)
+        {
+            int stride = System.Math.Max(1, ids.Count / SampleMobs);
+            for (int i = 0; i < ids.Count && picked.Count < SampleMobs + 7; i += stride)
+                if (!picked.Contains(ids[i])) picked.Add(ids[i]);
+        }
+        var map = new Dictionary<int, List<FieldDropEntry>>();
+        foreach (int id in picked) map[id] = FieldCatalog.Drops[id];
+        return map;
     }
 }
