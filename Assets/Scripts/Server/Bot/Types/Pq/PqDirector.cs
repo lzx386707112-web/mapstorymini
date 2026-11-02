@@ -196,6 +196,11 @@ namespace Server.Bot.Types.Pq
         static void SpawnOne(Lobby lobby, int index)
         {
             if (lobby.def == null) return;
+            // A queued continuation may outlive the player's visit. Do not repopulate
+            // an already retired lobby after a warp (or after this director resets).
+            if (localMap != lobby.def.recruitMap || !Enabled ||
+                !lobbies.TryGetValue(lobby.def.key, out var current) || !ReferenceEquals(current, lobby))
+            { lobby.spawning = false; return; }
             var (x, y) = Seat(lobby, index);
             BotCharacter bot = null;
             try
@@ -209,7 +214,7 @@ namespace Server.Bot.Types.Pq
             if (index == 0 && lobby.anchorX == int.MinValue) { lobby.anchorX = (int)bot.x; lobby.anchorY = (int)bot.y; }
             lobby.bots.Add(bot.id);
             BotTypeManager.SetAndStartBots(new List<int> { bot.id }, BotType.PQ_BOT);
-            if (index + 1 < lobby.want) BotEnvironment.Post(() => SpawnOne(lobby, index + 1));
+            if (index + 1 < lobby.want) BotEnvironment.PostNextFrame(() => SpawnOne(lobby, index + 1));
             else lobby.spawning = false;
         }
 

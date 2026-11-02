@@ -152,10 +152,7 @@ public static class NpcDialogUi
                 wordWrap = false,
                 clipping = TextClipping.Clip,
             };
-        // ————— 组队成员头顶血条（源端 ShowPartyHP，EXE 0x49F1AC 默认开启）—————
-        // 源端开启后由 0x9212E4 创建 0x91F001 控件，加载 UIWindow.img/UserList/Party/PartyHP
-        // 九宫格 + GaugeBar/graduation/bar 画量条；BeiDou 数据缺 PartyHP/BtHP 节点（原版有，
-        // 属数据导出缺失），量条按 GaugeBar 语义自绘：深底 + 红色 HP 填充。
+        // CUserRemote 0x9421B2/0x942442：同图队友的代码绘制头顶 HP 层。
         partyMemberIds.Clear();
         var party = GameServer.Local != null && GameServer.Local.Social != null
             ? GameServer.Local.Social.Parties.For(GameSession.CharacterId) : null;
@@ -192,15 +189,18 @@ public static class NpcDialogUi
 
     static readonly HashSet<int> partyMemberIds = new HashSet<int>();
 
-    // 源端量条没有可用素材，红色按 StatusBar.img/gauge（HP gauge 红条）语义自绘。
-    static void DrawPartyHpBar(Rect plate, float hp, float maxHp)
+    // BeiDou.exe 0x9421B2：52×10，脚底相对位置(-26,-89)。
+    // 0x942442：黑/白/黑三层边框，红色内条及暗红底边；0x9839EA：HP*46/MaxHP。
+    static void DrawPartyHpBar(Vector2 feet, float hp, float maxHp)
     {
-        const float w = 42f, h = 5f, gap = 2f;
-        var rect = new Rect(plate.center.x - w * .5f, plate.y - h - gap, w, h);
-        UiKit.Fill(new Rect(rect.x - 1f, rect.y - 1f, w + 2f, h + 2f), new Color32(0x1c,0x1c,0x1c,0xff));
-        UiKit.Fill(rect, new Color32(0x22,0x20,0x21,0xff));
-        float ratio = maxHp > 0f ? Mathf.Clamp01(hp / maxHp) : 0f;
-        if (ratio > 0f) UiKit.Fill(new Rect(rect.x, rect.y, Mathf.Max(1f, w * ratio), h), new Color32(0xc6,0x22,0x22,0xff));
+        var rect = new Rect(feet.x - 26f, feet.y - 89f, 52f, 10f);
+        UiKit.Fill(rect, Color.black);
+        UiKit.Fill(new Rect(rect.x + 1, rect.y + 1, 50, 8), Color.white);
+        UiKit.Fill(new Rect(rect.x + 2, rect.y + 2, 48, 6), Color.black);
+        int width = maxHp > 0 ? Mathf.FloorToInt(Mathf.Clamp01(hp / maxHp) * 46) : 0;
+        if (width <= 0) return;
+        UiKit.Fill(new Rect(rect.x + 3, rect.y + 3, width, 4), Color.red);
+        UiKit.Fill(new Rect(rect.x + 3, rect.y + 6, width, 1), new Color32(0xa0, 3, 0, 255));
     }
 
     static void DrawCharacterName(Camera cam, float scale, Vector2 feet, string name, bool local = false, bool partyMember = false, float partyHp = 0f, float partyHpMax = 0f)
@@ -246,8 +246,8 @@ public static class NpcDialogUi
                 GUI.Label(text, name, characterNameStyle);
             }
         }
-        // 组队血条画在名牌正上方（medal 牌会占名牌下方）。HP 由调用方按本地/假人取数。
-        if (partyMember && partyHpMax > 0) DrawPartyHpBar(plate, partyHp, partyHpMax);
+        // 原端只对远端队友创建该层（0x9421B2 检查 this+0x568）。
+        if (!local && partyMember && partyHpMax > 0) DrawPartyHpBar(gui, partyHp, partyHpMax);
         if (local)
         {
             int medal = Profile.EquipOfSlot(EquipSlot.Medal);

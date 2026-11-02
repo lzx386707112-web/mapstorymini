@@ -46,6 +46,18 @@ namespace Server.Bot.Environment
         public static BotMovementRuntime Get(BotCharacter actor) => actor != null && entries.TryGetValue(actor.id, out var e) ? e.motion : null;
         public static bool IsMoving(BotCharacter actor) => actor != null && entries.TryGetValue(actor.id, out var e) &&
             (e.target.HasValue || e.motion.InAir || e.motion.Climbing || e.motion.navEdge != null || e.portalDropAt > 0);
+        public static bool IsMovingToward(BotCharacter actor, int x, int y) => actor != null &&
+            entries.TryGetValue(actor.id, out var e) && e.target.HasValue &&
+            Math.Abs((long)e.target.Value.x - x) < 16 && Math.Abs((long)e.target.Value.y - y) < 16;
+        public static bool PrepareNavigation(BotCharacter actor)
+        {
+            var map = actor == null ? null : MapService.Get(actor.mapId);
+            if (map == null) return false;
+            // Wander's ground-spot picker uses Base, movement uses the actual profile.
+            bool spots = Graphs.Prepare(map);
+            bool movement = Graphs.Prepare(map, Profile(actor, map));
+            return spots && movement;
+        }
         public static BotMovementRuntime Enable(BotCharacter actor)
         {
             if (actor == null) return null;
@@ -110,6 +122,7 @@ namespace Server.Bot.Environment
             if (actor.mapId != e.motion.map.mapId)
             {
                 var map = MapService.Get(actor.mapId); if (map == null) { Disable(actor); return; }
+                if (BotStore.GetBotById(actor.id) is Types.Pq.PqBot && !PrepareNavigation(actor)) return;
                 var changed = Create(actor, map); changed.target = e.target; changed.arrival = e.arrival;
                 var ground = changed.motion.ground.GroundPoint((int)actor.x, (int)actor.y - 1);
                 if (ground.HasValue && Observed(actor.mapId))
@@ -125,6 +138,8 @@ namespace Server.Bot.Environment
                 e.profileAt = now;
                 if (!Profile(actor, e.motion.map).Equals(e.motion.profile))
                 {
+                    if (BotStore.GetBotById(actor.id) is Types.Pq.PqBot && !PrepareNavigation(actor))
+                    { e.profileAt = now - 20000; return; }
                     var refreshed = Create(actor, e.motion.map); refreshed.target = e.target; refreshed.arrival = e.arrival;
                     refreshed.progressAt = e.progressAt; entries[actor.id] = refreshed; Schedule(refreshed, 0); return;
                 }

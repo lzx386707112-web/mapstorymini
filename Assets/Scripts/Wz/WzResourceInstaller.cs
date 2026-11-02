@@ -32,20 +32,29 @@ public static class WzResourceInstaller
     // Fast startup check: hash only a spread-out sample instead of the whole Data tree.
     // A matching install receipt + a passing sample means "installed and sane"; a full
     // Verify is only needed when the sample fails (real corruption) or on first install.
-    public static void VerifySample(string root, string manifest, int sample)
+    public static void VerifySample(string root, string manifest, int sample, Action<int, int> progress = null)
     {
         var index = (Dictionary<string, object>)MiniJson.Parse(manifest);
         var files = (List<object>)index["files"];
         if (files.Count == 0) return;
         int step = Math.Max(1, files.Count / Math.Max(1, sample));
         int last = -1;
+        int count = 0;
+        int countTotal = (files.Count - 1) / step + 1;
+        if ((files.Count - 1) % step != 0) countTotal++;
+        progress?.Invoke(0, countTotal);
         for (int i = 0; i < files.Count; i += step)
         {
             VerifyOne(root, (Dictionary<string, object>)files[i]);
             last = i;
+            progress?.Invoke(++count, countTotal);
         }
         // Always include the final entry: the evenly spaced walk may stop just short of it.
-        if (last != files.Count - 1) VerifyOne(root, (Dictionary<string, object>)files[files.Count - 1]);
+        if (last != files.Count - 1)
+        {
+            VerifyOne(root, (Dictionary<string, object>)files[files.Count - 1]);
+            progress?.Invoke(++count, countTotal);
+        }
     }
     static void VerifyOne(string root, Dictionary<string, object> file)
     {

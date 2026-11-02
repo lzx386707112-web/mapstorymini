@@ -46,30 +46,26 @@ from 退化为落点，抛物线没有起点。修复：`dropperId==ownerCharact
 数量弹窗保持字符串 885 的「扔掉多少？」同款。type-2 画布 chrome 的反汇编细节（0x9A83F6 画白底
 黑边）与 Notice3 切片在 720 高下肉眼一致，未再追。
 
-## ⑤ 组队血条（ShowPartyHP，逆向定论）
+## ⑤ 组队血条（2026-11-02 后续纠正）
 
-### 证据链（用户坚持「肯定有」是对的）
+旧结论将 `ShowPartyHP → 0x9212E4 → 0x91F001` 的独立队伍 HP 窗口与头顶血条混淆。
+`PartyHP` 缺节点不能用于推导头顶条缺资源，旧 42×5 自绘尺寸/颜色也无源端依据，已替换。
 
-- **选项**：EXE `0x49F1AC` = `IsShowPartyHPEnabled()`，选项名 `ShowPartyHP`（字符串 4433），
-  `0x49EDDB(2, name, default=1)` —— **默认开启**。四处在登录/进图/组队事件检查
-  （0xA03E00、0xA03F20、0xA3E80D、0xA3EC48）。
-- **控件**：开启时 `0x9212E4` 在单例 `0xBF0B00` 上创建 0x91F001 类（size 0x5E0）。
-  构造加载 `UI/UIWindow.img/UserList/Party/PartyHP` 的**九宫格子节点**
-  （字符串 1394-1402：`nw/n/ne/e/w/sw/s/se`）+ `GaugeBar/graduation/bar`（4422-4424）+ `gauge`（1960）。
-  绘制函数 0x91FADA（953 条指令）逐件画 [this+0x5B0..0x5DC] 的 canvas。
-- **素材缺失**：BeiDou 的 GMS083 数据 21 个 UI img 里都没有 `PartyHP/BtHP` 节点（也无 UIWindow2.img），
-  全 WZ 二进制 grep 不到 `ShowPartyHP` 节点 —— EXE 引用它说明**原版 v083 有**，属 BeiDou 数据导出缺失。
-- 服务端同源证据：`Character.updatePartyMemberHPInternal` → `UPDATE_PARTYMEMBER_HP(0xC9)`（cid,curhp,maxhp）
-  发同图队友；源端 PartyGrindService.spawnFor 里 `leader.receivePartyMemberHP(); bot.updatePartyMemberHP();`。
-- 设置窗口下拉框：0x994730/0x994765（'Mark HP only' 4190 / 'Mark name and HP' 4191）是另一个
-  设置项（BtOK2/BtCancel2 对话框），与头顶血条无关；名牌绘制（0x942DCC）只画 名字/公会/勋章。
+真正头顶条由 EXE 代码绘制，不需要 IMG：
 
-### MapleDash 实现（自绘，已在会话中向用户说明素材缺失）
-
-- `NpcDialogUi.DrawCharacterNames`：每帧取 `GameServer.Local.Social.Parties.For(self)` 成员集合；
-  名牌正上方画 42×5 血条（深底 + `#C62222` 红色填充，按 StatusBar.img/gauge 的 HP 红条语义自绘）。
-- 数据源：本地玩家 `player.hp/hpMax`（实时）；假人 `BotCharacter.hp/maxHp`（新字段，恒满 ——
-  假人目前无受伤结算，战斗接入后在字段上更新）。
+- 同二进制身份：`0xA3EE98..0xA3EF08` 遍历旧/新队伍六名成员，排除自己后经 `0x971709`
+  查远端 CUser，调用 `0x9421B2(0/1)` 隐藏/显示。`this+0x568 != 0` 不创建远端条。
+- `0x9421B2` 创建 `this+0x1F7C` 的 **52×10** 图层；绑定角色坐标向量（`+0x1140/+0x1150`），
+  `0x9423DA..E1` 相对偏移 **(-26,-89)**，即脚底上方89原始像素。
+- `0x942442` 清画布后依次 DrawRectangle：`(0,0,52,10,FF000000)`、
+  `(1,1,50,8,FFFFFFFF)`、`(2,2,48,6,FF000000)`、
+  `(3,3,width,4,FFFF0000)`，最后 `(3,6,width,1,FFA00300)` 暗红底边。
+- HP 更新函数 `0x9839EA`：`+0x11A0=HP*100/MaxHP`；`+0x1F80=HP*46/MaxHP`
+  （64位整数除法），再调用 `0x942442` 重画。
+- 复现：`tools/inspect_beidou_client.py <exe> --fn 0x9421B2`、`--fn 0x942442`、
+  `--fn 0x9839EA`；组队更新片段 `--fn 0xA3E80D`。
+- MapleDash `NpcDialogUi` 已按上述布局/颜色画远端队友条，数据用 BotCharacter.hp/maxHp；
+  假人仍未接受伤结算，当前满条。尚未完成 Android 实机画面验收。
 
 ## ⑥ 假人打怪真实规则（源端对照 + 修正）
 

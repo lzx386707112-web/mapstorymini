@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Server.Bot;
 using Server.Field;
@@ -1503,6 +1504,14 @@ static class BotChecks
         foreach (var edge in built.Outgoing(2)) if (edge.type == BotNavigationGraph.EdgeType.Climb && edge.toRegionId == 3) climbIn = true;
         foreach (var edge in built.Outgoing(3)) if (edge.type == BotNavigationGraph.EdgeType.Climb && edge.toRegionId == 1) climbOut = true;
         check(climbIn && climbOut, "原绳梯图生成地面进入与顶部平台退出的双向路径");
+        var prepared = new BotNavigationGraphs();
+        check(!prepared.Prepare(navigationMap), "冷导航请求只排后台构建，不同步等待");
+        bool ready = System.Threading.SpinWait.SpinUntil(() => prepared.Prepare(navigationMap), 10000);
+        check(ready, "后台导航完成后主线程可获取结果");
+        string Edges(BotNavigationGraph graph) => string.Join("|", graph.outgoing.OrderBy(p => p.Key)
+            .SelectMany(p => p.Value).Select(e => $"{e.fromRegionId},{e.toRegionId},{e.type},{e.startPoint.x},{e.startPoint.y},{e.endPoint.x},{e.endPoint.y},{e.cost}"));
+        check(ready && Edges(prepared.Get(navigationMap)) == Edges(built),
+            "异步导航保留同步构图的跳跃、下落、绳梯路径与代价");
         var cache = new BotNavigationGraphs();
         var cacheMap = new MapRuntime { mapId = 0 };
         var firstGraph = cache.Get(cacheMap);

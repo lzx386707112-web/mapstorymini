@@ -151,6 +151,12 @@ public static class PqInstanceChecks
             FieldCatalog.Ensure();
             Require(FieldCatalog.Ready, "FieldCatalog 加载（怪 " + FieldCatalog.Mobs.Count + " 种）");
 
+            foreach (int itemId in new[] {4001007,4001008})
+            {
+                var icons = (Sprite[])typeof(GroundItem).GetMethod("LoadIcons", Flags).Invoke(null,new object[] {itemId,1});
+                Require(icons != null && icons.Length > 0 && icons[0] != null, "PQ " + itemId + " 可加载实际地面掉落图标");
+            }
+
             var host = (NativeEventScripts)InvokeStatic(typeof(NativeEventScripts), "Current");
             Require(host != null, "事件宿主就绪");
             var service = (NativeEventScriptService)typeof(NativeEventScripts)
@@ -163,6 +169,26 @@ public static class PqInstanceChecks
                 var manager = service.GetManager(def.eventName);
                 Require(manager != null, def.eventName + " 事件脚本加载");
                 if (manager == null) continue;
+
+                // 真实 Social → NpcApi → event JS 链路，不能再用 fake 配置掩盖缺失等级上限。
+                var parties = server.Social.Parties;
+                parties.Leave(cid);
+                var local = parties.Actor(record);
+                local.mapId = def.recruit; local.level = def.minLevel + 5;
+                Require(parties.Create(local), def.eventName + " 创建实际队伍");
+                var botIds = new List<int>();
+                for (int i = 0; i < 5; i++)
+                {
+                    var bot = new Server.Bot.BotCharacter { id = 2000000 + i, name = "PQ" + i,
+                        level = def.minLevel + 5, mapId = def.recruit, world = local.world };
+                    Server.Bot.BotRegistry.Add(bot); botIds.Add(bot.id);
+                    Require(parties.Join(bot, parties.For(cid).id), def.eventName + " 假人入队 " + i);
+                }
+                var actualParty = (JsValue)InvokeStatic(typeof(NpcApi), "BuildParty", new object[] { null });
+                int eligible = new Probe("return em.getEligibleParty(p).length;", ("em", manager.Host), ("p", actualParty)).Int();
+                Require(eligible == 6, def.eventName + " 真实六人队伍资格=" + eligible);
+                parties.Leave(cid);
+                foreach (int id in botIds) Server.Bot.BotRegistry.Remove(id);
 
                 var (party, leader) = FakeParty(cid, def.recruit);
                 var recruitHost = new JsHostObject(null);
@@ -194,6 +220,19 @@ public static class PqInstanceChecks
                     int before = MobCount(map);
                     new Probe("m.killMonster(m.getAllMonsters().get(0), true);return 0;", ("m", map)).Int();
                     Require(MobCount(map) == before - 1, "KPQ killMonster 后怪数递减（" + before + "→" + MobCount(map) + "）");
+
+                    int actualMob = new Probe("return m.getAllMonsters().get(0).getId();", ("m", map)).Int();
+                    Require(actualMob == 9300001, "KPQ 实例入口实际怪物 ID=" + actualMob);
+                    FieldCatalog.LoadMob(actualMob);
+                    Require(FieldCatalog.Mobs[actualMob].id == actualMob, "怪物 IMG link 不替换掉落模板 ID");
+                    foreach (int passMob in new[] { 9300000, 9300002, 9300003 })
+                    {
+                        int passes = 0;
+                        for (int i = 0; i < 100; i++)
+                            FieldLoot.Roll(passMob, (item, qty, d) => { if (item == 4001008) passes += qty; },
+                                new System.Random(i), 1, QuestLogic.NeedQuestItem);
+                        Require(passes == 100, "KPQ " + passMob + " 每次掉通行证：" + passes + "/100");
+                    }
 
                     // 掉落行：源端 drop_data (9300001, 4001007, 20%)，questid=0 不拦拾取
                     var row = DropStore.ForMob(9300001).Find(r => r.item == 4001007);

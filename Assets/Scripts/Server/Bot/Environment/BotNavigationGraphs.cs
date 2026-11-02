@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Server.Field;
 
 namespace Server.Bot.Environment
@@ -11,6 +12,27 @@ namespace Server.Bot.Environment
         readonly LinkedList<(int, int, int, bool)> lru = new LinkedList<(int, int, int, bool)>();
         readonly Dictionary<(int, int, int, bool), LinkedListNode<(int, int, int, bool)>> nodes = new Dictionary<(int, int, int, bool), LinkedListNode<(int, int, int, bool)>>();
         public int Count => graphs.Count;
+        readonly Dictionary<(int, int, int, bool), Task<BotNavigationGraph>> pending = new Dictionary<(int, int, int, bool), Task<BotNavigationGraph>>();
+
+        // Cache/LRU and geometry acquisition stay on the main thread. Workers only read
+        // the loaded map/immutable indices and own their builder; never wait in a frame.
+        public bool Prepare(MapRuntime map, BotMovementProfile profile = null)
+        {
+            if (map == null) return false;
+            var key = Key(map, profile);
+            if (graphs.ContainsKey(key)) { Touch(key); return true; }
+            if (!pending.TryGetValue(key, out var task))
+            {
+                var geometry = MapGeometryCache.Get(map);
+                var canonical = Canonical(map, profile);
+                pending[key] = Task.Run(() => new BotNavigationGraphBuilder(map, canonical, geometry).Build());
+                return false;
+            }
+            if (!task.IsCompleted) return false;
+            pending.Remove(key);
+            Cache(key, task.GetAwaiter().GetResult());
+            return true;
+        }
         static BotMovementProfile Canonical(MapRuntime map, BotMovementProfile profile)
         {
             profile = profile ?? BotMovementProfile.Base;

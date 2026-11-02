@@ -35,6 +35,10 @@ public sealed class WzAndroidLoader : MonoBehaviour
 
     bool permissionRequested, failed, starting, startInvoked;
     float botWait;
+    float loadingWait, stalledWait;
+    int lastLoaded, lastTotal;
+    string lastWorkerPhase;
+    const float ResourceStallTimeout = 120f;
     // 假人预热的硬上限（秒）。BotPreload 自己有 45s 上限，这里给足余量再兜一层。
     const float MaxBotWaitSeconds = 75f;
     int sdk;
@@ -75,9 +79,21 @@ public sealed class WzAndroidLoader : MonoBehaviour
         loader.complete = complete;
         loader.privateReceipt = Path.Combine(Application.persistentDataPath, "NativeAssetIndex.sha256");
         loader.LoadBackground();
-        loader.manifest = Resources.Load<TextAsset>("NativeAssetIndex").text;
-        using (var version = new AndroidJavaClass("android.os.Build$VERSION"))
-            loader.sdk = version.GetStatic<int>("SDK_INT");
+        try
+        {
+            var index = Resources.Load<TextAsset>("NativeAssetIndex");
+            if (index == null) throw new FileNotFoundException("安装包缺少资源清单，请重新安装 APK。");
+            loader.manifest = index.text;
+            using (var version = new AndroidJavaClass("android.os.Build$VERSION"))
+                loader.sdk = version.GetStatic<int>("SDK_INT");
+        }
+        catch (Exception e)
+        {
+            loader.manifest = null;
+            loader.failed = true;
+            loader.phase = "加载初始化失败";
+            loader.message = e.Message + " 请退出后重新打开游戏。";
+        }
     }
 
     void LoadBackground()
@@ -113,6 +129,8 @@ public sealed class WzAndroidLoader : MonoBehaviour
     void StartLoading()
     {
         failed = false; message = null; loaded = 0; total = 0;
+        loadingWait = stalledWait = 0f;
+        lastLoaded = lastTotal = 0; lastWorkerPhase = null;
         workerPhase = "正在检查资源";
         string expected = manifest;
 
@@ -133,7 +151,7 @@ public sealed class WzAndroidLoader : MonoBehaviour
                 workerPhase = "正在检查资源";
                 try
                 {
-                    WzResourceInstaller.VerifySample(Root, expected, 32);
+                    WzResourceInstaller.VerifySample(Root, expected, 32, (n, all) => { total = all; loaded = n; });
                 }
                 catch
                 {
@@ -182,12 +200,18 @@ public sealed class WzAndroidLoader : MonoBehaviour
         if (starting) return;              // 收尾交由 StartGameRoutine
 
         RefreshProgress();
+        if (failed && loading == null) return;
 
         if (!hasPermission)
         {
             if (Time.unscaledTime >= nextPermissionCheck)
             {
-                hasPermission = HasPermission();
+                try { hasPermission = HasPermission(); }
+                catch (Exception e)
+                {
+                    failed = true; phase = "权限检查失败"; message = e.Message;
+                    return;
+                }
                 nextPermissionCheck = Time.unscaledTime + .5f;
             }
             if (!hasPermission)
@@ -205,18 +229,42 @@ public sealed class WzAndroidLoader : MonoBehaviour
 
         // 阶段文案由后台线程单向写入，这里只在真正变化时同步一次。
         string wp = workerPhase;
-        if (!string.IsNullOrEmpty(wp) && wp != phase) phase = wp;
+        if (!failed && !string.IsNullOrEmpty(wp) && wp != phase) phase = wp;
 
-        if (!loading.IsCompleted) return;
+        if (!loading.IsCompleted)
+        {
+            // 只累计前台等待时间；文件完成或切换阶段都会重置无进展计时。
+            if (Application.isFocused)
+            {
+                loadingWait += Time.unscaledDeltaTime;
+                stalledWait += Time.unscaledDeltaTime;
+            }
+            if (loaded != lastLoaded || total != lastTotal || wp != lastWorkerPhase)
+            {
+                stalledWait = 0f;
+                lastLoaded = loaded; lastTotal = total; lastWorkerPhase = wp;
+            }
+            if (!failed && stalledWait >= ResourceStallTimeout)
+            {
+                failed = true; phase = "资源检查超时";
+                message = "连续两分钟没有进展。正在等待当前读写结束，结束后可重试；若一直无响应，请退出重开，并检查存储权限和剩余空间。";
+                Debug.LogWarning("[Resources] No progress for 120s: " + wp + " " + loaded + "/" + total);
+            }
+            else if (!failed && loadingWait >= 10f)
+                message = "首次解压或完整校验可能较久，耗时取决于手机性能和存储速度，请保持游戏在前台。";
+            return;
+        }
 
         if (loading.IsFaulted)
         {
             failed = true;
-            message = loading.Exception.GetBaseException().Message;
+            message = loading.Exception.GetBaseException().Message + " 请检查资源包、存储权限和剩余空间后重试。";
+            Debug.LogException(loading.Exception.GetBaseException());
             phase = "资源加载失败";
         }
-        else if (!startInvoked)
+        else if (!failed && !startInvoked)
         {
+            message = null;
             startInvoked = true;
             StartCoroutine(StartGameRoutine());
         }
@@ -267,14 +315,18 @@ public sealed class WzAndroidLoader : MonoBehaviour
             // 加载页钉死在这个循环里（真机上出现过 100% CPU、画面停在加载页、日志停在
             // [Art] ready 的情况）。超时就带上现有假人继续，别拦着玩家进登录页。
             botWait += Time.unscaledDeltaTime;
+            if (botWait >= 10f) message = "正在准备角色资源，耗时取决于手机性能，请稍候。";
             if (botWait >= MaxBotWaitSeconds)
             {
                 Debug.LogWarning("[Bot] 预热超时 " + MaxBotWaitSeconds + "s，跳过剩余预热直接启动");
+                message = "角色资源准备超时，将使用已就绪的资源继续启动。";
+                yield return new WaitForSecondsRealtime(2f);
                 break;
             }
             yield return null;
         }
 
+        message = null;
         phase = "资源就绪，正在启动游戏";
         yield return null;
         try { complete?.Invoke(); }
@@ -305,6 +357,8 @@ public sealed class WzAndroidLoader : MonoBehaviour
 
     void Retry()
     {
+        if (loading != null || string.IsNullOrEmpty(manifest)) return;
+        botWait = 0f;
         failed = false; message = null; starting = false; startInvoked = false;
         loading = null; workerPhase = null;
         loaded = 0; total = 0; visibleProgress = 0f; progressText = "0%";
@@ -398,31 +452,32 @@ public sealed class WzAndroidLoader : MonoBehaviour
             // 不透明底色，避免旧字形残留；有背景图时再盖一层。
             GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.055f, .07f, .09f, 1), 0, 0);
             if (background != null) GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), background, ScaleMode.ScaleAndCrop);
-            GUI.DrawTexture(new Rect(0, Screen.height * .74f, Screen.width, Screen.height * .26f), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .68f), 0, 0);
+
             float scale = Mathf.Min(Screen.width / 960f, Screen.height / 540f);
             GUI.matrix = Matrix4x4.TRS(new Vector3((Screen.width - 960 * scale) / 2, Screen.height - 540 * scale - Screen.safeArea.y, 0), Quaternion.identity, Vector3.one * scale);
 
-            GUI.Label(new Rect(120, 412, 720, 30), phase, titleStyle);
+            GUI.DrawTexture(new Rect((960f - Screen.width / scale) / 2f, 378, Screen.width / scale, 162 + Screen.safeArea.y / scale), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0, 0, 0, .68f), 0, 0);
+            GUI.Label(new Rect(120, 440, 720, 30), phase, titleStyle);
 
             // 进度条
-            GUI.DrawTexture(new Rect(160, 454, 640, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.18f, .2f, .23f), 0, 0);
+            GUI.DrawTexture(new Rect(160, 478, 640, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.18f, .2f, .23f), 0, 0);
             if (visibleProgress > 0)
-                GUI.DrawTexture(new Rect(160, 454, 640 * visibleProgress, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.25f, .7f, .4f), 0, 0);
+                GUI.DrawTexture(new Rect(160, 478, 640 * visibleProgress, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(.25f, .7f, .4f), 0, 0);
             // 启动阶段加一条来回扫动的高光，表示仍在工作（不是卡 100%）。
             if (starting)
             {
                 const float seg = 90f;
                 const float travel = 640f - seg;
                 float x = 160f + Mathf.PingPong(pulse * 200f, travel);
-                GUI.DrawTexture(new Rect(x, 454, seg, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(1f, 1f, 1f, .22f), 0, 0);
+                GUI.DrawTexture(new Rect(x, 478, seg, 10), Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(1f, 1f, 1f, .22f), 0, 0);
             }
 
-            GUI.Label(new Rect(160, 470, 640, 22), progressText, detailStyle);
+            GUI.Label(new Rect(160, 492, 640, 22), progressText, detailStyle);
 
-            if (!string.IsNullOrEmpty(message)) GUI.Label(new Rect(80, 320, 800, 70), message, detailStyle);
+            if (!string.IsNullOrEmpty(message)) GUI.Label(new Rect(80, 380, 800, 58), message, detailStyle);
 
-            if (failed && GUI.Button(new Rect(330, 386, 300, 26), "重试", buttonStyle)) Retry();
-            if (!hasPermission && permissionRequested && loading == null && GUI.Button(new Rect(330, 386, 300, 26), "授予文件访问权限", buttonStyle))
+            if (failed && loading == null && !string.IsNullOrEmpty(manifest) && GUI.Button(new Rect(330, 516, 300, 24), "重试", buttonStyle)) Retry();
+            if (!failed && !hasPermission && permissionRequested && loading == null && GUI.Button(new Rect(330, 516, 300, 24), "授予文件访问权限", buttonStyle))
                 try { RequestPermission(); } catch (Exception e) { message = e.Message; }
         }
         finally { GUI.matrix = matrix; GUI.color = color; GUI.depth = depth; }

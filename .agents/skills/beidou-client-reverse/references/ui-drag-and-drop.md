@@ -127,6 +127,14 @@ ItemMoveHandler.java:44
 
 ## 数量/文本输入框的移动端软键盘（2026-11-02，本次补接入）
 
+### 2026-11-02 数量窗外观补核（覆盖此前“肉眼一致”的结论）
+
+同一 BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2` / ImageBase400000。
+`9AC552` 将 A4（compact）传给 `99DD54`；`99DD7A..99DDA0` 将非零参数映射到默认字体索引4（白色，字体初始化见 npc-dialog）。因此 compact 正文不是黑色；编辑控件 `9A8424` 则明确 FF000000。正文测量宽225（`9A3D07` compact分支），内部margin2（`9A3DF6`），不能直接用GUIStyle.CalcHeight代替原正文流。
+`9ACD54`正文原点20,22，总高contentHeight+99；`9A83F6`的黑框19,contentHeight+24,229,18，白框20,contentHeight+25,227,16，编辑控件22,contentHeight+27,224,14。OK为212,height-26，Close为9,height-26；两图原始46×18，旧实现43×19拉伸错误。
+背景仍为Notice3/t(266×21)、c(266×20)、Notice4/s(266×78)。代码仅照搬已核实的黑白输入框绘制；其他素材继续直接取IMG。
+复现：`tools/inspect_beidou_client.py <exe> --fn 0x9a83f6`，持久汇编见 `docs/skill-regression/compact-number-controls-2026-11-02.txt`；排版使用既有DialogFlow输入模式，默认#w、margin2，数字单独黑字。Windows Arial与Unity中文字形差异仍是迁移边界；未作Android截图验收。
+
 **结论：数量弹窗本身早已接入，但「点击输入框拉起系统键盘」此前完全没接**， Android 真机点输入框不弹或行为不可靠。本次补齐并统一收口。
 
 ### 排查结论（改动前）

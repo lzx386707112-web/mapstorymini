@@ -23,8 +23,15 @@ public static class Program
         public bool NoExpDecrease(int mapId) => mapId == 980000000;
     }
 
-    public static int Main()
+    public static int Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--pq-navigation") return BotPerfChecks.PqNavigation();
+        if (args.Length > 0 && args[0] == "--pq-feedback")
+        {
+            PqChecks.Run(Check);
+            Console.WriteLine($"通过 {passed} / 失败 {failed}");
+            return failed == 0 ? 0 : 1;
+        }
         string dbPath = Path.Combine(Path.GetTempPath(), "mapstory_test.db");
         if (File.Exists(dbPath)) File.Delete(dbPath);
 

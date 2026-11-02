@@ -37,10 +37,13 @@ public static class NativeUtilPrompt
         try
         {
             var style = new GUIStyle {font = UiKit.Font, fontSize = 12, wordWrap = true, padding = new RectOffset()};
-            style.normal.textColor = answer != null ? Color.white : Color.black;
+            style.normal.textColor = Color.white;
             bool numeric = number != null;
             bool edit = numeric || entered != null;
-            float textHeight = Mathf.Ceil(style.CalcHeight(new GUIContent(text), edit ? 225 : 200));
+            // CUtilDlgEx A4=1: measurement width 225, internal margin 2,
+            // default font index 4 (white); the edit control has its own black font.
+            var layout = edit ? DialogFlow.Measure(DialogText.Parse("#w" + text), 225, input: true) : null;
+            float textHeight = edit ? layout.Height : Mathf.Ceil(style.CalcHeight(new GUIContent(text), 200));
             int lines = Mathf.Max(2, Mathf.FloorToInt(textHeight / 20) + 1);
             float height = edit ? textHeight + 99 : 55 + 21 + lines * 20;
             float x = (UiKit.W / scale - 266) / 2, y = (UiKit.H / scale - height) / 2;
@@ -51,7 +54,21 @@ public static class NativeUtilPrompt
             float bottom = edit ? 78 : 55;
             for (float dy = 21; dy < height - bottom; dy += 20) Image(slices + "/c", dy, 20);
             Image(edit ? "Notice4/s" : "YesNo3/s", height - bottom, bottom);
-            GUI.Label(new Rect(x + 20, y + 22, 225, textHeight), text, style);
+            if (edit)
+            {
+                foreach (var span in layout.Spans)
+                {
+                    var rect = new Rect(x + 20 + span.Rect.x, y + 22 + span.Rect.y, span.Rect.width, span.Rect.height);
+                    if (span.Tex != null) GUI.DrawTexture(rect, span.Tex);
+                    else
+                    {
+                        style.normal.textColor = span.Run.Color;
+                        style.fontStyle = span.Run.Bold ? FontStyle.Bold : FontStyle.Normal;
+                        GUI.Label(rect, span.Text, style);
+                    }
+                }
+            }
+            else GUI.Label(new Rect(x + 20, y + 22, 225, textHeight), text, style);
             bool submit = false;
             if (edit)
             {
@@ -59,6 +76,8 @@ public static class NativeUtilPrompt
                 UiKit.Fill(editRect, Color.black);
                 UiKit.Fill(new Rect(editRect.x+1,editRect.y+1,editRect.width-2,editRect.height-2), Color.white);
                 style.wordWrap = false;
+                style.normal.textColor = Color.black;
+                style.fontStyle = FontStyle.Normal;
                 var contentRect=numeric ? new Rect(x+22,y+textHeight+27,224,14) : new Rect(editRect.x+2,editRect.y+2,editRect.width-4,editRect.height-4);
                 string value = GUI.TextField(contentRect, input, numeric ? 19 : textMax, style);
                 if(numeric) { input = ""; foreach (char c in value) if (c >= '0' && c <= '9') input += c; }
@@ -72,9 +91,9 @@ public static class NativeUtilPrompt
                         numeric ? TouchScreenKeyboardType.NumberPad : TouchScreenKeyboardType.Default,
                         numeric ? 19 : textMax);
                 }
-                submit = NativeUi.Button(numeric ? new Rect(x + 212,y + height - 26,43,19) : new Rect(x+158,y+height-30,47,19),
+                submit = NativeUi.Button(numeric ? new Rect(x + 212,y + height - 26,46,18) : new Rect(x+158,y+height-30,47,19),
                     numeric ? "UI/UIWindow.img/UtilDlgEx/BtOK" : "UI/Basic.img/BtOK2", pointer);
-                if (NativeUi.Button(numeric ? new Rect(x + 9,y + height - 26,43,19) : new Rect(x+208,y+height-30,47,19),
+                if (NativeUi.Button(numeric ? new Rect(x + 9,y + height - 26,46,18) : new Rect(x+208,y+height-30,47,19),
                     numeric ? "UI/UIWindow.img/UtilDlgEx/BtClose" : "UI/Basic.img/BtCancel2", pointer)) { Clear(); return; }
             }
             else

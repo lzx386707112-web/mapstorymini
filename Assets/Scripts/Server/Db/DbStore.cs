@@ -161,6 +161,7 @@ public sealed class DbStore
     {
         var store = new DbStore { path = dbPath };
         store.LoadSchema();
+        GameConfigDao.EnsureLevelCaps(store);
         return store;
     }
 
@@ -170,6 +171,7 @@ public sealed class DbStore
         store.LoadSchema();
         if (File.Exists(dbPath)) store.ReadJson(File.ReadAllText(dbPath));
         else { store.Save(); }
+        GameConfigDao.EnsureLevelCaps(store);
         return store;
     }
 

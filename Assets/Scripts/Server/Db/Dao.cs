@@ -349,6 +349,16 @@ public static class SavedLocationsDao
 
 public static class GameConfigDao
 {
+    // 源端 V2.1.50；补旧存档缺失键，不覆盖后台已设置的等级上限。
+    public static void EnsureLevelCaps(DbStore db)
+    {
+        foreach (string code in new[] { "mxj_max_level", "qst_max_level" })
+            if (db.Table("game_config").Find(r => DbStore.Str(r, "config_code") == code) == null)
+                db.Table("game_config").Insert(new DbRow { ["config_type"] = "server",
+                    ["config_sub_type"] = "Game Mechanics", ["config_clazz"] = "java.lang.Integer",
+                    ["config_code"] = code, ["config_value"] = "255" });
+    }
+
     public static string Get(DbStore db, string code, string fallback = "")
     {
         var r = db.Table("game_config").Find(x => (string)x["config_code"] == code);

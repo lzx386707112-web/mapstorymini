@@ -19,6 +19,36 @@ static class BotPerfChecks
     static MapRuntime heavyMap;     // foothold 最多的图（建卡最贵）
     static MapRuntime walkMap;      // 有最长平台的图（测稳态移动）
 
+    public static int PqNavigation()
+    {
+        var map = BotNavigationMapLoader.Load().Geometry(103000000);
+        var watch = Stopwatch.StartNew();
+        var baseline = new BotNavigationGraphBuilder(map).Build();
+        double synchronous = watch.Elapsed.TotalMilliseconds;
+        var cache = new BotNavigationGraphs();
+        watch.Restart();
+        bool ready = cache.Prepare(map);
+        double request = watch.Elapsed.TotalMilliseconds, pollMax = 0;
+        var elapsed = Stopwatch.StartNew();
+        while (!ready && elapsed.Elapsed.TotalSeconds < 120)
+        {
+            System.Threading.Thread.Sleep(1);
+            watch.Restart(); ready = cache.Prepare(map);
+            pollMax = Math.Max(pollMax, watch.Elapsed.TotalMilliseconds);
+        }
+        if (!ready) { Console.WriteLine("[PERF] pq_navigation timeout"); return 1; }
+        string Signature(BotNavigationGraph graph)
+        {
+            var lines = new List<string>();
+            foreach (var edges in graph.outgoing.Values) foreach (var e in edges)
+                lines.Add($"{e.fromRegionId},{e.toRegionId},{e.type},{e.startPoint.x},{e.startPoint.y},{e.endPoint.x},{e.endPoint.y},{e.launchMinX},{e.launchMaxX},{e.launchStepX},{e.portalId},{e.ropeX},{e.ropeTopY},{e.ropeBottomY},{e.cost}");
+            lines.Sort(StringComparer.Ordinal); return string.Join("|", lines);
+        }
+        bool equal = Signature(baseline) == Signature(cache.Get(map));
+        Console.WriteLine($"[PERF] pq_navigation map={map.mapId} footholds={map.footholds.Count} sync_ms={synchronous:F2} request_ms={request:F2} poll_max_ms={pollMax:F2} worker_wait_ms={elapsed.Elapsed.TotalMilliseconds:F2} equal={equal}");
+        return equal ? 0 : 1;
+    }
+
     public static void Run()
     {
         Console.WriteLine();

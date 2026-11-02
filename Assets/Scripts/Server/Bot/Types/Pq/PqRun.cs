@@ -33,6 +33,7 @@ namespace Server.Bot.Types.Pq
         public readonly int partyId, leaderId;
         readonly List<int> bots = new List<int>();
         readonly Random rng = new Random();
+        readonly Dictionary<int,long> nextSwing = new Dictionary<int,long>();
 
         public int stageIndex;
         public int stepIndex;
@@ -114,10 +115,10 @@ namespace Server.Bot.Types.Pq
                 if (entry >= 0) { EnterStage(entry, now); return; }
                 if (now >= startDeadline)
                 {
-                    // 脚本没把我们送走（频道里已经有别的队、或脚本分支没走到）：自己送。
-                    PqDirector.WarpPlayer(def.entryMap);
-                    PqDirector.Notify("招募 NPC 没能把队伍送进副本，已直接送入。" + def.name);
-                    startDeadline = now + StartTimeoutMs;
+                    // 招募失败不能裸传公共模板图：它没有 setup/实例怪物与通行证状态。
+                    // 只能由原招募脚本成功建立实例后进入。
+                    PqDirector.Notify(def.name + "：招募未成功，请重新确认 NPC 的入场条件。");
+                    End(false);
                 }
                 return;
             }
@@ -319,14 +320,18 @@ namespace Server.Bot.Types.Pq
                 if (bot == null || bot.mapId != CurrentMap) continue;
                 var target = Nearest(bot, live);
                 if (target == null) continue;
-                if (Math.Abs(target.x - bot.x) > 55)
+                bot.equips.TryGetValue(-11, out int weapon);
+                var range = BotAttack.EngageRange(bot.job, weapon);
+                if (Math.Abs(target.x - bot.x) > range.x || Math.Abs(target.y - bot.y) > range.y)
                 {
                     MoveToward(bot, target.x, target.y);
                     continue;
                 }
+                BotMovementService.Stop(bot);
+                if (nextSwing.TryGetValue(id, out long ready) && now < ready) continue;
                 bot.stance = target.x < bot.x ? 5 : 4;
                 bot.facing = target.x < bot.x ? -1 : 1;
-                try { grind.Strike(bot, target); }
+                try { grind.Strike(bot, target); nextSwing[id] = now + 800; }
                 catch (Exception) { /* 目标在这一帧被真人打死：下一 tick 重选 */ }
             }
             return false;
@@ -337,7 +342,8 @@ namespace Server.Bot.Types.Pq
             BotGrindMob best = null; float dist = float.MaxValue;
             foreach (var mob in mobs)
             {
-                float d = Math.Abs(mob.x - bot.x) + Math.Abs(mob.y - bot.y) * .4f;
+                if (!mob.alive) continue;
+                float d = Math.Abs(mob.x - bot.x) + Math.Abs(mob.y - bot.y) * 2f;
                 if (d < dist) { dist = d; best = mob; }
             }
             return best;
@@ -538,7 +544,10 @@ namespace Server.Bot.Types.Pq
         {
             if (bot == null) return;
             if (!BotMovementService.Observed(bot.mapId)) { bot.x = x; bot.y = y; return; }
-            BotMovementService.Move(bot, x, (int)MapService.SnapToGround(bot.mapId, x, y));
+            if (!BotMovementService.PrepareNavigation(bot)) return;
+            int groundY = (int)MapService.SnapToGround(bot.mapId, x, y);
+            if (BotMovementService.IsMovingToward(bot, x, groundY)) return;
+            BotMovementService.Move(bot, x, groundY);
         }
     }
 }

@@ -22,10 +22,10 @@ namespace Server.Bot.Environment
         readonly Dictionary<int, List<Edge>> outgoing = new Dictionary<int, List<Edge>>();
         readonly HashSet<string> edgeKeys = new HashSet<string>();
         readonly Dictionary<(int, int, int), BotTrajectory.StableLanding> jumps = new Dictionary<(int, int, int), BotTrajectory.StableLanding>();
-        public BotNavigationGraphBuilder(MapRuntime map, BotMovementProfile profile = null)
+        public BotNavigationGraphBuilder(MapRuntime map, BotMovementProfile profile = null, MapGeometry geometry = null)
         {
             this.map = map; this.profile = profile ?? BotMovementProfile.Base;
-            var geometry = MapGeometryCache.Get(map);
+            geometry = geometry ?? MapGeometryCache.Get(map);
             regions = geometry.regions; ground = geometry.ground; collision = geometry.collision;
             motion = new BotGroundMotion(map, ground, regions, collision, physics); trajectory = new BotTrajectory(map, collision, this.profile);
             anchors = BotNavigationAnchors.Build(map, regions, ground, physics, this.profile);

@@ -35,6 +35,7 @@ public static class PqChecks
     public static void Run(Action<bool, string> Check)
     {
         PartyIndexChecks(Check);
+        CombatChecks(Check);
         string dir = EventScriptDir();
         if (dir == null)
         {
@@ -121,6 +122,59 @@ public static class PqChecks
             "组队任务：按队伍编号能取到全部成员（实际 " + (byId != null ? byId.members.Count : 0) + " 人）");
         // 契约守卫：两套编号不可混用。哪天 For() 被改成兼容队伍编号，这条会亮，提醒回来重看 Begin。
         Check(parties.For(party.id) == null, "组队任务：For(队伍编号) 不命中（编号语义不可混用）");
+    }
+
+    static void CombatChecks(Action<bool,string> check)
+    {
+        var db = DbStore.Create(Path.Combine(Path.GetTempPath(), "pq-combat-" + Guid.NewGuid().ToString("N") + ".json"));
+        check(GameConfigDao.GetInt(db, "mxj_max_level") == 255, "PQ 默认等级上限取源端 V2.1.50 的255");
+        var cap = db.Table("game_config").Find(r => DbStore.Str(r,"config_code") == "mxj_max_level");
+        cap["config_value"] = "180"; GameConfigDao.EnsureLevelCaps(db);
+        check(GameConfigDao.GetInt(db,"mxj_max_level") == 180, "补配置不覆盖管理员设置");
+        db.Table("game_config").Delete(r => DbStore.Str(r,"config_code") == "mxj_max_level");
+        db.Save();
+        check(GameConfigDao.GetInt(DbStore.Open(db.FilePath),"mxj_max_level") == 255, "旧存档缺失等级上限也补齐");
+        File.Delete(db.FilePath);
+
+        var previousParties = Server.Bot.BotTypeManager.Parties;
+        var previousGrind = Server.Bot.BotTypeManager.PartyGrind;
+        var previousId = Server.Bot.Types.Pq.PqDirector.LocalPlayerId;
+        var parties = new Server.Bot.BotPartyService(db);
+        var player = new Server.Bot.BotActor { id=81001, level=35, mapId=103000800 };
+        var bot = new Server.Bot.BotCharacter { id=81002, level=35, job=100, mapId=103000800 };
+        Server.Bot.BotRegistry.Add(bot);
+        parties.Create(player); parties.Join(bot,parties.For(player.id).id);
+        using var grind = new Server.Bot.BotPartyGrindService(parties, _ => null, new Random(1), db);
+        try
+        {
+            Server.Bot.BotTypeManager.Parties=parties; Server.Bot.BotTypeManager.PartyGrind=grind;
+            Server.Bot.Types.Pq.PqDirector.LocalPlayerId=()=>player.id;
+            var run=new Server.Bot.Types.Pq.PqRun(Server.Bot.Types.Pq.PqCatalog.Get("KPQ"),parties.For(player.id).id,player.id);
+            const System.Reflection.BindingFlags flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+            ((List<int>)typeof(Server.Bot.Types.Pq.PqRun).GetField("bots",flags).GetValue(run)).Add(bot.id);
+            run.stageIndex=0;
+            var mob=new Server.Bot.BotGrindMob {id=1,alive=true,maxHp=1000,x=0,y=300};
+            grind.Monsters=(_,__,___)=>new List<Server.Bot.BotGrindMob> {mob};
+            int hits=0; grind.Hit=(_,__,___,____,_____)=>hits++;
+            var work=typeof(Server.Bot.Types.Pq.PqRun).GetMethod("WorkMobs",flags);
+            void Tick(long now)=>work.Invoke(run,new object[] {new Server.Bot.Types.Pq.PqStep(),now,false});
+            Tick(1000);
+            check(hits==0 && bot.y==300, "PQ 同X不同楼层先接近，不原地循环打空");
+            Tick(1500); Tick(2000);
+            check(hits==1, "PQ 到达射程后攻击，800ms冷却内不重复结算");
+            Tick(2500);
+            check(hits==2, "PQ 冷却结束后继续攻击");
+            bot.job=212; bot.equips[-11]=1382000; bot.x=0;bot.y=300;mob.x=300;
+            Tick(3500);
+            check(hits==3 && bot.x==0, "PQ 远程职业使用真实Strike同口径射程停步攻击");
+        }
+        finally
+        {
+            Server.Bot.BotRegistry.Remove(bot);
+            Server.Bot.BotTypeManager.Parties=previousParties; Server.Bot.BotTypeManager.PartyGrind=previousGrind;
+            Server.Bot.Types.Pq.PqDirector.LocalPlayerId=previousId;
+            if(File.Exists(db.FilePath)) File.Delete(db.FilePath);
+        }
     }
 
     static string EventScriptDir()

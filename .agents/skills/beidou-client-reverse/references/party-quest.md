@@ -110,6 +110,14 @@ party6_* —— 全部清零。
   （源端每 10 秒一轮，怪被打死才减少），未做去重，属源端行为。
 - 静态扫描只证明「调用名有绑定」，不代表分支语义已完整验证；Android 实机仍需人工过一遍四个副本。
 
+## 2026-11-02 大厅进图主线程卡顿
+
+本节是移植端性能修正，不新增EXE行为结论。PqBot.Lobby → BotWander.Start → BotMovementService.Enable → BotNavigationGraphs.Get → GraphBuilder.Build 同步计算全地图轨迹；ground-spot picker还需要Base profile图。废都103000000有519段foothold，离线冷构图实测829.02ms，分帧生成假人无法切开这个同步调用。
+
+新增Graphs.Prepare：主线程取得只读MapGeometry，Task只读已加载地图/共享只读索引，独享builder；缓存/LRU只在主线程发布，不在帧内等待。PqBot开始游荡、PqRun.MoveToward、PQ移动器换图/属性变化先等待所需profile和Base图准备好。原同步Get保留给现有其他业务/离线契约；没有改路径、移动参数或副本规则。大厅SpawnOne续接改PostNextFrame，并拒绝玩家离图或Reset后的旧大厅任务，避免同帧连生及离图后回填。
+
+复现：`rtk dotnet run --project tools/server-check -c Release -- --pq-navigation`。同次废都对比：同步829.02ms，后台请求2.32ms，轮询最大0.63ms，后台完成等待486.04ms（后者不阻塞帧）；逐条比较全部路径端点/launch区间/step/portal/rope/代价一致。小图回归同时覆盖跳跃/下落/绳梯同步与异步结果。服务端检查1209通过/0失败。此为桌面纯C#测量，不代表Android实际帧率或所有进图卡顿已经消除，纸娃娃合成/音频/地图资源仍各走既有预算。
+
 ## 6. PQ 怪物不掉任务道具：实例地图必须开服即刷怪（2026-11-02）
 
 **症状**：废都 PQ 第一关杀鳄鱼不掉 4001007 证书，全程无通行证可交。
@@ -156,3 +164,23 @@ watk/matk/wdef/mdef 的难度调整未接入本地战斗链路（PQ 难度差异
 
 **grep 坑**：本机 BSD grep 对 UTF-8 文件要 `LC_ALL=C grep -a`，多模式用 `-E`
 （BRE `\|` 不可靠）。
+
+
+## 2026-11-02 六人资格/追怪/掉落补核
+
+- 源端 `GameConfig.java:331` 的 getServerInt 对缺键返回0；`event/KerningPQ.js:getEligibleParty`
+  要求招募图、等级[minLevel,maxLevel]、队长在合格名单、人数[minPlayers,maxPlayers]。
+  本地 Schema 缺 mxj_max_level，脚本顶层 maxLevel=0，所以六人也全部被过滤。
+  依据源端 SQL `V2.1.50__raise_character_level_cap_to_255_and_rebirth_cap_to_10.sql`，
+  DbStore Create/Open 补缺失 mxj/qst_max_level=255（server/Game Mechanics/Integer），保留现有配置。
+- PqRun 原先只看 |dx|>55，另一层同X目标会反复被 Strike 的Y检查拒绝；现以
+  BotAttack.EngageRange 两轴共同判接近/攻击，到位停步，800ms独立出手CD（源 CompanionGrindBot）。
+  同目标16px内不重设导航，避免每500ms把路径进度/卡住计时清零；选怪提高竖向距离权重。
+  射程档位仍沿用既有近似移植，未声称原EXE逐武器精确攻击框。
+- 招募脚本失败后的20秒裸传模板图已取消：没有 EIM setup 的公共图不能冒充组队任务实例。
+- 掉落未改概率：源表9300001→4001007券20%，还可掉4260000；9300000/2/3→4001008通行证100%。
+  9300003还可掉装备/卡片。不要把“其他物品同时出现”视为源表错误，也不能把第一关券改成通行证。
+- 验证：Unity PqInstanceChecks 77/0（五种真实 Social/NpcApi 六人资格均6，实例初始怪、
+  9300001实际模板ID、两种物品地面图标加载、券3980/20000、三种通行证怪各100/100）。
+  tools/server-check --pq-feedback 34/0，覆盖旧存档补键、保留配置、跨层追怪、冷却及远程攻击。
+  掉落测试未完整跑 Android 击杀→地面→拾取；用户所述“完全不出券”在当前Unity数据未复现。

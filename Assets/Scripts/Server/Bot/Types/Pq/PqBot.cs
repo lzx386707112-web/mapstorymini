@@ -127,6 +127,7 @@ namespace Server.Bot.Types.Pq
                     // 只在自己那一小片活动：围在招募 NPC 附近，不要满地图乱跑。
                     int lo = Math.Max((int)map.minX + 40, (int)chr.x - 220);
                     int hi = Math.Min((int)map.maxX - 40, (int)chr.x + 220);
+                    if (!BotMovementService.PrepareNavigation(chr)) return;
                     if (hi - lo > 80) { BotWander.Start(chr, true, lo, hi); wanderStarted = true; }
                     else { BotWander.Start(chr, false, 0, 0); wanderStarted = true; }
                 }
