@@ -108,5 +108,16 @@ namespace Server.Bot
             { int hit = i == hits-1 ? remaining : Math.Min(basic,remaining); result[i] = Math.Max(1,hit); remaining -= hit; }
             return result;
         }
+
+        // 真实攻击口径：源端 AI（CompanionGrindBot ENGAGE_X/Y=120）不区分职业，近战站在 120px 外
+        // 也出刀，观感就是「没走到怪身边就打到」。这里按 GrindSkill 的攻击类别分档：
+        //   CLOSE（含拳套近战）→ 一个身位内才出手（客户端近战攻击框量级）；
+        //   RANGED / MAGIC → 按射程停步（弓/弩/镖/枪/魔法的射程远大于 120，不必贴脸）。
+        // X/Y 两轴都限制；Y 收紧保证近战与怪同层才打（绳上/邻层不出刀）。
+        public static (int x,int y) EngageRange(int job,int weaponId)
+        {
+            var skill = GrindSkill(job,weaponId);
+            return skill.kind == PacketKind.CLOSE ? (70,50) : (380,120);
+        }
     }
 }

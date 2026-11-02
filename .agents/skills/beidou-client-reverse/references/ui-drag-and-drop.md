@@ -124,3 +124,33 @@ ItemMoveHandler.java:44
 6. 收尾：若丢的是正在生效的 item effect / 黑板 / 阿里安特宝石，分别清效果、关黑板、更新分数。
 
 迁移：客户端 `NativeInventoryActions.PickFromInventory`（背包格点一下拿起，装备也允许携带）→ 落在窗口与底栏之外的地面时 `DropToField`，可堆叠道具先问「扔掉多少？」（字符串池 885）；服务端 `NativeInventoryService.DropToField` 照抄上面 2~5。回归 `tools/server-check` 的 `DropChecks`（19 项：拆堆/整堆/超量/0/负数/装备行连带删除/dropType2/归属）。
+
+## 数量/文本输入框的移动端软键盘（2026-11-02，本次补接入）
+
+**结论：数量弹窗本身早已接入，但「点击输入框拉起系统键盘」此前完全没接**， Android 真机点输入框不弹或行为不可靠。本次补齐并统一收口。
+
+### 排查结论（改动前）
+- 丢弃 `NativeInventoryActions.cs:73` `DropToField`：可堆叠（`quantity>1` 且 `id/1000000!=1` 非装备）弹 `NativeUtilPrompt.Number("扔掉多少？", …)`；装备/单件直接丢 1 个。
+- 出售 `NativeNpcShopWindow.cs:88` `SellSelected`：可充能道具或 `quantity<=1` 走 `Confirm`，其余弹 `NativeUtilPrompt.Number("要出售多少个？", …)`。购买 `BuySelected` 同样走 `Number`。
+- 弹窗本体 `NativeUtilPrompt.cs`：`Number/NumberLong/Text/Confirm` 四种，数值用原图 `Notice3/Notice4` 切图 + `UI/UIWindow.img/UtilDlgEx/BtOK|BtClose`，输入框是裸 `GUI.TextField`（数值过滤非数字、最多 19 位），Esc 取消 / 回车提交、`min..max` 校验。**全文件没有任何 `TouchScreenKeyboard.Open`，输入框矩形也没有点击命中检测**。
+- 全工程显式拉软键盘原本只有 `LoginFlow.cs`（账号/密码/角色名）、`BottomBar.cs`（聊天）两处；`VirtualControls.cs` 只读 `visible/area` 做避让。
+- **决定性对照**：`LoginFlow.cs:826` 同样是 `GUI.TextField`，但点击时（`Application.isMobilePlatform`）额外调 `OpenKeyboard` → `TouchScreenKeyboard.Open`，并注释「关掉再重开在 Android 上是真会失败的」——证明本工程不信任 IMGUI 输入框自动弹键盘，必须显式拉起。数量弹窗缺的正是这段。
+
+### 迁移（新增 `NativeEditKeyboard.cs` 共享桥 + 三处接线）
+把登录页 / 聊天已验证的两条时序坑抽成一处，别再各自重写：
+1. **同框不重开**（`LoginFlow.cs:843-846` 原注释）：Android「`active=false` 再 `Open`」真会失败（返回非空但不弹）。`ShouldReopen(owner, active, key)`：同 owner 且键盘 active → 不重开；换输入框 / 已收起才允许重新 Open。
+2. **只在 Done/Canceled 收键盘**（`LoginFlow.cs:194-199` 原注释）：刚弹出头几帧 status 还不是 `Visible`，切前后台会短暂 `LostFocus`；按「非 Visible 就收」等于刚弹出来就被自己收走。`Apply` 里 `Visible/LostFocus` 一律返回 `None`、保留键盘与归属。
+3. **每 GUI 事件先读快照再消费 Enter**（`BottomBar.DrawChat:300-302` 原注释）：Android 输入法最终合成文本可能与 `Done/Enter` 同帧到达；`Done` 与回车同帧只提交一次（`Done` 后桥已 Close，同帧再 `Sync` 返回 `None`）。`Canceled` 收键盘但不提交。
+
+接线三处（owner 字符串隔离，避免 A 框键盘被 B 读走）：
+| 输入框 | 文件 | 命中坐标口径 | 键盘类型 | 提交 |
+| --- | --- | --- | --- | --- |
+| 数量 / 文本弹窗 | `NativeUtilPrompt.cs` | `Pointer.Pos/scale`（IMG 坐标，`editRect`） | numeric→NumberPad / 文本→Default | `Done`/回车 提交，Cancel 只收键盘；`Clear/Cancel` 收键盘 |
+| CUtilDlgEx 文本窗 | `NativeDlgInput.cs` | `Pointer.Pos`（屏幕像素，`field`） | Default | `Done`/回车 提交；`Close` 收键盘 |
+| 仓库金币双框 | `NativeStorageWindow.cs` | `p`（group 内 IMG 坐标，`takeRect/putRect`） | NumberPad | **不改交易口径**：仍走 BtOutCoin/BtInCoin，`Done` 只收键盘不代提交；`Reset` 收键盘 |
+
+命中统一 `EventType.Repaint && GUI.enabled && Pointer.Clicked && rect.Contains(pointer)` → `Pointer.ConsumeClick()`，与 `NativeUi.Button` 同口径；输入框矩形与各窗口按钮不重叠，点击消费不冲突。
+
+### 验证与边界
+- `Assets/Editor/NativeEditKeyboardChecks.cs`（`UNITY_EDITOR` 注入快照，走真机同一条 `Sync/Apply` 路径）：覆盖最终文本回灌、null 文本不覆盖、Visible/LostFocus 不收、Done 回灌且幂等、Canceled 不提交、`ShouldReopen` 四种组合、owner 隔离、三处关闭路径收键盘、数量弹窗开合。
+- **边界**：以上为纯逻辑 + dotnet 自检，**未连 Android 实机**；IMGUI `GUI.TextField` 自身在移动端的输入行为仍以显式键盘为权威，不宣称实机手感验收。丢弃/出售业务门控由既有 `DropChecks` / `npc-shop-check` 覆盖，本次未改服务端与回调链。

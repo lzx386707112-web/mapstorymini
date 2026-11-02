@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 public enum ExtraStorageOperation { None, Read, Store, Withdraw }
-public sealed class InventoryChangeRequest { public ExtraStorageOperation extraStorage; public int extraStorageType; public int characterId, itemId, quantity, equipSlot, sourcePosition; public int petSlot, evolvePetId; public int petTameness; public bool petLeaderOnly; public bool readPetExclusions, writePetExclusions; public int petId; public int[] petExclusions; public bool getPet, createPet; public long itemExpiration=-1; public bool equip, projectile, removeAll, togglePet, worldQuestDraw, petTick; public int grantItemId, grantQuantity, grantMinutes; public bool consumeGrantSource, breakthrough; public int bankExp, maxBankLevel; public long grantDurationMs=-1; public int[] checkItems, checkQuantities; public int removeCheckItem, removeCheckQuantity; public bool dropToField; public int dropQuantity, dropMapId, dropX, dropY; public bool sortItems, mergeItems; public int sortInventoryType; }
-public sealed class InventoryChangeResponse { public int extraStorageQuantity; public bool ok = true; public string error = "", message; public InventoryEntry pet; public List<int> petExclusions; public long damageCap; public int bankedExp, createdPetId; public bool inventoryChanged; public List<InventoryEntry> inventory; }
+public sealed class InventoryChangeRequest { public ExtraStorageOperation extraStorage; public int extraStorageType; public int characterId, itemId, quantity, equipSlot, sourcePosition; public int petSlot, evolvePetId; public int petTameness; public bool petLeaderOnly; public bool readPetExclusions, writePetExclusions; public int petId; public int[] petExclusions; public bool getPet, createPet; public long itemExpiration=-1; public bool equip, projectile, removeAll, togglePet, worldQuestDraw, petTick; public int grantItemId, grantQuantity, grantMinutes; public bool consumeGrantSource, breakthrough; public int bankExp, maxBankLevel; public long grantDurationMs=-1; public int[] checkItems, checkQuantities; public int removeCheckItem, removeCheckQuantity; public bool dropToField; public int dropQuantity, dropMapId, dropX, dropY; public long dropMeso; public bool sortItems, mergeItems; public int sortInventoryType; }
+public sealed class InventoryChangeResponse { public int extraStorageQuantity; public bool ok = true; public string error = "", message; public InventoryEntry pet; public List<int> petExclusions; public long damageCap; public int bankedExp, createdPetId; public bool inventoryChanged; public List<InventoryEntry> inventory; public long meso; }
 public static class NativeInventoryService {
     static readonly Dictionary<(DbStore,int),long> worldQuestUse=new Dictionary<(DbStore,int),long>();
     static readonly Random worldQuestRandom=new Random();
@@ -10,7 +10,7 @@ public static class NativeInventoryService {
     public static InventoryChangeResponse Handle(DbStore db, InventoryChangeRequest r) {
         var c = CharactersDao.FindById(db, r.characterId);
         bool petOperation=r.readPetExclusions || r.writePetExclusions || r.getPet || r.petTick || r.evolvePetId>0 || r.petTameness!=0;
-        if (c == null || r.itemId <= 0 && r.checkItems==null && !petOperation && !r.sortItems && !r.mergeItems) return new InventoryChangeResponse { ok = false, error = "角色或道具不存在" };
+        if (c == null || r.itemId <= 0 && r.dropMeso<=0 && r.checkItems==null && !petOperation && !r.sortItems && !r.mergeItems) return new InventoryChangeResponse { ok = false, error = "角色或道具不存在" };
         InventoryDao.ExpireItems(db,r.characterId,DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         // ITEM_SORT2 / ITEM_SORT：背包整理与合并，走 NativeInventorySort 的源端算法。
         if(r.sortItems) return NativeInventorySort.Sort(db,c,r.sortInventoryType);
@@ -19,6 +19,7 @@ public static class NativeInventoryService {
         if(r.readPetExclusions || r.writePetExclusions) return NativePetItems.Exclusions(db,r);
         if(r.checkItems!=null) return new InventoryChangeResponse {ok=CanReceive(db,c,r)};
         if(r.dropToField) return DropToField(db,c,r);
+        if(r.dropMeso>0) return DropMeso(db,c,r);
         if(r.removeAll)
         {
             InventoryDao.ConsumeItem(db,r.characterId,r.itemId,InventoryDao.CountOf(db,r.characterId,r.itemId));
@@ -284,6 +285,29 @@ public static class NativeInventoryService {
             dropped, r.dropX, r.dropY, true, true);
 
         return new InventoryChangeResponse { inventory = CharService.Load(db, characterId).inventory };
+    }
+
+    // 源端 MesoDropHandler：isAlive → meso>9 && meso<50001 && meso<=getMeso() → gainMeso(-meso)
+    // → map.spawnMesoDrop(meso, position, player, player, true, (byte)2)。
+    // GM 预检（客户端文案 775 / 服务端 "You cannot drop mesos at your GM level."）在客户端做，
+    // 服务端按 minimum_gm_level_to_drop 再拦一次，两侧共用 GameConfig 同名键（源端默认 4）。
+    // attemptCatchFish(meso) 分支（钓鱼场消失金币）没有对应系统，按普通 spawnMesoDrop 记录。
+    static InventoryChangeResponse DropMeso(DbStore db, CharRecord character, InventoryChangeRequest r)
+    {
+        long meso = r.dropMeso;
+        if (character.hp <= 0) return new InventoryChangeResponse { ok = false, error = "死亡状态中不能执行该操作" };
+        int gmLevel = GameConfigDao.GetInt(db, "minimum_gm_level_to_drop", 4);
+        if (character.gm > 0 && character.gm < gmLevel)
+            return new InventoryChangeResponse { ok = false, error = "管理账号不能扔掉金币。" };
+        if (meso <= 9 || meso > 50000 || meso > character.meso)
+            return new InventoryChangeResponse { ok = false, error = "金币数量不正确" };
+        character.meso -= meso;
+        CharactersDao.Save(db, character); db.Save();
+        Server.Field.MapItemService.SpawnMesoDrop(r.dropMapId, (int)meso, r.dropX, r.dropY,
+            (int)character.id, (int)character.id,
+            Server.Field.MapItemService.PartyOf != null ? Server.Field.MapItemService.PartyOf((int)character.id) : -1,
+            true, 2);
+        return new InventoryChangeResponse { meso = character.meso };
     }
 
     static bool TwoHanded(int id) => id / 10000 >= 140 && id / 10000 <= 149;

@@ -372,6 +372,8 @@ public class GameLoop : MonoBehaviour
     void Update()
     {
         NativeHuntRuntime.Tick();
+        NativeBotBossCombat.Tick(NativeMobController.Now);   // 自由市场假人集火 Boss 的攻击节拍
+        NativeDojoService.Tick();                            // 武陵道场超时踢出（源端 TimerManager）
         if (state != GameState.Playing) return;
 
         if (gameOver)

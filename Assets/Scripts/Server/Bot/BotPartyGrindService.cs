@@ -165,10 +165,16 @@ namespace Server.Bot
         public void Strike(BotCharacter bot,BotGrindMob target)
         {
             if (target==null || !target.alive) return;
+            bot.equips.TryGetValue(-11,out int weapon);
+            var skill=BotAttack.GrindSkill(bot.job,weapon);
+            var range=BotAttack.EngageRange(bot.job,weapon);
+            // 服务端二次校验：不在攻击距离内不出手（AI 每帧先判 ENGAGE，这里拦瞬移边缘帧）。
+            if (Math.Abs(target.x-bot.x)>range.x || Math.Abs(target.y-bot.y)>range.y) return;
             int damage=BotAttack.LineDamage(BotAttack.JobTier(bot.job),bot.level,target.maxHp,random);
             bot.stance=target.x<bot.x ? 5 : 4; bot.facing=target.x<bot.x ? -1 : 1;
-            bot.equips.TryGetValue(-11,out int weapon); var skill=BotAttack.GrindSkill(bot.job,weapon);
-            BotAttack.BasicSwing(bot,random);
+            // 源端 grindHit：有技能只播技能攻击（showSkillVisual + 对应 CLOSE/RANGED/MAGIC 包），
+            // 无技能才走普攻 visibleHit。此前总是先 BasicSwing 再叠技能特效，观感全是普攻。
+            if (skill.id==0) BotAttack.BasicSwing(bot,random);
             Hit?.Invoke(bot,target,damage,skill,BotAttack.SplitDamage(damage,skill.hits));
         }
         public void Stop(int leaderId,string message=null)

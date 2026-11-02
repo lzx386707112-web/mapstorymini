@@ -378,3 +378,9 @@ Repaint读取TouchScreenKeyboard.text；输入法最终文本与Enter/Done同时
 Done+Enter同帧、最新Visible文本、Canceled、拒绝发送粉色原因且不替换气泡、Clear均通过。
 编译0错误0警告，截图docs/chat-send-review/chat-sent-balloon.png已目视核对聊天回显与主角气泡同时存在。
 日志与交付记录见docs/chat-send-review/verification.md；没有连接Android设备，不称实机验收。
+
+2026-11-02补：上述「每事件先读快照 / Done与Enter同帧只一次 / Canceled不发送」与
+LoginFlow.OpenKeyboard 的「同框不重开、只在Done/Canceled收、LostFocus不收」两条坑，
+已抽成共享桥 `NativeEditKeyboard`（`Assets/Scripts/NativeEditKeyboard.cs`），
+供数量/文本弹窗、CUtilDlgEx文本窗、仓库金币框统一复用。详细接线与回归边界见
+[UI 拖动语义](ui-drag-and-drop.md) 的「数量/文本输入框的移动端软键盘」小节。

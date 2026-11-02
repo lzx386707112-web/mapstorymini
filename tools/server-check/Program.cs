@@ -353,6 +353,17 @@ public static class Program
             "删除角色清理怪物手册");
         File.Delete(socialPath);
 
+        // —— MapRuntime NPC 动态增删（cm.removeNPC/spawnNpc/getNPCById 的服务端数据面，
+        //    语义对齐源端 MapleMap.destroyNPC：同图至多一个同名 NPC，实例存活期间永久）——
+        var npcMap = new Server.Field.MapRuntime { mapId = 100 };
+        npcMap.npcs.Add(new Server.Field.MapNpcPosition { id = 1104002, x = 850, y = 200 });
+        Check(npcMap.GetNpc(1104002) != null && npcMap.GetNpc(999999) == null, "MapRuntime.getNpc 命中/未命中");
+        Check(npcMap.RemoveNpc(1104002) && npcMap.GetNpc(1104002) == null && npcMap.removedNpcs.Contains(1104002),
+            "destroyNPC：从图上移除并进入已删记录");
+        npcMap.npcs.Add(new Server.Field.MapNpcPosition { id = 1104002, x = 1, y = 1, dynamic = true });
+        Check(npcMap.RemoveNpc(1104002), "移除动态实例返回 true");
+        Check(npcMap.GetNpc(1104002) == null, "动态实例移除后不在图上");
+
         Console.WriteLine();
         NativeSystemChecks.Run(Check);
         GmCommandChecks.Run(Check);

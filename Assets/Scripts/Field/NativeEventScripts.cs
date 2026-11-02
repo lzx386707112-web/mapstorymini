@@ -69,6 +69,8 @@ public sealed class NativeEventScripts : MonoBehaviour
             // EventManager.getMonster(mobId)：LifeFactory.getMonster 的实例侧入口，
             // 脚本拿到模板怪后自己 registerMonster + map.spawnMonsterOnGroundBelow。
             host.service.MonsterFactory=id=>new ScriptMonster(id).Host();
+            // eim.getMapFactory().getMap(id)：warp 目标图的脚本对象（客户端 Npc 层的 BuildWarpMap）。
+            host.service.WarpMapFactory=id=>NpcApi.BuildWarpMap(id);
             // 组队任务（KPQ/LudiPQ/EllinPQ/PiratePQ）：warpEventTeam 把本地角色送到目标图。
             // 假人不走这条（它们由 Server.Bot 侧自己 WarpTo），这里只处理真实角色。
             host.service.WarpPlayer=(instance,mapId,player)=>

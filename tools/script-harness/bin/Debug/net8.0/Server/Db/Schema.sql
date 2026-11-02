@@ -13,7 +13,7 @@
 --   savedlocations    ← V1.0.39__create_savedlocations.sql
 --   world_prop        ← V1.3.0__create_world_prop.sql
 --   game_config       ← V1.7.0__create_game_config.sql（只取本项目消费的参数）
--- 未建表的源端对象（guilds/family/duey/mts/pets/bosslog…）当前玩法不消费，
+-- 未建表的源端对象（guilds/family/duey/mts/bosslog…）当前玩法不消费，
 -- 需要时按同一迁移文件补进本文件即可，DbStore 不需要改。
 --
 -- 说明：源端是 MySQL(InnoDB, AUTO_INCREMENT, TIMESTAMP 默认值)。本地嵌入式存储
@@ -61,7 +61,7 @@ CREATE TABLE characters
     world                INTEGER NOT NULL DEFAULT 0,
     name                 TEXT    NOT NULL DEFAULT '',
     level                INTEGER NOT NULL DEFAULT 1,
-    exp                  INTEGER NOT NULL DEFAULT 0,
+    exp                  BIGINT  NOT NULL DEFAULT 0,   -- 等级上限 300：满级累计经验约 8e17，INTEGER 会截断
     gachaexp             INTEGER NOT NULL DEFAULT 0,
     str                  INTEGER NOT NULL DEFAULT 12,
     dex                  INTEGER NOT NULL DEFAULT 5,
@@ -71,7 +71,7 @@ CREATE TABLE characters
     mp                   INTEGER NOT NULL DEFAULT 5,
     maxhp                INTEGER NOT NULL DEFAULT 50,
     maxmp                INTEGER NOT NULL DEFAULT 5,
-    meso                 INTEGER NOT NULL DEFAULT 0,
+    meso                 BIGINT  NOT NULL DEFAULT 0,   -- 金币不再受 21 亿限制
     hpMpUsed             INTEGER NOT NULL DEFAULT 0,
     job                  INTEGER NOT NULL DEFAULT 0,
     skincolor            INTEGER NOT NULL DEFAULT 0,
@@ -132,7 +132,7 @@ CREATE TABLE characters
     jailexpire           INTEGER NOT NULL DEFAULT 0,
     fishLevel            INTEGER NOT NULL DEFAULT 1,
     damageSkinId         INTEGER NOT NULL DEFAULT 0,
-    damageCap            INTEGER NOT NULL DEFAULT 19999999
+    damageCap            BIGINT  NOT NULL DEFAULT 19999999
 );
 
 CREATE TABLE keymap
@@ -234,7 +234,11 @@ CREATE TABLE inventoryequipment
     vicious              INTEGER NOT NULL DEFAULT 0,
     itemlevel            INTEGER NOT NULL DEFAULT 1,
     itemexp              INTEGER NOT NULL DEFAULT 0,
-    ringid               INTEGER NOT NULL DEFAULT -1
+    ringid               INTEGER NOT NULL DEFAULT -1,
+    starLevel            INTEGER NOT NULL DEFAULT 0,
+    starCount            INTEGER NOT NULL DEFAULT 0,
+    maxStar              INTEGER NOT NULL DEFAULT 0,
+    expandAttribute4     TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE queststatus
@@ -398,6 +402,7 @@ CREATE TABLE modified_cash_item (
  package_sn INTEGER
 );
 CREATE TABLE cash_items (
+ petid INTEGER NOT NULL DEFAULT -1,
  id INTEGER PRIMARY KEY AUTOINCREMENT,
  accountid INTEGER NOT NULL,
  world INTEGER NOT NULL,
@@ -409,6 +414,21 @@ CREATE TABLE cash_items (
  characterid INTEGER DEFAULT 0,
  inventoryitemid INTEGER DEFAULT 0,
  giftFrom TEXT DEFAULT ''
+);
+-- V1.0.29__create_pets.sql: pet identity survives cash locker round trips.
+CREATE TABLE pets (
+ petid INTEGER PRIMARY KEY AUTOINCREMENT,
+ name TEXT,
+ level INTEGER NOT NULL,
+ closeness INTEGER NOT NULL,
+ fullness INTEGER NOT NULL,
+ summoned INTEGER NOT NULL DEFAULT 0,
+ flag INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE petignores (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ petid INTEGER NOT NULL,
+ itemid INTEGER NOT NULL
 );
 CREATE TABLE cash_wishlist (
  id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -543,4 +563,151 @@ CREATE TABLE command_info (
     enabled      INTEGER NOT NULL DEFAULT 1,
     clazz        TEXT NOT NULL,
     default_level INTEGER NOT NULL DEFAULT 0
+);
+
+-- V1.0.36：举报记录（ReportHandler.addReport；reporttime 存 Unix 毫秒）
+CREATE TABLE reports
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    reporttime  INTEGER NOT NULL DEFAULT 0,
+    reporterid  INTEGER NOT NULL,
+    victimid    INTEGER NOT NULL,
+    reason      INTEGER NOT NULL DEFAULT 0,
+    chatlog     TEXT    NOT NULL DEFAULT '',
+    description TEXT    NOT NULL DEFAULT ''
+);
+
+-- 假人档案：对齐联机的「账号表」。
+-- 联机里每个玩家账号唯一，所以别人看到他永远是同一张脸、同一个名字；假人现在照这个来：
+-- 几百条档案一次性预置好，之后只读不改，同一个 id 永远同一套外观 + 同一个名字。
+-- template 指向 BotAppearanceTemplates 的模板下标 —— 外观模板被同模板假人共享，
+-- 纸娃娃纹理才能一份多用（这才是联机客户端同屏几十人也不爆显存的原因）。
+-- map_id 是「档案归属地图」：0 表示自由分配，>0 表示这只只会出现在该图。
+-- level/job 是身份的一部分（对齐联机：账号的角色有自己的等级职业），生成时优先于模板。
+-- 覆盖模式下按「等级 1..N × 该等级可转职业」铺满，保证每个职业每个等级都有人。
+CREATE TABLE bot_profile (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    template     INTEGER NOT NULL DEFAULT 0,
+    map_id       INTEGER NOT NULL DEFAULT 0,
+    channel      INTEGER NOT NULL DEFAULT 1,
+    bound        INTEGER NOT NULL DEFAULT 0,
+    enabled      INTEGER NOT NULL DEFAULT 1,
+    level        INTEGER NOT NULL DEFAULT 0,
+    job          INTEGER NOT NULL DEFAULT 0
+);
+
+-- 钓鱼系统物品配置表 ← 源端 V1.9.9__insert_fishing_items.sql + V2.0.2__update_fishing_items.sql。
+-- 源端 Fishing.getItemsByType(type) 就是 `SELECT item_id FROM fishing_items WHERE item_type = ?`
+-- （Fishing.java:153）。npc/9330045.js 在脚本顶层就要这 6 类清单，表不在 → 整个 NPC 打不开。
+-- 后续 V2.1.101/102/105 的清理只删武器 / 饰品区间，没有一条命中这里的 item_id。
+CREATE TABLE fishing_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_type   INTEGER NOT NULL,
+    item_id     INTEGER NOT NULL,
+    create_time TEXT,
+    update_time TEXT
+);
+INSERT INTO fishing_items (item_type, item_id) VALUES
+(1, 4031627), (1, 4031628), (1, 4031630), (1, 4031631),
+(2, 4031633), (2, 4031637), (2, 4031641), (2, 4031645),
+(3, 4031634), (3, 4031638), (3, 4031642), (3, 4031646),
+(4, 4031635), (4, 4031639), (4, 4031643), (4, 4031647),
+(5, 4031636), (5, 4031640), (5, 4031644), (5, 4031648),
+(5, 1112752), (5, 1113149), (5, 1113162), (5, 1113227), (5, 1113235),
+(6, 4031629), (6, 4031632),
+(6, 1113096), (6, 1113187), (6, 1113191), (6, 1113211);
+
+-- 原端 V1.8.7__create_extra_storage.sql（角色+账号共同限定）
+CREATE TABLE extrastorage (
+    inventoryequipmentid INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid INTEGER NOT NULL DEFAULT 0,
+    accountid INTEGER NOT NULL DEFAULT 0,
+    itemid INTEGER NOT NULL DEFAULT 0,
+    quantity INTEGER NOT NULL DEFAULT 0,
+    type INTEGER NOT NULL DEFAULT 0
+);
+
+-- Storage.java create/loadOrCreateFromDB; account storage is shared per world.
+CREATE TABLE storages (
+    storageid INTEGER PRIMARY KEY AUTOINCREMENT,
+    accountid INTEGER NOT NULL DEFAULT 0,
+    world INTEGER NOT NULL,
+    slots INTEGER NOT NULL DEFAULT 0,
+    meso INTEGER NOT NULL DEFAULT 0
+);
+
+-- 快递 ← 源端 V1.0.9__create_dueyi.sql。
+-- 源端列名是 PackageId/ReceiverId/SenderName/Mesos/TIMESTAMP/Message/Checked/Type；
+-- 这里改小写，TIMESTAMP 用 sendtime 存毫秒（源端是 SQL TIMESTAMP，比较时按 30 天过期）。
+-- dueyitems 关联 inventoryitems：包裹里的物品行 characterid = -1，不属于任何角色。
+CREATE TABLE dueypackages (
+    packageid  INTEGER PRIMARY KEY AUTOINCREMENT,
+    receiverid INTEGER NOT NULL DEFAULT 0,
+    sendername TEXT    NOT NULL DEFAULT '',
+    mesos      INTEGER NOT NULL DEFAULT 0,
+    sendtime   INTEGER NOT NULL DEFAULT 0,
+    message    TEXT    NULL,
+    checked    INTEGER NOT NULL DEFAULT 1,
+    type       INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE dueyitems (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    packageid       INTEGER NOT NULL DEFAULT 0,
+    inventoryitemid INTEGER NOT NULL DEFAULT 0
+);
+
+-- 雇佣商店（HiredMerchant）← 源端 playershopitem/inventorymerchant + characters.MerchantMesos/HasMerchant。
+-- 源端把店主物品存在 inventoryitems（type=ItemFactory.MERCHANT=6）并用 inventorymerchant 存 bundles；
+-- 本项目 inventoryitems.type 已经是「道具大分类」（itemId/1000000），所以店内存货行用
+-- characterid = -2（不与快递的 -1 混用）表示「无主」，merchantitems 记录槽位/份数/单价。
+CREATE TABLE hiredmerchants (
+    ownerid     INTEGER PRIMARY KEY,
+    mapid       INTEGER NOT NULL DEFAULT 0,
+    x           INTEGER NOT NULL DEFAULT 0,
+    y           INTEGER NOT NULL DEFAULT 0,
+    permitid    INTEGER NOT NULL DEFAULT 0,
+    description TEXT    NOT NULL DEFAULT '',
+    open        INTEGER NOT NULL DEFAULT 0,
+    published   INTEGER NOT NULL DEFAULT 0,
+    starttime   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE merchantitems (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    ownerid         INTEGER NOT NULL DEFAULT 0,
+    slot            INTEGER NOT NULL DEFAULT 0,
+    inventoryitemid INTEGER NOT NULL DEFAULT 0,
+    bundles         INTEGER NOT NULL DEFAULT 0,
+    price           INTEGER NOT NULL DEFAULT 0
+);
+
+-- Fredrick 寄存提醒 ← V1.0.13__create_fredstorage.sql（timestamp 存毫秒）
+CREATE TABLE fredstorage (
+    cid       INTEGER PRIMARY KEY,
+    daynotes  INTEGER NOT NULL DEFAULT 0,
+    timestamp INTEGER NOT NULL DEFAULT 0
+);
+
+-- HiredMerchant.sold：成交记录（店主窗口的「已售出」列表）
+CREATE TABLE merchantsold (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    ownerid  INTEGER NOT NULL DEFAULT 0,
+    buyer    TEXT    NOT NULL DEFAULT '',
+    itemid   INTEGER NOT NULL DEFAULT 0,
+    quantity INTEGER NOT NULL DEFAULT 0,
+    meso     INTEGER NOT NULL DEFAULT 0,
+    time     INTEGER NOT NULL DEFAULT 0
+);
+
+-- 便签 ← V1.0.27__create_notes.sql（MEMO_RESULT：商城送礼提醒 / 回复送礼便签 / Fredrick 寄存提醒）
+CREATE TABLE notes (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    "to"      TEXT    NOT NULL DEFAULT '',
+    "from"    TEXT    NOT NULL DEFAULT '',
+    message   TEXT    NOT NULL DEFAULT '',
+    timestamp INTEGER NOT NULL DEFAULT 0,
+    fame      INTEGER NOT NULL DEFAULT 0,
+    deleted   INTEGER NOT NULL DEFAULT 0
 );

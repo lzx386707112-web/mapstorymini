@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DropCheck")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d0284c190e70ab6896bfb05146267bfc8442f861")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c307cd909bce0e180b0f5a48a077b2ef139be794")]
 [assembly: System.Reflection.AssemblyProductAttribute("DropCheck")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DropCheck")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

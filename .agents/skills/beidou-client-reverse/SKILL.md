@@ -55,7 +55,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 皮奥任务箱子、Reactor原地图生成、普攻残影选箱、四击状态机、原JS/SQL掉落、任务物品拾取与刷新 | [任务箱子与Reactor](references/reactor-boxes.md) |
 | showIntro/goAdventure/goLith 世界坐标过场、Shape2D位移、原始声音、事件宿主生命周期、startInstance 重载/实例回收与怪物公园六图闭环 | [地图过场与事件实例](references/map-intro-and-events.md) |
 | 右上角辅助技能状态栏、32px 布局、剩余时间遮罩与迁移缺口 | [临时状态栏](references/temporary-stat-view.md) |
-| 鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义、背包道具丢到地上（ITEM_MOVE action=0） | [UI 拖动语义](references/ui-drag-and-drop.md) |
+| 鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义、背包道具丢到地上（ITEM_MOVE action=0）、**丢弃/出售数量弹窗的移动端软键盘桥（NativeEditKeyboard：同框不重开/只在 Done·Canceled 收/每事件先读快照，三处输入框统一接入）** | [UI 拖动语义](references/ui-drag-and-drop.md) |
 | 事件倒计时 CLOCK 面板：258×58 底图/小时底图、四数字槽 86/112/179/205、y=12、前导零与 3600 秒切换 | [事件倒计时](references/event-timer-clock.md) |
 | 组队任务招募/阶段/领奖 NPC：`em.getEligibleParty` 未绑定导致的「对话脚本出错」、`party.toArray`、`em.getMonster`、`map.getPlayers`/`spawnAllMonsterIdFromMapSpawnList`、组队搜索开关与副本公告、假人陪跑的队伍编号 vs 角色 id 混用 | [组队任务接口](references/party-quest.md) |
 | Say.img无JS问答ask/stop选错分支、NPC Java导入/日期/global this/命令元数据/21点入口与正式API审计口径、三处源脚本授权覆盖、ijl15对话正文480高度补丁、NPC 对话窗口精确布局/字体/按钮、VScr4、`#L` 图文、`#y/u`任务引用、`#q/s`技能名/图、`#@`NPC名、`#W`原图与atoi参数审计、sendPrev 上一页+确定/对话键任务菜单与接受页推进、灯泡 autoStart/日期筛选、NPC进行中QuestIcon1/stop对白与完成条件击杀计数、截图问候入口/交付奖励10000→4→1、fieldType82青苹果外观、建号路线与远程任务脚本 | [NPC 对话窗口](references/npc-dialog.md) |

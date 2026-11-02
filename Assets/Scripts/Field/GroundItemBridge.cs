@@ -79,6 +79,14 @@ public sealed class GroundItemBridge : MonoBehaviour
         Vector3 from = actor != null && actor.mapId == item.mapId
             ? new Vector3(actor.x / Art.PPU, -actor.y / Art.PPU, 0)
             : reactor!=null ? new Vector3(reactor.x/Art.PPU,-reactor.y/Art.PPU,0) : ToUnity(item);
+        // 本地玩家不在 BotRegistry：dropperId 等于自己时取角色实时脚点，
+        // 否则 from 退化为落点、抛出动画没有起点（看不到从身上抛出的弧线）。
+        // 源端 spawnMesoDrop/spawnItemDrop 的 position 都是 Character.getPosition()。
+        if (item.dropperId == GameSession.CharacterId && item.ownerCharacterId == GameSession.CharacterId)
+        {
+            var player = GameLoop.I != null ? GameLoop.I.player : null;
+            if (player != null) from = player.FeetPos;
+        }
         GroundItem.Spawn(item.IsMeso ? 0 : item.ItemId, item.IsMeso ? item.meso : item.Quantity,
             ToUnity(item), item, from);
     }

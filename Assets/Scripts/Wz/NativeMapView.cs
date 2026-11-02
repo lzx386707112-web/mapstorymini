@@ -118,6 +118,10 @@ public sealed class NativeMapView : MonoBehaviour
             m.npcs.Add(new FieldNpc { id = e.npcId, x = e.x, y = NpcGroundYAt(n, e.x, e.fh, 23),
                 head = NpcHeadHeight(e.npcId) });
         }
+        // 源端 destroyNPC 移除过的 NPC 不再出生（MapleMap 实例存活期间永久）。
+        var runtime = Server.Field.MapService.Get(previous.id);
+        if (runtime != null && runtime.removedNpcs.Count > 0)
+            m.npcs.RemoveAll(npc => runtime.removedNpcs.Contains(npc.id));
         // Use source VR when present; maps without VR use a provisional foothold-based camera envelope.
         int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
         foreach (var f in m.footholds)
@@ -282,11 +286,22 @@ public sealed class NativeMapView : MonoBehaviour
         renderer.transform.SetParent(mapBody, false);
         for (int i = at; i < mapRenderers.Count; i++) mapRenderers[i].sortingOrder = i;
     }
-    readonly Dictionary<Server.Field.MapNpcPosition,FieldNpc> dynamicNpcs = new Dictionary<Server.Field.MapNpcPosition,FieldNpc>();
+    readonly Dictionary<Server.Field.MapNpcPosition,(FieldNpc model,GameObject view)> dynamicNpcs = new Dictionary<Server.Field.MapNpcPosition,(FieldNpc,GameObject)>();
     public void SyncDynamicNpcs(FieldMap field)
     {
         var runtime=Server.Field.MapService.Get(NativeEventScripts.ResolveMap(field.id)?.Scope ?? field.id);
         if(runtime==null)return;
+        // 源端 destroyNPC：把控制器与 NPC 一起从图上撤下（removeNPCController + removeNPC）。
+        // 动态实例从 runtime.npcs 消失、或命中 removedNpcs 时，撤掉已画视图与交互模型。
+        var gone=new List<Server.Field.MapNpcPosition>();
+        foreach(var pair in dynamicNpcs)
+        {
+            if(runtime.npcs.Contains(pair.Key) && !runtime.removedNpcs.Contains(pair.Key.id))continue;
+            if(pair.Value.view!=null)UnityEngine.Object.Destroy(pair.Value.view);
+            field.npcs.Remove(pair.Value.model);
+            gone.Add(pair.Key);
+        }
+        foreach(var spawn in gone)dynamicNpcs.Remove(spawn);
         foreach(var spawn in runtime.npcs)
         {
             if(!spawn.dynamic || dynamicNpcs.ContainsKey(spawn))continue;
@@ -305,8 +320,18 @@ public sealed class NativeMapView : MonoBehaviour
             var draw = Draw(npc.Get("stand"),"Npc_"+id,spawn.x,spawn.y,0);
             if (draw != null) AddMapRenderer(draw.Renderer, NpcDepth(displayedMap, foothold));
             var model=new FieldNpc { id=spawn.id,x=spawn.x,y=spawn.y,head=NpcHeadHeight(spawn.id) };
-            field.npcs.Add(model);dynamicNpcs.Add(spawn,model);
+            field.npcs.Add(model);dynamicNpcs.Add(spawn,(model,draw?.Renderer?.gameObject));
         }
+    }
+
+    // 源端 destroyNPC 的客户端表现（removeNPCController + removeNPC 两个广播包）：
+    // 撤掉图上已画的该 NPC 视图。静态 life 出生与动态生成共用同一命名 "Npc_XXXXXXX"，
+    // 同图同名 NPC 至多一个（源端 destroyNPC 的既有假设）。
+    public void RemoveNpcView(int npcId)
+    {
+        if (mapBody == null) return;
+        var view = mapBody.Find("Npc_" + npcId.ToString("D7"));
+        if (view != null) Destroy(view.gameObject);
     }
 
     public void Show(int id)

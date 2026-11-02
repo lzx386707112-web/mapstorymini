@@ -49,6 +49,20 @@ namespace Server.Field
         public readonly List<MapRope> ropes = new List<MapRope>();
         public readonly List<MapPortal> portals = new List<MapPortal>();
         public readonly List<MapNpcPosition> npcs = new List<MapNpcPosition>();
+        /// <summary>
+        /// 本局已从这张图移除的 NPC id（源端 MapleMap.destroyNPC：假设同图至多一个同名 NPC）。
+        /// 语义与源端一致：MapleMap 实例存活期间 destroyNPC 是永久的，静态 life 与脚本/GM 动态生成的都算；
+        /// 本工程的生命周期锚点是进程——重开游戏等价源端服务器重启复位。
+        /// </summary>
+        public readonly HashSet<int> removedNpcs = new HashSet<int>();
+        /// <summary>按 npcId 找图上的 NPC（源端 getNPCById：至多一个；不在图上返回 null）。</summary>
+        public MapNpcPosition GetNpc(int npcId) => npcs.Find(n => n.id == npcId);
+        /// <summary>移除图上该 NPC 的全部实例（源端 destroyNPC），返回是否移除了动态实例。</summary>
+        public bool RemoveNpc(int npcId)
+        {
+            removedNpcs.Add(npcId);
+            return npcs.RemoveAll(n => n.id == npcId) > 0;
+        }
         /// <summary>WZ reactor 节点的静态描述；运行时实例由 MapReactorService 惰性生成（本文件不持逻辑）。</summary>
         public readonly List<MapReactorSpawn> reactors = new List<MapReactorSpawn>();
         public readonly List<FootholdSegment> footholds = new List<FootholdSegment>();

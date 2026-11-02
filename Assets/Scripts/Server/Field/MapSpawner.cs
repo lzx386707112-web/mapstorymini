@@ -70,6 +70,10 @@ namespace Server.Field
             return result;
         }
 
+        // 全部刷怪点（实例地图按频道口径首次铺怪用：源端频道地图自开服起
+        // 刷怪系统就在跑，玩家进本时模板 life 的怪都已在图上）。
+        public List<SpawnPoint> AllSpawnPoints => new List<SpawnPoint>(monsterSpawn);
+
         public List<SpawnPoint> StartFrenzy()
         {
             if(FrenzyTotemActive) return new List<SpawnPoint>();

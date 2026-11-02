@@ -20,6 +20,9 @@ namespace Server.Bot
         public bool mountActive;
         public int accId;
         public int gmLevel;
+        // 当前/最大 HP：源端 Character.recalcLocalStats 后满血进入地图；假人目前不掉血
+        //（无受伤结算），组队血条（ShowPartyHP）先按满血绘制，战斗接入后在此更新。
+        public int hp = 1, maxHp = 1;
         public int str = 12, dex = 5, intelligence = 4, luk = 4;
         public long meso;
         public readonly List<InventoryEntry> inventory = new List<InventoryEntry>();

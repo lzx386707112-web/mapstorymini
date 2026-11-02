@@ -43,6 +43,9 @@ public sealed class NativeEventScriptService
     // EventManager.getMonster(mobId) = LifeFactory.getMonster：返回一个「还没进图」的怪物对象。
     // ScriptMonster 在客户端 Field 层，Server 侧不能直接引用，由宿主注入（NativeEventScripts）。
     public Func<int,JsValue> MonsterFactory;
+    // eim.getMapFactory().getMap(id)：warp 目标图的脚本对象（NpcApi.BuildWarpMap 在客户端
+    // Npc 层，Server 侧不能直接引用），由宿主注入；未注入时返回 null（离线自检不触发该路径）。
+    public Func<int,JsValue> WarpMapFactory;
     public NativeEventScriptService(Func<string,string> source,Func<long> clock,Action<JsEngine> configure=null)
     { this.source=source;this.clock=clock;this.configure=configure; }
     public Manager GetManager(string name)
@@ -470,6 +473,17 @@ public sealed class NativeEventScriptService
             Bind(Host,"isTimerStarted",c=>JsBoolean.Of(eventTime>0 && timerStarted>0));
             Bind(Host,"getInstanceMap",c=>GetMap(Number(c)));
             Bind(Host,"getMapInstance",c=>GetMap(Number(c)));
+            // eim.getEm()：EventInstanceManager.getEm() 返回创建它的 EventManager
+            // （KerningTrain.js:31 `eim.getEm().getChannelServer().getMapFactory().getMap(...)`）。
+            Bind(Host,"getEm",c=>manager.Host);
+            // eim.getMapFactory()：源端委托 channel.getMapFactory()，与
+            // em.getChannelServer().getMapFactory() 是同一个全局地图工厂（KerningTrain.js:32-33）。
+            Bind(Host,"getMapFactory",c=>
+            {
+                var factory=new JsHostObject(null);
+                factory.Set("getMap",JsFunction.FromNative("getMap",c=>service.WarpMapFactory!=null ? service.WarpMapFactory(Number(c)) : JsNull.Value));
+                return factory;
+            });
             // ——— 组队任务（KPQ / LudiPQ / EllinPQ / PiratePQ）用到的实例接口 ———
             // 这些接口此前没迁移，四个副本的阶段 NPC 一调用就抛「Unmigrated」，
             // 表现为「点 NPC 提示对话脚本出错」。语义逐条对齐 EventInstanceManager.java。

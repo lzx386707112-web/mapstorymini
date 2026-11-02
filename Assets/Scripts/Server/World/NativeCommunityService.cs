@@ -54,6 +54,16 @@ public sealed class NativeCommunityService {
     readonly Dictionary<int, GuildFormation> formations = new Dictionary<int, GuildFormation>();
     sealed class GuildFormation { public string name; public long expires; public HashSet<int> members = new HashSet<int>(), accepted = new HashSet<int>(); }
     public static readonly int[] FamilyCosts = { 300, 500, 700, 800, 1000, 1200, 1500, 2000, 2500, 4000, 5000 };
+    // Guild.getIncreaseGuildCost（Guild.java:811）：扩容费用公式，ExpandGuild 与
+    // 脚本侧 Java 类 org.gms.net.server.guild.Guild 共用这一份，不许两处漂移。
+    public static int IncreaseGuildCost(DbStore db, int capacity)
+    {
+        int cost = GameConfigDao.GetInt(db, "expand_guild_base_cost", 500000)
+            + Math.Max(0, (capacity - 15) / 5) * GameConfigDao.GetInt(db, "expand_guild_tier_cost", 1000000);
+        if (capacity > 30)
+            return Math.Min(GameConfigDao.GetInt(db, "expand_guild_max_cost", 5000000), Math.Max(cost, 5000000));
+        return cost;
+    }
     public NativeCommunityService(DbStore db) { this.db = db; }
     public Func<int, int, bool> SameChannel;
     static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -213,8 +223,7 @@ public sealed class NativeCommunityService {
             case CommunityOperation.ExpandGuild:
                 if (!master) return "只有族长可以扩容";
                 int capacity = DbStore.Int(guild, "capacity"); if (capacity >= 100) return "家族容量已达上限";
-                int cost = GameConfigDao.GetInt(db, "expand_guild_base_cost", 500000) + Math.Max(0, (capacity - 15) / 5) * GameConfigDao.GetInt(db, "expand_guild_tier_cost", 1000000);
-                if (capacity > 30) cost = Math.Min(GameConfigDao.GetInt(db, "expand_guild_max_cost", 5000000), Math.Max(cost, 5000000));
+                int cost = IncreaseGuildCost(db, capacity);
                 if (c.meso < cost) return "金币不足，需要" + cost;
                 guild["capacity"] = (long)(capacity + 5); Meso(c, -cost); return null;
             case CommunityOperation.InviteFamily:

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="8880171.img">
+    <imgdir name="info">
+        <int name="level" value="230" />
+        <int name="maxHP" value="500000000" />
+        <int name="maxMP" value="45000" />
+        <int name="PADamage" value="16200" />
+        <int name="PDRate" value="10" />
+        <int name="MADamage" value="16088" />
+        <int name="MDRate" value="10" />
+        <int name="acc" value="9999" />
+        <int name="eva" value="750" />
+        <int name="pushed" value="1000000000" />
+        <float name="fs" value="10.0" />
+        <int name="exp" value="0" />
+        <int name="summonType" value="1" />
+        <string name="mobType" value="1N" />
+        <int name="boss" value="1" />
+        <int name="ignoreFieldOut" value="1" />
+        <int name="noFlip" value="1" />
+        <int name="hideHP" value="1" />
+        <int name="hideName" value="1" />
+        <imgdir name="attack">
+            <imgdir name="0">
+                <int name="action" value="1" />
+                <int name="attackRatio" value="100" />
+                <int name="type" value="0" />
+                <int name="cooltime" value="10000" />
+                <int name="ignoreStance" value="100" />
+                <int name="fixDamR" value="30" />
+            </imgdir>
+        </imgdir>
+        <int name="firstAttack" value="1" />
+        <int name="PDDamage" value="16200" />
+        <int name="MDDamage" value="16088" />
+        <int name="showNotRemoteDam" value="1" />
+    </imgdir>
+    <imgdir name="stand">
+    </imgdir>
+    <imgdir name="hit1">
+    </imgdir>
+    <imgdir name="die1">
+    </imgdir>
+    <imgdir name="attack1">
+        <imgdir name="info">
+            <int name="attackAfter" value="720" />
+            <imgdir name="range">
+                <vector name="lt" x="-310" y="-104" value="-310, -104" />
+                <vector name="rb" x="269" y="-22" value="269, -22" />
+            </imgdir>
+            <imgdir name="hit">
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="regen">
+    </imgdir>
+</imgdir>

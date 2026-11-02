@@ -35,7 +35,11 @@ namespace Server.Bot.Types
             var station=service.Station(chr,leader); var target=service.Target(chr,leader);
             if (target!=null)
             {
-                if (Math.Abs(chr.x-target.x)<=120 && Math.Abs(chr.y-target.y)<=120)
+                // 真实攻击口径：按职业/武器的攻击类别停步（近战贴身、远程/魔法在射程内），
+                // 不再沿用源端 120px 一刀切的 ENGAGE 圈。
+                chr.equips.TryGetValue(-11,out int weapon);
+                var range=BotAttack.EngageRange(chr.job,weapon);
+                if (Math.Abs(chr.x-target.x)<=range.x && Math.Abs(chr.y-target.y)<=range.y)
                 {
                     BotMovementService.Stop(chr); lastMoveX=int.MinValue;
                     if (BotScheduler.Now()>=nextSwing) { service.Strike(chr,target); nextSwing=BotScheduler.Now()+800; }

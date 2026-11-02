@@ -43,6 +43,8 @@ public sealed class NativeEventMap
     MapSpawner spawner;
     FieldDirector renderer;
     bool disposed;
+    // MapleMap.allowSummonState 的登记位（源端默认允许）。
+    public bool allowSummonState=true;
     static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     static int Int(JsCall c,int index=0)=>JsConvert.ToInt32(c.Arg(index));
     static void Bind(JsHostObject host,string name,Func<JsCall,JsValue> action)
@@ -67,12 +69,34 @@ public sealed class NativeEventMap
             script=portal.script,enabled=portal.enabled});
         MapService.Register(Geometry);
         live.Add(this);
+        // 源端 getMapInstance 返回的是频道地图：它的刷怪系统自开服起就在跑，玩家踏进
+        // 副本时模板 life 的怪早就站在图上了。KerningPQ 的 respawnStages 只调
+        // instanceMapRespawn、从不 resetPQ，就是按「图里本来就有怪」写的——之前移植端
+        // 要等 resetPQ 才建刷怪点，结果废都 PQ 全程无怪，第一关鳄鱼(9300001)的
+        // 通行证(4001007)无从掉落。这里对齐源端：实例图创建即建刷怪点并全部首刷。
+        InitialSpawn();
         Host=new JsHostObject(this);
         Host.Missing=key=>throw new JsRuntimeException("Unmigrated event map API: "+key);
         Bind(Host,"getId",c=>new JsNumber(Id));Bind(Host,"getMapId",c=>new JsNumber(Id));
         Bind(Host,"getFieldLimit",c=>new JsNumber(Geometry.fieldLimit));
         Bind(Host,"getMapName",c=>new JsString(WzNames.Map(Id)));
         Bind(Host,"resetPQ",c=>{Reset();return Done;});
+        // MapleMap.resetFully()：= resetMapObjects 全重置（清怪/掉落/反应堆 + 重建刷怪点立即首刷），
+        // 与 resetPQ 同路径。Puppeteer.js setup 第一句就是 getInstanceMap(eventMap).resetFully()。
+        Bind(Host,"resetFully",c=>{Reset();return Done;});
+        // MapleMap.allowSummonState(flag)：实例图是否允许召唤物状态保存（Puppeteer 禁、RockSpirit 开）。
+        // 本端召唤兽不走实例图持久化路径，登记真实开关即可。
+        Bind(Host,"allowSummonState",c=>{allowSummonState=JsConvert.ToBoolean(c.Arg(0));return Done;});
+        // MapleMap.warpEveryone(mapId[, portal])：把图上所有人传走（Subway takeoff/arrived 用）。
+        // 单机图上只有本地角色一人，语义一致。
+        Bind(Host,"warpEveryone",c=>
+        {
+            int target=Int(c);
+            var session=NpcSession.MapContext();
+            foreach(var player in PlayerList().Items)
+                session.RequestWarp(target,null,c.ArgCount>1?Int(c,1):-1);
+            return Done;
+        });
         Bind(Host,"getPortal",c=>Portal(c.Arg(0)));
         Bind(Host,"countMonsters",c=>new JsNumber(Count));
         Bind(Host,"getSpawnedMonstersOnMap",c=>new JsNumber(Count));
@@ -109,6 +133,8 @@ public sealed class NativeEventMap
         Bind(Host,"broadcastMessage",c=>{Broadcast(c.Arg(c.ArgCount-1));return Done;});
         // MapleMap.dropMessage(type, text)：只发给站在图里的人。
         Bind(Host,"dropMessage",c=>{DropMapMessage(Int(c),JsConvert.ToString(c.Arg(1)));return Done;});
+        // MapleMap.broadcastStringMessage(type, text)：dropMessage 的别名，LudiPQ 用它广播过关提示。
+        Bind(Host,"broadcastStringMessage",c=>{DropMapMessage(Int(c),JsConvert.ToString(c.Arg(1)));return Done;});
         // MapleMap.getAllPlayers()：实例地图只有本地角色，玩家不在图上就是空表。
         Bind(Host,"getAllPlayers",c=>PlayerList());
         Host.Set("getCharacters",Host.Get("getAllPlayers"));
@@ -152,6 +178,9 @@ public sealed class NativeEventMap
                 (byte)(JsConvert.ToBoolean(c.Arg(4)) ? 2 : 0),JsConvert.ToBoolean(c.Arg(5)));
             return Done;
         });
+        // MapleMap.shuffleReactors()：把图上反应堆的位置互相打乱（源端是收集全部
+        // 反应堆坐标后洗牌逐一重设）。EllinPQ 第三关 930000500 的箱子反应堆靠它换位。
+        Bind(Host,"shuffleReactors",c=>{ShuffleReactors();return Done;});
         // MapleMap.getReactorByName(name) / getReactors()：第 2 层卡牌石碑、第 18 层椰子树都靠它。
         Bind(Host,"getReactorByName",c=>
         {
@@ -187,6 +216,23 @@ public sealed class NativeEventMap
     }
     public int Count {get {int n=0;foreach(var mob in mobs)if(mob.Alive)n++;return n;}}
     Mob Find(Predicate<Mob> matches)=>mobs.Find(m=>m.Alive && matches(m));
+    static readonly System.Random rng=new System.Random();
+    // MapleMap.shuffleReactors：收集全部反应堆坐标 → 洗牌 → 逐一重设（bump visualRevision 让视图跟随）。
+    void ShuffleReactors()
+    {
+        var reactors=MapReactorService.Get(Scope);
+        var points=new List<(int x,int y)>();
+        foreach(var r in reactors)points.Add((r.x,r.y));
+        for(int i=points.Count-1;i>0;i--)
+        {
+            int j=rng.Next(i+1);
+            (points[i],points[j])=(points[j],points[i]);
+        }
+        for(int i=0;i<reactors.Count;i++)
+        {
+            reactors[i].x=points[i].x;reactors[i].y=points[i].y;reactors[i].visualRevision++;
+        }
+    }
 
     // ——— 原生宿主（LucidBossCompat 等）用到的地图能力，语义与 MapleMap 同名方法一致 ———
     public List<Mob> AllMobs => new List<Mob>(mobs);
@@ -203,8 +249,6 @@ public sealed class NativeEventMap
         LastPacket="effect:"+path;LastEffect=path;RecordEffect(path);
         if(renderer!=null)NativeScriptEffect.Play(path);
     }
-    // MapleMap.broadcastMessage(packet)：投递给图上的人。LastPacket 只做记录（回归用），
-    // 不改变「玩家不在图上就没人收到」这条源端语义。
     public void Broadcast(JsValue packet)
     {
         string description=NpcApi.DescribeScriptPacket(packet);
@@ -314,13 +358,26 @@ public sealed class NativeEventMap
             if(s.mobTime==-1)Spawn(point.MobId,point.Def.x,point.Def.y,point);
         }
     }
+    // 构造期的「频道地图已开服跑了一段时间」口径：Reset 后把 mobTime>=0 的
+    // 刷怪点也全部首刷（SpawnPoint.shouldForceSpawn 即源端实例强制补怪判定）。
+    void InitialSpawn()
+    {
+        Reset();
+        foreach(var point in spawner.AllSpawnPoints)
+            if(point.ShouldForceSpawn())
+                Spawn(point.MobId,point.Def.x,point.Def.y,point);
+    }
     Mob Spawn(int id,float x,float y,SpawnPoint spawn,JsHostObject host=null)
     {
         FieldCatalog.LoadMob(id);
         if(!FieldCatalog.Mobs.TryGetValue(id,out var data))throw new JsRuntimeException("Missing event monster: "+id);
         var mob=new Mob(this,id,nextMob++,x,y,NativeCombatData.Long(data.stats,"maxHP",1),spawn,host);
         if(host?.Host is ScriptMonster template)mob.ApplyTemplate(template);
-        mobs.Add(mob);spawn?.MarkSpawned(Now);Instance.RegisterMonster(mob.Host,mob.Friendly);
+        mobs.Add(mob);spawn?.MarkSpawned(Now);
+        // 源端 EventInstanceManager.mobs 只由脚本登记（eim.registerMonster / eim.spawnMonster）；
+        // 模板 life 刷出来的怪不进集合，否则脚本等 allMonstersDead 时会被模板怪拖住
+        //（PiratePQ 波次怪、HenesysPQ/TreasurePQ 的 allMonstersDead 都按脚本登记口径写）。
+        if(host!=null)Instance.RegisterMonster(mob.Host,mob.Friendly);
         if(renderer!=null)mob.Render(renderer);
         return mob;
     }
@@ -428,6 +485,19 @@ public sealed class NativeEventMap
                 if(Visible!=null)Visible.ScriptMoveTo(X,Y,false);
                 return Done;
             });
+            // Monster.changeDifficulty(difficulty, pqMob)：PiratePQ 按队伍难度调怪。
+            // 源端 MonsterStats.setChange 全工程无调用点，changeable 恒 false，实际总是 no-op。
+            Bind(Host,"changeDifficulty",c=>{ChangeDifficulty(Int(c),JsConvert.ToBoolean(c.Arg(1)));return Done;});
+        }
+        public long? ExpOverride;
+        // 公式与 mobHpVal 表在 ScriptMonster.ChangeableStats（模板怪与图内怪共用同一份源端口径）。
+        void ChangeDifficulty(int difficulty,bool pqMob)
+        {
+            var diff=ScriptMonster.ChangeableStats(Id,difficulty,pqMob);
+            if(!diff.HasValue)return;
+            MaxHp=Math.Max(1,diff.Value.hp);SetHp(MaxHp);
+            ExpOverride=diff.Value.exp;
+            if(Visible!=null){Visible.expOverride=diff.Value.exp;Visible.NativeController?.RestoreFieldHp(MaxHp);}
         }
         public int Fh;
         long damageBlockedUntil;
@@ -454,6 +524,12 @@ public sealed class NativeEventMap
             if(template.FhSet)Fh=template.Fh;
             damageBlockedUntil=template.DamageBlockedUntil;
             if(template.HpOverride>=0)Hp=Math.Max(0,Math.Min(MaxHp,template.HpOverride));
+            // changeDifficulty 的结果：源端 changeLevel 同时改 hp 与 maxHp（ostats.hp），
+            // 所以这里不走 clamp，直接重设 MaxHp。
+            if(template.DifficultyStats.HasValue)
+            {
+                MaxHp=Math.Max(1,template.DifficultyStats.Value.hp);Hp=MaxHp;ExpOverride=template.DifficultyStats.Value.exp;
+            }
         }
         // SeedTowerCompat.controls：脚本在 spawn 之后写 seedControlled.<mapId>.<oid>，
         // 所以这里必须在生成之后惰性读取（EnemyUnit 每 0.5s 问一次），不能只在 Spawn 时判一次。
@@ -471,6 +547,7 @@ public sealed class NativeEventMap
             if(Visible==null)throw new JsRuntimeException("Cannot render event monster: "+Id);
             Visible.ScriptControlProbe=()=>Controlled;
             Visible.NativeController?.RestoreFieldHp(Hp);
+            if(ExpOverride.HasValue)Visible.expOverride=ExpOverride.Value;
             // 进图前登记的免疫窗口（LucidBossCompat 的暴怒失败怪 8880154）。
             long remaining=damageBlockedUntil-NativeEventScripts.Clock();
             if(remaining>0)Visible.NativeController?.BlockFor((int)remaining);

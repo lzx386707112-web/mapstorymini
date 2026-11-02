@@ -109,3 +109,50 @@ party6_* —— 全部清零。
 - `PiratePQ` 的 `spawnAllMonsterIdFromMapSpawnList` 每次调用都会重新生成该模板的全部刷怪点
   （源端每 10 秒一轮，怪被打死才减少），未做去重，属源端行为。
 - 静态扫描只证明「调用名有绑定」，不代表分支语义已完整验证；Android 实机仍需人工过一遍四个副本。
+
+## 6. PQ 怪物不掉任务道具：实例地图必须开服即刷怪（2026-11-02）
+
+**症状**：废都 PQ 第一关杀鳄鱼不掉 4001007 证书，全程无通行证可交。
+
+**根因**：`NativeEventMap` 构造时只建几何不建刷怪点（`Reset()` 原本只由脚本
+`resetPQ/resetFully` 触发）。KerningPQ 全程**只**用 `instanceMapRespawn` 补怪
+（源端 respawnStages 每 15 秒一次），而 `Respawn()` 里 `spawner==null` 直接 return
+→ 实例图从进来到通关一只怪都没有 → 4001007 无从掉落。
+LudiPQ/EllinPQ/PiratePQ/HenesysPQ 在 setup 里调 `resetPQ`，所以只有 KPQ 坏。
+
+源端口径：`EventManager.getMapInstance` 返回**频道地图**，刷怪系统自开服常跑、
+怪一直在图上。移植端修法（`NativeEventMap` 构造末尾）：
+
+```
+void InitialSpawn() { Reset(); foreach (spawner.AllSpawnPoints) if (ShouldForceSpawn()) Spawn(...); }
+```
+
+`Spawn` 里的登记改为 `Instance.RegisterMonster(...)`（源端 eim.mobs 只收脚本 spawn 的怪，
+模板刷怪点出的怪不进集合——KPQ `killMonster` 递减断言按此口径）。
+
+**掉落数据本身无误**：`FieldDropTable.txt` 与源端 V1.0.51 drop_data 逐条一致——
+9300001→4001007(chance=200000, **questid=0**，源端如此，任何队员可拾)；
+9300000/9300002/9300003→4001008(100%)；LudiPQ 4001022/4001023；
+EllinPQ 4001162/4001163 走**反应堆掉落**（reactordrops，非怪物掉落）；
+PiratePQ 4001117/4001120-22。排查工具：`tools/drop-check`（离线滚动链路 35 项断言）。
+
+**连带补齐的 API**（PiratePQ/EllinPQ 跑到才暴露）：
+
+| 调用 | 源端语义 | 移植实现 |
+| --- | --- | --- |
+| `mob.changeDifficulty(diff, pqMob)` | `Monster.java:1920` → `changeLevel(level*rate, pqMob)` → `ChangeableStats`；rate 2→1.4/3→2.1/4→3.2/5→5.6/6→7.7；非 boss HP=`mobHpVal[newLevel]`×1.5、exp=`mobHpVal/hpRatio`×1.5（hpRatio=hp/exp），boss HP=hp×mod×1.5、exp 不变 | **注意作用点**：PiratePQ 是在 `em.getMonster()` 的**进图前模板**上调用 → 绑定在 `ScriptMonster`（结果存 `DifficultyStats`，进图时 `ApplyTemplate` 重设 MaxHp+exp，不走会 clamp 的 `HpOverride`）；图内 `NativeEventMap.Mob` 也绑了同名方法复用同一静态公式 `ScriptMonster.ChangeableStats()` |
+| `map.broadcastStringMessage(type, text)` | `MapleMap.dropMessage` 别名 | `DropMapMessage` 同 dropMessage |
+
+⚠️ **源端 changeDifficulty 实际总是 no-op**：`MonsterStats.setChange` 全工程无调用点，
+`changeable` 恒 false。移植端照实守卫（返回 null），公式留全以便将来接入。
+watk/matk/wdef/mdef 的难度调整未接入本地战斗链路（PQ 难度差异主要在 HP/exp）。
+
+**回归**：`Assets/Editor/PqInstanceChecks.cs`（batchmode：`Unity -batchmode -nographics
+-projectPath <proj> -executeMethod PqInstanceChecks.Run -logFile /tmp/pq_instance.log`）。
+五个 PQ（KPQ/LudiPQ/EllinPQ/PiratePQ/HenesysPQ）真脚本 setup 建实例，断言：
+入口图初始刷怪数（KPQ 22 / LudiPQ 25 / PiratePQ 26 / HenesysPQ 10）、KPQ `instanceMapRespawn`
+补怪不减、`killMonster` 递减、4001007 掉落行 quest=0/chance=200000、20000 次滚动命中
+4σ（3980/20000，期望 4000±226）。当前 35 通过 / 0 失败。
+
+**grep 坑**：本机 BSD grep 对 UTF-8 文件要 `LC_ALL=C grep -a`，多模式用 `-E`
+（BRE `\|` 不可靠）。

@@ -56,6 +56,11 @@ public static class NativeSystemMessage
                 // case 6 走 0x4906B5(msg, 10)：不带前缀、浅蓝
                 BottomBar.AddChat(text, BottomBar.ChatLightBlue);
                 break;
+            case 12:
+                // yellowChat（PacketCreator.yellowChat）：BotBossCombatManager 的黄字提示
+                // （"假人已开始集火Boss。"等）。色值对齐 BottomBar.ChatYellow。
+                BottomBar.AddChat(text, BottomBar.ChatYellow);
+                break;
             default:
                 BottomBar.AddChat(text, BottomBar.ChatWhite);
                 break;

@@ -37,7 +37,19 @@ public static class NativeInventoryActions
         if (!Carrying) return;
         if (Pointer.RightPressed || Input.GetKeyDown(KeyCode.Escape) || NpcSession.Blocking)
         { carriedItem = 0; return; }
-        if (!Pointer.Pressed) return;
+        // 松手丢弃：把物品拖出背包/窗口后直接抬手也丢到地上（源端只有点击-点击一种口径，
+        // 这是按用户要求补的拖拽口径；落点必须仍是地面区，窗口/底栏/虚拟键上松手不丢）。
+        if (!Pointer.Pressed)
+        {
+            if (Pointer.Released && carriedFromInventory && FieldAcceptsDrop(Pointer.Pos))
+            {
+                int dropId = carriedItem, dropPosition = carriedPosition;
+                carriedItem = 0;
+                if (DropToField(dropId, dropPosition)) { Pointer.ConsumeClick(); Pointer.Pressed = false; return; }
+                carriedItem = dropId;   // 没丢成（数量弹窗被拒等），保留携带
+            }
+            return;
+        }
         int id = carriedItem;
         carriedItem = 0;
         bool placed=EquipWindow.DropPetPotion(Pointer.Pos,id);
@@ -98,6 +110,47 @@ public static class NativeInventoryActions
         GameSession.ApplyInventoryToProfile(); Profile.Save();
     }
     static bool IsCashEquipment(int id)=>id==5060000 || id==5060001 || id>=5061000 && id<=5061003 || id==5060002 || id/10000==550 || id/10000==552 || id/10000==557;
+
+    // ——————— 丢金币（背包窗 BtCoin 按钮，EXE 0x81D996）———————
+    // 源端顺序：死亡状态拦截（字符串 66）→ 管理账号拦截（775）→ CUtilDlgEx type=2 数量弹窗
+    //（GetString 5280「扔掉多少？」，0x9AC732(10, 10, min(meso,0xC350), 0, 10, 0)）→ 确认后发 MESO_DROP。
+    // 服务端 MesoDropHandler：isAlive + meso>9 && meso<50001 && meso<=getMeso() → gainMeso(-meso)
+    // → spawnMesoDrop(meso, position, player, player, true, (byte)2)。
+    public static void PromptDropMeso()
+    {
+        if (!GameSession.InGame || GameSession.Character == null) return;
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        if (player == null || player.hp <= 0) { BottomBar.Toast("死亡状态中不能执行该操作"); return; }
+        int gm = GameSession.Character.record.gm;
+        int dropLevel = GameConfigDao.GetInt(GameServer.Local == null ? null : GameServer.Local.Db, "minimum_gm_level_to_drop", 4);
+        if (gm > 0 && gm < dropLevel) { BottomBar.Toast("管理账号不能扔掉金币。"); return; }
+        long cap = System.Math.Min(Profile.gold, 50000);
+        if (cap < 10) { BottomBar.Toast("金币不足，无法丢弃"); return; }
+        NativeUtilPrompt.NumberLong("扔掉多少？", 10, 10, cap, DropMeso);
+    }
+
+    static void DropMeso(long meso)
+    {
+        var loop = GameLoop.I;
+        var player = loop == null ? null : loop.player;
+        var field = loop == null ? null : loop.field;
+        if (player == null || field == null || field.StateId < 0) return;
+        // 源端 MesoDropHandler 用 Character.getPosition()（脚下）作为落点。
+        var response = GameSession.Net.ChangeInventory(new InventoryChangeRequest
+        {
+            characterId = GameSession.CharacterId,
+            dropMeso = meso, dropMapId = field.StateId,
+            dropX = Mathf.RoundToInt(player.transform.position.x * Art.PPU),
+            dropY = Mathf.RoundToInt(-player.transform.position.y * Art.PPU),
+        });
+        if (response == null || !response.ok)
+        { BottomBar.Toast(response == null || string.IsNullOrEmpty(response.error) ? "无法丢弃金币" : response.error); return; }
+        // record.meso 是服务端权威；Profile.Data.gold 是展示值，两者同步扣减。
+        GameSession.Character.record.meso = response.meso;
+        Profile.Data.gold = checked(Profile.Data.gold - meso);
+        Profile.Save();
+    }
+
     public static void DrawCarry()
     {
         if (!Carrying) return;

@@ -31,6 +31,9 @@ public class EnemyUnit : MonoBehaviour
     public bool nativeFloating;
     // 由事件实例地图（eim）生成的怪：玩法规则归脚本管，客户端不再另起一套 BOSS 控制器。
     public bool  eventOwned;
+    // 脚本改过等级/难度（Monster.changeDifficulty → ChangeableStats）后的经验覆盖；
+    // null = 按 FieldCatalog 基础表结算。击杀路径 FieldDirector.OnEnemyKilled 消费。
+    public long? expOverride;
     public float homeX;
     public float roamMin = float.NegativeInfinity, roamMax = float.PositiveInfinity;
     public float aggroRange = 8f;

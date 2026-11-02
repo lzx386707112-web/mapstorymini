@@ -968,6 +968,8 @@ public sealed class FieldDirector : MonoBehaviour
         if (!FieldCatalog.Mobs.TryGetValue(e.fieldMobId, out mob)) return;
 
         int exp = (int)Art.Num(mob.stats, "exp", 0);
+        // 经验按脚本改过的难度结算（Monster.changeDifficulty → ChangeableStats.exp）
+        exp = (int)(e.expOverride ?? exp);
         var rates = GameSession.InGame ? GameSession.Net.Community(new CommunityRequest { characterId = GameSession.CharacterId, operation = CommunityOperation.Read }) : new CommunityResponse();
         bool questCredit=true;
         int reputationCalls=1;
@@ -1082,9 +1084,25 @@ public sealed class FieldDirector : MonoBehaviour
 
     // ——————————————————— 清理 / 死亡 ———————————————————
 
+    // 源端 BotBossCombatManager.findBoss：本图活着的 Boss 里离玩家最近的一只
+    // （无 Boss 返回 null，由调用方发黄字提示）。地图像素坐标比较。
+    public EnemyUnit NearestAliveBoss(float playerX)
+    {
+        EnemyUnit best = null;
+        float bestDist = float.MaxValue;
+        foreach (var p in points)
+        {
+            if (p.mob == null || p.mob.dead || p.sp == null || !p.sp.Def.isBoss) continue;
+            float dist = Mathf.Abs(p.mob.transform.position.x * Art.PPU - playerX);
+            if (dist < bestDist) { bestDist = dist; best = p.mob; }
+        }
+        return best;
+    }
+
     public void ClearMobs()
     {
         StopFrenzy();
+        NativeBotBossCombat.Stop();   // 换图后集火目标失效，源端按地图 key 自动停
         foreach (var mob in dynamicMobs)
             if (mob != null) { mob.gameObject.SetActive(false); Destroy(mob.gameObject); }
         dynamicMobs.Clear();
@@ -1111,6 +1129,9 @@ public sealed class FieldDirector : MonoBehaviour
         var scripts=GetComponent<NativeMapScripts>(); if(scripts!=null)scripts.Reload();
         Enter(id,null);
     }
+
+    // 源端 destroyNPC 的客户端表现：撤掉当前图上该 NPC 的视图（removeNPCController+removeNPC）。
+    public void RemoveNpcView(int npcId) => view?.RemoveNpc(npcId);
 
     public void WarpTo(int mapId, string portalName = null, int portalIndex = -1)
     {

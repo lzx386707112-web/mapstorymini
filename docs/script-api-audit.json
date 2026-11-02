@@ -1,12 +1,12 @@
 {
     "auditMapId": 1000000,
     "scripts": 889,
-    "passed": 829,
-    "failed": 60,
+    "passed": 849,
+    "failed": 40,
     "hostChecks": 25,
     "requestedScripts": 120,
-    "requestedPassed": 106,
-    "requestedFailed": 14,
+    "requestedPassed": 113,
+    "requestedFailed": 7,
     "hostError": "",
     "entries": [
         {
@@ -102,7 +102,7 @@
         {
             "script": "1012103.js",
             "error": "",
-            "pages": 2
+            "pages": 1
         },
         {
             "script": "1012104.js",
@@ -311,7 +311,7 @@
         },
         {
             "script": "1032102.js",
-            "error": "Unmigrated server API: player.getPet",
+            "error": "",
             "pages": 1
         },
         {
@@ -386,7 +386,7 @@
         },
         {
             "script": "1052007.js",
-            "error": "Unmigrated event instance API: getMapFactory",
+            "error": "",
             "pages": 1
         },
         {
@@ -491,7 +491,7 @@
         },
         {
             "script": "1052125.js",
-            "error": "Unmigrated event instance map isolation: 103040410",
+            "error": "",
             "pages": 1
         },
         {
@@ -586,7 +586,7 @@
         },
         {
             "script": "1063017.js",
-            "error": "Unmigrated server API: map.910510202.spawnMonsterOnGroundBelow",
+            "error": "",
             "pages": 1
         },
         {
@@ -781,7 +781,7 @@
         },
         {
             "script": "1096005.js",
-            "error": "Unmigrated server API: cm.removeNPC",
+            "error": "",
             "pages": 1
         },
         {
@@ -866,7 +866,7 @@
         },
         {
             "script": "1104000.js",
-            "error": "Unmigrated event instance map isolation: 910510000",
+            "error": "",
             "pages": 1
         },
         {
@@ -906,7 +906,7 @@
         },
         {
             "script": "1104201.js",
-            "error": "Unmigrated server API: map.getNPCById",
+            "error": "",
             "pages": 0
         },
         {
@@ -1121,7 +1121,7 @@
         },
         {
             "script": "2010007.js",
-            "error": "Unmigrated server API: player.genericGuildMessage",
+            "error": "",
             "pages": 2
         },
         {
@@ -1761,8 +1761,8 @@
         },
         {
             "script": "2081005.js",
-            "error": "Java interop: class not migrated: org.gms.client.BuffStat",
-            "pages": 1
+            "error": "",
+            "pages": 3
         },
         {
             "script": "2081009.js",
@@ -1901,7 +1901,7 @@
         },
         {
             "script": "2091005.js",
-            "error": "Unmigrated server API: channelServer.lookupPartyDojo",
+            "error": "",
             "pages": 1
         },
         {
@@ -2081,12 +2081,12 @@
         },
         {
             "script": "2101015.js",
-            "error": "Unmigrated server API: player.getAriantColiseum",
+            "error": "",
             "pages": 0
         },
         {
             "script": "2101016.js",
-            "error": "Unmigrated server API: player.getAriantColiseum",
+            "error": "",
             "pages": 0
         },
         {
@@ -2466,7 +2466,7 @@
         },
         {
             "script": "2141000.js",
-            "error": "Unmigrated server API: cm.removeNpc",
+            "error": "",
             "pages": 1
         },
         {
@@ -2526,7 +2526,7 @@
         },
         {
             "script": "2540000.js",
-            "error": "Java interop: class not migrated: org.gms.client.inventory.Item",
+            "error": "",
             "pages": 1
         },
         {
@@ -2536,7 +2536,7 @@
         },
         {
             "script": "3003107.js",
-            "error": "Unmigrated server API: cm.mentorshipOverview",
+            "error": "",
             "pages": 1
         },
         {
@@ -2766,7 +2766,7 @@
         },
         {
             "script": "9000019.js",
-            "error": "Unmigrated server API: org.gms.util.PacketCreator.openRPSNPC",
+            "error": "",
             "pages": 0
         },
         {
@@ -2821,8 +2821,8 @@
         },
         {
             "script": "9000055.js",
-            "error": "Java interop: class not migrated: soloMapling.ArtificialPlayer.BotBossCombatManager",
-            "pages": 0
+            "error": "",
+            "pages": 1
         },
         {
             "script": "9001000.js",
@@ -2896,7 +2896,7 @@
         },
         {
             "script": "9030000.js",
-            "error": "",
+            "error": "No script session",
             "pages": 0
         },
         {
@@ -3321,8 +3321,8 @@
         },
         {
             "script": "9201004.js",
-            "error": "Unmigrated server API: player.isMarried",
-            "pages": 0
+            "error": "",
+            "pages": 14
         },
         {
             "script": "9201005.js",
@@ -3371,7 +3371,7 @@
         },
         {
             "script": "9201014.js",
-            "error": "Unmigrated server API: player.getMarriageInstance",
+            "error": "",
             "pages": 0
         },
         {
@@ -3831,8 +3831,8 @@
         },
         {
             "script": "9209100.js",
-            "error": "",
-            "pages": 1
+            "error": "TypeError: cannot read property 'getPosition' of null",
+            "pages": 0
         },
         {
             "script": "9220004.js",
@@ -4246,7 +4246,7 @@
         },
         {
             "script": "9900002.js",
-            "error": "Java interop: class not migrated: soloMapling.ArtificialPlayer.BotBossCombatManager",
+            "error": "",
             "pages": 0
         },
         {
@@ -4346,8 +4346,8 @@
         },
         {
             "script": "link_system.js",
-            "error": "Unmigrated server API: cm.linkSystemOverview",
-            "pages": 0
+            "error": "",
+            "pages": 1
         },
         {
             "script": "mParkEnter.js",
@@ -4396,8 +4396,8 @@
         },
         {
             "script": "monster_vac_toggle.js",
-            "error": "Unmigrated server API: cm.isMonsterVacActive",
-            "pages": 0
+            "error": "",
+            "pages": 1
         },
         {
             "script": "oldSuse.js",

@@ -258,7 +258,9 @@ public static class NpcApi
         // 就"没反应"——对话走完、任务也过了，职业却没变。这里按源端语义把过期介绍信视为已失效。
         cm.Set("haveItem", Ret(c => B(HasItem(Int(c, 0), Int(c, 1, 1)))));
         cm.Set("hasItem", Ret(c => B(HasItem(Int(c, 0), Int(c, 1, 1)))));
-        cm.Set("haveItemWithId", Ret(c => B(HasItem(Int(c, 0), Int(c, 1, 1)))));
+        // Character.haveItemWithId(itemid, checkEquipped)（Character.java:5153）：背包找到，
+        // 或 checkEquipped 时连装备栏（EQUIPPED）一起查——第二参是布尔，与 haveItem 的数量不同。
+        cm.Set("haveItemWithId", Ret(c => B(HasItemWithId(Int(c, 0), c.ArgCount > 1 && JsConvert.ToBoolean(c.Arg(1))))));
         cm.Set("itemQuantity", Ret(c => N(ItemQuantity(Int(c, 0)))));
         cm.Set("getItemQuantity", Ret(c => N(ItemQuantity(Int(c, 0)))));
         // 源端 AbstractPlayerInteraction.gainItem（:587-690）：正数发道具后返回**新道具对象**
@@ -658,6 +660,12 @@ public static class NpcApi
             foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead && mob.fieldMobId == id) count++;
             return N(count);
         }));
+        // —— NPC 动态增删（AbstractPlayerInteraction.removeNpc/spawnNpc + MapleMap.destroyNPC）——
+        // cm.removeNPC(579711) 是单参调用（1096005.js；源端 Java 只有 removeNpc(mapid,npcid) 两参，
+        // 按 destroyNPC「同图至多一个同名 NPC」的语义落到当前图）；cm.removeNpc(270050100,2141000) 两参。
+        cm.Set("removeNpc", Ret(c => { var t = RemoveScriptTarget(c); return RemoveScriptNpc(t.mapId, t.npcId); }));
+        cm.Set("removeNPC", cm.Get("removeNpc"));
+        cm.Set("spawnNpc", Fn(c => SpawnScriptNpc(c)));
         cm.Set("mapMobCount", Ret(_ => N(CountFieldMonsters())));
         cm.Set("resetMapObjects", Fn(c => GameLoop.I?.field?.ClearMobs()));   // MapleMap.resetMapObjects：重刷怪（反应堆未迁移）
         cm.Set("spawnMonsterOnGroundBelowIfMissing", Fn(c =>
@@ -770,6 +778,36 @@ public static class NpcApi
         cm.Set("getJailTimeLeft", Ret(_ => N(0)));   // 监狱系统未接入 = 无刑期
         cm.Set("getSkillBookInfo", Ret(_ => N(0)));
         cm.Set("getNamesWhoDropsItem", Ret(_ => BuildJavaList(new JsArray())));   // drop_data 反查走后台模块
+        // —— Link 系统（LinkSystemService.java；link_system.js）——
+        // 语义完整实现见 NativeLinkService；加成生效（伤害乘区/HPMP/经验）的接入点：
+        // 源端在 MapleMap.java:1523（伤害）、Character.updateLocalStats（HP/MP/四维）、
+        // Character.java:4923（经验）三处消费 loadBonus。单机同一账号只有真人 + 假人
+        // 存档角色，未达 150 级的 link 不生效（StagePercent=0），真实玩家将假人角色练到
+        // 150 后，这里返回的加成数据就是源端数值；战斗链路的倍率接入在 NativeBuffs/
+        // 经验结算处消费 NativeLinkService.LoadBonus（另批接线，先保证脚本面与存档真）。
+        cm.Set("linkSystemOverview", Ret(_ => S(NativeLinkService.Overview(GameServer.Local.Db,
+            GameSession.CharacterId))));
+        cm.Set("linkSystemAdd", Ret(c => S(NativeLinkService.AddLink(GameServer.Local.Db,
+            GameSession.CharacterId, Int(c, 0)))));
+        // —— 师徒系统（MentorshipService.java；3003107.js 的 16 个入口）——
+        // 全部走真实存档（mentorship_* 表）；单机里师徒关系的对象是假人角色存档，
+        // 校验链（师傅≥200/徒弟未转生/同家族）与源端一致，不满足就按源端文案拒绝。
+        cm.Set("mentorshipOverview", Ret(_ => S(NativeMentorshipService.Overview(GameServer.Local.Db, GameSession.CharacterId))));
+        cm.Set("mentorshipCreate", Ret(c => S(NativeMentorshipService.CreateRelation(GameServer.Local.Db, GameSession.CharacterId, Str(c, 0)))));
+        cm.Set("mentorshipPartyMasterMenu", Ret(_ => S(NativeMentorshipService.PartyMasterMenu(GameServer.Local.Db, GameSession.CharacterId, PartyMemberIds()))));
+        cm.Set("mentorshipHasPartyMasterCandidate", Ret(_ => B(NativeMentorshipService.HasPartyMasterCandidate(GameServer.Local.Db, PartyMemberIds()))));
+        cm.Set("mentorshipCreateFromParty", Ret(c => S(NativeMentorshipService.CreateFromParty(GameServer.Local.Db, GameSession.CharacterId, Int(c, 0), PartyMemberIds()))));
+        cm.Set("mentorshipCancel", Ret(_ => S(NativeMentorshipService.Cancel(GameServer.Local.Db, GameSession.CharacterId))));
+        cm.Set("mentorshipClaimStages", Ret(_ => S(NativeMentorshipService.ClaimStages(GameServer.Local.Db, GameSession.CharacterId))));
+        cm.Set("mentorshipClaimWeekly", Ret(_ => S(NativeMentorshipService.ClaimWeekly(GameServer.Local.Db, GameSession.CharacterId))));
+        cm.Set("mentorshipStartDuel", Ret(c => S(NativeMentorshipService.StartDuel(GameServer.Local.Db, GameSession.CharacterId, (long)JsConvert.ToNumber(c.Arg(0))))));
+        cm.Set("mentorshipJoinDuel", Ret(c => S(NativeMentorshipService.JoinDuel(GameServer.Local.Db, GameSession.CharacterId, (long)JsConvert.ToNumber(c.Arg(0))))));
+        cm.Set("mentorshipDuelStatus", Ret(_ => S(NativeMentorshipService.DuelStatus(GameServer.Local.Db, GameSession.CharacterId))));
+        cm.Set("mentorshipRanking", Ret(c => S(NativeMentorshipService.Ranking(GameServer.Local.Db, GameSession.CharacterId, Str(c, 0)))));
+        cm.Set("mentorshipVirtueCoins", Ret(_ => N(NativeMentorshipService.CoinsOf(GameServer.Local.Db, GameSession.CharacterId, true))));
+        cm.Set("mentorshipApprenticeCoins", Ret(_ => N(NativeMentorshipService.CoinsOf(GameServer.Local.Db, GameSession.CharacterId, false))));
+        cm.Set("mentorshipSpendVirtue", Ret(c => B(NativeMentorshipService.SpendCoins(GameServer.Local.Db, GameSession.CharacterId, true, Int(c, 0)))));
+        cm.Set("mentorshipSpendApprentice", Ret(c => B(NativeMentorshipService.SpendCoins(GameServer.Local.Db, GameSession.CharacterId, false, Int(c, 0)))));
         cm.Set("getAvailableMasteryBooks", Ret(_ => new JsArray()));
         cm.Set("getAvailableSkillBooks", Ret(_ => new JsArray()));
         cm.Set("getEquipInSlot", Ret(c =>
@@ -832,7 +870,9 @@ public static class NpcApi
         // 源端 Character.festivalPoints（MonsterCarnival.finish 里 gainFestivalPoints 写入）
         cm.Set("getFestivalPoints", Ret(_ => N(NativeCarnivalService.FestivalPoints)));
         cm.Set("partyMembersInMap", Ret(_ => N(HasParty() ? 1 : 0)));
-        cm.Set("getUnclaimedMarriageGifts", Ret(_ => N(0)));
+        // Character.getUnclaimedMarriageGifts()：婚礼礼物登记簿，本端没有未领礼物（婚礼系统未迁），
+        // 空列表是真实状态；9201014 用 marriageGifts.isEmpty() 分流，必须是 List 而不是数字。
+        cm.Set("getUnclaimedMarriageGifts", Ret(_ => BuildJavaList(new JsArray())));
         cm.Set("createMarriageWishlist", Ret(_ => NotAvailable("婚礼")));
         cm.Set("sendMarriageGifts", Ret(_ => NotAvailable("婚礼")));
         cm.Set("sendMarriageWishlist", Ret(_ => NotAvailable("婚礼")));
@@ -841,8 +881,9 @@ public static class NpcApi
         cm.Set("hasMerchant", Ret(_ => B(false)));
         cm.Set("hasMerchantItems", Ret(_ => B(false)));
         cm.Set("showFredrick", Fn(c => { }));
-        cm.Set("resetDojoEnergy", Fn(c => { }));
-        cm.Set("resetPartyDojoEnergy", Fn(c => { }));
+        cm.Set("resetDojoEnergy", Fn(c => dojoEnergy = 0));
+        // 单机没有别的队友可同步，与源端「把全队能量清零」在唯一真人身上等价。
+        cm.Set("resetPartyDojoEnergy", Fn(c => dojoEnergy = 0));
         cm.Set("goDojoUp", Fn(c => { }));    // 武陵道场爬塔未迁移
         cm.Set("startAriantBattle", Ret(_ => NotAvailable("阿里安特竞技场")));
         cm.Set("createPyramid", Ret(_ => NotAvailable("金字塔")));
@@ -1118,7 +1159,7 @@ public static class NpcApi
 
     // 目的地图是否存在：FieldCatalog.Maps 是从 WZ 索引里全量登记的（含北斗自定义的 0~4 号图），
     // 只查表、不解析——GetMap 会把整张图的美术解出来，对一次存在性判断太重。
-    static bool MapExists(int mapId)
+    internal static bool MapExists(int mapId)
     {
         if (mapId < 0) return false;
         FieldCatalog.Ensure();
@@ -1314,6 +1355,45 @@ public static class NpcApi
 
     static bool HasItem(int id, int count) => ItemQuantity(id) >= Math.Max(1, count);
 
+    // 装备槽是否穿着指定道具：固定槽 -1..-11（PlayerProfileData.EquipOfSlot）+ 动态配饰槽。
+    static bool ItemEquipped(int id)
+    {
+        if (id <= 0) return false;
+        var data = Profile.Data;
+        for (int slot = -1; slot >= -11; slot--) if (data.EquipOfSlot(slot) == id) return true;
+        if (data.accessorySlots != null)
+            foreach (int slot in data.accessorySlots) if (data.EquipOfSlot(slot) == id) return true;
+        return false;
+    }
+
+    // Character.haveItemWithId（Character.java:5153）：背包 findById 命中，
+    // 或 checkEquipped 且装备栏（EQUIPPED）命中。9201004 用 false 找未装备的婚戒、
+    // 2091005 用 true 让已装备的腰带也算，两路语义都要保真。
+    static bool HasItemWithId(int id, bool checkEquipped) => ItemQuantity(id) > 0 || (checkEquipped && ItemEquipped(id));
+
+    // 武陵道场能量（Character.dojoEnergy，源端不落库的内存态，上限 10000）。
+    static int dojoEnergy;
+
+    // Party.hashCode() 的单机等价物：队伍宿主的 getId（lookupPartyDojo(cm.getParty()) 的
+    // party 参数是 JS 宿主，源端按 hashCode 记账，这里按 partyId 记账，语义等价）。
+    static long PartyIdOf(JsCall c, int index)
+    {
+        if (!(c.Arg(index) is JsHostObject party)) return 0;
+        var value = c.Interp.Call(c.Interp.GetMember(party, "getId"), party, new JsValue[0]);
+        return value is JsNumber number ? (long)number.Value : 0;
+    }
+
+    // 在线队伍成员 cid 表（源端 getPartyMembersOnline；师徒菜单按它列师傅候选）。
+    static List<long> PartyMemberIds()
+    {
+        var ids = new List<long>();
+        if (!GameSession.InGame) return ids;
+        var state = GameSession.Net.Social(new SocialRequest { characterId = GameSession.CharacterId });
+        if (!state.party) return ids;
+        foreach (var member in state.partyMembers) ids.Add(member.id);
+        return ids;
+    }
+
     // 转职成功后把过期的介绍信清掉，别在背包里留一封指向已完成考验的废信。
     static void ClearStaleLetters()
     {
@@ -1451,6 +1531,34 @@ public static class NpcApi
         p.Set("getRemainingSp", Ret(_ => N(Profile.Sp)));
 
         p.Set("getGuildId", Ret(_ => N(GameSession.Character?.record.guildid ?? 0)));
+        // Character.getGuildRank()：characters.guildrank（1=族长..5=成员），2010007 家族中心按它拦权限。
+        p.Set("getGuildRank", Ret(_ => N(GameSession.Character?.record.guildrank ?? 5)));
+        // Character.getGuild()：2010007 只要 getCapacity()；家族数据走既有 Community 读路径。
+        p.Set("getGuild", Ret(_ =>
+        {
+            var guild = new JsHostObject(null);
+            Lenient(guild, "guild");
+            guild.Set("getId", Ret(_ => N(GameSession.Character?.record.guildid ?? 0)));
+            guild.Set("getCapacity", Ret(_ => N(NativeCommunityWindow.Request(CommunityOperation.Read).capacity)));
+            guild.Set("getName", Ret(_ => S(NativeCommunityWindow.Request(CommunityOperation.Read).guildName)));
+            return guild;
+        }));
+        // Character.genericGuildMessage(code)（Character.java:3414）→ 客户端 GUILD_OPERATION 处理：
+        // code 1 = 弹「创建家族」名输入框，确认后客户端发 CREATE_GUILD 请求（家族窗口邀请输入
+        // 同一 NativeDlgInput 组件）。创建校验（金币/重名/最少人数）全部在服务端 CreateGuild。
+        p.Set("genericGuildMessage", Fn(c =>
+        {
+            int code = Int(c, 0);
+            if (code != 1) throw new JsRuntimeException("Unmigrated guild message code: " + code);
+            if (!GameSession.InGame) throw new JsRuntimeException("Guild creation requires an active character");
+            NativeDlgInput.Open("请输入您想要创建的家族名称。（3～12 个字）", "", 12, value =>
+            {
+                NativeCommunityWindow.InputName = value;
+                NativeCommunityWindow.Request(CommunityOperation.CreateGuild);
+            });
+        }));
+        p.Set("disbandGuild", Fn(_ => B(NativeCommunityWindow.Request(CommunityOperation.DisbandGuild).ok)));
+        p.Set("increaseGuildCapacity", Fn(_ => B(NativeCommunityWindow.Request(CommunityOperation.ExpandGuild).ok)));
         p.Set("getGender", Ret(_ => N(GameSession.Character?.record.gender ?? 0)));
         p.Set("getName", Ret(_ => S(Profile.playerName)));
         p.Set("isGM", Ret(_ => B((GameSession.Character?.record.gm ?? 0) > 1)));
@@ -1520,6 +1628,18 @@ public static class NpcApi
             return Build(context,context.NpcId,context.QuestId,context.IsQuest);
         }));
         p.Set("haveItem", Ret(c => B(HasItem(Int(c, 0), Int(c, 1, 1)))));
+        p.Set("haveItemWithId", Ret(c => B(HasItemWithId(Int(c, 0), c.ArgCount > 1 && JsConvert.ToBoolean(c.Arg(1))))));
+        // 在线战力注入：师徒自动出师用（源端 MentorshipService.calculatePower(Character)，
+        // 全属性含装备 Totals + 存档 maxhp/maxmp + accounts 现金三桶）。
+        NativeMentorshipService.OnlinePowerOfActiveCharacter = () =>
+        {
+            var record = GameSession.Character?.record;
+            if (record == null) return 0;
+            var t = Total();
+            long stats = t.str + t.dex + t.intelligence + t.luk;
+            return stats * Math.Max(1, Math.Max(t.watk, t.matk))
+                + record.maxhp / 10L + record.maxmp / 20L + NativeMentorshipService.CashOfActiveAccount() / 100L;
+        };
         p.Set("canHold", Ret(c => B(CanHold(new[] {Int(c,0)},new[] {Int(c,1,1)}))));
         p.Set("getInventory", Ret(c => BuildInventory(Int(c, 0))));
         p.Set("hasEmptySlot",Ret(c=>B(FreeInventorySlots(Int(c,0))>0)));
@@ -1540,8 +1660,12 @@ public static class NpcApi
         p.Set("changeMap", Fn(c =>
         {
             int id=(c.Arg(0) as JsHostObject)?.Host is NativeEventMap eventMap?eventMap.Id:Int(c,0);
-            int portal=(c.Arg(1) as JsHostObject)?.Host is Server.Field.MapPortal point
-                ? eventMapPortalIndex(c.Arg(0),point) : c.ArgCount>1?Int(c,1):-1;
+            int portal=-1;
+            if ((c.Arg(1) as JsHostObject)?.Host is Server.Field.MapPortal point)
+                portal = eventMapPortalIndex(c.Arg(0),point);
+            else if ((c.Arg(1) as JsHostObject)?.Host is FieldPortal fieldPortal)
+                portal = fieldPortal.id;   // FieldPortal.id = WZ portal 列表下标（Portal.getId）
+            else if (c.ArgCount > 1 && !(c.Arg(1) is JsNull || c.Arg(1) is JsUndefined)) portal = Int(c, 1);
             session.RequestWarp(id,null,portal);
         }));
         p.Set("setMap", Fn(c => { if (NpcSession.Active != null) NpcSession.Active.RequestWarp(Int(c, 0)); }));
@@ -1625,7 +1749,67 @@ public static class NpcApi
         // 单机没有接收方，给一个可传给 PacketCreator.movePlayer 的占位即可。
         p.Set("getIdleMovement", Ret(_ => new JsHostObject(null)));
         p.Set("startMapEffect", Fn(c => { }));
-        p.Set("haveItemEquipped", Ret(_ => B(false)));
+        p.Set("haveItemEquipped", Ret(c => B(ItemEquipped(Int(c, 0)))));
+        // Character.isMarried()（Character.java）：partnerId>0。婚礼全套（预约/仪式/礼物）未迁移，
+        // 但 9201004/9201014 的信息与离婚面只依赖这几个判定，先按真实存档语义落地。
+        p.Set("isMarried", Ret(_ => B((GameSession.Character?.record.partnerId ?? 0) > 0)));
+        // Character.getMarriageRing()（Character.java:5212）：partnerId>0 时返回婚戒道具，
+        // 没有就是 null。婚戒 id 存在 characters.marriageItemId（getMarriageItemId 同源）。
+        p.Set("getMarriageRing", Ret(_ =>
+        {
+            int stored = GameSession.Character?.record.marriageItemId ?? 0;
+            if (stored <= 0 || (GameSession.Character?.record.partnerId ?? 0) <= 0) return JsNull.Value;
+            foreach (var item in GameSession.Character.inventory ?? new List<InventoryEntry>())
+                if (item.itemId == stored && item.inventoryType == 1)
+                {
+                    var ring = new JsHostObject(item);
+                    Lenient(ring, "item");
+                    ring.Set("getItemId", Ret(_ => N(item.itemId)));
+                    ring.Set("getPosition", Ret(_ => N(item.position)));
+                    // Item.equipped()：装备栏的已穿戴位在本地存档里就是负 position。
+                    ring.Set("equipped", Ret(_ => B(item.position < 0)));
+                    return ring;
+                }
+            return JsNull.Value;
+        }));
+        // Character.getMarriageInstance()：婚礼是 channel 级事件实例，本端未迁婚礼事件系统；
+        // 没进婚礼时源端本来就返回 null，这里不会出现「已进婚礼」的状态。
+        p.Set("getMarriageInstance", Ret(_ => JsNull.Value));
+        // Character.ariantPoints（characters.ariantPoints 列，Character.java:10775 直接累加）。
+        p.Set("getAriantPoints", Ret(_ => N(GameSession.Character?.record.ariantPoints ?? 0)));
+        p.Set("gainAriantPoints", Fn(c =>
+        {
+            var record = GameSession.Character?.record ?? throw new JsRuntimeException("Ariant points require an active character");
+            record.ariantPoints += Int(c, 0);
+            GameSession.SaveToDb();
+        }));
+        // Character.getAriantColiseum()：进阿里安特竞技场战斗事件时才有 arena 登记对象。
+        // 战斗事件（AriantColiseum）未迁移 → 没有进行中的登记，返回 null 是真实空状态
+        // （2101015/2101016 的「我不认识你」分支就是源端对非参赛者的原样表现）。
+        p.Set("getAriantColiseum", Ret(_ => JsNull.Value));
+        // —— 武陵道场存档字段（characters.dojoPoints / lastDojoStage 列；能量是内存态，≤10000） ——
+        // Character.addDojoPointsByMap 的累加入口在打怪链路，脚本只读分值与读写 stage。
+        p.Set("getDojoPoints", Ret(_ => N(GameSession.Character?.record.dojoPoints ?? 0)));
+        p.Set("getDojoStage", Ret(_ => N(GameSession.Character?.record.lastDojoStage ?? 0)));
+        p.Set("setDojoStage", Fn(c =>
+        {
+            var record = GameSession.Character?.record ?? throw new JsRuntimeException("Dojo stage requires an active character");
+            record.lastDojoStage = Int(c, 0);
+            GameSession.SaveToDb();
+        }));
+        p.Set("setDojoEnergy", Fn(c => dojoEnergy = System.Math.Min(Int(c, 0), 10000)));
+        p.Set("getDojoEnergy", Ret(_ => N(dojoEnergy)));
+        // Character.getBuffSource(BuffStat)：返回该状态当前生效的来源 id（技能 id / 道具 id），
+        // 没有该 buff 返回 null——与源端一致，2081005 等脚本用它判「是否处于某变身」。
+        p.Set("getBuffSource", Ret(c =>
+        {
+            string stat = (c.Arg(0) as JsHostObject)?.Host as string ?? Str(c, 0);
+            var buffs = Pc != null ? Pc.GetComponent<NativeBuffs>() : null;
+            if (buffs == null) return JsNull.Value;
+            int source = buffs.SourceOf(stat);
+            // 道具 buff 在本端以 -itemId 记账（NativeBuffs.ApplyItem），对外仍是正道具 id。
+            return source == 0 ? (JsValue)JsNull.Value : N(source < 0 ? -source : source);
+        }));
         p.Set("getMarriageItemId", Ret(_ =>
         {
             var stored = GameSession.InGame ? ScriptValueStore("marriageItemId", null) : null;
@@ -1898,7 +2082,7 @@ public static class NpcApi
         record.fquest=JsConvert.ToInt32(value.GetIndex(1));
     }
 
-    static JsValue BuildWarpMap(int id)
+    internal static JsValue BuildWarpMap(int id)
     {
         FieldCatalog.Ensure();
         if (!FieldCatalog.Maps.ContainsKey(id)) return JsNull.Value;
@@ -1925,6 +2109,9 @@ public static class NpcApi
         map.Set("getSpawnedMonstersOnMap", map.Get("countMonsters"));
         map.Set("spawnMonsterOnGroundBelow", Fn(c => SpawnBossInto(id, c)));
         map.Set("spawnMonster", map.Get("spawnMonsterOnGroundBelow"));
+        map.Set("getNPCById", Ret(c => ScriptNpcView(id, Int(c, 0))));
+        map.Set("getNpcById", map.Get("getNPCById"));
+        map.Set("containsNPC", Ret(c => B(MapHasNpc(id, Int(c, 0)))));
         map.Set("addMonsterSpawn", Fn(c =>
         {
             if (!(c.Arg(0) is JsHostObject mob)) throw new JsRuntimeException("addMonsterSpawn requires a monster");
@@ -1938,7 +2125,100 @@ public static class NpcApi
         {
             if (id == MapId) ApplyScriptPacket(c.Arg(c.ArgCount - 1));
         }));
+        // MapleMap.getPortal(int id)/getPortal(String name)：KerningTrain.js:34 的
+        // changeMap(onRide, onRide.getPortal(0)) 把 portal 宿主交回 player.changeMap，
+        // 那边按 FieldPortal.id（WZ 下标 = Portal.getId）解析落点。
+        map.Set("getPortal", Ret(c =>
+        {
+            var portals = FieldCatalog.GetMap(id).portals;
+            int index = c.Arg(0) is JsString name
+                ? portals.FindIndex(p => p.name == JsConvert.ToString(name))
+                : Int(c, 0);
+            if (index < 0 || index >= portals.Count) return JsNull.Value;
+            var portal = portals[index];
+            var view = new JsHostObject(portal);
+            Lenient(view, "portal");
+            view.Set("getId", Ret(_ => N(index)));
+            view.Set("getName", Ret(_ => S(portal.name)));
+            view.Set("getPosition", Ret(_ => BuildPoint(portal.x, portal.y)));
+            return view;
+        }));
         return map;
+    }
+
+    // ——— NPC 动态增删/查询（源端 AbstractPlayerInteraction.removeNpc/spawnNpc、
+    // MapleMap.destroyNPC/getNPCById/containsNPC；同图同名 NPC 至多一个）———
+    static (int mapId, int npcId) RemoveScriptTarget(JsCall c)
+        => c.ArgCount >= 2 ? (Int(c, 0), Int(c, 1)) : (MapId, Int(c, 0));
+
+    static JsValue RemoveScriptNpc(int mapId, int npcId)
+    {
+        var runtime = Server.Field.MapService.Get(mapId);
+        if (runtime == null) return B(false);
+        bool dynamic = runtime.RemoveNpc(npcId);
+        if (mapId == MapId)
+        {
+            var field = GameLoop.I?.field;
+            if (field?.Map != null && field.Map.id == mapId)
+            {
+                field.Map.npcs.RemoveAll(n => n.id == npcId);
+                field.RemoveNpcView(npcId);
+            }
+        }
+        return B(dynamic);
+    }
+
+    // AbstractPlayerInteraction.spawnNpc(npcId, pos, map)：fh = findBelow(pos)，客户端按 cy 落地。
+    // 脚本常传 Point(x, 0) 这类「只给 x」的点，这里吸附到该 x 的脚下平台；传进来的 map 宿主
+    // 就是当前图（事件实例图有自己的 eim.spawnNpc 链路，不走这里）。
+    // 编辑器回归（batchmode）没有进图链路：与 FieldDirector.SpawnWildBoss 同思路先登记，
+    // 真实进图时 MapService.Register 会用带 foothold 的运行时覆盖这份空壳。
+    static void SpawnScriptNpc(JsCall c)
+    {
+        int npcId = Int(c, 0), x = 0, y = 0;
+        if (c.Arg(1) is JsHostObject point) { x = JsConvert.ToInt32(point.Get("x")); y = JsConvert.ToInt32(point.Get("y")); }
+        else if (c.ArgCount > 2) { x = Int(c, 1); y = Int(c, 2); }
+        var runtime = Server.Field.MapService.Get(MapId);
+        if (runtime == null)
+        {
+            runtime = new Server.Field.MapRuntime { mapId = MapId };
+            Server.Field.MapService.Register(runtime);
+        }
+        float ground = y;
+        var below = runtime.PointBelow(x, y - 12f) ?? runtime.PointBelow(x, float.NegativeInfinity);
+        if (below != null) ground = below.Value;
+        runtime.npcs.Add(new Server.Field.MapNpcPosition { id = npcId, x = x, y = Mathf.RoundToInt(ground), dynamic = true });
+    }
+
+    // MapleMap.getNPCById：当前图以 FieldMap.npcs（静态 life + 动态实例）为准；
+    // 其它图只认已注册的运行时（本局进过图/假人几何），未加载的图没有 NPC 数据。
+    static JsValue ScriptNpcView(int mapId, int npcId)
+    {
+        Server.Field.MapNpcPosition npc = null;
+        var field = GameLoop.I?.field;
+        if (mapId == MapId && field?.Map != null)
+            foreach (var n in field.Map.npcs)
+                if (n.id == npcId) { npc = new Server.Field.MapNpcPosition { id = n.id, x = Mathf.RoundToInt(n.x), y = Mathf.RoundToInt(n.y) }; break; }
+        if (npc == null)
+        {
+            var runtime = Server.Field.MapService.Get(mapId);
+            if (runtime != null && !runtime.removedNpcs.Contains(npcId)) npc = runtime.GetNpc(npcId);
+        }
+        if (npc == null) return JsNull.Value;
+        var view = new JsHostObject(npc);
+        Lenient(view, "npc");
+        view.Set("getId", Ret(_ => N(npc.id)));
+        view.Set("getObjectId", Ret(_ => N(npc.id)));
+        view.Set("getPosition", Ret(_ => BuildPoint(npc.x, npc.y)));
+        return view;
+    }
+
+    static bool MapHasNpc(int mapId, int npcId)
+    {
+        var field = GameLoop.I?.field;
+        if (mapId == MapId && field?.Map != null) return field.Map.npcs.Exists(n => n.id == npcId);
+        var runtime = Server.Field.MapService.Get(mapId);
+        return runtime != null && !runtime.removedNpcs.Contains(npcId) && runtime.GetNpc(npcId) != null;
     }
 
     // 别的图里的 Boss 对脚本只是「存在与否」的判据（AreaBoss 用 getMonsterById != null 决定要不要重刷）。
@@ -2060,6 +2340,9 @@ public static class NpcApi
             foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead && mob.fieldMobId == Int(c,0)) return BuildMonster(mob);
             return JsNull.Value;
         }));
+        m.Set("getNPCById", Ret(c => ScriptNpcView(MapId, Int(c, 0))));
+        m.Set("getNpcById", m.Get("getNPCById"));
+        m.Set("containsNPC", Ret(c => B(MapHasNpc(MapId, Int(c, 0)))));
         return m;
     }
 
@@ -2077,6 +2360,13 @@ public static class NpcApi
     sealed class ScriptInventoryPacket { public readonly List<ScriptInventoryUpdate> updates=new List<ScriptInventoryUpdate>(); }
     // PacketCreator.openRPSNPC()：9000019.js 的唯一真实出口（RPS_GAME mode 8 + npcId）→ 开猜拳窗
     sealed class ScriptRpsOpen { public int npcId; }
+    // PacketCreator.getClock(seconds)：地图时钟倒计时（KerningTrain/Subway/活动脚本），
+    // 复用事件倒计时 UI（NativeEventClock，源端 CLOCK type 2 表现）。
+    sealed class ScriptClock { public int seconds; }
+    // PacketCreator.earnTitleMessage(msg)：源端 SCRIPT_PROGRESS_MESSAGE + writeString
+    // （PacketCreator.java:7389-7393），KerningTrain.js 的「下一站停靠 XX 站」到站播报。
+    // 客户端把该 opcode 正文当普通提示文本展示 → 走聊天窗浅蓝（与 type 6 同色）。
+    sealed class ScriptProgressMessage { public string text; }
     internal static void ApplyScriptPacket(JsValue packet)
     {
         if (packet is JsHostObject host && host.Host is ScriptSound sound)
@@ -2095,6 +2385,10 @@ public static class NpcApi
         if(packet is JsHostObject moveHost && moveHost.Host is ScriptMovePlayer)return;
         if(packet is JsHostObject rpsHost && rpsHost.Host is ScriptRpsOpen rps)
         { NativeRpsWindow.Open(); return; }
+        if(packet is JsHostObject clockHost && clockHost.Host is ScriptClock clock)
+        { NativeEventClock.Show(clock.seconds); return; }
+        if(packet is JsHostObject progressHost && progressHost.Host is ScriptProgressMessage progress)
+        { BottomBar.AddChat(progress.text, BottomBar.ChatLightBlue); return; }
         if(packet is JsHostObject inventoryHost && inventoryHost.Host is ScriptInventoryPacket)
         { FlushEquip(); GameSession.ApplyToProfile(); return; }
         throw new JsRuntimeException("Unmigrated script packet effect");
@@ -2148,18 +2442,8 @@ public static class NpcApi
                     return view;
                 }));return collection;
             }
-            // 9000019.js：PacketCreator.openRPSNPC() → cm.getClient().sendPacket(...)
-            if (name == "org.gms.util.PacketCreator")
-            {
-                var pc = new JsHostObject(null); Lenient(pc, "PacketCreator");
-                pc.Set("openRPSNPC", Ret(_ =>
-                {
-                    var packet = new JsHostObject(new ScriptRpsOpen { npcId = NativeRpsService.RpsAdminNpc });
-                    Lenient(packet, "Packet");
-                    return packet;
-                }));
-                return pc;
-            }
+            // openRPSNPC 的绑定并入下方 PacketCreator 完整分支（此前这里提前 return，
+            // 使 playSound/musicChange/getClock 等在第二个分支里的绑定全部不可达）。
             if (name == "soloMapling.ArtificialPlayer.BotTypes.Blackjack.BlackjackDealerBot")
             {
                 var dealer = new JsHostObject(null);
@@ -2393,6 +2677,12 @@ public static class NpcApi
                     type.Set("serverNotice", Ret(args => new JsHostObject(new ScriptNotice {type=Int(args,0),text=Str(args,args.ArgCount>=3 ? 2 : 1)})));
                     type.Set("musicChange", Ret(args => new JsHostObject(new ScriptSound { path = Str(args, 0), music = true })));
                     type.Set("playSound", Ret(args => new JsHostObject(new ScriptSound { path = Str(args, 0) })));
+                    // getClock(seconds)：地图时钟倒计时（列车/活动脚本 sendPacket 出去）。
+                    type.Set("getClock", Ret(args => new JsHostObject(new ScriptClock { seconds = Int(args, 0) })));
+                    // earnTitleMessage(msg)：SCRIPT_PROGRESS_MESSAGE 文本提示（列车到站播报等）。
+                    type.Set("earnTitleMessage", Ret(args => new JsHostObject(new ScriptProgressMessage { text = Str(args, 0) })));
+                    // openRPSNPC()：9000019 猜拳 GM NPC 的唯一真实出口（RPS_GAME mode 8 + npcId）。
+                    type.Set("openRPSNPC", Ret(_ => new JsHostObject(new ScriptRpsOpen { npcId = NativeRpsService.RpsAdminNpc })));
                     // showEffect：图上播 Map/Effect.img 动画（露希妲的花朵爆炸 / 各阶段技能特效）。
                     type.Set("showEffect", Ret(args => new JsHostObject(new ScriptEffect { path = Str(args, 0) })));
                     // damagePlayer(type, mobId, chrId, damage, fake, dir, isPg, oid, isPcrit, mobOid, ...)：
@@ -2662,6 +2952,65 @@ public static class NpcApi
                 cash.Set("MAX_CASH_INVENTORY_SAFE", N(1000));
                 return cash;
             }
+            // org.gms.net.server.guild.Guild（Guild.java）：2010007.js 用静态 getIncreaseGuildCost(capacity)
+            // 算「增加 5 人上限要多少金币」。费用公式与 NativeCommunityService.ExpandGuild 同一份。
+            if (name == "org.gms.net.server.guild.Guild")
+            {
+                var guild = new JsHostObject(null);
+                Lenient(guild, "Guild");
+                guild.Set("getIncreaseGuildCost", Ret(args =>
+                {
+                    var db = GameServer.Local?.Db;
+                    return db == null ? N(0) : N(NativeCommunityService.IncreaseGuildCost(db, Int(args, 0)));
+                }));
+                return guild;
+            }
+            // org.gms.client.BuffStat（BuffStat.java 枚举）：脚本把它当常量令牌传给
+            // player.getBuffSource(...)（2081005/2103000/2111015、quest/3314/3514/3941、
+            // portal/ariant_queens 只用到 MORPH 与 HPREC）。源端是 enum 引用相等：
+            // 同名常量恒为同一实例；缺的常量走 Lenient 明确报缺，不静默给假对象。
+            if (name == "org.gms.client.BuffStat")
+            {
+                var stat = new JsHostObject(null);
+                Lenient(stat, "BuffStat");
+                foreach (string constant in new[] { "MORPH", "HPREC" })
+                {
+                    var token = new JsHostObject(constant);
+                    token.Set("name", Ret(_ => S(constant)));
+                    token.Set("toString", Ret(_ => S(constant)));
+                    stat.Set(constant, token);
+                }
+                return stat;
+            }
+            // org.gms.net.server.channel.handlers.RingActionHandler（RingActionHandler.java）：
+            // 9201004 离婚走 breakMarriageRing(player, ringItemId)——清 partnerId、发离婚包；
+            // 戒指本体由脚本随后的 gainItem(itemId,-1) 删除，这里只做服务端状态面。
+            if (name == "org.gms.net.server.channel.handlers.RingActionHandler")
+            {
+                var handler = new JsHostObject(null);
+                Lenient(handler, "RingActionHandler");
+                handler.Set("breakMarriageRing", Ret(args =>
+                {
+                    var record = GameSession.Character?.record
+                        ?? throw new JsRuntimeException("Divorce requires an active character");
+                    record.partnerId = 0;
+                    record.marriageItemId = 0;
+                    GameSession.SaveToDb();
+                    return JsNull.Value;
+                }));
+                return handler;
+            }
+            // soloMapling.ArtificialPlayer.BotBossCombatManager：自由市场聊天拉假人集火 Boss
+            // （9000055/9900002 的 handleChatTrigger(player, "假人打boss")）。未命中触发词
+            // 返回 false，聊天链照常继续——与源端 GeneralChatHandler 的接法一致。
+            if (name == "soloMapling.ArtificialPlayer.BotBossCombatManager")
+            {
+                var boss = new JsHostObject(null);
+                Lenient(boss, "BotBossCombatManager");
+                boss.Set("handleChatTrigger", Ret(args =>
+                    B(NativeBotBossCombat.HandleChatTrigger(MapId, args.ArgCount > 1 ? Str(args, 1) : Str(args, 0)))));
+                return boss;
+            }
             return JsNull.Value;
         }));
         return java;
@@ -2765,6 +3114,18 @@ public static class NpcApi
             return factory;
         }));
         server.Set("getPlayerStorage", Ret(_ => storage));
+        // —— 武陵道场（Channel.java L494-700；2091005 检票/离场分支）——
+        // lookupPartyDojo(party)：party 为 null（源端同样入参）直接 -1。
+        server.Set("lookupPartyDojo", Ret(c => N(NativeDojoService.LookupPartyDojo(PartyIdOf(c, 0)))));
+        // ingressDojo(isPartyDojo[, party], fromStage)：两参/三参重载都按源端语义落。
+        server.Set("ingressDojo", Ret(c => N(NativeDojoService.IngressDojo(
+            JsConvert.ToBoolean(c.Arg(0)),
+            c.ArgCount > 2 ? PartyIdOf(c, 1) : 0,
+            Int(c, c.ArgCount > 2 ? 2 : 1)))));
+        server.Set("resetDojoMap", Fn(c => NativeDojoService.ResetDojoMap(Int(c, 0))));
+        server.Set("freeDojoSectionIfEmpty", Fn(c => NativeDojoService.FreeDojoSectionIfEmpty(Int(c, 0))));
+        server.Set("dismissDojoSchedule", Fn(c => NativeDojoService.DismissDojoSchedule(Int(c, 0), PartyIdOf(c, 1))));
+        server.Set("getDojoFinishTime", Ret(c => N(NativeDojoService.GetDojoFinishTime(Int(c, 0)))));
         // Channel.getId()：AreaBoss*.js 的 init() 第一句就是 em.getChannelServer().getId()，
         // 缺了它整个事件脚本 init 会抛异常，野外 Boss 一个都启动不了。
         server.Set("getId", Ret(_ => N(GameSession.Channel)));
@@ -2835,6 +3196,18 @@ public static class NpcApi
         }));
         inv.Set("getSlotLimit", Ret(_ => N(Profile.InventoryCapacity(type - 1))));
         inv.Set("getNumFreeSlot", Ret(_ => N(FreeInventorySlots(type))));
+        // Inventory.getNextFreeSlot（源端 Inventory.java）：最小空格位；满栏返回 -1。
+        // 9201014 玛瑙宝箱用 `getNextFreeSlot() >= 0` 判「消耗栏还有位」。
+        inv.Set("getNextFreeSlot", Ret(_ =>
+        {
+            int limit = Profile.InventoryCapacity(type - 1);
+            var used = new HashSet<int>();
+            if (GameSession.Character?.inventory != null)
+                foreach (var item in GameSession.Character.inventory)
+                    if (item.inventoryType == type && item.position > 0) used.Add(item.position);
+            for (int slot = 1; slot <= limit; slot++) if (!used.Contains(slot)) return N(slot);
+            return N(-1);
+        }));
         // Inventory.getItem(slot)（源端 Inventory.java）：星之力强化脚本用
         // `getInventory(EQUIP).getItem(1)` 拿「装备栏第 1 格」。
         inv.Set("getItem", Ret(c => BuildItemView(type, Int(c, 0))));

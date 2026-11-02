@@ -152,6 +152,15 @@ public static class NpcDialogUi
                 wordWrap = false,
                 clipping = TextClipping.Clip,
             };
+        // ————— 组队成员头顶血条（源端 ShowPartyHP，EXE 0x49F1AC 默认开启）—————
+        // 源端开启后由 0x9212E4 创建 0x91F001 控件，加载 UIWindow.img/UserList/Party/PartyHP
+        // 九宫格 + GaugeBar/graduation/bar 画量条；BeiDou 数据缺 PartyHP/BtHP 节点（原版有，
+        // 属数据导出缺失），量条按 GaugeBar 语义自绘：深底 + 红色 HP 填充。
+        partyMemberIds.Clear();
+        var party = GameServer.Local != null && GameServer.Local.Social != null
+            ? GameServer.Local.Social.Parties.For(GameSession.CharacterId) : null;
+        if (party != null)
+            foreach (int member in party.members) partyMemberIds.Add(member);
         // 名牌与地图共用原端像素尺度（和 NPC 名牌同一口径）。
         float scale = UiKit.H / (2f * cam.orthographicSize * Art.PPU);
         var matrix = GUI.matrix;
@@ -159,8 +168,11 @@ public static class NpcDialogUi
         {
             GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(scale, scale, 1f));
             var player = loop.player;
+            float localHp = partyMemberIds.Contains(GameSession.CharacterId) ? Mathf.Max(0f, player != null ? player.hp : 0f) : 0f;
+            float localHpMax = localHp > 0f && player != null ? player.hpMax : 0f;
             if (player != null && player.hp > 0f && !string.IsNullOrEmpty(Profile.playerName))
-                DrawCharacterName(cam, scale, player.FeetPos, Profile.playerName, true);
+                DrawCharacterName(cam, scale, player.FeetPos, Profile.playerName, true,
+                    localHpMax > 0f, localHp, localHpMax);
             var bots = loop.field != null ? loop.field.GetComponent<BotField>() : null;
             var map = loop.field != null ? loop.field.Map : null;
             if (bots != null && map != null)
@@ -168,13 +180,30 @@ public static class NpcDialogUi
                 {
                     if (!actor.online || string.IsNullOrEmpty(actor.name)) continue;
                     if (!bots.TryFeet(actor.id, out var feet)) continue;
-                    DrawCharacterName(cam, scale, feet, actor.name);
+                    // 假人：BotCharacter.hp/maxHp（不掉血恒满，战斗结算接入后更新字段）。
+                    float botHp = 0f, botHpMax = 0f;
+                    if (partyMemberIds.Contains(actor.id) && actor is Server.Bot.BotCharacter bot)
+                    { botHp = bot.hp; botHpMax = bot.maxHp; }
+                    DrawCharacterName(cam, scale, feet, actor.name, false, botHpMax > 0f, botHp, botHpMax);
                 }
         }
         finally { GUI.matrix = matrix; }
     }
 
-    static void DrawCharacterName(Camera cam, float scale, Vector2 feet, string name, bool local = false)
+    static readonly HashSet<int> partyMemberIds = new HashSet<int>();
+
+    // 源端量条没有可用素材，红色按 StatusBar.img/gauge（HP gauge 红条）语义自绘。
+    static void DrawPartyHpBar(Rect plate, float hp, float maxHp)
+    {
+        const float w = 42f, h = 5f, gap = 2f;
+        var rect = new Rect(plate.center.x - w * .5f, plate.y - h - gap, w, h);
+        UiKit.Fill(new Rect(rect.x - 1f, rect.y - 1f, w + 2f, h + 2f), new Color32(0x1c,0x1c,0x1c,0xff));
+        UiKit.Fill(rect, new Color32(0x22,0x20,0x21,0xff));
+        float ratio = maxHp > 0f ? Mathf.Clamp01(hp / maxHp) : 0f;
+        if (ratio > 0f) UiKit.Fill(new Rect(rect.x, rect.y, Mathf.Max(1f, w * ratio), h), new Color32(0xc6,0x22,0x22,0xff));
+    }
+
+    static void DrawCharacterName(Camera cam, float scale, Vector2 feet, string name, bool local = false, bool partyMember = false, float partyHp = 0f, float partyHpMax = 0f)
     {
         var sp = cam.WorldToScreenPoint(new Vector3(feet.x, feet.y, 0f));
         if (sp.z < 0f) return;
@@ -217,6 +246,8 @@ public static class NpcDialogUi
                 GUI.Label(text, name, characterNameStyle);
             }
         }
+        // 组队血条画在名牌正上方（medal 牌会占名牌下方）。HP 由调用方按本地/假人取数。
+        if (partyMember && partyHpMax > 0) DrawPartyHpBar(plate, partyHp, partyHpMax);
         if (local)
         {
             int medal = Profile.EquipOfSlot(EquipSlot.Medal);

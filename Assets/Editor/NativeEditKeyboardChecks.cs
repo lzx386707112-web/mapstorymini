@@ -53,7 +53,7 @@ public static class NativeEditKeyboardChecks
                 "当前无键盘：允许开", "");
 
             // ── 4. Sync owner 隔离：A 输入框的键盘不会被 B 读走、也不改 B 的草稿 ──
-            NativeEditKeyboard.Inject("NativeDlgInput", "不该串台", TouchScreenKeyboard.Status.Done);
+            NativeEditKeyboard.Inject("NativeDlgInput", "文本窗最终输入", TouchScreenKeyboard.Status.Done);
             string guard = "B草稿";
             var guardSig = NativeEditKeyboard.Sync("NativeUtilPrompt", ref guard);
             Check(guardSig == NativeEditKeyboard.Signal.None && guard == "B草稿",
@@ -62,7 +62,7 @@ public static class NativeEditKeyboardChecks
             // ── 5. Sync 命中：Done 回灌最终文本并提交后收键盘（幂等，不会二次提交）──
             string target = "旧值";
             var doneSig = NativeEditKeyboard.Sync("NativeDlgInput", ref target);
-            Check(doneSig == NativeEditKeyboard.Signal.Done && target == "不该串台",
+            Check(doneSig == NativeEditKeyboard.Signal.Done && target == "文本窗最终输入",
                 "同 owner 的 Done 回灌 Android 最终文本并提交一次", "v=" + target);
             // Done 之后桥已 Close：再 Sync 同 owner 应返回 None（同帧 Enter 不会二次触发提交）
             string again = target;

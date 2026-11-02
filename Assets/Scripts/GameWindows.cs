@@ -591,7 +591,9 @@ public static class InvenWindow
         }
 
         // 金币：BtCoin (7,266) 14×14，数字框 backgrnd 自带于 (25,267)-(142,280)
-        Image(r, "BtCoin/normal/0", 7, 266);
+        // 按钮创建于 0x81CD74（id 0x7D2）；点击分派 0x81D3A3(cmp eax,0x7D2) → 0x81D996 丢金币流程。
+        if (NativeUi.Button(At(r, 7, 266, 14, 14), "UI/UIWindow.img/Item/BtCoin"))
+            NativeInventoryActions.PromptDropMeso();
         // 81DC84: comma grouping; 81DCD8/81DD5F: right edge138, y266, font25 (black,12px).
         var mesoStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(12 * S),
             alignment = TextAnchor.UpperRight, clipping = TextClipping.Clip };
