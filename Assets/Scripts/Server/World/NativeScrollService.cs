@@ -32,6 +32,21 @@ public static class NativeScrollService
     static bool HeartScroll(int id)=>IsHeartScroll(id);
     public static bool IsHeartScroll(int id)=>id>=2616004 && id<=2616010 || id>=2643008 && id<=2643010;
     static bool HeartEquip(int id)=>id/10000==167;
+    // 心脏卷轴的拒绝提示必须自带「能砸哪些心脏」：玩家拿着 0 槽的銀心只看到 tuc=0，
+    // 不知道该换哪颗。逐颗列出 req 白名单里的心脏与各自槽数；reqScope 的卡勒馬
+    // 两张没有白名单（整段 167xxxx 都适用），返回 null 回退通用文案。
+    static string HeartHint(int scroll)
+    {
+        var required=BotItemCatalog.Shared.RequiredEquips(scroll);
+        if(required==null || required.Length==0) return null;
+        var parts=new List<string>();
+        foreach(int heart in required)
+        {
+            int tuc=BotItemCatalog.Int(BotItemCatalog.Shared.Info(heart),"tuc");
+            parts.Add((BotItemCatalog.Shared.Name(heart) ?? ("道具 "+heart))+(tuc>0 ? "（"+tuc+" 槽）" : "（0 槽）"));
+        }
+        return "这张卷轴适用于："+string.Join("、",parts);
+    }
     static bool Category(int scroll,int equip)
         => HeartScroll(scroll) ? HeartEquip(equip)
             : scroll/100==20492 ? equip/10000==111 || equip/10000==112 || equip/10000==113 : scroll/100%100==equip/10000%100;
@@ -55,7 +70,11 @@ public static class NativeScrollService
         {
             var required=BotItemCatalog.Shared.RequiredEquips(sid);
             bool listed=required!=null && required.Length>0;
-            if(listed && Array.IndexOf(required,id)<0) return Reject("这件心脏不符合卷轴要求");
+            if(listed && Array.IndexOf(required,id)<0)
+            {
+                var hint=HeartHint(sid);
+                return Reject("这件心脏不符合卷轴要求"+(hint==null ? "" : "，"+hint));
+            }
             // 卡勒馬两张没有 req，只有 reqScope(167/10000)。数据缺失时宁可拒绝，也不放开整段。
             if(!listed && !BotItemCatalog.Shared.ScopedTo(sid,id)) return Reject("这张卷轴没有适用这件心脏的数据");
         }
@@ -78,7 +97,12 @@ public static class NativeScrollService
         {
             // 报清楚是哪件装备、还剩几次、上限几次——不然「没砸过却说次数不足」无从判断。
             string name=BotItemCatalog.Shared.Name(id) ?? ("道具 "+id);
-            if(total<=0) return Reject(name+" 没有可升级次数（数据里 tuc=0），砸不了卷");
+            if(total<=0)
+            {
+                if(!HeartScroll(sid)) return Reject(name+" 没有可升级次数（数据里 tuc=0），砸不了卷");
+                var hint=HeartHint(sid);
+                return Reject(name+" 是 0 槽心脏，砸不了卷"+(hint==null ? "（数据里 tuc=0）" : "，"+hint));
+            }
             return Reject("装备可升级次数不足（"+name+"：剩 "+slots+" 次 / 共 "+total+" 次，已升级 "+level+" 次）");
         }
         DbRow white=null;

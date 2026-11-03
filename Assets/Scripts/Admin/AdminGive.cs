@@ -160,17 +160,12 @@ public static class AdminGive
         return rowId;
     }
 
-    // 找该背包栏下一个空位（源端 gainItem 的位置分配语义，这里取当前最大位+1）
+    // AP正槽属于穿着，不能参与背包位置分配；使用背包容量内的第一个空格。
     static int NextPosition(DbStore db, int characterId, int invType)
     {
-        int max = 0;
-        foreach (var row in InventoryDao.ItemsByCharacter(db, characterId))
-        {
-            if (DbStore.Long(row, "inventorytype") != invType) continue;
-            if (DbStore.Long(row, "position") < 0) continue;              // 负位=已装备，不占格
-            max = Math.Max(max, (int)DbStore.Long(row, "position"));
-        }
-        return max + 1;
+        int free = NativeInventoryService.Free(db, CharactersDao.FindById(db, characterId), invType);
+        if (free == 0) throw new AdminApiException("背包空间不足");
+        return free;
     }
 
     // 当前在线角色的内存记录同步（离线角色无需处理，落库即下次选角生效）

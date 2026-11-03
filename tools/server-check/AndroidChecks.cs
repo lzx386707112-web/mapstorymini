@@ -224,6 +224,63 @@ static class AndroidChecks
         Check(direction == 0 && 240 - robotX >= 59 && 240 - robotX < 65,
             "282普通跟随：连续步行后稳定停在距离区间，不追固定44px");
         CheckInventory(Check);
+        CheckAndroidShop(Check);
+    }
+
+    // 282 双击机器人开店：USER_ANDROID_SHOP(596) → handleAndroidShop 校验召出 →
+    // openShop(模板号, GENERAL_SHOP=9201060)，会话响应带店主模板号。
+    static void CheckAndroidShop(Action<bool, string> check)
+    {
+        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "android-shop-check-" + Guid.NewGuid().ToString("N") + ".db");
+        var db = DbStore.Create(path);
+        try
+        {
+            var login = LoginService.Login(db, "android_shop_user", "pw123456");
+            var made = CharFactory.CreateCharacter(db, login.accountId, 0, "ShopGuy", CharFactory.JobGroupAdventurer,
+                20000, 30300, 0, 0, 1040002, 1060002, 1072001, 1302000, 0);
+            int cid = made.characterId;
+            var record = CharactersDao.FindById(db, cid);
+            record.level = 50; record.meso = 100000; record.hp = 50;
+            CharactersDao.Save(db, record);
+            db.Table("game_config").Insert(new DbRow { ["config_code"] = "native_npc_shops_seed_v1", ["config_value"] = "1" });
+            // 测试库不跑源端 seed：按源端 GENERAL_SHOP 造 9201060 杂货店与一件标价商品。
+            db.Table("shops").Insert(new DbRow { ["shopid"] = NativeNpcShopService.AndroidShopId, ["npcid"] = NativeNpcShopService.AndroidShopId });
+            db.Table("shopitems").Insert(new DbRow { ["shopid"] = NativeNpcShopService.AndroidShopId, ["itemid"] = 2000000, ["price"] = 50, ["position"] = 1 });
+            var shop = new NativeNpcShopService(db);
+
+            // 未召出机器人：282 服务端静默忽略；本工程回错误并拒绝开店。
+            var denied = shop.Handle(new NpcShopRequest { characterId = cid, operation = NpcShopOperation.OpenShop,
+                id = NativeNpcShopService.AndroidShopId, npcTemplateId = 1001 });
+            check(!denied.ok && denied.error == "机器人未召出", "双击开店：未召出机器人被拒");
+
+            // 召出：1662000（补給型機器人）+ 1672000（銀之心），档位/等级满足装配规则。
+            long robot = InventoryDao.InsertItem(db, cid, 1662000, InventoryDao.Equipped, NativeAndroidService.RobotSlot, 1);
+            InventoryDao.InsertEquipment(db, robot);
+            long heart = InventoryDao.InsertItem(db, cid, 1672000, InventoryDao.Equipped, NativeAndroidService.HeartSlot, 1);
+            InventoryDao.InsertEquipment(db, heart);
+            var state = NativeAndroidService.Resolve(cid, slot =>
+                CharService.Load(db, cid).inventory.Find(x => x.inventoryType == InventoryDao.Equipped && x.position == slot)?.itemId ?? 0);
+            check(state.visible && state.templateId == NativeAndroidService.TemplateOf(1662000),
+                "双击开店：1662000+1672000 装配可见");
+            if (!state.visible) return;
+
+            // 模板号与召出的不一致：拒。
+            var mismatch = shop.Handle(new NpcShopRequest { characterId = cid, operation = NpcShopOperation.OpenShop,
+                id = NativeNpcShopService.AndroidShopId, npcTemplateId = state.templateId + 1 });
+            check(!mismatch.ok && mismatch.error == "机器人未召出", "双击开店：模板号与召出不符被拒");
+
+            var opened = shop.Handle(new NpcShopRequest { characterId = cid, operation = NpcShopOperation.OpenShop,
+                id = NativeNpcShopService.AndroidShopId, npcTemplateId = state.templateId });
+            check(opened.ok && opened.opened, "双击开店：召出后打开 9201060 杂货店");
+            check(opened.androidTemplateId == state.templateId, "双击开店：响应携带机器人店主模板号");
+            check(opened.items.Count > 0, "双击开店：杂货店有货");
+            // 会话期间的普通购买仍走同一条商店链（机器人商店就是普通商店换了店主）。
+            var buy = shop.Handle(new NpcShopRequest { characterId = cid, operation = NpcShopOperation.Buy,
+                index = 0, itemId = 2000000, quantity = 1 });
+            check(buy.ok, "双击开店：机器人商店可正常购买");
+            shop.EndSession(cid);
+        }
+        finally { System.IO.File.Delete(path); }
     }
 
     static void CheckInventory(Action<bool, string> check)

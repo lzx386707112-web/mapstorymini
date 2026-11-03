@@ -87,6 +87,21 @@ public static class CharService
     {
         var rec = CharactersDao.FindById(db, characterId);
         if (rec == null) return null;
+        // 旧后台 max(position)+1 曾把新发放装备写进 AP 穿着位。
+        // 只恢复品类不匹配的行，保留实例/属性；正常机器人时装不动。
+        bool repairedAndroidSlots = false;
+        foreach (var row in InventoryDao.ItemsByCharacter(db, characterId))
+        {
+            int slot = DbStore.Int(row, "position"), item = DbStore.Int(row, "itemid");
+            if (DbStore.Int(row, "inventorytype") != InventoryDao.Equip ||
+                !NativeAndroidService.IsApSlot(slot) ||
+                NativeAndroidService.ApAccepts(slot, NativeInventoryService.EquipmentSlotOf(item))) continue;
+            int free = NativeInventoryService.Free(db, rec, InventoryDao.Equip);
+            if (free == 0) continue; // 满包保留原行，下次腾出空间再恢复，绝不删除。
+            row["position"] = (long)free;
+            repairedAndroidSlots = true;
+        }
+        if (repairedAndroidSlots) db.Save();
         if(InventoryDao.ExpireItems(db,characterId,System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())) db.Save();
         var full = new FullCharacter { record = rec };
 

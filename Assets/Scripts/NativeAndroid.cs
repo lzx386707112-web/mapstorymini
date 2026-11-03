@@ -300,9 +300,26 @@ public sealed class NativeAndroid : MonoBehaviour
 
     // —————————————— 台词气泡 ——————————————
 
+    // 双击机器人开杂货店（282：点击机器人上行 USER_ANDROID_SHOP 596，
+    // 服务端 handleAndroidShop 校验召出后 openShop(模板号, GENERAL_SHOP)）。
+    // 命中口径与 BotField 的假人双击一致：指针 → 世界坐标 → 机器人 sprite bounds。
+    void DoubleClickShop()
+    {
+        if (!Pointer.DoubleClicked || Pointer.Blocked || GameWindows.AnyVisible) return;
+        if (visual == null || body == null || body.sprite == null || byeAt != 0f || templateId == 0) return;
+        var cam = Camera.main;
+        if (cam == null) return;
+        var point = cam.ScreenToWorldPoint(new Vector3(Pointer.Pos.x * UiKit.Scale,
+            Screen.height - Pointer.Pos.y * UiKit.Scale, 0));
+        if (!body.bounds.Contains(new Vector3(point.x, point.y, body.bounds.center.z))) return;
+        Pointer.ConsumeClick();
+        NativeNpcShopWindow.OpenAndroid(templateId);
+    }
+
     void OnGUI()
     {
         if (Event.current.type != EventType.Repaint) return;
+        DoubleClickShop();
         if (string.IsNullOrEmpty(balloonText)) return;
         float now = Time.unscaledTime;
         if (now > balloonUntil) { balloonText = null; return; }

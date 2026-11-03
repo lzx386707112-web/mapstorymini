@@ -100,6 +100,21 @@ public static class AndroidInventoryDragChecks
                 Pointer.Released = false;
                 Debug.Log("[AndroidInventoryDragChecks] PASS unequip and click-place " + item + " -> " + slot);
             }
+            var nextPosition = typeof(AdminGive).GetMethod("NextPosition", Private);
+            int grantPosition = (int)nextPosition.Invoke(null, new object[] { db, made.characterId, 1 });
+            Require(grantPosition > 0 && grantPosition <= CharactersDao.FindById(db, made.characterId).equipslots &&
+                InventoryDao.IsBagPosition(grantPosition), "admin grant used AP slot as bag position");
+            // Reproduce legacy grants after AP ring 1211: two hearts at 1212/1213.
+            foreach (int slot in new[] { 1212, 1213 })
+            {
+                db.Table("inventoryitems").Delete(x => DbStore.Int(x, "characterid") == made.characterId && DbStore.Int(x, "position") == slot);
+                long bad = InventoryDao.InsertItem(db, made.characterId, 1672043, 1, slot, 1);
+                InventoryDao.InsertEquipment(db, bad);
+                var recovered = CharService.Load(db, made.characterId).inventory.Find(x => x.itemRowId == bad);
+                Require(recovered != null && InventoryDao.IsBagPosition(recovered.position) && recovered.itemId == 1672043,
+                    "legacy heart was not recovered from AP ring " + slot);
+            }
+            Debug.Log("[AndroidInventoryDragChecks] PASS admin bag allocation and legacy AP heart recovery");
         }
         catch (Exception e) { Debug.LogException(e); exit = 1; }
         finally { if (File.Exists(path)) File.Delete(path); EditorApplication.Exit(exit); }

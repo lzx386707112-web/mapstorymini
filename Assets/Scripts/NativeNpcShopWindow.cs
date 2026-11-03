@@ -24,6 +24,18 @@ public static class NativeNpcShopWindow
     }
     public static void OpenNpc(int id) => Open(id, false, false);
     public static void OpenShop(int id, bool fallback) => Open(id, true, fallback);
+    // 282 双击机器人：USER_ANDROID_SHOP(596) → openShop(模板号, GENERAL_SHOP 9201060)，
+    // 服务端确认召出后以机器人为店主开杂货店。
+    public static void OpenAndroid(int templateId)
+    {
+        if (!GameSession.InGame || templateId == 0) return;
+        Close(); GameSession.SaveToDb();
+        state = GameSession.Net.NpcShop(new NpcShopRequest { characterId = GameSession.CharacterId,
+            id = NativeNpcShopService.AndroidShopId, npcTemplateId = templateId,
+            operation = NpcShopOperation.OpenShop });
+        sellTab = 0;
+        if (!state.ok) { BottomBar.Toast(state.error); Reset(); }
+    }
     static void Open(int id, bool shop, bool fallback)
     {
         if (!GameSession.InGame) return;
@@ -147,6 +159,18 @@ public static class NativeNpcShopWindow
         var texture = WzAssets.Texture(selected); var origin = WzAssets.Origin(selected);
         if (texture != null) GUI.DrawTexture(new Rect(x - origin.x, y - origin.y, texture.width, texture.height), texture);
     }
+    // 机器人店主：282 SHOP_OPEN 带 npcTemplateId 时店主画的是机器人纸娃娃（与场上一致：
+    // 同一 Resolve 结果），Appearance 内部自带 Register，无需实体在场。外观缺失回退普通店主。
+    static void AndroidPortrait(int templateId, float x, float y)
+    {
+        var ids = AndroidLook.Ids(NativeAndroidService.Resolve(GameSession.CharacterId, Profile.EquipOfSlot));
+        var sprite = ids != null
+            ? WzCharacter.Appearance(AndroidLook.Key(ids), ids, WzCharacter.AppearanceFrame(ids, Time.unscaledTime))
+            : null;
+        if (sprite == null) { Portrait(state.npcId, x, y); return; }
+        GUI.DrawTexture(new Rect(x - sprite.pivot.x, y - sprite.rect.height + sprite.pivot.y,
+            sprite.rect.width, sprite.rect.height), sprite.texture);
+    }
     public static void Draw()
     {
         if (!Visible) return;
@@ -166,7 +190,9 @@ public static class NativeNpcShopWindow
             try
             {
                 var p = pointer - position;
-                Image(Root + "backgrnd", 0, 0); Portrait(state.npcId, 56, 76);
+                Image(Root + "backgrnd", 0, 0);
+                if (state.androidTemplateId != 0) AndroidPortrait(state.androidTemplateId, 56, 76);
+                else Portrait(state.npcId, 56, 76);
                 NativeUi.CharacterPortrait(285, 76);
                 GUI.Label(new Rect(350, 64, 97, 16), Profile.Data.gold.ToString("N0"), Text(true));
                 if (NativeUi.Button(new Rect(142, 15, 70, 19), "UI/UIWindow.img/PersonalShop/BtExit", p)) { Close(); return; }

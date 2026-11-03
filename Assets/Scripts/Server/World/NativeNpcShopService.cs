@@ -9,6 +9,8 @@ public sealed class NpcShopRequest
     public NpcShopOperation operation;
     public int characterId, id, index, itemId, quantity = 1, inventoryType, position;
     public bool fallback;
+    // 双击机器人开店时带的机器人外观模板号（282 USER_ANDROID_SHOP 上行 payload）；0 = 普通 NPC 商店
+    public int npcTemplateId;
 }
 public sealed class NpcShopItem
 {
@@ -19,6 +21,8 @@ public sealed class NpcShopResponse
     public bool ok = true, opened;
     public string error = "";
     public int shopId, npcId, mapId;
+    // >0 = 本次会话以机器人为店主（282 SHOP_OPEN 的 npcTemplateId 分支），客户端画机器人纸娃娃
+    public int androidTemplateId;
     public List<NpcShopItem> items = new List<NpcShopItem>();
     public FullCharacter character;
     public Dictionary<int, int> sellPrices = new Dictionary<int, int>();
@@ -30,11 +34,16 @@ public sealed class NativeNpcShopService
     readonly DbStore db;
     readonly Dictionary<int, int> sessions = new Dictionary<int, int>();
     readonly Dictionary<int, int> sessionMaps = new Dictionary<int, int>();
+    // 店主形象覆盖：双击机器人开店（282 AndroidHandler.handleAndroidShop →
+    // openShop(templateID, GENERAL_SHOP)，GENERAL_SHOP = 9201060，GameConstants.java:46）
+    readonly Dictionary<int, int> sessionSpeakers = new Dictionary<int, int>();
+    /// <summary>282 的 GENERAL_SHOP：机器人双击打开的杂货店（shops 表已有该店）。</summary>
+    public const int AndroidShopId = 9201060;
     BotItemCatalog Catalog => BotItemCatalog.Shared;
     bool seeded;
     public Func<int, BotActor> Player;
     public NativeNpcShopService(DbStore db) { this.db = db; }
-    public void EndSession(int id) { sessions.Remove(id); sessionMaps.Remove(id); }
+    public void EndSession(int id) { sessions.Remove(id); sessionMaps.Remove(id); sessionSpeakers.Remove(id); }
     void Seed()
     {
         if (seeded) return;
@@ -107,7 +116,22 @@ public sealed class NativeNpcShopService
                 if (row == null && r.fallback) row = db.Table("shops").Find(x => DbStore.Int(x, "shopid") == 11000);
                 EndSession(r.characterId);
                 if (row == null) error = "这位 NPC 没有商店";
-                else { sessions[r.characterId] = DbStore.Int(row, "shopid"); sessionMaps[r.characterId] = c.record.map; }
+                else
+                {
+                    sessions[r.characterId] = DbStore.Int(row, "shopid");
+                    sessionMaps[r.characterId] = c.record.map;
+                    if (r.npcTemplateId != 0)
+                    {
+                        // 282 handleAndroidShop：chr.getAndroid() == null 或 charID 不符直接忽略；
+                        // 这里同样以服务端当前装配结果为准，模板号必须与召出的一致。
+                        var android = NativeAndroidService.Resolve(r.characterId, slot =>
+                            c.inventory.Find(x => x.inventoryType == InventoryDao.Equipped && x.position == slot)?.itemId ?? 0);
+                        if (!android.visible || android.templateId != r.npcTemplateId)
+                        { error = "机器人未召出"; EndSession(r.characterId); }
+                        else sessionSpeakers[r.characterId] = r.npcTemplateId;
+                    }
+                    else sessionSpeakers.Remove(r.characterId);
+                }
             }
             else if (!sessions.TryGetValue(r.characterId, out int shop) || sessionMaps[r.characterId] != c.record.map)
             { EndSession(r.characterId); error = "请重新打开商店"; }
@@ -133,6 +157,7 @@ public sealed class NativeNpcShopService
             {
                 var row = db.Table("shops").Find(x => DbStore.Int(x, "shopid") == current);
                 result.opened = true; result.shopId = current; result.npcId = DbStore.Int(row, "npcid");
+                result.androidTemplateId = sessionSpeakers.TryGetValue(r.characterId, out int speaker) ? speaker : 0;
                 result.mapId = sessionMaps[r.characterId]; result.items = Stock(current);
                 foreach (var item in result.character.inventory) if (InventoryDao.IsBagPosition(item.position))
                     result.sellPrices[item.inventoryType * 1000 + item.position] = SellPrice(item.itemId, TradeItemRules.Rechargeable(item.itemId) ? item.quantity : 1);

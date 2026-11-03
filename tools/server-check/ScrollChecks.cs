@@ -60,8 +60,8 @@ static class ScrollChecks
             InventoryDao.InsertItem(db, cid, 2616004, 2, 2, 1);
             var wrongHeart = NativeScrollService.Apply(db, new EquipPatchRequest
             { characterId = cid, inventoryItemId = gold, scrollId = 2616004, scrollPosition = 2 }, new Random(7));
-            Check(!wrongHeart.ok && wrongHeart.error == "这件心脏不符合卷轴要求",
-                "2616004 砸金之心被 req 白名单拒绝（" + wrongHeart.error + "）");
+            Check(!wrongHeart.ok && wrongHeart.error.StartsWith("这件心脏不符合卷轴要求") && wrongHeart.error.Contains("水晶未來心臟（6 槽）"),
+                "2616004 砸金之心被 req 白名单拒绝，提示带适用清单（" + wrongHeart.error + "）");
 
             // 卡勒馬：reqScope 整段 167xxxx，任何心脏都吃
             InventoryDao.InsertItem(db, cid, 2643009, 2, 3, 2);
@@ -78,8 +78,8 @@ static class ScrollChecks
             InventoryDao.InsertItem(db, cid, 2616008, 2, 6, 1);
             var noClientReq = NativeScrollService.Apply(db, new EquipPatchRequest
             { characterId = cid, inventoryItemId = gold, scrollId = 2616008, scrollPosition = 6 }, new Random(7));
-            Check(!noClientReq.ok && noClientReq.error == "这件心脏不符合卷轴要求",
-                "客户端不传 req 时服务端自己卡（" + noClientReq.error + "）");
+            Check(!noClientReq.ok && noClientReq.error.StartsWith("这件心脏不符合卷轴要求") && noClientReq.error.Contains("这张卷轴适用于"),
+                "客户端不传 req 时服务端自己卡，提示带适用清单（" + noClientReq.error + "）");
 
             // 只能砸心脏：武器（穿在身上，才轮到种类校验而不是匠人之魂提示）
             long weapon = InventoryDao.InsertItem(db, cid, 1302000, 1, 2, 1);
@@ -148,13 +148,24 @@ static class ScrollChecks
             Check(!drained.ok && drained.error.Contains("鋼鐵未來心臟") && drained.error.Contains("剩 0 次"),
                 "次数用完的提示带装备名与次数（" + drained.error + "）");
 
-            // tuc=0 的心脏（銀之心在数据里没有 tuc 字段）砸不上去，且提示要说清是哪件、为什么
+            // tuc=0 的心脏砸不上去：提示要说清是哪件、为什么，req 白名单卷还要列出能砸哪些心脏
             long blank = Wear(db, cid, 1672000, Check);
             InventoryDao.InsertItem(db, cid, 2643010, 2, 5, 1);
             var noSlot = NativeScrollService.Apply(db, new EquipPatchRequest
             { characterId = cid, inventoryItemId = blank, scrollId = 2643010, scrollPosition = 5 }, new Random(7));
-            Check(!noSlot.ok && noSlot.error == "銀之心 没有可升级次数（数据里 tuc=0），砸不了卷",
-                "銀之心 tuc=0 → 提示说清是数据里 0 次（" + noSlot.error + "）");
+            Check(!noSlot.ok && noSlot.error == "銀之心 是 0 槽心脏，砸不了卷（数据里 tuc=0）",
+                "銀之心 tuc=0 + 卡勒馬卷（无 req 清单）→ 通用文案（" + noSlot.error + "）");
+
+            // 用户实测场景：2616004 力量卷砸銀未來心臟（1672042，六款里唯一 0 槽）→
+            // 提示 0 槽 + 逐颗列出六款心脏的槽数，玩家知道该换鋼鐵以上
+            long silver = Wear(db, cid, 1672042, Check);
+            InventoryDao.InsertItem(db, cid, 2616004, 2, 12, 1);
+            var silverScroll = NativeScrollService.Apply(db, new EquipPatchRequest
+            { characterId = cid, inventoryItemId = silver, scrollId = 2616004, scrollPosition = 12 }, new Random(7));
+            Check(!silverScroll.ok && silverScroll.error.StartsWith("銀未來心臟 是 0 槽心脏，砸不了卷，这张卷轴适用于：")
+                && silverScroll.error.Contains("鋼鐵未來心臟（2 槽）") && silverScroll.error.Contains("鈦未來心臟（10 槽）")
+                && silverScroll.error.Contains("銀未來心臟（0 槽）"),
+                "2616004 砸銀未來心臟 → 0 槽提示 + 六款槽数清单（" + silverScroll.error + "）");
         }
         finally
         {
