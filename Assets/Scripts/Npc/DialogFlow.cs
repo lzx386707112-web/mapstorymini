@@ -390,7 +390,7 @@ public static class DialogFlow
         var thumb = new Rect(bar.x, trackTop + travel * (scroll / maxScroll), BarW, thumbH);
 
         bool press = Event.current.type == EventType.Repaint && Pointer.Pressed;
-        if (press)
+        if (GUI.enabled && press)
         {
             if (prev.Contains(Pointer.Pos)) { scroll = Mathf.Clamp(scroll - 8f, 0f, maxScroll); Pointer.ConsumeClick(); }
             else if (next.Contains(Pointer.Pos)) { scroll = Mathf.Clamp(scroll + 8f, 0f, maxScroll); Pointer.ConsumeClick(); }
@@ -398,6 +398,12 @@ public static class DialogFlow
             {
                 dragging = true;
                 grabOffset = Pointer.Pos.y - thumb.y;
+                Pointer.ConsumeClick();
+            }
+            else if (bar.Contains(Pointer.Pos))
+            {
+                scroll = Mathf.Clamp(scroll + (Pointer.Pos.y < thumb.y ? -1f : 1f) *
+                    Mathf.Max(16f, Mathf.Floor((maxScroll / 8f + 1f) / 16f)) * 8f, 0f, maxScroll);
                 Pointer.ConsumeClick();
             }
         }

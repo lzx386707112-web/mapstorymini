@@ -177,16 +177,56 @@ namespace Server.Bot.Types.Pq
             else BotAttack.BasicSwing(chr, random);
         }
 
-        // 大厅里丢东西：通行证 / 优惠券这类副本相关的杂物，纯氛围（谁都能捡）。
+        // 大厅里丢东西：只丢纯氛围的杂物（药水 / 母矿 / 杂料），谁都能捡。
+        // 副本券一律不丢：源端 PQ 脚本用 haveItem(id) == n 判定进度（废都第一关的优惠券最典型），
+        // 地上凭空多出一摞 4001007/4001008/4001022 会被队员捡走、把阶段判定直接打乱；
+        // 这些道具在 IMG 里都带 info/pquest=1，见下面 IsQuestItem 的兜底过滤。
         static readonly int[] LobbyDrops =
         {
-            PqCatalog.PassCoupon, PqCatalog.PassTicket, PqCatalog.LudiPass,
             2000000, 2000001, 4020000, 4000004,
         };
 
+        // 过滤后的实际投放池（首次丢东西时才筛，避免构造期去碰道具表）。
+        int[] ambientPool;
+
+        int[] AmbientPool()
+        {
+            if (ambientPool != null) return ambientPool;
+            var list = new List<int>(LobbyDrops.Length);
+            foreach (int id in LobbyDrops) if (!IsQuestItem(id)) list.Add(id);
+            ambientPool = list.ToArray();
+            return ambientPool;
+        }
+
+        // 任务道具判定：info/quest（普通任务）与 info/pquest（组队任务）任一为 1。
+        // 数据源是 Bot/Items.json（IMG 的 info 直出，四个副本的道具都带 pquest=1）。
+        // 表里查不到这条、或者表本身没加载成功：一律当任务道具挡掉——丢东西只是氛围，
+        // 宁可这一拍不丢，也不能把没核过的 id 扔到 PQ 图里。
+        static readonly Dictionary<int, bool> questFlags = new Dictionary<int, bool>();
+
+        static bool IsQuestItem(int itemId)
+        {
+            if (questFlags.TryGetValue(itemId, out bool cached)) return cached;
+            bool quest;
+            try
+            {
+                var info = BotItemCatalog.Shared.Info(itemId);
+                quest = info == null
+                     || BotItemCatalog.Int(info, "quest") == 1
+                     || BotItemCatalog.Int(info, "pquest") == 1;
+            }
+            catch (Exception) { return true; }
+            questFlags[itemId] = quest;
+            return quest;
+        }
+
         void DropSomething()
         {
-            int itemId = LobbyDrops[random.Next(LobbyDrops.Length)];
+            var pool = AmbientPool();
+            if (pool.Length == 0) return;
+            int itemId = pool[random.Next(pool.Length)];
+            // 二次兜底：池子被改坏或道具表重导后改了标记，也不许把任务道具扔到地上。
+            if (IsQuestItem(itemId)) return;
             int x = (int)chr.x + random.Next(-40, 41);
             int y = (int)MapService.SnapToGround(chr.mapId, x, chr.y);
             try { DropCommands.BotThrowItemNoExpire(chr, itemId, x, y); }

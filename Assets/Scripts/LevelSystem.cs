@@ -179,6 +179,15 @@ public static class LevelSystem
         return true;
     }
 
+    // Character.changeJobAndLevel: setLevel(target-1), then exactly one levelUp.
+    public static void ResetForRebirth(PlayerProfileData d, int target)
+    {
+        EnsureBaseline(d);
+        d.experience = 0;
+        d.level = Math.Max(1, Math.Min(ExpTable.MaxLevel, target)) - 1;
+        LevelUp(d);
+    }
+
     static void LevelUp(PlayerProfileData d)
     {
         AudioManager.Play("Game/LevelUp", 0.9f, false);

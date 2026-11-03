@@ -3,6 +3,34 @@ using UnityEngine;
 // Shared drawing helpers; every visible bitmap comes from an original IMG node.
 public static class NativeUi
 {
+    // CCtrlTab style 2 -> Tab3 (4DE4D0), not Tab2. Positions from 4DE15F/4DD903.
+    public static int TabsStyle2(string labels, int count, int selected, float x, float y, int width, Vector2 pointer, int fixedWidth = 0)
+    {
+        int inner = fixedWidth > 0 ? fixedWidth - 8 : (width - (count - 1) * 12 - 12) / count;
+        int remainder = fixedWidth > 0 ? 0 : width - (inner + 12) * count;
+        void Image(string name, float dx)
+        {
+            var t = Art.Tex("wz://UI/Basic.img/Tab3/" + name);
+            if (t != null) GUI.DrawTexture(new Rect(dx, y, t.width, t.height), t);
+        }
+        Image("left" + (selected == 0 ? 1 : 0), x);
+        float start = x + 6;
+        for (int i = 0; i < count; i++)
+        {
+            int length = inner + (i < remainder ? 1 : 0);
+            var fill = Art.Tex("wz://UI/Basic.img/Tab3/fill" + (selected == i ? 1 : 0));
+            if (fill != null) GUI.DrawTexture(new Rect(start, y, length, fill.height), fill);
+            float end = start + length;
+            Image(i == count - 1 ? "right" + (selected == i ? 1 : 0) : "middle" + (selected == i ? 1 : selected == i + 1 ? 2 : 0), end);
+            var label = Art.Tex("wz://" + labels + "/" + (selected == i ? "disabled/" : "enabled/") + i);
+            if (label != null) GUI.DrawTexture(new Rect(start + length / 2 - label.width / 2, y + 10 - label.height / 2 + 2, label.width, label.height), label);
+            if (GUI.enabled && Event.current.type == EventType.Repaint && Pointer.Released && new Rect(start - 6, y, length + 12, 21).Contains(pointer))
+            { Pointer.ConsumeClick(); selected = i; }
+            start = end + 12;
+        }
+        return selected;
+    }
+
     static readonly System.Collections.Generic.Dictionary<string, (Rect rect, System.Func<bool> visible)> windows =
         new System.Collections.Generic.Dictionary<string, (Rect, System.Func<bool>)>();
     // Bounds are in UiKit coordinates, before per-window GUI scaling/groups.
@@ -30,13 +58,15 @@ public static class NativeUi
 
     public static bool Button(Rect rect, string node)
     {
-        return Button(rect, node, Pointer.Pos);
+        return Button(rect, node, Pointer.Pos, false);
     }
-    public static bool Button(Rect rect, string node, Vector2 pointer)
+    // forceNormal：模态弹窗打开时背景仍按正常态绘制（不置灰），但点击依旧由 GUI.enabled 拦截。
+    public static bool Button(Rect rect, string node, Vector2 pointer, bool forceNormal = false)
     {
         bool hover = rect.Contains(pointer);
         bool enabled = GUI.enabled && (!NativeUtilPrompt.Visible || NativeUtilPrompt.Drawing);
-        var tex = Art.Tex("wz://" + node + "/" + (!enabled ? "disabled" : hover ? Pointer.Down ? "pressed" : "mouseOver" : "normal") + "/0");
+        bool visual = enabled || forceNormal;
+        var tex = Art.Tex("wz://" + node + "/" + (!visual ? "disabled" : hover ? Pointer.Down ? "pressed" : "mouseOver" : "normal") + "/0");
         if (tex != null) GUI.DrawTexture(rect, tex);
         bool clicked = enabled && Event.current.type == EventType.Repaint && Pointer.Clicked && hover;
         // 原版 UI 点击音（Sound/UI.img/BtMouseClick）；这里覆盖所有用原生 UI 资源的按钮
@@ -71,6 +101,8 @@ public static class NativeUi
                 if (thumb.Contains(pointer)) { scrollDrag = id; scrollGrab = pointer.y-thumb.y; Pointer.ConsumeClick(); }
                 else if (new Rect(bar.x,bar.y,15,13).Contains(pointer)) { value -= step; Pointer.ConsumeClick(); }
                 else if (new Rect(bar.x,bar.yMax-13,15,13).Contains(pointer)) { value += step; Pointer.ConsumeClick(); }
+                else if (track.Contains(pointer))
+                { value += (pointer.y < thumb.y ? -1f : 1f) * Mathf.Max(16f, Mathf.Floor((maximum / step + 1f) / 16f)) * step; Pointer.ConsumeClick(); }
             }
             if (scrollDrag == id)
             { if (Pointer.Down) value = (pointer.y-scrollGrab-track.y)/travel*maximum; else scrollDrag = 0; }
@@ -80,23 +112,52 @@ public static class NativeUi
         return value;
     }
 
+    // CUIShop::SetAvatar 754779 and CTrunkDlg::SetAvatar 7C70C8 use the current look.
+    public static void CharacterPortrait(float x, float y)
+    {
+        var character = GameSession.Character;
+        if (character == null) return;
+        var ids = WzCharacter.CharacterIds(character.record, character.inventory);
+        var sprite = WzCharacter.Appearance(string.Join("_", ids), ids, WzCharacter.AppearanceFrame(ids, Time.unscaledTime));
+        if (sprite != null)
+            GUI.DrawTexture(new Rect(x - sprite.pivot.x, y - sprite.rect.height + sprite.pivot.y,
+                sprite.rect.width, sprite.rect.height), sprite.texture);
+    }
+
+    static Texture2D dialogPanel;
     public static void DialogPanel(Rect rect)
     {
         const string root = "wz://UI/UIWindow.img/UtilDlgEx/";
-        // Native widths are 529px. Keep the 28px top / 58px bottom and corner
-        // caps intact instead of scaling the entire window into a thin banner.
-        Strip(new Rect(rect.x, rect.y, rect.width, 28), Art.Tex(root + "t"));
-        var center = Art.Tex(root + "c");
-        // Preserve native dithering: stretching a 20px row creates vertical stripes.
-        for (float y = rect.y + 28; y < rect.yMax - 58; y += 20)
+        int height = Mathf.CeilToInt(rect.height);
+        if (height < 86) return;
+        if (dialogPanel == null || dialogPanel.height != height)
         {
-            float height = Mathf.Min(20, rect.yMax - 58 - y);
-            if (center != null && rect.width == center.width)
-                GUI.DrawTextureWithTexCoords(new Rect(rect.x, y, rect.width, height), center,
-                    new Rect(0f, 1f - height / center.height, 1f, height / center.height));
-            else Strip(new Rect(rect.x, y, rect.width, height), center);
+            var top = Art.Tex(root + "t");
+            var center = Art.Tex(root + "c");
+            var bottom = Art.Tex(root + "s");
+            if (top == null || center == null || bottom == null) return;
+            var pixels = new Color32[top.width * height];
+            var topPixels = top.GetPixels32();
+            var centerPixels = center.GetPixels32();
+            var bottomPixels = bottom.GetPixels32();
+            // Assemble in native pixels, bottom-up like Texture2D. Separate GUI quads
+            // can expose the field at fractional screen-scale tile boundaries.
+            for (int y = 0; y < height; y++)
+            {
+                int fromTop = height - 1 - y;
+                var source = fromTop < 28 ? topPixels : y < 58 ? bottomPixels : centerPixels;
+                int sourceY = fromTop < 28 ? 27 - fromTop : y < 58 ? y :
+                    center.height - 1 - (fromTop - 28) % center.height;
+                System.Array.Copy(source, sourceY * top.width, pixels, y * top.width, top.width);
+            }
+            if (dialogPanel != null) Object.Destroy(dialogPanel);
+            dialogPanel = new Texture2D(top.width, height, TextureFormat.RGBA32, false)
+            { name = "UtilDlgEx assembled", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
+            dialogPanel.SetPixels32(pixels);
+            dialogPanel.Apply(false, true);
         }
-        Strip(new Rect(rect.x, rect.yMax - 58, rect.width, 58), Art.Tex(root + "s"));
+        if (rect.width == dialogPanel.width) GUI.DrawTexture(rect, dialogPanel);
+        else Strip(rect, dialogPanel);
     }
 
     static void Strip(Rect rect, Texture2D texture)

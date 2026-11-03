@@ -23,10 +23,16 @@ public static class NativeTeleportMovement
             int fy = Height(f, x), distance = Math.Abs(fy - y);
             if (distance < originalDistance) { original = f; originalDistance = distance; }
         }
+        // 只在相机 VR 的上下边界内找落点。竖井地图（如玩具塔 101 第 2 关 922010200）
+        // 在 VRBottom 之下还挂着一段「坑底」装饰 foothold（本图 y=542，VRBottom=330），
+        // 不剔除的话在最低平台继续按↓会直接瞬移到镜头外，看起来像跑出地图。
+        // top>=bottom 视为旧式/无边界地图，保持原行为。
+        bool bounded = map.bottom > map.top;
         foreach (var f in map.footholds)
         {
             if (f.x1 >= f.x2 || tx < f.x1 || tx > f.x2) continue;
             int fy = Height(f, tx), score;
+            if (bounded && (fy < map.top || fy > map.bottom)) continue;
             if (horizontal != 0)
             {
                 score = Math.Abs(fy - y);

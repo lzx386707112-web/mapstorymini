@@ -273,6 +273,13 @@ public static class NpcApi
             int id = Int(c, 0), count = Int(c, 1, 1);
             if (id <= 0 || count == 0) return JsNull.Value;
             if (count < 0) { Profile.RemoveItem(id, -count); return JsNull.Value; }
+            if (!CanHold(new[] {id}, new[] {count}))
+            {
+                string[] names = { "", "EQUIP", "USE", "SETUP", "ETC", "CASH" };
+                int type = id / 1000000;
+                NativeSystemMessage.Drop(1, "您的背包已满，请从" + (type >= 1 && type <= 5 ? names[type] : "") + "栏移除一件物品。");
+                return JsNull.Value;
+            }
             int before = Profile.ItemCount(id);
             Profile.AddItem(id, count);
             return Profile.ItemCount(id) - before == count ? NewItemRef(id, count) : JsNull.Value;
@@ -332,7 +339,7 @@ public static class NpcApi
         }));
         cm.Set("removeAllByInventory", Fn(c => RemoveInventory(Int(c, 0))));
         // 单机没有「格位」概念（inventoryitems 一行一道具），拿到 slot 也无法定位，明确不装作成功。
-        cm.Set("removeAllByInventorySlot", Fn(c => throw new JsRuntimeException("单机没有背包格位概念：removeAllByInventorySlot")));
+        cm.Set("removeAllByInventorySlot", Fn(c => RemoveInventorySlot(Int(c, 0), Int(c, 1))));
 
         // —— 传送 ——
         // AbstractPlayerInteraction.warp(map[, portal])：第二参可以是门名（String）也可以是
@@ -603,14 +610,19 @@ public static class NpcApi
     // 道具 id 的首位数字就是栏位（ItemConstants.getInventoryType），单机用它判定。
     static void RemoveInventory(int type)
     {
-        var data = Profile.Data;
-        if (type < 1 || type > 5 || data?.itemIds == null) return;
-        foreach (int id in new List<int>(data.itemIds))
-        {
-            if (id / 1000000 != type) continue;
-            int count = Profile.ItemCount(id);
-            if (count > 0) Profile.RemoveItem(id, count);
-        }
+        if (type < 1 || type > 5 || GameSession.Character == null) return;
+        var items = new List<InventoryEntry>(GameSession.Character.inventory);
+        foreach (var item in items)
+            if (item.inventoryType == type && item.position > 0) RemoveInventorySlot(type, item.position);
+    }
+
+    static void RemoveInventorySlot(int type, int slot)
+    {
+        var item = SlotEntry(type, slot);
+        if (item == null) return;
+        GameSession.SaveToDb();
+        if (!RemoveSlotItem(type, slot, item.quantity)) throw new JsRuntimeException("删除道具失败");
+        GameSession.ApplyInventoryToProfile(); Profile.Save();
     }
 
     static JsValue Location(ScriptOperation operation, string type)
@@ -816,7 +828,7 @@ public static class NpcApi
             return id > 0 ? BuildEquipItem(id) : JsNull.Value;
         }));
         cm.Set("eatEquip", Fn(c => { }));   // 源端无此 API（活动 NPC 自定义），无法还原语义
-        cm.Set("removeAllByInventorySlot", Fn(c => throw new JsRuntimeException("单机没有背包格位概念：removeAllByInventorySlot")));
+        cm.Set("removeAllByInventorySlot", Fn(c => RemoveInventorySlot(Int(c, 0), Int(c, 1))));
 
         // —— 未迁移整套系统：空态 / 显式提示，不再走 Lenient 中断对话 ——
         cm.Set("getGuild", Ret(_ => JsNull.Value));          // 公会（NativeCommunityService 有 Guild 操作，但脚本面缺成员查询）
@@ -1823,6 +1835,37 @@ public static class NpcApi
     // player 宿主补齐（AbstractCharacterObject/Character 语义）：
     // 基础四维、HP/MP 池、AP/SP/等级/转职/转生、技能、蓝泉/仓库等脚本直调面。
     // ————————————————————————————————————————————
+    static JsArray RebirthSettings()
+        => (JsArray)GameSession.Net.Script(new ScriptRequest {
+            operation = ScriptOperation.GetRebirthSettings, characterId = GameSession.CharacterId }).value;
+
+    static int RebornCount() => JsConvert.ToBoolean(RebirthSettings().Items[0])
+        ? GameSession.Character?.record.reborns ?? 0 : 0;
+
+    static void Rebirth(JsCall call)
+    {
+        if (!GameSession.InGame) throw new JsRuntimeException("Rebirth requires an active character");
+        // 一键转生.js uses false,false. Other overloads remain explicit migration gaps.
+        if (JsConvert.ToBoolean(call.Arg(0)) || JsConvert.ToBoolean(call.Arg(1)))
+            throw new JsRuntimeException("Unmigrated rebirth skill-reset flags");
+        var settings = RebirthSettings();
+        if (!JsConvert.ToBoolean(settings.Items[0])) throw new JsRuntimeException("重生系统未启用");
+        int maximum = JsConvert.ToInt32(GameSession.Net.Script(new ScriptRequest {
+            operation = ScriptOperation.GetMaxClassLevel, characterId = GameSession.CharacterId }).value);
+        int level = Math.Min(maximum, JsConvert.ToInt32(settings.Items[1]));
+        bool completed = NativeRebirthRules.IsCygnusFifth(Profile.JobId) ||
+            ScriptValueStore("cygnus_fifth_job_completed", null) == "1";
+        int next = NativeRebirthRules.JobAtLevel(Profile.JobId, level, Int(call, 2), completed);
+        using (Profile.DeferSaves())
+        {
+            if (!JobSystem.ChangeJobById(next)) throw new JsRuntimeException("Unknown rebirth job: " + next);
+            GameSession.Character.record.reborns++;
+            LevelSystem.ResetForRebirth(Profile.Data, level);
+            Profile.Save();
+        }
+        Pc?.ApplyProgression();
+    }
+
     static void BindCommonPlayer(JsHostObject p, NpcSession session)
     {
         // —— 基础四维（AbstractCharacterObject.attrStr 等：脚本 getStr 是裸基础值，不含装备）——
@@ -1871,14 +1914,16 @@ public static class NpcApi
             Pc?.ApplyProgression();
         }));
         p.Set("changeJob", Fn(c => ChangeJob(Int(c, 0))));
-        // 转生次数存 extend_value("reborns")（源端存 characters.reborns 列）
-        p.Set("getReborns", Ret(_ => N(PqExtendInt("reborns"))));
-        p.Set("getRebornsCount", Ret(_ => N(PqExtendInt("reborns"))));
+        // 与源端一样使用角色永久字段，不能用每日副本计数存储。
+        p.Set("getReborns", Ret(_ => N(RebornCount())));
+        p.Set("getRebornsCount", Ret(_ => N(RebornCount())));
+        p.Set("rebirth", Fn(c => Rebirth(c)));
         // Character.executeRebornAs：满级校验后 addReborns → changeJob → setLevel(0) → levelUp
         p.Set("executeRebornAsId", Fn(c =>
         {
             int jobId = Int(c, 0);
-            SavePqExtend("reborns", PqExtendInt("reborns") + 1);
+            if (GameSession.Character == null) throw new JsRuntimeException("Rebirth requires an active character");
+            GameSession.Character.record.reborns++;
             ChangeJob(jobId);
             Profile.Data.level = 1;
             Profile.Data.experience = 0;
@@ -2289,7 +2334,7 @@ public static class NpcApi
         m.Set("getMobs", Ret(_ => {
             var result = new JsArray();
             foreach (var mob in EnemyUnit.All) if (mob.fieldMode && !mob.dead) result.Items.Add(BuildMonster(mob));
-            return result;
+            return BuildJavaList(result);
         }));
         // MapleMap.getMonsters/getAllMonsters expose the same MONSTER objects.
         m.Set("getMonsters", m.Get("getMobs"));
@@ -2495,6 +2540,7 @@ public static class NpcApi
                     int id = Int(args, 0);
                     var shop = new JsHostObject(null);
                     shop.Set("sendShop", Fn(_ => NativeNpcShopWindow.OpenShop(id, false)));
+                    shop.Set("sell", Fn(args => NativeNpcShopWindow.SellFromScript(id, Int(args, 1), Int(args, 2), Int(args, 3))));
                     return shop;
                 }));
                 return factory;
@@ -2513,6 +2559,7 @@ public static class NpcApi
                 Lenient(provider, "ItemInformationProvider");
                 provider.Set("getInstance", Ret(_ => provider));
                 provider.Set("getName", Ret(args => S(WzNames.Item(Int(args, 0)))));
+                provider.Set("getPrice", Ret(args => N(GameServer.Local.NpcShops.SellPrice(Int(args, 0), Int(args, 1, 1)))));
                 provider.Set("isSamePart",Ret(args=>
                 {
                     string part=OriginalItemPart(Int(args,0));return B(part!=null && part==OriginalItemPart(Int(args,1)));
@@ -2873,7 +2920,7 @@ public static class NpcApi
             {
                 var type = new JsHostObject(null);
                 type.Set("EQUIP", N(1)); type.Set("USE", N(2)); type.Set("SETUP", N(3));
-                type.Set("ETC", N(4)); type.Set("CASH", N(5)); type.Set("EQUIPPED", N(-1));
+                type.Set("UNDEFINED", N(0)); type.Set("ETC", N(4)); type.Set("CASH", N(5)); type.Set("EQUIPPED", N(-1));
                 return type;
             }
             // org.gms.client.inventory.manipulator.InventoryManipulator（源端 InventoryManipulator.java）。
@@ -3049,6 +3096,11 @@ public static class NpcApi
         result.Set("isAlive",Ret(_ => B(mob != null && !mob.dead)));
         result.Set("getHp",Ret(_ => N(mob.hp)));
         result.Set("getMaxHp",Ret(_ => N(mob.hpMax)));
+        result.Set("getName",Ret(_ => S(WzNames.Mob(mob.fieldMobId))));
+        result.Set("getLevel",Ret(_ => N(NativeCombatData.Int(mob.CombatStats, "level", 1))));
+        result.Set("isBoss",Ret(_ => B(mob.IsBoss)));
+        result.Set("getBoss",result.Get("isBoss"));
+        result.Set("getMaxMp",Ret(_ => N(NativeCombatData.Int(mob.CombatStats, "maxMP"))));
         return result;
     }
 

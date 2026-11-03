@@ -70,3 +70,12 @@
 - 之前迁移版的 bug：按 `Profile.cls` 猜四转（`mage→212`），未二转法师也显示「火毒魔导师」。必须用 `Profile.JobId`。校验入口 `tools/audit_job_names.py`（`--check` 有差异返回 1）。
 
 后台技能图鉴 `AdminCatalogData.JobNames` **不要“修正”**：它与源端 `SkillCatalogService.java` 的 `JOB_NAMES` 逐条一致（102/102），源端自己就写「大魔导师(火毒)/箭神/夜使者/风行者」，只影响后台分类展示。
+
+## 2026-11-02 人物资料装备与宠物服装修正
+
+沿用本页 EXE 身份、`903E24` 装备列表与 `903C50/90433A/904AEA` 宠物资料依据（扩展布局见 five-fixes-character-expansion-2026-11-01.md）；本次为迁移实现纠错，没有新增 EXE 推测或布局。
+
+- 项目存储的 `InventoryDao.Equipped=1`，通过 `position<0` 区分已穿戴与背包装备。`NativeCharacterInfoData.Read` 旧筛选 `inventoryType==-1` 会漏掉实际人物及宠物装备；两处遍历统一使用常量及负槽位。
+- 宠物服装按既有已核实 `-14/-30/-38` 分宠读取；人物资料绘制从所选宠物 `petItems` 取180服装，删除读取 `-114` 和将第一宠服装复制给其余两宠的错误。宠物装备不进入人物物品列表。
+- `GameSession.ApplyInventoryToProfile` 同步后，若正在查看本人资料，`NativeCharacterInfo.RefreshSelf` 重新查询资料及纸娃娃外观；保留展开页与滚动状态，无宠物/坐骑时收回对应展开页。不在每帧查询或写盘。
+- 回归入口：`dotnet run --project tools/server-check -c Release` 的角色资料段，使用隔离库验证三宠服装、过滤宠物装备同时保留人物武器、卸下后重查无残留。Unity 编译入口 `dotnet build tools/unity-compile-check --no-restore`。本次服务端回归1318通过/0失败，Unity编译0错误/0警告，`git diff --check`通过；尚未 Android 实机验收。

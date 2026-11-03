@@ -98,11 +98,42 @@ public static class BotPresentationChecks
                 Synchronize(field, actor.mapId, 0, 1);
                 Require(animation.Current == pose && animation.IsOneShot,"base synchronization preserves swing " + pose);
             }
-            field.PlaySkillEffect(actor,1001005);
+            // 技能表现必须按 skill/<id>/level/<等级> 取原 IMG：1311001 的 action 只在 level/30
+            // （burster2），旧实现只拼根节点 /effect，动作和 effect0/hit 全丢。
             var effects=root.GetComponentsInChildren<NativeImgAnimation>();
-            Require(effects.Length==1 && effects[0].Image.sprite!=null,"original Slash Blast effect reaches bot renderer");
-            effects[0].Tick(Time.realtimeSinceStartupAsDouble+60);
-            Require(root.GetComponentsInChildren<NativeImgAnimation>().Length==0,"one-shot skill IMG expires without orphan objects");
+            int fxBefore=UnityEngine.Object.FindObjectsOfType<SkillFx>().Length;
+            field.PlaySkillCast(actor,1311001,30);
+            // 1311001 的 action 只在 level/30（burster2）；旧实现只读根节点，技能因此没有动作。
+            var skillClip=Art.GetClip("chars",animation.key,"skill_1311001@30");
+            var attackClip=Art.GetClip("chars",animation.key,"atk");
+            Require(skillClip!=null && attackClip!=null && animation.IsOneShot &&
+                animation.FrameUri==skillClip.frames[0] && skillClip.frames[0]!=attackClip.frames[0],
+                "level-local skill action reaches bot renderer 1311001");
+            var castFx=UnityEngine.Object.FindObjectsOfType<SkillFx>();
+            SkillFx cast=null;
+            foreach (var fx in castFx) if (fx.SkillKey==NativeSkillVfx.Key(1311001,30) && !fx.Part.Contains("hit")) cast=fx;
+            Require(castFx.Length>fxBefore && cast!=null && cast.CurrentSprite!=null,"level-local skill effect reaches bot renderer 1311001");
+            var hitFixture=new GameObject("SkillHitFixture"); hitFixture.transform.SetParent(root.transform);
+            hitFixture.transform.position=new Vector3(9,-3,0);
+            var hitRenderer=hitFixture.AddComponent<SpriteRenderer>(); hitRenderer.sprite=animation.Renderer.sprite;
+            field.PlaySkillHit(1311001,30,hitFixture.transform,1);
+            SkillFx landed=null;
+            foreach (var fx in UnityEngine.Object.FindObjectsOfType<SkillFx>()) if (fx.Part.Contains("hit")) landed=fx;
+            Require(landed!=null && landed.CurrentSprite!=null,"skill hit effect lands on bot target 1311001");
+            foreach (var fx in UnityEngine.Object.FindObjectsOfType<SkillFx>()) UnityEngine.Object.DestroyImmediate(fx.gameObject);
+            UnityEngine.Object.DestroyImmediate(hitFixture);
+            // 技能没有 action 节点时沿用武器普攻姿势，不能整帧消失。
+            field.PlaySkillCast(actor,1001005,20);
+            Require(animation.IsOneShot && animation.Current=="atk","skill without action node falls back to weapon attack pose");
+            var fallbackFx=UnityEngine.Object.FindObjectsOfType<SkillFx>();
+            Require(fallbackFx.Length>0 && fallbackFx[0].CurrentSprite!=null,"root-level skill effect still plays 1001005");
+            foreach (var fx in UnityEngine.Object.FindObjectsOfType<SkillFx>()) UnityEngine.Object.DestroyImmediate(fx.gameObject);
+            // 2111002 的 prepare/special 也只挂在 level/30 下：旧实现既没有前导也没有爆炸柱。
+            field.PlaySkillCast(actor,2111002,30);
+            SkillFx preparation=null;
+            foreach (var fx in UnityEngine.Object.FindObjectsOfType<SkillFx>()) if (fx.Part.Contains("prepare")) preparation=fx;
+            Require(preparation!=null && preparation.CurrentSprite!=null,"level-local prepare effect reaches bot renderer 2111002");
+            foreach (var fx in UnityEngine.Object.FindObjectsOfType<SkillFx>()) UnityEngine.Object.DestroyImmediate(fx.gameObject);
             foreach (int result in new[] {1,2,0})
             {
                 BotTypeManager.Output.Send(Server.Bot.Social.BotOutput.Kind.Scroll,actor,value:result);
@@ -144,7 +175,8 @@ public static class BotPresentationChecks
                 foreach (int stance in new[] {4,2,6,14,16})
                 {
                     actor.stance = stance; Synchronize(field,actor.mapId,0,1);
-                    Require(animation.key.EndsWith("_mount_"+mount,StringComparison.Ordinal) && animation.Renderer.sprite != null,
+                    // WzCharacter.MountedAppearance 的 key 形如 <recipe>_mount_<item>_<saddle>。
+                    Require(animation.key.Contains("_mount_"+mount+"_") && animation.Renderer.sprite != null,
                         "original mount plus rider composed " + mount + "/" + stance);
                     var navel = WzCharacter.Attachment(animation.FrameUri,"navel");
                     Require(navel.y < 0,"rider follows native mount navel " + mount + "/" + stance);

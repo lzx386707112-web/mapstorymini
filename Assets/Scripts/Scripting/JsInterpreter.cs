@@ -282,7 +282,9 @@ namespace MapleDash.Js
                         if (r is JsHostObject h) return JsBoolean.Of(h.Members.Has(key));
                         return JsBoolean.False;
                     }
-                case "instanceof": return JsBoolean.False;
+                case "instanceof":
+                    if (!(r is JsFunction constructor)) throw new JsRuntimeException("Right operand of instanceof is not a constructor");
+                    return JsBoolean.Of(constructor.InstanceCheck?.Invoke(l) == true);
             }
             throw new JsRuntimeException("Unknown operator " + op);
         }

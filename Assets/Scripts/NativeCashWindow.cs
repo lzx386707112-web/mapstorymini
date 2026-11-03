@@ -13,6 +13,8 @@ public static class NativeCashWindow {
     static Vector2 pointer;
     static int category = 1, subcategory, lockerRow, inventoryRow, categoryGroup, pageGroup;
     static bool giftVisible, purchaseVisible, birthdayVisible;
+    // 模态弹窗（购买确认等）打开时，背景控件保持正常态绘制，不整体置灰；点击仍被 GUI.enabled 拦截。
+    static bool keepNormal;
     static int purchaseMask;
     static int previewBackground;
     static bool previewEnabled = true;
@@ -109,17 +111,17 @@ public static class NativeCashWindow {
                 icon.width * 2, icon.height * 2), icon);
             if (Hit(new Rect(cell.x,cell.y,78,80))) previewItem = entry.itemId;
             GUI.Label(new Rect(cell.x + 82, cell.y + 31, 112, 18), PriceText(entry), label);
-            if (NativeUi.Button(new Rect(cell.x + 80, cell.y + 53, 37, 19), root + "BtBuy", pointer)) {
+            if (NativeUi.Button(new Rect(cell.x + 80, cell.y + 53, 37, 19), root + "BtBuy", pointer, keepNormal)) {
                 selected = entry.sn;
                 purchaseMask = (state.credit >= entry.price ? 1 : 0) | (state.points >= entry.price ? 2 : 0) | (state.prepaid >= entry.price ? 4 : 0);
                 if (entry.price == 0) purchaseMask = 2;
                 if (purchaseMask == 0) BottomBar.Toast("点券不足");
                 else { currency = purchaseMask == 2 ? 1 : purchaseMask == 4 ? 2 : 0; purchaseVisible = true; }
             }
-            if (NativeUi.Button(new Rect(cell.x + 119, cell.y + 53, 37, 19), root + "BtGift", pointer))
+            if (NativeUi.Button(new Rect(cell.x + 119, cell.y + 53, 37, 19), root + "BtGift", pointer, keepNormal))
                  { selected = entry.sn; giftVisible = true; }
             bool wished = state.wishes.Contains(entry.sn);
-            if (NativeUi.Button(new Rect(cell.x + 158, cell.y + 53, 37, 19), root + (wished ? "BtRemove" : "BtReserve"), pointer)) {
+            if (NativeUi.Button(new Rect(cell.x + 158, cell.y + 53, 37, 19), root + (wished ? "BtRemove" : "BtReserve"), pointer, keepNormal)) {
                 selected = entry.sn;
                 var wishes = new List<int>(state.wishes);
                 if (!wishes.Remove(selected)) wishes.Add(selected);
@@ -141,9 +143,9 @@ public static class NativeCashWindow {
         var texture = Art.Tex("wz://" + CashRoot + node);
         if (texture != null) GUI.DrawTexture(new Rect(x, y, texture.width, texture.height), texture);
     }
-    static bool Button(string node, float x, float y) {
+    static bool Button(string node, float x, float y, bool forceNormal = false) {
         var texture = Art.Tex("wz://" + CashRoot + node + "/normal/0");
-        return texture != null && NativeUi.Button(new Rect(x, y, texture.width, texture.height), CashRoot + node, pointer);
+        return texture != null && NativeUi.Button(new Rect(x, y, texture.width, texture.height), CashRoot + node, pointer, forceNormal);
     }
     static GUIStyle TextStyle(bool right = false) {
         var style = new GUIStyle { font = UiKit.Font, fontSize = 12, clipping = TextClipping.Clip,
@@ -171,6 +173,7 @@ public static class NativeCashWindow {
         GUI.matrix = previous * Matrix4x4.TRS(scene.position, Quaternion.identity, new Vector3(scale, scale, 1));
         bool enabled = GUI.enabled;
         bool exit = false;
+        keepNormal = giftVisible || purchaseVisible;
         try {
             GUI.enabled = enabled && !giftVisible && !purchaseVisible;
             Image(BackgroundNode(state.character != null ? state.character.record.job : 0).Substring(CashRoot.Length), 0, 0);
@@ -178,13 +181,20 @@ public static class NativeCashWindow {
             DrawCategories();
             var entries = state.catalog.FindAll(x => category == 9 ? state.wishes.Contains(x.sn) :
                 x.sn / 10000000 == category && x.sn / 100000 % 100 == subcategory);
+            // Keep the original pet-equipment category; expose its HP/MP bags on page one.
+            if(category==6 && subcategory==1) entries.Sort((a,b)=>
+            {
+                int Rank(int id)=>id==1812002 ? 0 : id==1812003 ? 1 : 2;
+                int order=Rank(a.itemId).CompareTo(Rank(b.itemId));
+                return order!=0 ? order : a.sn.CompareTo(b.sn);
+            });
             page = Mathf.Clamp(page, 0, Mathf.Max(0, (entries.Count - 1) / 10));
             DrawCatalog(new Vector2(275, 95), entries);
             // Native page selector occupies the strip below the ten commodity cells.
             DrawPages(entries.Count);
             DrawStorage();
             DrawBalances();
-            exit = Button("CSStatus/BtExit",632,545);
+            exit = Button("CSStatus/BtExit",632,545,keepNormal);
             GUI.enabled = enabled;
             if (giftVisible) { GUI.enabled = enabled && !birthdayVisible; DrawGift(); GUI.enabled = enabled; }
             if (birthdayVisible) DrawBirthday();
@@ -273,7 +283,7 @@ public static class NativeCashWindow {
         }
         string[] expansion = { "BtExEquip", "BtExConsume", "BtExInstall", "BtExEtc", "BtExTrunk" };
         for (int i = 0; i < expansion.Length; i++)
-            if (Button("CSInventory/" + expansion[i], 176, 453 + 27 * i)) {
+            if (Button("CSInventory/" + expansion[i], 176, 453 + 27 * i, keepNormal)) {
                 if (i < 4) {
                     var result = Request(CashOperation.ExpandInventory, 0, i + 1);
                     if (result != null && result.ok) BottomBar.Toast("道具栏已扩充4格");
@@ -387,8 +397,8 @@ public static class NativeCashWindow {
         GUI.enabled = false;
         Button("CSChar/BtBuyAvatar",16,237);
         GUI.enabled = enabled;
-        if (Button("CSChar/BtDefaultAvatar",101,237)) { previewItem=0; previewUndressed=false; }
-        if (Button("CSChar/BtTakeoffAvatar",187,237)) { previewItem=0; previewUndressed=true; }
+        if (Button("CSChar/BtDefaultAvatar",101,237,keepNormal)) { previewItem=0; previewUndressed=false; }
+        if (Button("CSChar/BtTakeoffAvatar",187,237,keepNormal)) { previewItem=0; previewUndressed=true; }
     }
     static void DrawPurchase() {
         // 0046B537 + 0046ABD2: mode 0, one commodity => 286x196 centered.
@@ -477,7 +487,7 @@ public static class NativeCashWindow {
             UiKit.Fill(new Rect(374,530 + y[i] + 2,107,11), new Color32(243,244,245,255));
             GUI.Label(new Rect(374,530 + y[i],100,14), values[i].ToString("N0"), TextStyle(true));
         }
-        if (Button("CSStatus/BtCheck",543,543)) Request(CashOperation.Read);
+        if (Button("CSStatus/BtCheck",543,543,keepNormal)) Request(CashOperation.Read);
         bool enabled = GUI.enabled;
         GUI.enabled = false; // External billing/coupon endpoints are not available in the local server.
         Button("CSStatus/BtCharge",502,543); Button("CSStatus/BtCoupon",584,543);

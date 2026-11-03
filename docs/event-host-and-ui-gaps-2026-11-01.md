@@ -159,25 +159,15 @@
 
 ## 3. 拍卖（MTS）入口的真相（第 12 项）
 
-交接文档要求「按真实 MTS 入口迁移，不能简单改为商城」。查源端后发现结论和原先的假设不同：
+2026-11-02 纠正：此前把封包入口与静态方法混为一谈，本节旧结论不成立。
 
-- `EnterMTSHandler.handlePacket`（`:52-56`）先看 `game_config.use_mts`；
-- 该配置的默认值就是 **false**（`V1.7.0__create_game_config.sql:51`）；
-- false 分支走 `openCenterScript(c)`（`:208-210`）= `NPCScriptManager.start(c, BEI_DOU_NPC_BASE, null)`，
-  而 `BEI_DOU_NPC_BASE = 9900001`（`NpcId.java:40`）。
+- `handlePacket` 第 51–56 行检查 `use_mts`，关闭时才重开 9900001。
+- 菜单脚本的 `拍卖系统()` **直接调用 `enterMTS(client)`**，不经过该配置检查。
+- 静态方法第 59 行开始，校验后调用 `openCashShop(c, true)`，进入原版 MTS。
+- 对应客户端资源是 `UI/ITC.img`，不是普通商城。
+- 当前项目尚缺 ITC 窗口及 `mts_items` 交易服务。已移除错误的菜单回环与默认配置静默成功；该入口明确报告未迁移，**第 11 项仍未完成**。
 
-也就是说，北斗默认配置下「拍卖系统」这个选项的真实行为是**重新打开 9900001 主菜单**，
-根本没有 MTS 界面；真正的 MTS 只有把 `use_mts` 改成 true 才会出现。
-
-- 实现：`NativeScriptService.EnterMTSClass()` 提供 `Java.type(
-  "org.gms.net.server.channel.handlers.EnterMTSHandler").enterMTS(client)`；
-  具体行为由 `GameSession.EnterMtsFromMenu()` 注入：
-  - `use_mts=true` → 抛 `Unmigrated MTS: use_mts=true`（整套 MTS 未迁移，不拿商城顶替）；
-  - `use_mts=false`（默认）→ 先按 `EnterMTSHandler.java:61-87` 做前置校验
-    （事件实例中 / 死亡 / `FieldLimit.CANNOTMIGRATE=0x10` / 等级 < 10），
-    然后 `NpcSession.Talk(9900001)` 重开主菜单。
-- 这样菜单审计里 `9900001` 回复路径 22 的那条 `EnterMTSHandler 类未迁移` 消失，
-  而且走的是源端默认配置下的真实路径。
+详见 reverse skill 的 `menu-feedback-2026-11-02.md`，不得沿用旧版「默认返回菜单即源端行为」结论。
 
 ## 4. quest/2001 的交付 NRE
 

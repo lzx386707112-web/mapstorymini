@@ -527,3 +527,86 @@ Party 分类补证：`0x90B8D0` 重建三个数组，`0x90B990` 检查成员 cha
 ## 2026-10-31反馈补查
 
 断层录制步行与启动Reactor资源阻塞补查见 [本次确认记录](field-feedback-2026-10.md)。保留其中的原端身份、地址、资源参数与验证边界，不将静态资源扫描等同于实机验收。
+\n
+## 2026-11-02 野外挂机（组队伴侣）行为：会捡东西、无怪会动
+
+用户反馈：「假人野外的打怪逻辑要优化下，现在是不会捡东西，原地挂，没怪就不会动，太假了」。
+野外能打怪的假人只有一种：`BotType.COMPANION_GRIND_BOT`（基友集合召唤的伴侣，
+`Types/CompanionGrindBot.cs` + `BotPartyGrindService.cs`）。改之前它的 `UpdateState` 只有两条分支：
+有目标就打、离队长超 280px 就回 station —— 怪清完站在原地，掉落一件不捡。
+
+### 1. 拾取：给 `BotGroundPickup` 加「随便捡」
+
+以前只有组队任务的「按 itemId 收券」口径（`PickNearby` / `WalkTo`），野外没有入口。
+新增两个不限 itemId 的方法（`Field/BotGroundPickup.cs`）：
+
+| 方法 | 作用 |
+| --- | --- |
+| `Nearest(bot, range, floorTolerance=140)` | 附近最近一件可捡掉落的落点 + 距离。权威链（`MapItemService.DroppedItems`，挂 Scope 图 id）与老式链（`GroundItem.All`，`bound==null`）都看；`floorTolerance` 只认同层，避免为了捡一个掉在别的平台的东西去爬绳子跑丢 |
+| `PickAny(bot, range, max, meso=true)` | 捡附近任何东西（金币也捡，走 `looter.GainMeso`）。权威链走 `MapItemPickup.PickupItem`（400ms 延迟/归属/背包规则原样），老式链走 `GroundItem.TakeForBot` + `TradeItemRules.Receive` |
+
+`Bind(runtime)` 顺手改成按 runtime 变化短路：`FieldDirector` 每帧都调 Bind，以前每帧清空
+looter 缓存再重建，现在野外每 400ms 要用一次，必须复用。looter 字典超过 64 条时清掉已下线的 id。
+
+Server 层看不到 Unity 的 `GroundItem`，所以按组队任务同一套注入：
+`BotPartyGrindService.FindLoot/TakeLoot` 两个委托，由 `FieldDirector` 接
+`botPickup.Nearest/PickAny`（`grindHooked` 只接一次，防 service 晚于该段就绪）。
+
+### 2. 无怪不再站桩：本层巡逻 + 换层跟随
+
+`BotPartyGrindService` 新增两个落点：
+
+- `PatrolPoint(bot, leader)`：本层可走区间（`BotPartyGrindFloors.Floor`）∩ 队长 ±420 的随机点，
+  离脚下不足 90px 会主动推远，避免「走两步就到」看起来还在原地抖；窄平台不再返回 null（否则又变站桩）。
+- `LeaderSpot(bot, leader)`：队长所在层的站位。**顺手把 `floors[bot.id]` 重绑到队长那一层**，
+  否则下一次巡逻又把它拉回旧平台。地面聚类每假人 5 秒最多算一次（`floorRebindAt`）。
+
+`CompanionGrindBot` 的行为顺序改为：
+**① 400ms 扫一次掉落 → ② 没怪就去捡 / 有怪但掉落就在脚边先弯腰 → ③ 打怪 → ④ 没怪本层巡逻**，
+本层连续 15 秒打不到怪（`lastCombatAt`）就跟到 `LeaderSpot` 去。
+
+防「追一个捡不到的掉落追到底」：同一个点最多追 6 秒（`lootUntil`，目标点变化才重置），
+背包满 / 归属没到期则这一拍直接放弃、继续打怪；有怪时搜索半径收到 120px，
+否则一场刷怪会变成满地图捡东西。
+
+### 3. 回归
+
+- `--pq-feedback` / 全量 `tools/server-check`：**1319 / 0**（新增 3 条：巡逻点会分散换点、
+  拾取钩子未接线时安全降级、`LeaderSpot` 能算出队长层集合点）。
+- `tools/unity-compile-check`：0 warning / 0 error。
+- 未跑：Android 实机。实机要看 ① 怪死后假人会不会走过去把东西收掉（含金币）；
+  ② 一片怪清完后假人是否左右走动而不是站着；③ 从上层小平台跟到队长层时会不会卡在绳子上。
+
+## 2026-11-03 野外伴侣：全图分工、Boss优先、闲聊与跟随清理
+
+### 来源与授权边界
+
+用户明确要求野外假人同步优化寻怪/巡逻/聊天/拾取/Boss优先/切图跟随。本节为该要求下的移植端行为增强，不把新增策略记作原版行为。复查源Java：
+
+- `BotTypes/CompanionGrindBot.java` SHA256 `3326a2c26a7d72860922f55547fb05627067134d1d43400a42228fb25a3de92d`；`updateState → resolveLeader / PartyGrindService.huntMobFor → approach / swingAndHit`，原220ms决策、800ms攻击、同频道换图跟随不变。`resolveLeader`仍从当前频道角色表取真人队长，跨频道/世界解散，不新增跨频道搬运。
+- `BotPartySystem/PartyGrindService.java` SHA256 `881e0634bd3a397cf925abb704fcf9108b65dad45187aa7399cf619ce98f82f4`；`huntMobFor:81 → closestMob → isHuntTarget:156` 原来排除Boss/fake，限制楼层与队长横向560px。原Companion没有闲聊、拾取和巡逻分支。下述Boss/全图/台词/节流均为用户本次授权的增强，非EXE逆向常量。
+- 本次没有新增EXE/DLL地址、IMG节点或布局结论，没有修改贴图/地图几何/任务脚本/技能伤害公式。
+
+### 当前执行链
+
+- `BotPartyGrindService.Target`：同图/世界/频道、存活、非fake为硬条件；移除560px与楼层硬过滤，楼层改为160权重偏好；先选最近Boss且允许队友集火，普通怪保留有效未被队友认领的目标、优先分工，目标不足时允许合击。每假人一次暂避记录，跨图清认领和暂避。
+- `CompanionGrindBot.UpdateState`：追目标10秒没有缩短加权距离且未进射程时暂避该目标10秒，避免始终锁定墙后/不可达目标；移动目标重设至少间隔700ms，同一落点不重复重设。继续走既有导航/绳梯/跳跃执行器；决策前等待导航准备完成。
+- 物品：仍400ms扫附近、使用已有权威/老式掉落入包链；有怪只看120px、无怪360px，Boss时只顺手收脚下东西，不为近处掉落中断Boss追击/攻击。相同落点追6秒失败或到点拾取失败后暂避10秒，避免下一拍又重新追；不改变归属/背包条件。
+- 无怪：既有本层随机巡逻继续执行；15秒无战斗时先算队长层集合点，再检查旧楼层返回逻辑，避免跨层打完怪后一直被拉回旧楼层。清旧巡逻点避免回拉。
+- 聊天：新增巡逻/Boss情境中文短句，经原BotOutput.Speak管线输出。每假人首次20~40秒错峰，之后25~45秒；全队共享最少15秒间隔。普通战斗不闲聊；无怪至少5秒才闲聊。未增加新气泡/UI绘制。
+- 同频道切图：既有Station/EnterMap跟随，新增ResetMapActions，清旧拾取、暂避落点、巡逻、追逐进度和移动/攻击计时；服务端重绑楼层时清旧怪物认领。解散/退出/30分钟到期清理新字典。
+
+### 验证与边界
+
+`rtk dotnet run --project tools/server-check -c Release -- --party-grind`：41/0，包含Boss抢占/集火、死怪重选、远处高层选怪、暂避后再选、实际FSM攻击冷却与Boss不被掉落抢占、拾取失败与6秒追逐超时、实际FSM巡逻/闲聊、聊天限频、切图清旧状态及跨频道/退出/到期清理。全量 `rtk dotnet run --project tools/server-check -c Release`：1340/0，`git diff --check`通过。纯C#编译仍有既有3条未使用字段警告。
+
+纯C#测试只证明调度/选择/移动目标与输出链，不代表每张野外图绳梯路线或Android画面已验收；没有构建APK或启动Unity实测。城镇路人/市场假人不是战斗伴侣，不赋予其野外攻击行为。
+
+### 2026-11-03 野外拾取归属后续纠正
+
+按用户新要求，野外`PickAny`不再调用假人自己的BotActorLooter；直接复用玩家拾取结算，物品/金币/NX归本地真人队长，并发右下角获得提示，原图700ms飞向假人。组队任务专用`PickNearby`保留假人背包及数量上限，仅补飞行动画。原端行为和用户授权差异、调用链与验证详见[掉落与拾取](drop-and-pickup.md)末节。
+
+
+### 2026-11-03 长绳执行条件补核
+
+废都 `103000800` 追怪复报查明 `BotNavigationRuntime.CanWalkTowardRope` 不能只验证朝绳子的一步：窄台后续会掉层，而且旧 Waypoint 仍瞄准已经到达的起跳点。现检查整段 `BotGroundMotion.Step` 至可抓绳位置，走得通才先走近并将 Waypoint 指向绳子；否则执行导航图验证的跳抓。这是 PQ/野外共享导航的移植端修复；复现坐标、对照失败、四档跨层攻击回归与验证边界见 [组队任务接口](party-quest.md) 末节。

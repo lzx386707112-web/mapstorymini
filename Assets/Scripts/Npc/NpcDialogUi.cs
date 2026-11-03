@@ -173,7 +173,7 @@ public static class NpcDialogUi
             var bots = loop.field != null ? loop.field.GetComponent<BotField>() : null;
             var map = loop.field != null ? loop.field.Map : null;
             if (bots != null && map != null)
-                foreach (var actor in BotRegistry.OnMap(loop.field.StateId))
+                foreach (var actor in BotRegistry.OnMap(loop.field.BotMapId))
                 {
                     if (!actor.online || string.IsNullOrEmpty(actor.name)) continue;
                     if (!bots.TryFeet(actor.id, out var feet)) continue;

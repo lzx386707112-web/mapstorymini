@@ -349,14 +349,19 @@ public static class SavedLocationsDao
 
 public static class GameConfigDao
 {
-    // 源端 V2.1.50；补旧存档缺失键，不覆盖后台已设置的等级上限。
+    // 源端 V2.1.50；补旧存档缺失键，不覆盖后台已设置的上限。
     public static void EnsureLevelCaps(DbStore db)
     {
-        foreach (string code in new[] { "mxj_max_level", "qst_max_level" })
+        foreach (string code in new[] { "mxj_max_level", "qst_max_level", "max_reborn_count" })
             if (db.Table("game_config").Find(r => DbStore.Str(r, "config_code") == code) == null)
                 db.Table("game_config").Insert(new DbRow { ["config_type"] = "server",
                     ["config_sub_type"] = "Game Mechanics", ["config_clazz"] = "java.lang.Integer",
-                    ["config_code"] = code, ["config_value"] = "255" });
+                    ["config_code"] = code, ["config_value"] = code == "max_reborn_count" ? "10" : "255" });
+        // 本地涅槃入口已开放；补缺失的启用键，显式关闭的现有配置仍保留。
+        if (db.Table("game_config").Find(r => DbStore.Str(r, "config_code") == "use_rebirth_system") == null)
+            db.Table("game_config").Insert(new DbRow { ["config_type"] = "server",
+                ["config_sub_type"] = "Game Mechanics", ["config_clazz"] = "java.lang.Boolean",
+                ["config_code"] = "use_rebirth_system", ["config_value"] = "true" });
     }
 
     public static string Get(DbStore db, string code, string fallback = "")

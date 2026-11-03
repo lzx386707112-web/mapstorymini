@@ -1,0 +1,19 @@
+Unity NativeRebirthChecks.Run: exit 0
+[RebirthCheck] PASS 原脚本显示10次上限
+[RebirthCheck] PASS 原脚本进入涅槃确认页
+[RebirthCheck] PASS 真实原脚本完成涅槃
+[RebirthCheck] PASS 按源端等级/职业逻辑回到1级初心者并清经验
+[RebirthCheck] PASS 第9次成功增加至10次
+[RebirthCheck] PASS 扣除30材料和10卷轴
+[RebirthCheck] PASS 发放两种宝石各50
+[RebirthCheck] PASS 仅扣除5万点券
+[RebirthCheck] PASS 永久偷学技能点增加1
+[RebirthCheck] PASS 涅槃次数写入characters并可重新读档
+[RebirthCheck] PASS 达到10次后由原脚本拒绝第11次
+[RebirthCheck] PASS 上限拒绝不扣材料/点券且不增加次数
+[RebirthCheck] ALL PASS
+
+server-check --rebirth: 11 passed / 0 failed
+compile-check Rebuild: 0 warnings / 0 errors
+NPC mock harness: files=889 ok=790 parseFail=0 runFail=27 javaInterop=72 (existing baseline)
+script pack: 2779 parseFail=0 mangled=0

@@ -12,6 +12,8 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 开始分析或修改原端相关功能前，先查下表，只读取当前模块的 reference。已确定结论直接复用；只对记录缺口、矛盾或不同二进制版本继续逆向。不要因为临时反编译文件不在了就从头分析。
 
 | 当前问题 | 读取记录 |
+| 仓库/商店Tab3、确认/Notice布局、脚本API、滚动空轨与MTS菜单入口纠正及未完边界 | [菜单反馈补核](references/menu-feedback-2026-11-02.md) |
+| 潮流前线38组骑宠/鞍具、现金-118/-119覆盖及普通基础装备前置（原EXE已核实）、已学骑兽入口、原装备格、1902033绳索delay UOL、商城药包首屏及拖药松手绑定 | [骑宠与药包反馈](references/mount-pet-feedback-2026-11-02.md) |
 | 商城扩容、现金武器/坐骑/勋章槽位、星显示、原图聊天/名牌戒指与勋章行、十二项菜单审计、独立副本基础宿主及剩余验收 | [十二项反馈](references/menu-equipment-feedback-2026-11-01.md) |
 | 100亿后拾金币截断、V/VI全职业目录/参数核对、174个物理技能mad误分类、圣骑双MCV、滚动条抢行、双层拖拽图标与键位窗共存 | [五项补核](references/five-issues-followup-2026-11-01.md) |
 | 快速移动/二段跳特效、偷学滚动/穿透、金币发放、假人悬空、UserInfo扩展与学院关系树、宠物排除入口及明确未完项 | [2026-11-01五项修复与角色扩展](references/five-fixes-character-expansion-2026-11-01.md) |
@@ -23,7 +25,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 建号中文名字、长度规则、重名与错误提示 | [角色命名](references/character-name.md) |
 | 登录包序、新账号声明→性别、Notice/TOS/VScr6 素材与坐标、单张滑块与鼠标捕获纠正 | [登录链路与弹窗](references/login-flow.md) |
 | 组队头顶血条代码绘制52×10/脚底(-26,-89)、纠正PartyHP窗口混淆 | [六项反馈及血条纠正](references/six-fixes-meso-drop-party-hp-2026-11-02.md) |
-| SoloMapling 假人生成、调度、地图索引、迁移缺口、地面掉落权威服务（MapItem/pickupItem/pickItemDrop） | [假人系统](references/solomapling.md) |
+| SoloMapling 假人生成、调度、地图索引、迁移缺口、地面掉落权威服务、野外伴侣全图分工/Boss优先/巡逻聊天/拾取暂避与切图跟随（2026-11-03） | [假人系统](references/solomapling.md) |
 | 文件版本、地址、字符串池、复现工具（递归下降 `--fn` / 字段映射 `--fields` / 任意 DLL 的 `pe_module.py`）、**先翻 Compat DLL 拿 exe 入口**、反编译陷阱（线性 sweep 会失步） | [二进制与工具](references/binary-and-tools.md) |
 | ijl15/2ijl15 职责、手机用版本差异、分辨率补丁与 Android 适配价值 | [DLL 与手机适配](references/ijl15-mobile-adaptation.md) |
 | 自定义DLL身份、V/VI视频表版本差异、MCV双流/Android解码、Boss标记选片、数字首位/后续位与Miss、伤害皮肤、V/VI回放/雷枪12按、追击/雷枪numeric动作、天气粒子/地面/声音、skillback合同与迁移边界 | [自定义功能 DLL](references/custom-dll-systems.md) |
@@ -31,10 +33,11 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 站立/警戒计时、notAttack训练怪接触豁免、接触受击/冲量/免疫、身体框、隐身接触过滤、STANCE概率/地图限制、INVINCIBLE物理减伤、多段飘字与尚未对齐的边界 | [角色受击与飘字](references/character-reactions-and-damage.md) |
 | 玩家死亡悬浮origin/2000ms旋转/2500ms渐显、20帧墓碑/600px与880ms下落/2200ms确认窗、Notice0和原BtOK2 | [死亡与复活](references/death-and-respawn.md) |
 | 怪物模板字段与移动分类、攻击info字段与偏移（含按 `type` 分派的 `+0x28` union 布局）、**四种攻击形态的执行内核（矩形持续检测/圆 r+10/弹道逐点/多波位掩码）**、MobSkill.img类型表、放技能触发链/冷却/HP门槛、疾病与反伤、全屏/场景技能节点、召唤与治疗公式 | [怪物技能与攻击](references/monster-skills.md) |
-| 怪物掉落抛物线/悬浮/旋转、金币四档四帧、拾取键范围、700ms弧线拾取与同步移除桥 | [掉落与主动拾取](references/drop-and-pickup.md) |
+| 怪物掉落抛物线/悬浮/旋转、金币四档四帧、拾取键范围、700ms弧线、假人拾取动画及野外代玩家入包/获得提示（2026-11-03） | [掉落与主动拾取](references/drop-and-pickup.md) |
 | 小地图模式、视口、标记、大地图边框与定位 | [地图窗口](references/map-windows.md) |
 | 商城子窗口、商品列表、坐标与素材、现金背包身份/宠物存取持久化 | [现金商城](references/cash-shop.md) |
 | 地图宠物CVecCtrlPet、三宠编队、动作/服装同帧、宠物装备槽/药品绑定与自动HP/MP、实际拾取与边界 | [宠物地图与装备](references/pet-field-and-equipment.md) |
+| 九转涅槃上限10、原JS确认链、永久次数、按等级退职业与源端未处理分支 | [九转涅槃](references/rebirth.md) |
 | 普通NPC商店全量绑定、开店与交易、原版控件布局、店主/柜台深度 | [普通NPC商店](references/npc-shops.md) |
 | 快递 Duey：NPC 9010009 / 533 券入口、getFee 六档、寄件扣费顺序、不可交易与 karma、取件错误码、30 天过期、Delivery 窗口素材与取不到的坐标 | [快递 Duey](references/duey.md) |
 | 雇佣商店：503 许可/自由市场开店、营业态与上架顺序、成交扣费、MerchantMesos 提取与寄存衰减、Fredrick 取回、假人顾客镜像 | [雇佣商店](references/hired-merchant.md) |
@@ -56,9 +59,9 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 皮奥任务箱子、Reactor原地图生成、普攻残影选箱、四击状态机、原JS/SQL掉落、任务物品拾取与刷新 | [任务箱子与Reactor](references/reactor-boxes.md) |
 | showIntro/goAdventure/goLith 世界坐标过场、Shape2D位移、原始声音、事件宿主生命周期、startInstance 重载/实例回收与怪物公园六图闭环 | [地图过场与事件实例](references/map-intro-and-events.md) |
 | 右上角辅助技能状态栏、32px 布局、剩余时间遮罩与迁移缺口 | [临时状态栏](references/temporary-stat-view.md) |
-| 数量弹窗白字/2px正文边距、compact分支纠正（9A8716：右下Basic确定+取消，非左下结束对话）、鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义、背包道具丢到地上（ITEM_MOVE action=0）、**丢弃/出售数量弹窗的移动端软键盘桥（NativeEditKeyboard：同框不重开/只在 Done·Canceled 收/每事件先读快照，三处输入框统一接入）** | [UI 拖动语义](references/ui-drag-and-drop.md) |
+| 数量弹窗白字/2px正文边距、compact分支纠正（9A8716：右下Basic确定+取消，非左下结束对话）、鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义、背包道具丢到地上（ITEM_MOVE action=0）、**背包格到格移动/合并/互换（ITEM_MOVE action>0，0x4F3057 同页+非同格才发包，Inventory.move 三分支）**、**丢弃/出售数量弹窗的移动端软键盘桥（NativeEditKeyboard：同框不重开/只在 Done·Canceled 收/每事件先读快照，三处输入框统一接入）** | [UI 拖动语义](references/ui-drag-and-drop.md) |
 | 事件倒计时 CLOCK 面板：258×58 底图/小时底图、四数字槽 86/112/179/205、y=12、前导零与 3600 秒切换 | [事件倒计时](references/event-timer-clock.md) |
-| 副本负Scope与模板编号混用导致假人未跟进/六人资格上限缺键/跨层假人追怪/券与通行证掉落补核、废都进图卡顿（导航后台构建/分帧生成/829ms离线基线）、组队任务招募/阶段/领奖 NPC：`em.getEligibleParty` 未绑定导致的「对话脚本出错」、`party.toArray`、`em.getMonster`、`map.getPlayers`/`spawnAllMonsterIdFromMapSpawnList`、组队搜索开关与副本公告、假人陪跑的队伍编号 vs 角色 id 混用 | [组队任务接口](references/party-quest.md) |
+| 废都103000800长绳Waypoint死点/24条跨层追怪与攻击回调验证/近身攻击不被收券抢占、假人导航/视图统一BotMapId、战斗/掉落保留负Scope（两次编号方案冲突纠正）/六人资格上限缺键/跨层假人追怪/券与通行证掉落补核、废都进图卡顿（导航后台构建/分帧生成/829ms离线基线）、组队任务招募/阶段/领奖 NPC：`em.getEligibleParty` 未绑定导致的「对话脚本出错」、`party.toArray`、`em.getMonster`、`map.getPlayers`/`spawnAllMonsterIdFromMapSpawnList`、组队搜索开关与副本公告、假人陪跑的队伍编号 vs 角色 id 混用 | [组队任务接口](references/party-quest.md) |
 | Say.img无JS问答ask/stop选错分支、NPC Java导入/日期/global this/命令元数据/21点入口与正式API审计口径、三处源脚本授权覆盖、ijl15对话正文480高度补丁、NPC 对话窗口精确布局/字体/按钮、VScr4、`#L` 图文、`#y/u`任务引用、`#q/s`技能名/图、`#@`NPC名、`#W`原图与atoi参数审计、sendPrev 上一页+确定/对话键任务菜单与接受页推进、灯泡 autoStart/日期筛选、NPC进行中QuestIcon1/stop对白与完成条件击杀计数、截图问候入口/交付奖励10000→4→1、fieldType82青苹果外观、建号路线与远程任务脚本 | [NPC 对话窗口](references/npc-dialog.md) |
 | 任务键/完成通知入口自动选择与详情展开、任务三页签/详情summary/原端Tab2布局、任务告知、达成目标FadeYesNo红气泡、QuestClear及用户授权截图重建训练任务 | [任务窗口与告知](references/quest-window-and-alarm.md) |
 | 传送门 pt 触发方式、NPC 脚下名牌宽+5/高16与Canvas字体高度/透明四角、聊天气泡九宫格与时长、新手训练营 0~4 图、`cm.warp` 目标图不存在的语义、**换图 Enter 异常导致黑幕锁死（出租车黑屏）的修复与出租车链路逐项排除** | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |

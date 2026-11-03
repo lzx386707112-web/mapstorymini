@@ -1,0 +1,109 @@
+Unity PqInstanceChecks.Run: current navigation/view template-id contract
+[PqInstance] 通过 FieldCatalog 加载（怪 11 种）
+[PqInstance] 通过 PQ 4001007 可加载实际地面掉落图标
+[PqInstance] 通过 PQ 4001008 可加载实际地面掉落图标
+[PqInstance] 通过 事件宿主就绪
+[PqInstance] 通过 事件服务就绪
+[PqInstance] 通过 KerningPQ 事件脚本加载
+[PqInstance] 通过 KerningPQ 创建实际队伍
+[PqInstance] 通过 KerningPQ 假人入队 0
+[PqInstance] 通过 KerningPQ 假人入队 1
+[PqInstance] 通过 KerningPQ 假人入队 2
+[PqInstance] 通过 KerningPQ 假人入队 3
+[PqInstance] 通过 KerningPQ 假人入队 4
+[PqInstance] 通过 KerningPQ 真实六人队伍资格=6
+[PqInstance] 通过 KerningPQ startInstance 建立实例
+[PqInstance] 通过 KerningPQ 会话侧能取到 eim
+[PqInstance] 通过 KerningPQ 入口图实例化
+[PqInstance] 通过 KerningPQ 场景导航/视图与实例战斗编号分离
+[PqInstance] 通过 KerningPQ 实例负编号保留原地图身份
+[PqInstance] 通过 KerningPQ 实例入场接管五名队友
+[PqInstance] 通过 KerningPQ 五名假人进入当前阶段导航地图
+[PqInstance] 通过 KerningPQ 地图渲染注册表能取到五名队友
+[PqInstance] 通过 KerningPQ 下一阶段仍跟随当前导航地图
+[PqInstance] 通过 KerningPQ 入口图 103000800 初始刷怪 22 ≥ 20
+[PqInstance] 通过 KPQ instanceMapRespawn 后怪数不减少（22≥22）
+[PqInstance] 通过 KPQ killMonster 后怪数递减（22→21）
+[PqInstance] 通过 KPQ 实例入口实际怪物 ID=9300001
+[PqInstance] 通过 怪物 IMG link 不替换掉落模板 ID
+[PqInstance] 通过 KPQ 9300000 每次掉通行证：100/100
+[PqInstance] 通过 KPQ 9300002 每次掉通行证：100/100
+[PqInstance] 通过 KPQ 9300003 每次掉通行证：100/100
+[PqInstance] 通过 鳄鱼(PQ) 9300001 有 4001007 掉落行
+[PqInstance] 通过 4001007 questid=0（源端如此，任何队员可拾）
+[PqInstance] 通过 4001007 chance=200000，源端 200000
+[PqInstance] 通过 通行证命中率 3980/20000（期望 4000±226）
+[PqInstance] 通过 LudiPQ 事件脚本加载
+[PqInstance] 通过 LudiPQ 创建实际队伍
+[PqInstance] 通过 LudiPQ 假人入队 0
+[PqInstance] 通过 LudiPQ 假人入队 1
+[PqInstance] 通过 LudiPQ 假人入队 2
+[PqInstance] 通过 LudiPQ 假人入队 3
+[PqInstance] 通过 LudiPQ 假人入队 4
+[PqInstance] 通过 LudiPQ 真实六人队伍资格=6
+[PqInstance] 通过 LudiPQ startInstance 建立实例
+[PqInstance] 通过 LudiPQ 会话侧能取到 eim
+[PqInstance] 通过 LudiPQ 入口图实例化
+[PqInstance] 通过 LudiPQ 场景导航/视图与实例战斗编号分离
+[PqInstance] 通过 LudiPQ 实例负编号保留原地图身份
+[PqInstance] 通过 LudiPQ 实例入场接管五名队友
+[PqInstance] 通过 LudiPQ 五名假人进入当前阶段导航地图
+[PqInstance] 通过 LudiPQ 地图渲染注册表能取到五名队友
+[PqInstance] 通过 LudiPQ 下一阶段仍跟随当前导航地图
+[PqInstance] 通过 LudiPQ 入口图 922010100 初始刷怪 25 ≥ 20
+[PqInstance] 通过 EllinPQ 事件脚本加载
+[PqInstance] 通过 EllinPQ 创建实际队伍
+[PqInstance] 通过 EllinPQ 假人入队 0
+[PqInstance] 通过 EllinPQ 假人入队 1
+[PqInstance] 通过 EllinPQ 假人入队 2
+[PqInstance] 通过 EllinPQ 假人入队 3
+[PqInstance] 通过 EllinPQ 假人入队 4
+[PqInstance] 通过 EllinPQ 真实六人队伍资格=6
+[PqInstance] 通过 EllinPQ startInstance 建立实例
+[PqInstance] 通过 EllinPQ 会话侧能取到 eim
+[PqInstance] 通过 EllinPQ 入口图实例化
+[PqInstance] 通过 EllinPQ 场景导航/视图与实例战斗编号分离
+[PqInstance] 通过 EllinPQ 实例负编号保留原地图身份
+[PqInstance] 通过 EllinPQ 实例入场接管五名队友
+[PqInstance] 通过 EllinPQ 五名假人进入当前阶段导航地图
+[PqInstance] 通过 EllinPQ 地图渲染注册表能取到五名队友
+[PqInstance] 通过 EllinPQ 下一阶段仍跟随当前导航地图
+[PqInstance] 通过 EllinPQ 入口图 930000000 初始刷怪 0 ≥ 0
+[PqInstance] 通过 PiratePQ 事件脚本加载
+[PqInstance] 通过 PiratePQ 创建实际队伍
+[PqInstance] 通过 PiratePQ 假人入队 0
+[PqInstance] 通过 PiratePQ 假人入队 1
+[PqInstance] 通过 PiratePQ 假人入队 2
+[PqInstance] 通过 PiratePQ 假人入队 3
+[PqInstance] 通过 PiratePQ 假人入队 4
+[PqInstance] 通过 PiratePQ 真实六人队伍资格=6
+[PqInstance] 通过 PiratePQ startInstance 建立实例
+[PqInstance] 通过 PiratePQ 会话侧能取到 eim
+[PqInstance] 通过 PiratePQ 入口图实例化
+[PqInstance] 通过 PiratePQ 场景导航/视图与实例战斗编号分离
+[PqInstance] 通过 PiratePQ 实例负编号保留原地图身份
+[PqInstance] 通过 PiratePQ 实例入场接管五名队友
+[PqInstance] 通过 PiratePQ 五名假人进入当前阶段导航地图
+[PqInstance] 通过 PiratePQ 地图渲染注册表能取到五名队友
+[PqInstance] 通过 PiratePQ 下一阶段仍跟随当前导航地图
+[PqInstance] 通过 PiratePQ 入口图 925100000 初始刷怪 26 ≥ 20
+[PqInstance] 通过 HenesysPQ 事件脚本加载
+[PqInstance] 通过 HenesysPQ 创建实际队伍
+[PqInstance] 通过 HenesysPQ 假人入队 0
+[PqInstance] 通过 HenesysPQ 假人入队 1
+[PqInstance] 通过 HenesysPQ 假人入队 2
+[PqInstance] 通过 HenesysPQ 假人入队 3
+[PqInstance] 通过 HenesysPQ 假人入队 4
+[PqInstance] 通过 HenesysPQ 真实六人队伍资格=6
+[PqInstance] 通过 HenesysPQ startInstance 建立实例
+[PqInstance] 通过 HenesysPQ 会话侧能取到 eim
+[PqInstance] 通过 HenesysPQ 入口图实例化
+[PqInstance] 通过 HenesysPQ 入口图 910010000 初始刷怪 10 ≥ 5
+[PqInstance] 通过 全程不应出现 Error/Exception 日志：
+[PqInstance] 结束：通过 101，失败 0
+
+server-check --pq-feedback: 131 passed / 0 failed
+unity-compile-check Rebuild: 0 warnings / 0 errors
+script-harness --pack: 2779 parseFail=0 mangled=0
+script-harness --run: files=889 ok=790 parseFail=0 runFail=27 javaInterop=72 (existing baseline)
+Android visual verification: not run

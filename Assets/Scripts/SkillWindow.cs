@@ -131,6 +131,9 @@ public static class SkillWindow
         // Character.equippedItem grants Frenzy outside the fixed beginner display list.
         if (Art.Int(tabs[tab], "job") == 0 && SkillProgress.LevelOf(1016) > 0 && !list.Contains(1016))
             list.Add(1016);
+        int riding=Art.Int(tabs[tab],"job")*10000+1004;
+        if (NativeMount.IsSkill(riding) && SkillProgress.LevelOf(riding)>0 && !list.Contains(riding))
+            list.Add(riding);
         return list;
     }
 

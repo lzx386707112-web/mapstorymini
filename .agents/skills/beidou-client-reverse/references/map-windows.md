@@ -43,9 +43,33 @@ MaxMap/MinMap 使用 nw/n/ne/w/e/sw/s/se/c 九片，Min 使用 w/c/e 三片。
 0x856487 起另有 0x30C(780)/0x244(580) 的上限 clamp，语义（量宽还是面板）未核实，运行时未加。
 
 **标记素材（已核实存在）**：`Map/MapHelper.img/minimap/` 下有
-`user`(6×6)、`another`、`friend`、`guild`、`guildmaster`、`match`、`party`、`partymaster`、
-`npc`(4×7)、`startnpc`、`endnpc`、`usertrader`、`anothertrader`、`portal`(8×8)、
-`arrowup/down/right/left/upright/upleft/downright/downleft`。
+`user`(6×6)、`another`(5×5)、`friend`(5×5)、`guild`(5×5)、`guildmaster`(5×9)、`match`(7×6)、
+`party`(5×5)、`partymaster`(5×9)、`npc`(4×7)、`startnpc`(4×13)、`endnpc`(4×13)、
+`usertrader`(5×5)、`anothertrader`(5×5)、`portal`(8×8)、
+`arrowup`(11×7)/`arrowdown`(11×7)/`arrowright`(7×11)/`arrowleft`(7×11)/
+`arrowupright`(9×9)/`arrowupleft`(9×9)/`arrowdownright`(9×9)/`arrowdownleft`(9×9)。
+**这些 canvas 全都没有 `origin` 节点**（2026-11-02 逐节点核实），所以不能按 origin 对齐。
+
+### 标记绘制（2026-11-02 补）
+
+- 小地图绘制主体是 `0x859122`（`mov eax,0xac74ec; call __EH_prolog` 开头，到 `0x85aa1c` 收尾），
+  滚动计算 `0x85abbc` 在 `0x8591c3` 调用。半透明黑底在 `0x859279/0x8592CD`（Canvas vtable +0x8C），
+  地图 canvas 裁切复制在 `0x859313`（+0x84）。
+- 单个标记绘制 `0x85AA2B`（this, POINT*, IWzCanvas*）：
+  `0x40b947` 取宽、`0x40b920` 取高，然后
+  **x = point.x + [this+0x5dc] − width/2，y = point.y + [this+0x5e0] − height/2**，
+  即按图幅居中，`[this+0x5dc]/[this+0x5e0]` 是视口左上原点。**不是**用 IMG origin。
+- `0x85AB32` 是对「标记项链表」的批量绘制（遍历 `[arg+0xc]` 逐项调 `0x85AA2B`）。
+- 绘制顺序（`0x85A13E` 起）：`[this+0x6a4]`（usertrader，自己在开店）→ portal 循环
+  （`0x85A165`，`[0xbed768]` 列表，`type==2||7`，坐标在 `+0xc/+0x10`）→ 伙伴类标记
+  `[0x680]/[0x684]/[0x688]/[0x690]/[0x694]/[0x68c]`（friend/guild/guildmaster/party/partymaster/match）→
+  `[0x6d0]/[0x6d4]/[0x6d8]`（按 user+`0x2ad8` 三态选中的关系标记）。
+- 标记 IMG 初始化 `0x854e50..0x8558f5`：依次加载 `minimap`/`user`/`another`/`friend`/`guild`/
+  `guildmaster`/`match`/`party`/`partymaster`/`startnpc`/`endnpc`/`usertrader`/`anothertrader`/`portal`/
+  8 个 `arrow*`，存窗口成员 `0x67c..0x6cc` 每项 +4（`0x6d0/0x6d4/0x6d8` 另有三项关系标记）。
+- 运行时迁移：小地图已按此改为**按图幅居中**（`MiniMarker`），并补上同图其他角色标记——
+  无队伍用 `another`，同队用 `party`，队长用 `partymaster`，坐标取服务端地图坐标
+  （与 NPC/portal 同口径，未右移 2^mag）。大地图的 BaseImg 仍按 origin 画，两者不要混用。
 
 ### 自由市场 910000000 小地图实测（2026-10-26）
 

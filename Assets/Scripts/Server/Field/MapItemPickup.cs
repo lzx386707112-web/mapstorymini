@@ -79,9 +79,10 @@ namespace Server.Field
 
         /// <summary>
         /// 源端 Character.pickupItem(ob, petIndex)。petIndex > -1 表示宠物捡（广播用 reason 5）。
+        /// 野外伴侣代玩家拾取时 sharePartyMeso=false，整份金币进入玩家账户。
         /// 返回 true 表示这次调用把地面物品从地图上摘掉了。
         /// </summary>
-        public static bool PickupItem(MapItem mapitem, IMapItemLooter looter, long nowMs, int petIndex = -1)
+        public static bool PickupItem(MapItem mapitem, IMapItemLooter looter, long nowMs, int petIndex = -1, bool sharePartyMeso = true)
         {
             if (mapitem == null || looter == null) return false;
             if (mapitem.AgeMs(nowMs) < PickupDelayMs) { looter.EnableActions(); return false; }
@@ -95,7 +96,7 @@ namespace Server.Field
 
             // 源端 mpcs：只有金币掉落才提前取同图队友（用于均分）
             var mpcs = new List<int>();
-            if (mapitem.meso > 0 && !mapitem.pickedUp) mpcs.AddRange(looter.PartyMembersOnSameMap());
+            if (sharePartyMeso && mapitem.meso > 0 && !mapitem.pickedUp) mpcs.AddRange(looter.PartyMembersOnSameMap());
 
             if (mapitem.pickedUp)
             {

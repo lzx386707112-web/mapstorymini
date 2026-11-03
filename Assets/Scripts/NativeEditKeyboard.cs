@@ -19,6 +19,11 @@ public static class NativeEditKeyboard
     static TouchScreenKeyboard keyboard;
     static string owner;
 
+    // 打开键盘时请求「默认全选」：数量弹窗数字先全选，便于直接覆盖输入。
+    // Android 输入法常忽略程序化选区，所以每帧重试若干次（见 Sync），尽力而为。
+    static int selectAllRemaining;
+    static int selectAllLen;
+
 #if UNITY_EDITOR
     // batchmode 回归注入：编辑器里没有真键盘对象，用一对假 (text, status) 走同一条 Sync 逻辑。
     // 真机构建不编译这段，运行期不产生任何分支开销。
@@ -48,6 +53,12 @@ public static class NativeEditKeyboard
 #endif
         if (keyboard == null || owner != key) return Signal.None;
         var signal = Apply(ref value, keyboard.text, keyboard.status);
+        // 打开后若干帧内反复请求「全选初始文本」，抵消 Android 输入法的选区丢弃。
+        if (selectAllRemaining > 0)
+        {
+            try { keyboard.selection = new RangeInt(0, selectAllLen); } catch { }
+            selectAllRemaining--;
+        }
         if (signal != Signal.None) Close();
         return signal;
     }
@@ -70,7 +81,8 @@ public static class NativeEditKeyboard
 
     // 点击输入框命中时调用。仅在移动平台真正拉起；同框已开着则不重开（坑 1）。
     // type 由调用方按 numeric / 文本指定；characterLimit 与对应 GUI.TextField 的上限一致。
-    public static void Open(string key, string value, TouchScreenKeyboardType type, int characterLimit)
+    // selectAll：打开时请求默认全选（数量弹窗数字），移动端输入法若不买账则尽力重试。
+    public static void Open(string key, string value, TouchScreenKeyboardType type, int characterLimit, bool selectAll = false)
     {
         if (!Application.isMobilePlatform) return;
         if (!ShouldReopen(owner, keyboard != null && keyboard.active, key)) return;
@@ -78,6 +90,7 @@ public static class NativeEditKeyboard
         keyboard = TouchScreenKeyboard.Open(value ?? "", type,
             false, false, false, false, "", characterLimit);
         owner = key;
+        if (selectAll) { selectAllRemaining = 12; selectAllLen = (value ?? "").Length; }
     }
 
     // 弹窗/窗口关闭、切场景时调用。无差别收掉当前桥持有的键盘（同一时刻只会有一个 owner）。
@@ -86,6 +99,7 @@ public static class NativeEditKeyboard
         if (keyboard != null) keyboard.active = false;
         keyboard = null;
         owner = null;
+        selectAllRemaining = 0;
 #if UNITY_EDITOR
         injected = false; injectedText = null;
 #endif

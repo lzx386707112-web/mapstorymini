@@ -25,10 +25,10 @@ public sealed class NativeCharacterInfoData
             {
                 if (item.petData != null && Convert.ToInt32(item.petData["summoned"]) == 1 && result.pets.Count < 3)
                     result.pets.Add(item.Copy());
-                if (item.inventoryType != -1) continue;
+                if (item.inventoryType != InventoryDao.Equipped || item.position >= 0) continue;
                 if (item.position == -18) result.mount = item.itemId;
                 if (item.position == -49) result.medal = item.itemId;
-                if (item.position == -114) result.petClothing = item.itemId;
+                if (item.position == -14 && item.itemId / 10000 == 180) result.petClothing = item.itemId;
                 if (item.position == -18 || item.position == -19 || item.position == -20) result.mountItems.Add(item.itemId);
                 for(int i=0;i<3;i++)
                     if (NativePetItems.IsEquipment(item.itemId) && NativePetItems.EquipmentSlot(item.itemId,i)==item.position)
@@ -50,10 +50,10 @@ public sealed class NativeCharacterInfoData
         var visibleItems = new SortedDictionary<int, List<InventoryEntry>>();
         if (inventory != null) foreach (var item in inventory)
         {
-            if (item.inventoryType != -1) continue;
+            if (item.inventoryType != InventoryDao.Equipped || item.position >= 0) continue;
             int slot = -item.position;
             if (slot > 100) slot -= 100;
-            if (slot <= 0 || slot == 14 || slot == 18 || slot == 19 || slot == 20 || item.itemId / 10000 == 181) continue;
+            if (slot <= 0 || slot == 14 || slot == 18 || slot == 19 || slot == 20 || NativePetItems.IsEquipment(item.itemId)) continue;
             if (!visibleItems.TryGetValue(slot,out var items)) visibleItems[slot]=items=new List<InventoryEntry>();
             items.Add(item);
         }
@@ -61,7 +61,7 @@ public sealed class NativeCharacterInfoData
         {
             int slot = -pair.Key;
             if (slot > 100) slot -= 100;
-            if (slot > 0 && slot != 14 && slot != 18 && slot != 19 && slot != 20 && pair.Value / 10000 != 181)
+            if (slot > 0 && slot != 14 && slot != 18 && slot != 19 && slot != 20 && !NativePetItems.IsEquipment(pair.Value))
             {
                 if (!visibleItems.TryGetValue(slot,out var items)) visibleItems[slot]=items=new List<InventoryEntry>();
                 if (!items.Exists(item=>item.itemId==pair.Value)) items.Add(new InventoryEntry {itemId=pair.Value,position=pair.Key});
@@ -71,7 +71,6 @@ public sealed class NativeCharacterInfoData
             items.Sort((a,b)=>b.position.CompareTo(a.position));
             foreach(var item in items)result.items.Add(item.itemId);
         }
-        for(int i=0;i<3;i++) if(result.petClothing!=0 && !result.petItems[i].Contains(result.petClothing))result.petItems[i].Insert(0,result.petClothing);
         if (actor == null)
         {
             // Preserve the server's active pet order rather than cash inventory order.

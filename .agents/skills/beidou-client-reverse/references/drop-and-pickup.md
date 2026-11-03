@@ -130,3 +130,17 @@ BotActorLooter也未配置GainNxCredit钩子。两处现连接CashOperation.Adju
 ## 2026-11-01 点券反馈复核
 
 未改已接线的NX发放逻辑。NativePetSceneChecks本轮真实临时账号回归PASS79：4031865数量2余额200，4031866数量2后累计700，均无背包卡；日志docs/four-feedback-pet-20261101.log。补齐既有fixture缺失的GameSession.Server注入，避免新版宠物过滤在测试中空引用。当前代码未复现不入账；未核对反馈APK是否包含10-31修复，也没有Android实机验收。
+
+## 2026-11-03 假人拾取动画与野外代拾取归属
+
+用户明确指定：假人拾取也要有玩家式动画；野外伴侣拾到的东西归玩家，右下角按玩家拾取提示。本节是该授权下的迁移端行为调整，不是原Java假人回收/原EXE经济规则的新结论。EXE身份与动画证据沿用上文：`5067A0 → 4360C3 → 437991 → 44528F → 4416DB`，700ms、目标随拾取者身体中心变化、420ms后淡出；UI获得提示复用现有`NativeGainNotice`，不新增自绘素材或重设布局。
+
+- 原`GroundItem.TakeForBot`直接减少amount，整份取完走reason0淡出，没有玩家式飞行动画。现PQ收券走reason2、目标接`BotField.PickupTarget(bot.id)`；部分数量被拿走时克隆原物品显示，仅被拿走的那份飞向假人，剩余数量仍留地面。遍历旧掉落快照避免新增动画副本修改枚举器。
+- 野外`BotGroundPickup.PickAny`只允许本地真人队长的同图同队伴侣调用，遍历当前可见`GroundItem`，由`PickupForCompanion`检查落地/距离/已移除状态。动画目标是假人纸娃娃实时中心，经济接收者是玩家；PQ专用`PickNearby`仍给假人自己入包，保留严格收券数量。
+- 本地无bound掉落复用`GroundItem.Pickup`：物品走玩家Profile/真实inventory transport，金币进玩家，NX卡进玩家账号，图鉴走玩家已有分支；成功才发`NativeGainNotice.Pickup`并开始飞行动画。`Profile.TryAddItem`暴露原入包结果，满包拒绝时不移除地面物品、不发成功提示。
+- 权威bound掉落复用`GroundItemBridge.TryPickup`，仍以玩家身份执行400ms/归属/任务/空间校验、落库、`GameSession.ApplyGroundPickup`与获得提示。`TryPickupForCompanion`只在同步Removed事件期间重定向动画目标，并在finally复位。`MapItemPickup`可选`sharePartyMeso=false`仅用于这条代拾取，整份金币归玩家，不因假人队伍均分舍入而损失；普通玩家/宠物路径默认规则不变。
+- 成功后移除态立即阻止再次拾取，但原图仍在场直到700ms动画结束；假人离场则既有动画目标解析返回空并结束，不伪装飞向本地玩家。
+
+验证入口：`BotPickupChecks.Run`（隔离Unity工程）覆盖玩家真实背包/金币/NX、右下角队列、跟随假人移动的弧线、重复拾取、PQ部分收券及动画、满包保留本地和权威掉落。尚未Android实机录屏验收。
+
+本轮实际验证：隔离Unity `BotPickupChecks.Run` PASS17；既有 `GroundItemChecks.Run` PASS（72组原EXE拾取轨迹 + 48组抛出轨迹、原金币素材、成功/拒绝拾取及同步移除动画）。日志 `docs/skill-regression/bot-pickup-2026-11-03.log` 与 `ground-item-2026-11-03.log`。全量服务端1340/0，Unity Scripts+Editor编译0 warning/0 error，diff空白检查通过。未构建APK，未做Android画面实测。

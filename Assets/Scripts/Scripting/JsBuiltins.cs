@@ -23,6 +23,7 @@ namespace MapleDash.Js
             }));
 
             var numberFn = JsFunction.FromNative("Number", c => new JsNumber(JsConvert.ToNumber(c.Arg(0))));
+            numberFn.Members.Set("isInteger", JsFunction.FromNative("isInteger", c => JsBoolean.Of(c.Arg(0) is JsNumber n && !double.IsInfinity(n.Value) && Math.Floor(n.Value) == n.Value)));
             scope.Declare("Number", numberFn);
 
             var stringFn = JsFunction.FromNative("String", c => new JsString(JsConvert.ToString(c.Arg(0))));
@@ -70,6 +71,24 @@ namespace MapleDash.Js
                 return set;
             }));
 
+            scope.Declare("Map", JsFunction.FromNative("Map", c =>
+            {
+                var keys = new List<JsValue>(); var values = new List<JsValue>();
+                var map = new JsHostObject(keys);
+                Func<JsValue, int> index = key => keys.FindIndex(v => JsConvert.StrictEquals(v, key) ||
+                    v is JsNumber n && key is JsNumber k && double.IsNaN(n.Value) && double.IsNaN(k.Value));
+                map.Set("has", JsFunction.FromNative("has", a => JsBoolean.Of(index(a.Arg(0)) >= 0)));
+                map.Set("get", JsFunction.FromNative("get", a => { int i = index(a.Arg(0)); return i < 0 ? JsUndefined.Value : values[i]; }));
+                map.Set("set", JsFunction.FromNative("set", a => {
+                    int i = index(a.Arg(0));
+                    if (i < 0) { keys.Add(a.Arg(0)); values.Add(a.Arg(1)); } else values[i] = a.Arg(1);
+                    return map;
+                }));
+                map.Set("values", JsFunction.FromNative("values", _ => new JsArray(values)));
+                map.Set("keys", JsFunction.FromNative("keys", _ => new JsArray(keys)));
+                return map;
+            }));
+
             // new Array(...) 的三种语义（ES5 §15.4.2）：
             //   无参       → 空数组
             //   单个非负整数 n → length=n 的稀疏数组（脚本里很常见：new Array(8) 再按下标填）
@@ -91,6 +110,8 @@ namespace MapleDash.Js
                 }
                 return new JsArray(c.Args);
             });
+            arrayFn.InstanceCheck = value => value is JsArray;
+            arrayFn.Members.Set("from", JsFunction.FromNative("from", c => new JsArray(JsPatterns.Iterate(c.Arg(0)))));
             var arrayProto = new JsObject();
             foreach (var name in ArrayMethodNames) arrayProto.Set(name, ArrayMethod(it, name));
             arrayFn.Members.Set("prototype", arrayProto);

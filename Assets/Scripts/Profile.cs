@@ -163,9 +163,13 @@ public static class Profile
 
     public static int ItemCount(int id) => Data.ItemCount(id);
     public static void AddItem(int id, int count)
+        => TryAddItem(id, count);
+    public static bool TryAddItem(int id, int count)
     {
-        if (GameSession.InGame && !SyncInventory(id, count)) return;
-        if (Data.AddItem(id, count)) Save();
+        if (GameSession.InGame && !SyncInventory(id, count)) return false;
+        if (!Data.AddItem(id, count)) return false;
+        Save();
+        return true;
     }
     public static bool RemoveItem(int id, int count, int sourcePosition=0)
     {

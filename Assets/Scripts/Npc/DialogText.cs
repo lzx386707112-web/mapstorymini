@@ -134,8 +134,12 @@ public static class DialogText
                 continue;
             }
 
+            // Unknown markers are ordinary text, not a parameter extending to the next #.
+            // E.g. the original exchange menu contains #L1##金币兑换…#l.
+            if ("hocmp@tzyuqsWvif".IndexOf(code) < 0)
+            { buffer.Append('#'); i++; continue; }
             int close = raw.IndexOf('#', i + 2);
-            if (close < 0) break;
+            if (close < 0) { buffer.Append('#'); i++; continue; }
             string payload = raw.Substring(i + 2, close - i - 2);
 
             switch (code)

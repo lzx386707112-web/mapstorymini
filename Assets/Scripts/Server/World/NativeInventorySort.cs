@@ -277,6 +277,15 @@ public static class NativeInventorySort
         }
 
         // 落库：先按最终槽位写 position，再删掉已并为空的源行。
+        Persist(db, slots, map);
+
+        db.Save();
+        return new InventoryChangeResponse { ok = true, inventory = CharService.Load(db, cid).inventory };
+    }
+
+    // 槽位 → 行/实例 的最终落库：写 position，删掉被并掉的行（源行 position 置 0）。
+    static void Persist(DbStore db, List<Slot> slots, Dictionary<int, Slot> map)
+    {
         foreach (var pair in map)
         {
             pair.Value.Row["position"] = (long)pair.Key;
@@ -291,7 +300,31 @@ public static class NativeInventorySort
                 db.Table("inventoryitems").Delete(x => DbStore.Long(x, "inventoryitemid", -1) == rowId);
                 db.Table("inventoryequipment").Delete(x => DbStore.Long(x, "inventoryitemid", -1) == rowId);
             }
+    }
 
+    // ───────────────── ITEM_MOVE(action>0)：格到格 ─────────────────
+    // 源端 ItemMoveHandler:54（action>0）→ InventoryManipulator.move(c, type, src, dst)
+    //   → Inventory.move(src, dst, slotMax)：dst 空 → 改 position；同 id 且非充能、owner
+    //   相同 → 相加（超 slotMax 时 dst 填满、源留余量）；其余 → 两个槽位互换。
+    // 客户端 0x4F3057 在发请求前已限定「同背包页 + 源格≠目标格」，这里再兜一次。
+    public static InventoryChangeResponse MoveItem(DbStore db, CharRecord c, int invType, int from, int to)
+    {
+        int cid = (int)c.id;
+        if (invType < 1 || invType > 5) return new InventoryChangeResponse { ok = false, error = "背包页无效" };
+        int limit = SlotLimit(db, c, invType);
+        if (from <= 0 || to <= 0 || from == to || from > limit || to > limit)
+            return new InventoryChangeResponse { ok = false, error = "槽位无效" };
+
+        var slots = LoadSlots(db, cid, invType);
+        var map = new Dictionary<int, Slot>();
+        foreach (var s in slots) map[s.Index] = s;
+        if (!map.TryGetValue(from, out var source)) return new InventoryChangeResponse { ok = false, error = "该格子没有物品" };
+
+        var actor = new Server.Bot.BotActor { id = cid, job = c.job, character = CharService.Load(db, cid) };
+        var rules = new Server.Bot.Trade.TradeItemRules(db, Server.Bot.BotItemCatalog.Shared);
+        Move(map, invType, from, to, rules.SlotMax(source.Item.itemId, actor));
+
+        Persist(db, slots, map);
         db.Save();
         return new InventoryChangeResponse { ok = true, inventory = CharService.Load(db, cid).inventory };
     }

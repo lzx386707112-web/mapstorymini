@@ -39,18 +39,22 @@ namespace Server.Bot.Types.Pq
     public sealed class PqStep
     {
         public PqAction action;
-        public int[] ids = System.Array.Empty<int>();   // 怪 / 反应堆模板 id
-        public int minId, maxId;                        // 反应堆 id 区间（0 = 不用）
-        public int need;                                // 数量要求
-        public int itemId, itemCount;                   // GrantItem / HandOver
-        public int npc;                                 // Talk
-        public bool openOnly;                           // 只开一次对话（海盗船 2094002）
-        public int rounds = 1;                          // Talk 重复轮数
-        public string[] prefer;                         // 对话选项偏好关键字
-        public List<PqRect> stands = new List<PqRect>();  // Stand / StageCheck（必须初始化：数据表用集合初始化器写）
-        public string comboProperty;                    // StageCheck：阶段随机组合写在哪个实例属性上
-        public string say;                              // 做这件事时假人说的话
-        public long timeoutMs;                          // 0 = 用默认步骤超时；攒券这类要放宽
+        public int[] ids = System.Array.Empty<int>();      // 怪 / 反应堆模板 id
+        public int[] reactors = System.Array.Empty<int>(); // BotCollect：要砸的箱子模板 id
+        public int[] maps = System.Array.Empty<int>();     // 要分散到的图（空 = 本阶段主图）
+        public int minId, maxId;                           // 反应堆 id 区间（0 = 不用）
+        public int need;                                   // 数量要求（BotCollect：全队合计）
+        public int itemId, itemCount;                      // GrantItem / HandOver / BotCollect 的目标物品
+        public int npc;                                    // Talk
+        public bool openOnly;                              // 只开一次对话（海盗船 2094002 / 各关引言页）
+        public int rounds = 1;                             // Talk 重复轮数
+        public string[] prefer;                            // 对话选项偏好关键字
+        public List<PqRect> stands = new List<PqRect>();   // Stand / StageCheck（必须初始化：数据表用集合初始化器写）
+        public string comboProperty;                       // StageCheck：阶段随机组合写在哪个实例属性上
+        /// <summary>对话后要等实例属性变成这个值才算真正过关（null = 只要不为 null）。</summary>
+        public string awaitProperty, awaitValue;
+        public string say;                                 // 做这件事时假人说的话
+        public long timeoutMs;                             // 0 = 用默认步骤超时；攒券这类要放宽
     }
 
     public struct PqRect
@@ -71,6 +75,11 @@ namespace Server.Bot.Types.Pq
         public int npc;
         /// <summary>队长持有这个物品才算过关（源端 haveItem 判定）；0 = 不看物品。</summary>
         public int requireItem, requireCount;
+        /// <summary>
+        /// 活干完之后等多久再强制推进（毫秒）。有些阶段要玩家自己踩脚本传送门
+        /// （海盗船 next00 会顺手刷 BOSS），多给点时间；0 = 默认 1.5s。
+        /// </summary>
+        public long gateMs;
     }
 
     public sealed class PqDef
@@ -85,6 +94,8 @@ namespace Server.Bot.Types.Pq
         public int minLevel;
         public string[] keywords;        // 触发组队的喊话关键词
         public List<PqStage> stages = new List<PqStage>();
+        /// <summary>不在阶段链上、但假人要去干活的子图（玩具塔的分层子图、黑暗塔那五间）。</summary>
+        public List<int> extraMaps = new List<int>();
 
         public PqStage Stage(int mapId)
         {
@@ -171,6 +182,32 @@ namespace Server.Bot.Types.Pq
             => new PqStep { action = PqAction.Stand, stands = new List<PqRect>(rects), need = Math.Min(3, rects.Length), say = say };
         static PqStep Give(int item, int count, string say)
             => new PqStep { action = PqAction.GrantItem, itemId = item, itemCount = count, say = say };
+
+        static int[] Ids(params int[] ids) => ids ?? Array.Empty<int>();
+
+        /// <summary>队长点一次 NPC。openOnly = 只走引言页（脚本的 statusStgN: -1 → 0），不做判定。</summary>
+        static PqStep Talk(int npc, string say, bool openOnly = false, string await = null, string value = null)
+            => new PqStep { action = PqAction.Talk, npc = npc, openOnly = openOnly, say = say,
+                            awaitProperty = await, awaitValue = value, timeoutMs = 60000 };
+
+        /// <summary>
+        /// 假人自己去把 item 凑够 need 张：打 mobs 里的怪或砸 reactors 里的箱子。
+        /// 箱子砸开掉什么、刷什么怪，全由反应堆自己的 reactor/&lt;id&gt;.js 决定
+        /// （2202003 dropItems 掉券、2201001 spawnMonster 刷怪），这里不另设掉落。
+        /// maps 非空时按人头分散到这些图（玩具塔 5 关的六个子图那种）。
+        /// </summary>
+        static PqStep Collect(int item, int need, int[] mobs, int[] reactors, int[] maps, string say,
+            long timeoutMs = 240000)
+            => new PqStep { action = PqAction.BotCollect, itemId = item, need = need,
+                            ids = mobs ?? Array.Empty<int>(), reactors = reactors ?? Array.Empty<int>(),
+                            maps = maps ?? Array.Empty<int>(), say = say, timeoutMs = timeoutMs };
+
+        /// <summary>队员把攒到的物品交给队长（源端是当面交易，这里直接落到队长背包）。</summary>
+        static PqStep HandOver(int item, int count, string say)
+            => new PqStep { action = PqAction.HandOver, itemId = item, itemCount = count, say = say };
+
+        /// <summary>阶段过关标记（"Nstageclear"）：NPC 真的 clearStage 之后才算这一步完成。</summary>
+        static string Cleared(int stageNo) => stageNo + "stageclear";
 
         // ————————————————————— 废弃都市组队任务（KPQ）—————————————————————
         static PqDef Kerning()
@@ -263,6 +300,13 @@ namespace Server.Bot.Types.Pq
         }
 
         // ————————————————————— 玩具塔101（LudiPQ）—————————————————————
+        // ————————————————————— 玩具塔101（LudiPQ）—————————————————————
+        // 九关一个套路（npc/2040036~2040044.js）：
+        //   ① 队长点 NPC 听规则（脚本把 statusStgN 从 -1 置 0，只发一页说明）
+        //   ② 队员去打怪 / 砸箱子，把 4001022 攒够（通行证 100% 掉落，箱子走 reactordrops）
+        //   ③ 队员把券全部交给队长（源端是当面交易）
+        //   ④ 队长再点一次 NPC → cm.haveItem(4001022, N) → 扣券 + clearStage + linkToNextStage
+        // 张数照抄脚本：25 / 15 / 32 / 6 / 24 / 3；第九关要的是 4001023 钥匙。
         static PqDef Ludi()
         {
             var def = new PqDef
@@ -271,78 +315,131 @@ namespace Server.Bot.Types.Pq
                 recruitMap = 221024500, entryMap = 922010100, exitMap = 922010000,
                 recruitNpc = 2040034, minLevel = 35,
                 keywords = new[] { "求组", "缺一", "缺二", "缺三", "q1", "q2", "组队", "玩具", "101", "塔" },
+                extraMaps = {
+                    922010201,                                                          // 第 2 关陷阱房（多 4 个箱子）
+                    922010401, 922010402, 922010403, 922010404, 922010405,              // 第 4 关黑暗塔五间
+                    922010501, 922010502, 922010503, 922010504, 922010505, 922010506,   // 第 5 关六个子图
+                },
             };
-            // 阶段 1：25 张券（9300005 ×15 + 9300006 ×10，npc/2040036.js:75）
+            // 第 1 关：15 只 9300005 + 10 只 9300006，各掉 1 张，正好 25。
             def.stages.Add(new PqStage
             {
-                mapId = 922010100, stageNo = 1, npc = 2040036, title = "第1阶段：25 张通行证",
-                requireItem = LudiPass, requireCount = 25,
-                steps = { new PqStep { action = PqAction.KillMobs, ids = new[] { 9300005, 9300006 }, need = 25, say = "白鼠黑鼠我包了，券归队长" },
-                          Give(LudiPass, 25, "25 张，够了") },
+                mapId = 922010100, stageNo = 1, title = "第1阶段：25 张通行证",
+                steps = {
+                    Talk(2040036, "队长先听红气球讲规则", openOnly: true),
+                    Collect(LudiPass, 25, Ids(9300005, 9300006), null, null,
+                        "白鼠黑鼠我包了，通行证我来捡", 300000),
+                    HandOver(LudiPass, 25, "25 张都交给队长"),
+                    Talk(2040036, "队长去交 25 张", await: Cleared(1)),
+                },
             });
-            // 阶段 2：11 个箱子 2202003（陷阱图还有 4 个）。这里用「砸完本图箱子 + 补足 15 张」。
+            // 第 2 关：本图 11 个箱子 + 陷阱房 4 个，每个 1 张 = 15。
             def.stages.Add(new PqStage
             {
-                mapId = 922010200, stageNo = 2, npc = 2040037, title = "第2阶段：15 张通行证",
-                requireItem = LudiPass, requireCount = 15,
-                steps = { new PqStep { action = PqAction.BreakReactors, ids = new[] { 2202003 }, need = 11, say = "箱子我来砸" },
-                          Give(LudiPass, 15, "15 张，走") },
+                mapId = 922010200, stageNo = 2, title = "第2阶段：15 张通行证",
+                steps = {
+                    Talk(2040037, "队长去听橙气球讲规则", openOnly: true),
+                    Collect(LudiPass, 15, null, Ids(2202003), Ids(922010200, 922010201),
+                        "箱子我来砸，砸开就有券", 300000),
+                    HandOver(LudiPass, 15, "15 张给队长"),
+                    Talk(2040037, "队长去交 15 张", await: Cleared(2)),
+                },
             });
-            // 阶段 3：8 只 9300007 + 8 个 2201001 = 32 张
+            // 第 3 关：8 只 9300007 先在地图上；砸开 8 个 2201001 每个再刷 3 只（reactor/2201001.js），
+            // 8 + 8×3 = 32 只，正好 32 张。注意 2201001 本身不掉券（脚本只 spawnMonster），
+            // 所以这里不能给箱子配掉落，否则会多出 8 张。
             def.stages.Add(new PqStage
             {
-                mapId = 922010300, stageNo = 3, npc = 2040038, title = "第3阶段：32 张通行证",
-                requireItem = LudiPass, requireCount = 32,
-                steps = { new PqStep { action = PqAction.BreakReactors, ids = new[] { 2201001 }, need = 8, say = "双鱼出来了，先打双鱼" },
-                          Clear("清场"),
-                          Give(LudiPass, 32, "32 张齐了") },
+                mapId = 922010300, stageNo = 3, title = "第3阶段：32 张通行证",
+                steps = {
+                    Talk(2040038, "队长去听黄气球讲规则", openOnly: true),
+                    Collect(LudiPass, 32, Ids(9300007), Ids(2201001), null,
+                        "泡泡鱼和箱子我一起收拾", 360000),
+                    HandOver(LudiPass, 32, "32 张齐了"),
+                    Talk(2040038, "队长去交 32 张", await: Cleared(3)),
+                },
             });
-            // 阶段 4：6 只（在黑暗塔子图），这里按「补券 + 清本图」处理
+            // 第 4 关：黑暗塔五间，物理/魔法各打一半，一共 6 只（9300008 ×3 + 9300014 ×3）。
             def.stages.Add(new PqStage
             {
-                mapId = 922010400, stageNo = 4, npc = 2040039, title = "第4阶段：6 张通行证",
-                requireItem = LudiPass, requireCount = 6,
-                steps = { Clear("黑暗塔的怪我来清"), Give(LudiPass, 6, "6 张") },
+                mapId = 922010400, stageNo = 4, title = "第4阶段：6 张通行证",
+                steps = {
+                    Talk(2040039, "队长去听青气球讲规则", openOnly: true),
+                    Collect(LudiPass, 6, Ids(9300008, 9300014), null,
+                        Ids(922010401, 922010402, 922010403, 922010404, 922010405),
+                        "黑暗塔五间我分开跑", 300000),
+                    HandOver(LudiPass, 6, "6 张给队长"),
+                    Talk(2040039, "队长去交 6 张", await: Cleared(4)),
+                },
             });
-            // 阶段 5：24 张（6 张子图共 25 个箱子）
+            // 第 5 关：六个子图各 4 个箱子，24 张。假人按人头分图，砸完再汇合。
             def.stages.Add(new PqStage
             {
-                mapId = 922010500, stageNo = 5, npc = 2040040, title = "第5阶段：24 张通行证",
-                requireItem = LudiPass, requireCount = 24,
-                steps = { new PqStep { action = PqAction.BreakReactors, ids = new[] { 2202003 }, need = 6, say = "我在 5 层砸箱子" },
-                          Give(LudiPass, 24, "24 张齐") },
+                mapId = 922010500, stageNo = 5, title = "第5阶段：24 张通行证",
+                steps = {
+                    Talk(2040040, "队长去听绿气球讲规则", openOnly: true),
+                    Collect(LudiPass, 24, null, Ids(2202003),
+                        Ids(922010501, 922010502, 922010503, 922010504, 922010505, 922010506),
+                        "六个子图我们分开砸箱子", 360000),
+                    HandOver(LudiPass, 24, "24 张齐了"),
+                    Talk(2040040, "队长去交 24 张", await: Cleared(5)),
+                },
             });
-            // 阶段 6 是纯传送门迷宫（922010600），没有判定：由 PqRun 直接送到下一阶段。
-            def.stages.Add(new PqStage { mapId = 922010600, stageNo = 6, title = "第6阶段：爬塔" });
-            // 阶段 7：3 只 9300010（由 2201002 反应堆刷出来）
+            // 第 6 关是纯传送门迷宫（922010600），Aqua Balloon 只说一句话，没有判定。
+            def.stages.Add(new PqStage { mapId = 922010600, stageNo = 6, title = "第6阶段：爬到塔顶", gateMs = 20000 });
+            // 第 7 关：砸开 3 个 2201002 各刷 1 只战甲鱼（reactor/2201002.js），打掉凑 3 张。
+            // 2201002 同样只刷怪不掉券。
             def.stages.Add(new PqStage
             {
-                mapId = 922010700, stageNo = 7, npc = 2040042, title = "第7阶段：3 张通行证",
-                requireItem = LudiPass, requireCount = 3,
-                steps = { new PqStep { action = PqAction.BreakReactors, ids = new[] { 2201002 }, need = 3, say = "战甲鱼我来打" },
-                          Clear("补刀"), Give(LudiPass, 3, "3 张") },
+                mapId = 922010700, stageNo = 7, title = "第7阶段：3 张通行证",
+                steps = {
+                    Talk(2040042, "队长去听天蓝气球讲规则", openOnly: true),
+                    Collect(LudiPass, 3, Ids(9300010), Ids(2201002), null,
+                        "战甲鱼我来打", 300000),
+                    HandOver(LudiPass, 3, "3 张给队长"),
+                    Talk(2040042, "队长去交 3 张", await: Cleared(7)),
+                },
             });
-            // 阶段 8：9 个区域站 5 个人 —— 源端 npc/2040043.js:128 在 size()<7 时直接放行，
-            // 单机实例只有 1 个人，所以这关脚本必过；假人仍按矩形站好，免得看起来像跳过了。
+            // 第 8 关：五个人站到箱子上（npc/2040043.js:128 判定 getAreas() 的 9 个矩形）。
+            // 脚本对 size()<7 的队伍直接放行，所以这里只要人真的站上箱子、队长点两次即可。
             def.stages.Add(new PqStage
             {
-                mapId = 922010800, stageNo = 8, npc = 2040043, title = "第8阶段：站箱子",
-                steps = { Stand("我站左边那个箱子", new PqRect(-247, -232, 61, 25), new PqRect(-180, -233, 61, 25),
-                    new PqRect(-112, -196, 59, 26), new PqRect(-42, -157, 59, 25)) },
+                mapId = 922010800, stageNo = 8, title = "第8阶段：五个箱子占位",
+                steps = {
+                    Talk(2040043, "队长先听蓝气球讲规则", openOnly: true),
+                    new PqStep { action = PqAction.Stand, say = "我们一人站一个箱子",
+                        need = 5, stands = {
+                            new PqRect(-247, -232, 61, 25), new PqRect(-180, -233, 61, 25),
+                            new PqRect(-246, -194, 60, 25), new PqRect(-180, -195, 61, 26),
+                            new PqRect(-112, -196, 59, 26) } },
+                    Talk(2040043, "队长去按确定", await: Cleared(8)),
+                },
             });
-            // 阶段 9：砸 2201003 出阿丽莎乐，打死掉钥匙
+            // 第 9 关：砸祭坛 2201003 召出阿丽莎乐（9300012），打死掉 4001023；
+            // 队长带钥匙点紫气球 → 发阶段经验 + clearPQ → 传送到奖励关 922011000。
             def.stages.Add(new PqStage
             {
-                mapId = 922010900, stageNo = 9, npc = 2040044, title = "第9阶段：BOSS 阿丽莎乐",
-                requireItem = LudiKey, requireCount = 1,
-                steps = { new PqStep { action = PqAction.BreakReactors, ids = new[] { 2201003 }, need = 1, minId = 0, maxId = 0, say = "我把祭坛砸开" },
-                          new PqStep { action = PqAction.KillBoss, say = "BOSS 交给我" },
-                          Give(LudiKey, 1, "钥匙拿到了，队长去交") },
+                mapId = 922010900, stageNo = 9, title = "第9阶段：BOSS 阿丽莎乐",
+                steps = {
+                    Talk(2040044, "队长先听紫气球讲规则", openOnly: true),
+                    Collect(LudiKey, 1, Ids(9300012), Ids(2201003), null, "祭坛我来砸，BOSS 交给我", 300000),
+                    HandOver(LudiKey, 1, "钥匙给队长"),
+                    Talk(2040044, "队长去交钥匙", await: Cleared(9)),
+                },
+            });
+            // 奖励关：922011000 等一分钟 → 922011100 砸箱子拿奖，然后回出口图。
+            def.stages.Add(new PqStage { mapId = 922011000, stageNo = 10, title = "奖励关：等开门", gateMs = 6000 });
+            def.stages.Add(new PqStage
+            {
+                mapId = 922011100, stageNo = 11, title = "奖励关：砸完箱子就撤",
+                steps = { new PqStep { action = PqAction.BreakReactors, say = "箱子我来砸，东西大家分" } },
             });
             return def;
         }
 
         // ————————————————————— 毒雾森林（EllinPQ）—————————————————————
+        // 和玩具塔不同，这一路没有「队员交东西」的环节，只有两处需要队长持有道具：
+        // 930000500 的 2133004 要看 4001163（紫色魔力石），没带就当场把你传出副本。
         static PqDef Ellin()
         {
             var def = new PqDef
@@ -352,50 +449,65 @@ namespace Server.Bot.Types.Pq
                 recruitNpc = 2133000, minLevel = 45,
                 keywords = new[] { "求组", "缺一", "缺二", "缺三", "q1", "q2", "组队", "毒雾", "森林", "艾琳" },
             };
-            // 第一张图 930000000 只是入口，east00 直接放行。
+            // 930000000 只是入口，传送门 party6_stage 直接放行（NPC 2133001 在这里只负责送回城）。
             def.stages.Add(new PqStage { mapId = 930000000, stageNo = 1, title = "森林入口" });
-            // 930000100：源端 portal/party6_stage.js:8 要求把 50 只 9300172 清空。
+            // 930000100：portal/party6_stage.js 要求 getMonsters().size()==0 —— 50 只 9300172。
             def.stages.Add(new PqStage
             {
-                mapId = 930000100, stageNo = 2, title = "森林初入：清 50 只毒苔藓木妖",
+                mapId = 930000100, stageNo = 2, title = "森林初入：清掉 50 只毒苔藓木妖",
                 steps = { Clear("这片苔藓木妖我来清") },
             });
-            // 930000200：反应堆 3009000（spine）要打到 state>=4。
+            // 930000200：spine 反应堆 3009000 要打到 state>=4 才放行，旁边还有 2 只 9300173。
             def.stages.Add(new PqStage
             {
-                mapId = 930000200, stageNo = 3, title = "变质的森林：砸毒刺",
-                steps = { new PqStep { action = PqAction.BreakReactors, ids = new[] { 3009000 }, need = 1, say = "毒刺我来敲" } },
+                mapId = 930000200, stageNo = 3, title = "变质的森林：砸断毒刺",
+                steps = {
+                    new PqStep { action = PqAction.BreakReactors, ids = Ids(3009000), need = 1, say = "毒刺我来敲" },
+                    Clear("顺手把守着的怪清掉"),
+                },
             });
-            // 930000300：16 格迷宫，走到 16st 找 2133001 对话进 930000500。
+            // 930000300：16 格迷宫，出口那格的 2133001 会把全队送到 930000500。
             def.stages.Add(new PqStage
             {
-                mapId = 930000300, stageNo = 4, npc = 2133001, title = "雾之丛：找出口",
+                mapId = 930000300, stageNo = 4, title = "雾之丛：找出口",
+                steps = { Talk(2133001, "队长去跟艾琳说话", await: null) },
             });
-            // 930000500：9 个反应堆，其中一个 3002001 必掉紫色魔力石；队长持石去 2133004。
+            // 930000500：9 个石堆，只有 3002001 掉 4001163（reactor/3002001.js → dropItems，
+            // 源端 reactordrops 表 3002001 → 4001163 概率 1）；3002002 没有脚本，砸了什么都不掉。
+            // 队长必须带着石头去点 2133004，否则脚本会把你传回出口图（等于放弃本趟）。
             def.stages.Add(new PqStage
             {
-                mapId = 930000500, stageNo = 5, npc = 2133004, title = "森林空地：拿魔力石",
-                requireItem = EllinStone, requireCount = 1,
-                steps = { new PqStep { action = PqAction.BreakReactors, ids = new[] { 3002001, 3002002 }, need = 9, say = "石堆我来砸，魔力石给队长" },
-                          Give(EllinStone, 1, "魔力石给队长") },
+                mapId = 930000500, stageNo = 5, title = "森林空地：拿紫色魔力石",
+                steps = {
+                    Collect(EllinStone, 1, null, Ids(3002001, 3002002), null,
+                        "石堆我来砸，魔力石给队长", 240000),
+                    HandOver(EllinStone, 1, "魔力石给队长"),
+                    Talk(2133004, "队长带着石头去点艾琳"),
+                },
             });
-            // 930000600：祭坛 3001000 需要 reactItem 4001163，召出 9300180 -> 181 -> 182。
+            // 930000600：祭坛 3001000 召出毒液石头人（9300180，WZ revive 链 180→181→182），
+            // 打掉 9300182 时事件脚本 monsterKilled 才 clearPQ，出口门 party6_out 才会开。
             def.stages.Add(new PqStage
             {
                 mapId = 930000600, stageNo = 6, title = "毒树丛：石头人三连",
-                steps = { new PqStep { action = PqAction.BreakReactors, ids = new[] { 3001000 }, need = 1, say = "祭坛我来开" },
-                          new PqStep { action = PqAction.KillMobs, ids = new[] { 9300180, 9300181, 9300182 }, need = 3, say = "石头人我来扛" },
-                          Clear("清尾巴") },
+                steps = {
+                    new PqStep { action = PqAction.BreakReactors, ids = Ids(3001000), need = 1, say = "祭坛我来开" },
+                    Clear("石头人我来扛，变一次打一次"),
+                },
+                gateMs = 8000,
             });
-            // 930000700：NPC 2133001 发奖（yes）→ warp 930000800。
+            // 930000700：2133001 的「确定」走发放奖励（前三次有特殊奖励）+ 记次数 + 传回 930000800。
             def.stages.Add(new PqStage
             {
-                mapId = 930000700, stageNo = 7, npc = 2133001, title = "艾琳森林：领奖",
+                mapId = 930000700, stageNo = 7, title = "艾琳森林：领奖",
+                steps = { Talk(2133001, "队长去领奖，领完就回城") },
             });
             return def;
         }
 
         // ————————————————————— 老海盗 / 海盗船（PiratePQ）—————————————————————
+        // 这一路的关键差别：2094002 只走**一页**对话（npc/2094002.js:27 再点一次就把队长传回城），
+        // 所以三轮勋章都用 OpenOnly；每轮的完成信号是实例属性 stage2 = "1"/"2"/"3"。
         static PqDef Pirate()
         {
             var def = new PqDef
@@ -404,44 +516,66 @@ namespace Server.Bot.Types.Pq
                 recruitMap = 251010404, entryMap = 925100000, exitMap = 925100700,
                 recruitNpc = 2094000, minLevel = 55,
                 keywords = new[] { "求组", "缺一", "缺二", "缺三", "q1", "q2", "组队", "海盗", "船" },
+                extraMaps = { 925100201, 925100202, 925100301, 925100302 },
             };
-            // 925100000：清 26 只（9300108~9300111）
+            // 925100000：清光 26 只守卫（9300108~9300111），门 davy_next0 才开。
             def.stages.Add(new PqStage
             {
                 mapId = 925100000, stageNo = 1, title = "抵达海盗船的路：清怪",
                 steps = { CleanMobs() },
             });
-            // 925100100：2094002 交 3 轮，每轮 20 个（4001120/21/22）。
-            // 这个 NPC 只要多点一次就把队长传回 251010404（npc/2094002.js:20-23），
-            // 所以必须是 OpenOnly：开一次触发交付，然后 ESC。
+            // 925100100：三轮勋章，每轮 20 个（4001120 → 4001121 → 4001122）。
+            // 勋章由 9300114/5/6 各 100% 掉落，队员捡满交给队长，队长点一次 2094002 交掉。
+            // 每交一轮脚本会 killAllMonsters，所以要等怪重新刷出来再打下一轮。
             def.stages.Add(new PqStage
             {
-                mapId = 925100100, stageNo = 2, npc = 2094002, title = "突破船头：三轮勋章",
+                mapId = 925100100, stageNo = 2, title = "突破船头：三轮勋章",
                 steps = {
-                    new PqStep { action = PqAction.GrantItem, itemId = PirateLow, itemCount = 20, say = "初级勋章凑够了" },
-                    new PqStep { action = PqAction.Talk, npc = 2094002, openOnly = true, rounds = 1, say = "第一轮交了" },
-                    new PqStep { action = PqAction.GrantItem, itemId = PirateMid, itemCount = 20, say = "中级勋章也够了" },
-                    new PqStep { action = PqAction.Talk, npc = 2094002, openOnly = true, rounds = 1, say = "第二轮交了" },
-                    new PqStep { action = PqAction.GrantItem, itemId = PirateHigh, itemCount = 20, say = "高级勋章最后 20 个" },
-                    new PqStep { action = PqAction.Talk, npc = 2094002, openOnly = true, rounds = 1, say = "三轮交完，开门吧" },
+                    Collect(PirateLow, 20, Ids(9300114, 9300115, 9300116), null, null,
+                        "新手勋章我来捡", 200000),
+                    HandOver(PirateLow, 20, "20 个新手勋章给队长"),
+                    Talk(2094002, "队长交第一轮", openOnly: true, await: "stage2", value: "1"),
+                    Collect(PirateMid, 20, Ids(9300114, 9300115, 9300116), null, null,
+                        "升华勋章也够了", 200000),
+                    HandOver(PirateMid, 20, "20 个升华勋章给队长"),
+                    Talk(2094002, "队长交第二轮", openOnly: true, await: "stage2", value: "2"),
+                    Collect(PirateHigh, 20, Ids(9300114, 9300115, 9300116), null, null,
+                        "最后一轮资深勋章", 200000),
+                    HandOver(PirateHigh, 20, "20 个资深勋章给队长"),
+                    Talk(2094002, "队长交第三轮", openOnly: true, await: "stage2", value: "3"),
                 },
             });
-            def.stages.Add(new PqStage { mapId = 925100200, stageNo = 3, title = "突破船甲1：清怪", steps = { CleanMobs() } });
-            def.stages.Add(new PqStage { mapId = 925100300, stageNo = 4, title = "突破船甲2：清怪", steps = { CleanMobs() } });
-            // 925100400：4 个门反应堆 2519000~2519003 都要打到 state>=1
+            // 925100200：真正要清的是子舱 925100201 那 48 只；清完 davy_next2 才开。
             def.stages.Add(new PqStage
             {
-                mapId = 925100400, stageNo = 5, title = "击退海盗：四个门",
-                steps = { new PqStep { action = PqAction.BreakReactors, ids = new[] { 2519000, 2519001, 2519002, 2519003 }, need = 4, say = "四个门我一个个来" },
-                          CleanMobs() },
+                mapId = 925100200, stageNo = 3, title = "突破船甲1：清舱",
+                steps = { new PqStep { action = PqAction.ClearMobs, maps = Ids(925100200, 925100201), say = "子舱的怪我去清" } },
+                gateMs = 12000,
             });
-            // 925100500：BOSS（开 0 个宝箱 → 9300119 老海盗）
             def.stages.Add(new PqStage
             {
-                mapId = 925100500, stageNo = 6, npc = 2094001, title = "海盗船长的威严：BOSS",
+                mapId = 925100300, stageNo = 4, title = "突破船甲2：清舱",
+                steps = { new PqStep { action = PqAction.ClearMobs, maps = Ids(925100300, 925100301), say = "这层交给我" } },
+                gateMs = 12000,
+            });
+            // 925100400：四个动力门 sMob1~4 各打一下（davy_next4 要求 state>=1），再把杂兵清掉。
+            // 清完要玩家自己踩 next00 —— 那扇门的脚本会顺手把 BOSS 刷进 925100500。
+            def.stages.Add(new PqStage
+            {
+                mapId = 925100400, stageNo = 5, title = "击退海盗：四个动力门",
+                steps = {
+                    new PqStep { action = PqAction.BreakReactors, ids = Ids(2519000, 2519001, 2519002, 2519003),
+                        need = 4, say = "四个门我一个个敲" },
+                    CleanMobs(),
+                },
+                gateMs = 20000,
+            });
+            def.stages.Add(new PqStage
+            {
+                mapId = 925100500, stageNo = 6, npc = 2094002, title = "海盗船长的威严：BOSS",
                 steps = { new PqStep { action = PqAction.KillBoss, say = "船长交给我" } },
             });
-            // 925100600：发奖 NPC（sendYesNo）
+            // 925100600：2094001 发奖（sendYesNo），点完就地解散回招募图。
             def.stages.Add(new PqStage
             {
                 mapId = 925100600, stageNo = 7, npc = 2094001, title = "无恙的感谢：领奖",

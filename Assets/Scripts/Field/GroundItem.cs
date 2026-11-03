@@ -161,6 +161,47 @@ public sealed class GroundItem : MonoBehaviour
         return icons[key] = result.ToArray();
     }
 
+    /// <summary>落点的地图像素坐标（x 右、y 下），假人走过去捡时用。</summary>
+    public int MapX => targetX;
+    public int MapY => targetY;
+    public bool Ready => bound == null && !removing && amount > 0 && resting;
+
+    /// <summary>
+    /// 组队任务的队员收券用：把这份**老式**掉落整份交给假人拿走，返回实际拿到的件数。
+    ///
+    /// 为什么需要：FieldDirector.DropLoot（普通怪掉落）是直接 GroundItem.Spawn，没有服务端
+    /// MapItem 实体，所以 BotGroundPickup 走 MapItemService 的范围查询看不到它们。
+    /// 废都第一关的鳄鱼券就属于这一类 —— 不补这条，假人打死了怪也永远收不到券。
+    /// 有 bound 的权威掉落不走这里（那边由 MapItemService.Removed 驱动，假人另有一条路）。
+    /// </summary>
+    public int TakeForBot(int mapX, int mapY, long rangeSq, int max, System.Func<Vector2?> target = null)
+    {
+        if (bound != null || removing || !resting || amount <= 0 || max <= 0) return 0;
+        long dx = mapX - targetX, dy = mapY - targetY;
+        if (dx * dx + dy * dy > rangeSq) return 0;
+        int taken = Mathf.Min(amount, max);
+        amount -= taken;
+        if (amount <= 0) Remove(2, target);
+        else if (target != null)
+        {
+            var portion = Instantiate(this);
+            portion.amount = taken;
+            portion.Remove(2, target);
+        }
+        return taken;
+    }
+
+    public bool PickupForCompanion(Server.Bot.BotCharacter bot, long rangeSq)
+    {
+        if (bot == null || !enabled || removing || !resting || amount <= 0) return false;
+        long dx = (long)bot.x - targetX, dy = (long)bot.y - targetY;
+        if (dx * dx + dy * dy > rangeSq) return false;
+        System.Func<Vector2?> target = () => BotGroundPickup.PickupTarget(bot);
+        if (bound != null)
+            return GameLoop.I?.field?.GetComponent<GroundItemBridge>()?.TryPickupForCompanion(bound, target) ?? false;
+        return Pickup(-1, target);
+    }
+
     public static void TryPickupNearest()
     {
         var game = GameLoop.I;
@@ -236,12 +277,12 @@ public sealed class GroundItem : MonoBehaviour
                     amount=checked((itemId==Server.Field.MapItemPickup.NxCard100 ? 100 : 250)*amount) });
                 if (!result.ok) return false;
             }
-            else Profile.AddItem(itemId, amount);
+            else if (!Profile.TryAddItem(itemId, amount)) return false;
             lastPickup = name + " x" + amount;
         }
         NativeGainNotice.Pickup(itemId, amount);
         lastPickupAt = Time.realtimeSinceStartupAsDouble;
-        Remove(petSlot>=0 ? 5 : 2,petSlot>=0 ? petTarget : LocalPickupTarget, true);
+        Remove(petSlot>=0 ? 5 : 2,petTarget ?? LocalPickupTarget, true);
         return true;
     }
 

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Server.Bot;
 using UnityEngine;
@@ -327,15 +328,159 @@ public sealed class BotField : MonoBehaviour
         }
     }
 
-    public void PlaySkillEffect(BotCharacter actor,int skillId)
+    // ——————————————— 假人技能表现 ———————————————
+    // 源端 grindHit 的链路是 showSkillVisual(skillId) + 对应攻击包，技能视觉全部挂在
+    // Skill/<职业>.img/skill/<id>/level/<等级>/ 下（effect/ball/hit/action 都有可能只在
+    // 等级节点里，根节点常常一个都没有）。旧实现只拼根节点 /effect：根上没有 effect 的
+    // 技能既没有动作、也没有释放和命中特效——这就是「有些技能缺动作缺特效」的根因。
+    // 现在复用主角那条已经按等级核对过的 NativeSkillVfx 解析，动作走原 IMG 的 action 节点。
+    const float ProjectileSpeed=(1000f/1.5f)/Art.PPU;   // 95445F..954511：1.5ms/px
+    int hitVariant;
+
+    public void PlaySkillCast(BotCharacter actor,int skillId,int level,Component target=null)
     {
-        if (!views.TryGetValue(actor.id,out var view)) return;
-        string path="Skill/"+(skillId/10000).ToString("D3")+".img/skill/"+skillId+"/effect";
-        var frames=WzAssets.Frames(WzAssets.Node(path));
-        if (frames.Count==0) return;
-        float lifetime=0;
-        foreach (var frame in frames) lifetime+=Mathf.Max(1,Mathf.Abs(frame.Int("delay",100)))/1000f;
-        NativeImgAnimation.Spawn(path,view.root.transform,view.root.transform.position,360,actor.facing>0,lifetime:lifetime);
+        if (!views.TryGetValue(actor.id,out var view) || view.root==null) return;
+        int rank=Mathf.Max(1,level);
+        string key=NativeSkillVfx.Key(skillId,rank);
+        // action 可能只在 level/N/action（如 1311001 的 burster1/burster2），由 WzCharacter.Pose 解析；
+        // 原端没有 action 的技能沿用武器普攻姿势，和主角 PlaySkill 的回退口径一致。
+        string action="skill_"+skillId+"@"+rank;
+        if (Art.GetClip("chars",view.animation.key,action)==null) action="atk";
+        CastBranches(view,key,action,actor.facing,target);
+    }
+
+    // prepare/effect 在施法者身上（z<0 是施法者后层），ball 飞向目标，hit 落在目标身上。
+    // 伤害由服务端即时结算，这里只负责把同一套原 IMG 表现补齐。
+    void CastBranches(View view,string key,string action,int facing,Component target)
+    {
+        var foot=view.root!=null ? view.root.transform : null;
+        if (foot==null) return;
+        float preparation=0f;
+        foreach (var clip in NativeSkillVfx.Parts(key,"prepare"))
+        {
+            SpawnPart(key,clip,foot.position,facing,foot);
+            preparation=Mathf.Max(preparation,clip.Duration);
+        }
+        // 有 prepare 的技能先播前导帧、再出招放特效；和主角 CastVisuals 的次序一致，
+        // 否则前导动画会和挥砍动作/特效叠在同一帧上。
+        if (preparation>0f) StartCoroutine(CastAfterPrepare(view,key,action,facing,target,preparation));
+        else CastNow(view,key,action,facing,target);
+    }
+
+    IEnumerator CastAfterPrepare(View view,string key,string action,int facing,Component target,float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (view==null || view.root==null) yield break;
+        CastNow(view,key,action,facing,target);
+    }
+
+    void CastNow(View view,string key,string action,int facing,Component target)
+    {
+        var foot=view.root!=null ? view.root.transform : null;
+        if (foot==null) return;
+        view.animation.PlayOnce(action);
+        foreach (string branch in new[]{"effect","effect0"})
+            foreach (var clip in NativeSkillVfx.Parts(key,branch))
+            {
+                bool behind=NativeSkillVfx.Number(key,clip.path,"z")<0;
+                SpawnPart(key,clip,foot.position,facing,foot,behind ? 299 : 360);
+            }
+        foreach (var clip in NativeSkillVfx.Parts(key,"affected"))
+            SpawnPart(key,clip,foot.position,facing,foot);
+        if (NativeSkillVfx.Has(key,"special")) SpecialBurst(key,foot.position,facing);
+        if (target==null) return;
+        if (NativeSkillVfx.Has(key,"ball")) StartCoroutine(FlyBall(foot,key,target,facing));
+        else PlaySkillHit(key,target,facing);
+    }
+
+    // 原端 special（2111002 爆炸柱）：start 之后按 interval 连续 count 段，x 方向按宽度铺开，
+    // y>0 时从该高度落到地面。主角 CastVisuals 走同一套参数，假人缺这段就只剩一团闪光。
+    void SpecialBurst(string key,Vector3 origin,int facing)
+    {
+        var parts=NativeSkillVfx.Parts(key,"special");
+        if (parts.Count==0) return;
+        int count=Mathf.Max(1,(int)NativeSkillVfx.Number(key,"special","count",parts.Count));
+        float start=NativeSkillVfx.Number(key,"special","start")/1000f;
+        float interval=NativeSkillVfx.Number(key,"special","interval",60)/1000f;
+        float width=NativeSkillVfx.Number(key,"special","x",200)/Art.PPU;
+        float height=NativeSkillVfx.Number(key,"special","y")/Art.PPU;
+        float fall=height>0f ? NativeSkillVfx.Number(key,"special","duration",500)/1000f : 0f;
+        StartCoroutine(BurstParts(key,parts,origin,facing,count,start,interval,width,height,fall));
+    }
+
+    IEnumerator BurstParts(string key,List<NativeVfxClip> parts,Vector3 origin,int facing,
+        int count,float start,float interval,float width,float height,float fall)
+    {
+        if (start>0f) yield return new WaitForSeconds(start);
+        for (int i=0;i<count;i++)
+        {
+            float x=origin.x+((i+.5f)/count*2f-1f)*width;
+            var point=new Vector3(x,origin.y+height,0);
+            var clip=parts[i%parts.Count];
+            var fx=SkillFx.PlayPart(key,clip.path,point,facing,1,360);
+            if (fx!=null && fall>0f) StartCoroutine(FallToGround(fx,point,new Vector3(x,PlayerCtrl.GroundAt(x,origin.y),0),fall));
+            yield return new WaitForSeconds(Mathf.Max(.001f,interval));
+        }
+    }
+
+    IEnumerator FallToGround(SkillFx fx,Vector3 from,Vector3 to,float duration)
+    {
+        for (float elapsed=0f;fx!=null && elapsed<duration;)
+        {
+            elapsed+=Time.deltaTime;
+            fx.transform.position=Vector3.Lerp(from,to,Mathf.Clamp01(elapsed/duration));
+            yield return null;
+        }
+        if (fx!=null) fx.Stop();
+    }
+
+    IEnumerator FlyBall(Transform foot,string key,Component target,int facing)
+    {
+        if (foot==null || target==null) yield break;
+        Vector3 from=foot.position+Vector3.up*(28/Art.PPU);
+        float duration=Vector3.Distance(from,HitAnchor(target,0))/ProjectileSpeed;
+        var ball=SkillFx.PlayPart(key,"ball",from,facing,1,360,true);
+        for (float elapsed=0f;elapsed<duration;)
+        {
+            if (foot==null || target==null) break;
+            elapsed+=Time.deltaTime;
+            if (ball!=null)
+                ball.transform.position=Vector3.Lerp(from,HitAnchor(target,0),Mathf.Clamp01(elapsed/Mathf.Max(.001f,duration)));
+            yield return null;
+        }
+        if (ball!=null) ball.Stop();
+        if (target!=null) PlaySkillHit(key,target,facing);
+    }
+
+    static SkillFx SpawnPart(string key,NativeVfxClip clip,Vector3 point,int facing,Transform follow,int order=360)
+    {
+        var fx=SkillFx.PlayPart(key,clip.path,point,facing,1,order);
+        if (fx!=null && follow!=null) fx.Follow(follow);
+        return fx;
+    }
+
+    public void PlaySkillHit(int skillId,int level,Component target,int facing)
+        => PlaySkillHit(NativeSkillVfx.Key(skillId,Mathf.Max(1,level)),target,facing);
+
+    void PlaySkillHit(string key,Component target,int facing)
+    {
+        if (target==null) return;
+        var hits=NativeSkillVfx.Parts(key,"hit");
+        if (hits.Count==0) return;
+        var clip=hits[hitVariant++%hits.Count];
+        var fx=SkillFx.PlayPart(key,clip.path,HitAnchor(target,NativeSkillVfx.Number(key,clip.path,"pos")),facing,1,360);
+        if (fx!=null) fx.Follow(target.transform);
+    }
+
+    // 和主角 SkillSystem.TargetAnchor 同一口径：取最高的身体 Sprite 中心；pos=2 是头顶状态节点。
+    static Vector3 HitAnchor(Component target,float pos)
+    {
+        var renderers=target.GetComponentsInChildren<SpriteRenderer>();
+        SpriteRenderer body=null;
+        foreach (var renderer in renderers)
+            if (renderer.enabled && renderer.sprite!=null && (body==null || renderer.bounds.size.y>body.bounds.size.y)) body=renderer;
+        if (body==null) return target.transform.position+Vector3.up*.6f;
+        return new Vector3(body.bounds.center.x,pos==2 ? body.bounds.max.y : body.bounds.center.y,0);
     }
 
     public void Express(int actorId, int expression)

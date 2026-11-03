@@ -51,6 +51,10 @@ static class GachaChecks
             var rest = S().stock.First(x => x.itemId == 5222000);
             Check(rest.quantity == 1, "数量 2 → 开一次剩 1");
             NativeCashService.SurprisePick = null;
+            // 这里原来放任真随机：抽到 5222000 自己（惊喜箱本身也在在售池里）时，
+            // 仓库里会「又出现一张 5222000」，下面那条「最后一张消耗」就随机变红。
+            // 固定到 sn=100（5370000）保持确定性，仍覆盖「随机开出非礼包商品」这条语义。
+            NativeCashService.SurprisePick = n => idx;
             var anyOpen = S(CashOperation.OpenSurprise, item: rest.id);
             Check(anyOpen.ok && anyOpen.rewardItemId != 9100000, "礼包商品不入奖励池");
             Check(!S().stock.Any(x => x.itemId == 5222000), "最后一张消耗");

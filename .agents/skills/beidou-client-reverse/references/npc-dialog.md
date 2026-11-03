@@ -701,3 +701,12 @@ compile-check Rebuild为0错误0警告；脚本包2779条parseFail0/mangled0。�
 复现：inspect_beidou_client.py对ijl15 --start 0x1000fc30 --end 0x1000fc40，--start 0x10015c2b --end 0x10015c62，--start 0x10016550 --end 0x100165b4；对EXE --start 0x9a3d71 --end 0x9a3d99。`DialogFlow.MaxBodyHeight=480`补齐此原端扩展，QuestNpcChecks覆盖400正文保持400、700限480、495/496滚动门槛。此前段落中的240及326是未打DLL补丁EXE的历史结论，当前clien应按480/566。不是用户授权的任意屏幕拉伸。
 
 本轮验证：compile-check Rebuild0错误0警告；QuestNpcChecks24472通过/4失败，本次480与495/496门槛断言通过，四项失败是2300传送/forceStartQuest及1021/QuestClear动画，不能称全量通过。日志与范围见docs/four-feedback-2026-11-01.md。
+
+
+## 2026-11-02 NPC 背景横向接缝
+
+本次为移植绘制修复，没有新增 EXE/DLL 地址或修改原端布局结论。素材与原端尺寸沿用本记录「窗口素材」：`UI/UIWindow.img/UtilDlgEx/t` 529×28、`c` 529×20、`s` 529×58。导出 c 核对其内部 x15..514 每行 alpha 都为255，横线不是素材自带的透明行；截图横线贯穿左右背景，符合分块绘制露底的现象。旧 `NativeUi.DialogPanel` 把中段拆成多个20px高 GUI quad，在 UiKit/窗口缩放后具有分块边界；尚未取得旧实现非整数缩放的自动截图，因此具体 GPU 舍入过程不写为已证实结论。
+
+修复：按原尺寸先在 Texture2D 中拼接 t/c/s，中段仍逐20行平铺，末块只取原图顶部所需行，然后整个529宽窗口只绘制一次。只缓存最近高度，高度改变销毁旧缓存；Point/Clamp、不生成 mipmap，保留原图像素、顶部28/底部58、正文与按钮布局。非529宽的既有调用保留 Strip 边帽处理。未改NPC原JS、窗口上限480或内容排版。
+
+复现材料及隔离Unity GPU检查源码：`docs/skill-regression/npc-dialog-background-2026-11-02.txt`。实际 Graphics.Blit→ReadPixels 对206/326/487/566高共838465像素逐一比对，全部一致，Unity退出0；487覆盖不足20行的末块。已目视检查566高GPU回读图，背景完整，无横向裂缝。compile-check Rebuild 0警告/0错误，git diff --check通过。整窗OnGUI缩放截图尝试未完成，不以GPU贴图回读冒称该截图或Android实机验收；最终手机显示仍待实机复核。

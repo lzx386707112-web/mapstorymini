@@ -23,6 +23,12 @@ namespace Server.Field
         // ReactorActionManager.getPlayer()（起源之塔第 18 层 reactor/9922003.js 传给 seedCoconut 的玩家）。
         // Server 层不引用 NpcApi，由客户端宿主按 owner 注入。
         public static Func<int,MapleDash.Js.JsValue> Player;
+        // ReactorActionManager.getMap()：事件实例地图的脚本宿主。Server 层不引用 Field/NativeEventMap，
+        // 由宿主注入（毒雾森林 3002001/3009000、海盗船四个动力门都要 rm.getMap().getId()）。
+        public static Func<int,MapleDash.Js.JsValue> MapHost;
+        // ReactorActionManager.spawnMonster(id[,qty][,x,y])：刷进实例地图。
+        // (mapId, mobId, x, y, qty) -> 是否刷成功；组队任务「砸箱子出怪」全走这里。
+        public static Func<int,int,float,float,int,bool> SpawnMonsterAt;
         // Reactor.hitReactor 的 SeedTowerCompat.allowReactorHit 钩子。Server 层不引用 UnityEngine，
         // 由事件宿主注入（SeedTowerCompat 在 Field 层）。
         public static Func<MapReactor,bool> AllowHit;
@@ -163,8 +169,15 @@ namespace Server.Field
             // Reactor.hitReactor:384 先问 SeedTowerCompat.allowReactorHit：
             // 第 2 层石碑禁止直接打，第 18 层由 seedReactorHit 做 500ms 节流与重生锁。
             if (reactor != null && AllowHit != null && !AllowHit(reactor)) return false;
-            var events = reactor?.template?.Events(reactor.state);
-            if (reactor == null || !reactor.alive || events == null || events.Count == 0 || events[0].type != 0)
+            if (reactor == null || !reactor.alive) return false;
+            // 没有 WZ 状态机数据的反应堆：源端 stats.getType(state) 返回 -1，走的是
+            // 「state++ 然后 act」的兜底分支（Reactor.java hitReactor 的 else 分支）。
+            // 组队任务的箱子/石堆全属于这一类（reactor img 里没有 0..n 状态节点），
+            // 不兜这一下，玩家在玩具塔砸箱子会毫无反应、只有假人砸得开。
+            if (reactor.template == null || reactor.template.states.Count == 0)
+                return Hit(mapId, objectId, null, ownerId) != null;
+            var events = reactor.template.Events(reactor.state);
+            if (events == null || events.Count == 0 || events[0].type != 0)
                 return false;
             reactor.previousState = reactor.state;
             reactor.state = events[0].next;
@@ -214,10 +227,15 @@ namespace Server.Field
             reactor.previousState = reactor.state; reactor.visualRevision++;
             reactor.state++;
             reactor.lastHitAt = now;
-            if (reactor.state >= reactor.maxState)
+            bool end = reactor.state >= reactor.maxState;
+            if (end)
                 Destroy(mapId, reactor, drops, ownerId, partyId, playerDrop);
             else
                 Changed?.Invoke(reactor);
+            // 破坏时跑反应堆自己的 act()：玩具塔的箱子要刷怪/掉券、毒雾森林的箱子要掉魔力石，
+            // 全靠这一段。源端 CustomReactor 不走脚本，但组队任务的箱子本来都是 WZ 反应堆，
+            // 走的就是 Reactor.hitReactor → ReactorScriptManager.act。
+            if (end) Act?.Invoke(reactor, ownerId);
             return reactor;
         }
 
@@ -245,8 +263,7 @@ namespace Server.Field
         }
 
         /// <summary>源端 Reactor.forceRespawn / setState(0)：状态归零、重新可打。</summary>
-        public static void Respawn(int mapId, MapReactor reactor)
-        {
+        public static void Respawn(int mapId, MapReactor reactor)        {
             if (reactor == null) return;
             reactor.alive = true;
             reactor.state = 0;
@@ -265,6 +282,26 @@ namespace Server.Field
             reactor.visualRevision++;
             reactor.lastHitAt = 0;
             Changed?.Invoke(reactor);
+        }
+
+        /// <summary>
+        /// 把整张图的反应堆恢复到初始状态（源端 MapleMap.resetReactors：实例图 resetFully 的一部分）。
+        /// reactorTime&lt;=0 的箱子破坏后不会自己长回来，组队任务重进同一关会一个箱子都没有，
+        /// 所以每次进阶段时按真实图 id 重置一次。
+        /// </summary>
+        public static void RespawnAll(int mapId)
+        {
+            foreach (var reactor in Get(mapId))
+            {
+                if (reactor == null) continue;
+                reactor.alive = true;
+                reactor.state = 0;
+                reactor.previousState = -1;
+                reactor.respawnAt = 0;
+                reactor.shouldCollect = true;
+                reactor.visualRevision++;
+                Changed?.Invoke(reactor);
+            }
         }
 
         /// <summary>宿主可选的统一驱动入口（与 MapItemService.Tick 同一范式）；不调用也不会漏重生。</summary>

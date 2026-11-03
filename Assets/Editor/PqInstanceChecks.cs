@@ -211,25 +211,35 @@ public static class PqInstanceChecks
                     {
                         Server.Bot.BotTypeManager.Parties = parties;
                         Server.Bot.Types.Pq.PqDirector.LocalPlayerId = () => cid;
-                        local.mapId = instanceMap.Scope;
+                        var fieldObject = new GameObject("PqMapIdentityCheck");
+                        try
+                        {
+                            var field = fieldObject.AddComponent<FieldDirector>();
+                            typeof(FieldDirector).GetProperty("Map").GetSetMethod(true).Invoke(field, new object[] { instanceMap.Template });
+                            typeof(FieldDirector).GetProperty("EventMap").GetSetMethod(true).Invoke(field, new object[] { instanceMap });
+                            Require(field.BotMapId == def.entry && field.StateId == instanceMap.Scope,
+                                def.eventName + " 场景导航/视图与实例战斗编号分离");
+                            local.mapId = field.BotMapId;
+                        }
+                        finally { UnityEngine.Object.DestroyImmediate(fieldObject); }
                         Require(instanceMap.Scope < 0 && instanceMap.Geometry.templateMapId == def.entry,
                             def.eventName + " 实例负编号保留原地图身份");
                         InvokeStatic(typeof(Server.Bot.Types.Pq.PqDirector), "AdoptStageEntry", local, 1000L);
                         var run = Server.Bot.Types.Pq.PqDirector.RunOf(parties.For(cid).id);
                         Require(run != null && run.Bots.Count == 5, def.eventName + " 实例入场接管五名队友");
                         run?.Tick(1500);
-                        Require(botIds.TrueForAll(id => Server.Bot.BotRegistry.Get(id).mapId == instanceMap.Scope),
-                            def.eventName + " 五名假人进入队长同一实例，而非公共模板图");
-                        Require(Server.Bot.BotRegistry.OnMap(instanceMap.Scope).Count == 5,
+                        Require(botIds.TrueForAll(id => Server.Bot.BotRegistry.Get(id).mapId == instanceMap.Id),
+                            def.eventName + " 五名假人进入当前阶段导航地图");
+                        Require(Server.Bot.BotRegistry.OnMap(instanceMap.Id).Count == 5,
                             def.eventName + " 地图渲染注册表能取到五名队友");
                         if (pq.stages.Count > 1)
                         {
                             var nextHost = (JsHostObject)EntryMap(eim, pq.stages[1].mapId);
                             var nextMap = (NativeEventMap)nextHost.Host;
-                            local.mapId = nextMap.Scope;
+                            local.mapId = nextMap.Id;
                             run?.Tick(2000);
-                            Require(botIds.TrueForAll(id => Server.Bot.BotRegistry.Get(id).mapId == nextMap.Scope),
-                                def.eventName + " 下一阶段仍跟随同一实例作用域");
+                            Require(botIds.TrueForAll(id => Server.Bot.BotRegistry.Get(id).mapId == nextMap.Id),
+                                def.eventName + " 下一阶段仍跟随当前导航地图");
                         }
                     }
                     finally

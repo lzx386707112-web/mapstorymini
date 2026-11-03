@@ -199,6 +199,12 @@ def build(verbose: bool = False) -> sqlite3.Connection:
     return con
 
 
+# 怪物结晶（etc 4260xxx 命名空间）禁止直接掉落：只可由原石经制作合成获得。
+# 导出基线时也剔除，与运行时 DropStore.ExcludeMonsterCrystals 保持同一规则。
+def is_monster_crystal(itemid: int) -> bool:
+    return 4260000 <= itemid < 4270000
+
+
 def export(con: sqlite3.Connection) -> None:
     rows = con.execute(
         "SELECT dropperid, itemid, minimum_quantity, maximum_quantity, questid, chance "
@@ -206,9 +212,13 @@ def export(con: sqlite3.Connection) -> None:
     gl = con.execute(
         "SELECT continent, itemid, minimum_quantity, maximum_quantity, questid, chance "
         "FROM drop_data_global ORDER BY continent, itemid").fetchall()
+    # 剔除怪物结晶的直接掉落行。
+    rows = [r for r in rows if not is_monster_crystal(r[1])]
+    gl = [r for r in gl if not is_monster_crystal(r[1])]
     lines = ["# 源端 drop_data 全量重放（tools/export_field_drops.py 生成，勿手改）",
              "# M|dropperid|itemid|min|max|questid|chance",
-             "# G|continent|itemid|min|max|questid|chance"]
+             "# G|continent|itemid|min|max|questid|chance",
+             "# 注：怪物结晶（4260xxx）直接掉落已剔除，只可由原石经制作合成获得。"]
     lines += ["M|%d|%d|%d|%d|%d|%d" % r for r in rows]
     lines += ["G|%d|%d|%d|%d|%d|%d" % r for r in gl]
     with open(TARGET, "w", encoding="utf-8") as fp:

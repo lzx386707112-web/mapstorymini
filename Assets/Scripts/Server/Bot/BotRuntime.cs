@@ -91,6 +91,8 @@ namespace Server.Bot
             reactorScripts.Message = (map,type,text)=>MapReactorService.ScriptMessage?.Invoke(map,type,text);
             reactorScripts.EventInstance = map=>MapReactorService.EventInstance?.Invoke(map);
             reactorScripts.Player = owner=>MapReactorService.Player?.Invoke(owner);
+            reactorScripts.Map = map=>MapReactorService.MapHost?.Invoke(map);
+            reactorScripts.SpawnMonster = (map,mob,x,y,qty)=>MapReactorService.SpawnMonsterAt?.Invoke(map,mob,x,y,qty) ?? false;
             reactorScripts.Error = error=>MapReactorService.ScriptError?.Invoke(error);
             MapReactorService.Act = (reactor,owner)=>reactorScripts.Act(reactor,owner);
             Types.Opq.OpqOrchestrator.LeaderMapOf = id =>

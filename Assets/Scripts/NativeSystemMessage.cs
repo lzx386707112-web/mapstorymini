@@ -25,8 +25,7 @@ using UnityEngine;
 // 迁移状态：
 //   0/5/6 已按上表进聊天窗并按类型上色；
 //   type 0 还要在客户端侧加 `[Notice] ` 前缀（见下）；
-//   type 1 的居中弹窗还没做（皮肤已确认是 `UI/Basic.img/Notice3` 三段，
-//   但居中坐标/文字区/按钮位置还没跟到），暂时退回 Toast，等确认版面后再补。
+//   type 1 走 CUtilDlg type1000 的 Notice3 原图、14px 居中文字与右下 OK。
 public static class NativeSystemMessage
 {
     // type 0 的 `[Notice] ` 前缀是**客户端自己加的**，服务端正文里没有。
@@ -45,8 +44,8 @@ public static class NativeSystemMessage
                 BottomBar.AddChat(text, BottomBar.ChatPink);
                 break;
             case 1:
-                // 原端是居中弹窗（点 OK 关闭）；弹窗版面未核实，先按提示条显示。
-                BottomBar.Toast(text);
+                // CUtilDlg::OnCreate 991899 (type1000), Draw 99311B.
+                NativeUtilPrompt.Notice(text);
                 break;
             case 0:
                 // case 0 走 0x4906B5("[Notice] " + msg, 10)

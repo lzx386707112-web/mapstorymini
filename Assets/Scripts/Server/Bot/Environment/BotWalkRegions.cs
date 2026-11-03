@@ -31,6 +31,31 @@ namespace Server.Bot.Environment
                 group.Add(f);
             }
             var groups = new List<List<FootholdSegment>>(grouped.Values);
+            // 丢掉完全落在相机 VR 之外的行走区域。竖井类地图会在 VR 上下各挂一段装饰性
+            // foothold（玩具塔 101 第 2 关 922010200：顶部 y=-3945 在 VRTop=-3100 之上，
+            // 底部坑底 y=542 在 VRBottom=330 之下）。这些区域玩家根本看不到，假人一旦
+            // 规划/掉进去就停在镜头外 —— 表现就是「假人走下去之后全不见了」。
+            // 只剔除「整组都在外面」的组：贴边/跨界的正常平台保持不动；top>=bottom
+            // 或 right<=left 视为旧式/无边界地图，不做裁剪。
+            bool verticalBounds = map.bottom > map.top;
+            bool horizontalBounds = map.right > map.left;
+            if (verticalBounds || horizontalBounds)
+            {
+                var bounded = new List<List<FootholdSegment>>(groups.Count);
+                foreach (var group in groups)
+                {
+                    float gy1 = float.MaxValue, gy2 = float.MinValue, gx1 = float.MaxValue, gx2 = float.MinValue;
+                    foreach (var f in group)
+                    {
+                        gy1 = Math.Min(gy1, Math.Min(f.y1, f.y2)); gy2 = Math.Max(gy2, Math.Max(f.y1, f.y2));
+                        gx1 = Math.Min(gx1, Math.Min(f.x1, f.x2)); gx2 = Math.Max(gx2, Math.Max(f.x1, f.x2));
+                    }
+                    if (verticalBounds && (gy1 > map.bottom || gy2 < map.top)) continue;
+                    if (horizontalBounds && (gx2 < map.left || gx1 > map.right)) continue;
+                    bounded.Add(group);
+                }
+                groups = bounded;
+            }
             // List.Sort不是稳定排序，使用原键的稳定插入排序。
             for (int i = 1; i < groups.Count; i++)
             {

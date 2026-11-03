@@ -45,6 +45,22 @@ public static class NativeNpcShopWindow
         Profile.Data.gold = state.character.record.meso;
         GameSession.ApplyInventoryToProfile(); Profile.Save();
     }
+    // Shop.sell is also called by the original batch-sale script without opening a UI.
+    public static void SellFromScript(int shopId, int type, int slot, int quantity)
+    {
+        GameSession.SaveToDb();
+        var open = GameSession.Net.NpcShop(new NpcShopRequest { operation = NpcShopOperation.OpenShop,
+            characterId = GameSession.CharacterId, id = shopId });
+        if (!open.ok) throw new MapleDash.Js.JsRuntimeException(open.error);
+        var result = GameSession.Net.NpcShop(new NpcShopRequest { operation = NpcShopOperation.Sell,
+            characterId = GameSession.CharacterId, inventoryType = type, position = slot, quantity = quantity });
+        GameSession.Net.NpcShop(new NpcShopRequest { operation = NpcShopOperation.Close, characterId = GameSession.CharacterId });
+        if (!result.ok) throw new MapleDash.Js.JsRuntimeException(result.error);
+        GameSession.Character.inventory = result.character.inventory;
+        GameSession.Character.record.meso = result.character.record.meso;
+        Profile.Data.gold = result.character.record.meso;
+        GameSession.ApplyInventoryToProfile(); Profile.Save();
+    }
     static List<int> BuyItems()
     {
         var result = new List<int>();
@@ -105,23 +121,8 @@ public static class NativeNpcShopWindow
         if (!GUI.enabled || Event.current.type != EventType.Repaint || !Pointer.Released || !rect.Contains(pointer)) return false;
         Pointer.ConsumeClick(); return true;
     }
-    // CCtrlTab style 2 (4DE15F): 6px ends, 12px joins, selected uses disabled label.
     static int Tabs(string labels, int count, int selected, float x, float width, Vector2 pointer, int fixedWidth = 0)
-    {
-        float inner = fixedWidth > 0 ? fixedWidth - 8 : Mathf.Floor((width - (count - 1) * 12 - 12) / count);
-        Image("UI/Basic.img/Tab2/left" + (selected == 0 ? 1 : 0), x, 95);
-        for (int i = 0; i < count; i++)
-        {
-            float start = x + 6 + i * (inner + 12), end = start + inner;
-            var fill = Art.Tex("wz://UI/Basic.img/Tab2/fill" + (selected == i ? 1 : 0));
-            if (fill != null) GUI.DrawTexture(new Rect(start, 95, inner, fill.height), fill);
-            Image("UI/Basic.img/Tab2/" + (i == count - 1 ? "right" + (selected == i ? 1 : 0) : "middle" + (selected == i ? 1 : selected == i + 1 ? 2 : 0)), end, 95);
-            var label = Art.Tex("wz://" + Root + labels + "/" + (selected == i ? "disabled/" : "enabled/") + i);
-            if (label != null) GUI.DrawTexture(new Rect(start + (inner - label.width) / 2, 95 + (19 - label.height) / 2 + 2, label.width, label.height), label);
-            if (Hit(new Rect(start - 6, 95, inner + 12, 19), pointer)) selected = i;
-        }
-        return selected;
-    }
+        => NativeUi.TabsStyle2(Root + labels, count, selected, x, 95, (int)width, pointer, fixedWidth);
     static void Icon(int id, float x, float foot)
     {
         var icon = NativeItemSource.IconNode(id); if (icon == null) return;
@@ -129,9 +130,9 @@ public static class NativeNpcShopWindow
         var origin = WzAssets.Origin(icon);
         GUI.DrawTexture(new Rect(x - origin.x, foot - origin.y, texture.width, texture.height), texture);
     }
-    static void Portrait()
+    public static void Portrait(int npcId, float x, float y)
     {
-        var root = WzAssets.FileRoot("Npc/" + state.npcId.ToString("D7") + ".img");
+        var root = WzAssets.FileRoot("Npc/" + npcId.ToString("D7") + ".img");
         var seen = new HashSet<int>();
         while (root.Get("info/link") != null)
         {
@@ -144,7 +145,7 @@ public static class NativeNpcShopWindow
         var selected = frames[0];
         foreach (var frame in frames) { selected = frame; time -= Math.Max(1, frame.Int("delay", 100)); if (time < 0) break; }
         var texture = WzAssets.Texture(selected); var origin = WzAssets.Origin(selected);
-        if (texture != null) GUI.DrawTexture(new Rect(56 - origin.x, 76 - origin.y, texture.width, texture.height), texture);
+        if (texture != null) GUI.DrawTexture(new Rect(x - origin.x, y - origin.y, texture.width, texture.height), texture);
     }
     public static void Draw()
     {
@@ -165,7 +166,8 @@ public static class NativeNpcShopWindow
             try
             {
                 var p = pointer - position;
-                Image(Root + "backgrnd", 0, 0); Portrait();
+                Image(Root + "backgrnd", 0, 0); Portrait(state.npcId, 56, 76);
+                NativeUi.CharacterPortrait(285, 76);
                 GUI.Label(new Rect(350, 64, 97, 16), Profile.Data.gold.ToString("N0"), Text(true));
                 if (NativeUi.Button(new Rect(142, 15, 70, 19), "UI/UIWindow.img/PersonalShop/BtExit", p)) { Close(); return; }
                 if (NativeUi.Button(new Rect(142, 35, 70, 19), Root + "BtBuy", p)) BuySelected();
@@ -200,7 +202,7 @@ public static class NativeNpcShopWindow
                         Icon(item.itemId, 238, y + 34);
                         GUI.Label(new Rect(279, y - 1, 152, 16), ItemCatalog.Name(item.itemId), Text());
                         state.sellPrices.TryGetValue(item.inventoryType * 1000 + item.position, out int sellPrice);
-                        GUI.Label(new Rect(279, y + 19, 122, 16), Math.Max(0, sellPrice).ToString("N0") + " mesos.", Text());
+                        GUI.Label(new Rect(279, y + 19, 122, 16), Math.Max(0, sellPrice).ToString("N0") + " 金币", Text());
                         if (TradeItemRules.Rechargeable(item.itemId) && NativeUi.Button(new Rect(404, y, 35, 19), Root + "BtRecharge", p))
                             Transact(new NpcShopRequest { operation = NpcShopOperation.Recharge, inventoryType = item.inventoryType, position = item.position });
                         var hit = new Rect(236, y, 165, 35);

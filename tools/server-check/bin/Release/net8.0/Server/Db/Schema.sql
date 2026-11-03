@@ -565,6 +565,95 @@ CREATE TABLE command_info (
     default_level INTEGER NOT NULL DEFAULT 0
 );
 
+-- V1.0.36：举报记录（ReportHandler.addReport；reporttime 存 Unix 毫秒）
+CREATE TABLE reports
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    reporttime  INTEGER NOT NULL DEFAULT 0,
+    reporterid  INTEGER NOT NULL,
+    victimid    INTEGER NOT NULL,
+    reason      INTEGER NOT NULL DEFAULT 0,
+    chatlog     TEXT    NOT NULL DEFAULT '',
+    description TEXT    NOT NULL DEFAULT ''
+);
+
+-- V2.1.69（源端）：Link 系统（LinkSystemService；同账号同世界、比当前角色更早创建
+-- 的角色可 Link，达 Lv.150 生效）。复合主键 (target_cid, source_cid) 在服务层判重
+-- （DbStore 只支持列级 PRIMARY KEY，源端 INSERT IGNORE 的语义由 AddLink 先查重实现）。
+CREATE TABLE character_link
+(
+    target_cid INTEGER NOT NULL,
+    source_cid INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- V2.1.56（源端）：师徒系统（MentorshipService）。status：0 进行 / 1 出师 / 2 解除。
+-- 源端 mentorship_wallet 以 characterid 为主键；event_log / reward_log 是幂等记账。
+CREATE TABLE mentorship_relation
+(
+    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+    master_cid             INTEGER NOT NULL,
+    master_accountid       INTEGER NOT NULL,
+    master_name            TEXT    NOT NULL,
+    apprentice_cid         INTEGER NOT NULL,
+    apprentice_accountid   INTEGER NOT NULL,
+    apprentice_name        TEXT    NOT NULL,
+    guildid                INTEGER NOT NULL DEFAULT 0,
+    status                 INTEGER NOT NULL DEFAULT 0,
+    start_master_power     INTEGER NOT NULL DEFAULT 0,
+    start_apprentice_power INTEGER NOT NULL DEFAULT 0,
+    last_master_power      INTEGER NOT NULL DEFAULT 0,
+    last_apprentice_power  INTEGER NOT NULL DEFAULT 0,
+    reward_step            INTEGER NOT NULL DEFAULT 0,
+    total_points           INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_wallet
+(
+    characterid     INTEGER NOT NULL,
+    apprentice_coin INTEGER NOT NULL DEFAULT 0,
+    virtue_coin     INTEGER NOT NULL DEFAULT 0,
+    total_points    INTEGER NOT NULL DEFAULT 0,
+    weekly_points   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_weekly_pool
+(
+    relationid       INTEGER NOT NULL,
+    week_key         TEXT    NOT NULL,
+    points           INTEGER NOT NULL DEFAULT 0,
+    claim_master     INTEGER NOT NULL DEFAULT 0,
+    claim_apprentice INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_duel
+(
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    relation_a      INTEGER NOT NULL,
+    relation_b      INTEGER NOT NULL DEFAULT 0,
+    stake           INTEGER NOT NULL DEFAULT 0,
+    points_a        INTEGER NOT NULL DEFAULT 0,
+    points_b        INTEGER NOT NULL DEFAULT 0,
+    status          INTEGER NOT NULL DEFAULT 0,
+    winner_relation INTEGER NOT NULL DEFAULT 0,
+    created_at      INTEGER NOT NULL DEFAULT 0,
+    ends_at         INTEGER NOT NULL DEFAULT 0,
+    finished_at     INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_event_log
+(
+    event_key  TEXT    NOT NULL,
+    relationid INTEGER NOT NULL,
+    points     INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_reward_log
+(
+    relationid INTEGER NOT NULL,
+    reward_key TEXT    NOT NULL
+);
+
 -- 假人档案：对齐联机的「账号表」。
 -- 联机里每个玩家账号唯一，所以别人看到他永远是同一张脸、同一个名字；假人现在照这个来：
 -- 几百条档案一次性预置好，之后只读不改，同一个 id 永远同一套外观 + 同一个名字。
@@ -623,4 +712,79 @@ CREATE TABLE storages (
     world INTEGER NOT NULL,
     slots INTEGER NOT NULL DEFAULT 0,
     meso INTEGER NOT NULL DEFAULT 0
+);
+
+-- 快递 ← 源端 V1.0.9__create_dueyi.sql。
+-- 源端列名是 PackageId/ReceiverId/SenderName/Mesos/TIMESTAMP/Message/Checked/Type；
+-- 这里改小写，TIMESTAMP 用 sendtime 存毫秒（源端是 SQL TIMESTAMP，比较时按 30 天过期）。
+-- dueyitems 关联 inventoryitems：包裹里的物品行 characterid = -1，不属于任何角色。
+CREATE TABLE dueypackages (
+    packageid  INTEGER PRIMARY KEY AUTOINCREMENT,
+    receiverid INTEGER NOT NULL DEFAULT 0,
+    sendername TEXT    NOT NULL DEFAULT '',
+    mesos      INTEGER NOT NULL DEFAULT 0,
+    sendtime   INTEGER NOT NULL DEFAULT 0,
+    message    TEXT    NULL,
+    checked    INTEGER NOT NULL DEFAULT 1,
+    type       INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE dueyitems (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    packageid       INTEGER NOT NULL DEFAULT 0,
+    inventoryitemid INTEGER NOT NULL DEFAULT 0
+);
+
+-- 雇佣商店（HiredMerchant）← 源端 playershopitem/inventorymerchant + characters.MerchantMesos/HasMerchant。
+-- 源端把店主物品存在 inventoryitems（type=ItemFactory.MERCHANT=6）并用 inventorymerchant 存 bundles；
+-- 本项目 inventoryitems.type 已经是「道具大分类」（itemId/1000000），所以店内存货行用
+-- characterid = -2（不与快递的 -1 混用）表示「无主」，merchantitems 记录槽位/份数/单价。
+CREATE TABLE hiredmerchants (
+    ownerid     INTEGER PRIMARY KEY,
+    mapid       INTEGER NOT NULL DEFAULT 0,
+    x           INTEGER NOT NULL DEFAULT 0,
+    y           INTEGER NOT NULL DEFAULT 0,
+    permitid    INTEGER NOT NULL DEFAULT 0,
+    description TEXT    NOT NULL DEFAULT '',
+    open        INTEGER NOT NULL DEFAULT 0,
+    published   INTEGER NOT NULL DEFAULT 0,
+    starttime   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE merchantitems (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    ownerid         INTEGER NOT NULL DEFAULT 0,
+    slot            INTEGER NOT NULL DEFAULT 0,
+    inventoryitemid INTEGER NOT NULL DEFAULT 0,
+    bundles         INTEGER NOT NULL DEFAULT 0,
+    price           INTEGER NOT NULL DEFAULT 0
+);
+
+-- Fredrick 寄存提醒 ← V1.0.13__create_fredstorage.sql（timestamp 存毫秒）
+CREATE TABLE fredstorage (
+    cid       INTEGER PRIMARY KEY,
+    daynotes  INTEGER NOT NULL DEFAULT 0,
+    timestamp INTEGER NOT NULL DEFAULT 0
+);
+
+-- HiredMerchant.sold：成交记录（店主窗口的「已售出」列表）
+CREATE TABLE merchantsold (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    ownerid  INTEGER NOT NULL DEFAULT 0,
+    buyer    TEXT    NOT NULL DEFAULT '',
+    itemid   INTEGER NOT NULL DEFAULT 0,
+    quantity INTEGER NOT NULL DEFAULT 0,
+    meso     INTEGER NOT NULL DEFAULT 0,
+    time     INTEGER NOT NULL DEFAULT 0
+);
+
+-- 便签 ← V1.0.27__create_notes.sql（MEMO_RESULT：商城送礼提醒 / 回复送礼便签 / Fredrick 寄存提醒）
+CREATE TABLE notes (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    "to"      TEXT    NOT NULL DEFAULT '',
+    "from"    TEXT    NOT NULL DEFAULT '',
+    message   TEXT    NOT NULL DEFAULT '',
+    timestamp INTEGER NOT NULL DEFAULT 0,
+    fame      INTEGER NOT NULL DEFAULT 0,
+    deleted   INTEGER NOT NULL DEFAULT 0
 );

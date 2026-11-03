@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Wz/WzResourceInstaller.cs" Link="WzResourceInstaller.cs" />
+    <Compile Include="../../Assets/Scripts/Stage/MiniJson.cs" Link="MiniJson.cs" />
+  </ItemGroup>
+</Project>

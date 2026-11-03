@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 public enum ExtraStorageOperation { None, Read, Store, Withdraw }
-public sealed class InventoryChangeRequest { public ExtraStorageOperation extraStorage; public int extraStorageType; public int characterId, itemId, quantity, equipSlot, sourcePosition; public int petSlot, evolvePetId; public int petTameness; public bool petLeaderOnly; public bool readPetExclusions, writePetExclusions; public int petId; public int[] petExclusions; public bool getPet, createPet; public long itemExpiration=-1; public bool equip, projectile, removeAll, togglePet, worldQuestDraw, petTick; public int grantItemId, grantQuantity, grantMinutes; public bool consumeGrantSource, breakthrough; public int bankExp, maxBankLevel; public long grantDurationMs=-1; public int[] checkItems, checkQuantities; public int removeCheckItem, removeCheckQuantity; public bool dropToField; public int dropQuantity, dropMapId, dropX, dropY; public long dropMeso; public bool sortItems, mergeItems; public int sortInventoryType; }
+public sealed class InventoryChangeRequest { public ExtraStorageOperation extraStorage; public int extraStorageType; public int characterId, itemId, quantity, equipSlot, sourcePosition; public int petSlot, evolvePetId; public int petTameness; public bool petLeaderOnly; public bool readPetExclusions, writePetExclusions; public int petId; public int[] petExclusions; public bool getPet, createPet; public long itemExpiration=-1; public bool equip, projectile, removeAll, togglePet, worldQuestDraw, petTick; public int grantItemId, grantQuantity, grantMinutes; public bool consumeGrantSource, breakthrough; public int bankExp, maxBankLevel; public long grantDurationMs=-1; public int[] checkItems, checkQuantities; public int removeCheckItem, removeCheckQuantity; public bool dropToField; public int dropQuantity, dropMapId, dropX, dropY; public long dropMeso; public bool sortItems, mergeItems; public int sortInventoryType; public int moveFrom, moveTo, moveInventoryType; }
 public sealed class InventoryChangeResponse { public int extraStorageQuantity; public bool ok = true; public string error = "", message; public InventoryEntry pet; public List<int> petExclusions; public long damageCap; public int bankedExp, createdPetId; public bool inventoryChanged; public List<InventoryEntry> inventory; public long meso; }
 public static class NativeInventoryService {
     static readonly Dictionary<(DbStore,int),long> worldQuestUse=new Dictionary<(DbStore,int),long>();
@@ -10,11 +10,13 @@ public static class NativeInventoryService {
     public static InventoryChangeResponse Handle(DbStore db, InventoryChangeRequest r) {
         var c = CharactersDao.FindById(db, r.characterId);
         bool petOperation=r.readPetExclusions || r.writePetExclusions || r.getPet || r.petTick || r.evolvePetId>0 || r.petTameness!=0;
-        if (c == null || r.itemId <= 0 && r.dropMeso<=0 && r.checkItems==null && !petOperation && !r.sortItems && !r.mergeItems) return new InventoryChangeResponse { ok = false, error = "角色或道具不存在" };
+        if (c == null || r.itemId <= 0 && r.dropMeso<=0 && r.checkItems==null && !petOperation && !r.sortItems && !r.mergeItems && r.moveFrom<=0) return new InventoryChangeResponse { ok = false, error = "角色或道具不存在" };
         InventoryDao.ExpireItems(db,r.characterId,DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         // ITEM_SORT2 / ITEM_SORT：背包整理与合并，走 NativeInventorySort 的源端算法。
         if(r.sortItems) return NativeInventorySort.Sort(db,c,r.sortInventoryType);
         if(r.mergeItems) return NativeInventorySort.Merge(db,c,r.sortInventoryType);
+        // ITEM_MOVE(action>0)：背包格到背包格的移动/合并/互换，同页限定。
+        if(r.moveFrom>0 && r.moveTo>0) return NativeInventorySort.MoveItem(db,c,r.moveInventoryType,r.moveFrom,r.moveTo);
         if(r.extraStorage!=ExtraStorageOperation.None)return NativeExtraStorage.Handle(db,c,r);
         if(r.readPetExclusions || r.writePetExclusions) return NativePetItems.Exclusions(db,r);
         if(r.checkItems!=null) return new InventoryChangeResponse {ok=CanReceive(db,c,r)};
@@ -259,6 +261,14 @@ public static class NativeInventoryService {
                 (r.sourcePosition == 0 || entry.position == r.sourcePosition)) { source = entry; break; }
         if (source == null) return new InventoryChangeResponse { ok = false, error = "背包里没有这件物品" };
 
+        // 源端客户端拦现金道具（EXE 0x5d4a2b 读 info/cash → 0x372「这种道具不能扔掉」）；服务端再兜一层。
+        var itemInfo = Server.Bot.BotItemCatalog.Shared.Info(r.itemId);
+        if (itemInfo != null && Server.Bot.BotItemCatalog.Int(itemInfo, "cash") == 1)
+            return new InventoryChangeResponse { ok = false, error = "这种道具不能扔掉。" };
+        // 任务道具（info/quest）：客户端会确认「丢弃后无法再次获得」，落地走源端 disappearingItemDrop
+        // （丢出即消失、不可拾取）——这里直接不生成可拾取的地面掉落。
+        bool questItem = itemInfo != null && Server.Bot.BotItemCatalog.Int(itemInfo, "quest") == 1;
+
         int have = source.quantity;
         int take = r.dropQuantity;
         // 源端丢弃前先判 (!isRechargeable && source.quantity < quantity) || quantity < 0
@@ -278,11 +288,15 @@ public static class NativeInventoryService {
         }
         db.Save();
 
-        var dropped = source.Copy();
-        dropped.quantity = take;
-        Server.Field.MapItemService.SpawnItemDrop(r.dropMapId, characterId, characterId,
-            Server.Field.MapItemService.PartyOf != null ? Server.Field.MapItemService.PartyOf(characterId) : -1,
-            dropped, r.dropX, r.dropY, true, true);
+        // 任务道具丢出即消失（源端 disappearingItemDrop），不生成可拾取的地面掉落。
+        if (!questItem)
+        {
+            var dropped = source.Copy();
+            dropped.quantity = take;
+            Server.Field.MapItemService.SpawnItemDrop(r.dropMapId, characterId, characterId,
+                Server.Field.MapItemService.PartyOf != null ? Server.Field.MapItemService.PartyOf(characterId) : -1,
+                dropped, r.dropX, r.dropY, true, true);
+        }
 
         return new InventoryChangeResponse { inventory = CharService.Load(db, characterId).inventory };
     }

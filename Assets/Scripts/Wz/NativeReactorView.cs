@@ -38,8 +38,12 @@ public sealed class NativeReactorView : MonoBehaviour
             if (pool.mapId!=map) continue;
             foreach (var r in MapReactorService.Get(map))
             {
+                if (!r.alive) continue;
+                // 有 WZ 状态机但不是 type-0（物品触发/其它类型）的不参与近战；
+                // 完全没有状态机数据的（组队任务的箱子/石堆）照样能打，跟
+                // MapReactorService.HitPlayer 的兜底同口径。
                 var events=r.template?.Events(r.state);
-                if (!r.alive || events==null || events.Count==0 || events[0].type!=0) continue;
+                if (events!=null && events.Count>0 && events[0].type!=0) continue;
                 var clip=pool.Load(r.id,r.state,false);
                 if (clip==null) continue;
                 var sprite=clip.At(Math.Max(0,MapReactorService.Now()-r.lastHitAt));

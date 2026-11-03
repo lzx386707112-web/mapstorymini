@@ -21,10 +21,14 @@ public sealed class FieldDirector : MonoBehaviour
     public FieldMap Map { get; private set; }
     public NativeEventMap EventMap {get;private set;}
     public int StateId=>EventMap?.Scope ?? Map?.id ?? -1;
+    // Bot navigation/registry use template ids; combat and drops use StateId.
+    public int BotMapId => Map?.id ?? -1;
     public int AliveCount { get; private set; }
 
     FieldView view;
     static System.Action<System.Exception> hookedStartupError;
+    // 野外挂机（伴侣）的拾取钩子只接一次：BotPartyGrindService 有可能比这一段晚就绪。
+    bool grindHooked;
     // 地图分片后台解析中只记一次日志，别每帧刷。
     bool pendingMapLogged;
     MapSpawner spawner;                       // 后端刷怪调度（Server.Field）
@@ -671,7 +675,11 @@ public sealed class FieldDirector : MonoBehaviour
             // 传送真实角色、静默点 NPC、把道具落进背包、粉色系统提示。Server/ 不引用 UnityEngine，
             // 所以这里一次性把钩子接齐（重复赋值是幂等的）。
             Server.Bot.Types.Pq.PqDirector.LocalPlayerId = () => GameSession.CharacterId;
-            Server.Bot.Types.Pq.PqDirector.LocalMapId = () => StateId;
+            Server.Bot.Types.Pq.PqDirector.LocalMapId = () => BotMapId;
+            // 真实图 id → 客户端当前用的图 id：副本图是每实例一份的 Scope 负 id，
+            // 刷怪快照/地面掉落/反应堆都挂在 Scope 下，假人算出来的却是真实 id。
+            Server.Bot.Types.Pq.PqDirector.LiveMapId = map =>
+                NativeEventScripts.ResolveMap(map)?.Scope ?? map;
             Server.Bot.Types.Pq.PqDirector.WarpLocalPlayer = target => { if (target > 0) { pendingWarpMap = -1; WarpTo(target); } };
             Server.Bot.Types.Pq.PqDirector.GrantItem = (itemId, count) => Profile.AddItem(itemId, count);
             Server.Bot.Types.Pq.PqDirector.TalkNpc = (npcId, openOnly, prefer, done) =>
@@ -687,6 +695,8 @@ public sealed class FieldDirector : MonoBehaviour
             Server.Bot.Types.Pq.PqDirector.InstanceProperty = NativeEventScripts.InstanceProperty;
             // 假人自己捡地面掉落（队员攒优惠券）。
             Server.Bot.Types.Pq.PqDirector.PickupItem = (bot, itemId, max) => botPickup.PickNearby(bot, itemId, 120f, max);
+            // 券掉在拾取半径外时走过去（两套掉落都看得见的只有这一层）。
+            Server.Bot.Types.Pq.PqDirector.WalkToItem = (bot, itemId, searchRange) => botPickup.WalkTo(bot, itemId, searchRange: searchRange);
             Server.Bot.Types.Pq.PqDirector.BotItem = (bot, itemId, count) => BotNpcApi.Gain(bot, itemId, count);
             Server.Bot.Types.Pq.PqDirector.Notice = text => NativeSystemMessage.Drop(5, text);
         }
@@ -694,7 +704,7 @@ public sealed class FieldDirector : MonoBehaviour
         // 绝不能让 SynchronizePlayer → GetMap → BotWarmup.Root() 在主线程 Join 解析线程：
         // 一个 0.3~1.4MB 分片现场解析就是「进图卡几秒」的来源。分片已 Ready 时 TryGetMap
         // 会先把它登记进 MapService，后面的 GetMap 直接命中，不会再走阻塞分支。
-        var mapState = bots.TryGetMap(StateId, out _, false);
+        var mapState = bots.TryGetMap(BotMapId, out _, false);
         if (mapState == Server.Bot.Environment.BotMapState.Pending)
         {
             if (!pendingMapLogged)
@@ -705,25 +715,39 @@ public sealed class FieldDirector : MonoBehaviour
             // 只跳过「需要几何」的铺摊与状态机推进；视图同步照常做，
             // 否则玩家会看到假人和气泡整个冻住几秒（分片解析窗口内）。
             if (botField == null) botField = GetComponent<BotField>() ?? gameObject.AddComponent<BotField>();
-            botField.Synchronize(StateId, GameSession.World, GameSession.Channel);
+            botField.Synchronize(BotMapId, GameSession.World, GameSession.Channel);
             return;
         }
         pendingMapLogged = false;
-        bots.SynchronizePlayer(GameSession.Character, StateId, player.transform.position.x * Art.PPU, -player.transform.position.y * Art.PPU, GameSession.Channel);
+        bots.SynchronizePlayer(GameSession.Character, BotMapId, player.transform.position.x * Art.PPU, -player.transform.position.y * Art.PPU, GameSession.Channel);
         // 换图是组队任务假人唯一的权威信号（铺摊 / 收摊都看它），内部自己判重，每帧调无开销。
-        Server.Bot.Types.Pq.PqDirector.OnLocalMap(StateId);
+        Server.Bot.Types.Pq.PqDirector.OnLocalMap(BotMapId);
         // 组件只取一次：以前每帧 4 次 GetComponent（含 AddComponent 兜底），纯浪费。
         if (botCombat == null) botCombat = GetComponent<BotCombatField>() ?? gameObject.AddComponent<BotCombatField>();
         botCombat.Bind(this, bots);
         if (groundLoot == null) groundLoot = GetComponent<GroundItemBridge>() ?? gameObject.AddComponent<GroundItemBridge>();
         groundLoot.Bind(this, bots);
         botPickup.Bind(bots);
+        // 野外挂机：伴侣假人要会捡地面掉落、没怪要会巡逻。Server 层看不到 GroundItem/MapItemService，
+        // 所以按组队任务同一套注入方式把两个能力递过去（只接一次）。
+        if (!grindHooked && Server.Bot.BotTypeManager.PartyGrind != null)
+        {
+            grindHooked = true;
+            var grind = Server.Bot.BotTypeManager.PartyGrind;
+            grind.FindLoot = (bot, range) =>
+            {
+                var spot = botPickup.Nearest(bot, range);
+                return new Server.Bot.GrindLoot
+                { found = spot.found, x = spot.x, y = spot.y, distance = spot.distance };
+            };
+            grind.TakeLoot = (bot, range, max) => botPickup.PickAny(bot, range, max);
+        }
         // Drive 内部：BotTasks 的分帧泵 + 受预算约束的状态机分发，不会一次跑完全部假人。
         bots.Drive((long)(Time.realtimeSinceStartup * 1000));
         view.SyncDynamicNpcs();
         if (botField == null) botField = GetComponent<BotField>() ?? gameObject.AddComponent<BotField>();
         // 假人视图的增删本身也降到 10Hz（BotField 内部节流），纸娃娃合成改在 BotField.Update 里按预算出队。
-        botField.Synchronize(StateId, GameSession.World, GameSession.Channel);
+        botField.Synchronize(BotMapId, GameSession.World, GameSession.Channel);
     }
 
     // debug_frame_log=1（一次有效）时，每 2 秒把掉帧情况打到 logcat：
@@ -790,7 +814,7 @@ public sealed class FieldDirector : MonoBehaviour
             return;
         }
 
-        FieldPortal hit = FindPortal(player);
+        FieldPortal hit = FindPortal(player, out var gated);
         nearPortal = hit;
 
         // Releasing up rearms a manual portal at the arrival point; touch
@@ -800,6 +824,10 @@ public sealed class FieldDirector : MonoBehaviour
         if (hit == null)
         {
             portalArmed = true;      // 走开门 → 重新允许触发
+            // 关卡闸门没开：源端这扇门本来就不显示，按 ↑ 只由 portal 脚本回一句
+            // 「某种封印阻挡着这扇门」。这里照旧把脚本跑一遍（脚本自己 return false，不会 warp），
+            // 但不算「可进入的门」——不弹提示、不进 nearPortal。
+            if (gated != null && portalLock <= 0f && PressUpEdge()) UsePortal(gated);
             return;
         }
         if (portalLock > 0f || !portalArmed) return;
@@ -810,8 +838,11 @@ public sealed class FieldDirector : MonoBehaviour
         UsePortal(hit);
     }
 
-    FieldPortal FindPortal(PlayerCtrl player)
+    // out gated：脚下确实站着一扇门，但它的关卡闸门还没开（portal 脚本里的 Nstageclear 没置位）。
+    // 这种门不回给 nearPortal，所以既不会弹「按 ↑ 进入传送门」，也不会被当成可进入的门触发。
+    FieldPortal FindPortal(PlayerCtrl player, out FieldPortal gated)
     {
+        gated = null;
         Vector2 feet = player.FeetPos;
         FieldPortal best = null;
         float bestDx = float.MaxValue;
@@ -826,6 +857,8 @@ public sealed class FieldDirector : MonoBehaviour
             float dx = Mathf.Abs(feet.x - px);
             if (dx > 30f / Art.PPU) continue;
             if (Mathf.Abs(feet.y - py) > 80f / Art.PPU) continue;
+            // 闸门判定放在距离之后：只要脚下这一扇（离得最近的别的门照常可用）。
+            if (!PortalGate.Open(p.script)) { gated ??= p; continue; }
             if (dx < bestDx) { bestDx = dx; best = p; }
         }
         return best;
@@ -837,6 +870,13 @@ public sealed class FieldDirector : MonoBehaviour
         if (InputHub.Held(GameAction.Up)) return true;
         if (Input.GetAxisRaw("Vertical") > 0.6f) return true;
         return TouchInput.MoveV > 0.6f;    // 摇杆向上
+    }
+
+    // 上升沿：只给「按一次回一句话」的场景用（封印门），避免按住 ↑ 每帧刷一条提示。
+    static bool PressUpEdge()
+    {
+        if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W)) return true;
+        return InputHub.Pressed(GameAction.Up);
     }
 
     // 换图走原版的三段渐变：渐隐到全黑 → 在全黑里换图 → 渐显（ScreenFade）。
@@ -852,6 +892,14 @@ public sealed class FieldDirector : MonoBehaviour
 
     void StartWarp(FieldPortal portal)
     {
+        // GenericPortal resolves tm/tn; an in-field destination moves the avatar only.
+        // In particular ph (10) must not re-enter the map/fade out the whole field.
+        if (portal != null && Map != null && portal.tm == Map.id)
+        {
+            WarpInsideMap(portal);
+            AudioManager.Play("Game/Portal", 0.7f, false);
+            return;
+        }
         warpTarget = portal;
         warpState = WarpState.Out;
         warpClock = 0f;
@@ -950,7 +998,12 @@ public sealed class FieldDirector : MonoBehaviour
     // 同图内部传送（如选择之岔路的上下通道）
     void WarpInsideMap(FieldPortal portal)
     {
-        var target = Map.Portal(portal.targetName);
+        var target = Map.Portal(portal.targetName) ?? (Map.portals.Count > 0 ? Map.portals[0] : null);
+        PlaceInsideMap(target);
+    }
+
+    void PlaceInsideMap(FieldPortal target)
+    {
         var player = GameLoop.I != null ? GameLoop.I.player : null;
         if (target == null || player == null) return;
 
@@ -1150,7 +1203,14 @@ public sealed class FieldDirector : MonoBehaviour
     public void WarpTo(int mapId, string portalName = null, int portalIndex = -1)
     {
         if (Warping || mapId < 0) return;
-        if (Map != null && Map.id == mapId && string.IsNullOrEmpty(portalName) && portalIndex < 0) return;
+        if (Map != null && Map.id == mapId)
+        {
+            if (string.IsNullOrEmpty(portalName) && portalIndex < 0) return;
+            var target = !string.IsNullOrEmpty(portalName) ? Map.Portal(portalName) :
+                portalIndex >= 0 && portalIndex < Map.portals.Count ? Map.portals[portalIndex] : null;
+            PlaceInsideMap(target ?? (Map.portals.Count > 0 ? Map.portals[0] : null));
+            return;
+        }
         pendingWarpMap = mapId;
         pendingWarpPortal = portalName;
         pendingWarpPortalIndex = portalIndex;

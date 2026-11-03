@@ -17,6 +17,7 @@ public sealed class GroundItemBridge : MonoBehaviour
     System.Func<MapItem, bool> pickupHandler;
     System.Func<MapItem,int,bool> petPickupHandler;
     bool subscribed;
+    System.Func<Vector2?> companionPickupTarget;
 
     public void Bind(FieldDirector field, BotRuntime bots)
     {
@@ -100,7 +101,7 @@ public sealed class GroundItemBridge : MonoBehaviour
             {
                 System.Func<Vector2?> target = null;
                 if (item.pickupCharacterId == GameSession.CharacterId && item.pickupPetIndex < 0)
-                    target = GroundItem.LocalPickupTarget;
+                    target = companionPickupTarget ?? GroundItem.LocalPickupTarget;
                 else if(item.pickupCharacterId==GameSession.CharacterId && item.pickupPetIndex>=0)
                 {
                     int pet=item.pickupPetIndex;
@@ -113,6 +114,15 @@ public sealed class GroundItemBridge : MonoBehaviour
                 }
                 view.Remove(reason, target, item.pickupCharacterId == GameSession.CharacterId);
             }
+    }
+
+    public bool TryPickupForCompanion(MapItem item, System.Func<Vector2?> target)
+    {
+        // Removed 同步触发：只重定向本次显示目标，归属/入包/提示仍按玩家拾取。
+        var previous = companionPickupTarget;
+        companionPickupTarget = target;
+        try { return TryPickup(item, -1); }
+        finally { companionPickupTarget = previous; }
     }
 
     bool TryPickup(MapItem item)
@@ -135,7 +145,7 @@ public sealed class GroundItemBridge : MonoBehaviour
         long before=player.character.record.meso;
         int itemId=item.ItemId, quantity=item.Quantity;
         bool isMeso=item.IsMeso;
-        bool picked=MapItemPickup.PickupItem(item, actor, (long)(Time.realtimeSinceStartup * 1000),petSlot);
+        bool picked=MapItemPickup.PickupItem(item, actor, (long)(Time.realtimeSinceStartup * 1000),petSlot,sharePartyMeso: companionPickupTarget == null);
         if (picked)
         {
             long mesoGain = player.character.record.meso-before;

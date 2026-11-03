@@ -1,0 +1,30 @@
+NPC dialog background GPU pixel regression (2026-11-02)
+
+Read-only source: Assets/Scripts/NativeUi.cs. Copy this source and the two C# files below into an empty Unity project (Probe.cs under Assets/Editor, Stubs.cs under Assets). Use the Unity version from ProjectSettings/ProjectVersion.txt.
+
+Export via tools/imgpng.py --scale 1 using the reverse Python venv:
+UI/UIWindow.img UtilDlgEx/t /tmp/dialog-top.png
+UI/UIWindow.img UtilDlgEx/c /tmp/dialog-center-native.png
+UI/UIWindow.img UtilDlgEx/s /tmp/dialog-bottom.png
+
+Run Unity -batchmode -projectPath <isolated project> -executeMethod Probe.Run -logFile <log>. No game save or original script is loaded. The expected GUI-outside-OnGUI ArgumentException is caught AFTER the real production cache is assembled. Graphics.Blit + ReadPixels verifies the actual uploaded texture, including a partial center tile at height 487. This is a texture/pixel check, not an OnGUI screen-scale or Android test.
+
+=== Stubs.cs ===
+using UnityEngine;
+public static class UiKit { public static float W=>2400; public static float H=>1400; }
+public static class NativeUtilPrompt { public static bool Visible=>false; public static bool Drawing=>false; }
+public static class Pointer { public static Vector2 Pos,PressPosition; public static bool Down,Released,Clicked,Pressed; public static void ConsumeClick(){} }
+public static class AudioManager { public static void Play(string s,float f,bool b){} }
+public static class Art { public static Texture2D Tex(string path) { string key=path.Substring(path.LastIndexOf('/')+1); if(!cache.ContainsKey(key)) { var t=new Texture2D(2,2); t.LoadImage(System.IO.File.ReadAllBytes("/tmp/dialog-"+(key=="t"?"top":key=="s"?"bottom":"center-native")+".png")); t.filterMode=FilterMode.Point;cache[key]=t; } return cache[key]; } static System.Collections.Generic.Dictionary<string,Texture2D> cache=new System.Collections.Generic.Dictionary<string,Texture2D>(); }
+
+=== Editor/Probe.cs ===
+using UnityEditor;using UnityEngine;using System;using System.Reflection;
+public static class Probe { public static void Run() { try { foreach(int h in new[]{206,326,487,566}) { try { NativeUi.DialogPanel(new Rect(0,0,529,h)); } catch(ArgumentException) {} var t=(Texture2D)typeof(NativeUi).GetField("dialogPanel",BindingFlags.Static|BindingFlags.NonPublic).GetValue(null); var rt=RenderTexture.GetTemporary(529,h,0,RenderTextureFormat.ARGB32,RenderTextureReadWrite.Linear);Graphics.Blit(t,rt);RenderTexture.active=rt;var copy=new Texture2D(529,h,TextureFormat.RGBA32,false);copy.ReadPixels(new Rect(0,0,529,h),0,0);copy.Apply();var actual=copy.GetPixels32();var top=Art.Tex("t").GetPixels32();var c=Art.Tex("c").GetPixels32();var s=Art.Tex("s").GetPixels32();int bad=0;for(int y=0;y<h;y++)for(int x=0;x<529;x++){int fromTop=h-1-y;Color32 expected=fromTop<28?top[(27-fromTop)*529+x]:y<58?s[y*529+x]:c[(19-(fromTop-28)%20)*529+x]; if(!actual[y*529+x].Equals(expected))bad++;} if(bad>0)throw new Exception("height "+h+" mismatched pixels "+bad);System.IO.File.WriteAllBytes("/tmp/dialog-fixed-"+h+".png",copy.EncodeToPNG());RenderTexture.active=null;RenderTexture.ReleaseTemporary(rt);UnityEngine.Object.DestroyImmediate(copy);Debug.Log("DIALOG_PIXEL_PASS height="+h+" pixels="+actual.Length); }EditorApplication.Exit(0); }catch(Exception e){Debug.LogException(e);EditorApplication.Exit(1);} } }
+
+=== Actual result ===
+Unity exit 0
+DIALOG_PIXEL_PASS height=206 pixels=108974
+DIALOG_PIXEL_PASS height=326 pixels=172454
+DIALOG_PIXEL_PASS height=487 pixels=257623
+DIALOG_PIXEL_PASS height=566 pixels=299414
+compile-check Rebuild: 0 warnings / 0 errors

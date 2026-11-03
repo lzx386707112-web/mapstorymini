@@ -162,3 +162,102 @@ ItemMoveHandler.java:44
 ### 验证与边界
 - `Assets/Editor/NativeEditKeyboardChecks.cs`（`UNITY_EDITOR` 注入快照，走真机同一条 `Sync/Apply` 路径）：覆盖最终文本回灌、null 文本不覆盖、Visible/LostFocus 不收、Done 回灌且幂等、Canceled 不提交、`ShouldReopen` 四种组合、owner 隔离、三处关闭路径收键盘、数量弹窗开合。
 - **边界**：以上为纯逻辑 + dotnet 自检，**未连 Android 实机**；IMGUI `GUI.TextField` 自身在移动端的输入行为仍以显式键盘为权威，不宣称实机手感验收。丢弃/出售业务门控由既有 `DropChecks` / `npc-shop-check` 覆盖，本次未改服务端与回调链。
+
+## 丢弃物品的门控（按物品类型，2026-11-03 反汇编）
+
+同一 BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2` / ImageBase `0x400000`。
+**地址口径坑**：`pe.get_memory_mapped_image()` 返回的是 **RVA 索引** 的字节，真实 VA = 索引 + ImageBase；直接把 RVA 当 VA 会整体高 0x400000（本次曾因此失步）。
+
+丢弃入口函数（含 0x4f3430..0x4f38b1），流程：先建婚戒对话框 → 若干类型判定 → 数量弹窗(885) → 发 ITEM_MOVE。判定的字符串引用点（VA）：
+
+| 字符串 id | 文案 | 引用点 | 触发条件（已核实） |
+| --- | --- | --- | --- |
+| 882 (0x372) | 这种道具不能扔掉。 | `0x4f3887` | 现金道具 `info/cash==1`（`0x5d4a2b` 读字符串2037=`cash`）；以及 itemId/1000==4220 段 |
+| 5571 (0x15c3) | 这种道具丢弃后无法再次获得还想丢弃吗？ | `0x4f35b7` | 任务道具 `info/quest==1`（`0x5d50b8` 读2973=`quest`）；点确定仍可丢 |
+| 4658 (0x1232) | 丢弃物品后获得的话，会变成无法交易状态… | `0x4f3658` | 不可交易/`info/tradeBlock==1`（`0x5d4db9` 读3186=`tradeBlock`；`0x5d28ae` 组合 vtable[0x10] 或 tradeBlock） |
+| 885 (0x375) | 扔掉多少？ | `0x4f382a` | 可堆叠且数量>1（`[item]+0x20` 取数量） |
+| 4259/4260 | 丢弃订婚取消… | `0x4f3430`/`0x4f347c` | 婚戒 |
+| 4875 (0x130b) | 你想扔掉这个卡片? | `0x4f3790` | itemId/10000==430（卡片段） |
+| 3416 (0xd58) | 已封印的道具无法贩卖、交换或丢弃。 | `0x4f376c` | 封印道具（item vtable[+4] 非 0） |
+| 4558 | 这里无法丢弃物品。 | `0xe09067`/`0xe23e25` | 地图禁止丢弃 |
+
+服务端对照（权威）：`ItemInformationProvider.isDropRestricted = isLootRestricted(info/tradeBlock || accountRestricted) || isQuestItem(info/quest)`；
+`InventoryManipulator.drop` 本身**不拦**任务物品，但 `isDisappearingItemDrop`（含 isDropRestricted）会让它走 `map.disappearingItemDrop`——丢出即消失、不能拾取。现金道具由客户端拦，服务端 `drop` 未显式判 cash。
+
+**本项目落地（2026-11-03）**：`NativeInventoryActions.DropToField` 先按 `NativeItemSource.Node(id).Get("info")` 判定：
+cash→`Notice("这种道具不能扔掉。")`；quest→`Confirm("这种道具丢弃后无法再次获得，还想丢弃吗？")`；tradeBlock→`Confirm("…会变成无法交易状态…")`；确认后进入数量弹窗/直接丢。
+服务端 `NativeInventoryService.DropToField` 兜底：cash 直接拒绝；`info/quest` 丢弃后**不生成可拾取地面掉落**（等价 disappearing，无法再次获得）。
+封印/婚戒/卡片/4220xxx 本项目暂无对应系统，记录在案未接。
+
+## 副本独占道具出本自动消失（2026-11-03）
+
+源端 `EventInstanceManager`：`setExclusiveItems(list)` 记录副本独占道具（多为任务/通行证），
+`unregisterPlayer(chr)` 末尾 `dropExclusiveItems(chr)` → `api.removeAll(item)`；`dropAllExclusiveItems()` 对全员清一次。
+`Character.respawn(eim,returnMap)` 在死亡返回时会 `eim.unregisterPlayer(this)`（`Character.java:7598`），普通换图不自动清，
+其余由 PQ 脚本 `em.exitPlayer/unregisterPlayer` 驱动。`dispose()` 本身不直接清独占道具。
+脚本侧：`npc_scripts.json` 里 50+ 个 `event/*` 调 `setExclusiveItems`，其中 Kerning/Ludi/Orbis 调 `dropAllExclusiveItems`。
+
+**本项目落地**：`NativeEventScriptService` 已绑定 `setExclusiveItems`/`dropAllExclusiveItems`，`Instance.Unregister` 会
+`removeAll(exclusiveItems)`（对齐源端 unregisterPlayer），`PqInstanceChecks` 有 `dropAllExclusiveItems→removeAll` 覆盖。
+结论：该机制已实现且忠实源端；若个别副本不消失，问题是该副本脚本未调 exitPlayer/setExclusiveItems，需按副本名单独查。
+
+
+## 背包格到背包格：移动 / 合并 / 互换（2026-11-03）
+
+二进制身份同上（SHA256 `1b91cf5b…f134b2`、ImageBase `0x400000`）。复现：
+`python3 tools/inspect_beidou_client.py <clien/BeiDou.exe> --fn 0x4F3057`、`--fn 0x4F31A5`、`--fn 0xA0900A`；
+调用点扫描按 `E8 rel32` 找 `0xA0900A` 的 5 个射点：`4F116A / 4F193F / 4F2B84（穿戴）/ 4F3131（见 0x4F3057）/ 4F3873（丢弃）`。
+
+### 客户端
+
+- **ITEM_MOVE(0x47) 打包函数 `0xA0900A`**：`push 0x47` 建包（`0x6ec9ce`）→ `0x987257` 写 tick →
+  `0x406549` 写 **byte type** → `0x427f74` 连写 **三个 short = src / action / quantity** → `0x49637b` 发送。
+  与服务端 `ItemMoveHandler`（skip4 → byte type → short src → short action → short quantity）逐字段对齐。
+- **点击背包格 `0x81D42E`**（InvenWindow 的 `OnMouseButton`，只处理 `0x201`）：命中格号 `0x81DB7E(this, x, y)`
+  （从 `+0x5e0` 的首格号开始逐格 `0x81E2C8` 算矩形做 PtInRect，返回**绝对格号（1 起，0 = 没命中）**），
+  把 `{+0x18 = 当前页签, +0x1c = 格号, +0x24 = 窗口}` 装进 0x28 字节载荷，再 `0x989588` 派发字符串 1847
+  `DragStart`。**按下即拿起**，不发包。（`0x81d447` 的 `this` 是挂在窗口 +4 上的子控件，`lea ecx,[ebx-4]`
+  才是窗口基址，所以子控件 `+0x5e0` == 窗口 `+0x5e4`。）
+- **放下到背包格 `0x4F3057`**（由拖放分派处 `0x4EFBB8` 调用，参数 `(窗口, x, y)`）：
+  1. `[0xbe7910] != 0` → 直接返回（已有拖拽/模态）；
+  2. `0x4F5697(1)` 必须为真（可操作状态）；
+  3. `0x81DB7E` 取目标格号，0 → 返回；
+  4. **`[窗口+0x5e4] != 载荷+0x18`（页签不同）→ 返回**（跨背包页不落格，连包都不发）；
+  5. `src == dst` → 返回（**点回原格不发请求**）；
+  6. 源格道具存在（非 2/3/4 类或 207/233 充能时还要求 `quantity > 0`，`0x4F3144`）；
+  7. `0xA0900A(type, src, dst, quantity = -1)`。
+- **放下到地面 `0x4F31A5`**：`0xA0900A(type, src, action = 0, quantity)`，可堆叠道具先弹字符串 885 数量窗（见上一节）。
+- 结论：**源端两种目标，同一个包**——`action == 0` 丢地面、`action > 0` 落到格号 `action`、`action < 0` 穿戴；
+  客户端只负责填 `src / dst`，合法性全在服务端。
+
+### 服务端
+
+`ItemMoveHandler:54`（`action > 0`）→ `InventoryManipulator.move:489` → `Inventory.move:264`：
+
+| 目标格 | 结果 |
+| --- | --- |
+| 空 | 源格 `setPosition(dst)` |
+| 同 id、非 207 充能、owner 相同 | 数量相加；超过 `slotMax` 时 dst 填满、源格留余量 |
+| 其余（不同 id / EQUIP / CASH / 充能 / owner 不同） | **两个槽位互换**（`swap`） |
+
+`InventoryManipulator.move` 只回 `ModifyInventory`（1/3），不整包下发；本工程沿用「回包带整份背包」的既有口径。
+
+### 落地（本项目）
+
+- 客户端 `InvenWindow`：格子内容改为**按服务端槽位**取（`inventoryType == tab+1 && position > 0` → 字典），
+  空格留空、同 id 的两个堆叠各占一格、数量画**本格** `quantity`（原实现用 `Profile.itemIds` 扁平投影，
+  同 id 会并成一格总数，导致没有落点可言）。`SlotAt(pointer, out position)` 按当前窗位实时算矩形，
+  空槽也返回 1 起槽位号；未进游戏（读不到 `Character.inventory`）才退回旧扁平投影。
+- 客户端 `NativeInventoryActions`：`Pick` 记 `carriedType = id/1000000`；`CarryPointerStep` 的按下分支在
+  卷轴/现金装备落点之后、绑键与地面之前处理背包格 → `MoveToSlot(src, dst, type)` 发
+  `{ moveFrom, moveTo, moveInventoryType }`；跨页保持携带、点回原格取消携带、服务端拒绝时保留携带并 toast。
+  拖拽松手（`Pointer.Released && Pointer.DragEnded`，项目补的口径）同样落格，要求真的拖动过，
+  否则「点一下拿起」的抬手会被当成落格。
+- 服务端 `NativeInventoryService`：`moveFrom/moveTo` 分派到 `NativeInventorySort.MoveItem`，
+  复用 `NativeInventorySort.Move`（整理/合并已照抄的同一套 `Inventory.move` 分支）+ 抽出的 `Persist`
+  落库（写 position、删被并掉的行）。
+- 回归：`tools/server-check/InventoryMoveChecks.cs`（20 项：空格移动、互换、同 id 合并、超 slotMax 留余量、
+  装备同 id 换位不合并、207 充能换位、src==dst/空格/越界/页号非法拒绝）→ 全量 **1387 通过 / 0 失败**；
+  `tools/unity-compile-check` 0 warning / 0 error。
+- **边界**：未做 Unity 编辑器交互回归与 Android 实机点选验收；跨背包页移动按源端拒绝（保持携带），
+  不同 id 同页只互换、不合并；`Profile` 扁平投影仍在其它读取方（宠物/交易校验）存在，本次只改背包窗显示口径。

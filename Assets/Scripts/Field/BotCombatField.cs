@@ -24,7 +24,7 @@ public sealed class BotCombatField : MonoBehaviour
         {
             if (enemy==null || !enemy.fieldMode || enemy.dead) continue;
             int id=enemy.GetInstanceID(); targets[id]=enemy;
-            result.Add(new BotGrindMob { id=id,mapId=mapId,world=world,channel=channel,
+            result.Add(new BotGrindMob { id=id,mobId=enemy.fieldMobId,mapId=mapId,world=world,channel=channel,
                 x=Mathf.RoundToInt(enemy.transform.position.x*Art.PPU), y=Mathf.RoundToInt(-enemy.transform.position.y*Art.PPU),
                 maxHp=enemy.NativeController!=null ? enemy.NativeController.MaximumHp : (long)enemy.hpMax,alive=true,boss=enemy.IsBoss });
         }
@@ -32,12 +32,17 @@ public sealed class BotCombatField : MonoBehaviour
     }
     void Hit(BotCharacter bot,BotGrindMob mob,int damage,BotAttack.Skill skill,int[] lines)
     {
-        if (!targets.TryGetValue(mob.id,out var enemy) || enemy==null || enemy.dead || field.Map==null || field.StateId!=bot.mapId ||
+        // 副本内假人拿的是真实图 id，快照里的怪挂在每实例一份的 Scope 图 id 上，
+        // 所以这里只能比「怪自己所在的图」（mob.mapId 就是 Snapshot 传进来的那个 id），
+        // 不能再拿 bot.mapId 去和 field.StateId 比 —— 那样副本里每一刀都会被静默丢掉。
+        if (!targets.TryGetValue(mob.id,out var enemy) || enemy==null || enemy.dead || field.Map==null || mob.mapId!=field.StateId ||
             bot.world!=GameSession.World || bot.channel!=GameSession.Channel) return;
         if (skill.id>0)
         {
             var presentation=GetComponent<BotField>();
-            presentation?.PlaySkillEffect(bot,skill.id);
+            // 等级必须一起传：绝大多数技能的 effect/ball/hit/action 只存在于 level/<等级> 节点，
+            // 只给 ID 就只能读到根节点，表现直接丢失。
+            presentation?.PlaySkillCast(bot,skill.id,skill.level,enemy);
         }
         if (lines.Length>0) DamageText.Show(enemy.DamageAnchor,lines[0],"red",1);
         for (int i=1;i<lines.Length;i++) pending.Add(new Number { target=enemy,amount=lines[i],due=Time.realtimeSinceStartupAsDouble+i*.08 });

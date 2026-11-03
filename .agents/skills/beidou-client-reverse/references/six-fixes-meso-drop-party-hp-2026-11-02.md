@@ -97,3 +97,38 @@ from 退化为落点，抛物线没有起点。修复：`dropperId==ownerCharact
   `NativeEventScriptService.getMapFactory` 的 `NpcApi.BuildWarpMap` 依赖改为 `WarpMapFactory`
   注入委托（分层违规修复，NativeEventScripts 装配处注入）——这两处是此前会话遗留的离线工程损坏。
 - 头顶血条为自绘（源素材缺失）；EngageRange 档位无逐武器源端数值。均未在 Android 实机验收。
+
+## ⑥b 假人技能缺动作/缺释放与命中特效（2026-11-03 修复）
+
+### 根因
+
+- 假人技能视觉全部来自 `Skill/<职业>.img/skill/<id>`：`effect/effect0/ball/hit/prepare/special`
+  **优先生效的是 `level/<等级>/` 节点**，根节点常常一个都没有；`action` 更是只在等级节点
+  （1311001 的 `level/30/action=burster2` 是标量字符串，不是候选列表）。
+- 旧 `BotField.PlaySkillEffect` 只拼 `Skill/<class>.img/skill/<id>/effect` 根路径、且从不切动作：
+  根上没有 effect 的技能整段视觉为空，所有技能都没有技能动作 —— 即用户反馈的「有些技能缺动作、
+  缺释放特效、缺击中特效」。
+- `BotCombatField.Hit` 只拿到 `skill.id`，等级在适配层被丢掉，无法拼等级节点。
+
+### 修复
+
+- `BotCombatField.Hit` 把 `skill.level` 一并交给表现层。
+- `BotField.PlaySkillCast(actor,id,level,target)` 复用主角同一条 `NativeSkillVfx.Key(id,level)` 解析：
+  动作 `skill_<id>@<level>`（`WzCharacter.Pose` 解析等级/根、标量/列表），无 action 节点回退 `atk`；
+  分支次序对齐 `SkillVisuals.CastVisuals`：`prepare` → 等前导时长 → `effect`/`effect0`（`z<0` 落到
+  施法者后层 299）→ `affected` → `special`（start/interval/count/x/y/duration，2111002 爆炸柱）→
+  `ball`（1.5ms/px 飞向目标）→ `hit`（`pos=2` 取头顶，其余取身体 Sprite 中心，跟随目标）。
+- `BotPartyGrindService` 本来就是「有技能只广播技能包」，表现层现在补齐同一套原 IMG。
+
+### 边界
+
+- `effect1/2/3`、`keydown/end/finish`、`mob`（眩晕/封印状态层，只有真中状态才画）不无条件播放，
+  与主角口径一致；假人战斗无状态效果，故 `mob` 不画。
+- 假人伤害仍由服务端即时结算，`hit` 与伤害数字同帧，未做原 EXE 的命中帧对齐。
+
+### 验证
+
+`tools/unity-compile-check` 0 error；`BotPresentationChecks.Run` PASS（1311001 等级动作 burster2 +
+effect、1001005 无 action 回退 atk 且根 effect、2111002 等级 prepare）。
+全量审计：假人偏好表 35 个 (技能,等级) 组合全部能解析出视觉节点，14 个技能原端本就没有 action 节点
+（按源端回退武器普攻姿势），旧实现会让其中 3 个（1111005/3001004/4001334）与全部无根 effect 的技能整段无特效。

@@ -607,11 +607,14 @@ public class PlayerCtrl : MonoBehaviour
         return false;
     }
 
+    int visibleMount;
     void BuildArt()
     {
         // 已登录角色按真实外观合成；旧版离线入口才使用职业配方。
         string artKey = WzCharacter.CurrentAppearanceKey()
             ?? Profile.cls + "_" + HairStyles.KeyOf(HairStyles.IndexOf(Profile.hair));
+        visibleMount=NativeMount.Item(this);
+        if(visibleMount>0) artKey=WzCharacter.MountedAppearance(artKey,visibleMount,NativeMount.Saddle);
         if (Art.Has("chars", artKey))
         {
             vis = Art.Attach(transform, "chars", artKey, "stand", 0f);
@@ -671,6 +674,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         if (GameLoop.I != null && (GameLoop.I.state != GameLoop.GameState.Playing || GameLoop.I.gameOver)) return;
         if (InputLocked || ScriptUiLock > 0) { SyncTransform(); return; }   // 换图黑场/脚本锁UI：不读输入、不跑物理
+        if(visibleMount!=NativeMount.Item(this)) RefreshFieldAppearance();
         RefreshMovementAttributes();
         float dt = Time.deltaTime;
         if (dt > 0f) Step(dt);   // 顿帧期间 dt==0，逻辑自动跳过
@@ -737,7 +741,7 @@ public class PlayerCtrl : MonoBehaviour
         // —— 自动普攻 ——
         // Boss 优先：Boss 体积大、通常只有一只，误判成本比杂兵高得多
         atkTimer -= dt;
-        if (!(GetComponent<NativeBuffs>()?.Value("MORPH")>0 && GetComponent<NativeBuffs>().Value("MORPH")<100) && (diseases == null || !diseases.BlocksAttack) && (Terrain == null || attackRequested) && !IsClimbing && atkTimer <= 0f && (vis == null || !vis.IsOneShot))
+        if (visibleMount==0 && !(GetComponent<NativeBuffs>()?.Value("MORPH")>0 && GetComponent<NativeBuffs>().Value("MORPH")<100) && (diseases == null || !diseases.BlocksAttack) && (Terrain == null || attackRequested) && !IsClimbing && atkTimer <= 0f && (vis == null || !vis.IsOneShot))
         {
             var b = FindBossTarget();
             if (attackRequested && StrikeReactor())

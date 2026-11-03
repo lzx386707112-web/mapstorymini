@@ -135,6 +135,7 @@ namespace MapleDash.Js
         public JsScope Closure;
         public Func<JsCall, JsValue> Native;
         public readonly JsObject Members = new JsObject();   // String.fromCharCode / Array.prototype / fn.call
+        public Func<JsValue, bool> InstanceCheck;
         public bool IsNative => Native != null;
 
         public static JsFunction FromNative(string name, Func<JsCall, JsValue> fn)

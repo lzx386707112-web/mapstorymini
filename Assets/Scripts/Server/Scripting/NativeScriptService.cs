@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using MapleDash.Js;
 
-public enum ScriptOperation { Open, Call, Close, SaveLocation, PeekLocation, GetLocation, ClearLocation, GachaDraw, GetStoredVar, SetStoredVar, GetQuestCustomData, SetQuestCustomData, GetMaxClassLevel, GainFame, AwardEventQuestPoints }
+public enum ScriptOperation { Open, Call, Close, SaveLocation, PeekLocation, GetLocation, ClearLocation, GachaDraw, GetStoredVar, SetStoredVar, GetQuestCustomData, SetQuestCustomData, GetMaxClassLevel, GainFame, AwardEventQuestPoints, GetRebirthSettings }
 
 // 本地传输专用宿主桥：JS 对象显式绑定，禁止反射调用任意 C#/Java 方法。
 // 脚本状态/解释执行属于 Server；对话与地图效果由 Client 注入的适配器消费。
@@ -46,6 +46,10 @@ public sealed class NativeScriptService
 
     public ScriptResponse Handle(ScriptRequest request)
     {
+        if (request.operation == ScriptOperation.GetRebirthSettings)
+            return new ScriptResponse { value = new JsArray(new JsValue[] {
+                JsBoolean.Of(GameConfigDao.GetBool(db, "use_rebirth_system")),
+                new JsNumber(Math.Max(1, GameConfigDao.GetInt(db, "rebirth_level"))) }) };
         if(request.operation==ScriptOperation.GainFame || request.operation==ScriptOperation.AwardEventQuestPoints)
         {
             var character=db==null?null:CharactersDao.FindById(db,request.characterId);
@@ -223,11 +227,8 @@ public sealed class NativeScriptService
         return null;
     }
 
-    // EnterMTSHandler.enterMTS(client)：NPC 9900001 的「拍卖系统」选项直接调这个静态方法
-    // （npc/9900001.js:480-484）。真正进不进 MTS 由 game_config.use_mts 决定：源端默认 false
-    // （V1.7.0__create_game_config.sql:51），此时 handlePacket 走 openCenterScript 重开 9900001 主菜单。
-    // 「重开菜单」是界面层动作，由 GameSession.EnterMtsFromMenu 注入；这里只保证没有界面宿主时
-    // （编辑器菜单审计）也不会因为 use_mts 的默认值把脚本打断。
+    // NPC 9900001 直接调用静态 enterMTS，不受 handlePacket 的 use_mts 开关约束。
+    // 缺少界面宿主时明确保留迁移缺口，不能静默成功。
     Action enterMTS;
     public Action EnterMTS
     {
@@ -237,8 +238,7 @@ public sealed class NativeScriptService
 
     void DefaultEnterMTS()
     {
-        if (db != null && GameConfigDao.GetBool(db, "use_mts"))
-            throw new JsRuntimeException("Unmigrated MTS: use_mts=true");
+        throw new JsRuntimeException("Unmigrated MTS: ITC window and trading service");
     }
 
     JsValue EnterMTSClass()

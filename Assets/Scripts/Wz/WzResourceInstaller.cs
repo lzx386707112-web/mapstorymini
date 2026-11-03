@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 // Extract on a worker thread. Validate the whole new pack before replacing installed Data.
 public static class WzResourceInstaller
@@ -67,14 +68,51 @@ public static class WzResourceInstaller
             if (hash != (string)file["sha256"]) throw new InvalidDataException("资源校验失败: " + file["path"]);
         }
     }
-    public static void Install(string zipPath, string root, string expectedManifest, Action<int, int> progress)
+    // Detach obsolete trees before deleting them: shared-storage deletion of tens of
+    // thousands of files must not hold up startup, or race a subsequent installation.
+    static void RetireDirectory(string path)
+    {
+        if (!Directory.Exists(path)) return;
+        string retired = path + ".cleanup-" + Guid.NewGuid().ToString("N");
+        Directory.Move(path, retired);
+        Task.Run(() =>
+        {
+            try { Directory.Delete(retired, true); }
+            catch (IOException) { } // Safe to leave obsolete files if storage is unavailable.
+            catch (UnauthorizedAccessException) { }
+        });
+    }
+
+    // Resume cleanup if Android killed the process before its background delete finished.
+    public static void CleanupRetired(string root)
+    {
+        Task.Run(() =>
+        {
+            try
+            {
+                foreach (string prefix in new[] { "Installing.cleanup-", "PreviousData.cleanup-" })
+                    foreach (string path in Directory.GetDirectories(root, prefix + "*"))
+                    {
+                        try { Directory.Delete(path, true); }
+                        catch (IOException) { }
+                        catch (UnauthorizedAccessException) { }
+                    }
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        });
+    }
+
+    public static void Install(string zipPath, string root, string expectedManifest, Action<int, int> progress,
+        Action<string> phase = null)
     {
         string staging = Path.Combine(root, "Installing"), data = Path.Combine(root, "Data");
         string old = Path.Combine(root, "PreviousData"), receipt = Path.Combine(root, "NativeAssetIndex.sha256");
         Directory.CreateDirectory(root);
         // Recover an interrupted directory promotion before starting another install.
         if (!Directory.Exists(data) && Directory.Exists(old)) Directory.Move(old, data);
-        if (Directory.Exists(staging)) Directory.Delete(staging, true);
+        phase?.Invoke("正在准备资源安装");
+        RetireDirectory(staging);
         Directory.CreateDirectory(staging);
         try
         {
@@ -89,6 +127,9 @@ public static class WzResourceInstaller
                 var index = (Dictionary<string, object>)MiniJson.Parse(text);
                 var files = (List<object>)index["files"];
                 int count = 0;
+                var buffer = new byte[128 * 1024];
+                phase?.Invoke("首次安装：解压并校验资源");
+                progress?.Invoke(0, files.Count);
                 foreach (Dictionary<string, object> file in files)
                 {
                     string relative = (string)file["path"];
@@ -99,17 +140,24 @@ public static class WzResourceInstaller
                     if (entry == null) throw new InvalidDataException("资源包缺少文件: " + relative);
                     Directory.CreateDirectory(Path.GetDirectoryName(target));
                     using (var input = entry.Open())
-                    using (var output = File.Create(target)) input.CopyTo(output);
-                    using (var input = File.OpenRead(target))
+                    using (var output = File.Create(target))
                     using (var sha = SHA256.Create())
                     {
-                        string hash = BitConverter.ToString(sha.ComputeHash(input)).Replace("-", "").ToLowerInvariant();
+                        int read;
+                        while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            output.Write(buffer, 0, read);
+                            sha.TransformBlock(buffer, 0, read, buffer, 0);
+                        }
+                        sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                        string hash = BitConverter.ToString(sha.Hash).Replace("-", "").ToLowerInvariant();
                         if (hash != (string)file["sha256"]) throw new InvalidDataException("资源校验失败: " + relative);
                     }
                     progress?.Invoke(++count, files.Count);
                 }
             }
-            if (Directory.Exists(old)) Directory.Delete(old, true);
+            phase?.Invoke("正在完成资源安装");
+            RetireDirectory(old);
             if (Directory.Exists(data)) Directory.Move(data, old);
             try
             {
@@ -125,7 +173,9 @@ public static class WzResourceInstaller
                 throw;
             }
             // A cleanup failure must not invalidate an already verified installation.
-            try { if (Directory.Exists(old)) Directory.Delete(old, true); } catch (IOException) { }
+            try { RetireDirectory(old); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
         finally { if (Directory.Exists(staging)) Directory.Delete(staging, true); }
     }

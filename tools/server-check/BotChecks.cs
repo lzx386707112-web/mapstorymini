@@ -88,6 +88,7 @@ static class BotChecks
         check(appearanceIds[appearanceIds.Length - 1] == "01302000", "取消现金武器恢复普通武器外观");
         CheckRecordedPlayback(check);
         CheckMovementRuntime(check);
+        CheckLudiPqPitRealMap(check);
         BotScheduler.Stop();
         BotScheduler.Clock = 0;
         int ticks = 0;
@@ -347,7 +348,7 @@ static class BotChecks
         finally { GameServer.Stop(); }
     }
 
-    static void CheckPartyGrindRuntime(Action<bool,string> check)
+    public static void CheckPartyGrindRuntime(Action<bool,string> check)
     {
         BotScheduler.Stop(); BotTasks.Stop(); BotScheduler.Clock=200000;
         var db=DbStore.Create(System.IO.Path.Combine(System.IO.Path.GetTempPath(),"mapledash_grind_runtime.json"));
@@ -386,8 +387,25 @@ static class BotChecks
             new BotGrindMob { id=4,mapId=player.mapId,channel=1,x=(int)player.x+30,y=(int)player.y,maxHp=18000,alive=true } };
         service.Monsters=(_,__,___)=>mobs;
         var first=service.Target(lead,player); bots[1].x=player.x; bots[1].y=player.y;
+        check(first?.id==1 && service.Target(bots[1],player)?.id==1,
+            "野外Boss优先于普通怪，全队允许集火");
+        mobs[0].alive=false;
+        first=service.Target(lead,player);
         check(first?.id==3 && service.Target(bots[1],player)?.id==4 && service.Target(lead,player)==first,
-            "战斗排除Boss假怪、保留有效认领且同队不同假人不争抢目标");
+            "Boss死亡后普通怪分工认领，排除假怪并保持活目标");
+        service.AvoidTarget(lead,3,BotScheduler.Now());
+        check(service.Target(lead,player)?.id==4,"追怪无进展时暂时跳过旧目标，怪少允许合击");
+        service.ReleaseTarget(lead);
+        mobs[2].x=(int)player.x+1800; mobs[2].y=(int)player.y-900;
+        mobs[3].alive=false;
+        BotScheduler.Clock+=11000;
+        check(service.Target(lead,player)?.id==3,"野外寻怪覆盖远处高层，不再受560px或指定楼层限制");
+        mobs[2].x=(int)player.x+20; mobs[2].y=(int)player.y; mobs[3].alive=true;
+        service.ReleaseTarget(lead);
+        mobs[0].alive=true;
+        check(service.Target(lead,player)?.boss==true,"普通怪认领中出现Boss时立即切换");
+        mobs[0].alive=false;
+        service.ReleaseTarget(lead);
         int hits=0,damage=0; service.Hit=(bot,mob,total,skill,lines)=> { hits++; damage=total; };
         BotStore.GetBotById(lead.id).UpdateState(); BotStore.GetBotById(lead.id).UpdateState();
         check(hits==1 && damage>=1000,"具体战斗FSM接真实伤害回调并受800ms冷却保护");
@@ -413,6 +431,67 @@ static class BotChecks
         player.level=120;
         mobs[2].alive=false; mobs[3].alive=false;
         check(service.Target(lead,player)==null,"目标死亡后释放认领且不会打已死怪");
+        // 野外挂机：怪清完后不能站桩。巡逻点必须落在队长两侧的本层范围内，
+        // 而且要真的分散（不是每次都回同一个 station）。
+        bool patrolOk=true; int distinctX=0; var patrolXs=new HashSet<int>();
+        for (int i=0;i<12;i++)
+        {
+            var spot=service.PatrolPoint(lead,player);
+            if (!spot.HasValue) { patrolOk=false; break; }
+            // 落点由「本层可走区间 ∩ 队长附近」决定，y 由地面吸附决定，这里只验「有得走、且会换点」。
+            if (Math.Abs(spot.Value.x-(int)lead.x)>=40) distinctX++;
+            patrolXs.Add(spot.Value.x);
+        }
+        check(patrolOk && patrolXs.Count>=2 && distinctX>0,
+            "无怪时巡逻点分散在队长两侧本层范围内，不再固定站桩（越界=" + (!patrolOk) +
+            " 点数=" + patrolXs.Count + " 拉开=" + distinctX + "）");
+        // 拾取钩子由 Unity 侧注入；纯 Server 自检没有落地面时必须是「安全降级」，不能抛。
+        check(!service.Loot(lead,300f).found && service.TakeLootNearby(lead,50f,2)==0,
+            "拾取钩子未接线时安全降级为找不到/捡不到");
+        // 本层刷空后要能算出「队长那一层」的集合点（跟随换层的前提）。
+        var home=service.LeaderSpot(lead,player);
+        check(home.HasValue && Math.Abs(home.Value.x-(int)player.x)<=100,
+            "本层刷空后能算出队长所在层的集合点");
+        BotTypeManager.Output.Clear();
+        long chatNow=BotScheduler.Now();
+        check(service.TryChat(lead,"巡逻中",chatNow) && !service.TryChat(bots[1],"收到",chatNow),
+            "野外聊天全队15秒限频");
+        check(service.TryChat(bots[1],"收到",chatNow+15000),"聊天冷却结束后允许另一名队员发言");
+        // 实际FSM：附近掉落不能抢占Boss攻击。
+        mobs[0].alive=true;
+        service.FindLoot=(_,__)=>new GrindLoot { found=true,x=(int)lead.x+80,y=(int)lead.y,distance=80 };
+        service.TakeLoot=(_,__,___)=>0;
+        int beforeBossHits=hits;
+        BotScheduler.Clock+=1000;
+        BotStore.GetBotById(lead.id).UpdateState();
+        check(hits==beforeBossHits+1,"附近掉落不阻止Boss攻击");
+        mobs[0].alive=false;
+        service.FindLoot=(_,__)=>new GrindLoot { found=true,x=(int)lead.x,y=(int)lead.y,distance=0 };
+        var companion=BotStore.GetBotById(lead.id);
+        BotScheduler.Clock+=1000; companion.UpdateState();
+        var privateFlags=BindingFlags.Instance|BindingFlags.NonPublic;
+        check((bool)typeof(CompanionGrindBot).GetField("blocksLoot",privateFlags).GetValue(companion),
+            "归属或背包导致拾取失败后，掉落落点进入暂避期");
+        // 实际FSM：追不到同一落点超过6秒后必须暂停重试。
+        foreach (var mob in mobs) mob.alive=false;
+        service.FindLoot=(_,__)=>new GrindLoot { found=true,x=(int)lead.x+200,y=(int)lead.y,distance=200 };
+        BotScheduler.Clock+=1000; companion.UpdateState();
+        check((bool)typeof(CompanionGrindBot).GetField("hasLoot",privateFlags).GetValue(companion),
+            "无怪时实际FSM主动走向附近掉落");
+        BotScheduler.Clock+=6100; companion.UpdateState();
+        check(!(bool)typeof(CompanionGrindBot).GetField("hasLoot",privateFlags).GetValue(companion),
+            "同一掉落追逐超时后不会下一拍立即重新追");
+        service.FindLoot=null; service.TakeLoot=null;
+        BotScheduler.Clock+=30000;
+        BotTypeManager.Output.Clear();
+        typeof(CompanionGrindBot).GetField("nextChatAt",privateFlags).SetValue(companion,0L);
+        typeof(CompanionGrindBot).GetField("lastCombatAt",privateFlags).SetValue(companion,BotScheduler.Now()-6000);
+        companion.UpdateState();
+        bool idleChat=false;
+        while (BotTypeManager.Output.Count>0)
+            idleChat |= BotTypeManager.Output.Poll().kind==BotOutput.Kind.Chat;
+        check(idleChat,"无怪时实际FSM输出低频闲聊");
+        check(BotMovementService.IsMoving(lead),"无怪时实际FSM继续巡逻移动");
         runtime.Drive(200000+BotPartyGrindService.Duration);
         bool cleaned=service.Companions(id).Count==0 && !service.IsActive(id) && runtime.parties.For(id).members.Count==1;
         foreach (var bot in bots) cleaned &= BotRegistry.Get(bot.id)==null && BotStore.GetBotById(bot.id)==null && BotMovementService.Get(bot)==null;
@@ -459,8 +538,14 @@ static class BotChecks
         player=runtime.SynchronizePlayer(CharService.Load(db,id),100000000,0,0);
         runtime.parties.Create(player); service.Start(player);
         var follower=BotRegistry.Get(service.Companions(id)[0]);
+        var followSm=BotStore.GetBotById(follower.id);
+        typeof(CompanionGrindBot).GetField("hasLoot",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(followSm,true);
+        typeof(CompanionGrindBot).GetField("patrolX",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(followSm,12345);
         player.mapId=101000000;
-        BotStore.GetBotById(follower.id).UpdateState();
+        followSm.UpdateState();
+        check(!(bool)typeof(CompanionGrindBot).GetField("hasLoot",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(followSm) &&
+            (int)typeof(CompanionGrindBot).GetField("patrolX",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(followSm)==int.MinValue,
+            "切图跟随清除旧地图拾取和巡逻目标");
         check(follower.mapId==player.mapId && service.IsActive(id),"同频道换图实际FSM跟随队长并重绑站位");
         player.channel++;
         BotStore.GetBotById(follower.id).UpdateState();
@@ -1701,6 +1786,55 @@ static class BotChecks
         BotRegistry.Remove(actor); BotTasks.Stop();
     }
 
+    // 用**真实地图数据**（Assets/Resources/Bot/Maps/922.json 的 922010200）验证玩具塔 101 第 2 关。
+    // 这张图的相机 VR 是 VRTop=-3100 / VRBottom=330，但 WZ 里在其上下还各挂了一段装饰 foothold
+    // （顶盖 y=-3945、坑底 y=542）。三条链路要一起成立，玩家才看不到「假人全不见 / 角色瞬移到图外」：
+    //   ① 瞬移落点只在 VR 内 → 最低平台继续按↓ 原地不动；
+    //   ② 导航区域不覆盖 VR 外的装饰地面 → 假人不会往镜头外规划/停留；
+    //   ③ 万一下去，移动服务把假人复位回界内平台。
+    static void CheckLudiPqPitRealMap(Action<bool, string> check)
+    {
+        MapRuntime map;
+        try { map = BotNavigationMapLoader.Load().Geometry(922010200); }
+        catch (Exception e)
+        { check(false, "加载真实地图 922010200 失败：" + e.Message); return; }
+        if (map == null || map.footholds.Count == 0) { check(false, "真实地图 922010200 没有 foothold 数据"); return; }
+        check(map.bottom > map.top && map.footholds.Exists(f => Math.Max(f.y1, f.y2) > map.bottom),
+            "真实地图 922010200 存在 VRBottom 之下的装饰坑底（复现前提）");
+        // VR 内最低的那段平台（本图 y=129，就是放 15 张通行证反应堆的那层）。
+        int lowest = int.MinValue, lowestX = 0;
+        foreach (var f in map.footholds)
+        {
+            if (f.x1 >= f.x2) continue;
+            int y = (int)Math.Max(f.y1, f.y2);
+            if (y > map.bottom || y <= lowest) continue;
+            lowest = y; lowestX = (int)((f.x1 + f.x2) / 2);
+        }
+        check(lowest > map.top, "真实地图 922010200 找得到 VR 内的最低平台");
+        check(!NativeTeleportMovement.Destination(map, lowestX, lowest, 0, 1, 350, out _, out _),
+            "真实地图 922010200：最低平台按↓瞬移原地不动，不落到图外坑底");
+        // 导航区域必须整体落在 VR 内（否则假人会走到镜头外，玩家看到的就是「全不见了」）。
+        var graph = new BotNavigationGraphBuilder(map).Build();
+        bool inside = graph.regions.Count > 0;
+        foreach (var region in graph.regions)
+            if (region.minY < map.top || region.maxY > map.bottom) { inside = false; break; }
+        check(inside, $"真实地图 922010200：假人导航区域全部落在相机 VR 内（{graph.regions.Count} 区）");
+        // 掉进坑底 → 移动服务复位回界内最低平台。
+        BotTasks.Stop(); BotMovementService.Shutdown(); BotScheduler.Clock = 2000;
+        BotMovementService.IsObserved = _ => true;
+        BotMovementService.ResolveProfile = (_, __) => BotMovementProfile.Base;
+        MapService.Register(map);
+        var fallen = new BotCharacter { id = 20782, mapId = 922010200, x = lowestX, y = 542 };
+        BotRegistry.Add(fallen); BotMovementService.Enable(fallen);
+        for (int i = 0; i < 6; i++) { BotScheduler.Clock += 50; BotTasks.Drive(BotScheduler.Clock); }
+        check(fallen.y <= map.bottom && Math.Abs(fallen.y - lowest) <= 2,
+            $"真实地图 922010200：掉进坑底(y=542)的假人被复位回界内平台(y={fallen.y})");
+        BotMovementService.Disable(fallen); BotRegistry.Remove(fallen);
+        BotMovementService.Shutdown(); BotTasks.Stop();
+        BotMovementService.IsObserved = null; BotMovementService.ResolveProfile = null;
+        MapService.Unregister(922010200);
+    }
+
     static void CheckMovementRuntime(Action<bool, string> check)
     {
         var teleportMap = new MapRuntime { left = -500, right = 500 };
@@ -1716,6 +1850,15 @@ static class BotChecks
         check(!NativeTeleportMovement.Destination(teleportMap,0,-1,0,0,350,out tx,out ty) &&
             !NativeTeleportMovement.Destination(teleportMap,400,-1,1,0,350,out tx,out ty),
             "快速移动无方向/无落点拒绝");
+        // 竖井地图在 VRBottom 之下还挂着装饰性坑底（实测 922010200：VRBottom=330，坑底 y=542）。
+        // 在最低平台上继续按↓瞬移必须原地不动，不能落到镜头外。
+        var shaft = new MapRuntime { mapId = 922010200, left = -500, right = 500, top = -1000, bottom = 330 };
+        shaft.AddFoothold(-300, 129, 300, 129);
+        shaft.AddFoothold(-300, 542, 300, 542);
+        check(!NativeTeleportMovement.Destination(shaft, 0, 129, 0, 1, 350, out tx, out ty),
+            "瞬移不落到地图 VR 之外的装饰坑底");
+        check(NativeTeleportMovement.Destination(shaft, 0, 541, 0, -1, 500, out tx, out ty) && ty == 128,
+            "误入坑底时可向上瞬移回 VR 内的平台");
         teleportMap.fieldLimit=2;
         check(!NativeTeleportMovement.Destination(teleportMap,0,-1,1,0,350,out tx,out ty),"地图禁移动技能时拒绝快速移动");
         var map = new MapRuntime { mapId = 77, left = -300, right = 300, top = -300, bottom = 300 };
@@ -1768,6 +1911,18 @@ static class BotChecks
         BotMovementService.Move(bot, -150, 100); BotRegistry.Remove(bot);
         float removedX = bot.x; BotScheduler.Clock += 1000; BotTasks.Drive(BotScheduler.Clock);
         check(BotMovementService.Get(bot) == null && bot.x == removedX, "移除角色取消实际移动服务回调与导航状态");
+        // 竖井地图在 VRBottom 之下还有装饰性坑底：假人掉进去时必须被移动服务复位回界内平台，
+        // 否则会一直停在镜头外（玩具塔 101 第 2 关「假人走下去后全不见了」）。
+        var pitMap = new MapRuntime { mapId = 80, left = -300, right = 300, top = -1000, bottom = 330 };
+        pitMap.AddFoothold(-250, 129, 250, 129); pitMap.footholds[0].id = 1;
+        pitMap.AddFoothold(-250, 542, 250, 542); pitMap.footholds[1].id = 2;
+        MapService.Register(pitMap);
+        var fallen = new BotCharacter { id = 20781, mapId = 80, x = 0, y = 542 };
+        BotRegistry.Add(fallen); BotMovementService.Enable(fallen);
+        for (int i = 0; i < 6; i++) { BotScheduler.Clock += 50; BotTasks.Drive(BotScheduler.Clock); }
+        check(fallen.y <= 330 && Math.Abs(fallen.y - 129) <= 2,
+            "假人掉到 VRBottom 之下的装饰坑底时被复位回界内平台");
+        BotMovementService.Disable(fallen); BotRegistry.Remove(fallen); MapService.Unregister(80);
         var picker = new BotGroundSpotPicker(new FirstChoiceRandom());
         var spots = picker.PickMany(map, new BotNavigationGraph.Point(0, 100), 3, -100, 100);
         check(spots.Count == 3 && spots.TrueForAll(p => p.x >= -100 && p.x <= 100 && p.y == 100),

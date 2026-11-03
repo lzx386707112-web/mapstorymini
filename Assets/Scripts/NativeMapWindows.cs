@@ -51,6 +51,15 @@ public static class NativeMapWindows
         GUI.DrawTexture(new Rect(position.x - origin.x * scale, position.y - origin.y * scale,
             tex.width * scale, tex.height * scale), tex);
     }
+    // EXE 0x85AA2B: 小地图标记按图幅居中（x = px + 视口原点 - width/2，y 用 height/2），
+    // 不是按 IMG origin 对齐——minimap 下的标记素材本身没有 origin 节点。
+    static void MiniMarker(ImgNode icon, Vector2 position, float scale)
+    {
+        if (icon == null) return;
+        var tex = WzAssets.Texture(icon);
+        GUI.DrawTexture(new Rect(position.x - tex.width * .5f * scale, position.y - tex.height * .5f * scale,
+            tex.width * scale, tex.height * scale), tex);
+    }
     public static void DrawMini()
     {
         var map = FieldCatalog.GetMap(Profile.LastMapId);
@@ -134,10 +143,23 @@ public static class NativeMapWindows
             Mathf.Floor((y + mini.Int("centerY")) / divisor) - scrollY) * s;
         var helper = WzAssets.FileRoot("Map/MapHelper.img").Get("minimap");
         foreach (var portal in map.portals)
-            if (portal.type == 2 || portal.type == 7) Marker(helper.Get("portal"), point(portal.x, portal.y), s);
+            if (portal.type == 2 || portal.type == 7) MiniMarker(helper.Get("portal"), point(portal.x, portal.y), s);
         foreach (var npc in map.npcs)
-            if (npc.hide == 0) Marker(helper.Get("npc"), point(npc.x, npc.y), s);
-        if (player != null) Marker(helper.Get("user"), point(px, py), s);
+            if (npc.hide == 0) MiniMarker(helper.Get("npc"), point(npc.x, npc.y), s);
+        // 同图其他角色（假人）：源端 0x859122 绘制主体按关系取 another/party/partymaster
+        // （标记成员 0x680..0x6d8）；坐标与 NPC/portal 同口径（未右移 2^mag 前的服务端地图坐标）。
+        var another = helper.Get("another");
+        var partyMark = helper.Get("party");
+        var masterMark = helper.Get("partymaster");
+        var parties = Server.Bot.BotTypeManager.Parties;
+        foreach (var bot in Server.Bot.BotRegistry.OnMap(map.id))
+        {
+            if (bot == null || !bot.online || bot.mapId != map.id) continue;
+            var party = parties != null ? parties.For(bot.id) : null;
+            var botMark = party == null ? another : party.leader == bot.id ? masterMark : partyMark;
+            MiniMarker(botMark != null ? botMark : another, point(bot.x, bot.y), s);
+        }
+        if (player != null) MiniMarker(helper.Get("user"), point(px, py), s);
         GUI.EndGroup();
     }
 

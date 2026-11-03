@@ -25,6 +25,18 @@ public static class Program
 
     public static int Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--party-grind")
+        {
+            BotChecks.CheckPartyGrindRuntime(Check);
+            Console.WriteLine($"通过 {passed} / 失败 {failed}");
+            return failed == 0 ? 0 : 1;
+        }
+        if (args.Length > 0 && args[0] == "--rebirth")
+        {
+            RebirthChecks.Run(Check);
+            Console.WriteLine($"通过 {passed} / 失败 {failed}");
+            return failed == 0 ? 0 : 1;
+        }
         if (args.Length > 0 && args[0] == "--pq-navigation") return BotPerfChecks.PqNavigation();
         if (args.Length > 0 && args[0] == "--pq-feedback")
         {
@@ -300,6 +312,24 @@ public static class Program
         var info = social.Handle(new SocialRequest { characterId = first, operation = SocialOperation.CharacterInfo }).characterInfo;
         Check(info != null && info.wishes.Count == 1 && info.wishes[0] == 123456 && info.normalCards == 1 && info.specialCards == 1,
             "角色资料独立读取愿望与普通/特殊手册统计");
+        {
+            var added = new System.Collections.Generic.List<long>();
+            for (int pet = 0; pet < 3; pet++)
+                added.Add(InventoryDao.InsertItem(socialDb, first, 1802000 + pet, InventoryDao.Equipped,
+                    NativePetItems.EquipmentSlot(1802000 + pet, pet), 1));
+            added.Add(InventoryDao.InsertItem(socialDb, first, 1812007, InventoryDao.Equipped, -46, 1));
+            var equippedInfo = NativeCharacterInfoData.Read(socialDb, CharactersDao.FindById(socialDb, first), null);
+            Check(equippedInfo.petClothing == 1802000 && equippedInfo.petItems[0].Contains(1802000) &&
+                equippedInfo.petItems[1].Contains(1802001) && equippedInfo.petItems[2].Contains(1802002),
+                "角色资料按三宠实际槽位读取服装");
+            Check(!equippedInfo.petItems[1].Contains(1802000) && !equippedInfo.petItems[2].Contains(1802000) &&
+                equippedInfo.petItems[0].Contains(1812007) && !equippedInfo.items.Exists(NativePetItems.IsEquipment) &&
+                equippedInfo.items.Contains(1302000), "宠物装备不串宠、不混入人物装备且保留人物武器");
+            socialDb.Table("inventoryitems").Delete(row => added.Contains(DbStore.Long(row, "inventoryitemid")));
+            var removedInfo = NativeCharacterInfoData.Read(socialDb, CharactersDao.FindById(socialDb, first), null);
+            Check(removedInfo.petClothing == 0 && removedInfo.petItems.TrueForAll(items => items.Count == 0),
+                "卸下后重新查询角色资料不保留旧宠物装备");
+        }
         var buddyInfo = social.Handle(new SocialRequest { characterId = second, operation = SocialOperation.CharacterInfo }).characterInfo;
         Check(buddyInfo.wishes.Count == 0 && buddyInfo.normalCards == 0 && buddyInfo.specialCards == 0,
             "角色资料不会把上一位玩家的扩展数据泄漏给另一角色");
@@ -378,6 +408,7 @@ public static class Program
         BotPerfChecks.Run();
         DropChecks.Run(Check);
         InventoryOrganizeChecks.Run(Check);
+        InventoryMoveChecks.Run(Check);
         PqChecks.Run(Check);
         DueyChecks.Run(Check);
         MerchantChecks.Run(Check);

@@ -190,7 +190,7 @@ public static class EquipWindow
         var cells=expanded ? FullCells : SmallCells;
         for(int row=0;row<cells.GetLength(0);row++) for(int col=0;col<cells.GetLength(1);col++)
             if(cells[row,col]!=0 && At(r,GridX+col*Step,GridY+row*Step,Cell,Cell).Contains(pointer))
-                return GameSession.Character.inventory.Find(i=>i.position==cells[row,col] && i.inventoryType==1);
+                return GameSession.Character.inventory.Find(i=>i.position==NativeMount.VisibleSlot(cells[row,col]) && i.inventoryType==1);
         return null;
     }
     public static bool Visible;
@@ -207,7 +207,7 @@ public static class EquipWindow
     static Rect At(Rect r, float x, float y, float w, float h) => new Rect(r.x + x * S, r.y + y * S, w * S, h * S);
     static Texture2D Tex(string node) => Art.Tex("wz://UI/UIWindow.img/Equip/" + node);
 
-    // 每格对应原 IMG 背景已有的装备位；0 = 空白或未迁移的骑兽/宠物位。
+    // 每格对应原 IMG 背景已有的装备位；BE2260: -18=(5,233), -19=(38,233)。
     // 行 0..6 自上而下、列 0..4 自左而右，按 backgrnd 上的中文槽位名对齐：
     //   帽子 / 勋章 额饰 戒指 戒指 / 眼饰 耳饰 肩饰 / 披风 上衣 项链 武器 盾牌 /
     //   手套 裤裙 腰带 指环 指环 / 鞋子 副手 图腾 / 骑兽 鞍子 心脏 徽章 纹章
@@ -219,7 +219,7 @@ public static class EquipWindow
         { EquipSlot.Cape, EquipSlot.Top, -17, EquipSlot.Weapon, EquipSlot.Shield },
         { EquipSlot.Glove, EquipSlot.Bottom, -50, -15, -16 },
         { 0, 0, EquipSlot.Shoes, -51, -53 },
-        { 0, 0, -54, -55, -56 },
+        { -18, -19, -54, -55, -56 },
     };
 
     // 展开态 6 列，同样按 FullBackgrnd 的槽位名对齐：
@@ -233,7 +233,7 @@ public static class EquipWindow
         { EquipSlot.Cape, EquipSlot.Top, -17, 0, EquipSlot.Weapon, EquipSlot.Shield },
         { EquipSlot.Glove, EquipSlot.Bottom, -50, 0, -15, -16 },
         { 0, 0, EquipSlot.Shoes, 0, 0, 0 },
-        { 0, 0, 0, 0, 0, 0 },
+        { -18, -19, 0, 0, 0, 0 },
     };
 
     public static void Toggle() { Visible = !Visible; if (!Visible) petVisible = false; }
@@ -263,7 +263,7 @@ public static class EquipWindow
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < cols; col++)
             {
-                int slot = cells[row, col];
+                int slot = NativeMount.VisibleSlot(cells[row, col]);
                 if (slot == 0) continue;
                 var cellRect = At(r, GridX + col * Step, GridY + row * Step, Cell, Cell);
                 int id = Profile.EquipOfSlot(slot);
@@ -307,9 +307,13 @@ public static class EquipWindow
             if(!At(r,i==0 ? 46 : 112,11,32,32).Contains(pointer)) continue;
             var spec=NativeItemSource.Node(id)?.Get("spec");
             bool hp=i==0;
-            if(Profile.EquipOfSlot(hp ? -24 : -25)<=0 || spec==null ||
-                id/1000000!=2 || (spec.Int(hp ? "hp" : "mp")<=0 && spec.Int(hp ? "hpR" : "mpR")<=0)) return true;
+            if(Profile.EquipOfSlot(hp ? -24 : -25)<=0)
+            { BottomBar.Toast("请先给宠物装备对应的自动药水包"); return true; }
+            if(spec==null || id/1000000!=2 || (spec.Int(hp ? "hp" : "mp")<=0 && spec.Int(hp ? "hpR" : "mpR")<=0))
+            { BottomBar.Toast(hp ? "请放入恢复HP的药水" : "请放入恢复MP的药水"); return true; }
             KeyMap.BindPetPotion(hp,id);
+            int alarm=hp ? ClientSettings.HpAlarm : ClientSettings.MpAlarm;
+            BottomBar.Toast(alarm==0 ? "药水已绑定，请在系统设置中调高"+(hp ? "HP" : "MP")+"警报比例以启用自动补药" : "已绑定"+WzNames.Item(id));
             return true;
         }
         return false;
@@ -416,6 +420,34 @@ public static class InvenWindow
     static Vector2 grab;
     static int tab, scroll;
     static float S => BottomBar.S;
+
+    // 当前背包页对应的服务端 inventorytype（1 装备 / 2 消耗 / 3 设置 / 4 其他 / 5 现金）。
+    public static int InventoryType => tab + 1;
+
+    // 指针落在哪个背包格：position = 源端 inventoryitems.position（1 起、含空格）。
+    // 源端把「手上拿着东西再点一格」做成 ITEM_MOVE(type, src, dst)
+    // （BeiDou.exe 0x4F3057 用 0x81DB7E 命中格子拿 dst），所以空槽也必须报出槽位号。
+    // 这里按当前窗位实时算矩形，不用上一帧缓存，避免拖动窗体后落点错位。
+    public static bool SlotAt(Vector2 pointer, out int position)
+    {
+        position = 0;
+        if (!Visible) return false;
+        int capacity = Profile.InventoryCapacity(tab);
+        var r = new Rect(pos.x * S, pos.y * S, (expanded ? 603 : 175) * S, 289 * S);
+        for (int cell = 0; cell < (expanded ? 96 : 24); cell++)
+        {
+            int index = expanded ? cell : scroll * 4 + cell;
+            if (index >= capacity) break;
+            int block = expanded ? cell / 24 : 0;
+            int local = cell % 24;
+            float x = 8 + block * (expanded ? 149 : 0) + local % 4 * 36;
+            float y = 50 + local / 4 * 34;
+            if (!At(r, x, y, 32, 32).Contains(pointer)) continue;
+            position = index + 1;
+            return true;
+        }
+        return false;
+    }
     static Texture2D Tex(string node) => Art.Tex("wz://UI/UIWindow.img/Item/" + node);
     static Rect At(Rect r, float x, float y, float w, float h) => new Rect(r.x + x * S, r.y + y * S, w * S, h * S);
     static void Image(Rect r, string node, float x, float y)
@@ -498,27 +530,39 @@ public static class InvenWindow
         int capacity = Profile.InventoryCapacity(tab);
         int maxScroll = Mathf.Max(0, Mathf.CeilToInt(capacity / 4f) - 6);
         scroll = Mathf.Clamp(scroll, 0, maxScroll);
-        var entries = new List<int>();
+        // 格子内容一律按服务端槽位取：源端背包就是按 inventoryitems.position 画格，
+        // 空格留空、同 id 的两个堆叠各占一格（Profile 的扁平 itemIds 会把它们并成一格，
+        // 那样「点 A 格再点 B 格互换位置」就没有落点可言）。整理后 position 变了这里也跟着变。
+        bool live = GameSession.InGame && GameSession.Character != null && GameSession.Character.inventory != null;
+        var byPosition = new Dictionary<int, InventoryEntry>();
         List<InventoryEntry> equipment = null;
-        if (tab == 0 && GameSession.InGame)
+        List<int> fallback = null;
+        if (live)
         {
-            equipment = GameSession.Character.inventory.FindAll(item => item.inventoryType == 1 && item.position > 0);
-            // 显示顺序 = 服务端槽位。整理后 position 变了，这里必须跟着变，
-            // 不能再按 itemId 本地排（那会让服务端的整理结果看不见）。
-            equipment.Sort((left, right) => left.position.CompareTo(right.position));
-            foreach (var item in equipment) entries.Add(item.itemId);
-        }
-        else if (tab == 0)
-        {
-            bool equipped = false;
-            foreach (string id in Profile.OwnedWeapons)
+            foreach (var item in GameSession.Character.inventory)
+                if (item.inventoryType == tab + 1 && item.position > 0) byPosition[item.position] = item;
+            if (tab == 0)
             {
-                // 已装备的武器占 EQUIPPED 位，不再占用背包格
-                if (!equipped && id == Profile.equipWeapon) { equipped = true; continue; }
-                if (int.TryParse(id, out int number)) entries.Add(number);
+                equipment = new List<InventoryEntry>(byPosition.Values);
+                equipment.Sort((left, right) => left.position.CompareTo(right.position));
             }
         }
-        if (equipment == null) entries.AddRange(Profile.InventoryItems(tab));
+        else
+        {
+            // 没进游戏（读不到 Character.inventory）时退回 Profile 的扁平投影，保持原行为。
+            fallback = new List<int>();
+            if (tab == 0)
+            {
+                bool equipped = false;
+                foreach (string id in Profile.OwnedWeapons)
+                {
+                    // 已装备的武器占 EQUIPPED 位，不再占用背包格
+                    if (!equipped && id == Profile.equipWeapon) { equipped = true; continue; }
+                    if (int.TryParse(id, out int number)) fallback.Add(number);
+                }
+            }
+            fallback.AddRange(Profile.InventoryItems(tab));
+        }
         if (!expanded && maxScroll > 0 && Event.current.type == EventType.Repaint && At(r, 8, 50, 148, 202).Contains(Pointer.Pos))
         {
             float wheel = Input.mouseScrollDelta.y;
@@ -535,15 +579,25 @@ public static class InvenWindow
             float y = 50 + local / 4 * 34;
             var slot = At(r, x, y, 32, 32);
             if (index >= capacity) { Image(r, "disabled", x, y); continue; }
-            if (index >= entries.Count) continue;
-            int id = entries[index];
-            if(Event.current.type==EventType.Repaint && equipment!=null) equipmentTargets.Add(new KeyValuePair<Rect,InventoryEntry>(slot,equipment[index]));
+            int position = index + 1;
+            InventoryEntry entry = null;
+            int id = 0;
+            if (live)
+            {
+                byPosition.TryGetValue(position, out entry);
+                if (entry != null) id = entry.itemId;
+            }
+            else if (index < fallback.Count) id = fallback[index];
+            if (id <= 0) continue;   // 空格：只可能作为「放下」的落点，由 NativeInventoryActions.SlotAt 处理
+            if(Event.current.type==EventType.Repaint && equipment!=null && entry!=null) equipmentTargets.Add(new KeyValuePair<Rect,InventoryEntry>(slot,entry));
             var icon = NativeItemSource.Icon(id);
             if (icon != null) GUI.DrawTexture(slot, icon, ScaleMode.ScaleToFit);
             if (tab != 0)
             {
+                // 数量画的是这一格自己的堆叠数（源端逐格数字，不是同 id 总和）。
                 float digitX = x;
-                foreach (char digit in Profile.ItemCount(id).ToString())
+                int count = entry != null ? entry.quantity : Profile.ItemCount(id);
+                foreach (char digit in count.ToString())
                 {
                     var image = Art.Tex("wz://UI/Basic.img/ItemNo/" + digit);
                     if (image == null) continue;
@@ -551,17 +605,16 @@ public static class InvenWindow
                     digitX += image.width;
                 }
             }
-            if (Event.current.type == EventType.Repaint && id > 0 && slot.Contains(Pointer.Pos)) ItemTooltip.SetHover(id, false, equipment == null ? null : equipment[index]);
+            if (Event.current.type == EventType.Repaint && id > 0 && slot.Contains(Pointer.Pos)) ItemTooltip.SetHover(id, false, entry);
             if (press && NativeTradeWindow.CanOffer && slot.Contains(Pointer.Pos))
-            {
-                var offered = equipment == null ? GameSession.Character.inventory.Find(item => item.itemId == id && item.inventoryType == tab + 1 && item.position > 0) : equipment[index];
-                NativeTradeWindow.BeginItemDrag(offered);
-            }
-            if (press && !NativeTradeWindow.CanOffer && slot.Contains(Pointer.Pos)) NativeInventoryActions.PickFromInventory(id,equipment==null ? 0 : equipment[index].position);
+                NativeTradeWindow.BeginItemDrag(entry);
+            // 手上有东西时不再覆盖手上的道具：落格由 CarryPointerStep（ITEM_MOVE src→dst）处理。
+            if (press && !NativeTradeWindow.CanOffer && !NativeInventoryActions.Carrying && slot.Contains(Pointer.Pos))
+                NativeInventoryActions.PickFromInventory(id, entry != null ? entry.position : position);
             if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && slot.Contains(Pointer.Pos))
             {
                 Pointer.ConsumeClick();
-                if (!NativeTradeWindow.CanOffer) NativeInventoryActions.DoubleClick(id, equipment == null ? 0 : equipment[index].position);
+                if (!NativeTradeWindow.CanOffer) NativeInventoryActions.DoubleClick(id, entry != null ? entry.position : position);
                 // Finish drawing this snapshot; stopping here blanks all later cells.
             }
         }

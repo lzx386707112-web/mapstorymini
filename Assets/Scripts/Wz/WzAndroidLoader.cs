@@ -137,6 +137,7 @@ public sealed class WzAndroidLoader : MonoBehaviour
         loading = Task.Run(() =>
         {
             Directory.CreateDirectory(Root);
+            WzResourceInstaller.CleanupRetired(Root);
             string data = Path.Combine(Root, "Data");
             string previous = Path.Combine(Root, "PreviousData");
             if (!Directory.Exists(data) && Directory.Exists(previous)) Directory.Move(previous, data);
@@ -170,7 +171,8 @@ public sealed class WzAndroidLoader : MonoBehaviour
                 try
                 {
                     workerPhase = "首次安装：解压并校验资源";
-                    WzResourceInstaller.Install(zip, Root, expected, (n, all) => { total = all; loaded = n; });
+                    WzResourceInstaller.Install(zip, Root, expected, (n, all) => { total = all; loaded = n; },
+                        value => workerPhase = value);
                     WriteReceipt(expected);
                     loaded = 1; total = 1;
                     return;

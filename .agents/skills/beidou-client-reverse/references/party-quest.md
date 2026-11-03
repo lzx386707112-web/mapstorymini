@@ -186,25 +186,19 @@ watk/matk/wdef/mdef 的难度调整未接入本地战斗链路（PQ 难度差异
   掉落测试未完整跑 Android 击杀→地面→拾取；用户所述“完全不出券”在当前Unity数据未复现。
 
 
-## 2026-11-02 副本只有真人、假人仍在入口：实例作用域修复
+## 2026-11-02 副本只有真人：两次编号方案冲突的纠正
 
-这是移植端编号语义错误，不是源脚本人数条件：NativeEventMap 为每份EIM地图分配负数Scope，
-而脚本getId/getMapId继续返回原模板ID；FieldDirector.StateId/BotCombatField/BotField运行索引用Scope。
-旧PqDirector.ByStageMap(负Scope)恒找不到副本，PqRun.Tick也无法由Scope识别阶段；
-WarpBot又拒绝mapId<=0。因此已成功进本的真人无法带入假人，甚至后续超时被当招募失败。
+源端参照仍是 EventInstanceManager.java registerParty(Party,MapleMap):390，在线队员随队入图；本节仅记录移植端接线，不新增EXE行为结论。
 
-修复边界：
-- MapRuntime.templateMapId由NativeEventMap构建时填Id；PqDirector.TemplateMapId只用于阶段身份判断。
-- AdoptStageEntry/OnLocalMap/Run.Tick按模板识别阶段；PqRun.CurrentMap按队长当前Scope返回运行地图。
-- WarpBot接受MapService已注册的负Scope，未知负数仍拒绝；怪物/反应堆/站位/导航均用CurrentMap Scope。
-- 下一阶段比较先还原模板身份，DriveBot允许负Scope重试跟随；名称/队伍HP按field.StateId查假人。
-- 源端参照：EventInstanceManager.java registerParty(Party,MapleMap):390，遍历合格在线成员，
-  从招募地图取真实Character再registerPlayer；本次只修假人运行态地图跟随，不声称已补齐
-  NativeEventScriptService.StartParty的全部假人EIM成员宿主/阶段NPC行为。未改原JS或新增EXE结论。
+早先版本把假人运行态也迁入负Scope，曾通过97项实例回归；后续多图战斗/拾取改成“假人导航保留模板ID，仅战斗、掉落、反应堆经Live转换Scope”，但FieldDirector.TickBots和NpcDialogUi仍按Scope同步/查表。这两个方案混在一起：PqRun把队友放到正模板ID，BotField.OnMap(负Scope)稳定取不到队友，观察者还只登记负Scope，假人导航也不会按当前可见图正常调度。早先97/0是旧方案结果，不能证明当前链路通过。
 
-验证：Unity PqInstanceChecks 97/0：四种陪跑副本都经真实NativeEventMap负Scope，接管五名队友、
-验证OnMap注册表五人、下一阶段Scope跟随；另保留六人资格和掉落检查。server-check --pq-feedback 34/0，
-unity-compile-check 0 warning/0 error。未运行Android实机画面验收。
+当前统一口径：
+- FieldDirector.BotMapId=Map.id；TryGetMap、SynchronizePlayer、OnLocalMap、PqDirector.LocalMapId、BotField.Synchronize和NpcDialogUi队员名/血条查询全部使用BotMapId。
+- PqRun.CurrentMap、bot.mapId和导航继续使用模板ID；实际怪物/掉落/反应堆仍经Live转换至NativeEventMap.Scope，FieldDirector.StateId不变。
+- 保留MapRuntime.templateMapId和TemplateMapId用于识别实例身份；未改源JS或人数条件。
+- PqInstanceChecks改为以真实NativeEventMap的Template/Scope构建FieldDirector，检查BotMapId和StateId分离，再验证四种陪跑副本五名队友入图及下一阶段跟随。Android画面仍待实机验证。
+
+本次验证：Unity实例回归101/0（四种陪跑副本各五名队友+换阶段）、server-check --pq-feedback 131/0、编译0警告/0错误；脚本pack2779/parseFail0，run基线889/ok790/runFail27/javaInterop72未变。证据：`docs/skill-regression/pq-bot-visibility-2026-11-02.txt`。
 
 
 ## 2026-11-02 假人跑图 vs 关卡脚本：流程差异盘点（KPQ 为主）
@@ -309,3 +303,265 @@ KPQ 第 5 关（103000804）：现状 `KillBoss` + `Give(4001008,10)` → 点一
 - 未跑：Unity `PqInstanceChecks`（需 batchmode）与 Android 实机。实机上要盯三件事：
   ① 假人是否真的去捡券（掉落归属=队长，靠同队归属窗口放行）；② 第 2/3/4 关组合站位是否落进矩形；
   ③ 券的掉落节奏够不够 5 分钟内收满（20% 掉落，22 只鳄鱼/波）。
+
+## 2026-11-02 玩具塔101 / 毒雾森林 / 老海盗：按脚本落地面流程
+
+用户口径：「全部组队任务都要支持」。做法和废都第一关一致——不重写脚本，把假人放进
+脚本要求的位置上：**队长点 NPC 听规则 → 队员真去打怪/砸箱子把道具攒到手上 → 交给队长 →
+队长再点一次让脚本判定**。`PqCatalog` 里三个副本的阶段表全部按源端 npc 脚本重写。
+
+### 1. 玩具塔101（LudiPQ，npc/2040036~2040044.js）
+
+九关一个套路，四步缺一不可（以前是 `Give` 直发券 + 只点一次，脚本停在 `statusStgN=0` 永不 clearStage）：
+
+| 关 | 图 | NPC | 要几张 4001022 | 怎么来 |
+| --- | --- | --- | --- | --- |
+| 1 | 922010100 | 2040036 | 25 | 9300005×15 + 9300006×10 各掉 1 |
+| 2 | 922010200(+201) | 2040037 | 15 | 11 个 2202003（dropItems 掉券）+ 陷阱房 922010201 的 4 个 |
+| 3 | 922010300 | 2040038 | 32 | 图上 8 只 9300007 + 8 个 2201001 各 spawnMonster×3 |
+| 4 | 922010400 | 2040039 | 6 | 黑暗塔 922010401~405，9300008/9300014 |
+| 5 | 922010500 | 2040040 | 24 | 六个子图 922010501~506 各 4 个 2202003 |
+| 6 | 922010600 | — | 0 | 纯传送门迷宫，只等玩家爬（gateMs=20s） |
+| 7 | 922010700 | 2040042 | 3 | 3 个 2201002 各刷 1 只 9300010 |
+| 8 | 922010800 | 2040043 | 0 | 五个箱子占位（脚本对 <7 人直接放行） |
+| 9 | 922010900 | 2040044 | 钥匙 4001023 | 砸 2201003 召 9300012，BOSS 100% 掉钥匙 |
+
+⚠️ **2201001 / 2201002 只 `rm.spawnMonster`，不 `dropItems`**（源端 SQL 里 2201001 有一条
+4001022 记录，但脚本从不调 dropItems ⇒ 实际不掉）。给这两种箱子再配"砸开掉券"会凭空多出
+8 / 3 张，第 3 关变成 40、第 7 关变成 6。
+
+### 2. 毒雾森林（EllinPQ）
+
+- 930000100：portal `party6_stage` 要求 `getMonsters().size()==0` → 清 50 只 9300172。
+- 930000200：`spine` 3009000 要砸到 state≥4 才放行（另有 3002000「水池」dropItems→4001162）。
+- 930000500：9 个石堆 = **8×3002002（无脚本，砸了不掉东西）+ 1×3002001**，
+  只有 3002001 走 `dropItems` 掉 4001163（reactordrops 概率 1）。假人砸出来交给队长，
+  队长带着石头点 2133004（不带会被当场传回 930000800 = 放弃本趟）。
+- 930000600：砸 3001000 召 9300180（WZ revive 链 180→181→182），打掉 9300182 才 clearPQ。
+- 930000700：2133001 发奖 + 记次数 + 传回 930000800。
+
+### 3. 老海盗（PiratePQ）
+
+- 925100100：三轮勋章 4001120→4001121→4001122 各 20 个，由 9300114/5/6 各 10% 掉。
+  **2094002 只能点一页**（npc/2094002.js 再点一次就把队长传回城）⇒ 三轮全用 `openOnly`，
+  完成信号是实例属性 `stage2 = "1"/"2"/"3"`（`PqStep.awaitProperty/awaitValue`）。
+- 925100200 / 925100300：真正要清的在子舱 925100201 / 925100301（各 48 只）；
+  另有 2511001 反应堆，砸开各刷 6+6 只（怪不打完门不开）。
+- 925100400：四个动力门 2519000~2519003（`sMob1~4`，脚本判 `getReactorByName(...).getState()>=1`），
+  清完还得玩家自己踩 `next00`——那扇门的脚本把 BOSS 刷进 925100500（`gateMs=20s`）。
+- 925100600：2094001 发奖。
+
+### 4. 反应堆脚本宿主：一个实现、一处接线
+
+以前 `MapReactorService.Act` 有两个实现（`Server/Scripting/NativeReactorScriptService` 与一个
+Field 层重复品），而且 `MapReactorService.Hit` 破坏时根本不调 Act——291 个 `reactor/*.js`
+一次都没跑过。现在只保留 `NativeReactorScriptService`，由 `BotRuntime` 接
+`MapReactorService.Act`，GameSession 只补两个「只有 Unity 侧拿得到」的钩子
+（`MapReactorService.MapHost` / `SpawnMonsterAt`）。
+
+已修的重载/绑定缺口：
+
+| 脚本 | 以前为什么坏 | 现在 |
+| --- | --- | --- |
+| `2202003.js` `rm.dropItems()` | 宿主只认 5 参重载，0 参直接抛「overload is not migrated: 0」 | 0/4/5/6/7 参全支持，统一折到 `NativeReactorDrops.Drop` |
+| `3002001.js` `rm.getEventInstance().showClearEffect(rm.getMap().getId()); rm.dropItems()` | `rm.getMap` 没绑定 → 抛在 dropItems 之前，石头永远不掉 | 绑 `getMap`（实例地图宿主，缺实例时退化成只认 getId 的最小宿主） |
+| `2201001.js` / `3001000.js` `rm.spawnMonster(...)` | 没绑定 | `(id)/(id,qty)/(id,x,y)/(id,qty,x,y)` 四档 → `NativeEventMap.SpawnAt`；未接线只记一条明确错误，不吞同段脚本里的 dropItems |
+| `2519000~2519003.js` `rm.getReactor().getMap()` | 反应堆宿主没有 getMap | `getReactor().getMap()` 与 `rm.getMap()` 同一宿主 |
+
+`MapReactorService` 侧同时补了两条源端行为：
+
+- `Hit()`（CustomReactor 路径，假人/OPQ 走这条）破坏时 `Act?.Invoke(reactor, owner)`；
+- `HitPlayer()` 在模板**没有状态机数据**时退回「state++ 然后 act」——源端 `stats.getType(state)`
+  返回 -1 就是这个分支。组队任务的箱子/石堆全属于这一类；不兜这一下，玩家砸玩具塔箱子毫无反应、
+  只有假人砸得开（`NativeReactorView.FindTarget` 的过滤同口径放宽）。
+- `RespawnAll(mapId)`：`reactorTime<=0` 的箱子破坏后不会自己长回来，`PqRun.EnterStage`
+  按「本关主图 + 各步骤 maps」各重置一次，否则同一趟会话里第二遍跑玩具塔一个箱子都没有。
+
+`NativeReactorDrops.Drop` 缺表不再抛异常：源端 reactordrops 没有行就是「这一款箱子不掉物品」，
+抛异常会把它后面那段脚本一起吞掉（玩具塔奖励关 36 个 2202004 的 `sprayItems(...,15)` 就靠这一条）。
+缺的模板 id 记进 `NativeReactorDrops.MissingTables`，自检/日志去看。
+
+### 5. 地图数据：分片原来根本没有 reactors 数组
+
+`Assets/Resources/Bot/Maps/*.json` 由 `export_solomapling_maps.py` 导出，**只有
+footholds/portals/ropes/npcs**，没有 `reactors`。于是四个副本的箱子/石堆/动力门在移植端
+一个都不存在——再怎么改假人逻辑也砸不到东西。
+
+补法：`tools/patch_solomapling_reactors.py --maps <47 张副本图>`，从
+`MapleDashResources/Data/Map/Map*/**.img` 的 `reactor` 节点增量写入分片，并把用到的模板
+导出进 `ReactorTemplates.json`（49 条，包含组队任务全集；注意这些模板 `states` 是空的，
+所以只能走上面那条「无状态机」兜底）。关键数量（也是分片导出的验收口径）：
+
+```
+922010200 11×2202003 + 1×2200002(陷阱箱, warpMap 922010201)   922010201 4×2202003
+922010300 8×2201001      922010700 3×2201002      922010900 1×2201003
+922010501~506 各 4×2202003（主图 922010500 一个都没有）
+930000200 3002000 + spine 3009000     930000500 8×3002002 + 1×3002001     930000600 1×3001000
+925100400 sMob1~4 = 2519000~2519003   925100201/301 各 1 个宝箱 2512001
+```
+
+### 6. 两套图 id：真实 id 与 Scope 负 id
+
+副本图每实例各一份，客户端用的是 `NativeEventMap.Scope`（`FieldDirector.StateId = EventMap.Scope`），
+刷怪快照（`BotCombatField`）、地面掉落（`MapItemService`）、反应堆实例都挂在这个 id 下；
+而假人的 `mapId`、阶段表、传送门、存档一律是**真实 id**。以前 PqRun 直接拿真实 id 去问这三套系统，
+`BotCombatField.Snapshot` 的 `field.StateId != mapId` 恒成立 ⇒ 假人永远看不到怪（多图步骤还会
+因为「一张图都没活」被当成已完成而静默跳过）。
+
+修法：`PqDirector.LiveMapId`（FieldDirector 注入 `NativeEventScripts.ResolveMap(map)?.Scope ?? map`）
++ `PqRun.Live()`，只在「战斗快照 / 地面掉落 / 反应堆」三处转换；`bot.mapId`、`WarpBot`、阶段比较
+仍走真实 id。`BotGroundPickup.PickNearby` 同理（它直接查 `MapItemService.ItemsInRange`）。
+
+⚠️ 单客户端的硬边界：只有玩家当前所在的那张图有 `EnemyUnit`，其它图 `Snapshot` 恒空。
+所以「多图清怪」步骤里，非当前图会被当作已清——玩家走到子图后假人才跟过去接着打。
+这是渲染单图的必然结果，不是脚本条件。
+
+### 7. 回归
+
+- `tools/server-check --pq-feedback` **129/0**（本轮新增 77 条）：LPQ 九关张数与四步形态、
+  子图覆盖、EPQ 反应堆顺序与魔力石独占、PPQ 三轮勋章 + `stage2` 序列 + 四个动力门、
+  `reactordrops` 三条源端行、`2202003.js` 真脚本跑通（0 参 dropItems）、`2201001.js` 刷 3 只
+  9300007、`3002001.js` 跑通（getMap+dropItems）、`spawnMonster` 未接线只报错不掉链、
+  分片 reactors 计数（11+4=15 / 6×4=24 / 4 个动力门…）、`RespawnAll` 让砸坏的箱子回到初始状态。
+- 全量 `tools/server-check` 1311/0；`tools/unity-compile-check` 0 warning / 0 error。
+- 未跑：Unity `PqInstanceChecks`（需 batchmode）、Android 实机。
+  实机要看：① 玩家自己砸箱子有没有反应（`HitPlayer` 兜底）；② 跨子图（陷阱房/黑暗塔/子舱）
+  玩家走过去后假人是否跟上；③ 三轮勋章 10% 掉落的节奏（20 个/轮 × 3 轮）。
+
+## 2026-11-02 夜：废都第一关「走到 Cloto 就停住、不去打怪」
+
+实机反馈：假人全走到右边 NPC 之后就没下文，不会去打鳄鱼。三个独立断点叠在一起，
+缺任何一个都表现为「站着不动」，所以以前看日志只看到"领题成功"。
+
+### 1. `StrikeNearest` 还在用真实图 id 查怪（`BotCollect` 专用路径）
+
+`WorkMobs` / `WorkReactors` / `GroundCount` / `TargetCount` 在上一次 Live 改造里都换成了
+`Live(map)`，但 `WorkBotCollect` 走的 `StrikeNearest(bot, step, now)` 漏了：
+`grind.Monsters(bot.mapId, ...)` → `BotCombatField.Snapshot` 里 `field.StateId != mapId`
+恒成立 ⇒ 返回空表 ⇒ 找不到目标直接 return。表现就是「人不走、不打」。
+
+### 2. `BotCombatField.Hit` 拿 `bot.mapId` 和 `field.StateId` 比 —— 副本里每一刀都被丢掉
+
+即使找到怪、走过去挥刀，伤害也会在 `Hit` 入口被这个判断静默吞掉：
+假人拿的是真实图 id（103000800），`field.StateId` 是每实例一份的 Scope 负 id。
+改成比「怪自己所在的图」：`mob.mapId != field.StateId`（`mob.mapId` 就是 Snapshot
+传进来的那个 id，天然是 Live 口径）。这条影响全部四个副本，不只是废都。
+
+### 3. 普通怪掉落根本不进 `MapItemService`，假人永远捡不到券
+
+`FieldDirector.DropLoot`（普通怪死亡）走的是老式 `GroundItem.Spawn(itemId, qty, pos)`
+——`bound == null`，没有服务端 `MapItem` 实体；而 `BotGroundPickup.PickNearby` 查的是
+`MapItemService.ItemsInRange`。两套掉落系统并存：反应堆/脚本掉的走权威链，怪掉的走老式链。
+所以废都的 4001007、玩具塔的 4001022、毒雾的 4001163（怪掉的）假人一张都拿不到。
+
+补法（不动真人拾取链路）：
+
+| 层 | 改动 |
+| --- | --- |
+| `GroundItem` | 新增 `TakeForBot(mx,my,rangeSq,max)` / `MapX,MapY` / `Ready`：把无实体的老式掉落整份交给假人，返回件数 |
+| `BotGroundPickup` | `PickNearby` 在权威掉落之后再扫一遍 `GroundItem.All`（只认 `bound==null` 且 `itemId` 匹配），先 `HasSpace` 再拿走；新增 `WalkTo(bot,item)` 找最近一件（两套都看）并让假人走过去 |
+| `PqDirector` | 新增 `WalkToItem` 委托 + `WalkToDrop()` 包装（Server 层看不到 GroundItem，只能注入） |
+| `FieldDirector` | 接线 `PqDirector.WalkToItem = (bot,item) => botPickup.WalkTo(bot,item)` |
+| `PqRun` | `WalkToDrop` 改调 `PqDirector.WalkToDrop`（原来自己查 `MapItemService`，看不见老式掉落） |
+
+只动 `bound == null` 的那些，真人点地面物品仍走 `GroundItem.Pickup → MapItemPickup`。
+
+### 4. 收券数量：废都第一关不能写死 `need`
+
+`PqCatalog.Kerning()` 第一关的 `BotCollect` 没有 `itemId/need`（每人题目不同，靠
+`couponNeed` 各收各的）。`WorkBotCollect` 原来一律 `need = max(1, step.need)` ⇒ 全队凑够
+**1 张**就停、直接跳到换证，队长只拿到一张证也交不掉。改成：
+
+- `CollectDone`：表里写了 `need` → 全队合计；没写 → 每个假人各自凑够自己那份（`couponNeed`）；
+- `CollectShortfall`：同上口径算「这个假人还差几张」；
+- 另外 `WorkBotExchange` 里 `if (shortAny) return WorkMobs(...)` 也不对：`WorkMobs` 在
+  「一张图都没怪」时返回 true，会把这一步判成完成、带着空手进交证步。改成干活后一律 `return false`，
+  交给超时兜底。
+
+### 5. 回归
+
+- `--pq-feedback` **131/0**（新增 2 条：废都第一关收券步 `need/itemId` 必须留空、只打 9300001）。
+- 全量 `tools/server-check` **1313/0**；`unity-compile-check` 0 warning / 0 error。
+- 实机待验：走到 Cloto → 领题 → 去打鳄鱼 → 捡券 → 换证 → 等队长 → 交证 → 队长点 Cloto 过关。
+
+## 2026-11-02 深夜：仍然是「走到 Cloto 就站着」——根因是句柄当模板 id 用
+
+上一轮的三个断点都修了，实机还是走到右边不动。这次是数据结构层面的错：
+
+**`BotGrindMob.id` 填的是 `enemy.GetInstanceID()`（Unity 运行时句柄，随机大数），但阶段表里
+`PqStep.ids` 写的是怪物模板 id（废都的 `9300001`）。** PqRun 有三处拿 `mob.id` 去比
+`step.ids`：
+
+| 位置 | 后果 |
+| --- | --- |
+| `WorkMobs`（KillMobs/ClearMobs 选怪） | 玩具塔第 4 关（9300008/9300014）一只都选不出来 |
+| `TargetCount`（收券步的「还剩多少活」） | 恒 0 ⇒ `AssignMaps` 认为这张图没活，假人不派过去 |
+| `StrikeNearest`（BotCollect 的打怪） | `best == null` 直接 return ⇒ **站在 NPC 旁边不动** |
+
+废都第一关的收券步 `ids = {9300001}`，三处全中，所以表现就是「领完题站着」。野外挂机看不出来
+（`BotPartyGrindService.Target` 不做怪种过滤），只有副本的按怪种步骤会暴露。
+
+修法：
+
+- `BotGrindMob` 加 `mobId`（模板 id），`BotCombatField.Snapshot` 填 `mobId = enemy.fieldMobId`；
+  `id` 继续只当运行时句柄（认领 / `Hit` 反查 `EnemyUnit` 都用它，语义不变）。
+- `PqRun.IsWanted(step, mob)`：统一按 `mobId` 过滤，`mobId == 0`（自检造的假数据）才退回 `id`。
+
+顺带把「一只怪都没有」从静默改成可观察：
+
+- `StrikeNearest` 返回 bool；`WorkBotCollect` 拿不到目标就 `Sweep(bot)`：每 2.6 秒换方向走
+  半张图，别守着 NPC 那一段等。刷怪点是分段的，废都的鳄鱼、玩具塔的分层都靠这一下才找得到。
+- 连续 8 秒选不出目标 → `PqDirector.Notify` 一条带「真实图 id / 实例 Scope / 场上有几只但不是这种」
+  的粉字提示。以后再出类似问题，实机上直接能看出是「没刷怪」还是「过滤写错」。
+
+⚠️ 记住这条口径：**`BotGrindMob.id` 是句柄，`BotGrindMob.mobId` 是怪种。** 任何
+「只打某某怪」的判断都必须用 `mobId`。
+
+### 回归
+
+- `--pq-feedback` **135/0**（新增 4 条：模板 id 命中 / 句柄恰好等于模板 id 也不能误判 /
+  旧数据没填 mobId 的降级 / `BotCombatField` 快照真的填了 `mobId`）。
+- 全量 `tools/server-check` **1323/0**；`unity-compile-check` 0 warning / 0 error。
+
+## 2026-11-03 PQ 追怪分工与收券抢占修正（移植端）
+
+本节为移植端 AI 修复，不新增 BeiDou.exe 地址、资源或原端行为结论；任务答案、怪种、掉率、收券数量继续沿用上文已核实脚本。
+
+- `PqRun.WorkBotCollect → WalkToDrop → BotGroundPickup.WalkTo` 原来全图追券优先于攻击，附近有怪仍可能被远处掉落拉走；WalkTo 每拍重设 Move，会重置移动进度检测。现在先捡脚下、追加权距离 340 内的券，再选全图怪；无目标时再全图收券。同一落点用 IsMovingToward 保留现有移动，不重置进度。
+- `WorkMobs/StrikeNearest → Nearest` 共享每队员目标认领：优先未认领的活怪，保持原活目标，怪少时允许合击；不增加寻怪半径或队长附近限制。收齐券的队员释放认领，阶段/步骤切换清空。StrikeNearest 补齐既有 Strike 的 800ms 攻击节奏。
+- `Sweep` 的 2600ms 节流由全队共享改为每假人独立，避免每轮只有首个队员获准扫图。
+- 回归：`rtk dotnet run --project tools/server-check -c Release -- --pq-feedback`（工作目录 MapleDash）139/0，新增近怪/远处高层未认领怪/追逐保持/死怪后合击四条。Unity 编译检查 0 warning / 0 error，diff whitespace 检查通过。
+- 边界：纯 C# 选择测试证明远处高层目标可被分配，不证明 103000800 每条绳梯路径实际可走；尚未做 Unity 游戏内或 Android 实机验收。340 为本次移植端收券调度参数，不是已逆向确认的原 EXE 常量。
+
+
+## 2026-11-03 废都第一关追怪复报：长绳执行死点与收券抢占
+
+这是移植端 AI 执行修复，不新增原 EXE 地址或原端行为结论。复用已导出的原图 `Assets/Resources/Bot/Maps/103.json` 中 `103000800` 的 214 条 foothold、6 条 rope；不修改地图几何、脚本题目/怪种/收券数量。以下坐标均为地图像素，y 向下。
+
+- **确定死点**：`BotNavigationRuntime.Resolve → Execute(Climb) → Waypoint` 在底层到上层路径上选到 `start=(-347,101), rope.x=-437` 的绳边。Execute 的 `CanWalkTowardRope` 判定脚下还可以走，故推迟跳抓；旧 Waypoint 却仍返回已经到达的起跳点，角色永远不向绳子接近。只加选怪范围/怪物认领无法修复这个执行矛盾。
+- 修复：`CanWalkTowardRope` 改为复用 `BotGroundMotion.Step` 检查整段地面路线，只有能不掉层/不阻墙地走到 `BotRopeMotion.CanGrab` 的位置才延迟跳抓；仅第一步可走不再阻止已验证的跳抓。可直接走近时 Waypoint 也指向绳子的 x，不能一直指向已到达的起跳点。该导航由 PQ 和野外假人共同使用。
+- **对照复现**：`tools/server-check/PqChecks.CheckKerningRoutes` 用真实几何、125/105 档、从 `(282,-82)` 到 `(-642,-1125)` 跑 50ms 物理 tick，不启用移动服务的随机跳跃救援。临时撤掉这段修复后，120s 仍停在 `(-347,101)`；恢复后可进入近战射程。另有 100/100、125/105、130/110、155/123 四档，每档从 `(-1077,111)` 到六个平台，执行实际 `BotMovementService` 调度和 `PqRun.StrikeNearest → BotPartyGrindService.Strike → Hit` 回调，共 24 条路线。
+- **收券抢占**：`WorkBotCollect` 旧逻辑即使当前目标已在射程内，也会先被 `WalkToDrop` 抢走这一拍。现在仍先捡脚下券，其次对已在射程内的认领目标出手，再考虑走向附近券/追怪；射程与 800ms 冷却不变。新增模拟持续有待追券的测试，证明近身攻击不会被寻券委托抢占。
+- **分工粒度**：仅保证不同怪的 id 不同，仍会让所有队员认领同一片平台上的怪。新目标评分在原距离上加入队友认领目标周围的拥挤成本 `max(0,1400-|dx|-2|dy|)`；既有活目标仍保留，怪少时仍合击。1400 是用户授权 AI 优化的移植端参数，并非原 EXE 常量。
+- 验证边界：离线测试使用真实导航/物理/攻击服务和伤害回调，怪物目标为平台坐标上的测试对象；不等同于 Unity `EnemyUnit` 场景战斗或 Android 实机验收。旧 `tools/bot-move-check` 以 8px 到达判定而未开 precise，可能全部停在距离目标 9~21px 却仍输出 OK；本次不将它的 OK 当作追怪成功证据，而以进入射程且收到 Hit 回调为准。
+
+- 最终回归：PQ 定向 **166/0**；全量 Server **1367/0**；Unity 编译检查 **0 error / 0 warning**；diff whitespace 检查通过。前后对照摘要保存在 `docs/skill-regression/pq-navigation-{before,after}-2026-11-03.log`。
+
+## 2026-11-03 招募图大厅「丢东西」不许丢任务道具
+
+原端事实（`tools/imgdump.py` 直接查 `Item/Etc/0400.img`，非推测）：四个副本用到的道具全部带 **`info/pquest = 1`**，没有 `info/quest`；price 多为 1。
+
+| id | 名称 | 用途 |
+| --- | --- | --- |
+| 4001007 | 证书（优惠券） | 废都第一关：砸箱/打鳄鱼掉，换 4001008 |
+| 4001008 | 通行许可证 | 废都：交给 Cloto 过关 |
+| 4001022 | 次元的通行证 | 玩具塔 2/5/6/7/8 关 |
+| 4001023 | 次元的钥匙 | 玩具塔第 9 关 BOSS 阿丽莎乐掉 |
+| 4001163 | 紫色魔力石 | 毒雾森林 930000500 |
+| 4001120/1/2 | 初级/升华/资深海盗勋章 | 老海盗 925100100 三轮 |
+
+对照物（大厅氛围掉落池里真正的杂物，**不带** quest/pquest）：2000000 红色药水、2000001 橙色药水、4020000 石榴石母矿、4000004 绿液球。
+
+移植端问题与修复：`PqBot.DropSomething` 原来把 4001007/4001008/4001022 和杂物混在一个池里往招募图地上丢。源端脚本用 `haveItem(id) == 题目张数` 判定（废都第一关尤其硬），地上凭空多一摞券会被队员/玩家捡走，直接把阶段判定打乱。现在：池子只留纯杂物；`IsQuestItem` 按 `Bot/Items.json` 的 `info.quest`/`info.pquest` 过滤（查不到或表没加载成功一律当任务道具挡掉），`AmbientPool()` 首次丢东西时才筛、`DropSomething` 再兜一次。
+
+回归：`PqChecks.AmbientDropChecks`（反射读 `PqBot.LobbyDrops`）——池内 4 条无任务道具、7 种阶段道具全部带 `pquest`、三个历史肇事 id 单独点名。`--pq-feedback` **183/0**；全量 `tools/server-check` **1404/0**；`unity-compile-check` 0 error / 0 warning。

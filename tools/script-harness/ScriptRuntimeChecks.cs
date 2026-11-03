@@ -28,6 +28,12 @@ internal static class ScriptRuntimeChecks
     }
     public static int Run()
     {
+        Check("blood recipe Array instanceof preserves separate material arrays", () => Equal("true,false,300,50,50,20,5,5,1", Execute(
+            "function test(){var a=[300,50,50,20,5,5,1];return [a instanceof Array,({}) instanceof Array,a.join(',')].join(',');}")));
+        Check("drop query Map deduplicates and Array.from reads values", () => Equal("3,5", Execute(
+            "function test(){var m=new Map();m.set(1,2);m.set(1,3);m.set(2,5);return Array.from(m.values()).join(',');}")));
+        Check("sell settings Number.isInteger does not coerce strings", () => Equal("true,false,false,false", Execute(
+            "function test(){return [Number.isInteger(2),Number.isInteger('2'),Number.isInteger(2.5),Number.isInteger(NaN)].join(',');}")));
         Check("event original warrior setup/entry/timeout and isolated instance map handles",()=>
         {
             long now=1000;int warped=0,reset=0,clocks=0;

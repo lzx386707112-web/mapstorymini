@@ -146,6 +146,11 @@ public static class WzCharacter
     }
     static string Pose(Dictionary<string, object> recipe, string action)
     {
+        if(recipe.ContainsKey("mount"))
+        {
+            if(action=="stand" || action=="alert" || action=="hit" || action=="sit") return "stand1";
+            if(action=="walk") return "walk1";
+        }
         var ids = (List<object>)recipe["ids"];
         var weapon = Equipment((string)ids[ids.Count - 1]);
         switch (action)
@@ -320,7 +325,9 @@ public static class WzCharacter
         {
             string frame = frames.Count > 0 ? frames[i].Name : "0";
             clip.frames[i] = "avatar://" + key + "/" + pose + "/" + frame;
-            clip.delays[i] = frames.Count > 0 ? Math.Max(1, Math.Abs(frames[i].Resolve().Int("delay", 120))) / 1000f : .12f;
+            // 1902033 rope frame delays are UOLs into ladder, not numeric properties.
+            var delay=frames.Count>0 ? frames[i].TryResolve()?.Get("delay")?.TryResolve()?.Value : null;
+            clip.delays[i] = frames.Count > 0 ? Math.Max(1, Math.Abs(delay==null ? 120 : Convert.ToInt32(delay))) / 1000f : .12f;
         }
         clips.Add(cacheKey, clip); return clip;
     }
@@ -548,10 +555,18 @@ public static class WzCharacter
         var parts = Placements(rider, ref riderPose, ref riderFrame);
         var mount = WzAssets.FileRoot("Character/TamingMob/" + Convert.ToInt32(recipe["mount"]).ToString("D8") + ".img");
         var source = mount.Get(pose + "/" + frame)?.TryResolve();
+        var sources=new List<ImgNode>();
+        if(source!=null) sources.Add(source);
+        if(recipe.TryGetValue("saddle",out var saddleId))
+        {
+            var saddleFrame=WzAssets.FileRoot("Character/TamingMob/"+Convert.ToInt32(saddleId).ToString("D8")+".img")
+                ?.Get(recipe["mount"]+"/"+pose+"/"+frame)?.TryResolve();
+            if(saddleFrame!=null) sources.Add(saddleFrame);
+        }
         var mountParts = new List<Part>();
         Vector2Int saddle = Vector2Int.zero, riderNavel = Vector2Int.zero;
         bool hasSaddle = false;
-        if (source != null) foreach (var child in source.Children)
+        foreach(var layer in sources) foreach (var child in layer.Children)
         {
             var canvas = child.TryResolve();
             if (canvas == null || canvas.Kind != "Canvas") continue;
@@ -631,13 +646,15 @@ public static class WzCharacter
     static readonly Dictionary<string, Dictionary<string, object>> appearanceRecipes =
         new Dictionary<string, Dictionary<string, object>>();
 
-    public static string MountedAppearance(string key, int itemId)
+    public static string MountedAppearance(string key, int itemId,int saddleId=0)
     {
-        string mounted = key + "_mount_" + itemId;
+        string mounted = key + "_mount_" + itemId + "_" + saddleId;
         if (!appearanceRecipes.ContainsKey(mounted))
         {
             var recipe = new Dictionary<string, object>(Recipe(key));
-            recipe["mount"] = itemId; appearanceRecipes.Add(mounted, recipe);
+            recipe["mount"] = itemId;
+            if(saddleId>0) recipe["saddle"]=saddleId;
+            appearanceRecipes.Add(mounted, recipe);
         }
         return mounted;
     }

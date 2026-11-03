@@ -17,6 +17,13 @@ namespace Server.Field
             public List<Entry> items;
         }
         public static readonly Dictionary<int,List<Entry>> Tables = new Dictionary<int,List<Entry>>();
+        /// <summary>
+        /// 脚本要 dropItems 但 reactordrops 表里没有这个反应堆的模板 id。
+        /// 源端缺表就是「不掉东西」（generateDropList 拿到空表继续跑），不能抛——
+        /// 抛异常会把它后面那段脚本一起吞掉（玩具塔奖励关 2202004 的 sprayItems 就是这样）。
+        /// 这里只登记一下，交给自检/日志去看，不影响流程。
+        /// </summary>
+        public static readonly HashSet<int> MissingTables = new HashSet<int>();
         public static Random Random = new Random();
         public static Func<int,(double drop,double meso)> Rates;
         public static Func<int,int,int,bool> NeedsQuestItem;
@@ -25,6 +32,7 @@ namespace Server.Field
         public static void Load(Dictionary<string,object> root)
         {
             Tables.Clear();
+            MissingTables.Clear();
             foreach (var pair in root)
             {
                 var rows = new List<Entry>();
@@ -36,13 +44,15 @@ namespace Server.Field
 
         public static void Drop(MapReactor reactor,int owner,bool meso,int mesoChance,int minMeso,int maxMeso,int minItems)
         {
-            if (!Tables.TryGetValue(reactor.id,out var table))
-                throw new InvalidOperationException("Reactor drop table is not migrated: " + reactor.id);
+            // 缺表 = 这一款箱子不掉物品（源端 reactordrops 没有行就是这个结果），
+            // 但 meso / minItems 这两层仍然照常走。
+            if (!Tables.TryGetValue(reactor.id,out var table)) { MissingTables.Add(reactor.id); table = null; }
             var rates = Rates?.Invoke(owner) ?? (drop:1.0,meso:1.0);
             var items = new List<Entry>();
             if (meso && Random.NextDouble() < 1.0 / mesoChance) items.Add(new Entry { quest=-1 });
-            foreach (var row in table)
-                if (Random.NextDouble() < rates.drop / row.chance) items.Add(row);
+            if (table != null)
+                foreach (var row in table)
+                    if (Random.NextDouble() < rates.drop / row.chance) items.Add(row);
             while (items.Count < minItems) items.Add(new Entry { quest=-1 });
 
             var normal = new List<Entry>(); var visible = new List<Entry>(); var other = new List<Entry>();

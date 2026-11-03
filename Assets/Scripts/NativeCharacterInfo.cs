@@ -20,6 +20,17 @@ public static class NativeCharacterInfo
     const string Root = "UI/UIWindow.img/UserInfo/";
 
     public static void Close() { Visible = dragging = false; target = null; appearance = null; NativePetExclusionWindow.Close(); }
+    public static void RefreshSelf()
+    {
+        if (!Visible || target != null || !GameSession.InGame) return;
+        var response = GameSession.Net.Social(new SocialRequest { characterId = GameSession.CharacterId,
+            operation = SocialOperation.CharacterInfo, memberId = GameSession.CharacterId });
+        if (!response.ok) return;
+        details = response.characterInfo; guild = details.guild;
+        appearance = WzCharacter.CharacterIds(GameSession.Character.record, GameSession.Character.inventory);
+        petIndex = Mathf.Clamp(petIndex, 0, Mathf.Max(0, details.pets.Count - 1));
+        if (mode == 1 && details.pets.Count == 0 || mode == 2 && details.mount == 0) mode = 0;
+    }
     public static void Open(BotCharacter actor = null)
     {
         if (!GameSession.InGame) return;
@@ -147,9 +158,10 @@ public static class NativeCharacterInfo
                     var petSprite = WzAssets.Sprite(frames[frame]);
                     if (petSprite != null) GUI.DrawTexture(new Rect(53 - petSprite.pivot.x, 299 - petSprite.rect.height + petSprite.pivot.y,
                         petSprite.rect.width, petSprite.rect.height), petSprite.texture);
-                    if (details.petClothing != 0)
+                    int petClothing = details.petItems[petIndex].Find(id => id / 10000 == 180);
+                    if (petClothing != 0)
                     {
-                        var clothing = WzAssets.Node("Character/PetEquip/" + details.petClothing.ToString("D8") + ".img/" + pet.itemId + "/stand0/" + frames[frame].Name);
+                        var clothing = WzAssets.Node("Character/PetEquip/" + petClothing.ToString("D8") + ".img/" + pet.itemId + "/stand0/" + frames[frame].Name);
                         var coat = clothing == null ? null : WzAssets.Sprite(clothing);
                         if (coat != null) GUI.DrawTexture(new Rect(53 - coat.pivot.x, 299 - coat.rect.height + coat.pivot.y,
                             coat.rect.width, coat.rect.height), coat.texture);

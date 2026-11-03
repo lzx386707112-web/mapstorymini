@@ -151,6 +151,7 @@ public sealed class NativePetSceneProbe : MonoBehaviour
         yield return new WaitForEndOfFrame();yield return null;
         Require(BottomBar.ChatFocused,"Virtual Enter opens rendered chat after input edge is cleared");
         Directory.CreateDirectory("docs/pet-review");
+        yield return new WaitForEndOfFrame();
         var shot=ScreenCapture.CaptureScreenshotAsTexture();
         File.WriteAllBytes("docs/pet-review/chat-enter.png",shot.EncodeToPNG());Destroy(shot);
         SendEnter(false);yield return null;
@@ -247,6 +248,21 @@ public sealed class NativePetSceneProbe : MonoBehaviour
         var savedKeys=CharService.Load(db,(int)c.id).keymap;
         KeyMap.LoadCharacter(savedKeys);
         Require(KeyMap.PetPotion(true)==2000000 && KeyMap.PetPotion(false)==2000003,"Type7 91/92 bindings survive DB reload");
+        for(int i=0;i<2;i++)
+        {
+            KeyMap.BindPetPotion(i==0,0);
+            NativeInventoryActions.PickFromInventory(i==0 ? 2000000 : 2000003);
+            Pointer.Pos=(equipmentPos+new Vector2(172+(i==0 ? 47 : 113),135))*BottomBar.S;
+            Pointer.Pressed=false;Pointer.Released=true;
+            NativeInventoryActions.CarryPointerStep();Pointer.Released=false;
+            Require(!NativeInventoryActions.Carrying && KeyMap.PetPotion(i==0)==(i==0 ? 2000000 : 2000003),
+                "Release after inventory drag binds pet potion without a second click");
+        }
+        var cashService=new NativeCashService(db) {Catalog=new NativeCashCatalog()};
+        var cash=cashService.Handle(new CashRequest {characterId=(int)c.id,operation=CashOperation.Read});
+        foreach(int id in new[] {1812002,1812003})
+            Require(cash.catalog.Exists(item=>item.itemId==id && item.sn/100000==601 && item.onSale==1),
+                "Original HP/MP bag is purchasable in pet-equipment catalog: "+id);
         int hpAlarm=ClientSettings.HpAlarm,mpAlarm=ClientSettings.MpAlarm;
         ClientSettings.HpAlarm=50;ClientSettings.MpAlarm=50;
         int hpCount=Profile.ItemCount(2000000),mpCount=Profile.ItemCount(2000003);
@@ -290,6 +306,73 @@ public sealed class NativePetSceneProbe : MonoBehaviour
         yield return new WaitForEndOfFrame();yield return null;
         Require(feedbackFrames>0,"Item buff renders through status bar and windows without aborting GUI");
         feedbackDraw=false;NativeMonsterVac.For(owner).StopVac();EquipWindow.Visible=false;
+        foreach(int id in new[] {1902000,1912000})
+            Require(NativeInventoryService.Handle(db,new InventoryChangeRequest {characterId=(int)c.id,itemId=id,quantity=1}).ok,"Seed mount "+id);
+        Session("Character",CharService.Load(db,(int)c.id));GameSession.ApplyInventoryToProfile();
+        SkillProgress.SetLearned(1004,1);
+        var shown=(System.Collections.Generic.List<int>)typeof(SkillWindow).GetMethod("TabSkills",Flags).Invoke(null,null);
+        Require(shown.Contains(1004),"Learned NPC riding skill appears in beginner skill tab");
+        foreach(string field in new[] {"SmallCells","FullCells"})
+        {
+            var cells=(int[,])typeof(EquipWindow).GetField(field,Flags).GetValue(null);
+            Require(cells[6,0]==-18 && cells[6,1]==-19,"Original mount and saddle equipment cells are available: "+field);
+        }
+        Require(EquipLoadout.Equip(1902000,attrs)==null && EquipLoadout.Equip(1912000,attrs)==null,"Equip NPC mount and saddle");
+        var system=owner.GetComponent<SkillSystem>() ?? owner.gameObject.AddComponent<SkillSystem>();
+        Require(system.TryCastSkill(1004) && NativeMount.Item(owner)==1902000,"Learned riding skill activates actual player mount");
+        Require(system.TryCastSkill(1004) && NativeMount.Item(owner)==0,"Riding skill toggles off");
+        Require(system.TryCastSkill(1004),"Ride again before unequipping saddle");
+        EquipLoadout.Unequip(-19);
+        Require(NativeMount.Item(owner)==0,"Removing saddle cancels riding");
+        Require(!system.TryCastSkill(1004),"Reject riding without saddle");
+        Profile.Data.level=200;Profile.Data.attributes=attrs.Copy();
+        foreach(int id in new[] {1902008,1912003,1912004})
+            Require(NativeInventoryService.Handle(db,new InventoryChangeRequest {characterId=(int)c.id,itemId=id,quantity=1}).ok,"Seed cash mount equipment "+id);
+        Session("Character",CharService.Load(db,(int)c.id));GameSession.ApplyInventoryToProfile();
+        Require(NativeInventoryActions.TryUse(1912003)=="请先装备普通鞍具，再装备现金鞍具" && Profile.ItemCount(1912003)==1,"Double-click cash saddle requires normal saddle and preserves item");
+        EquipLoadout.Unequip(-18);
+        Require(NativeInventoryActions.TryUse(1902008)=="请先装备普通骑兽，再装备现金骑兽" && Profile.ItemCount(1902008)==1,"Double-click cash mount requires normal mount and preserves item");
+        string baseMountError=NativeInventoryActions.TryUse(1902000),baseSaddleError=NativeInventoryActions.TryUse(1912000);
+        Require(baseMountError==null && baseSaddleError==null,"Double-click equips normal riding base: "+baseMountError+"/"+baseSaddleError);
+        Require(NativeInventoryActions.TryUse(1902008)==null && Profile.EquipOfSlot(-118)==1902008,"Double-click equips cash mount to original cash slot");
+        Require(!system.TryCastSkill(1004),"Cash mount without cash saddle cannot ride");
+        Require(NativeInventoryActions.TryUse(1912004)!=null && Profile.EquipOfSlot(-119)==0,"Reject mismatched cash saddle without moving item");
+        Require(NativeInventoryActions.TryUse(1912003)==null && Profile.EquipOfSlot(-119)==1912003,"Double-click equips matching cash saddle");
+        Require(system.TryCastSkill(1004) && NativeMount.Item(owner)==1902008 && NativeMount.Saddle==1912003,"Cash riding overlays matching pair on normal base");
+        Session("Character",CharService.Load(db,(int)c.id));GameSession.ApplyInventoryToProfile();
+        Require(Profile.EquipOfSlot(-18)==1902000 && Profile.EquipOfSlot(-19)==1912000 &&
+            Profile.EquipOfSlot(-118)==1902008 && Profile.EquipOfSlot(-119)==1912003,"Reload retains both normal and cash riding equipment");
+        Require(NativeMount.VisibleSlot(-18)==-118 && NativeMount.VisibleSlot(-19)==-119,"Equipment cells resolve visible cash positions");
+        EquipWindow.Visible=true;
+        typeof(EquipWindow).GetField("expanded",Flags).SetValue(null,false);
+        float scale=BottomBar.S;
+        var equipPos=(Vector2)typeof(EquipWindow).GetField("pos",Flags).GetValue(null);
+        var equipOrigin=NativeUi.ClampWindowPosition(equipPos,new Vector2(175,304),scale)*scale;
+        Require(EquipWindow.EquipmentAt(equipOrigin+new Vector2(21,249)*scale)?.itemId==1902008 &&
+            EquipWindow.EquipmentAt(equipOrigin+new Vector2(54,249)*scale)?.itemId==1912003,"Equipment hover/drag hits actual cash mount and saddle entries");
+        EquipWindow.Visible=false;
+        EquipLoadout.Unequip(-119);
+        Require(NativeMount.Item(owner)==0 && NativeMount.VisibleSlot(-19)==-19 && Profile.EquipOfSlot(-19)==1912000,"Removing cash saddle cancels riding and reveals normal saddle");
+        Require(NativeInventoryActions.TryUse(1912003)==null && system.TryCastSkill(1004),"Re-equip cash saddle and ride again");
+        EquipLoadout.Unequip(-18);
+        Require(NativeMount.Item(owner)==0 && !system.TryCastSkill(1004),"Removing base mount cancels riding even when cash pair remains");
+        Session("Character",CharService.Load(db,(int)c.id));GameSession.ApplyInventoryToProfile();
+        Require(NativeMount.VisibleSlot(-18)==-118 && Profile.EquipOfSlot(-118)==1902008,"Previously equipped cash mount without base remains visible after reload");
+        EquipLoadout.Unequip(-118);EquipLoadout.Unequip(-119);
+        Require(Profile.ItemCount(1902008)==1 && Profile.ItemCount(1912003)==1,"Legacy cash equipment can be removed without loss");
+        string recipe=WzCharacter.CurrentAppearanceKey();
+        string script=File.ReadAllText(Path.Combine(WzAssets.DataRoot,"script-sources/scripts-zh-CN/npc/坐骑领取.js"));
+        foreach(System.Text.RegularExpressions.Match pair in System.Text.RegularExpressions.Regex.Matches(script,@"\[(190\d{4}),\s*(191\d{4})\]"))
+        {
+            int mount=int.Parse(pair.Groups[1].Value),saddle=int.Parse(pair.Groups[2].Value);
+            string key=WzCharacter.MountedAppearance(recipe,mount,saddle);
+            foreach(string action in new[] {"stand","walk","jump","prone","ladder","rope"})
+            {
+                var clip=WzCharacter.Clip(key,action);
+                Require(clip!=null && clip.frames.Length>0 && WzCharacter.Frame(clip.frames[0])!=null,
+                    "NPC mount and saddle original IMG composition "+mount+"/"+action);
+            }
+        }
         bridge.Unbind();GroundItem.Clear();
         Debug.Log("[NativePetSceneChecks] PASS "+count);
     }

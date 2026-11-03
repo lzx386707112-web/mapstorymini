@@ -17,3 +17,4 @@
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/obj/Debug/net8.0/ref/MapleDash.ServerCheck.dll
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/bin/Debug/net8.0/Maker/MakerTable.txt
 /Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/bin/Debug/net8.0/Storage/TrunkFees.txt
+/Users/lizixian/Documents/mxd/mxd-android/MapleDash/tools/server-check/bin/Debug/net8.0/Bot/ReactorDrops.json

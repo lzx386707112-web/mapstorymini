@@ -178,6 +178,8 @@ public static class EquipLoadout
         }
         int slot = EquipSlot.SlotOf(itemId);
         if (slot == 0) return "这不是可装备的物品";
+        string mountError=NativeMount.WearError(itemId,slot);
+        if(mountError!=null) return mountError;
         if (slot == -12 || slot == -112)
             foreach (int ringSlot in slot == -112 ? new[] { -112, -113, -115, -116 } : new[] { -12, -13, -15, -16 })
                 if (Profile.EquipOfSlot(ringSlot) == 0) { slot = ringSlot; break; }
@@ -201,6 +203,11 @@ public static class EquipLoadout
         var response = GameSession.Net.ChangeInventory(new InventoryChangeRequest {
             characterId = GameSession.CharacterId, itemId = itemId, equipSlot = slot, sourcePosition = inventoryPosition, petSlot=petSlot, equip = true, quantity = unequip ? 0 : 1 });
         if (!response.ok) return response.error;
+        if(slot==-18 || slot==-19 || slot==-118 || slot==-119)
+        {
+            var player=GameLoop.I?.player;
+            player?.GetComponent<NativeBuffs>()?.CancelStat("MONSTER_RIDING");
+        }
         GameSession.Character.inventory = response.inventory;
         GameSession.ApplyInventoryToProfile();
         if (!unequip && itemId == 1189999 && SkillProgress.LevelOf(1016) == 0) SkillProgress.SetLearned(1016, 1);

@@ -147,6 +147,9 @@ namespace Server.Bot.Environment
             if (actor.chair > 0) return;
             bool observed = Observed(actor.mapId);
             if (!observed && !IsMoving(actor)) return;
+            // 越界复位必须早于下面的「无目标 Idle」提前返回：否则掉进 VR 外坑底的假人
+            // 没有目标时永远不会被检查到，会一直停在镜头外（玩具塔 101 第 2 关「全不见了」）。
+            if (observed) RecoverOutOfBounds(e);
             if (e.coarse && observed)
             {
                 e.coarse = false; e.coarseEdges = null;
@@ -215,6 +218,24 @@ namespace Server.Bot.Environment
                 startMs += duration;
             }
         }
+        static void RecoverOutOfBounds(Entry e)
+        {
+            var map = e.motion.map;
+            if (map.right <= map.left || map.bottom <= map.top) return;
+            var pos = e.motion.Position;
+            // 横向越界保留 400px 容差（旧行为）；纵向只要出了 VR 上下边界就复位。
+            // 竖井地图（玩具塔 101 第 2 关 922010200）在 VRBottom 之下还挂着装饰坑底，
+            // 假人掉进去会一直停在镜头外 —— 玩家看到的就是「全不见了」。
+            // 顶部允许 300px：跳跃可以冲出 VRTop，但装饰性顶盖不会只有 300px。
+            bool outside = pos.x < map.left - 400 || pos.x > map.right + 400 ||
+                           pos.y < map.top - 300 || pos.y > map.bottom + 16;
+            if (!outside) return;
+            // 只按「当前所在列」回界内地面：不能拿 e.target 复位，否则会把掉进坑底的假人
+            // 直接扔到它原本想去的远处平台（实测真实地图上会跳到 y=-2643 的高台）。
+            int x = map.right > map.left ? Math.Max(map.left, Math.Min(map.right, pos.x)) : pos.x;
+            Recover(e, new Point(x, pos.y));
+            e.target = null;
+        }
         static void DetectStuck(Entry e, long now)
         {
             var m = e.motion; var pos = m.Position; e.cooldown = BotMovementRuntime.TickDown(e.cooldown);
@@ -226,12 +247,8 @@ namespace Server.Bot.Environment
                 { Recover(e, e.target ?? m.navigationTarget ?? pos); e.airStuckTicks = 0; e.airStuckAt = null; }
             }
             else { e.airStuckTicks = 0; e.airStuckAt = null; }
-            var map = m.map;
-            if (map.right > map.left && map.bottom > map.top && (pos.y > map.bottom + 400 || pos.x < map.left - 400 || pos.x > map.right + 400))
-            {
-                Recover(e, e.target ?? m.navigationTarget ?? new Point(Math.Max(map.left, Math.Min(map.right, pos.x)), map.top));
-                e.target = null;
-            }
+            // 非观察态的移动假人也要防越界；观察态已在 Tick 开头处理过，这里再查一次很便宜。
+            RecoverOutOfBounds(e);
             if (m.InAir || m.Climbing || m.navEdge == null && !e.target.HasValue) { e.stuckMs = 0; e.stuckAt = null; return; }
             if (!e.stuckAt.HasValue) { e.stuckAt = pos; return; }
             if (Math.Abs(pos.x - e.stuckAt.Value.x) > 8 || Math.Abs(pos.y - e.stuckAt.Value.y) > 8) { e.stuckMs = 0; e.stuckAt = pos; }
@@ -240,7 +257,32 @@ namespace Server.Bot.Environment
             { e.stuckMs = 0; e.stuckAt = null; m.Jump(random.Next(2) == 0 ? -1 : 1); e.navigation.Clear(); e.cooldown = 4950; m.Publish(now); }
         }
         static void Recover(Entry e, Point target)
-        { e.motion.Teleport(e.motion.ground.GroundPoint(target.x, target.y - 1) ?? target); e.navigation.Clear(); }
+        {
+            var map = e.motion.map;
+            bool bounded = map.bottom > map.top && map.right > map.left;
+            int x = map.right > map.left ? Math.Max(map.left, Math.Min(map.right, target.x)) : target.x;
+            Point? point = null;
+            if (bounded)
+            {
+                int y = Math.Max(map.top, Math.Min(map.bottom, target.y));
+                point = e.motion.ground.GroundPoint(x, y - 1);
+                // 目标点正下方只有界外装饰地面（坑底）时不算数。
+                if (point.HasValue && (point.Value.y < map.top || point.Value.y > map.bottom)) point = null;
+                // 从 VR 底往上找最近的界内平台（坑底在 VRBottom 之下时走这条）。
+                if (!point.HasValue)
+                    point = e.motion.ground.GroundAbove(x, map.bottom + 1, map.bottom - map.top + 1);
+                if (!point.HasValue)
+                    point = e.motion.ground.GroundPoint(x, (map.top + map.bottom) / 2);
+                if (point.HasValue && (point.Value.y < map.top || point.Value.y > map.bottom)) point = null;
+                if (!point.HasValue) point = new Point(x, Math.Max(map.top, Math.Min(map.bottom, target.y)));
+            }
+            else
+            {
+                point = e.motion.ground.GroundPoint(target.x, target.y - 1);
+            }
+            e.motion.Teleport(point ?? target);
+            e.navigation.Clear();
+        }
         public static HashSet<int> Reachable(BotNavigationGraph graph, BotGroundIndex ground, Point from)
         {
             var seen = new HashSet<int>(); int start = graph.FindRegionId(ground, from); if (start < 0) return seen;

@@ -98,6 +98,13 @@ public partial class SkillSystem : MonoBehaviour
         if (data == null) return Reject("缺少技能数据");
         int level = SkillProgress.LevelOf(skillId);
         if (level <= 0) return Reject("技能尚未学习（技能窗里加点）");
+        if (NativeMount.IsSkill(skillId))
+        {
+            if(p==null || p.hp<=0 || GameLoop.I?.state!=GameLoop.GameState.Playing || GameLoop.I.gameOver)
+                return Reject("当前无法骑乘");
+            string failure=NativeMount.Toggle(p,skillId,level);
+            return failure==null || Reject(failure);
+        }
         if(skillId==1016)
         {
             if(p==null || p.hp<=0 || GameLoop.I?.field==null) return Reject("当前无法放置轮回碑石。");
@@ -132,6 +139,7 @@ public partial class SkillSystem : MonoBehaviour
         if (heldSkill!=null && !continuousShot) return Reject("正在持续释放技能");
         if (!continuousShot && Time.unscaledTime < actionUntil) return Reject("正在释放技能");
         if (s.native == null) return Reject("技能等级数据缺失");
+        if (NativeMount.Item(p)>0) return Reject("请先解除骑乘状态");
         if (s.native.Kind == "Passive" && !InstantSelfSkill(s.native.Id)) return Reject("被动技能无需施放");
         if (s.native.Kind=="FlashJump" && !p.CanUseFlashJump(s.native.Id)) return Reject("当前无法使用二段跳");
         Vector2 teleportDestination = default;

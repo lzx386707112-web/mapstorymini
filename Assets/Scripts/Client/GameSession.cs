@@ -41,7 +41,7 @@ public static class GameSession
         global::Server.Field.MapReactorService.EventInstance = map=>GameLoop.I?.field?.StateId==map ? NativeEventScripts.Instance() : MapleDash.Js.JsNull.Value;
         // ReactorActionManager.getPlayer()：单机只有一个真实角色，owner 就是它。
         global::Server.Field.MapReactorService.Player = owner=>NpcApi.BuildPlayer(NpcSession.MapContext());
-        // EnterMTSHandler.enterMTS：源端默认 use_mts=false，此时拍卖入口只是重开 9900001 主菜单。
+        // 菜单直接调用 enterMTS，不经过 handlePacket 的 use_mts 开关。
         Server.Scripts.EnterMTS = EnterMtsFromMenu;
         // —— 远征队（Expedition.java）——
         // 单机只有一个真实角色：广播/私聊/倒计时全部落在本地玩家身上。
@@ -54,6 +54,22 @@ public static class GameSession
         Expedition.ConfigBool = name => Server != null && GameConfigDao.GetBool(Server.Db,name);
         Expedition.Log = text => UnityEngine.Debug.Log("[Expedition] " + text);
         global::Server.Field.MapReactorService.ScriptError = error=>UnityEngine.Debug.LogError("[ReactorScript] "+error.Message);
+        // ReactorScriptManager.act 的宿主由 BotRuntime 统一接线（反应堆脚本要刷怪/掉券）。
+        // 这里只补它需要的两件「只有 Unity 侧才拿得到」的东西：
+        //   rm.getMap()       —— 事件实例地图的脚本宿主（毒雾森林 3002001、海盗船四个动力门）
+        //   rm.spawnMonster() —— 刷进实例地图（玩具塔 2201001 砸箱子出 3 只怪）
+        global::Server.Field.MapReactorService.MapHost = map =>
+        {
+            var instance = NativeEventScripts.ResolveMap(map);
+            return instance != null ? (MapleDash.Js.JsValue)instance.Host : MapleDash.Js.JsNull.Value;
+        };
+        global::Server.Field.MapReactorService.SpawnMonsterAt = (map,mob,x,y,qty) =>
+        {
+            var instance = NativeEventScripts.ResolveMap(map);
+            if (instance == null) return false;
+            for (int i = 0; i < qty; i++) instance.SpawnAt(mob, x, y, true);
+            return true;
+        };
         global::Server.Field.NativeReactorDrops.NeedsQuestItem = (owner,quest,item)=>owner!=CharacterId || QuestLogic.NeedQuestItem(quest,item);
         global::Server.Field.NativeReactorDrops.Rates = owner=>
         {
@@ -275,16 +291,10 @@ public static class GameSession
         return true;
     }
 
-    // EnterMTSHandler.java:59-151 的 enterMTS 全流程。
-    // 关键点：源端默认配置 use_mts=false（V1.7.0__create_game_config.sql:51），
-    // 此时 handlePacket 直接走 openCenterScript → NPCScriptManager.start(c, BEI_DOU_NPC_BASE=9900001, null)，
-    // 也就是「拍卖系统」这个选项在北斗默认配置下就是回到主菜单，根本没有 MTS 界面。
-    // 打开真正的 MTS 需要整套界面 + mts_items 交易，未迁移 —— 明确报缺失，不拿商城顶替。
+    // 9900001 直接调用 EnterMTSHandler.enterMTS；use_mts 只约束封包入口。
+    // 原版 ITC 窗口与 mts_items 交易尚未迁移，禁止回到主菜单伪装成功。
     static void EnterMtsFromMenu()
     {
-        if (Server != null && GameConfigDao.GetBool(Server.Db, "use_mts"))
-            throw new MapleDash.Js.JsRuntimeException("Unmigrated MTS: use_mts=true");
-
         if (!(NativeEventScripts.Instance() is MapleDash.Js.JsNull))
         {
             NativeSystemMessage.Drop(5, "Entering Cash Shop or MTS are disabled when registered on an event.");
@@ -299,7 +309,7 @@ public static class GameSession
             return;
         }
         if (Profile.level < 10) return;
-        NpcSession.Talk(9900001);
+        throw new MapleDash.Js.JsRuntimeException("Unmigrated MTS: ITC window and trading service");
     }
 
     /// <summary>只放开当前角色、保留账号登录态（退出战斗回选角用）。</summary>
@@ -478,6 +488,7 @@ public static class GameSession
             else d.AddItem(it.itemId, it.quantity);
         }
         NativeEquipmentEffects.EquipmentChanged();
+        NativeCharacterInfo.RefreshSelf();
 
         // 装备窗读 Profile，场景精灵则缓存合成配方；同步后必须刷新变化的外观。
         if (player != null && previousAppearance != WzCharacter.CurrentAppearanceKey())

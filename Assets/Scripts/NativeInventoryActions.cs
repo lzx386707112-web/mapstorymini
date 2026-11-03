@@ -4,7 +4,7 @@ using System.Collections.Generic;
 // Source UseItemHandler and dedicated equipment / chair / cash handlers use distinct routes.
 public static class NativeInventoryActions
 {
-    static int carriedItem,carriedPosition;
+    static int carriedItem,carriedPosition,carriedType;
     static bool swallowDrop,carriedFromInventory;
     public static bool Carrying => carriedItem != 0;
     public static void Pick(int id,int inventoryPosition=0) => Pick(id,inventoryPosition,false);
@@ -22,6 +22,10 @@ public static class NativeInventoryActions
             !(fromInventory && id > 0 && inventoryPosition >= 0)) return;
         SkillWindow.CancelSkillDrag();
         carriedItem = id;carriedPosition=inventoryPosition;carriedFromInventory=fromInventory;
+        // 源端拖拽载荷带来源页签（BeiDou.exe 0x81D42E 把窗口 +0x5e4 的当前页签写进载荷 +0x18），
+        // 放下时 0x4F3057 要求「目标窗口页签 == 载荷页签」才发 ITEM_MOVE，跨页落格直接拒绝。
+        // 这里同口径：类型取道具 id 首位（1..5），等价于「页签 + 1」。
+        carriedType = fromInventory ? id / 1000000 : 0;
     }
     public static void CarryStep()
     {
@@ -41,6 +45,21 @@ public static class NativeInventoryActions
         // 这是按用户要求补的拖拽口径；落点必须仍是地面区，窗口/底栏/虚拟键上松手不丢）。
         if (!Pointer.Pressed)
         {
+            if (Pointer.Released && EquipWindow.DropPetPotion(Pointer.Pos,carriedItem))
+            {
+                carriedItem=0; Pointer.ConsumeClick(); return;
+            }
+            // 按住拖动到另一格再松手：同样走 ITEM_MOVE（项目补的拖拽口径，必须要求真的拖动过，
+            // 否则「点一下拿起」的抬手会被当成落格，等于刚拿起来就放回）。
+            if (Pointer.Released && Pointer.DragEnded && carriedFromInventory && InvenWindow.Visible &&
+                InvenWindow.SlotAt(Pointer.Pos, out int releaseTarget) &&
+                InvenWindow.InventoryType == carriedType && releaseTarget != carriedPosition)
+            {
+                int moveId = carriedItem, moveFrom = carriedPosition;
+                carriedItem = 0;
+                if (MoveToSlot(moveFrom, releaseTarget, carriedType)) { Pointer.ConsumeClick(); return; }
+                carriedItem = moveId;
+            }
             if (Pointer.Released && carriedFromInventory && FieldAcceptsDrop(Pointer.Pos))
             {
                 int dropId = carriedItem, dropPosition = carriedPosition;
@@ -59,12 +78,60 @@ public static class NativeInventoryActions
             var target=EquipWindow.EquipmentAt(Pointer.Pos) ?? InvenWindow.EquipmentAt(Pointer.Pos);
             if(target!=null) { placed=true; if(IsCashEquipment(id)) NativeItemUseEffects.CashEquipment(id,target); else NativeItemUseEffects.Scroll(id,target); }
         }
+        // 背包格落点：源端放下时会先问命中窗口（0x4EFBB8 → 0x4F3057），
+        // 目标格与手上道具同页且不是同一格 → 发 ITEM_MOVE(type, src, dst)，
+        // 服务端 Inventory.move 决定「空格移动 / 同 id 合并 / 否则互换槽位」。
+        // 必须排在卷轴/现金装备的落点之后：那是另一条判定分支，不能先被移动吃掉。
+        if (!placed && carriedFromInventory && InvenWindow.Visible && InvenWindow.SlotAt(Pointer.Pos, out int targetPosition))
+        {
+            if (InvenWindow.InventoryType != carriedType)
+            {
+                // 跨背包页不落格（源端 0x4F30D8 比较页类型后直接返回）：保持携带，什么都不做。
+                carriedItem = id;
+                return;
+            }
+            if (targetPosition == carriedPosition)
+            {
+                // 点回原格 = 放回原处，源端同样不发请求（0x4F30E6 src==dst 直接返回）。
+                swallowDrop = true; Pointer.ConsumeClick(); Pointer.Pressed = false;
+                return;
+            }
+            if (MoveToSlot(carriedPosition, targetPosition, carriedType))
+            {
+                swallowDrop = true; Pointer.ConsumeClick(); Pointer.Pressed = false;
+                return;
+            }
+            carriedItem = id;   // 服务端拒绝（格子越界/已空等），保留携带
+            return;
+        }
         if(!placed && id/1000000!=1) placed = KeyConfigWindow.Visible && !KeyConfigWindow.Carrying && KeyConfigWindow.DropSkill(Pointer.Pos, -id);
         if (!placed && id/1000000!=1 && !KeyConfigWindow.Visible)
             for (int i = 0; i < QuickSlots.Count; i++)
                 if (BottomBar.SlotRect(i).Contains(Pointer.Pos)) { QuickBarKeys.BindSkill(i, -id); placed = true; break; }
         if (!placed && carriedFromInventory && FieldAcceptsDrop(Pointer.Pos)) placed = DropToField(id, carriedPosition);
         if (placed) { swallowDrop = true; Pointer.ConsumeClick(); Pointer.Pressed = false; }
+    }
+
+    // 源端「放到另一个背包格」= ITEM_MOVE(0x47) 的 action>0 分支：
+    //   ItemMoveHandler → InventoryManipulator.move(c, type, src, dst) → Inventory.move
+    //   dst 空 → 改 position；同 id 且非 207 充能、owner 相同 → 相加（超 slotMax 留余量）；
+    //   其余（含装备/现金同 id）→ 两个槽位互换。判定全部在服务端 NativeInventorySort.MoveItem。
+    static bool MoveToSlot(int from, int to, int type)
+    {
+        if (!GameSession.InGame || GameSession.Character == null || from <= 0 || to <= 0 || from == to) return false;
+        var response = GameSession.Net.ChangeInventory(new InventoryChangeRequest
+        {
+            characterId = GameSession.CharacterId,
+            moveFrom = from, moveTo = to, moveInventoryType = type,
+        });
+        if (response == null || !response.ok)
+        {
+            BottomBar.Toast(response == null || string.IsNullOrEmpty(response.error) ? "无法移动这件物品" : response.error);
+            return false;
+        }
+        GameSession.Character.inventory = response.inventory;
+        GameSession.ApplyInventoryToProfile(); Profile.Save();
+        return true;
     }
 
     // 源端「丢到地上」= ITEM_MOVE(0x47) 且 action==0（ItemMoveHandler → InventoryManipulator.drop）。
@@ -81,14 +148,43 @@ public static class NativeInventoryActions
         var entry = GameSession.Character.inventory.Find(x => x.itemId == itemId && x.position > 0 &&
             (position == 0 || x.position == position));
         if (entry == null) return false;
-        // 源端对可堆叠道具先问「扔掉多少？」（字符串池 885），装备/单件直接丢。
-        if (entry.quantity > 1 && itemId / 1000000 != 1)
+        // 源端丢弃门控（EXE 0x4f34f5..0x4f38a1，按 info 字段分派）：
+        //   现金道具 info/cash       → 0x372「这种道具不能扔掉。」硬拦（0x5d4a2b 读 cash）
+        //   任务道具 info/quest      → 0x15c3「这种道具丢弃后无法再次获得，还想丢弃吗？」确认（0x5d50b8 读 quest）
+        //   不可交易 info/tradeBlock → 0x1232「丢弃后变无法交易，确认？」确认（0x5d4db9 读 tradeBlock）
+        // 源端还有：封印道具 0x2F7「已封印…无法丢弃」、婚戒 0x10A3、卡片(430xxxx) 0x130B、
+        //   4220xxx 硬拦——本项目暂无封印/婚戒/卡片系统，先不接。
+        var info = NativeItemSource.Node(itemId)?.Get("info");
+        if (info != null && info.Int("cash") == 1)
+        { NativeUtilPrompt.Notice("这种道具不能扔掉。"); return true; }
+        if (info != null && info.Int("quest") == 1)
         {
-            NativeUtilPrompt.Number("扔掉多少？", 1, 1, entry.quantity, value => DropToField(itemId, position, (int)value));
+            NativeUtilPrompt.Confirm("这种道具丢弃后无法再次获得，还想丢弃吗？", yes => { if (yes) DropToFieldAsk(itemId, position); });
             return true;
         }
-        DropToField(itemId, position, 1);
+        if (info != null && info.Int("tradeBlock") == 1)
+        {
+            NativeUtilPrompt.Confirm("丢弃物品后获得的话，会变成无法交易状态。你确认要丢弃吗？", yes => { if (yes) DropToFieldAsk(itemId, position); });
+            return true;
+        }
+        DropToFieldAsk(itemId, position);
         return true;
+    }
+
+    // 门控通过后：可堆叠道具（>1 且非装备）先问「扔掉多少？」（源端字符串池 885），装备/单件直接丢 1 个。
+    static void DropToFieldAsk(int itemId, int position)
+    {
+        var entry = GameSession.Character == null ? null :
+            GameSession.Character.inventory.Find(x => x.itemId == itemId && x.position > 0 &&
+                (position == 0 || x.position == position));
+        if (entry == null) return;
+        if (entry.quantity > 1 && itemId / 1000000 != 1)
+        {
+            // 默认填全部数量（而非 1）：与背包金币丢弃默认 10 一致的体验。
+            NativeUtilPrompt.Number("扔掉多少？", entry.quantity, 1, entry.quantity, value => DropToField(itemId, position, (int)value));
+            return;
+        }
+        DropToField(itemId, position, 1);
     }
 
     static void DropToField(int itemId, int position, int quantity)

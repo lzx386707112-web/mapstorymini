@@ -83,6 +83,16 @@ namespace Server.Bot.Types.Pq
             return map != null && map.templateMapId > 0 ? map.templateMapId : mapId;
         }
 
+        /// <summary>
+        /// 真实图 id → 客户端此刻实际使用的图 id。
+        /// 副本图每实例各一份，客户端侧用的是 Scope 负 id（FieldDirector.StateId = EventMap.Scope），
+        /// 刷怪快照 / 地面掉落 / 反应堆实例也都挂在这个 id 下；而假人的 mapId、阶段表、
+        /// 传送门、存档一律是真实 id。两套 id 只在这三套系统之间转换一次（由客户端注入）。
+        /// 没有注入（离线自检）时是恒等映射。
+        /// </summary>
+        public static Func<int, int> LiveMapId;
+        public static int Live(int mapId) => LiveMapId != null ? LiveMapId(mapId) : mapId;
+
         public static bool Enabled => BotConfig.PqLobbyBotsEnabled(Db);
 
         // =====================================================================
@@ -94,8 +104,7 @@ namespace Server.Bot.Types.Pq
             tickHandle?.Cancel(); tickHandle = null;
             lobbies.Clear(); runs.Clear();
             localMap = int.MinValue; pendingEnterParty = 0; pendingEnterAt = 0;
-            prefetchIds = null; prefetchIndex = 0;
-        }
+            prefetchIds = null; prefetchIndex = 0;        }
 
         /// <summary>
         /// 加载页每帧推一张组队任务地图的分片进后台解析队列。
@@ -113,6 +122,13 @@ namespace Server.Bot.Types.Pq
                 {
                     Add(def.recruitMap); Add(def.entryMap); Add(def.exitMap);
                     foreach (var stage in def.stages) Add(stage.mapId);
+                    // 阶段链之外的子图（玩具塔的分层、黑暗塔五间、海盗船子舱）也要预热：
+                    // 假人是按需 WarpBot 进去的，分片没 Ready 就会一直卡在主图。
+                    foreach (int map in def.extraMaps) Add(map);
+                    foreach (var stage in def.stages)
+                        foreach (var step in stage.steps)
+                            if (step.maps != null)
+                                foreach (int map in step.maps) Add(map);
                 }
             }
             if (prefetchIndex >= prefetchIds.Count) return;
@@ -651,6 +667,9 @@ namespace Server.Bot.Types.Pq
         public static Func<string,string> InstanceProperty;
         /// <summary>假人自己捡脚下的道具：(bot, itemId, max) → 捡到的件数。</summary>
         public static Func<BotCharacter,int,int,int> PickupItem;
+        /// <summary>地上有这个道具但不在拾取范围内时走过去：(bot, itemId) → true = 这一拍在赶路。
+        /// 掉落有两套（MapItemService 的权威掉落 + GroundItem 的老式掉落），只有 Unity 侧都看得见。</summary>
+        public static Func<BotCharacter,int,float,bool> WalkToItem;
 
         public static bool EnterEvent(int botId)
         {
@@ -682,6 +701,14 @@ namespace Server.Bot.Types.Pq
             if (bot == null || itemId <= 0 || max <= 0 || PickupItem == null) return 0;
             try { return PickupItem(bot, itemId, max); }
             catch (Exception) { return 0; }
+        }
+
+        /// <summary>走过去捡（地上有、但不在拾取半径里）。返回 true 表示这一拍已经在赶路。</summary>
+        public static bool WalkToDrop(BotCharacter bot, int itemId, float searchRange = float.MaxValue)
+        {
+            if (bot == null || itemId <= 0 || WalkToItem == null) return false;
+            try { return WalkToItem(bot, itemId, searchRange); }
+            catch (Exception) { return false; }
         }
 
         /// <summary>改假人自己的背包（队员换证/交证时用，落在 BotCharacter.inventory）。</summary>

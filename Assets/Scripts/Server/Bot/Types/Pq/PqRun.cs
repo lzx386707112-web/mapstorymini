@@ -28,12 +28,14 @@ namespace Server.Bot.Types.Pq
         const long StartTimeoutMs = 20000;     // 招募 NPC 点完 20s 还没进本 → 放弃
         const long RewardWaitMs = 6000;        // 出本后在出口图站一会儿再解散
         const long OffMapGraceMs = 8000;       // 玩家离开阶段图（奖励关/回城）后的宽限
+        const int TalkRetries = 3;             // NPC 没认账时的重试次数
 
         public readonly PqDef def;
         public readonly int partyId, leaderId;
         readonly List<int> bots = new List<int>();
         readonly Random rng = new Random();
         readonly Dictionary<int,long> nextSwing = new Dictionary<int,long>();
+        readonly Dictionary<int,int> combatClaims = new Dictionary<int,int>();
 
         public int stageIndex;
         public int stepIndex;
@@ -41,9 +43,12 @@ namespace Server.Bot.Types.Pq
         public string lastNote = "";
 
         long stepStartedAt, stepDeadline, nextActionAt, nextSayAt, nextChatterAt, offMapAt;
-        long stageClearedAt, startDeadline, rewardUntil;
+        long stageClearedAt, startDeadline, rewardUntil, talkRetryAt;
+        readonly Dictionary<int,long> nextSweepAt = new Dictionary<int,long>();
+        long noTargetSince;   // 看不到可打目标时的扫图/诊断节流
+        bool noTargetNoted;
         bool started, stageWorkDone, talking, talkSent, talkDone;
-        int talkStage = -1;
+        int talkStage = -1, talkRetries;
 
         // ——— 队员分支（废都第一关）的每个假人状态 ———
         // couponNeed：领题后脚本要求收几张优惠券（题目号 → PqCatalog.Stage1Answer）
@@ -170,7 +175,10 @@ namespace Server.Bot.Types.Pq
             // —— 站好之后等下一阶段 ——
             if (stageWorkDone)
             {
-                if (now - stageClearedAt < StageIdleMs) return;
+                // gateMs：有些阶段要玩家自己踩脚本传送门（海盗船的 next00 会顺手刷 BOSS、
+                // 玩具塔第 6 关是纯传送门迷宫），多给一点时间，别一清完就把人硬传走。
+                long gate = stage.gateMs > 0 ? stage.gateMs : StageIdleMs;
+                if (now - stageClearedAt < gate) return;
                 AdvanceStage(now);
                 return;
             }
@@ -179,18 +187,15 @@ namespace Server.Bot.Types.Pq
             DriveWork(stage, now);
         }
 
-        int CurrentMap
-        {
-            get
-            {
-                var stage = CurrentStage;
-                if (stage == null) return 0;
-                var player = PqDirector.LocalPlayer();
-                return player != null && PqDirector.TemplateMapId(player.mapId) == stage.mapId
-                    ? player.mapId : stage.mapId;
-            }
-        }
+        /// <summary>
+        /// 本阶段的目标图（真实 id）。客户端在副本里用的是每实例一份的 Scope 负 id，
+        /// 两套 id 只在问战斗快照 / 地面掉落 / 反应堆时经 <see cref="Live"/> 转换一次。
+        /// </summary>
+        int CurrentMap => CurrentStage?.mapId ?? 0;
         public PqStage CurrentStage => stageIndex >= 0 && stageIndex < def.stages.Count ? def.stages[stageIndex] : null;
+
+        /// <summary>真实图 id → 刷怪/掉落/反应堆实际使用的图 id（副本内是 Scope）。</summary>
+        static int Live(int mapId) => PqDirector.Live(mapId);
 
         void PruneBots()
         {
@@ -217,13 +222,28 @@ namespace Server.Bot.Types.Pq
             stageWorkDone = false;
             stageClearedAt = 0;
             talking = false; talkSent = false; talkDone = false; talkStage = -1;
+            talkRetries = 0; talkRetryAt = 0;
             couponNeed.Clear(); passReady.Clear(); asked.Clear();
             questScriptFailed = false; checkAttempts = 0;
             // 0 = 「这一步还没开跑」：DriveWork 会用第一次 tick 的时间把截止时间算出来，
             // 并顺手把这一步的台词说出去。
             stepStartedAt = 0; stepDeadline = 0;
+            nextSweepAt.Clear(); noTargetSince = 0; noTargetNoted = false;
+            combatClaims.Clear();
             nextActionAt = now; nextSayAt = now; nextChatterAt = now + 4000;
             lastNote = CurrentStage?.title ?? "";
+            // 进图先把这一关的箱子恢复到初始状态：源端实例图是 resetFully 过的，
+            // 移植端的反应堆挂在真实图 id 下、reactorTime<=0 的破坏后不会自己长回来，
+            // 不重置的话同一趟会话里第二遍跑玩具塔会一个箱子都没有。
+            // 本关要跨的子图（陷阱房/黑暗塔/六个子图/子舱）一并重置。
+            var stage = CurrentStage;
+            if (stage != null)
+            {
+                MapReactorService.RespawnAll(Live(stage.mapId));
+                foreach (var each in stage.steps)
+                    foreach (int map in each.maps)
+                        if (map != stage.mapId) MapReactorService.RespawnAll(Live(map));
+            }
             // 假人跟着队长进这一张图（脚本只送真实角色，假人得自己走）。
             foreach (int id in bots)
             {
@@ -296,7 +316,7 @@ namespace Server.Bot.Types.Pq
                 PqAction.BreakReactors => WorkReactors(step, now),
                 PqAction.Stand => WorkStands(step, now),
                 PqAction.GrantItem => WorkGrant(step),
-                PqAction.Talk => WorkTalk(step),
+                PqAction.Talk => WorkTalk(step, now),
                 PqAction.BotAsk => WorkBotAsk(step, now),
                 PqAction.BotCollect => WorkBotCollect(step, now),
                 PqAction.BotExchange => WorkBotExchange(step, now),
@@ -326,9 +346,12 @@ namespace Server.Bot.Types.Pq
             if (!string.IsNullOrEmpty(reason)) lastNote = (CurrentStage?.title ?? "") + "（" + reason + "）";
             stepIndex++;
             stepStartedAt = 0; stepDeadline = 0;
+            nextSweepAt.Clear(); noTargetSince = 0; noTargetNoted = false;
+            combatClaims.Clear();
             // 一关里可能有多次 Talk（废都 2/3/4 第一次抽组合、第二次核对），
             // 所以 talkSent/talkDone 必须跟着步骤重置，否则第二次对话永远不发。
             talkSent = false; talkDone = false;
+            talkRetries = 0; talkRetryAt = 0;
             nextActionAt = now; nextSayAt = now;
         }
 
@@ -340,7 +363,49 @@ namespace Server.Bot.Types.Pq
             PqDirector.Say(bot, step.say);
         }
 
-        // ———————————————— 打怪 ————————————————
+        // ———————————————— 打怪 / 砸箱子（可跨子图）————————————————
+
+        // 一个步骤可能要横跨好几张图（玩具塔第 4 关的黑暗塔五间、第 5 关的六个子图、
+        // 海盗船的子舱）。假人按「哪张图还有活」分头走，人多的图多分几个。
+        List<int> StepMaps(PqStep step)
+        {
+            var list = new List<int>();
+            if (step.maps != null)
+                foreach (int map in step.maps) if (map > 0) list.Add(map);
+            if (list.Count == 0) list.Add(CurrentMap);
+            return list;
+        }
+
+        /// <summary>把假人分到「还有活」的图上：已经在干活的原地不动，其余补到活最多、人最少的图。</summary>
+        void AssignMaps(List<int> maps, Func<int,int> remainingOf)
+        {
+            var remaining = new Dictionary<int,int>();
+            var load = new Dictionary<int,int>();
+            foreach (int map in maps) { remaining[map] = remainingOf(map); load[map] = 0; }
+            foreach (int id in bots)
+            {
+                var bot = BotRegistry.Get(id);
+                if (bot == null) continue;
+                if (remaining.TryGetValue(bot.mapId, out int left) && left > 0) load[bot.mapId]++;
+            }
+            foreach (int id in bots)
+            {
+                var bot = BotRegistry.Get(id);
+                if (bot == null) continue;
+                if (remaining.TryGetValue(bot.mapId, out int here) && here > 0) continue;
+                int pick = 0;
+                foreach (int map in maps)
+                {
+                    if (remaining[map] <= 0) continue;
+                    if (pick == 0) { pick = map; continue; }
+                    // 活多、人少的优先（交叉相乘比较，避免除零）
+                    if ((long)load[map] * remaining[pick] < (long)load[pick] * remaining[map]) pick = map;
+                }
+                if (pick == 0) continue;
+                if (bot.mapId != pick && !PqDirector.WarpBot(bot, pick)) continue;
+                load[pick]++;
+            }
+        }
 
         // 怪物实例由 Unity 侧提供（BotCombatField → BotPartyGrindService），
         // 这里只做选择与出手，伤害结算仍走同一条 Hit 通路。
@@ -350,27 +415,38 @@ namespace Server.Bot.Types.Pq
             if (grind == null) return true;
             var player = PqDirector.LocalPlayer();
             if (player == null) return false;
-            List<BotGrindMob> mobs;
-            try { mobs = grind.Monsters?.Invoke(CurrentMap, player.world, player.channel); }
-            catch (Exception) { mobs = null; }
-            if (mobs == null) return true;
-
-            var live = new List<BotGrindMob>();
-            foreach (var mob in mobs)
+            var maps = StepMaps(step);
+            var live = new Dictionary<int,List<BotGrindMob>>();
+            int total = 0;
+            foreach (int map in maps)
             {
-                if (mob == null || !mob.alive || mob.fake) continue;
-                if (boss != mob.boss) continue;
-                live.Add(mob);
+                List<BotGrindMob> mobs;
+                try { mobs = grind.Monsters?.Invoke(Live(map), player.world, player.channel); }
+                catch (Exception) { mobs = null; }
+                var list = new List<BotGrindMob>();
+                if (mobs != null)
+                    foreach (var mob in mobs)
+                    {
+                        if (mob == null || !mob.alive || mob.fake) continue;
+                        if (boss != mob.boss) continue;
+                        // KillMobs 只认表里点名的怪（玩具塔第 4 关的 9300008/9300014 就靠它）。
+                        if (!IsWanted(step, mob)) continue;
+                        list.Add(mob);
+                    }
+                live[map] = list;
+                total += list.Count;
             }
-            if (live.Count == 0) return true;
+            if (total == 0) return true;
             if (now < nextActionAt) return false;
             nextActionAt = now + ActionIntervalMs;
+            AssignMaps(maps, map => live[map].Count);
 
             foreach (int id in bots)
             {
                 var bot = BotRegistry.Get(id);
-                if (bot == null || bot.mapId != CurrentMap) continue;
-                var target = Nearest(bot, live);
+                if (bot == null) continue;
+                if (!live.TryGetValue(bot.mapId, out var targets) || targets.Count == 0) continue;
+                var target = Nearest(bot, targets);
                 if (target == null) continue;
                 bot.equips.TryGetValue(-11, out int weapon);
                 var range = BotAttack.EngageRange(bot.job, weapon);
@@ -391,36 +467,85 @@ namespace Server.Bot.Types.Pq
 
         BotGrindMob Nearest(BotCharacter bot, List<BotGrindMob> mobs)
         {
+            var taken = new HashSet<int>();
+            foreach (int id in bots)
+                if (id != bot.id && BotRegistry.Get(id)?.mapId == bot.mapId &&
+                    combatClaims.TryGetValue(id, out int claim)) taken.Add(claim);
+            // 保留活目标，避免每拍在不同平台之间改道；空闲队友优先找未认领目标。
+            combatClaims.TryGetValue(bot.id, out int held);
             BotGrindMob best = null; float dist = float.MaxValue;
             foreach (var mob in mobs)
             {
-                if (!mob.alive) continue;
+                if (mob == null || !mob.alive || taken.Contains(mob.id)) continue;
+                if (mob.id == held) return mob;
                 float d = Math.Abs(mob.x - bot.x) + Math.Abs(mob.y - bot.y) * 2f;
+                // 不同怪也可能挤在同一小块平台；把队友已认领目标周围的拥挤成本
+                // 算进去，让后续队员优先承担别处的怪。已认领目标仍保持，不每拍改道。
+                foreach (var other in mobs)
+                    if (other != null && other.alive && taken.Contains(other.id))
+                        d += Math.Max(0, 1400 - Math.Abs(mob.x - other.x) - Math.Abs(mob.y - other.y) * 2);
                 if (d < dist) { dist = d; best = mob; }
             }
+            // 怪少于队员时允许合击，不让多余队员站桩。
+            if (best == null)
+                foreach (var mob in mobs)
+                {
+                    if (mob == null || !mob.alive) continue;
+                    float d = Math.Abs(mob.x - bot.x) + Math.Abs(mob.y - bot.y) * 2f;
+                    if (d < dist) { dist = d; best = mob; }
+                }
+            if (best != null) combatClaims[bot.id] = best.id;
+            else combatClaims.Remove(bot.id);
             return best;
+        }
+
+        /// <summary>
+        /// 阶段表里 step.ids 写的是**怪物模板 id**（9300001 这种），BotGrindMob.mobId 才是它；
+        /// BotGrindMob.id 是 Unity 运行时句柄。以前拿 id 比模板 id，永远不相等，
+        /// 于是「按怪种过滤」的步骤（废都第一关的鳄鱼、玩具塔第 4 关）一只怪都选不出来，
+        /// 假人走到 NPC 旁边就站着不动。这里统一走 mobId，自检里没填 mobId 时才退回 id。
+        /// </summary>
+        public static bool IsWanted(PqStep step, BotGrindMob mob)
+        {
+            if (step.ids.Length == 0) return true;
+            int key = mob.mobId > 0 ? mob.mobId : mob.id;
+            return Array.IndexOf(step.ids, key) >= 0;
         }
 
         // ———————————————— 砸反应堆 ————————————————
 
+        /// <summary>
+        /// 砸反应堆。砸开那一下由 MapReactorService.Hit → ReactorScriptManager.act 跑
+        /// reactor/&lt;id&gt;.js：2202003 自己 dropItems 掉券、2201001 刷 3 只 9300007、
+        /// 3002001 掉魔力石、3001000 召石头人。这里不另配掉落，免得和脚本各掉一份。
+        /// </summary>
         bool WorkReactors(PqStep step, long now)
         {
-            var list = MapReactorService.Get(CurrentMap);
-            var live = new List<MapReactor>();
-            foreach (var reactor in list)
+            var maps = StepMaps(step);
+            var live = new Dictionary<int,List<MapReactor>>();
+            int total = 0;
+            foreach (int map in maps)
             {
-                if (!InStep(step, reactor.id)) continue;
-                if (reactor.Hittable) live.Add(reactor);
+                var list = new List<MapReactor>();
+                foreach (var reactor in MapReactorService.Get(Live(map)))
+                {
+                    if (!InStep(step, reactor.id)) continue;
+                    if (reactor.Hittable) list.Add(reactor);
+                }
+                live[map] = list;
+                total += list.Count;
             }
-            if (live.Count == 0) return true;
+            if (total == 0) return true;
             if (now < nextActionAt) return false;
             nextActionAt = now + ActionIntervalMs;
+            AssignMaps(maps, map => live[map].Count);
 
             foreach (int id in bots)
             {
                 var bot = BotRegistry.Get(id);
-                if (bot == null || bot.mapId != CurrentMap) continue;
-                var target = NearestReactor(bot, live);
+                if (bot == null) continue;
+                if (!live.TryGetValue(bot.mapId, out var targets) || targets.Count == 0) continue;
+                var target = NearestReactor(bot, targets);
                 if (target == null) continue;
                 if (Math.Abs(target.x - bot.x) > 60)
                 {
@@ -430,7 +555,7 @@ namespace Server.Bot.Types.Pq
                 bot.stance = target.x < bot.x ? 5 : 4;
                 bot.facing = target.x < bot.x ? -1 : 1;
                 BotAttack.BasicSwing(bot, rng);
-                try { MapReactorService.Hit(CurrentMap, target.objectId, null, bot.id, partyId); }
+                try { MapReactorService.Hit(Live(bot.mapId), target.objectId, null, bot.id, partyId); }
                 catch (Exception) { /* 反应堆这一帧被拆了 */ }
             }
             return false;
@@ -491,9 +616,33 @@ namespace Server.Bot.Types.Pq
             return true;
         }
 
-        bool WorkTalk(PqStep step)
+        /// <summary>
+        /// 队长点 NPC。openOnly 只走引言页（脚本的 statusStgN: -1 → 0），不做判定；
+        /// 带 awaitProperty 的步骤要等实例属性真的变过来才算完成，否则隔一会儿重点一次
+        /// （物品差一点 / 站位偏一点都会被脚本打回，重试比硬往下走更接近真人）。
+        /// </summary>
+        bool WorkTalk(PqStep step, long now)
         {
             if (step.npc == 0) return true;
+            if (talkDone)
+            {
+                if (string.IsNullOrEmpty(step.awaitProperty)) return true;
+                string value = PqDirector.PropertyOf(step.awaitProperty);
+                bool ok = step.awaitValue != null ? value == step.awaitValue : value != null;
+                if (ok) return true;
+                if (talkRetries >= TalkRetries)
+                {
+                    lastNote = (CurrentStage?.title ?? "") + "（NPC 没认账，先往下走）";
+                    PqDirector.Notify(def.name + "：" + step.awaitProperty + " 还是 "
+                        + (value ?? "空") + "，NPC 没有放行。");
+                    return true;
+                }
+                talkRetries++;
+                talkSent = false; talkDone = false;
+                talkRetryAt = now + 2500;
+                return false;
+            }
+            if (now < talkRetryAt) return false;
             if (!talkSent)
             {
                 talkSent = true;
@@ -506,7 +655,7 @@ namespace Server.Bot.Types.Pq
             }
             // 等这一段对话真的走完再进下一步：脚本的副作用（抽组合、clearStage）都在对话里，
             // 提前返回会出现「还没抽组合就让假人去站位」。
-            return talkDone;
+            return false;
         }
 
         // =====================================================================
@@ -592,44 +741,226 @@ namespace Server.Bot.Types.Pq
             return seen == 0 || asked.Count >= seen;
         }
 
+        /// <summary>
+        /// 假人自己去凑 item：优先捡地上已经掉出来的，其次砸箱子 / 打怪让它掉。
+        /// step.need 是「全队合计」，凑够就交给队长（下一拍 HandOver）。
+        /// 可以跨子图（玩具塔第 4/5 关、海盗船子舱）：哪张图还有活就往哪张图派人。
+        /// </summary>
         bool WorkBotCollect(PqStep step, long now)
         {
             int item = step.itemId > 0 ? step.itemId : PqCatalog.PassCoupon;
-            int totalHeld = 0;
-            if (step.itemId > 0)
-                foreach (int id in bots) { var b = BotRegistry.Get(id); if (b != null) totalHeld += Held(b, item); }
-            foreach (int id in bots)
-            {
-                var bot = BotRegistry.Get(id);
-                if (bot == null || bot.mapId != CurrentMap) continue;
-                int held = Held(bot, item);
-                // NPC 是 itemQuantity == answer 严格相等：多捡一张反而交不掉，按「还差几张」封顶。
-                int missing = step.itemId > 0
-                    ? Math.Max(0, Math.Max(1, step.need) - totalHeld)
-                    : Math.Max(0, (couponNeed.TryGetValue(id, out int n) ? n : 0) - held);
-                if (missing > 0) PqDirector.Pickup(bot, item, missing);
-            }
-            if (Collected(step, item)) return true;
-            // 第一关的券是打鳄鱼掉的：不够就继续打。第五关的证由 BOSS 直接掉，只捡不打。
-            if (step.itemId > 0) return false;
-            return WorkMobs(step, now, boss: false);
-        }
+            if (bots.Count == 0 || item <= 0) return true;
+            if (CollectDone(step, item)) return true;
+            if (now < nextActionAt) return false;
+            nextActionAt = now + ActionIntervalMs;
 
-        bool Collected(PqStep step, int item)
-        {
-            if (bots.Count == 0) return true;
-            int total = 0;
+            // 每张图还剩多少活：地上没人捡的 + 还没打掉的目标。
+            var maps = StepMaps(step);
+            var work = new Dictionary<int,int>();
+            foreach (int map in maps) work[map] = GroundCount(map, item) + TargetCount(step, map);
+            AssignMaps(maps, map => work[map]);
+
             foreach (int id in bots)
             {
                 var bot = BotRegistry.Get(id);
                 if (bot == null) continue;
-                int held = Held(bot, item);
-                total += held;
-                if (step.itemId > 0) continue;                 // 第五关按「全队凑满 N 张」算
-                int need = couponNeed.TryGetValue(id, out int n) ? n : 0;
-                if (need > 0 && held < need) return false;      // 第一关每人一张不落
+                int shortfall = CollectShortfall(step, item, bot);
+                if (shortfall <= 0) { combatClaims.Remove(id); continue; }
+                // 先捡：脚本判定是 itemQuantity == answer 严格相等（废都）/ haveItem（玩具塔），
+                // 按「还差多少」封顶，多捡一张反而交不掉。
+                if (PqDirector.Pickup(bot, item, shortfall) > 0) continue;
+                // 已在射程内就出手，不能被邻层/远处一张券每拍抢走攻击机会。
+                if (step.reactors.Length == 0 && StrikeNearest(bot, step, now, inRangeOnly: true)) continue;
+                // 券掉在拾取半径外：先走过去。不然怪打完了人还杵在原地，券永远进不了包。
+                if (WalkToDrop(bot, item)) continue;
+                // 地上没东西了就干活：有箱子砸箱子，没箱子打怪；
+                // 一只可打的都找不到就自己扫图，不要站在原地等（刷怪点是分段的）。
+                if (step.reactors.Length > 0) BreakNearest(bot, step);
+                else if (!StrikeNearest(bot, step, now) && !PqDirector.WalkToDrop(bot, item)) Sweep(bot, now);
             }
-            return step.itemId > 0 ? total >= Math.Max(1, step.need) : true;
+            return false;
+        }
+
+        /// <summary>
+        /// 这一步算不算收齐了。
+        /// 表里写了 need 的是「全队合计」（玩具塔/毒雾/海盗）；
+        /// 废都第一关每人题目不同，需要各自凑够自己那份，合计没有意义。
+        /// </summary>
+        bool CollectDone(PqStep step, int item)
+        {
+            if (step.need > 0) return HeldAll(item) >= step.need;
+            if (couponNeed.Count == 0) return HeldAll(item) >= 1;   // 题目没读回来：先收一张别卡死
+            int seen = 0;
+            foreach (int id in bots)
+            {
+                var bot = BotRegistry.Get(id);
+                if (bot == null) continue;
+                if (!couponNeed.TryGetValue(id, out int need) || need <= 0) continue;
+                seen++;
+                if (Held(bot, item) < need) return false;
+            }
+            return seen > 0 || HeldAll(item) >= 1;
+        }
+
+        /// <summary>这个假人还差几张（表里有 need 时是全队口径）。</summary>
+        int CollectShortfall(PqStep step, int item, BotCharacter bot)
+        {
+            if (step.need > 0) return step.need - HeldAll(item);
+            if (couponNeed.TryGetValue(bot.id, out int need) && need > 0) return need - Held(bot, item);
+            return Held(bot, item) > 0 ? 0 : 1;
+        }
+
+        /// <summary>
+        /// 地上还有这个道具、但不在拾取半径内：朝最近的那件走过去。
+        /// 返回 true 表示这一拍已经在赶路（别再切去打怪）。
+        /// 掉落有两套（权威掉落挂在 Scope 图 id 下、老式掉落根本没有实体），
+        /// Server 层只看得见前者，所以这个判断交给 Unity 侧注入的实现。
+        /// </summary>
+        bool WalkToDrop(BotCharacter bot, int item)
+            => PqDirector.WalkToDrop(bot, item, 340f);
+
+        int HeldAll(int itemId)
+        {
+            int total = 0;
+            foreach (int id in bots)
+            {
+                var bot = BotRegistry.Get(id);
+                if (bot != null) total += Held(bot, itemId);
+            }
+            return total;
+        }
+
+        static int GroundCount(int mapId, int itemId)
+        {
+            int count = 0;
+            try
+            {
+                foreach (var drop in MapItemService.DroppedItems(Live(mapId)))
+                    if (drop != null && !drop.pickedUp && !drop.IsMeso && drop.ItemId == itemId) count++;
+            }
+            catch (Exception) { return 0; }
+            return count;
+        }
+
+        int TargetCount(PqStep step, int mapId)
+        {
+            int count = 0;
+            if (step.reactors.Length > 0)
+            {
+                foreach (var reactor in MapReactorService.Get(Live(mapId)))
+                    if (reactor.Hittable && InStep(step, reactor.id)) count++;
+            }
+            if (step.ids.Length > 0 || step.reactors.Length == 0)
+            {
+                var grind = BotTypeManager.PartyGrind;
+                var player = PqDirector.LocalPlayer();
+                if (grind != null && player != null)
+                {
+                    List<BotGrindMob> mobs = null;
+                    try { mobs = grind.Monsters?.Invoke(Live(mapId), player.world, player.channel); }
+                    catch (Exception) { mobs = null; }
+                    if (mobs != null)
+                        foreach (var mob in mobs)
+                        {
+                            if (mob == null || !mob.alive || mob.fake) continue;
+                            if (!IsWanted(step, mob)) continue;
+                            count++;
+                        }
+                }
+            }
+            return count;
+        }
+
+        void BreakNearest(BotCharacter bot, PqStep step)
+        {
+            if (bot == null) return;
+            MapReactor best = null; float dist = float.MaxValue;
+            foreach (var reactor in MapReactorService.Get(Live(bot.mapId)))
+            {
+                if (!reactor.Hittable || !InStep(step, reactor.id)) continue;
+                float d = Math.Abs(reactor.x - bot.x) + Math.Abs(reactor.y - bot.y) * .4f;
+                if (d < dist) { dist = d; best = reactor; }
+            }
+            if (best == null) return;
+            if (Math.Abs(best.x - bot.x) > 60) { MoveToward(bot, best.x, best.y); return; }
+            bot.stance = best.x < bot.x ? 5 : 4;
+            bot.facing = best.x < bot.x ? -1 : 1;
+            BotAttack.BasicSwing(bot, rng);
+            try { MapReactorService.Hit(Live(bot.mapId), best.objectId, null, bot.id, partyId); }
+            catch (Exception) { /* 反应堆这一帧被拆了 */ }
+        }
+
+        /// <summary>打这一架（走过去或出手）。返回 false = 视野里没有可选目标。</summary>
+        bool StrikeNearest(BotCharacter bot, PqStep step, long now, bool inRangeOnly = false)
+        {
+            var grind = BotTypeManager.PartyGrind;
+            var player = PqDirector.LocalPlayer();
+            if (grind == null || player == null || bot == null) return true;
+            List<BotGrindMob> mobs = null;
+            // 副本里怪挂在每实例一份的 Scope 图 id 下，假人手上是真实图 id，必须过 Live()
+            // （BotCombatField.Snapshot 的 field.StateId != mapId 会直接返回空表 ⇒ 假人看不到怪）。
+            try { mobs = grind.Monsters?.Invoke(Live(bot.mapId), player.world, player.channel); }
+            catch (Exception) { mobs = null; }
+            if (mobs == null) { NoteNoTarget(now, bot, 0); return false; }
+            var candidates = new List<BotGrindMob>();
+            int onMap = 0;
+            foreach (var mob in mobs)
+            {
+                if (mob == null || !mob.alive || mob.fake || mob.boss) continue;
+                onMap++;
+                if (IsWanted(step, mob)) candidates.Add(mob);
+            }
+            var best = Nearest(bot, candidates);
+            if (best == null) { NoteNoTarget(now, bot, onMap); return false; }
+            bot.equips.TryGetValue(-11, out int weapon);
+            var range = BotAttack.EngageRange(bot.job, weapon);
+            if (Math.Abs(best.x - bot.x) > range.x || Math.Abs(best.y - bot.y) > range.y)
+            {
+                if (inRangeOnly) return false;
+                MoveToward(bot, best.x, best.y);
+                return true;
+            }
+            BotMovementService.Stop(bot);
+            bot.stance = best.x < bot.x ? 5 : 4;
+            bot.facing = best.x < bot.x ? -1 : 1;
+            if (nextSwing.TryGetValue(bot.id, out long ready) && now < ready) return true;
+            try { grind.Strike(bot, best); nextSwing[bot.id] = now + 800; }
+            catch (Exception) { /* 目标在这帧被真人打死 */ }
+            return true;
+        }
+
+        /// <summary>
+        /// 视野里一只可打的目标都没有时不要站桩：每 2.6 秒换一个方向扫一段本层。
+        /// 刷怪点是分段的（废都的鳄鱼、玩具塔的分层），假人守着 NPC 那一段永远等不到怪；
+        /// 另外这也是「过滤条件写错」时的可见症状替代品——以前会静静地站着，看不出哪里错。
+        /// </summary>
+        void Sweep(BotCharacter bot, long now)
+        {
+            if (nextSweepAt.TryGetValue(bot.id, out long ready) && now < ready) return;
+            nextSweepAt[bot.id] = now + 2600;
+            var map = MapService.Get(bot.mapId);
+            int lo = map != null && map.maxX > map.minX ? (int)map.minX + 60 : (int)bot.x - 400;
+            int hi = map != null && map.maxX > map.minX ? (int)map.maxX - 60 : (int)bot.x + 400;
+            if (hi <= lo) return;
+            int mid = (lo + hi) / 2;
+            // 一半地图的步长，走到另一侧再折回；贴着边界时反向。
+            int span = Math.Max(120, (hi - lo) / 2);
+            int dir = bot.x >= mid ? -1 : 1;
+            int x = (int)bot.x + dir * span;
+            if (x < lo || x > hi) { dir = -dir; x = (int)bot.x + dir * span; }
+            x = Math.Max(lo, Math.Min(hi, x));
+            MoveToward(bot, x, (int)bot.y);
+        }
+
+        void NoteNoTarget(long now, BotCharacter bot, int visible)
+        {
+            if (noTargetSince == 0) noTargetSince = now;
+            if (noTargetNoted || now - noTargetSince < 8000) return;
+            noTargetNoted = true;
+            PqDirector.Notify(def.name + "：这一步在图 " + (bot != null ? bot.mapId : 0) +
+                "（实例 " + (bot != null ? Live(bot.mapId) : 0) + "）里看不到可打的怪" +
+                (visible > 0 ? "（场上有 " + visible + " 只，但都不是这一步要的）" : "") +
+                "，假人先自己扫图找。");
         }
 
         bool WorkBotExchange(PqStep step, long now)
@@ -649,7 +980,22 @@ namespace Server.Bot.Types.Pq
                 shortAny = true;
                 PqDirector.Pickup(bot, PqCatalog.PassCoupon, need - held);
             }
-            if (shortAny) return WorkMobs(step, now, boss: false);
+            // 有人没凑够：继续打怪捡券，不在这里干等，也别把这一步判成完成
+            // （WorkMobs 在「一张图都没怪」时会返回 true，直接 return 就会带着空手进交证步）。
+            if (shortAny)
+            {
+                // 没怪可打时同样别站着：自己扫图去这一段之外找券的来源。
+                if (WorkMobs(step, now, boss: false))
+                    foreach (int each in bots)
+                    {
+                        var bot = BotRegistry.Get(each);
+                        if (bot == null || bot.mapId != CurrentMap) continue;
+                        int rest = couponNeed.TryGetValue(each, out int n2) ? n2 : 0;
+                        if (rest > 0 && Held(bot, PqCatalog.PassCoupon) >= rest) continue;
+                        Sweep(bot, now);
+                    }
+                return false;
+            }
 
             if (now < nextActionAt) return false;
             nextActionAt = now + ActionIntervalMs;
@@ -856,7 +1202,7 @@ namespace Server.Bot.Types.Pq
         public void DriveBot(BotCharacter bot, long now)
         {
             if (bot == null || finished) return;
-            if (bot.mapId != CurrentMap)
+            if (!BotAllowedHere(bot))
             {
                 if (CurrentMap != 0) PqDirector.WarpBot(bot, CurrentMap);
                 return;
@@ -865,6 +1211,21 @@ namespace Server.Bot.Types.Pq
             // 具体动作在 DriveWork 里按步骤统一驱动；这里只补一个「别站着发呆」的动作，
             // 让玩家看到假人确实在忙（挥手/技能/碎碎念）。
             if (rng.Next(100) < 12) BotAttack.BasicSwing(bot, rng);
+        }
+
+        /// <summary>
+        /// 这个假人现在该不该待在这张图：当前步骤点了名的子图（玩具塔的分层、海盗船的子舱）
+        /// 也算「该在的地方」，否则一律拉回主图。
+        /// </summary>
+        bool BotAllowedHere(BotCharacter bot)
+        {
+            if (bot == null) return false;
+            if (bot.mapId == CurrentMap) return true;
+            var stage = CurrentStage;
+            if (stage == null || stepIndex < 0 || stepIndex >= stage.steps.Count) return false;
+            var step = stage.steps[stepIndex];
+            if (step.maps == null || step.maps.Length == 0) return false;
+            return Array.IndexOf(step.maps, bot.mapId) >= 0;
         }
 
         // =====================================================================

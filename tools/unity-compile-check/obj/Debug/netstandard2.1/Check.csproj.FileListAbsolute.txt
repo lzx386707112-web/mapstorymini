@@ -171,3 +171,12 @@
 /tmp/mapledash-chat-compile/bin/AssemblyCSharpCheck.deps.json
 /tmp/mapledash-chat-compile/bin/AssemblyCSharpCheck.dll
 /tmp/mapledash-chat-compile/bin/AssemblyCSharpCheck.pdb
+/tmp/mapledash-dialog-compile/AssemblyCSharpCheck.deps.json
+/tmp/mapledash-dialog-compile/AssemblyCSharpCheck.dll
+/tmp/mapledash-dialog-compile/AssemblyCSharpCheck.pdb
+/tmp/mapledash-rebirth-compile/AssemblyCSharpCheck.deps.json
+/tmp/mapledash-rebirth-compile/AssemblyCSharpCheck.dll
+/tmp/mapledash-rebirth-compile/AssemblyCSharpCheck.pdb
+/tmp/pq-visibility-compile/AssemblyCSharpCheck.deps.json
+/tmp/pq-visibility-compile/AssemblyCSharpCheck.dll
+/tmp/pq-visibility-compile/AssemblyCSharpCheck.pdb

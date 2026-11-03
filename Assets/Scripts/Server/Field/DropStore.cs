@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 // 怪物掉落表（drop_data / drop_data_global）的运行时读取与缓存。
 //
@@ -88,6 +89,9 @@ public static class DropStore
                 foreach (var kv in baseTable) drops[kv.Key] = new List<DropEntry>(kv.Value);
             if (JsonGlobalDrops != null) global = new List<DropEntry>(JsonGlobalDrops());
 
+            // 怪物结晶（etc 4260xxx）禁止直接掉落：只能由原石经制作合成获得。
+            ExcludeMonsterCrystals(drops, global);
+
             if (db == null) return drops;
 
             // 2) 覆盖：DB 里改过的行，按 (怪, 道具) 覆盖基线，新道具追加，chance<=0 = 删除
@@ -121,7 +125,22 @@ public static class DropStore
                 foreach (var row in db.Table("drop_data_global").rows)
                     global.Add(FromRow(row, true));
             }
+
+            // DB 覆盖层也可能误加怪物结晶掉落，按同一规则剔除。
+            ExcludeMonsterCrystals(drops, global);
             return drops;
+        }
+
+        /// <summary>怪物结晶（etc 4260xxx 命名空间）禁止直接掉落：只可由原石经制作合成获得。</summary>
+        static bool IsMonsterCrystal(int item) => item >= 4260000 && item < 4270000;
+
+        static void ExcludeMonsterCrystals(Dictionary<int, List<DropEntry>> mobs, List<DropEntry> globals)
+        {
+            foreach (var kv in mobs)
+                kv.Value.RemoveAll(e => IsMonsterCrystal(e.item));
+            globals.RemoveAll(e => IsMonsterCrystal(e.item));
+            foreach (var key in mobs.Keys.Where(k => mobs[k].Count == 0).ToList())
+                mobs.Remove(key);
         }
     }
 
