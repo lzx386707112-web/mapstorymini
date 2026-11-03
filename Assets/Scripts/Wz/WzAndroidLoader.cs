@@ -146,6 +146,17 @@ public sealed class WzAndroidLoader : MonoBehaviour
             bool receiptOk = ReceiptMatches(expected);
             string zip = Path.Combine(Root, "MapleDashResources.zip");
 
+            string patch = Path.Combine(Root, "MapleDashResources.patch.zip");
+            if (File.Exists(patch))
+            {
+                // Do not skip patches via the fast receipt path, or hide patch errors.
+                WzResourceInstaller.Install(patch, Root, expected, (n, all) => { total = all; loaded = n; },
+                    value => workerPhase = value);
+                WriteReceipt(expected);
+                loaded = 1; total = 1;
+                return;
+            }
+
             // 已安装且回执匹配：只抽样校验，正常情况几百毫秒内完成。
             if (receiptOk && dataExists)
             {

@@ -35,7 +35,14 @@ public static class NativeInventoryActions
     {
         if (swallowDrop)
         {
-            if (Pointer.Released) { Pointer.ConsumeClick(); swallowDrop = false; }
+            if (Pointer.Released)
+            {
+                // 源端双击是独立消息 0x203（背包窗 vtable idx22 = 0x81D8AD，命中格 → 使用/穿戴），
+                // 第二击不进「放回原格」的丢弃路径；这里的 ConsumeClick 会把 DoubleClicked 一起清掉，
+                // 背包双击使用/穿戴因此永远无反应。DoubleClicked 必须留给 InvenWindow 的双击处理。
+                if (!Pointer.DoubleClicked) Pointer.ConsumeClick();
+                swallowDrop = false;
+            }
             return;
         }
         if (!Carrying) return;
@@ -48,6 +55,21 @@ public static class NativeInventoryActions
             if (Pointer.Released && EquipWindow.DropPetPotion(Pointer.Pos,carriedItem))
             {
                 carriedItem=0; Pointer.ConsumeClick(); return;
+            }
+            // 拖到装备窗的格子上松手 = 直接穿上/替换（源端把「落到已装备格」当 action<0 的穿戴，
+            // 0x7FEA63 按目标格分派）。必须先于背包格落点判定，否则会被空格移动吃掉。
+            if (Pointer.Released && Pointer.DragEnded && carriedFromInventory && carriedType == 1 &&
+                EquipWindow.Visible && EquipWindow.SlotAt(Pointer.Pos, out int equipCell))
+            {
+                if (FitsEquipCell(equipCell, EquipSlot.SlotOf(carriedItem)))
+                {
+                    int equipId = carriedItem, equipFrom = carriedPosition;
+                    carriedItem = 0;
+                    string equipError = EquipLoadout.Equip(equipId, Profile.Attributes, equipFrom, equipCell);
+                    if (equipError != null) BottomBar.Toast(equipError);
+                }
+                else BottomBar.Toast("这件装备不能放在" + EquipSlot.NameOf(equipCell) + "这一格");
+                Pointer.ConsumeClick(); return;
             }
             // 按住拖动到另一格再松手：同样走 ITEM_MOVE（项目补的拖拽口径，必须要求真的拖动过，
             // 否则「点一下拿起」的抬手会被当成落格，等于刚拿起来就放回）。
@@ -77,6 +99,24 @@ public static class NativeInventoryActions
         {
             var target=EquipWindow.EquipmentAt(Pointer.Pos) ?? InvenWindow.EquipmentAt(Pointer.Pos);
             if(target!=null) { placed=true; if(IsCashEquipment(id)) NativeItemUseEffects.CashEquipment(id,target); else NativeItemUseEffects.Scroll(id,target); }
+        }
+        // 装备窗落格（点击口径）：先拿起、再点装备窗上的对应格子 → 直接穿上/替换。
+        // 与拖拽口径同一条路，都走 EquipLoadout.Equip（服务端 InventoryManipulator.equip）。
+        if(!placed && carriedFromInventory && carriedType==1 && EquipWindow.Visible &&
+           EquipWindow.SlotAt(Pointer.Pos,out int equipCellPress))
+        {
+            if(FitsEquipCell(equipCellPress,EquipSlot.SlotOf(id)))
+            {
+                string equipError = EquipLoadout.Equip(id, Profile.Attributes, carriedPosition, equipCellPress);
+                if(equipError!=null) BottomBar.Toast(equipError);
+                placed = true;
+            }
+            else
+            {
+                BottomBar.Toast("这件装备不能放在" + EquipSlot.NameOf(equipCellPress) + "这一格");
+                carriedItem = id;   // 格子不收，保留携带，别把道具吞掉
+                return;
+            }
         }
         // 背包格落点：源端放下时会先问命中窗口（0x4EFBB8 → 0x4F3057），
         // 目标格与手上道具同页且不是同一格 → 发 ITEM_MOVE(type, src, dst)，
@@ -111,6 +151,19 @@ public static class NativeInventoryActions
         if (!placed && carriedFromInventory && FieldAcceptsDrop(Pointer.Pos)) placed = DropToField(id, carriedPosition);
         if (placed) { swallowDrop = true; Pointer.ConsumeClick(); Pointer.Pressed = false; }
     }
+
+    // 装备窗落格判定：目标格收不收这件装备。
+    // 归一化到普通槽位（现金 -100）后要求一致；四个戒指格互相收（源端四个戒指位等价，
+    // 具体落到哪个空槽由 InventoryManipulator.equip 决定）。
+    static bool FitsEquipCell(int cellSlot, int itemSlot)
+    {
+        if (cellSlot == 0 || itemSlot == 0) return false;
+        int cell = cellSlot <= -100 ? cellSlot + 100 : cellSlot;
+        int item = itemSlot <= -100 ? itemSlot + 100 : itemSlot;
+        if (cell == item) return true;
+        return IsRingSlot(cell) && IsRingSlot(item);
+    }
+    static bool IsRingSlot(int slot) => slot == -12 || slot == -13 || slot == -15 || slot == -16;
 
     // 源端「放到另一个背包格」= ITEM_MOVE(0x47) 的 action>0 分支：
     //   ItemMoveHandler → InventoryManipulator.move(c, type, src, dst) → Inventory.move

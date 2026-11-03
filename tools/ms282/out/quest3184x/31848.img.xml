@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="31848.img">
+    <imgdir name="QuestInfo">
+        <string name="name" value="[赫力席母] 獲得被詛咒的凱撒" />
+        <int name="area" value="21" />
+        <string name="0" value="擊退梅格耐斯取得他持有的巨大的劍。我感受到什麼強大的氣息，可是被詛咒沒辦法使用。#b#p3001015##k或許知道更詳細的資訊？" />
+        <string name="1" value="透過通信機和 #p3001015#聯絡。他看來很吃驚的樣子，看來是很厲害的劍。最好快點去找位於 #b#m401040000##k的 #b#p3001015##k。" />
+        <string name="2" value="親眼看到劍的 #b#p3001015##k似乎比剛才還要吃驚。名字…叫做凱撒嗎？有個方法可以解除劍的詛咒…稍後再跟 #b#p3001015##k再次對話。" />
+        <int name="autoStart" value="1" />
+        <string name="rewardSummary" value="#Wbasic#&#13;&#10;可進行 '解除凱撒的詛咒' 任務&#13;&#10;" />
+        <string name="demandSummary" value="#i1402179:# #t1402179:# #c1402179# / 1&#13;&#10;" />
+        <imgdir name="reward">
+            <int name="exp" value="22000000" />
+            <imgdir name="item">
+            </imgdir>
+            <imgdir name="explain">
+                <imgdir name="summaryDemand">
+                    <int name="order" value="1" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <int name="reqType" value="8" />
+    </imgdir>
+    <imgdir name="Check">
+        <imgdir name="0">
+            <string name="startscript" value="q31848s" />
+            <int name="normalAutoStart" value="1" />
+            <int name="npc" value="3001100" />
+            <imgdir name="item">
+                <imgdir name="0">
+                    <int name="id" value="1402179" />
+                    <int name="count" value="1" />
+                    <int name="order" value="1" />
+                </imgdir>
+            </imgdir>
+            <int name="lvmin" value="175" />
+        </imgdir>
+        <imgdir name="1">
+            <int name="npc" value="3001100" />
+            <int name="order" value="1" />
+            <string name="endscript" value="q31848e" />
+            <imgdir name="item">
+                <imgdir name="0">
+                    <int name="id" value="1402179" />
+                    <int name="count" value="1" />
+                    <int name="order" value="1" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="Act">
+        <imgdir name="0">
+        </imgdir>
+        <imgdir name="1">
+            <imgdir name="item">
+                <imgdir name="0">
+                    <int name="id" value="1402179" />
+                    <int name="count" value="-1" />
+                    <string name="potentialGrade" value="一般" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="Say">
+        <imgdir name="0">
+        </imgdir>
+        <imgdir name="1">
+            <int name="ask" value="1" />
+            <imgdir name="stop">
+                <imgdir name="item">
+                    <string name="0" value="身上並沒有持有#b#t1402179##k。這樣的話無法完成任務。" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+</imgdir>

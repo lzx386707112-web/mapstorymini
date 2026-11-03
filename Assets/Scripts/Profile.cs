@@ -239,6 +239,7 @@ public static class Profile
         if (GameServer.Local != null && !GameConfigDao.GetBool(GameServer.Local.Db, "exp_enabled", true)) return 0;
         // 经验是 long：300 级需求已到 1.6e17，不能再钳到 int.MaxValue
         amount+=NativeEquipmentEffects.PendantBonus(amount);
+        amount+=NativeEquipmentEffects.RingExpBonus(amount);
         if (GameLoop.I?.player?.GetComponent<NativeMobDebuffs>()?.Has(124) == true) amount /= 2;
         if (amount <= 0) return 0;
         int before = Data.level;

@@ -31,6 +31,7 @@ public static class Program
             Console.WriteLine($"通过 {passed} / 失败 {failed}");
             return failed == 0 ? 0 : 1;
         }
+        if (args.Length > 0 && args[0] == "--equip-unequip") return EquipUnequipChecks.Run();
         if (args.Length > 0 && args[0] == "--rebirth")
         {
             RebirthChecks.Run(Check);

@@ -59,6 +59,16 @@ public static class EquipSlot
     /// <summary>物品 id → 装备位置（源端 Equip.inventory 的负位置）。</summary>
     public static int SlotOf(int itemId) => NativeInventoryService.EquipmentSlotOf(itemId);
 
+    /// <summary>普通槽 → 对应的现金槽。源端现金装备一律是 slot-100（-1→-101 … -16→-116、-49→-149）。</summary>
+    public static int CashOf(int slot) => slot == 0 ? 0 : slot - 100;
+
+    /// <summary>
+    /// 装备窗一格实际穿着的槽位：现金槽非空则用现金槽，否则用普通槽。
+    /// 依据 BeiDou.exe 0x7FEE65..0x7FEEEC：普通/现金两组数组并行读取（基址间隔 0x1A0），
+    /// 现金那组非空就覆盖普通那组。以前只按普通槽号读，现金戒指永远落在面板外。
+    /// </summary>
+    public static int WornSlotOf(int cellSlot)
+        => cellSlot != 0 && Profile.EquipOfSlot(CashOf(cellSlot)) > 0 ? CashOf(cellSlot) : cellSlot;
 }
 
 public static class EquipCatalog
@@ -130,8 +140,75 @@ public static class EquipCatalog
         return null;
     }
 
+    /// <summary>
+    /// info 上那层「戒指附加效果」。源端数据把戒指的功能拆在 addition 下，和 inc* 是两套：
+    ///   statinc  额外属性（多数还带 con 条件）
+    ///   critical 暴击率 prob%、暴击伤害 damage%
+    ///   boss     BOSS 伤害 damage%（prob=100 表示常驻）
+    ///   skill    赋技能；本数据集只引用 90000000/90001001，而 Skill.wz 里没有这两个节点，跳过。
+    /// 条件 con 支持三种：level/lv（角色等级门槛）、job（具体 jobId 列表）、weekDay（生效星期）。
+    /// </summary>
+    public static void ApplyAddition(int itemId, CharacterAttributes result, ref int bossDamage)
+    {
+        var addition = Info(itemId)?.Get("addition");
+        if (addition == null) return;
+        int level = result.level, job = Profile.JobId;
+        var statinc = addition.Get("statinc");
+        if (statinc != null && ConditionMet(statinc.Get("con"), level, job))
+        {
+            result.str += statinc.Int("incSTR"); result.dex += statinc.Int("incDEX");
+            result.intelligence += statinc.Int("incINT"); result.luk += statinc.Int("incLUK");
+            result.maxHp += statinc.Int("incMHP"); result.maxMp += statinc.Int("incMMP");
+            result.weaponDefense += statinc.Int("incPDD"); result.magicDefense += statinc.Int("incMDD");
+            result.accuracy += statinc.Int("incACC"); result.avoidability += statinc.Int("incEVA");
+            result.equipmentSpeed += statinc.Int("incSpeed"); result.equipmentJump += statinc.Int("incJump");
+        }
+        var critical = addition.Get("critical");
+        if (critical != null && ConditionMet(critical.Get("con"), level, job))
+        {
+            result.criticalChance += Mathf.Max(0, critical.Int("prob")) / 100f;
+            result.criticalBonus += Mathf.Max(0, critical.Int("damage")) / 100f;
+        }
+        var boss = addition.Get("boss");
+        if (boss != null && ConditionMet(boss.Get("con"), level, job) && boss.Int("prob", 100) >= 100)
+            bossDamage += boss.Int("damage");
+    }
+
+    // con 三种判据可同时出现（如 weekDay + level），任一不满足就整段不生效。
+    static bool ConditionMet(ImgNode con, int level, int job)
+    {
+        if (con == null) return true;
+        int need = con.Int("lv", con.Int("level"));
+        if (need > 0 && level < need) return false;
+        var jobs = con.Get("job");
+        if (jobs != null)
+        {
+            // 源端列的是具体 jobId（米哈尔 5111/5112、英雄 2111/2112…），不是分支位掩码。
+            bool matched = false;
+            foreach (var child in jobs.Children)
+                if (child.Value != null && System.Convert.ToInt32(child.Value) == job) { matched = true; break; }
+            if (!matched) return false;
+        }
+        var days = con.Get("weekDay");
+        if (days != null)
+        {
+            string today = System.DateTime.Now.DayOfWeek.ToString().ToLowerInvariant();
+            bool matched = false;
+            foreach (var child in days.Children)
+                if (string.Equals(child.Value as string, today, System.StringComparison.OrdinalIgnoreCase)) { matched = true; break; }
+            if (!matched) return false;
+        }
+        return true;
+    }
+
     /// <summary>把一件装备的 inc* 叠加到属性上（源端 Character.reapplyLocalStats 的装备段）。</summary>
-    public static void Apply(int itemId, CharacterAttributes result, ref int watk, ref int matk, int slot=0)
+    public static void Apply(int itemId, CharacterAttributes result, ref int watk, ref int matk, int slot = 0)
+    {
+        int ignoredBoss = 0;
+        Apply(itemId, result, ref watk, ref matk, slot, ref ignoredBoss);
+    }
+
+    public static void Apply(int itemId, CharacterAttributes result, ref int watk, ref int matk, int slot, ref int bossDamage)
     {
         var info = Info(itemId);
         if (info == null) return;
@@ -150,6 +227,7 @@ public static class EquipCatalog
         watk += Value("incPAD"); matk += Value("incMAD");
         result.equipmentSpeed += Value("incSpeed");
         result.equipmentJump += Value("incJump");
+        ApplyAddition(itemId, result, ref bossDamage);
     }
 }
 
@@ -164,7 +242,9 @@ public static class EquipLoadout
     public static int Get(int slot) => SlotItem(slot);
 
     /// <summary>穿上一件（槽位由物品 id 决定）。返回 null 表示成功，否则是原因。</summary>
-    public static string Equip(int itemId, CharacterAttributes attrs, int inventoryPosition = 0)
+    /// <param name="preferredSlot">装备窗上被拖到的普通槽位（-12/-13…）。四格戒指不指定时按第一个空槽，
+    /// 指定了就落那一格；那一格已有戒指时由服务端做互换（源端 InventoryManipulator.equip 的 prior 分支）。</param>
+    public static string Equip(int itemId, CharacterAttributes attrs, int inventoryPosition = 0, int preferredSlot = 0)
     {
         if(NativePetItems.IsEquipment(itemId))
         {
@@ -181,8 +261,14 @@ public static class EquipLoadout
         string mountError=NativeMount.WearError(itemId,slot);
         if(mountError!=null) return mountError;
         if (slot == -12 || slot == -112)
-            foreach (int ringSlot in slot == -112 ? new[] { -112, -113, -115, -116 } : new[] { -12, -13, -15, -16 })
+        {
+            bool cash = slot == -112;
+            int[] group = cash ? new[] { -112, -113, -115, -116 } : new[] { -12, -13, -15, -16 };
+            int wanted = preferredSlot == 0 ? 0 : cash ? preferredSlot - 100 : preferredSlot <= -100 ? preferredSlot + 100 : preferredSlot;
+            if (wanted != 0 && System.Array.IndexOf(group, wanted) >= 0) slot = wanted;
+            else foreach (int ringSlot in group)
                 if (Profile.EquipOfSlot(ringSlot) == 0) { slot = ringSlot; break; }
+        }
         if (slot == EquipSlot.Weapon)
         {
             if (!WeaponDefs.TryGet(itemId.ToString(), out var weapon)) return "这件武器的穿戴尚未接入";
@@ -244,13 +330,13 @@ public static class EquipLoadout
     /// <summary>基础属性 + 武器 + 全部防具 + 套装加成的最终面板（出战与能力值窗共用同一条路）。</summary>
     public static CharacterAttributes Apply(CharacterAttributes baseAttrs, WeaponDef weapon, int attackBuff, out int watk, out int matk)
     {
-        int w = attackBuff, m = 0;
+        int w = attackBuff, m = 0, additionBoss = 0;
         var result = baseAttrs.Copy();
-        if(int.TryParse(weapon.id,out int weaponId)) EquipCatalog.Apply(weaponId,result,ref w,ref m,EquipSlot.Weapon);
+        if(int.TryParse(weapon.id,out int weaponId)) EquipCatalog.Apply(weaponId,result,ref w,ref m,EquipSlot.Weapon,ref additionBoss);
         foreach (var kv in WornSlots())
         {
             if (kv.Key == EquipSlot.Weapon) continue;         // 武器已单独叠加
-            EquipCatalog.Apply(kv.Value, result, ref w, ref m,kv.Key);
+            EquipCatalog.Apply(kv.Value, result, ref w, ref m,kv.Key,ref additionBoss);
         }
 
         // —— 套装加成（≡ Character.reapplyLocalStats 的 setItemBonus 段）——
@@ -258,6 +344,13 @@ public static class EquipLoadout
         var wornIds = new List<int>();
         foreach (var kv in WornSlots()) wornIds.Add(kv.Value);
         var set = AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
+        // info/addition/boss 的 BOSS 伤害并进同一张差量表，交给 AdminSetItem.ApplyDamage。
+        // ComputeBonus 可能是缓存实例，先复制再改。
+        if (additionBoss != 0)
+        {
+            set = set == null ? new Dictionary<string,int>() : new Dictionary<string,int>(set);
+            set["BossDamage"] = (set.TryGetValue("BossDamage", out int hadBoss) ? hadBoss : 0) + additionBoss;
+        }
 
         // HP/MP/STR/DEX/LUK：apply(key, base) = (base+flat) + (base+flat)×pct%
         result.maxHp = AdminSetItem.ApplyStat(set, "HP", result.maxHp);

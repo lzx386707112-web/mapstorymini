@@ -109,7 +109,17 @@ public static class NativeInventoryService {
             }
             if (slot == -12 && (r.equipSlot == -12 || r.equipSlot == -13 || r.equipSlot == -15 || r.equipSlot == -16) ||
                 slot == -112 && (r.equipSlot == -112 || r.equipSlot == -113 || r.equipSlot == -115 || r.equipSlot == -116)) slot = r.equipSlot;
-            if (slot == 0 || slot != r.equipSlot) return new InventoryChangeResponse { ok = false, error = "无效装备槽位" };
+            if (slot == 0 || slot != r.equipSlot)
+            {
+                // 源端 unequip（InventoryManipulator.move 的 src）由客户端指定格子，服务端不按道具
+                // 重推规范槽位，只要求那一格真的穿着这件。现金装备坐在普通位、旧槽位映射版本留下
+                // 的历史位置等漂移数据，双击装备面板脱下时按源端口径放行；穿上（quantity=1）仍严格要求。
+                bool unequipByPosition = r.quantity == 0 && r.equipSlot < 0 && items.Find(x =>
+                    DbStore.Int(x, "characterid") == r.characterId && DbStore.Int(x, "itemid") == r.itemId &&
+                    DbStore.Int(x, "position") == r.equipSlot && DbStore.Int(x, "inventorytype") == InventoryDao.Equipped) != null;
+                if (!unequipByPosition) return new InventoryChangeResponse { ok = false, error = "无效装备槽位" };
+                slot = r.equipSlot;
+            }
             var source = items.Find(x => DbStore.Int(x, "characterid") == r.characterId && DbStore.Int(x, "itemid") == r.itemId &&
                 (r.quantity == 0 ? DbStore.Int(x, "position") == slot : DbStore.Int(x, "position") > 0 && (r.sourcePosition == 0 || DbStore.Int(x, "position") == r.sourcePosition)));
             if (source == null) return new InventoryChangeResponse { ok = false, error = "没有持有这件装备" };

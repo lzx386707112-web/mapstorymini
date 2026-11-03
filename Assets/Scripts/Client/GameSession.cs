@@ -287,6 +287,7 @@ public static class GameSession
         if (Net != null && Net.Memo(new MemoRequest { characterId = CharacterId, action = 2 })?.notes is { Length: > 0 })
             NativeMemoWindow.Open();
         ApplyToProfile();
+        NativeNameplate.RefreshFromServer();
         KeyMap.LoadCharacter(Character.keymap);
         return true;
     }

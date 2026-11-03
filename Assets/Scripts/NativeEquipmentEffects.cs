@@ -42,6 +42,36 @@ public sealed class NativeEquipmentEffects : MonoBehaviour
         var effects=player.GetComponent<NativeEquipmentEffects>();
         return effects==null ? 0 : (gain/10)*effects.PendantStage(NativeBuffs.Now);
     }
+
+    // 四格戒指（现金槽 -100 优先，与装备窗同口径）。
+    static readonly int[] ringCells = { -12, -13, -15, -16 };
+
+    /// <summary>
+    /// info/bonusExp：戒指的经验加成，incExpR 是百分比（十字旅团 +2、快乐指环 +20…）。
+    /// 多段（termStart 0/1/2）是新人/回归礼包按周递增，本工程没有账号龄基准，取第 0 段（最保守）。
+    /// 多枚戒指同时戴取最大值——源端同部位加成不叠加。
+    /// </summary>
+    public static int RingExpPercent()
+    {
+        if(!GameSession.InGame) return 0;
+        int best=0;
+        foreach(int cell in ringCells)
+        {
+            int id=Profile.EquipOfSlot(EquipSlot.WornSlotOf(cell));
+            if(id<=0) continue;
+            var bonus=EquipCatalog.Info(id)?.Get("bonusExp");
+            if(bonus==null) continue;
+            var first=bonus.Get("0") ?? (bonus.Children.Count>0 ? bonus.Children[0] : null);
+            int pct=first?.Int("incExpR") ?? 0;
+            if(pct>best) best=pct;
+        }
+        return best;
+    }
+    public static long RingExpBonus(long gain)
+    {
+        int pct=RingExpPercent();
+        return gain<=0 || pct==0 ? 0 : gain/100*pct+gain%100*pct/100;   // 先除后乘，long 不溢出
+    }
     public static void EquipmentChanged()
         => GameLoop.I?.player?.GetComponent<NativeEquipmentEffects>()?.PendantStage(NativeBuffs.Now);
     void Update()

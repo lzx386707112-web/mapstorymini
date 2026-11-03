@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BotMoveCheck")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c7fb53f24a0b93debbfe0cc7eeaaed9a6dce6bf8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d562e2e9f55f16454f90d5a13b4c236f4514ac0f")]
 [assembly: System.Reflection.AssemblyProductAttribute("BotMoveCheck")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BotMoveCheck")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="31849.img">
+    <imgdir name="QuestInfo">
+        <string name="name" value="[赫力席母] 解除凱撒的詛咒" />
+        <int name="area" value="21" />
+        <string name="0" value="請再次和#b#p3001015##k對話。找到解除凱撒的詛咒的方法了嗎？" />
+        <string name="1" value="解除凱撒的詛咒，似乎不太容易。雖然眼前有艱辛遙遠的旅程…不過絕對不能放棄！快點全部取得 #r#e#t4033767# 5個#k#n，去找#b#m401040000##k的#b#p3001100##k！\r\n\r\n#r#e[放棄任務時， #t4033767#會全部消失。]#k" />
+        <string name="2" value="獲得傳說的凱撒…將厲害的劍拿在手上…這是真的嗎？我的心充滿著無限感概。" />
+        <string name="demandSummary" value="#questorder1##i4033767:# #t4033767:# #c4033767# / 5&#13;&#10;#questorder1##i1402198:# #t1402198:# #c1402198# / 1&#13;&#10;" />
+        <string name="rewardSummary" value="#Wbasic#&#13;&#10;#fUI/UIWindow2.img/QuestIcon/8/0# 22,000,000&#13;&#10;#i1402180:# #t1402180:# 1 個&#13;&#10;" />
+        <imgdir name="deleteItem">
+            <int name="0" value="4033767" />
+        </imgdir>
+        <imgdir name="reward">
+            <int name="exp" value="22000000" />
+            <imgdir name="item">
+            </imgdir>
+            <imgdir name="explain">
+                <imgdir name="summaryDemand">
+                    <int name="order" value="1" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <int name="reqType" value="8" />
+    </imgdir>
+    <imgdir name="Check">
+        <imgdir name="0">
+            <int name="npc" value="3001100" />
+            <imgdir name="quest">
+                <imgdir name="0">
+                    <int name="id" value="31848" />
+                    <int name="state" value="2" />
+                    <int name="order" value="1" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <imgdir name="1">
+            <int name="npc" value="3001100" />
+            <int name="order" value="1" />
+            <imgdir name="item">
+                <imgdir name="0">
+                    <int name="id" value="4033767" />
+                    <int name="count" value="5" />
+                    <int name="order" value="1" />
+                </imgdir>
+                <imgdir name="1">
+                    <int name="id" value="1402198" />
+                    <int name="count" value="1" />
+                    <int name="order" value="1" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="Act">
+        <imgdir name="0">
+        </imgdir>
+        <imgdir name="1">
+            <int name="exp" value="22000000" />
+            <imgdir name="item">
+                <imgdir name="0">
+                    <int name="id" value="1402180" />
+                    <int name="count" value="1" />
+                    <string name="potentialGrade" value="一般" />
+                </imgdir>
+                <imgdir name="1">
+                    <int name="id" value="4033767" />
+                    <string name="potentialGrade" value="一般" />
+                </imgdir>
+                <imgdir name="2">
+                    <int name="id" value="1402198" />
+                    <int name="count" value="-1" />
+                    <string name="potentialGrade" value="一般" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="Say">
+        <imgdir name="0">
+            <int name="ask" value="1" />
+            <string name="0" value="#b#h0##k。解除凱撒利恩的詛咒這件事…比想像的還要複雜。\r\n#L0##b難道無法解除這詛咒嗎？#l\n#k" />
+            <string name="1" value="不是，不是這樣的…因為是長時間累積的詛咒若要解除需要相當的材料。\r\n#L0##b若是說材料我會盡力收集。#l\n#k" />
+            <string name="2" value="首先需要馴鹿奶、黃昏之露、超級藥水各 50個。\r\n#L0##b這程度應該…#l\n#k" />
+            <string name="3" value="還有貝倫頭盔 100個與殘暴炎魔的象徵 100個。\r\n#L0##b啊……#l\n#k" />
+            <string name="4" value="最後還有最重要的 #t4033767# 100個。\r\n#L0##b需要的材料…這麼多啊…#l\n#k" />
+            <string name="5" value="是嗎？就算其他材料由我們來想辦法但是最重要的材料是 #t4033767# 。詛咒的號角可以在擊倒梅格耐斯時得到一個。\r\n#L0##b可是要 100個……#l\n#k" />
+            <string name="6" value="如果詛咒的號角數量越少越不容易解除詛咒…可是這樣的話就委託 #b#t4033767##k共 #b5個#k吧。這樣應該可以收集了吧？" />
+            <imgdir name="stop">
+                <imgdir name="0">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+                <imgdir name="1">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+                <imgdir name="2">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+                <imgdir name="3">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+                <imgdir name="4">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+                <imgdir name="5">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+            </imgdir>
+            <imgdir name="yes">
+                <string name="0" value="那麼收集  #b#t4033767#5個#k之後交給我吧。這段時間我就去收集其它材料。" />
+                <string name="1" value="#b放棄#k任務時，持有的 #b#t4033767#都會消失。#k 這點請特別注意。" />
+            </imgdir>
+            <imgdir name="no">
+                <string name="0" value="如果不願意也不能勉強。" />
+            </imgdir>
+        </imgdir>
+        <imgdir name="1">
+            <string name="0" value="你來啦，#b#h0##k！你真的拿#b#t4033767##k#b5個#k來了嗎？雖然會花了點時間，但真的沒錯有5個耶！我已經把其他材料都收集好了，說不定能更快解除詛咒。\r\n#L0##b(給予伊黛亞#t4033767#。)#l\n#k" />
+            <string name="1" value="#b#h0##k所剩下的#t4033767#我會全數使用，畢竟多一個都會對解除詛咒有所幫助。\r\n#L0##b好的，你請使用。#l\n#k" />
+            <string name="2" value="那也請把#b#t1402198##k交到這裡，現在起就要正式開始解除詛咒了。\r\n#r#e[解放凱撒利恩就會使已套用的靈魂消失，若不想這麼做請按下'不'。]#k#n\r\n#L0##b是，請解放凱撒利恩。#l\n#L1#不，請稍等我一下。#l\n#k" />
+            <string name="3" value="(稍後)" />
+            <imgdir name="yes">
+                <string name="0" value="凱撒利恩的詛咒解除了！" />
+                <string name="1" value="詛咒竟然如此虛無地解開了。我也受到了不少驚嚇呢。來，這裡是解開所有詛咒的#t1402180#。請用在好事上吧。" />
+            </imgdir>
+            <imgdir name="stop">
+                <imgdir name="item">
+                    <string name="0" value="#r#t1402198##k 或 #r#t4033767##k數量不夠。\r\n目前 #h0##k持有 #b#t4033767##k只有 #b#c4033767#個#k而已。#b#e5個#k#n全部收集後再與我對話吧。" />
+                </imgdir>
+                <imgdir name="0">
+                    <int name="answer" value="1" />
+                </imgdir>
+                <imgdir name="1">
+                    <int name="answer" value="1" />
+                </imgdir>
+                <imgdir name="2">
+                    <int name="answer" value="1" />
+                    <string name="1" value="還需要時間做心理準備嗎？好的，那麼我就等你吧。" />
+                </imgdir>
+            </imgdir>
+            <int name="ask" value="1" />
+        </imgdir>
+    </imgdir>
+</imgdir>

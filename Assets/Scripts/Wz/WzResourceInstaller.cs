@@ -103,6 +103,14 @@ public static class WzResourceInstaller
         });
     }
 
+    // Keep failed archives for retry; deletion failure must not undo a valid install.
+    public static void DeleteInstalledArchive(string path)
+    {
+        try { File.Delete(path); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
     public static void Install(string zipPath, string root, string expectedManifest, Action<int, int> progress,
         Action<string> phase = null)
     {
@@ -124,11 +132,12 @@ public static class WzResourceInstaller
                 using (var reader = new StreamReader(manifest.Open(), Encoding.UTF8)) text = reader.ReadToEnd();
                 if (Hash(Encoding.UTF8.GetBytes(text)) != Hash(Encoding.UTF8.GetBytes(expectedManifest)))
                     throw new InvalidDataException("资源包版本与当前游戏不匹配");
+                bool patch = zip.GetEntry("resource-patch.json") != null;
                 var index = (Dictionary<string, object>)MiniJson.Parse(text);
                 var files = (List<object>)index["files"];
                 int count = 0;
                 var buffer = new byte[128 * 1024];
-                phase?.Invoke("首次安装：解压并校验资源");
+                phase?.Invoke(patch ? "正在应用资源补丁并校验" : "首次安装：解压并校验资源");
                 progress?.Invoke(0, files.Count);
                 foreach (Dictionary<string, object> file in files)
                 {
@@ -137,9 +146,10 @@ public static class WzResourceInstaller
                     if (!target.StartsWith(Path.GetFullPath(staging) + Path.DirectorySeparatorChar, StringComparison.Ordinal))
                         throw new InvalidDataException("资源路径无效");
                     var entry = zip.GetEntry("Data/" + relative);
-                    if (entry == null) throw new InvalidDataException("资源包缺少文件: " + relative);
+                    if (entry == null && !patch) throw new InvalidDataException("资源包缺少文件: " + relative);
                     Directory.CreateDirectory(Path.GetDirectoryName(target));
-                    using (var input = entry.Open())
+                    // Unchanged patch files come from installed Data; every file is still hashed.
+                    using (var input = entry != null ? entry.Open() : File.OpenRead(Path.Combine(data, relative)))
                     using (var output = File.Create(target))
                     using (var sha = SHA256.Create())
                     {
@@ -172,6 +182,7 @@ public static class WzResourceInstaller
                 if (Directory.Exists(old)) Directory.Move(old, data);
                 throw;
             }
+            DeleteInstalledArchive(zipPath);
             // A cleanup failure must not invalidate an already verified installation.
             try { RetireDirectory(old); }
             catch (IOException) { }

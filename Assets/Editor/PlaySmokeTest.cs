@@ -22,6 +22,7 @@ public static class PlaySmokeTest
     const string K_RUNPLAN = "PlaySmoke.runPlan";
     const string K_CLIMBALL = "PlaySmoke.climbAll";
     const string K_WARP   = "PlaySmoke.warp";
+    const string K_PQGATE = "PlaySmoke.pqGate";
     const string K_PROBE  = "PlaySmoke.uiProbe";
     const string K_CLICKAT = "PlaySmoke.uiClickAt";
     const string K_DIALOG = "PlaySmoke.dialog";
@@ -50,6 +51,10 @@ public static class PlaySmokeTest
     static float warpAlphaMax, warpAlphaAtSwitch;
     static float warpX, warpY;
     static double warpT, warpStart;
+
+    // 组队任务通关门实测：站到 next00 上，核对这扇门当前算不算「可进入」
+    static int pqGatePhase;
+    static float pqGateX, pqGateY;
 
     [InitializeOnLoadMethod]
     static void Hook()
@@ -138,6 +143,7 @@ public static class PlaySmokeTest
             if (args[i] == "-smokeClimbAll") EditorPrefs.SetBool(K_CLIMBALL, args[i + 1] != "0");
             // 换图渐变验证：站到第一个可见传送门上按 ↑，采样黑幕 alpha 与换图时机
             if (args[i] == "-smokeWarp") EditorPrefs.SetBool(K_WARP, args[i + 1] != "0");
+            if (args[i] == "-smokePqGate") EditorPrefs.SetBool(K_PQGATE, args[i + 1] != "0");
             // UI 悬停探针：把虚拟指针钉在 "x,y"（960x720 逻辑坐标），失焦跑截图时用来验 tooltip/提示
             if (args[i] == "-smokeUiProbe") EditorPrefs.SetString(K_PROBE, args[i + 1]);
             // 进入 Play 多少秒后在探针位置按一下左键（验证加点/页签）
@@ -245,6 +251,7 @@ public static class PlaySmokeTest
         DriveInput(t - t0);
         if (TickClimbAll()) return;
         if (TickWarp()) return;
+        if (TickPqGate(t - t0)) return;
 
         if (t - nextLog >= 1.0)
         {            nextLog = t;
@@ -562,6 +569,52 @@ public static class PlaySmokeTest
         return null;
     }
 
+    // 组队任务通关门实测（-smokePqGate 1，配 -smokeMap 922010100）：
+    //   0: 地图进好后站到 next00 上，打出这扇门的类型/脚本/闸门属性，并读一次「当前算不算开着」
+    //   1: 站定半个屏后核对 FieldDirector 有没有把它当成「可进入的门」
+    //      —— 未清关（没进事件实例）时必须是 null，否则 HUD 会弹「按 ↑ / W 进入传送门」，
+    //         那就是「通关门一开始就出现了」。
+    static bool TickPqGate(double elapsed)
+    {
+        if (!EditorPrefs.GetBool(K_PQGATE, false)) return false;
+        var gl = GameLoop.I;
+        if (gl == null || gl.field == null || gl.field.Map == null || gl.player == null) return false;
+        var f = gl.field;
+
+        if (pqGatePhase == 0)
+        {
+            if (elapsed < 1.2) return false;
+            var door = f.Map.portals.Find(p => p.name == "next00");
+            if (door == null)
+            {
+                Debug.LogError("[PqGate] 地图 " + f.Map.id + " 没有 next00");
+                Finish(1);
+                return true;
+            }
+            pqGateX = f.Map.WorldX(door.x);
+            pqGateY = f.Map.WorldY(door.y);
+            Debug.Log("[PqGate] 地图 " + f.Map.id + " next00 pt=" + door.type + " script=" + door.script +
+                      " tm=" + door.tm + " 闸门属性=" + (PortalGate.Required(door.script) ?? "无") +
+                      " 现在开着=" + PortalGate.Open(door.script));
+            gl.player.PlaceAt(pqGateX, PlayerCtrl.GroundAt(pqGateX, pqGateY));
+            pqGatePhase = 1;
+            return false;
+        }
+
+        // 站定后至少要过一帧 CheckPortals 才写 nearPortal，这里直接等它更新。
+        bool usable = f.NearPortal != null && f.NearPortal.name == "next00";
+        bool gated = !PortalGate.Open(f.Map.portals.Find(p => p.name == "next00")?.script);
+        string msg = "[PqGate] 地图 " + f.Map.id + " next00 未清关：闸门关着=" + gated +
+                     "，NearPortal=" + (f.NearPortal == null ? "null" : f.NearPortal.name) +
+                     "，HUD 提示=" + (f.NearPortal != null && f.NearPortal.PressUpTrigger ? "显示" : "不显示");
+        System.IO.File.WriteAllText("/tmp/pq_gate_result.txt", msg + "\n");
+        // 闸门关着时必须「不是可进入的门」；闸门开着（真跑清了关）时才允许它出现。
+        bool ok = gated ? !usable : usable;
+        if (ok) Debug.LogWarning(msg); else Debug.LogError(msg + " ← 与实际闸门状态不符");
+        Finish(ok ? 0 : 1);
+        return true;
+    }
+
     // 按剧本驱动触屏输入（batchmode 下没有键盘，只能写 TouchInput）
     // plan 形如 "right:6,up:3,none:1"，单位秒，超出时长后归零。
     static void DriveInput(double elapsed)
@@ -657,6 +710,7 @@ public static class PlaySmokeTest
         EditorPrefs.DeleteKey(K_RUNPLAN);
         EditorPrefs.DeleteKey(K_CLIMBALL);
         EditorPrefs.DeleteKey(K_WARP);
+        EditorPrefs.DeleteKey(K_PQGATE);
         EditorPrefs.DeleteKey(K_PROBE);
         EditorPrefs.DeleteKey(K_CLICKAT);
         EditorPrefs.DeleteKey(K_DIALOG);

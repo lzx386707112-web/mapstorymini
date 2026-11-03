@@ -45,11 +45,14 @@ static class Program
             Require(File.ReadAllText(Path.Combine(root, "NativeAssetIndex.sha256")).Trim() ==
                 WzResourceInstaller.Hash(Encoding.UTF8.GetBytes(manifest)), "Missing receipt");
 
+            Require(!File.Exists(zipPath), "Successful archive was not deleted");
+
             // A bad pack must leave the last working installation intact.
             files["nested/large.img"] = new byte[] { 1, 2, 3 };
             Pack(zipPath, manifest, files);
             ExpectFailure(() => WzResourceInstaller.Install(zipPath, root, manifest, null));
             WzResourceInstaller.Verify(root, manifest, null);
+            Require(File.Exists(zipPath), "Failed archive must remain for retry");
 
             // Failure after promotion must restore the previous installation.
             files["nested/large.img"] = payload;
@@ -58,7 +61,36 @@ static class Program
             ExpectFailure(() => WzResourceInstaller.Install(zipPath, root, manifest, null));
             WzResourceInstaller.Verify(root, manifest, null);
             Require(!Directory.Exists(Path.Combine(root, "Installing")), "Staging was not cleaned up");
-            Console.WriteLine("PASS: streaming hash (large/empty), interrupted install recovery, progress phases, corrupt pack rejection, promotion rollback");
+            Directory.Delete(Path.Combine(root, "NativeAssetIndex.sha256.pending"));
+
+            // Delta: reuse a large file, add one, remove one; validate target before promotion.
+            var target = new Dictionary<string, byte[]>
+            {
+                ["nested/large.img"] = payload,
+                ["new.img"] = new byte[] { 9, 8, 7 }
+            };
+            entries.Clear();
+            foreach (var file in target)
+                entries.Add(new { path = file.Key, sha256 = WzResourceInstaller.Hash(file.Value) });
+            string patchedManifest = JsonSerializer.Serialize(new { files = entries });
+            Pack(zipPath, patchedManifest, new Dictionary<string, byte[]> { ["new.img"] = target["new.img"] });
+            using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Update))
+                zip.CreateEntry("resource-patch.json");
+            // Wrong APK manifest rejects the patch and keeps both archive and Data.
+            ExpectFailure(() => WzResourceInstaller.Install(zipPath, root, manifest, null));
+            Require(File.Exists(zipPath), "Rejected patch was deleted");
+            WzResourceInstaller.Verify(root, manifest, null);
+            // Missing or corrupt unchanged files must also reject the patch.
+            File.WriteAllBytes(Path.Combine(root, "Data/nested/large.img"), new byte[] { 0 });
+            ExpectFailure(() => WzResourceInstaller.Install(zipPath, root, patchedManifest, null));
+            Require(File.Exists(zipPath), "Failed patch was deleted");
+            Require(File.Exists(Path.Combine(root, "Data/empty.img")), "Failed patch changed Data");
+            File.WriteAllBytes(Path.Combine(root, "Data/nested/large.img"), payload);
+            WzResourceInstaller.Install(zipPath, root, patchedManifest, null);
+            WzResourceInstaller.Verify(root, patchedManifest, null);
+            Require(!File.Exists(Path.Combine(root, "Data/empty.img")), "Deleted entry survived patch");
+            Require(!File.Exists(zipPath), "Successful patch was not deleted");
+            Console.WriteLine("PASS: streaming hash (large/empty), interrupted install recovery, progress phases, corrupt pack rejection, promotion rollback, delta add/remove/reuse, wrong APK/base rejection, archive cleanup");
         }
         finally
         {

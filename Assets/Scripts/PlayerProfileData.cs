@@ -43,6 +43,10 @@ public sealed class PlayerProfileData
     public string outfit = "none";
     public List<string> owned = new List<string> { "1302000" };
 
+    // 名牌称号系列（0..8），对应源端角色扩展表 nameplate_title_series / Character.nameplateTitleSeries。
+    // 只有穿着名牌戒指（info/nameTag）时才会显示成脚下那一行「称号 || 战斗力：N」。
+    public int nameplateTitleSeries;
+
     // 已学技能（id → 等级）。与 DB skills 表对应；进游戏时由 GameSession 灌入。
     public List<int> skillIds = new List<int>();
     public List<int> skillLevels = new List<int>();

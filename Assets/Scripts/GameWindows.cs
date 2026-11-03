@@ -190,8 +190,26 @@ public static class EquipWindow
         var cells=expanded ? FullCells : SmallCells;
         for(int row=0;row<cells.GetLength(0);row++) for(int col=0;col<cells.GetLength(1);col++)
             if(cells[row,col]!=0 && At(r,GridX+col*Step,GridY+row*Step,Cell,Cell).Contains(pointer))
-                return GameSession.Character.inventory.Find(i=>i.position==NativeMount.VisibleSlot(cells[row,col]) && i.inventoryType==1);
+                return GameSession.Character.inventory.Find(i=>i.position==EquipSlot.WornSlotOf(cells[row,col]) && i.inventoryType==1);
         return null;
+    }
+
+    /// <summary>
+    /// 指针命中的装备格，回传底图上的<b>普通</b>槽位号（-1..-19/-49..-56，不含现金 -100）。
+    /// 背包拖装备进来时用它判断「这一格收不收这件东西」。
+    /// </summary>
+    public static bool SlotAt(Vector2 pointer,out int cellSlot)
+    {
+        cellSlot = 0;
+        if(!Visible || GameSession.Character==null) return false;
+        int w=expanded ? FullW : SmallW,h=expanded ? FullH : SmallH;
+        var origin=NativeUi.ClampWindowPosition(pos,new Vector2(w,h),S)*S;
+        var r=new Rect(origin.x,origin.y,w*S,h*S);
+        var cells=expanded ? FullCells : SmallCells;
+        for(int row=0;row<cells.GetLength(0);row++) for(int col=0;col<cells.GetLength(1);col++)
+            if(cells[row,col]!=0 && At(r,GridX+col*Step,GridY+row*Step,Cell,Cell).Contains(pointer))
+            { cellSlot=cells[row,col]; return true; }
+        return false;
     }
     public static bool Visible;
     static Vector2 pos = new Vector2(200, 100);
@@ -254,7 +272,10 @@ public static class EquipWindow
             r.position = pos * S;
         }
         if (!Pointer.Down) dragging = false;
-        var bg = Tex(expanded ? "FullBackgrnd" : "backgrnd");
+        // 折叠态背景先用 NativeEquipBackdrop 修补一遍：图里「副手/图腾/心脏/徽章/纹章」
+        // 5 格是当年 DLL 补画后烘进去的，底块矮 3px、字带白雾；修补版把底块补满、
+        // 抹掉旧字，再由下面的循环用原版样式重写槽位名。展开态是原版 6 列图，不动。
+        var bg = expanded ? Tex("FullBackgrnd") : (NativeEquipBackdrop.Texture() ?? Tex("backgrnd"));
         if (bg != null) GUI.DrawTexture(r, bg);
         if (NativeUi.Button(At(r, w - 19, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
 
@@ -263,21 +284,25 @@ public static class EquipWindow
         for (int row = 0; row < rows; row++)
             for (int col = 0; col < cols; col++)
             {
-                int slot = NativeMount.VisibleSlot(cells[row, col]);
-                if (slot == 0) continue;
+                int cellSlot = cells[row, col];
+                if (cellSlot == 0) continue;
                 var cellRect = At(r, GridX + col * Step, GridY + row * Step, Cell, Cell);
+                // 现金槽优先：同一格上「现金戒指 -112」和「普通戒指 -12」只显示一件，
+                // 现金那件非空就盖掉普通那件（原端 7FEE65 并行读取的顺序）。
+                int slot = EquipSlot.WornSlotOf(cellSlot);
                 int id = Profile.EquipOfSlot(slot);
                 if (id <= 0) continue;
                 var icon = IconOf(slot, id);
                 if (icon != null) GUI.DrawTexture(cellRect, icon, ScaleMode.ScaleToFit);
-                if (Event.current.type == EventType.Repaint && id > 0 && cellRect.Contains(Pointer.Pos)) ItemTooltip.SetHover(id, true);
+                if (Event.current.type != EventType.Repaint) continue;
+                if (cellRect.Contains(Pointer.Pos)) ItemTooltip.SetHover(id, true);
                 // 双击脱下：武器必须一直持有，卸武器走背包换装
-                if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && cellRect.Contains(Pointer.Pos) && slot != EquipSlot.Weapon)
+                if (Pointer.DoubleClicked && cellRect.Contains(Pointer.Pos) && cellSlot != EquipSlot.Weapon)
                 {
                     Pointer.ConsumeClick();
-                    if (slot == EquipSlot.Medal) NativeMedalWindow.Wear(id, true);
+                    if (cellSlot == EquipSlot.Medal) NativeMedalWindow.Wear(id, true);
                     else EquipLoadout.Unequip(slot);
-                    if (Profile.EquipOfSlot(slot) == 0) BottomBar.Toast("已脱下" + EquipSlot.NameOf(slot));
+                    if (Profile.EquipOfSlot(slot) == 0) BottomBar.Toast("已脱下" + EquipSlot.NameOf(cellSlot));
                 }
             }
 
@@ -389,6 +414,7 @@ public static class EquipWindow
         return ArmorIcon(id);
     }
 
+    // 后补槽位（副手 / 图腾 / 心脏 / 徽章 / 纹章）的槽位名。
     public static Texture2D ArmorIcon(int itemId)
     {
         var dir = EquipCatalog.DirOf(itemId);

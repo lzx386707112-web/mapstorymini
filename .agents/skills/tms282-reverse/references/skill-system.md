@@ -193,7 +193,42 @@ Snow2 分支会回退到全零密钥。
 
 ---
 
-## 7. 与本文档集的关系
+## 7. 五转 / 六转任务与技能获取（摘要）
+
+全量正文 `docs/tms282-skill/07-job-advancement.md`，数据 `docs/tms282-skill/data/advancement.json`。
+
+- **五转**：Lv200 + 总星力 100 + 武器星力 10，时间神殿 `270010111` 找**凝視者** `2140001`，
+  任务 `1460 → 1481 → 1461 → 1465 →(1478 解 V 矩阵)`。**不直接发技能**。
+  星力门槛在任务 `1481`（NPC 神殿管理人 `2140000`，`Check/1/totalStarForce=100` + `weaponStarForce=10`），
+  不是脚本；但服务端 grep 不到这两个字段，V 矩阵门禁只查 `level >= 200 && 完成 1465`。
+- **六转**：Lv260 + 完成 `1465` + `39722`（[Borderless] 本來的樣貌），
+  任务 `38601(莉莉) → 38602 … 38609 → 38612 → 38611 → 38624 → 38625(HEXA 矩阵)`。
+  `38618`–`38623` 是奥术河 6 个区域的符文回收（索尔艾尔达来源）。
+  **282 的 HEXA 包与处理器沿用 265**（`CP0490`/`CP0491`），只多一个 `LP009D` unlock；
+  所以 `HexaMatrixConstants.jobAdvanceQuest=1488` / `solErda=1489` 这两个 265 任务 ID
+  在 282 客户端**不存在**。
+- **技能获取是一条三级链**：核心宝石/掉落 → V 核心 →（练满后）HEXA 核心。
+  六转**不是白给**：
+  - HEXA 精通核心（type1）前置 = 对应**五转强化核心 `400004xxx` 达 40 级**
+  - HEXA 强化核心（type2）前置 = 对应**五转技能核心 `400011xxx` 达 25 级**
+  - 六转新技能（type0）与部分共通核心（type3）无前置
+  例：英雄 `20000000 狂暴攻擊VI` 需 `400004008=40`；`30000000 燃燒靈魂之劍` 需 `400011001=25`。
+- **V 矩阵**：`Etc/VCore.img` + `Etc/VMatrixOption.img`。580 核心 = 技能 255 / 强化 306 /
+  特殊 18 / 材料 1；51 职业各 4 技能 + 6 强化 + 19 共通（1 个职业 21）。
+  槽位初始 12、上限 30；V 点上限 9999；技能核心 1→30 = 193 点，强化核心 1→60 = 80 点
+  （`vPoint/skill|enforce` 是**阈值表**，取第一个 ≥ 目标等级的键）。
+- **HEXA 矩阵**：`Etc/HexaCore.img`。563 核心 = 新技能 102 / 精通 204 / 强化 204 / 共通 53；
+  51 职业全是 `mastery 4 + enforce 4 + skill 2 + common 3`。
+  索尔艾尔达 9 档（10…1000 经验），gauge 上限 1000、单次最多吃 20 个。
+  激活/升级消耗**不在客户端 WZ**，由服务端 `HexaMatrixConstants` 下发
+  （激活 5/3/4/7 点；1→30 总耗 145/80/119/201 点）。
+- **待决策**：职业 ID 三层（4 转 112 / 5 转 113 / 6 转 114）。任务数据写 113，
+  技能文件用 `114`（4 转+2），矩阵表 `coreGroup`/`jobCore` 却按 **112** 建索引，
+  而服务端 `getJobLevel(113)=0`。迁移前必须选「ID 不变 + jobLevel」或「ID 逐级 +1」。
+
+---
+
+## 8. 与本文档集的关系
 
 | 需要细节时读 | 文件 |
 |---|---|
@@ -203,6 +238,9 @@ Snow2 分支会回退到全零密钥。
 | 图层播放 / 帧序 / 生命周期 / 伪码 | `docs/tms282-skill/04-vfx-playback.md` |
 | 51 职业技能清单（2454 行，逐职业表） | `docs/tms282-skill/05-job-inventory.md` |
 | 迁到本项目 Unity `NativeSkill*` 的缺口 | `docs/tms282-skill/06-migration.md` |
+| 五/六转任务链 + 核心获取与消耗 | `docs/tms282-skill/07-job-advancement.md` |
+| 星力：概率/费用/破坏/属性/UI/包协议 | `docs/tms282-skill/08-star-force.md` |
 | 1618 条结构化数据 | `docs/tms282-skill/data/skills-5th6th.json` |
 | 120 字段 → 结构体偏移 | `docs/tms282-skill/data/skillinfo-fields.tsv` |
 | 图层名 → 枚举值 | `docs/tms282-skill/data/effect-layer-enum.tsv` |
+| 星力 30+15 档规则表 | `docs/tms282-skill/data/starforce-table.tsv` |

@@ -238,6 +238,13 @@ public static class NpcApi
         // —— 金币 / 经验 / 等级 ——
         cm.Set("getMeso", Ret(_ => N(Profile.gold)));
         cm.Set("getNameplateSeries", Ret(_ => N(Math.Max(0, Math.Min(8, ReadCharacterInteger("nameplate_title_series"))))));
+        // Character.setNameplateSeries 会广播 0x17C；单机里「广播」就是刷新脚下那一行。
+        cm.Set("setNameplateSeries", Fn(c =>
+        {
+            int series = Math.Max(0, Math.Min(NativeNameplate.SeriesCount - 1, Int(c, 0)));
+            WriteCharacterValue("nameplate_title_series", series.ToString());
+            NativeNameplate.SetSeries(series);
+        }));
         cm.Set("getPqPoints", Ret(_ => N(ReadCharacterInteger("副本积分"))));
         cm.Set("getPqTotalPoints", Ret(_ => N(ReadCharacterInteger("副本总积分"))));
         cm.Set("gainMeso", Fn(c => Profile.AddGold(Int(c, 0))));
@@ -524,6 +531,14 @@ public static class NpcApi
             characterId = GameSession.CharacterId, name = key }).value;
         return int.TryParse(value, System.Globalization.NumberStyles.AllowLeadingSign,
             System.Globalization.CultureInfo.InvariantCulture, out int number) ? number : 0;
+    }
+
+    // 写角色扩展值（对应源端 CharacterExtendStore；ExtendType.CHARACTER_EXTEND 那一路）。
+    static void WriteCharacterValue(string key, string value)
+    {
+        if (!GameSession.InGame) throw new JsRuntimeException("Script values require an active character");
+        GameSession.Net.ScriptValue(new ScriptValueRequest {
+            characterId = GameSession.CharacterId, write = true, name = key, value = value });
     }
 
     static JsValue ExtendValue(JsCall call, bool account, bool write)

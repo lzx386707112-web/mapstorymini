@@ -27,6 +27,21 @@ public static class NativeNameTag
         }
         return selected;
     }
+
+    /// <summary>
+    /// 四枚戒指里是否有任意一枚在该字段上有值。源端 isNameTagRing 只要求 info/nameTag
+    /// <b>节点存在</b>（值可以是 0），名牌附加行的显示条件就走这一条。
+    /// </summary>
+    public static bool WearsField(string field)
+    {
+        foreach (int slot in ringSlots)
+        {
+            int id = Profile.EquipOfSlot(-slot-100);
+            if (id == 0) id = Profile.EquipOfSlot(-slot);
+            if (id != 0 && EquipCatalog.Info(id)?.Get(field) != null) return true;
+        }
+        return false;
+    }
     public static Layout Prepare(string path, int textWidth)
     {
         string key = path+":"+textWidth;

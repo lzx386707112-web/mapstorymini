@@ -250,15 +250,21 @@ public static class NpcDialogUi
         if (!local && partyMember && partyHpMax > 0) DrawPartyHpBar(gui, partyHp, partyHpMax);
         if (local)
         {
+            // 名牌附加行（BeiDouSetItemCompat.dll）：称号 || 战斗力：N。
+            // 只在穿着名牌戒指时出现；出现时勋章行整体下移一行，不叠在一起。
+            float nextAnchor = plate.yMax - 1f;   // NamePlateRects 会再加 NameGapPx=2
+            string title = NativeNameplate.LineFor(GameLoop.I?.player);
+            if (!string.IsNullOrEmpty(title) && DrawPlateLine(new Vector2(gui.x, nextAnchor), title, out var titlePlate))
+                nextAnchor = titlePlate.yMax - 1f;
             int medal = Profile.EquipOfSlot(EquipSlot.Medal);
             if (medal > 0)
             {
                 int skin = EquipCatalog.Info(medal)?.Int("medalTag") ?? 0;
                 string medalName = WzNames.Item(medal);
                 if (!string.IsNullOrEmpty(medalName) && !NativeNameTag.Draw("UI/NameTag.img/medal/"+skin,
-                    medalName,new Vector2(gui.x,plate.yMax+1),characterNameStyle,out _))
+                    medalName,new Vector2(gui.x,nextAnchor+2),characterNameStyle,out _))
                 {
-                    NamePlateRects(new Vector2(gui.x,plate.yMax-1),new Vector2(characterNameStyle.CalcSize(new GUIContent(medalName)).x,NameFontSize),out var medalPlate,out var medalText);
+                    NamePlateRects(new Vector2(gui.x,nextAnchor),new Vector2(characterNameStyle.CalcSize(new GUIContent(medalName)).x,NameFontSize),out var medalPlate,out var medalText);
                     UiKit.Fill(new Rect(medalPlate.x,medalPlate.y+1,medalPlate.width,medalPlate.height-2),NameBg);
                     UiKit.Fill(new Rect(medalPlate.x+1,medalPlate.y,medalPlate.width-2,1),NameBg);
                     UiKit.Fill(new Rect(medalPlate.x+1,medalPlate.yMax-1,medalPlate.width-2,1),NameBg);
@@ -267,6 +273,29 @@ public static class NpcDialogUi
                 }
             }
         }
+    }
+
+    // 一行「脚下名牌」：几何与名字那一行完全一致（0x5F12E5 / 0x5F15EC），只是多叠一行。
+    static bool DrawPlateLine(Vector2 anchor, string text, out Rect plate)
+    {
+        NamePlateRects(anchor, new Vector2(MeasureLineWidth(text), NameFontSize), out plate, out var rect);
+        UiKit.Fill(new Rect(plate.x, plate.y + 1f, plate.width, plate.height - 2f), NameBg);
+        UiKit.Fill(new Rect(plate.x + 1f, plate.y, plate.width - 2f, 1f), NameBg);
+        UiKit.Fill(new Rect(plate.x + 1f, plate.yMax - 1f, plate.width - 2f, 1f), NameBg);
+        characterNameStyle.normal.textColor = CharacterNameText;
+        GUI.Label(rect, text, characterNameStyle);
+        return true;
+    }
+
+    // 称号行随战力变化，宽度每级都会变；只缓存最近一条，避免每帧 CalcSize。
+    static string measuredLine;
+    static float measuredLineWidth;
+    static float MeasureLineWidth(string text)
+    {
+        if (text == measuredLine) return measuredLineWidth;
+        measuredLine = text;
+        measuredLineWidth = characterNameStyle.CalcSize(new GUIContent(text)).x;
+        return measuredLineWidth;
     }
 
     static void DrawNpcNames()

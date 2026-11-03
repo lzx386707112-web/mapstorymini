@@ -565,3 +565,21 @@ footholds/portals/ropes/npcs**，没有 `reactors`。于是四个副本的箱子
 移植端问题与修复：`PqBot.DropSomething` 原来把 4001007/4001008/4001022 和杂物混在一个池里往招募图地上丢。源端脚本用 `haveItem(id) == 题目张数` 判定（废都第一关尤其硬），地上凭空多一摞券会被队员/玩家捡走，直接把阶段判定打乱。现在：池子只留纯杂物；`IsQuestItem` 按 `Bot/Items.json` 的 `info.quest`/`info.pquest` 过滤（查不到或表没加载成功一律当任务道具挡掉），`AmbientPool()` 首次丢东西时才筛、`DropSomething` 再兜一次。
 
 回归：`PqChecks.AmbientDropChecks`（反射读 `PqBot.LobbyDrops`）——池内 4 条无任务道具、7 种阶段道具全部带 `pquest`、三个历史肇事 id 单独点名。`--pq-feedback` **183/0**；全量 `tools/server-check` **1404/0**；`unity-compile-check` 0 error / 0 warning。
+
+## 2026-11-03 组队任务「通往下一关的门」不许提前出现
+
+用户反馈：玩具塔 101（LudiPQ）里**通关用的下一关门一开始就显示出来了**，应该「完成条件、点 NPC 之后才出现」。
+
+原端事实（只读核对，无猜测）：
+
+- WZ 里 `922010100..922010900` 的 `next00` 除第 6 关塔顶 `922010600`（`pt=2`，本来就有光洞）外**全是 `pt=5`（隐形门，客户端不画任何东西）**；来源 `MapleDashResources/Data/Map/Map/Map9/9220101xx.img` 与源端 `clien/Data` 一致。
+- 关卡隔离写在 `gms-server/scripts/portal/lpqN.js` 的 `enter(pi)` 里：`var avail = eim.getProperty("Nstageclear"); if (avail == null) { dropMessage(5,"某种封印阻挡着这扇门，暂时无法进入。"); return false; }`，通关才 `changeMap`。闸门属性逐关为 lpq0..lpq7 → `1,2,3,4,5,5,7,8stageclear`（第 6 关塔顶的 lpq5 判 `5stageclear`，进图顺带置 `6stageclear`）；KPQ `kpq0..4` → `1..5stageclear`。
+- `GenericPortal.enterPortal` 脚本分支 **绝不回退 tm/tn**（移植端 `NpcSession.RunPortal` 返回 true = 「脚本跑过了」，`FieldDirector.UsePortal` 因此本来就不会回退，无需改动）；`PortalFactory.loadPortal` 只读 6 个字段，**没有「初始隐藏」位**。
+
+移植端真正的问题：`GameHUD` 的「按 ↑ / W 进入传送门」只看脚下有没有 `pt=1/2/4/5/…` 的门，于是站在还没清关的隐形 `next00` 上也会弹提示 —— 观感就是「通关门一开始就在那儿」。
+
+修复：新增 `Assets/Scripts/Field/PortalGate.cs`（源端脚本逐条手抄的 `script → 闸门属性` 表），`FieldDirector.FindPortal` 在距离判定之后过滤掉闸门未开的门：这类门**不进 `nearPortal`**（不提示、不被当成可进入的门），只在按 ↑ 上升沿时把脚本跑一遍，让脚本自己回「某种封印阻挡着这扇门」（与源端唯一的反馈一致）。表里没有的脚本一律当「没闸门」，完全退回改动前行为。
+
+- 为什么不用静态解析：LPQ 把 `getProperty` 结果存进局部变量 `avail` 再判 null，第一版正则只认出 lpq5 里那条 `6stageclear`（还是「进图置位」而非闸门）；GPQ 用 `getIntProperty` 复合条件更不可靠。故改为显式表 + 回归钉住。
+- 回归：`Assets/Editor/PqPortalGateChecks.cs`（`-executeMethod PqPortalGateChecks.Run`，19 项 PASS）；`PlaySmokeTest -smokeMap 922010100 -smokePqGate 1` 实机核对 `next00 pt=5 script=lpq0 tm=922010200 闸门属性=1stageclear 现在开着=False / NearPortal=null / HUD 提示=不显示`（EXIT=0）；`--pq-feedback` **183/0**；`unity-compile-check` 0 error / 0 warning。
+- 遗留：`NativeEventScriptService.LinkPortal`（`linkToNextStage`/`linkPortalToScript` 的出口）仍然只声明不赋值。LPQ/KPQ 的门靠 WZ 自带脚本名 + 脚本内闸门即可工作；若要给「WZ 里没有脚本」的事件门补 `setScriptName`，需先确认不会把 GPQ 这类 `glpqPortalN` 的门改成不存在的 `glpqX`。

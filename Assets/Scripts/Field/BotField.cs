@@ -549,7 +549,10 @@ public sealed class BotField : MonoBehaviour
         if (balloonDebug)
         {
             var speaker = BotRegistry.Get(actorId);
+            int ring = actorId == GameSession.CharacterId ? NativeNameTag.RingStyle("chatBalloon") : 0;
+            bool art = ring == 0 || NativeChatBalloon.Prepare(ring, 16, 1) != null;
             Debug.Log("[Bot/Balloon] speaker=" + (speaker?.name ?? "?") + "(#" + actorId + ")" +
+                      " ring=" + ring + (ring == 0 ? "" : art ? " 有素材" : " 素材缺失→回退默认") +
                       " map=" + (speaker?.mapId ?? 0) + " x=" + (speaker?.x ?? 0) + " y=" + (speaker?.y ?? 0) +
                       " text=" + text);
         }
@@ -687,9 +690,10 @@ public sealed class BotField : MonoBehaviour
                 var decoratedColor = GUI.color;
                 GUI.matrix = decoratedMatrix * Matrix4x4.Scale(new Vector3(s,s,1f));
                 GUI.color = new Color(1,1,1,alpha);
-                var bodyRect = new Rect(anchor.x-decorated.anchorX,anchor.y-decorated.texture.height,
-                    decorated.texture.width,decorated.texture.height);
-                GUI.DrawTexture(bodyRect,decorated.texture);
+                var frame = decorated.Frame(now);
+                var bodyRect = new Rect(anchor.x-decorated.anchorX,anchor.y-frame.height,
+                    frame.width,frame.height);
+                GUI.DrawTexture(bodyRect,frame);
                 balloonStyle.normal.textColor = decorated.color;
                 var textRect = decorated.text; textRect.position += bodyRect.position;
                 int previousSize=balloonStyle.fontSize;

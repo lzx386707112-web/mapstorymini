@@ -161,7 +161,40 @@ public static class VirtualControls
     // 而虚拟按键这一层的 GUI.depth 更小、会画在商城之上——不隐藏就盖住界面并抢走点击。
     // 这里只在「此刻被浮窗占用」时临时让位，不写 PlayerPrefs：
     // 关掉商城立即复原，用户在侧边栏里的开关状态也不受影响。
-    public static bool Shown => OverlayVisible && !ShopWindow.Visible;
+    //
+    // 进场也要让位（EntranceDone）：选角双击 → BuildScene → 地图首帧上屏之间确实跨了场景切换。
+    // 切场景那一帧的 OnGUI 里登录页已经不再绘制、战斗画面又还没渲染出来，
+    // 虚拟按键若照常画就会先于游戏滑上屏幕（"按键先亮，画面后到"）。
+    public static bool Shown => OverlayVisible && !ShopWindow.Visible && EntranceDone;
+
+    // —————————— 进场让位 ——————————
+    // 进入战斗时由 GameLoop 记下时刻：至少跳过一个渲染帧（切场景那一帧）再多等一小段，
+    // 让地图和人物先出现在屏幕上，之后才放出摇杆/按钮。
+    // 只是显示时机，不改任何存盘状态；Shown 同时是 Draw / Tick / Capturing 的门控，
+    // 所以这段时间整层既不绘制、也不吃触摸、不注入按键。
+    const float EntranceSeconds = 0.2f;
+    static float entranceAt = -1f;
+    static int entranceFrame = -1;
+
+    public static void OnEnterGame()
+    {
+        entranceAt = Time.unscaledTime;
+        entranceFrame = Time.frameCount;
+        ReleaseAll();
+    }
+
+    static bool EntranceDone
+    {
+        get
+        {
+            // 从没进过场（开局就在战斗里 / 回到选角屏）不受影响
+            if (entranceFrame < 0) return true;
+            // 切场景那一帧的 OnGUI 跑在登录页的绘制流程里，必须整帧跳过；
+            // 再多等一帧让地图真正渲染上屏（低帧率时才可能先卡在这里）。
+            if (Time.frameCount <= entranceFrame + 1) return false;
+            return Time.unscaledTime - entranceAt >= EntranceSeconds;
+        }
+    }
 
     // —————————— 系统输入法避让 ——————————
     // 聊天框/宏名字输入时，安卓会弹出输入法，屏幕下半被整体盖住：

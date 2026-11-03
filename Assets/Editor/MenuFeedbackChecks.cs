@@ -95,6 +95,11 @@ public static class MenuFeedbackChecks
         Require(medal!=null && medal.width==51 && medal.height==17 && medal.textX==10 && medal.textY==1,"original medal layout");
         var bubble=NativeChatBalloon.Prepare(174,31,1);
         Require(bubble!=null && bubble.texture.width==97 && bubble.texture.height==81 && bubble.anchorX==50,"asymmetric original chat ring layout: "+(bubble==null?"missing":bubble.texture.width+"x"+bubble.texture.height+" anchor="+bubble.anchorX));
+        // 动画气泡样式（21）的九宫格在 0/1/2 帧子节点里，以前按平整样式读会直接判定「缺节点」
+        // 而回退默认气泡——「戴了气泡戒指还是默认气泡」就是这么来的。
+        var animated=NativeChatBalloon.Prepare(21,31,1);
+        Require(animated!=null && animated.frames!=null && animated.frames.Length==3 && animated.delay==150 &&
+            animated.texture.height>0,"animated chat balloon style keeps its three frames");
         string fixtures=Path.Combine(Application.dataPath,"../docs/evidence/menu-feedback-2026-11-01");
         File.WriteAllBytes(Path.Combine(fixtures,"name-tag-3.png"),name.texture.EncodeToPNG());
         File.WriteAllBytes(Path.Combine(fixtures,"medal-9.png"),medal.texture.EncodeToPNG());
@@ -140,6 +145,64 @@ public static class MenuFeedbackChecks
         }
         GameSession.ApplyInventoryToProfile();
         Require(NativeNameTag.RingStyle("nameTag")==3 && NativeNameTag.RingStyle("chatBalloon")==3,"native ring order preserves independent nonzero name/chat styles");
+        Require(NativeNameTag.WearsField("nameTag") && NativeNameTag.WearsField("chatBalloon"),"name tag ring presence drives the extra nameplate row");
+        // 装备窗：普通戒指槽 -12 是空的，现金戒指在 -112；面板必须按「现金优先」读到 -112
+        // （BeiDou.exe 7FEE65 并行读两组数组），否则现金戒指在装备面板上永远是空格子。
+        Require(Profile.EquipOfSlot(-12)==0 && Profile.EquipOfSlot(-112)==1112100,"cash ring lives only on the cash slot");
+        Require(EquipSlot.WornSlotOf(-12)==-112 && EquipSlot.WornSlotOf(-13)==-113 && EquipSlot.WornSlotOf(-15)==-115,
+            "equip window resolves the cash slot before the plain slot");
+        Require(EquipSlot.WornSlotOf(-18)==-18 && EquipSlot.WornSlotOf(-19)==-19,"plain slots without a cash counterpart stay put");
+        // .titles 节的档位门槛（10000/10万/100万/1000万/5000万/2亿/5亿/20亿，第 10 档 100亿）
+        Require(NativeNameplate.TierOf(0)==0 && NativeNameplate.TierOf(9999)==0 && NativeNameplate.TierOf(10000)==1 &&
+            NativeNameplate.TierOf(2000000000L)==8 && NativeNameplate.TierOf(9999999999L)==8 &&
+            NativeNameplate.TierOf(10000000000L)==9,"original nameplate power tiers");
+        Require(NativeNameplate.TitleOf(0,0)=="乾元玄阶" && NativeNameplate.TitleOf(0,9)=="无敌大帝" &&
+            NativeNameplate.TitleOf(8,0)=="无个性者" && NativeNameplate.TitleOf(8,9)=="超觉醒者" &&
+            NativeNameplate.TitleOf(99,99)=="超觉醒者","original 9x10 nameplate title table");
+        // info/addition：戒指的附加暴击/暴伤/BOSS 伤害/条件属性。源端和 inc* 是两套字段，
+        // 只有打进真面板才算生效（Character.reapplyLocalStats 之后才用得上）。
+        var addAttrs = new CharacterAttributes { level = 29 };
+        int addBoss = 0;
+        EquipCatalog.ApplyAddition(1112427, addAttrs, ref addBoss);
+        Require(addAttrs.criticalChance == 0 && addBoss == 0, "addition critical respects con.lv (29 < 30)");
+        addAttrs = new CharacterAttributes { level = 30 };
+        addBoss = 0;
+        EquipCatalog.ApplyAddition(1112427, addAttrs, ref addBoss);
+        Require(Mathf.Abs(addAttrs.criticalChance - .05f) < .0001f, "adventurer critical ring adds 5% at level 30");
+        addAttrs = new CharacterAttributes { level = 70 };
+        addBoss = 0;
+        EquipCatalog.ApplyAddition(1113068, addAttrs, ref addBoss);
+        Require(Mathf.Abs(addAttrs.criticalChance - .12f) < .0001f && Mathf.Abs(addAttrs.criticalBonus - .01f) < .0001f,
+            "explorer critical ring adds 12% chance and 1% crit damage");
+        addAttrs = new CharacterAttributes { level = 100 };
+        addBoss = 0;
+        EquipCatalog.ApplyAddition(1113025, addAttrs, ref addBoss);
+        // 周末戒指的每一段都带 con/weekDay=saturday,sunday，所以只有周末才生效。
+        bool weekend = DateTime.Now.DayOfWeek == DayOfWeek.Saturday || DateTime.Now.DayOfWeek == DayOfWeek.Sunday;
+        Require(addBoss == (weekend ? 5 : 0), "weekend stage-4 ring only adds 5% boss damage on sat/sun");
+        // statinc 的 con/job 是精确 jobId 列表（米哈尔 5111/5112），不是分支位掩码。
+        var jobAttrs = new CharacterAttributes { level = 200 };
+        int jobBoss = 0;
+        EquipCatalog.ApplyAddition(1112723, jobAttrs, ref jobBoss);
+        bool mihile = Profile.JobId == 5111 || Profile.JobId == 5112;
+        Require(jobAttrs.str == (mihile ? 14 : 12), "job-conditional ring only buffs its own job");
+        // 戒指的另外两处功能入口：经验加成（bonusExp）与身上特效（effect/path）。
+        var bonus = EquipCatalog.Info(1112613)?.Get("bonusExp/0/incExpR");
+        Require(bonus != null && Convert.ToInt32(bonus.Value) == 2, "cross brigade ring carries +2% exp");
+        Require(EquipCatalog.Info(1112900)?.Text("effect/path") == "Effect/CharacterEff.img/1112900",
+            "note ring resolves its CharacterEff animation");
+        // 折叠态装备窗里「副手/图腾/心脏/徽章/纹章」5 格是 DLL 时代补画后烘进位图的，
+        // 底块残缺、字带白雾且字形已毁；NativeEquipBackdrop 在加载时用本格干净行补底纹，
+        // 再按自带格实测参数（12px 宋体点阵、墨迹 23×11 钉在格内 (3,3)、#7788AA）盖回槽位名。
+        Require(NativeEquipBackdrop.LabelOf(-51) == "副手" && NativeEquipBackdrop.LabelOf(-53) == "图腾" &&
+                NativeEquipBackdrop.LabelOf(-54) == "心脏" && NativeEquipBackdrop.LabelOf(-55) == "徽章" &&
+                NativeEquipBackdrop.LabelOf(-56) == "纹章" && NativeEquipBackdrop.LabelOf(EquipSlot.Weapon) == null,
+            "extra equip slots keep their own labels");
+        var patchedBackdrop = NativeEquipBackdrop.Texture();
+        Require(patchedBackdrop != null && patchedBackdrop.width == NativeEquipBackdrop.Width &&
+                patchedBackdrop.height == NativeEquipBackdrop.Height,
+            "folded equip backdrop rebuilt: " + (patchedBackdrop == null ? "null" :
+                patchedBackdrop.width + "x" + patchedBackdrop.height));
         var ids = WzCharacter.CharacterIds(GameSession.Character.record,GameSession.Character.inventory);
         Require(Array.IndexOf(ids,"01702000")>=0 && ids[ids.Length-1]=="01302000", "cash cover and real weapon coexist");
         Require(WzCharacter.Appearance("feedback-cash-weapon",ids)!=null,"cash weapon composition");

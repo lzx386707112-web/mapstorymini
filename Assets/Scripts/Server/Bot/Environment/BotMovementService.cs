@@ -264,17 +264,21 @@ namespace Server.Bot.Environment
             Point? point = null;
             if (bounded)
             {
+                // 在 x 这一列里挑「纵向离目标最近」的界内平台当落点。
+                // 不能用 GroundAbove：它按桶内顺序返回最上面那段（实测真实竖井图会跳去 y=-2643 的高台）。
+                // 界外的装饰地面（VRBottom 之下的坑底、VRTop 之上的顶盖）一律不算落点。
                 int y = Math.Max(map.top, Math.Min(map.bottom, target.y));
-                point = e.motion.ground.GroundPoint(x, y - 1);
-                // 目标点正下方只有界外装饰地面（坑底）时不算数。
-                if (point.HasValue && (point.Value.y < map.top || point.Value.y > map.bottom)) point = null;
-                // 从 VR 底往上找最近的界内平台（坑底在 VRBottom 之下时走这条）。
-                if (!point.HasValue)
-                    point = e.motion.ground.GroundAbove(x, map.bottom + 1, map.bottom - map.top + 1);
-                if (!point.HasValue)
-                    point = e.motion.ground.GroundPoint(x, (map.top + map.bottom) / 2);
-                if (point.HasValue && (point.Value.y < map.top || point.Value.y > map.bottom)) point = null;
-                if (!point.HasValue) point = new Point(x, Math.Max(map.top, Math.Min(map.bottom, target.y)));
+                bool found = false; int bestY = y, bestScore = int.MaxValue;
+                foreach (var f in map.footholds)
+                {
+                    if (f.Wall || f.x1 > x || f.x2 < x) continue;
+                    int fy = BotGroundIndex.YAt(f, x);
+                    if (fy < map.top || fy > map.bottom) continue;
+                    int score = Math.Abs(fy - y);
+                    if (score >= bestScore) continue;
+                    bestScore = score; bestY = fy; found = true;
+                }
+                point = new Point(x, found ? bestY : y);
             }
             else
             {

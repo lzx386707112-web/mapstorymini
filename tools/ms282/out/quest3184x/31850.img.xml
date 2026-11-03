@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<imgdir name="31850.img">
+    <imgdir name="QuestInfo">
+        <string name="name" value="[赫力席母] 凱撒遺失了嗎 ？" />
+        <int name="area" value="21" />
+        <string name="0" value="咦？#b#t1402198##k到哪去了？" />
+        <string name="1" value="怎麼會這樣！凱撒跑哪去了！\r\n快點去找 #b#m401040000##k的#b#p3001100##k！" />
+        <string name="2" value="還好是由 #b#p3001100##k保管… 以後要小心絕對不能弄丟。" />
+        <string name="rewardSummary" value="#Wbasic#&#13;&#10;#i1402198:# #t1402198:# 1 個&#13;&#10;" />
+        <int name="autoStart" value="1" />
+        <imgdir name="reward">
+            <imgdir name="item">
+                <imgdir name="0">
+                    <int name="id" value="1402198" />
+                    <int name="count" value="1" />
+                </imgdir>
+            </imgdir>
+            <imgdir name="explain">
+                <imgdir name="summaryDemand">
+                    <int name="order" value="1" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+        <int name="reqType" value="8" />
+    </imgdir>
+    <imgdir name="Check">
+        <imgdir name="0">
+            <int name="npc" value="3001100" />
+            <int name="normalAutoStart" value="1" />
+            <imgdir name="quest">
+                <imgdir name="0">
+                    <int name="id" value="31849" />
+                    <int name="state" value="1" />
+                    <int name="order" value="1" />
+                </imgdir>
+            </imgdir>
+            <imgdir name="item">
+                <imgdir name="0">
+                    <int name="id" value="1402198" />
+                    <int name="order" value="1" />
+                </imgdir>
+            </imgdir>
+            <int name="dayByDay" value="1" />
+            <int name="lvmin" value="175" />
+        </imgdir>
+        <imgdir name="1">
+            <int name="order" value="1" />
+            <int name="npc" value="3001100" />
+            <imgdir name="item">
+                <imgdir name="0">
+                    <int name="id" value="1402198" />
+                    <int name="order" value="1" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="Act">
+        <imgdir name="0">
+        </imgdir>
+        <imgdir name="1">
+            <imgdir name="item">
+                <imgdir name="0">
+                    <int name="id" value="1402198" />
+                    <int name="count" value="1" />
+                    <string name="potentialGrade" value="一般" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+    <imgdir name="Say">
+        <imgdir name="0">
+            <int name="ask" value="1" />
+            <string name="0" value="#b#h0##k，最近好嗎？\r\n#L0##b嗯。 #p3001100#你有什麼事嗎？#l\n#k" />
+            <string name="1" value="請問，你的凱撒利恩有保管好嗎？\r\n#L0##b當然！就在這裡… 嗯？哪裡去了？完蛋了… 凱撒利恩消失不見了…#l\n#k" />
+            <string name="2" value="這麼珍貴的劍怎麼隨便放呢… 真令人擔心。\r\n#L0##b啊，抱歉… 那現在要怎麼辦呢？#l\n#k" />
+            <string name="3" value="你先來 #b#m401040000##k找我吧。" />
+            <imgdir name="stop">
+                <imgdir name="0">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+                <imgdir name="1">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+                <imgdir name="2">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+            </imgdir>
+            <imgdir name="yes">
+                <string name="0" value="那麼我在 #b#m401040000##k等你。" />
+            </imgdir>
+            <imgdir name="no">
+                <string name="0" value="對一個把#t1402198#弄丟的人來說你好像很輕鬆啊？如果不需要我的幫助就算了。" />
+            </imgdir>
+        </imgdir>
+        <imgdir name="1">
+            <int name="ask" value="1" />
+            <string name="0" value="你來了。我們的一位士兵在戰場上發現了這種劍喔。\r\n#L0##b（沒錯！是#t1402198#！）#l\n#k" />
+            <string name="1" value=" #b#h0##k你太過分了，太令人失望。你的心思都放在哪裡呢？把這個珍貴的劍…\r\n#L0##b很抱歉。這的確是我的疏忽。#l\n#k" />
+            <string name="2" value="既然你都這麼說我就不再大小聲了。這既然是歷代凱撒的物品請你珍惜它。明白嗎？\r\n#L0##b是！（還好，好像氣消了。）#l\n#k" />
+            <string name="3" value="快收好吧。希望不要再有這種事情發生。" />
+            <imgdir name="yes">
+                <string name="0" value="那麼請快點收集  #b#t4033767##k交給我。你還記得共收集 #b5個#k 才能解除詛咒嗎？" />
+            </imgdir>
+            <imgdir name="stop">
+                <imgdir name="0">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+                <imgdir name="1">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+                <imgdir name="2">
+                    <int name="answer" value="1" />
+                    <int name="flip" value="1" />
+                </imgdir>
+            </imgdir>
+        </imgdir>
+    </imgdir>
+</imgdir>

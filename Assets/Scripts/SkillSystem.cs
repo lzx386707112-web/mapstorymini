@@ -143,8 +143,10 @@ public partial class SkillSystem : MonoBehaviour
         if (s.native.Kind == "Passive" && !InstantSelfSkill(s.native.Id)) return Reject("被动技能无需施放");
         if (s.native.Kind=="FlashJump" && !p.CanUseFlashJump(s.native.Id)) return Reject("当前无法使用二段跳");
         Vector2 teleportDestination = default;
+        // 原端找不到落点就整条请求不发出：不扣 MP/冷却，也不弹提示。
+        // 场景就是竖井图最低平台继续按↓（玩具塔101第2关），表现应当只是「原地不动」。
         if (s.native.Kind=="Teleport" && !p.TeleportDestination(s.native,out teleportDestination))
-            return Reject("当前方向没有可瞬移的落脚点");
+        { LastFailure = null; return false; }
         bool frenzy=s.native.Id==4121023&&fourSeasonsFrenzy;
         if (!frenzy && State(s.native.Id).Remaining(Time.realtimeSinceStartupAsDouble) > 0) return Reject("技能冷却中");
         // 原端 TryUseSkill：MP 不够直接拒绝，扣蓝在施法成功之后。

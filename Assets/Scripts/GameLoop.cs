@@ -146,6 +146,9 @@ public class GameLoop : MonoBehaviour
                 if (player != null) { player.hpMax = 99999f; player.hp = 99999f; }
                 Debug.Log("[GameLoop] 调试无敌已开启");
             }
+            // 场景已经建完（地图/人物都在位），这里才开始倒数虚拟按键的出现时机：
+            // 太早放出会先于游戏画面滑上屏幕（见 VirtualControls.EntranceDone）。
+            VirtualControls.OnEnterGame();
             return;
         }
 
@@ -176,6 +179,9 @@ public class GameLoop : MonoBehaviour
         {
             Debug.Log("[GameLoop] 无关卡数据，进入无限刷怪模式");
         }
+
+        // 章节/兜底模式同样等场景建完再放出虚拟按键（原版地图分支已在上面 return）
+        VirtualControls.OnEnterGame();
     }
 
     // 拆除战斗世界，保留背景（不切状态，调用方负责）

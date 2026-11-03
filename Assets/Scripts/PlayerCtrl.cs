@@ -21,6 +21,9 @@ public class PlayerCtrl : MonoBehaviour
     CharacterAttributes baseAttributes;
     public CharacterAttributes Attributes { get; private set; }
     int weaponAttack, magicAttack;
+    // 面板攻击力（含装备/技能/buff），名牌战力要用它：源端 Character.getTotalWatk/getTotalMagic。
+    public int WeaponAttack => weaponAttack;
+    public int MagicAttack => magicAttack;
     float rushRemaining, rushSpeed;
     int rushFacing;
     public bool IsRushing => rushRemaining > 0;
@@ -460,6 +463,7 @@ public class PlayerCtrl : MonoBehaviour
     {
         Profile.Load();
         if(GetComponent<NativeEquipmentEffects>()==null) gameObject.AddComponent<NativeEquipmentEffects>();
+        if(GetComponent<NativeRingEffect>()==null) gameObject.AddComponent<NativeRingEffect>();
         Profile.LeveledUp += OnLevelUp;
         movementPhysics = NativeMovementPhysics.Load();
         var physics = WzAssets.FileRoot("Map/Physics.img");

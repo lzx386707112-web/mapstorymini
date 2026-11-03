@@ -79,7 +79,7 @@ echo
 echo "⚠️  ZI P 内的 resource-manifest.json 来自: $MANIFEST"
 echo "    若该清单与手机上 APK 内嵌的不一致，手机会报『资源包版本与当前游戏不匹配』。"
 echo "    如果你刚改过清单/资源，请一并重新构建 APK（本脚本加 --apk，或另跑 build_android.sh）。"
-echo "    传到手机后把旧的 MapleDashResources.zip 删掉再放新的，避免 installer 读到旧包。"
+echo "    安装成功后会自动删除 ZIP；失败时保留 ZIP 供重试。"
 
 if [[ $APK -eq 1 ]]; then
   echo "==> 重新构建 APK"
