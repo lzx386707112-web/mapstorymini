@@ -52,6 +52,10 @@ public static class NativeScrollService
             : scroll/100==20492 ? equip/10000==111 || equip/10000==112 || equip/10000==113 : scroll/100%100==equip/10000%100;
     public static EquipPatchResponse Apply(DbStore db,EquipPatchRequest request,Random random=null)
     {
+        if(request==null)return Reject("无效卷轴请求");
+        if(NativePotentialService.IsReserved(db,request.inventoryItemId))return Reject("请先选择方块候选结果");
+        var enhancement=InventoryDao.EquipmentOf(db,request.inventoryItemId);
+        if(enhancement!=null&&DbStore.Int(enhancement,"starForceVestige")!=0)return Reject("装备痕迹需要先复原");
         random ??= new Random();
         var character=CharactersDao.FindById(db,request.characterId);
         if(character==null) return Reject("无效卷轴");

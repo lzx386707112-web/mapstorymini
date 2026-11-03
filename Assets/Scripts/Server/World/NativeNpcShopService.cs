@@ -211,6 +211,7 @@ public sealed class NativeNpcShopService
             return null;
         }
         if (r.operation != NpcShopOperation.Sell || r.inventoryType > 5) return "无效商店操作";
+        if (NativePotentialService.BlocksTransfer(db, heldItem)) return "潜能结果待选装备或装备痕迹不能出售";
         if (q == 0 || q == 65535) q = 1;
         if (q < 1 || q > short.MaxValue || heldItem.quantity < 0) return "出售数量无效";
         if (TradeItemRules.Rechargeable(heldItem.itemId)) q = heldItem.quantity;

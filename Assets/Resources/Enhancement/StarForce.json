@@ -1,0 +1,336 @@
+{
+  "itemCaps": {
+    "1072870": 15,
+    "1082556": 15,
+    "1102623": 15,
+    "1132247": 15,
+    "1182060": 22,
+    "1182273": 22
+  },
+  "normal": [
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 0,
+      "success": 9500
+    },
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 1,
+      "success": 9000
+    },
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 2,
+      "success": 8500
+    },
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 3,
+      "success": 8500
+    },
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 4,
+      "success": 8000
+    },
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 5,
+      "success": 7500
+    },
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 6,
+      "success": 7000
+    },
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 7,
+      "success": 6500
+    },
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 8,
+      "success": 6000
+    },
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 9,
+      "success": 5500
+    },
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 10,
+      "success": 5000
+    },
+    {
+      "destroy": 0,
+      "down": true,
+      "meso": -1,
+      "star": 11,
+      "success": 4500
+    },
+    {
+      "destroy": 600,
+      "down": true,
+      "meso": -1,
+      "star": 12,
+      "success": 4000
+    },
+    {
+      "destroy": 1300,
+      "down": true,
+      "meso": -1,
+      "star": 13,
+      "success": 3500
+    },
+    {
+      "destroy": 1400,
+      "down": true,
+      "meso": -1,
+      "star": 14,
+      "success": 3000
+    },
+    {
+      "destroy": 2100,
+      "down": false,
+      "meso": -1,
+      "star": 15,
+      "success": 3000
+    },
+    {
+      "destroy": 2100,
+      "down": true,
+      "meso": -1,
+      "star": 16,
+      "success": 3000
+    },
+    {
+      "destroy": 2100,
+      "down": true,
+      "meso": -1,
+      "star": 17,
+      "success": 3000
+    },
+    {
+      "destroy": 2800,
+      "down": true,
+      "meso": -1,
+      "star": 18,
+      "success": 3000
+    },
+    {
+      "destroy": 2800,
+      "down": true,
+      "meso": -1,
+      "star": 19,
+      "success": 3000
+    },
+    {
+      "destroy": 3500,
+      "down": false,
+      "meso": -1,
+      "star": 20,
+      "success": 3000
+    },
+    {
+      "destroy": 3500,
+      "down": true,
+      "meso": -1,
+      "star": 21,
+      "success": 3000
+    },
+    {
+      "destroy": 5820,
+      "down": true,
+      "meso": -1,
+      "star": 22,
+      "success": 300
+    },
+    {
+      "destroy": 5880,
+      "down": true,
+      "meso": -1,
+      "star": 23,
+      "success": 200
+    },
+    {
+      "destroy": 5940,
+      "down": true,
+      "meso": -1,
+      "star": 24,
+      "success": 100
+    },
+    {
+      "destroy": 1800,
+      "down": false,
+      "meso": -1,
+      "star": 25,
+      "success": 1000
+    },
+    {
+      "destroy": 1860,
+      "down": false,
+      "meso": -1,
+      "star": 26,
+      "success": 700
+    },
+    {
+      "destroy": 1900,
+      "down": false,
+      "meso": -1,
+      "star": 27,
+      "success": 500
+    },
+    {
+      "destroy": 1940,
+      "down": false,
+      "meso": -1,
+      "star": 28,
+      "success": 300
+    },
+    {
+      "destroy": 1980,
+      "down": false,
+      "meso": -1,
+      "star": 29,
+      "success": 100
+    }
+  ],
+  "scale": 10000,
+  "schemaVersion": 1,
+  "sourceSha256": {
+    "starforce-caps.tsv": "1803c841aa7bf369515395dfbbccda82712d6eae66c792d5511b3282551bd812",
+    "starforce-settings.tsv": "4c436406d88f220d65959e38aa05c720303199e241b310c5f1ce00591c110327",
+    "starforce.tsv": "88e52e6d96b414033149218d6238dc9b95e928a806f01c7abdec46c4aa3550c7"
+  },
+  "superior": [
+    {
+      "destroy": 0,
+      "down": false,
+      "meso": -1,
+      "star": 0,
+      "success": 5000
+    },
+    {
+      "destroy": 0,
+      "down": true,
+      "meso": -1,
+      "star": 1,
+      "success": 4500
+    },
+    {
+      "destroy": 0,
+      "down": true,
+      "meso": -1,
+      "star": 2,
+      "success": 4000
+    },
+    {
+      "destroy": 0,
+      "down": true,
+      "meso": -1,
+      "star": 3,
+      "success": 3500
+    },
+    {
+      "destroy": 0,
+      "down": true,
+      "meso": -1,
+      "star": 4,
+      "success": 3500
+    },
+    {
+      "destroy": 195,
+      "down": true,
+      "meso": -1,
+      "star": 5,
+      "success": 3500
+    },
+    {
+      "destroy": 420,
+      "down": true,
+      "meso": -1,
+      "star": 6,
+      "success": 3000
+    },
+    {
+      "destroy": 490,
+      "down": true,
+      "meso": -1,
+      "star": 7,
+      "success": 3000
+    },
+    {
+      "destroy": 700,
+      "down": true,
+      "meso": -1,
+      "star": 8,
+      "success": 3000
+    },
+    {
+      "destroy": 1050,
+      "down": true,
+      "meso": -1,
+      "star": 9,
+      "success": 3000
+    },
+    {
+      "destroy": 1500,
+      "down": true,
+      "meso": -1,
+      "star": 10,
+      "success": 2500
+    },
+    {
+      "destroy": 1875,
+      "down": true,
+      "meso": -1,
+      "star": 11,
+      "success": 2500
+    },
+    {
+      "destroy": 2400,
+      "down": true,
+      "meso": -1,
+      "star": 12,
+      "success": 2000
+    },
+    {
+      "destroy": 3400,
+      "down": true,
+      "meso": -1,
+      "star": 13,
+      "success": 1500
+    },
+    {
+      "destroy": 4500,
+      "down": true,
+      "meso": -1,
+      "star": 14,
+      "success": 1000
+    }
+  ]
+}

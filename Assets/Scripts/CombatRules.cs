@@ -35,8 +35,7 @@ public static class CombatRules
         => (Math.Ceiling((totalMagic * Math.Ceiling(totalMagic / 1000.0) + totalMagic) / 30.0)
             + Math.Ceiling(intelligence / 200.0)) * skillMagicAttack;
 
-    // 单机伤害策略：旧版平减防御、等级差、熟练度和逐段独立暴击。
-    // 原服务端只收客户端结果；下列随机/防御系数尚不能据服务端证明为当前 EXE 常量。
+    // 怪物防御采用282百分比字段；等级差、随机分布仍属于既有战斗管线。
     public static DamageResult Attack(CharacterAttributes a, WeaponDef w, int watk, int matk,
         System.Collections.Generic.Dictionary<string, object> target, NativeSkillDefinition skill,
         double roll, double critRoll, double hitRoll,long damageCap=InitialDamageCap)
@@ -58,7 +57,9 @@ public static class CombatRules
         double minimum = magic ? maximum * .5 : ((w.multiplier * main * .9 * Math.Max(.1, Math.Min(1,a.mastery)) + secondary) * watk / 100.0);
         double damage = minimum + (maximum-minimum) * Math.Max(0,Math.Min(1,roll));
         damage *= Math.Max(0,1-.01*diff);
-        damage -= NativeCombatData.Int(target,magic ? "MDDamage" : "PDDamage") * (magic ? .6 : .5);
+        int ignoreDefense=0;
+        if(a.setItemBonus!=null)a.setItemBonus.TryGetValue("IgnoreDefense",out ignoreDefense);
+        damage *= PercentageDefense.Multiplier(NativeCombatData.Int(target,magic ? "MDRate" : "PDRate"),ignoreDefense);
         bool critical = !magic && critRoll < Math.Max(0,Math.Min(1,a.criticalChance));
         if (!magic) damage *= (skill == null ? 100 : skill.DamagePercent) / 100.0 + (critical ? a.criticalBonus : 0);
         double element = ElementModifier(target,skill == null ? "" : skill.Element);

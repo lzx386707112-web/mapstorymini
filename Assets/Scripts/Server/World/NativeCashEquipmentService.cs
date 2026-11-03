@@ -7,6 +7,10 @@ public static class NativeCashEquipmentService
     static EquipPatchResponse Reject(string message)=>new EquipPatchResponse {ok=false,error=message};
     public static EquipPatchResponse Apply(DbStore db,EquipPatchRequest request)
     {
+        if(request==null)return Reject("无效现金道具请求");
+        if(NativePotentialService.IsReserved(db,request.inventoryItemId))return Reject("请先选择方块候选结果");
+        var enhancement=InventoryDao.EquipmentOf(db,request.inventoryItemId);
+        if(enhancement!=null&&DbStore.Int(enhancement,"starForceVestige")!=0)return Reject("装备痕迹需要先复原");
         var c=CharactersDao.FindById(db,request.characterId);
         var item=db.Table("inventoryitems").Find(x=>DbStore.Int(x,"characterid")==request.characterId && DbStore.Long(x,"inventoryitemid")==request.inventoryItemId);
         int cash=request.cashItemId;

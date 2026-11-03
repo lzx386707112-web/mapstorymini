@@ -931,7 +931,7 @@ public static class GameWindows
         NativeCommunityWindow.Visible || NativeGuildWindow.Visible || NativeGuildGradeWindow.Visible ||
         NativeMedalWindow.Visible || ShopWindow.Visible || GameOptWindow.Visible ||
         SysOptWindow.Visible || ChannelWindow.Visible ||
-        NativeVegaWindow.Visible || NativeResetWindow.Visible || NativeSpResetWindow.Visible || NativeTeleportWindow.Visible || NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterInfo.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible || NativeNpcShopWindow.Visible || NativeDeliveryWindow.Visible || NativeMerchantWindow.Visible || NativeMakerWindow.Visible || NativeRankingWindow.Visible || NativePlayerShopWindow.Visible || NativeItemSearchWindow.Visible || NativeStorageWindow.Visible || NativeClaimWindow.Visible || NativeRpsWindow.Visible || NativeRemoteGachaponWindow.Visible;
+        NativeEnhancementWindow.Visible || NativeVegaWindow.Visible || NativeResetWindow.Visible || NativeSpResetWindow.Visible || NativeTeleportWindow.Visible || NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterInfo.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible || NativeNpcShopWindow.Visible || NativeDeliveryWindow.Visible || NativeMerchantWindow.Visible || NativeMakerWindow.Visible || NativeRankingWindow.Visible || NativePlayerShopWindow.Visible || NativeItemSearchWindow.Visible || NativeStorageWindow.Visible || NativeClaimWindow.Visible || NativeRpsWindow.Visible || NativeRemoteGachaponWindow.Visible;
 
     // ——————————————— Esc 分层关闭 ———————————————
     // 原版 Esc 是「系统菜单」键，但用户要求：只要有面板开着，Esc 先关面板。
@@ -1039,6 +1039,7 @@ public static class GameWindows
     public static bool CloseTop()
     {
         if (NativeUtilPrompt.Visible) { NativeUtilPrompt.Cancel(); return true; }
+        if (NativeEnhancementWindow.Visible) { NativeEnhancementWindow.Close(); return true; }
         if (NativeVegaWindow.Visible) { if(!NativeVegaWindow.Busy) NativeVegaWindow.Close(); return true; }
         if (NativeResetWindow.Visible) { NativeResetWindow.Close(); return true; }
         if (NativeSpResetWindow.Visible) { NativeSpResetWindow.Close(); return true; }
@@ -1074,6 +1075,10 @@ public static class GameWindows
         NativeDeliveryWindow.Tick();
         NativeItemSearchWindow.Tick();
         bool enabled = GUI.enabled;
+        bool shield=NativeEnhancementWindow.AtPointer;
+        var pointerPosition=Pointer.Pos;
+        bool pointerPressed=Pointer.Pressed,pointerReleased=Pointer.Released,pointerClicked=Pointer.Clicked,pointerDouble=Pointer.DoubleClicked;
+        if(shield){Pointer.Pos=new Vector2(-10000,-10000);Pointer.Pressed=Pointer.Released=Pointer.Clicked=Pointer.DoubleClicked=false;}
         GUI.enabled &= !NativeUtilPrompt.Visible;
         try
         {
@@ -1122,12 +1127,18 @@ public static class GameWindows
         GameMenuWindow.Draw();
         ShortcutWindow.Draw();
         NativeVegaWindow.Draw();
+        if(shield){Pointer.Pos=pointerPosition;Pointer.Pressed=pointerPressed;Pointer.Released=pointerReleased;Pointer.Clicked=pointerClicked;Pointer.DoubleClicked=pointerDouble;shield=false;}
+        NativeEnhancementWindow.Draw();
         NativeResetWindow.Draw();
         NativeSpResetWindow.Draw();
         NativeTeleportWindow.Draw();
         ItemTooltip.Flush();
         }
-        finally { GUI.enabled = enabled; }
+        finally
+        {
+            GUI.enabled = enabled;
+            if(shield){Pointer.Pos=pointerPosition;Pointer.Pressed=pointerPressed;Pointer.Released=pointerReleased;Pointer.Clicked=pointerClicked;Pointer.DoubleClicked=pointerDouble;}
+        }
         NativeUtilPrompt.Draw();
         UiPreviewHook.Emit();
     }

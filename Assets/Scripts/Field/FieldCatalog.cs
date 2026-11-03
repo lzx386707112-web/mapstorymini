@@ -215,6 +215,7 @@ public static class FieldCatalog
                         stats = d.ContainsKey("stats") ? d["stats"] as Dictionary<string, object>
                                                        : new Dictionary<string, object>(),
                     };
+                    MobDefenseCatalog.Shared.Apply(mob.id,mob.stats);
                     Mobs[mob.id] = mob;
                 }
         }
@@ -354,6 +355,7 @@ public static class FieldCatalog
         var stats = new Dictionary<string, object>();
         foreach (var property in info.Children)
             if (property.Value != null) stats[property.Name] = property.Value;
+        MobDefenseCatalog.Shared.Apply(id,stats);
         var label = WzAssets.FileRoot("String/Mob.img").Get(id.ToString());
         Mobs[id] = new FieldMob { id = id, name = label?.Text("name") ?? id.ToString(), artKey = id.ToString(), stats = stats };
         loadedMobs.Add(id);

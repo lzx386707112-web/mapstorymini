@@ -37,7 +37,7 @@ public sealed class InventoryEntry
     // inventoryequipment.level：源端 Equip.getLevel()，背包整理里装备的副排序键。
     public int equipLevel;
     // 星之力（源端 Equip.java 的 maxStar/starLevel/starCount，DB 列同名）：
-    //   starLevel 当前星级、starCount 连续失败次数（满 5 必成）、maxStar 上限（按需求等级表算）。
+    //   starLevel 当前星级。enhancementVersion=282 时 starCount 是连续实际掉星次数（2 次后必成）；旧规则在切换时清空。
     public int maxStar, starLevel, starCount;
 }
 

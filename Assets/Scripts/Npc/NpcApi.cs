@@ -776,6 +776,7 @@ public static class NpcApi
         cm.Set("showWZEffect", Fn(c => { }));
         cm.Set("showInstruction", Fn(c => ToastIfAny(Str(c, 0))));
         cm.Set("showInfoText", Fn(c => ToastIfAny(Str(c, 0))));
+        cm.Set("openEnhancement", Fn(c => NativeEnhancementWindow.Open(Int(c,0))));
         cm.Set("openUI", Fn(c => { }));    // UIType 窗口枚举未迁移
         cm.Set("changeMusic", Fn(c => { }));   // 无 BGM 系统
         cm.Set("lockUI", Fn(c => PlayerCtrl.ScriptUiLock++));

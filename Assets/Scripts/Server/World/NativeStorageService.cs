@@ -199,6 +199,7 @@ public static class NativeStorageService
             return new StorageResponse { ok = false, error = "背包里没有这个道具" };
         if (IsWeddingItem(row.itemId))
             return new StorageResponse { ok = false, error = "这个道具不能存进仓库" };
+        if(NativePotentialService.BlocksTransfer(db,row))return new StorageResponse {ok=false,error="请先处理装备痕迹或方块候选结果"};
 
         int slots = Slots(db, c.accountid);
         if (LoadItems(db, c.accountid).Count >= slots)

@@ -220,6 +220,8 @@ public static class NativeMerchantService
         if (row == null) return new MerchantResponse { ok = false, error = "背包里没有这件道具" };
 
         var item = CharService.ToInventoryEntry(db, row);
+        if (NativePotentialService.BlocksTransfer(db, item))
+            return new MerchantResponse { ok = false, error = "潜能结果待选装备或装备痕迹不能上架" };
         bool rechargeable = Server.Bot.Trade.TradeItemRules.Rechargeable(item.itemId);
         int perBundle = r.bundles > 0 ? r.quantity : r.quantity;   // 请求里的 quantity = 每份数量
         int bundles = r.bundles > 0 ? r.bundles : 1;

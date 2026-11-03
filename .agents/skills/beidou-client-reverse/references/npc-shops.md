@@ -157,3 +157,7 @@ PlayMode画面冒烟截图已人工查看：`docs/hud-review/npc-shop-counter.pn
 脚本harness `--run`使用其简化宿主，889文件：789成功、parseFail0、runFail28、javaInterop72；
 其中ShopFactory在简化宿主未注册，与上面的实际NpcApi宿主不同。未改源JS来消除这些既有报告。
 `--pack`：2779条脚本、parseFail0、mangled0。Unity compile-check已通过0error/0warning。
+
+## 282 强化迁移联动（2026-11-03）
+
+`NativeNpcShopService.Apply` 出售前新增 `NativePotentialService.BlocksTransfer`，在数量/金币变更之前明确拒绝潜能结果待选装备及装备痕迹。原来待选装备删除直到 BotTradeService.Persist 才抛异常；现在走正常失败回包并保持金币与装备，痕迹也不可藉出售转移。此项是项目 282 强化状态联动，未新增 BeiDou 二进制结论。

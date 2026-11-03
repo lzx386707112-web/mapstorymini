@@ -258,7 +258,7 @@ public static class GameSession
         NativeCommunityWindow.Reset();
         NativeMedalWindow.Visible = false;
         NativeCashWindow.Reset();
-        NativeVegaWindow.Close();
+        NativeVegaWindow.Close(); NativeEnhancementWindow.Close();
         NativeNpcShopWindow.Reset();
         NativeDeliveryWindow.Reset();
         NativeMerchantWindow.Reset();
@@ -317,7 +317,7 @@ public static class GameSession
     public static void DeselectChar()    {
         if (InGame) SaveToDb();
         NativeCashWindow.Reset();
-        NativeVegaWindow.Close();
+        NativeVegaWindow.Close(); NativeEnhancementWindow.Close();
         NativeNpcShopWindow.Reset();
         NativeDeliveryWindow.Reset();
         NativeMerchantWindow.Reset();
@@ -352,7 +352,7 @@ public static class GameSession
     {
         if (InGame) SaveToDb();
         NativeCashWindow.Reset();
-        NativeVegaWindow.Close();
+        NativeVegaWindow.Close(); NativeEnhancementWindow.Close();
         NativeNpcShopWindow.Reset();
         NativeDeliveryWindow.Reset();
         NativeMerchantWindow.Reset();

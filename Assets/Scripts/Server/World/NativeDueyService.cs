@@ -80,6 +80,7 @@ public static class NativeDueyService
     // Item.isUntradeable = (flag & UNTRADEABLE) != 0 || (isDropRestricted() && !hasKarma())
     static bool IsUntradeable(DbStore db, InventoryEntry item)
     {
+        if(NativePotentialService.BlocksTransfer(db,item))return true;
         if ((item.flag & UnTradeable) != 0) return true;
         int karma = item.isEquip ? KarmaEqp : KarmaUse;
         if ((item.flag & karma) == karma) return false;   // hasKarma → 允许交易

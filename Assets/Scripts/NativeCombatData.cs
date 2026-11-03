@@ -10,7 +10,12 @@ public static class NativeCombatData
     public static Dictionary<string, object> Mob(string key)
     {
         foreach (Dictionary<string, object> mob in (List<object>)Root["mobs"])
-            if ((string)mob["key"] == key) return (Dictionary<string, object>)mob["stats"];
+            if ((string)mob["key"] == key)
+            {
+                var stats=(Dictionary<string,object>)mob["stats"];
+                MobDefenseCatalog.Shared.Apply(Int(mob,"id"),stats);
+                return stats;
+            }
         return null;
     }
     public static int Int(Dictionary<string, object> d, string key, int fallback = 0)

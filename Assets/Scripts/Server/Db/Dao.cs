@@ -296,6 +296,7 @@ public static class InventoryDao
             int q = (int)DbStore.Long(r, "quantity", 0);
             int take = Math.Min(q, left);
             long id = DbStore.Long(r, "inventoryitemid", 0);
+            if(NativePotentialService.IsReserved(db,id))continue;
             if (q - take <= 0)
             {
                 table.Delete(x => DbStore.Long(x, "inventoryitemid", -1) == id);

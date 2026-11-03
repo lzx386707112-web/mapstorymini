@@ -28,6 +28,38 @@ internal static class ScriptRuntimeChecks
     }
     public static int Run()
     {
+        Check("auction growth entries dispose dialogue then open the exact enhancement page",()=>
+        {
+            string script=System.IO.File.ReadAllText("../../content/script-overrides/npc/9900001.js");
+            for(int mode=0;mode<4;mode++)
+            {
+                bool disposed=false;int opened=-1;
+                var cm=new JsHostObject(null);
+                cm.Set("dispose",JsFunction.FromNative("dispose",c=>{disposed=true;return JsUndefined.Value;}));
+                cm.Set("openEnhancement",JsFunction.FromNative("openEnhancement",c=>
+                {if(!disposed)throw new Exception("dialogue still blocking");opened=JsConvert.ToInt32(c.Arg(0));return JsUndefined.Value;}));
+                var engine=new JsEngine(script,"npc/9900001");
+                engine.Interp.ResolveHostType=type=>new JsHostObject(type);
+                engine.Bind("cm",cm);engine.Run();
+                engine.Call("doSelect",new JsNumber(32+mode));
+                if(opened!=mode)throw new Exception("wrong page "+opened);
+            }
+        });
+
+        Check("legacy cube and star scripts redirect without invoking old stat scripts",()=>
+        {
+            foreach(var pair in new[]{("魔方洗练.js",1),("装备制作/星级强化.js",0)})
+            {
+                bool disposed=false;int opened=-1;
+                var cm=new JsHostObject(null);
+                cm.Set("dispose",JsFunction.FromNative("dispose",c=>{disposed=true;return JsUndefined.Value;}));
+                cm.Set("openEnhancement",JsFunction.FromNative("openEnhancement",c=>
+                {if(!disposed)throw new Exception("dialogue still blocking");opened=JsConvert.ToInt32(c.Arg(0));return JsUndefined.Value;}));
+                var engine=new JsEngine(System.IO.File.ReadAllText("../../content/script-overrides/BeiDouSpecial/"+pair.Item1),pair.Item1);
+                engine.Bind("cm",cm);engine.Run();engine.Call("start");
+                if(opened!=pair.Item2)throw new Exception("legacy redirect");
+            }
+        });
         Check("blood recipe Array instanceof preserves separate material arrays", () => Equal("true,false,300,50,50,20,5,5,1", Execute(
             "function test(){var a=[300,50,50,20,5,5,1];return [a instanceof Array,({}) instanceof Array,a.join(',')].join(',');}")));
         Check("drop query Map deduplicates and Array.from reads values", () => Equal("3,5", Execute(

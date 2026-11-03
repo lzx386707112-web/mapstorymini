@@ -224,6 +224,7 @@ public static class EquipCatalog
         var info = Info(itemId);
         if (info == null) return;
         var instance=GameSession.Character?.inventory.Find(i=>i.itemId==itemId && i.position<0 && (slot==0 || i.position==slot));
+        if (instance?.equipmentData!=null && instance.equipmentData.TryGetValue("starForceVestige",out var vestige) && System.Convert.ToInt32(vestige)!=0) return;
         bool native=NativeScrollService.HasStats(instance);
         int Value(string key)=>!native ? info.Int(key) : key switch {
             "incSTR"=>instance.str,"incDEX"=>instance.dex,"incINT"=>instance.int_,"incLUK"=>instance.luk,
@@ -238,6 +239,23 @@ public static class EquipCatalog
         watk += Value("incPAD"); matk += Value("incMAD");
         result.equipmentSpeed += Value("incSpeed");
         result.equipmentJump += Value("incJump");
+        if (instance?.equipmentData!=null && instance.equipmentData.TryGetValue("enhancementVersion",out var version) && System.Convert.ToInt32(version)==282)
+        {
+            var baseStats=new Dictionary<string,int> {
+                {"str",Value("incSTR")},{"dex",Value("incDEX")},{"int",Value("incINT")},{"luk",Value("incLUK")},
+                {"hp",Value("incMHP")},{"mp",Value("incMMP")},{"watk",Value("incPAD")},{"matk",Value("incMAD")},
+                {"wdef",Value("incPDD")},{"mdef",Value("incMDD")},{"speed",Value("incSpeed")},{"jump",Value("incJump")}
+            };
+            int level=info.Int("reqLevel");
+            if(instance.equipmentData.TryGetValue("iIncReq",out var incReq)) level+=System.Convert.ToInt32(incReq);
+            var star=StarForceStats.Calculate(itemId,level,instance.starLevel,info.Int("superiorEqp")!=0,baseStats);
+            int Delta(string key)=>star.TryGetValue(key,out int value)?value:0;
+            result.str+=Delta("str");result.dex+=Delta("dex");result.intelligence+=Delta("int");result.luk+=Delta("luk");
+            result.maxHp+=Delta("hp");result.maxMp+=Delta("mp");
+            result.weaponDefense+=Delta("wdef");result.magicDefense+=Delta("mdef");
+            result.equipmentSpeed+=Delta("speed");result.equipmentJump+=Delta("jump");
+            watk+=Delta("watk");matk+=Delta("matk");
+        }
         ApplyAddition(itemId, result, ref bossDamage);
     }
 }
@@ -356,7 +374,35 @@ public static class EquipLoadout
     {
         var wornIds = new List<int>();
         foreach (var kv in WornSlots()) wornIds.Add(kv.Value);
-        return AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
+        var source=AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
+        var bonus=source==null?new Dictionary<string,int>():new Dictionary<string,int>(source);
+        AddPotentialBonus(bonus,new CharacterAttributes {level=GameSession.Character?.record.level??1});
+        return bonus;
+    }
+
+    static void AddPotentialBonus(Dictionary<string,int> set,CharacterAttributes result)
+    {
+        var inventory=GameSession.Character?.inventory;
+        if(inventory!=null)
+        foreach(var item in inventory)
+        {
+            if(item.position>=0||System.Array.IndexOf(EquipSlot.Worn,item.position)<0||item.equipmentData==null)continue;
+            var data=item.equipmentData;
+            if(data.TryGetValue("starForceVestige",out var vestige)&&System.Convert.ToInt32(vestige)!=0)continue;
+            var options=new List<int>();
+            foreach(string prefix in new[]{"potentialOption","bonusOption"})
+                for(int line=1;line<=3;line++)if(data.TryGetValue(prefix+line,out var option))options.Add(System.Convert.ToInt32(option));
+            if(!options.Exists(id=>id>0))continue;
+            int level=EquipCatalog.Info(item.itemId)?.Int("reqLevel")??0;
+            if(data.TryGetValue("iIncReq",out var incReq))level+=System.Convert.ToInt32(incReq);
+            var effects=PotentialStats.Calculate(PotentialCatalog.Shared,level,options,result.level);
+            foreach(var pair in effects)
+                if(pair.Key=="CriticalChance")result.criticalChance+=pair.Value/100f;
+                else if(pair.Key=="CriticalDamage")result.criticalBonus+=pair.Value/100f;
+                else if(pair.Key=="Speed")result.equipmentSpeed+=pair.Value;
+                else if(pair.Key=="Jump")result.equipmentJump+=pair.Value;
+                else PotentialStats.Add(set,pair.Key,pair.Value);
+        }
     }
 
     static IEnumerable<KeyValuePair<int, int>> WornSlots()
@@ -385,6 +431,8 @@ public static class EquipLoadout
         var wornIds = new List<int>();
         foreach (var kv in WornSlots()) wornIds.Add(kv.Value);
         var set = AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
+        set = set == null ? new Dictionary<string,int>() : new Dictionary<string,int>(set);
+        AddPotentialBonus(set,result);
         // info/addition/boss 的 BOSS 伤害并进同一张差量表，交给 AdminSetItem.ApplyDamage。
         // ComputeBonus 可能是缓存实例，先复制再改。
         if (additionBoss != 0)

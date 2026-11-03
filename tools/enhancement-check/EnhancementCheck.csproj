@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="../../Assets/Scripts/Wz/ImgFile.cs" />
+    <Compile Include="../../Assets/Scripts/Server/Db/MiniJsonDb.cs" />
+    <Compile Include="../../Assets/Scripts/Server/PlatformRes.cs" />
+    <Compile Include="../../Assets/Scripts/Server/World/StarForceRules.cs" />
+    <Compile Include="../../Assets/Scripts/Server/World/StarForceStats.cs" />
+    <Compile Include="../../Assets/Scripts/Server/World/PotentialCatalog.cs" />
+    <Compile Include="../../Assets/Scripts/Server/World/CubeRateTable.cs" />
+    <Compile Include="../../Assets/Scripts/Server/World/CubeRules.cs" />
+    <Compile Include="../../Assets/Scripts/Server/World/PotentialPool.cs" />
+    <Compile Include="../../Assets/Scripts/Server/World/PotentialRoller.cs" />
+    <Compile Include="../../Assets/Scripts/Server/World/PotentialStats.cs" />
+    <Compile Include="../../Assets/Scripts/Server/World/MobDefenseCatalog.cs" />
+    <Compile Include="../../Assets/Scripts/Server/World/PercentageDefense.cs" />
+    <None Include="../../Assets/Resources/Enhancement/MobDefense.json" Link="MobDefense.json" CopyToOutputDirectory="Always" />
+    <None Include="../../Assets/Resources/Enhancement/CubeRates.json" Link="CubeRates.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../Assets/Resources/Enhancement/StarForce.json" Link="StarForce.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../Assets/Resources/Enhancement/ItemOption.json" Link="ItemOption.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

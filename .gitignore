@@ -44,3 +44,7 @@ sysinfo.txt
 
 # 后台接口离线自检工程（纯 C#，可脱离 Unity 跑）
 !/tools/admin-check/AdminCheck.csproj
+!/tools/enhancement-check/EnhancementCheck.csproj
+!/tools/server-check/MapleDash.ServerCheck.csproj
+/tools/enhancement-check/bin/
+/tools/enhancement-check/obj/

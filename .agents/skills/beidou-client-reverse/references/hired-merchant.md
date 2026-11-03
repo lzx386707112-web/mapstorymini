@@ -81,3 +81,7 @@
 `tools/server-check/MerchantChecks.cs`（38 项）：非自由市场/无许可/重复开店、商店盒三态、
 上架参数四类拒绝、营业中禁改、假人成交（含手续费）、提金币、取回数量、空店关店、背包满寄存、
 15+16 寄存取回、10 天衰减到 90%、`hired_merchants_exist_time` 过期删店。
+
+## 282 强化迁移联动（2026-11-03）
+
+`NativeMerchantService.AddItem` 原来直接复制装备 payload，未经过交易规则，因此可绕过 282 魔方待选/装备痕迹保护。新增在 `WriteEntry` 和扣背包之前调用 `NativePotentialService.BlocksTransfer`，拒绝时不创建 merchantitems/payload、不移除原装备。此处是项目 282 状态保护修复，不是新增 BeiDou EXE 推断。`PotentialChecks` 已覆盖两个拒绝分支；普通商店的原有上架规则不变。

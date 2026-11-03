@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <AssemblyName>MapleDash.ServerCheck</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="StarForceChecks.cs" />
+    <Compile Include="PotentialChecks.cs" />
+    <Compile Include="RebirthChecks.cs" />
+    <Compile Include="GmCommandChecks.cs" />
+    <Compile Include="NativeSystemChecks.cs" />
+    <Compile Include="BotChecks.cs" />
+    <Compile Include="BotPerfChecks.cs" />
+    <Compile Include="DropChecks.cs" />
+    <Compile Include="InventoryOrganizeChecks.cs" />
+    <Compile Include="InventoryMoveChecks.cs" />
+    <Compile Include="InventoryMoveChecks.cs" />
+    <Compile Include="PqChecks.cs" />
+    <Compile Include="DueyChecks.cs" />
+    <Compile Include="MerchantChecks.cs" />
+    <Compile Include="MakerChecks.cs" />
+    <Compile Include="RankingChecks.cs" />
+    <Compile Include="PlayerShopChecks.cs" />
+    <Compile Include="OwlChecks.cs" />
+    <Compile Include="StorageChecks.cs" />
+    <Compile Include="SkillMacroChecks.cs" />
+    <Compile Include="ReportChecks.cs" />
+    <Compile Include="ArenaChecks.cs" />
+    <Compile Include="RpsChecks.cs" />
+    <Compile Include="GachaChecks.cs" />
+    <Compile Include="CashEquipChecks.cs" />
+    <Compile Include="AndroidChecks.cs" />
+    <Compile Include="ScrollChecks.cs" />
+    <Compile Include="EquipUnequipChecks.cs" />
+    <Compile Include="NoteChecks.cs" />
+    <Compile Include="TvChecks.cs" />
+    <Compile Include="CarnivalChecks.cs" />
+    <Compile Include="../../Assets/Scripts/Server/**/*.cs" />
+    <Compile Include="../../Assets/Scripts/Scripting/*.cs" />
+    <!-- 纯 C# 的共享常量/曲线（不含 UnityEngine），Server 侧也引用它们 -->
+    <Compile Include="../../Assets/Scripts/ExpCurve.cs" />
+    <Compile Include="../../Assets/Scripts/DamageCap.cs" />
+    <!-- 客户端侧的过场时间轴解析依赖 MapleDash.Wz（ImgNode），而 Wz 层引用 UnityEngine，
+         离线自检工程故意不编 Wz，所以这条单独排除；Unity 内正常编译。 -->
+    <Compile Remove="../../Assets/Scripts/Server/Scripting/NativeIntroTimeline.cs" />
+    <!-- Boss 集火直接复用 EnemyUnit（Unity 场景对象），只在 Unity 侧编译；同上单独排除。 -->
+    <Compile Remove="../../Assets/Scripts/Server/World/NativeBotBossCombat.cs" />
+    <Compile Remove="../../Assets/Scripts/Server/World/NativeDojoService.cs" />
+    <Compile Remove="../../Assets/Scripts/Server/World/NativeMentorshipService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../../Assets/Resources/Maker/MakerTable.txt" CopyToOutputDirectory="PreserveNewest" Link="Maker/MakerTable.txt" />
+    <None Include="../../Assets/Resources/Storage/TrunkFees.txt" CopyToOutputDirectory="PreserveNewest" Link="Storage/TrunkFees.txt" />
+    <None Include="../../Assets/Resources/Field/ExpTable.json" CopyToOutputDirectory="PreserveNewest" Link="Field/ExpTable.json" />
+    <!-- 组队任务回归：反应堆掉落表（玩具塔 2202003 的券、毒雾森林 3002001 的魔力石） -->
+    <None Include="../../Assets/Resources/Bot/ReactorDrops.json" CopyToOutputDirectory="PreserveNewest" Link="Bot/ReactorDrops.json" />
+    <None Include="../../Assets/Scripts/Server/Db/Schema.sql" CopyToOutputDirectory="Always" Link="Server/Db/Schema.sql" />
+  </ItemGroup>
+</Project>

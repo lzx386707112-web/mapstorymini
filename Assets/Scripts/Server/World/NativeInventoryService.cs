@@ -24,6 +24,9 @@ public static class NativeInventoryService {
         if(r.dropMeso>0) return DropMeso(db,c,r);
         if(r.removeAll)
         {
+            foreach(var item in InventoryDao.ItemsByCharacter(db,r.characterId))
+                if(DbStore.Int(item,"itemid")==r.itemId&&NativePotentialService.IsReserved(db,DbStore.Long(item,"inventoryitemid")))
+                    return new InventoryChangeResponse {ok=false,error="请先选择方块候选结果"};
             InventoryDao.ConsumeItem(db,r.characterId,r.itemId,InventoryDao.CountOf(db,r.characterId,r.itemId));
             if(r.itemId/1000000==1)
             {
@@ -134,6 +137,9 @@ public static class NativeInventoryService {
                 (r.quantity == 0 ? DbStore.Int(x, "inventorytype") == InventoryDao.Equipped && DbStore.Int(x, "position") == slot
                     : DbStore.Int(x, "inventorytype") == 1 && InventoryDao.IsBagPosition(DbStore.Int(x, "position")) && (r.sourcePosition == 0 || DbStore.Int(x, "position") == r.sourcePosition)));
             if (source == null) return new InventoryChangeResponse { ok = false, error = "没有持有这件装备" };
+            if(NativePotentialService.IsReserved(db,DbStore.Long(source,"inventoryitemid")))return new InventoryChangeResponse {ok=false,error="请先选择方块候选结果"};
+            if (r.quantity != 0 && DbStore.Int(InventoryDao.EquipmentOf(db,DbStore.Long(source,"inventoryitemid")),"starForceVestige") != 0)
+                return new InventoryChangeResponse { ok = false, error = "装备痕迹需要先复原，无法穿戴" };
             int oldPos = DbStore.Int(source, "position");
             if (r.quantity == 0) {
                 // 原 InventoryManipulator.unequip(src,dst)：指定背包格必须为空，不互换。
@@ -149,6 +155,9 @@ public static class NativeInventoryService {
                 int conflictSlot = slot == -6 ? -5 : slot == -5 && r.itemId / 10000 == 105 ? -6 :
                     slot == -10 ? -11 : slot == -11 && TwoHanded(r.itemId) ? -10 : 0;
                 var conflict = conflictSlot == 0 ? null : items.Find(x => DbStore.Int(x, "characterid") == r.characterId && DbStore.Int(x, "position") == conflictSlot && DbStore.Int(x, "inventorytype") == InventoryDao.Equipped);
+                var existing=items.Find(x=>DbStore.Int(x,"characterid")==r.characterId&&DbStore.Int(x,"position")==slot&&DbStore.Int(x,"inventorytype")==InventoryDao.Equipped);
+                if(conflict!=null&&NativePotentialService.IsReserved(db,DbStore.Long(conflict,"inventoryitemid"))||existing!=null&&NativePotentialService.IsReserved(db,DbStore.Long(existing,"inventoryitemid")))
+                    return new InventoryChangeResponse {ok=false,error="请先选择方块候选结果"};
                 if (conflict != null && (slot != -6 || DbStore.Int(conflict, "itemid") / 10000 == 105) && (slot != -10 || TwoHanded(DbStore.Int(conflict, "itemid")))) {
                     int free = Free(db, c, 1);
                     if (free == 0) return new InventoryChangeResponse { ok = false, error = "装备栏已满" };

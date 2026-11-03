@@ -158,6 +158,9 @@ public static class NativeMakerService
             pos = r.position;
             int equippedId = EquipIdAt(db, characterId, pos);
             if (equippedId == 0 || equippedId != toCreate) return Fail("无法对该物品进行分解");
+            var material=InventoryDao.ItemsByCharacter(db,characterId).Find(x=>DbStore.Int(x,"inventorytype")==InventoryDao.Equip&&DbStore.Int(x,"position")==pos);
+            if(material!=null&&NativePotentialService.BlocksTransfer(db,CharService.ToInventoryEntry(db,material)))
+                return Fail("待选方块结果的装备或装备痕迹不能分解");
             toDisassemble = toCreate;
 
             int fee = DisassembledFee(toCreate);

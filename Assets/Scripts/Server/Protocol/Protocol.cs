@@ -165,6 +165,8 @@ public interface ITransport
     Server.Bot.MarketResponse Market(Server.Bot.MarketRequest req);
     InventoryChangeResponse ChangeInventory(InventoryChangeRequest req);
     EquipPatchResponse UpdateEquip(EquipPatchRequest req);
+    StarForceResponse StarForce(StarForceRequest req);
+    PotentialResponse Potential(PotentialRequest req);
     SlotRemoveResponse RemoveSlot(SlotRemoveRequest req);
     void EndSocialSession(int characterId);
 }
@@ -187,6 +189,39 @@ public sealed class InProcessTransport : ITransport
     public BossResponse Boss(BossRequest r) => server.Bosses.Handle(r);
     public InventoryChangeResponse ChangeInventory(InventoryChangeRequest r) => NativeInventoryService.Handle(server.Db, r);
     public EquipPatchResponse UpdateEquip(EquipPatchRequest r) => NativeEquipService.Patch(server.Db, r);
+    public StarForceResponse StarForce(StarForceRequest r)
+    {
+        lock(server.Db)
+        {
+            if(r!=null&&server.ActiveBotPlayer(r.characterId)?.trade!=null)
+                return new StarForceResponse {ok=false,error="交易中不能强化装备"};
+            var response=NativeStarForceService.Handle(server.Db,r);
+            if(response.ok&&r.commit)RefreshEnhancementMirror(r.characterId);
+            return response;
+        }
+    }
+    public PotentialResponse Potential(PotentialRequest r)
+    {
+        lock(server.Db)
+        {
+            if(r!=null&&server.ActiveBotPlayer(r.characterId)?.trade!=null)
+                return new PotentialResponse {ok=false,error="交易中不能变更潜能"};
+            var response=NativePotentialService.Handle(server.Db,r);
+            if(response.ok&&r.commit)RefreshEnhancementMirror(r.characterId);
+            return response;
+        }
+    }
+    void RefreshEnhancementMirror(int characterId)
+    {
+        var actor=server.ActiveBotPlayer(characterId);
+        if(actor?.character==null)return;
+        var current=CharService.Load(server.Db,characterId);
+        actor.character.inventory=current.inventory;
+        actor.character.record.meso=current.record.meso;
+        // Reuse the existing inventory/economy revision gate in SynchronizePlayer
+        // and SaveCharacter so an older client snapshot cannot refund a cube.
+        actor.character.tradeRevision++;
+    }
     public SlotRemoveResponse RemoveSlot(SlotRemoveRequest r) => NativeEquipService.RemoveSlot(server.Db, r);
     public bool HasNpcShop(int npcId) => server.NpcShops.HasNpc(npcId);
     public NpcShopResponse NpcShop(NpcShopRequest r) => server.NpcShops.Handle(r);

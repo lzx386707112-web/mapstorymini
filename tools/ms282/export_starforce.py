@@ -21,6 +21,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import math
 import os
 from pathlib import Path
@@ -125,6 +127,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--level", type=int, default=150, help="费用示例用的装备等级")
+    ap.add_argument("--runtime-out", type=Path, help="Export per-10000 rates and raw cost overrides for C#")
     args = ap.parse_args()
 
     rows = read_tsv(ENHANCE / "starforce.tsv")
@@ -149,7 +152,7 @@ def main() -> None:
         "# TMS 282 星力规则表（export_starforce.py 生成，勿手改）",
         "# success/destroy 单位为万分之一（per 10000）。keep = 10000 - success - destroy。",
         "# down = 失败时掉一颗星（服务端 isStarDownOnFailure 已实现判定，但 ItemHandler 尚未调用）。",
-        f"# bonus_time = {bonus_time}：连续失败 bonus_time-1 次后下一次必成（chance time）。",
+        f"# bonus_time = {bonus_time}；本项目用户决定连续掉星两次后下一次必成，源端实际结算未实现。",
         f"# meso 列按 rLevel + iIncReq = {args.level} 计算；服务端 TSV 的 meso_cost 全为 -1 表示走公式。",
         "kind\tstar\tsuccess_279\tdestroy_279\tkeep_279\tdown\t"
         "success_builtin\tdestroy_builtin\tmeso\tmeso_safeguard\tnote",
@@ -187,6 +190,21 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(lines) + "\n\n" + "\n".join(limits) + "\n", encoding="utf-8")
     print(f"wrote {out} ({len(lines) - 1} rows)")
+    if args.runtime_out:
+        runtime = {"schemaVersion": 1, "scale": 10000, "normal": [], "superior": [],
+                   "itemCaps": {str(k): v for k, v in ITEM_STAR_LIMIT.items()},
+                   "sourceSha256": {name: hashlib.sha256((ENHANCE / name).read_bytes()).hexdigest()
+                                    for name in ("starforce.tsv", "starforce-caps.tsv", "starforce-settings.tsv")}}
+        for sup, key in ((False, "normal"), (True, "superior")):
+            for star, builtin in (BUILTIN_SUPERIOR if sup else BUILTIN_NORMAL).items():
+                row = tsv.get((sup, star))
+                scale = 10 if sup else 1
+                runtime[key].append({"star": star, "success": row["success"] if row else builtin[0] * scale,
+                                     "destroy": row["destroy"] if row else builtin[1] * scale,
+                                     "down": row["down"] if row else False,
+                                     "meso": row["meso"] if row else -1})
+        args.runtime_out.parent.mkdir(parents=True, exist_ok=True)
+        args.runtime_out.write_text(json.dumps(runtime, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

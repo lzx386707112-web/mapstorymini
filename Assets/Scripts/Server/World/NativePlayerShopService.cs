@@ -471,6 +471,7 @@ public static class NativePlayerShopService
     // Item.isUntradeable()：UNTRADEABLE 位，或「禁止丢弃且没有因果剪刀标记」
     static bool Untradeable(DbStore db, InventoryEntry item)
     {
+        if(NativePotentialService.BlocksTransfer(db,item))return true;
         int karma = item.isEquip ? FlagKarmaEqp : FlagKarmaUse;
         if ((item.flag & FlagUntradeable) == FlagUntradeable) return true;
         var info = Server.Bot.BotItemCatalog.Shared.Info(item.itemId);

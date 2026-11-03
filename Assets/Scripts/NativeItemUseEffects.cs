@@ -17,6 +17,15 @@ public static class NativeItemUseEffects
     }
     public static void Scroll(int id,InventoryEntry target)
     {
+        if(id==2049400||id==2049401)
+        {
+            var scroll=GameSession.Character.inventory.Find(x=>x.itemId==id&&x.position>0);
+            if(scroll==null)return;
+            NativeEnhancementWindow.Open(1,scroll);
+            string error=NativeEnhancementWindow.Select(target);if(error!=null)BottomBar.Toast(error);
+            return;
+        }
+
         // 心脏卷（2616/2643 段）不在 204 段，也不吃祝福卷：源端 applyScroll 对它们只走
         // 普通成功/失败分支，祝福卷只在 204 卷失败时保护 tuc。
         bool excluded=id==2040727 || id==2041058 || id>=2049000 && id<=2049003 || NativeScrollService.IsHeartScroll(id);

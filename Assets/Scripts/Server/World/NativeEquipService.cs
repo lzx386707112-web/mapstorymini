@@ -50,6 +50,7 @@ public static class NativeEquipService
 {
     public static EquipPatchResponse Patch(DbStore db, EquipPatchRequest r)
     {
+        if(r!=null&&NativePotentialService.IsReserved(db,r.inventoryItemId))return new EquipPatchResponse {ok=false,error="请先选择方块候选结果"};
         if(r!=null && r.cashItemId>0) return NativeCashEquipmentService.Apply(db,r);
         if(r!=null && r.scrollId>0) return NativeScrollService.Apply(db,r);
         if (r == null || r.inventoryItemId <= 0) return new EquipPatchResponse { ok = false, error = "无效装备" };
@@ -65,6 +66,8 @@ public static class NativeEquipService
         }
 
         var eq = db.Table("inventoryequipment").Find(x => DbStore.Long(x, "inventoryitemid") == r.inventoryItemId);
+        if (eq != null && DbStore.Int(eq,"enhancementVersion") == 282)
+            return new EquipPatchResponse {ok=false,error="282 强化装备不能通过旧属性写入接口修改"};
         if (eq == null)
         {
             // 装备行缺失（老存档里只建了 inventoryitems）：补一行再写，避免「强化成功但没落库」。
@@ -101,6 +104,7 @@ public static class NativeEquipService
             DbStore.Int(x, "inventorytype") == r.inventoryType &&
             DbStore.Int(x, "position") == r.slot);
         if (row == null) return new SlotRemoveResponse { ok = false, error = "该格位没有道具" };
+        if(NativePotentialService.IsReserved(db,DbStore.Long(row,"inventoryitemid")))return new SlotRemoveResponse {ok=false,error="请先选择方块候选结果"};
 
         long id = DbStore.Long(row, "inventoryitemid");
         int have = DbStore.Int(row, "quantity", 1);

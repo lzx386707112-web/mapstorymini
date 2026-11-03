@@ -69,6 +69,8 @@ public static class NativeInventoryActions
         }
         if (Pointer.RightPressed || Input.GetKeyDown(KeyCode.Escape) || NpcSession.Blocking)
         { carriedItem = 0; return; }
+        if((Pointer.Pressed||Pointer.Released&&Pointer.DragEnded)&&NativeEnhancementWindow.Drop(Pointer.Pos,carriedItem,carriedPosition))
+        {carriedItem=0;swallowDrop=Pointer.Pressed;Pointer.ConsumeClick();Pointer.Pressed=false;return;}
         // 装备窗 DragStart 的载荷保留实际穿着位（现金优先）；只有放到背包才请求卸下。
         if (!carriedFromInventory && carriedType == 1 && carriedPosition < 0)
         {
@@ -430,6 +432,18 @@ public static class NativeInventoryActions
         if (!GameSession.InGame || NpcSession.Blocking) return "当前无法使用物品";
         var player = GameLoop.I?.player;
         if (player == null || player.hp <= 0) return "当前无法使用物品";
+        if(CubeRules.GetFamily(itemId)!=null||itemId==2049400||itemId==2049401)
+        {
+            var cost=GameSession.Character.inventory.Find(x=>x.itemId==itemId&&x.position>0&&(inventoryPosition==0||x.position==inventoryPosition));
+            if(cost==null)return "背包里没有这个物品";
+            if(NativeEnhancementWindow.Visible)return NativeEnhancementWindow.Select(cost);
+            NativeEnhancementWindow.Open(CubeRules.GetFamily(itemId)?.bonus==true?2:1,cost);return null;
+        }
+        if(NativeEnhancementWindow.Visible&&itemId/1000000==1)
+        {
+            var target=GameSession.Character.inventory.Find(x=>x.itemId==itemId&&(inventoryPosition==0||x.position==inventoryPosition));
+            return NativeEnhancementWindow.Select(target);
+        }
         if(NativeVegaWindow.Visible && (itemId/1000000==1 || itemId/10000==204))
         {
             var item=GameSession.Character.inventory.Find(x=>x.itemId==itemId && InventoryDao.IsBagPosition(x.position) && (inventoryPosition==0 || x.position==inventoryPosition));

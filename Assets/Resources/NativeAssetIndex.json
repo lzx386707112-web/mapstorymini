@@ -142686,7 +142686,7 @@
   },
   {
    "path": "Item/Cash/0506.img",
-   "sha256": "9b7db24f9c7191bf4de1942991cfcc9e298e4574e16df2804112e57562842506"
+   "sha256": "6db3cc6a0dc226e9029e83c70b3e350587aa0a6180e556b5f3a31623c881a5cb"
   },
   {
    "path": "Item/Cash/0507.img",
@@ -142878,7 +142878,7 @@
   },
   {
    "path": "Item/Consume/0204.img",
-   "sha256": "d3186717fa66276ee42560e9584ff0cd67e4d74339a70914bb006c00015ab923"
+   "sha256": "356d5adb44ec68014525e7fb953db666a7a02c9da81a931946294ec1e670fe59"
   },
   {
    "path": "Item/Consume/0205.img",
@@ -218934,11 +218934,11 @@
   },
   {
    "path": "String/Cash.img",
-   "sha256": "7317042bfb4bd54dfde8eb0dc95925baebfef2a48e85359756fc84ad4c55610c"
+   "sha256": "6e482251921487a20854a0e7e2a1d27fb2e35cdd29245d89cf61b0d0063b416d"
   },
   {
    "path": "String/Consume.img",
-   "sha256": "48b7d10a748e82286b23386e7a10af93a7d7ad384fc451f6639d2f01dd04c5b3"
+   "sha256": "e4306f1bba5225c139536949a2630bbb4a6c4fc161de0bed4b4abd1f10a0c0df"
   },
   {
    "path": "String/EULA.img",
@@ -226167,6 +226167,26 @@
   {
    "path": "Item/Consume/_Canvas/0264.img",
    "sha256": "f460e092cdbd873730e4d2723058c4da7991a8277cf47e3a729c9b1bcb6050fe"
+  },
+  {
+   "path": "UI/Enchant.img",
+   "sha256": "93c6bd703a84f0d118c523c93e1a1becec7ae0f9d1a185790b5af83a4338efb7"
+  },
+  {
+   "path": "UI/UICubeWz2.img",
+   "sha256": "b1b64326b25868ed2c222cd155b407d68bc257139e575835c14704915177999d"
+  },
+  {
+   "path": "Item/Consume/0271.img",
+   "sha256": "34b8d80e44e390f9c2426d6ddf300c66fcb3b631bf797f1b67723c9cd3d0d8a5"
+  },
+  {
+   "path": "Item/Consume/0273.img",
+   "sha256": "2a536d4ba016b0aa7618cb2206b5063a5cafd7013f5454c0cf250b43e61cf21e"
+  },
+  {
+   "path": "Sound/Enchant.img",
+   "sha256": "24914e1629908f876804c39f71572c1c74423f965cdc96070c53d9e666beade8"
   }
  ]
 }

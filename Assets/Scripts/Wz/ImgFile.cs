@@ -16,6 +16,8 @@ namespace MapleDash.Wz
         public ImgNode Parent;
         public readonly List<ImgNode> Children = new List<ImgNode>();
         public int Width, Height, Format, X, Y;
+        public int SoundLengthMs;
+        public byte[] SoundHeader, SoundData;
         internal byte[] Pixels;
         public ImgNode Get(string path)
         {
@@ -267,8 +269,21 @@ namespace MapleDash.Wz
                     reader.ReadInt32(); reader.ReadInt32(); reader.ReadByte();
                     n.Pixels = reader.ReadBytes(checked((int)(end - reader.BaseStream.Position)));
                     break;
-                // Audio/video are opaque in this map-rendering prototype.
-                case "Sound_DX8": case "Sound": case "Canvas#Video": case "RawData": break;
+                case "Sound_DX8": case "Sound":
+                    reader.ReadByte();
+                    int audioLength=Int();
+                    n.SoundLengthMs=Int();
+                    long headerLength=end-reader.BaseStream.Position-audioLength;
+                    if(audioLength<0||n.SoundLengthMs<0||headerLength<0||headerLength>int.MaxValue)
+                        throw new InvalidDataException("IMG sound length mismatch: "+n.Name);
+                    n.SoundHeader=reader.ReadBytes((int)headerLength);
+                    n.SoundData=reader.ReadBytes(audioLength);
+                    if(n.SoundData.Length!=audioLength)throw new EndOfStreamException();
+                    break;
+                // Preserve these opaque high-version payloads for their consumers.
+                case "Canvas#Video": case "RawData":
+                    n.Value=reader.ReadBytes(checked((int)(end-reader.BaseStream.Position)));
+                    break;
                 default: throw new NotSupportedException("IMG extended type " + n.Kind);
             }
         }

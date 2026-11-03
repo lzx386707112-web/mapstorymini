@@ -70,6 +70,8 @@ public static class NativeInventorySort
         if (invType < 1 || invType > 5) return new InventoryChangeResponse { ok = false, error = "背包页无效" };
 
         var slots = LoadSlots(db, cid, invType);
+        if (slots.Exists(s => NativePotentialService.IsReserved(db, s.Item.itemRowId)))
+            return new InventoryChangeResponse { ok = false, error = "请先选择方块候选结果" };
         if (slots.Count == 0)
             return new InventoryChangeResponse { ok = true, inventory = CharService.Load(db, cid).inventory };
 
@@ -231,6 +233,8 @@ public static class NativeInventorySort
         if (invType < 1 || invType > 5) return new InventoryChangeResponse { ok = false, error = "背包页无效" };
 
         var slots = LoadSlots(db, cid, invType);
+        if (slots.Exists(s => NativePotentialService.IsReserved(db, s.Item.itemRowId)))
+            return new InventoryChangeResponse { ok = false, error = "请先选择方块候选结果" };
         if (slots.Count == 0)
             return new InventoryChangeResponse { ok = true, inventory = CharService.Load(db, cid).inventory };
 
@@ -319,6 +323,8 @@ public static class NativeInventorySort
         var map = new Dictionary<int, Slot>();
         foreach (var s in slots) map[s.Index] = s;
         if (!map.TryGetValue(from, out var source)) return new InventoryChangeResponse { ok = false, error = "该格子没有物品" };
+        if(NativePotentialService.IsReserved(db,source.Item.itemRowId)||map.TryGetValue(to,out var pendingTarget)&&NativePotentialService.IsReserved(db,pendingTarget.Item.itemRowId))
+            return new InventoryChangeResponse {ok=false,error="请先选择方块候选结果"};
 
         var actor = new Server.Bot.BotActor { id = cid, job = c.job, character = CharService.Load(db, cid) };
         var rules = new Server.Bot.Trade.TradeItemRules(db, Server.Bot.BotItemCatalog.Shared);

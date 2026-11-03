@@ -67,6 +67,20 @@ namespace Server.Bot.Trade
             int cid = actor.id;
             var items = Inventory(actor);
             var ids = new HashSet<long>(); foreach (var row in InventoryDao.ItemsByCharacter(db, cid)) ids.Add(DbStore.Long(row, "inventoryitemid"));
+            // Enhancement endpoints own these rows; an actor mirror can predate a persisted cube choice.
+            var enhanced = new Dictionary<long, DbRow>();
+            foreach (long id in ids)
+            {
+                var current = InventoryDao.EquipmentOf(db, id);
+                if (NativePotentialService.IsReserved(db, id) && !items.Exists(item => item.itemRowId == id))
+                    throw new InvalidOperationException("待选方块装备不能从库存镜像移除");
+                if (current != null && DbStore.Int(current, "enhancementVersion") == 282)
+                {
+                    var copy = new DbRow();
+                    foreach (var pair in current) copy[pair.Key] = pair.Value;
+                    enhanced[id] = copy;
+                }
+            }
             db.Table("inventoryequipment").Delete(r => ids.Contains(DbStore.Long(r, "inventoryitemid")));
             db.Table("inventoryitems").Delete(DbStore.Eq("characterid", (long)cid));
             foreach (var item in items)
@@ -83,12 +97,18 @@ namespace Server.Bot.Trade
                 long id = db.Table("inventoryitems").Insert(row);
                 item.itemRowId = id; item.itemData = new Dictionary<string, object>(row);
                 if (!item.isEquip) continue;
-                var equip = new DbRow(); if (item.equipmentData != null) foreach (var pair in item.equipmentData) equip[pair.Key] = pair.Value;
+                bool authoritative = enhanced.TryGetValue(id, out var currentEquip);
+                var equip = new DbRow();
+                var sourceEquip = authoritative ? currentEquip : item.equipmentData;
+                if (sourceEquip != null) foreach (var pair in sourceEquip) equip[pair.Key] = pair.Value;
                 equip.Remove("inventoryequipmentid"); equip["inventoryitemid"] = id;
+                if (!authoritative)
+                {
                 equip["str"] = item.str; equip["dex"] = item.dex; equip["int"] = item.int_; equip["luk"] = item.luk;
                 equip["hp"] = item.hp; equip["mp"] = item.mp; equip["watk"] = item.watk; equip["matk"] = item.matk;
                 equip["wdef"] = item.wdef; equip["mdef"] = item.mdef; equip["acc"] = item.acc; equip["avoid"] = item.avoid;
                 equip["hands"] = item.hands; equip["speed"] = item.speed; equip["jump"] = item.jump; equip["upgradeslots"] = item.upgradeslots;
+                }
                 db.Table("inventoryequipment").Insert(equip);
                 item.equipmentData = new Dictionary<string, object>(equip);
             }

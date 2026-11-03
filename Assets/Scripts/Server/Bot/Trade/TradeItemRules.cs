@@ -15,6 +15,7 @@ namespace Server.Bot.Trade
         bool Config(string key) => GameConfigDao.Get(db, key).Equals("true", StringComparison.OrdinalIgnoreCase);
         public bool CanOffer(InventoryEntry item)
         {
+            if(NativePotentialService.BlocksTransfer(db,item))return false;
             var info = catalog.Info(item.itemId);
             bool cash = BotItemCatalog.Int(info, "cash") == 1;
             bool unmerchable = Config("use_enforce_unmerchable_cash") && cash

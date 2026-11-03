@@ -25,6 +25,18 @@ public static class Program
 
     public static int Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--potential")
+        {
+            PotentialChecks.Run(Check);
+            Console.WriteLine($"通过 {passed} / 失败 {failed}");
+            return failed == 0 ? 0 : 1;
+        }
+        if (args.Length > 0 && args[0] == "--starforce")
+        {
+            StarForceChecks.Run(Check);
+            Console.WriteLine($"通过 {passed} / 失败 {failed}");
+            return failed == 0 ? 0 : 1;
+        }
         if (args.Length > 0 && args[0] == "--party-grind")
         {
             BotChecks.CheckPartyGrindRuntime(Check);
