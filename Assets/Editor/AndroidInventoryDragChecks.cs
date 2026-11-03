@@ -115,6 +115,30 @@ public static class AndroidInventoryDragChecks
                     "legacy heart was not recovered from AP ring " + slot);
             }
             Debug.Log("[AndroidInventoryDragChecks] PASS admin bag allocation and legacy AP heart recovery");
+            var robotState = NativeAndroidService.Resolve(made.characterId,
+                slot => slot == -32 ? 1662000 : slot == -54 ? 1672000 : 0);
+            var plainIds = AndroidLook.Ids(robotState);
+            robotState.top = 1042021;
+            var dressedIds = AndroidLook.Ids(robotState);
+            string plainKey = AndroidLook.Key(plainIds), dressedKey = AndroidLook.Key(dressedIds);
+            WzCharacter.Register(plainKey, plainIds); WzCharacter.Register(dressedKey, dressedIds);
+            var go = new GameObject("Android appearance refresh regression");
+            try
+            {
+                var renderer = go.AddComponent<SpriteRenderer>(); var animator = go.AddComponent<SpriteAnim>();
+                foreach (string action in new[] { "stand", "walk" })
+                {
+                    animator.Init("chars", plainKey, action, renderer);
+                    string plainFrame = animator.FrameUri;
+                    animator.Init("chars", dressedKey, action, renderer);
+                    Require(animator.FrameUri != plainFrame && animator.FrameUri != null,
+                        "same-action equipment change retained old frame " + action);
+                    animator.Init("chars", plainKey, action, renderer);
+                    Require(animator.FrameUri == plainFrame, "unequip retained dressed frame " + action);
+                }
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+            Debug.Log("[AndroidInventoryDragChecks] PASS immediate stand/walk appearance equip/unequip refresh");
         }
         catch (Exception e) { Debug.LogException(e); exit = 1; }
         finally { if (File.Exists(path)) File.Delete(path); EditorApplication.Exit(exit); }

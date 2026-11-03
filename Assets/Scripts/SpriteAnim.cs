@@ -85,7 +85,8 @@ public class SpriteAnim : MonoBehaviour
         this.key = key;
         this.sr = sr;
         baseAnim = idle;
-        Play(idle, false);
+        // Init 可能在同一播放器上换纸娃娃；动作同名也必须替换旧 clip/首帧。
+        Play(idle, false, true);
     }
 
     // 循环动作：站立/走路
