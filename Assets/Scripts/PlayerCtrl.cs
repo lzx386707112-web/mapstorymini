@@ -676,6 +676,7 @@ public class PlayerCtrl : MonoBehaviour
 
     void Update()
     {
+        using var framePerf = Server.Bot.BotPerf.Timer("Player.Update");
         if (GameLoop.I != null && (GameLoop.I.state != GameLoop.GameState.Playing || GameLoop.I.gameOver)) return;
         if (InputLocked || ScriptUiLock > 0) { SyncTransform(); return; }   // 换图黑场/脚本锁UI：不读输入、不跑物理
         if(visibleMount!=NativeMount.Item(this)) RefreshFieldAppearance();

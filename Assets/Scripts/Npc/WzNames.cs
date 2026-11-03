@@ -83,24 +83,29 @@ public static class WzNames
     static string ItemUncached(int id)
     {
         int cat = id / 1000000;
+        string name = null;
         try
         {
             switch (cat)
             {
-                case 0: return id / 10000 >= 2 && id / 10000 <= 6 ? EquipItem(id) : null;
-                case 1: return EquipItem(id);
-                case 2: return FlatItem("String/Consume.img", id);
-                case 3: return FlatItem("String/Ins.img", id);
+                case 0: name = id / 10000 >= 2 && id / 10000 <= 6 ? EquipItem(id) : null; break;
+                case 1: name = EquipItem(id); break;
+                case 2: name = FlatItem("String/Consume.img", id); break;
+                case 3: name = FlatItem("String/Ins.img", id); break;
                 // String/Etc.img 多包一层同名节点：Etc/Etc/<id>/name
-                case 4: return FlatItem("String/Etc.img", "Etc", id);
+                case 4: name = FlatItem("String/Etc.img", "Etc", id); break;
                 // 宠物名不在 Cash.img，在 String/Pet.img/<id>/name
-                case 5: return FlatItem("String/Cash.img", id) ?? FlatItem("String/Pet.img", id);
+                case 5: name = FlatItem("String/Cash.img", id) ?? FlatItem("String/Pet.img", id); break;
                 // 910xxxx 礼包不在 String.wz，Item.wz/Special 自带 name
-                case 9: return SpecialItem(id);
-                default: return null;
+                case 9: name = SpecialItem(id); break;
             }
         }
-        catch { return null; }
+        catch { name = null; }
+        // 282 迁入的道具（机器人 1662xxx、心脏 1672xxx、心脏卷轴 2616/2643 段）在本项目的
+        // GMS083 String 树里没有条目，名字由 Bot/Items.json 兜底。HasItem 也据此认可，
+        // 否则后台商品校验会把它们当成「缺名字」。
+        if (string.IsNullOrEmpty(name)) name = Server.Bot.BotItemCatalog.Shared.Name(id);
+        return name;
     }
 
     // String/Eqp.img 的真实层级是 Eqp/Eqp/<类别>/<id>/name，类别名随版本变化，按层遍历。

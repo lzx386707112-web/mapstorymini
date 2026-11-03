@@ -53,6 +53,35 @@ static class EquipUnequipChecks
                     if (Roundtrip(db, cid, id)) break;
 
             Console.WriteLine("-- 状态场景 --");
+            int cashWeapon = FirstOf(catalog, -111);
+            Check(cashWeapon > 0, "目录含现金武器");
+            if (cashWeapon > 0)
+            {
+                EquipAt(db, cid, 1302000, -11, "普通武器作为现金覆盖的底层");
+                EquipAt(db, cid, cashWeapon, -111, "现金武器覆盖");
+                int destination = NativeInventoryService.Free(db, CharactersDao.FindById(db, cid), 1);
+                var moved = NativeInventoryService.Handle(db, new InventoryChangeRequest {
+                    characterId=cid,itemId=cashWeapon,equip=true,quantity=0,equipSlot=-111,moveTo=destination });
+                Check(moved.ok && !Worn(db,cid,-111) && Worn(db,cid,-11) &&
+                    moved.inventory.Exists(x=>x.itemId==cashWeapon && x.inventoryType==1 && x.position==destination),
+                    "现金武器卸到指定空格，底层普通武器保留");
+                // 穿回同一条实例，再验证占用格/越界拒绝且保留原穿着。
+                var worn = NativeInventoryService.Handle(db, new InventoryChangeRequest {
+                    characterId=cid,itemId=cashWeapon,equip=true,quantity=1,equipSlot=-111,sourcePosition=destination });
+                Check(worn.ok, "现金武器可重新穿戴");
+                var occupied = InventoryDao.ItemsByCharacter(db,cid).Find(x=>DbStore.Int(x,"inventorytype")==1 && DbStore.Int(x,"position")>0);
+                Check(occupied != null, "存在已占用背包格供拒绝测试");
+                if (occupied != null)
+                {
+                    var rejected = NativeInventoryService.Handle(db, new InventoryChangeRequest {
+                        characterId=cid,itemId=cashWeapon,equip=true,quantity=0,equipSlot=-111,moveTo=DbStore.Int(occupied,"position") });
+                    Check(!rejected.ok && Worn(db,cid,-111), "放到已占用格拒绝，不卸装不覆盖");
+                }
+                var outside = NativeInventoryService.Handle(db, new InventoryChangeRequest {
+                    characterId=cid,itemId=cashWeapon,equip=true,quantity=0,equipSlot=-111,moveTo=int.MaxValue });
+                Check(!outside.ok && Worn(db,cid,-111), "越界背包格拒绝且不丢装备");
+                UnequipAt(db,cid,-111,"现金武器双击式卸下（自动空格）");
+            }
             // 两枚普通戒指：第一枚 -12，第二枚客户端挑 -13；再从面板格 -13 双击脱下
             int ring1 = FirstOf(catalog, -12), ring2 = SecondOf(catalog, -12);
             if (ring1 > 0 && ring2 > 0)

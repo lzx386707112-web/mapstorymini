@@ -424,6 +424,8 @@ public static class Program
         RpsChecks.Run(Check);
         GachaChecks.Run(Check);
         CashEquipChecks.Run(Check);
+        AndroidChecks.Run(Check);
+        ScrollChecks.Run(Check);
         NoteChecks.Run(Check);
         TvChecks.Run(Check);
         CarnivalChecks.Run(Check);

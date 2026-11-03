@@ -38,3 +38,35 @@ cd MapleDash/tools/script-harness && dotnet run -c Release -- --pack   ../../Ass
 cd MapleDash/tools/unity-compile-check && dotnet build -t:Rebuild      # Assets/Scripts + Assets/Editor，0 error 才算过
 ```
 
+## 机器人（Android）玩法
+
+动 `NativeAndroid*.cs`、`Wz/AndroidLook.cs`、`NativeInventoryService.EquipmentSlotOf`、
+`EquipLoadout` 的槽位表，或往 `Assets/Resources/Bot/AndroidTemplates.json` 加模板之前，
+先读 `docs/tms282-skill/11-android-migration.md`（§8 是真机走查清单）。
+
+五条硬约束：
+
+1. **282 客户端 img 是 BMS 密钥，本项目读 GMS 密钥**。新增 282 资源必须先用
+   `tools/ms282/bms_to_gms.py` 等长 XOR 转码（偏移不变，间接字符串仍然有效），
+   再用 `tools/ms282/import_androids.py` 按 `_outlink` 闭包导入。
+2. **机器人本体 -32（`islot "An"`）、心臟 -54（`"Ht"`）不做 `slot-100` 现金槽换算**。
+   282 把两者标了 `cash=1`，但 BodyPart 还是 53/54，走现金换算会变成 -132/-154。
+3. **AP 时装槽是 1200..1207 + 1210..1213**（1208/1209 是空号，APRing 从 1210 起）。
+   判断用 `NativeAndroidService.IsApSlot`，别自己写区间。
+4. **外观合成只能 `WzCharacter.Register(key, ids)`**，不要把机器人的 id 灌进职业配方表；
+   `ids[0]` 必须是 body、最后一项是 weapon（`Pose()`/`Placements()` 按这两端取动作）。
+5. **心臟卷轴（2616/2643 段）的适用范围只认 `req` 与 `reqScope`，且必须服务端判**
+   （`BotItemCatalog.RequiredEquips/ScopedTo`）。客户端传的 `scrollRequirements` 只是副本，
+   GM/脚本/老客户端不会带。100% 成功的卷照样扣 1 次 tuc（源端 `useTuc=!reset`）。
+   心臟格 -54 **不在装备窗底图里**，砸卷要拖到 `NativeAndroidWindow` 的「心臟」格。
+
+改完必须过：
+
+```bash
+cd MapleDash && python3 tools/ms282/check_android_look.py   # 248 个模板逐个验证能拼出纸娃娃
+cd MapleDash && python3 tools/ms282/import_heart_scrolls.py  # 心脏卷轴图标链（dry-run，不写盘）
+cd MapleDash && python3 tools/check_scroll_effect.py         # 砸卷成功/失败特效应与音效链
+cd MapleDash && dotnet build tools/server-check/MapleDash.ServerCheck.csproj && dotnet run --project tools/server-check --no-build
+cd MapleDash && dotnet build tools/unity-compile-check/Check.csproj
+```
+

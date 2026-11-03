@@ -258,11 +258,22 @@ def main():
             links(img.root)
     # Copy Data resources and companion files; editor backups are not runtime assets.
     source_files = sorted(p.relative_to(data).as_posix() for p in data.rglob("*") if p.is_file() and not is_backup(p.relative_to(data)))
+    dest = args.output.resolve() / "Data"
+    files = [{"path": rel, "sha256": hashlib.sha256((data/rel).read_bytes()).hexdigest()} for rel in source_files]
+    # 282 迁入的资源（Character/Android 机器人+心臟、Item/Consume/0261|0264 心脏卷 + 它们的 _Canvas）
+    # 不在 GMS083 源端里，是 tools/ms282/import_androids.py / import_heart_scrolls.py 单独登记进
+    # 索引的。重跑本脚本只重建源端那部分，不能把已导入的条目抹掉，否则真机又会缺资源。
+    covered = {entry["path"] for entry in files}
+    if index_path.exists():
+        carried = 0
+        for entry in json.loads(index_path.read_text())["files"]:
+            if entry["path"] in covered or not (dest / entry["path"]).is_file(): continue
+            files.append(entry); covered.add(entry["path"]); carried += 1
+        if carried: print(f"carried over {carried} imported 282 files", flush=True)
     index = {"packageMode": "complete-data", "unavailableOutlinks": sorted(missing_outlinks), "unavailableEquipment": sorted(unavailable), "characters": characters, "mobs": mobs, "skills": {k: int(v["id"]) for k,v in manifest["skills"].items()},
              "aliases": aliases, "zOrder": list(_DEFAULT_ZMAP), "backZ": _BACK_FACING_Z_OVERRIDE,
              "backAbsoluteZ": _BACK_FACING_ABSOLUTE_Z, "overCapRemap": {k: v[0] for k,v in _OVER_CAP_REMAP.items()},
-             "files": [{"path": rel, "sha256": hashlib.sha256((data/rel).read_bytes()).hexdigest()} for rel in source_files]}
-    dest = args.output.resolve() / "Data"
+             "files": files}
     for rel in source_files:
         target = dest / rel; target.parent.mkdir(parents=True, exist_ok=True)
         if not target.exists() or hashlib.sha256(target.read_bytes()).digest() != hashlib.sha256((data/rel).read_bytes()).digest(): shutil.copyfile(data/rel, target)

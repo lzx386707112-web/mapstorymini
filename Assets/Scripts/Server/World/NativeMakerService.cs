@@ -460,7 +460,7 @@ public static class NativeMakerService
             foreach (var item in inventory)
             {
                 if (remaining <= 0) break;
-                if (item.position <= 0 || item.itemId != req.itemId) continue;
+                if (!InventoryDao.IsBagPosition(item.position) || item.itemId != req.itemId) continue;
                 int take = Math.Min(remaining, item.quantity);
                 item.quantity -= take;
                 remaining -= take;
@@ -654,7 +654,7 @@ public static class NativeMakerService
     static int EquipIdAt(DbStore db, int characterId, int position)
     {
         foreach (var row in InventoryDao.ItemsByCharacter(db, characterId))
-            if (DbStore.Int(row, "inventorytype") == 1 && DbStore.Int(row, "position") == position && position > 0)
+            if (DbStore.Int(row, "inventorytype") == 1 && DbStore.Int(row, "position") == position && InventoryDao.IsBagPosition(position))
                 return DbStore.Int(row, "itemid");
         return 0;
     }
@@ -663,7 +663,7 @@ public static class NativeMakerService
     {
         foreach (var row in InventoryDao.ItemsByCharacter(db, characterId))
         {
-            if (DbStore.Int(row, "inventorytype") != 1 || DbStore.Int(row, "position") != position || position <= 0) continue;
+            if (DbStore.Int(row, "inventorytype") != 1 || DbStore.Int(row, "position") != position || !InventoryDao.IsBagPosition(position)) continue;
             long id = DbStore.Long(row, "inventoryitemid");
             db.Table("inventoryitems").Delete(x => DbStore.Long(x, "inventoryitemid", -1) == id);
             db.Table("inventoryequipment").Delete(x => DbStore.Long(x, "inventoryitemid", -1) == id);

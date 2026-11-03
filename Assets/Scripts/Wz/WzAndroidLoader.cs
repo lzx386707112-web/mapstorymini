@@ -46,6 +46,7 @@ public sealed class WzAndroidLoader : MonoBehaviour
     float nextProgressUpdate, visibleProgress, pulse, nextPermissionCheck;
     string progressText = "0%";
     bool hasPermission;
+    bool resourceUpdateStarted, resourceUpdateFinished;
     Camera bootCam;
 
     // ——————————————————— 生命周期 ———————————————————
@@ -147,59 +148,27 @@ public sealed class WzAndroidLoader : MonoBehaviour
             string zip = Path.Combine(Root, "MapleDashResources.zip");
 
             string patch = Path.Combine(Root, "MapleDashResources.patch.zip");
-            if (File.Exists(patch))
+            if (File.Exists(patch) && !WzResourceUpdate.InstalledThisLaunch)
             {
                 // Do not skip patches via the fast receipt path, or hide patch errors.
-                WzResourceInstaller.Install(patch, Root, expected, (n, all) => { total = all; loaded = n; },
-                    value => workerPhase = value);
-                WriteReceipt(expected);
+                string targetManifest = WzResourceInstaller.ReadArchiveManifest(patch);
+                WzResourceInstaller.Install(patch, Root, targetManifest, (n, all) => { total = all; loaded = n; },
+                    value => workerPhase = value, null, expected);
+                manifest = targetManifest;
                 loaded = 1; total = 1;
                 return;
             }
 
-            // 已安装且回执匹配：只抽样校验，正常情况几百毫秒内完成。
-            if (receiptOk && dataExists)
-            {
-                workerPhase = "正在检查资源";
-                try
-                {
-                    WzResourceInstaller.VerifySample(Root, expected, 32, (n, all) => { total = all; loaded = n; });
-                }
-                catch
-                {
-                    // 抽样发现异常：退回到完整校验，交由真正的错误提示。
-                    workerPhase = "正在校验资源";
-                    WzResourceInstaller.Verify(Root, expected, (n, all) => { total = all; loaded = n; });
-                }
-                WriteReceipt(expected);
-                loaded = 1; total = 1;
-                return;
-            }
-
-            // 需要安装：优先用 ZIP；ZIP 与当前 APK 不匹配时退回校验已有 Data。
+            // 全量包直接解压；已有 Data 直接加载，不再抽样/全量哈希或匹配 APK 清单。
             if (File.Exists(zip))
             {
-                try
-                {
-                    workerPhase = "首次安装：解压并校验资源";
-                    WzResourceInstaller.Install(zip, Root, expected, (n, all) => { total = all; loaded = n; },
-                        value => workerPhase = value);
-                    WriteReceipt(expected);
-                    loaded = 1; total = 1;
-                    return;
-                }
-                catch (Exception) when (dataExists)
-                {
-                    // 旧 ZIP / 版本不符：Data 还在，改走校验路径。
-                }
+                workerPhase = "正在解压资源";
+                string extracted = WzResourceInstaller.ExtractFull(zip, Root,
+                    (n, all) => { total = all; loaded = n; });
+                if (extracted != null) manifest = extracted;
             }
-
-            if (!dataExists)
+            if (!Directory.Exists(data))
                 throw new FileNotFoundException("未找到资源。请把 MapleDashResources.zip 放到 /sdcard/mapstory/ 后重试。");
-
-            workerPhase = "正在校验资源";
-            WzResourceInstaller.Verify(Root, expected, (n, all) => { total = all; loaded = n; });
-            WriteReceipt(expected);
             loaded = 1; total = 1;
         });
     }
@@ -235,6 +204,16 @@ public sealed class WzAndroidLoader : MonoBehaviour
                     try { RequestPermission(); } catch (Exception e) { message = e.Message; }
                 return;
             }
+        }
+
+        if (!resourceUpdateFinished)
+        {
+            if (!resourceUpdateStarted)
+            {
+                resourceUpdateStarted = true;
+                StartCoroutine(CheckResourceUpdate());
+            }
+            return;
         }
 
         if (loading == null && !failed) StartLoading();
@@ -284,6 +263,55 @@ public sealed class WzAndroidLoader : MonoBehaviour
         loading = null;
     }
 
+    System.Collections.IEnumerator CheckResourceUpdate()
+    {
+        // 在版本同步前先恢复上次被中断的目录切换。
+        string data = Path.Combine(Root, "Data"), previous = Path.Combine(Root, "PreviousData");
+        try { if (!Directory.Exists(data) && Directory.Exists(previous)) Directory.Move(previous, data); }
+        catch (Exception e) { Debug.LogWarning("[Resources] 恢复资源目录失败：" + e.Message); }
+        var recovery = Task.Run(() => WzResourcePatchInstaller.Recover(Root));
+        phase = "正在恢复资源补丁";
+        while (!recovery.IsCompleted) yield return null;
+        if (recovery.IsFaulted)
+        {
+            failed = true; phase = "资源恢复失败";
+            message = recovery.Exception.GetBaseException().Message + " 请联系群主处理后重新启动。";
+            yield break;
+        }
+        string fullZip = Path.Combine(Root, "MapleDashResources.zip");
+        if (File.Exists(fullZip))
+        {
+            phase = "正在解压资源";
+            var extract = Task.Run(() => WzResourceInstaller.ExtractFull(fullZip, Root,
+                (n, all) => { total = all; loaded = n; }));
+            while (!extract.IsCompleted) yield return null;
+            if (extract.IsFaulted)
+            {
+                failed = true; phase = "资源解压失败";
+                message = extract.Exception.GetBaseException().Message;
+                yield break;
+            }
+            if (extract.Result != null) manifest = extract.Result;
+        }
+        phase = "正在检查资源更新";
+        yield return WzResourceUpdate.Run(manifest);
+        // 资源更新流程结束后再检查 APK，等待用户处理完才继续加载。
+        phase = "正在检查应用更新";
+        bool appUpdateFinished = false;
+        AppUpdate.Begin(() => appUpdateFinished = true);
+        while (!appUpdateFinished) yield return null;
+        // 授权之后才访问外部 Data；更新已在任何资源缓存/假人预热之前完成。
+        string installedManifest = Path.Combine(Root, "Data/.resource-manifest.json");
+        try
+        {
+            // 手动部署补丁仍按当前 APK 的清单校验；在线补丁已在上面安装完成。
+            if ((WzResourceUpdate.InstalledThisLaunch || !File.Exists(Path.Combine(Root, "MapleDashResources.patch.zip"))) && File.Exists(installedManifest))
+                manifest = File.ReadAllText(installedManifest);
+        }
+        catch (Exception e) { Debug.LogWarning("[Resources] 读取已安装清单失败：" + e.Message); }
+        resourceUpdateFinished = true;
+    }
+
     void RefreshProgress()
     {
         if (Time.unscaledTime < nextProgressUpdate) return;
@@ -301,7 +329,7 @@ public sealed class WzAndroidLoader : MonoBehaviour
         phase = "正在加载AI假人系统";
         starting = true;
         visibleProgress = 1f;
-        progressText = "100%";
+        progressText = "资源安装完成，正在准备游戏";
         yield return null;                 // 先让假人系统加载提示渲染一帧
 
         // 资源可读之后先启动本地服务端，把原来登录期间的预建/合成留在加载页。
@@ -333,7 +361,6 @@ public sealed class WzAndroidLoader : MonoBehaviour
             {
                 Debug.LogWarning("[Bot] 预热超时 " + MaxBotWaitSeconds + "s，跳过剩余预热直接启动");
                 message = "角色资源准备超时，将使用已就绪的资源继续启动。";
-                yield return new WaitForSecondsRealtime(2f);
                 break;
             }
             yield return null;

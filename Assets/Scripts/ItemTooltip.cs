@@ -31,6 +31,9 @@ public static class ItemCatalog
         if (nameCache.TryGetValue(id, out var c)) return c ?? "";
         var node = ItemNode(id);
         string name = node != null ? node.Text("name") : "";
+        // 282 迁入的道具（机器人、心脏、心脏卷轴）在本项目的 GMS083 String 树里没有名字，
+        // 统一由 Bot/Items.json 兜底。有 String 名的道具仍以 String 树为准。
+        if (string.IsNullOrEmpty(name)) name = Server.Bot.BotItemCatalog.Shared.Name(id);
         nameCache[id] = name;
         return name;
     }
@@ -38,12 +41,9 @@ public static class ItemCatalog
     public static string Desc(int id)
     {
         if (descCache.TryGetValue(id, out var c)) return c ?? "";
-        string desc = "";
-        if (!IsEquip(id))
-        {
-            var node = ItemNode(id);
-            if (node != null) desc = node.Text("desc");
-        }
+        var node = ItemNode(id);
+        string desc = node != null ? node.Text("desc") : "";
+        if (string.IsNullOrEmpty(desc)) desc = Server.Bot.BotItemCatalog.Shared.Description(id);
         descCache[id] = desc;
         return desc;
     }
@@ -81,6 +81,7 @@ public static class ItemCatalog
         else if (p >= 180 && p <= 183) sub = "PetEquip";
         else if (p == 190 || p == 191 || p == 193) sub = "Taming";
         else if (p >= 194 && p <= 197) sub = "Dragon";
+        else if (p == 166 || p == 167) sub = "Android";
         else sub = "Weapon"; // 121-160 / 169 / 170
         subcatCache[id] = sub;
         return sub;
@@ -274,6 +275,10 @@ public static class ItemTooltip
             if (value > 0) rows.Add(new[] { labels[i], " +" + value });
         }
         int upgrades = actual == null ? info.Int("tuc") : hoverItem.upgradeslots;
+        // 老存档里存在「建了装备行但没种 WZ 值」的实例（upgradeslots 一直是 0）。
+        // 这种行不是砸光了次数（level/星力都是 0），按道具数据补显示，否则新装备看着像不能砸卷。
+        if (actual != null && upgrades <= 0 && hoverItem.equipLevel == 0 && hoverItem.starLevel == 0)
+            upgrades = System.Math.Max(upgrades, info.Int("tuc"));
         if (upgrades > 0) rows.Add(new[] { LUpgrades, " " + upgrades });
 
         // —— 星级条（BeiDouSetItemCompat.dll 0x65C82B4E）——
@@ -297,7 +302,15 @@ public static class ItemTooltip
         float dy = capacity > 0 ? starBar + 4f : 0f;
 
         // 0x8E8E43 的高度：0xA6(166) + 行数×0x10(16) + 名称换行/附加段 + 星条
-        float height = (166 + rows.Count * 16 + starBar) * s;
+        // BeiDou 8E8E81 reads equipment desc too; 8E973A/8E9756 measures it
+        // with font 7 at x=10, right=221, then appends it after the stat rows.
+        string description = FormatDescription(ItemCatalog.Desc(id));
+        var descriptionStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(12 * s),
+            wordWrap = true, richText = true };
+        descriptionStyle.normal.textColor = Color.white;
+        float descriptionHeight = string.IsNullOrEmpty(description) ? 0
+            : descriptionStyle.CalcHeight(new GUIContent(description), 211 * s);
+        float height = (166 + rows.Count * 16 + starBar) * s + descriptionHeight;
         var p = anchor;
         var rect = new Rect(Mathf.Clamp(p.x, 0, Mathf.Max(0, UiKit.W - 236 * s)),
             Mathf.Clamp(p.y + 20 * s, 0, Mathf.Max(0, UiKit.H - height)), 236 * s, height);
@@ -351,6 +364,9 @@ public static class ItemTooltip
             GUI.Label(new Rect(rect.x + 10 * s, y, 216 * s, 13 * s), rows[i][0], label);
             GUI.Label(new Rect(rect.x + 10 * s + labelWidth, y, 216 * s - labelWidth, 13 * s), rows[i][1], valueStyle);
         }
+        if (descriptionHeight > 0)
+            GUI.Label(new Rect(rect.x + 10 * s, rect.y + (161 + dy + rows.Count * 16) * s,
+                211 * s, descriptionHeight), description, descriptionStyle);
         if (capacity > 0)
             DrawStarBar(new Rect(rect.x, rect.y + 26 * s, rect.width, starBar * s),
                 capacity, stars, s);

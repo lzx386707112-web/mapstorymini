@@ -53,7 +53,7 @@ namespace Server.Bot
             }
             public void Dispose()
             {
-                if (!Enabled) return;
+                if (!Enabled || start == 0) return;
                 Record(name, (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency);
             }
         }

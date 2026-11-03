@@ -31,7 +31,7 @@ public sealed class AndroidNativeDataBuild : IPostGenerateGradleAndroidProject
         string manifest = Path.Combine(path, "src/main/AndroidManifest.xml");
         var xml = new XmlDocument(); xml.Load(manifest);
 
-        foreach (string permission in new[] { "android.permission.MANAGE_EXTERNAL_STORAGE", "android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE" })
+        foreach (string permission in new[] { "android.permission.INTERNET", "android.permission.REQUEST_INSTALL_PACKAGES", "android.permission.MANAGE_EXTERNAL_STORAGE", "android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE" })
         {
             bool exists = false;
             foreach (XmlElement element in xml.DocumentElement.SelectNodes("uses-permission"))
@@ -46,6 +46,19 @@ public sealed class AndroidNativeDataBuild : IPostGenerateGradleAndroidProject
         var application = (XmlElement)xml.DocumentElement.SelectSingleNode("application");
         if (application != null)
         {
+            // 固定单文件的只读 ContentProvider；安装器通过临时 URI 授权读取 APK。
+            XmlElement provider = null;
+            foreach (XmlElement element in application.SelectNodes("provider"))
+                if (element.GetAttribute("name", Android) == "com.mapledash.game.UpdateApkProvider") provider = element;
+            if (provider == null)
+            {
+                provider = xml.CreateElement("provider");
+                application.AppendChild(provider);
+            }
+            provider.SetAttribute("name", Android, "com.mapledash.game.UpdateApkProvider");
+            provider.SetAttribute("authorities", Android, "${applicationId}.updates");
+            provider.SetAttribute("exported", Android, "false");
+            provider.SetAttribute("grantUriPermissions", Android, "true");
             application.SetAttribute("requestLegacyExternalStorage", Android, "true");
             // 引用 res/xml/network_security_config.xml；资源在下面写入，合并后归 launcher 的 resources.arsc。
             application.SetAttribute("networkSecurityConfig", Android, "@xml/" + NetworkSecurityConfigRes);

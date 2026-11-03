@@ -86,11 +86,74 @@ static class Program
             Require(File.Exists(zipPath), "Failed patch was deleted");
             Require(File.Exists(Path.Combine(root, "Data/empty.img")), "Failed patch changed Data");
             File.WriteAllBytes(Path.Combine(root, "Data/nested/large.img"), payload);
-            WzResourceInstaller.Install(zipPath, root, patchedManifest, null);
+            // Online updates use the target manifest from the archive, independently of the APK.
+            string downloadedManifest = WzResourceInstaller.ReadArchiveManifest(zipPath);
+            Require(downloadedManifest == patchedManifest, "Wrong downloaded target manifest");
+            const string resourceVersion = "{\"versionCode\":2,\"resUrl\":\"https://example.com/patch.zip\"}";
+            phases.Clear();
+            string unchanged = Path.Combine(root, "Data/nested/large.img");
+            DateTime originalWriteTime = new DateTime(2020, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+            File.SetLastWriteTimeUtc(unchanged, originalWriteTime);
+            // Failure after all moves must restore files, deletions and metadata.
+            ExpectFailure(() => WzResourceInstaller.Install(zipPath, root, downloadedManifest, null,
+                phase => { if (phase == "正在完成资源安装") throw new IOException("Injected pre-commit failure"); },
+                resourceVersion, manifest));
+            WzResourceInstaller.Verify(root, manifest, null);
+            Require(!File.Exists(Path.Combine(root, "Data/new.img")), "Rollback left new file");
+            Require(!File.Exists(Path.Combine(root, "Data/.resUpdate.json")), "Rollback advanced version");
+            int maximumProgress = 0;
+            WzResourceInstaller.Install(zipPath, root, downloadedManifest,
+                (done, total) => maximumProgress = Math.Max(maximumProgress, done * 100 / total),
+                phases.Add, resourceVersion, manifest);
+            Require(maximumProgress < 100, "Progress reached 100 before installer returned");
+            Require(File.GetLastWriteTimeUtc(unchanged) == originalWriteTime, "Unchanged resource was rewritten");
+            Require(phases.Contains("正在解压补丁资源"), "Patch resource did not use hash validation");
+            Require(!phases.Contains("正在校验旧资源基线"), "Verified unchanged resource was rehashed");
             WzResourceInstaller.Verify(root, patchedManifest, null);
+            Require(File.ReadAllText(Path.Combine(root, "Data/.resource-manifest.json")) == patchedManifest,
+                "Target manifest did not travel with promoted Data");
+            Require(File.ReadAllText(Path.Combine(root, "Data/.resUpdate.json")) == resourceVersion,
+                "Resource version did not travel with promoted Data");
+            // A failed later update must preserve both the installed files and version receipt.
+            Pack(zipPath, manifest, new Dictionary<string, byte[]> { ["empty.img"] = Array.Empty<byte>() });
+            ExpectFailure(() => WzResourceInstaller.Install(zipPath, root, manifest, null, null,
+                "{\"versionCode\":3,\"resUrl\":\"https://example.com/bad.zip\"}"));
+            Require(File.ReadAllText(Path.Combine(root, "Data/.resUpdate.json")) == resourceVersion,
+                "Failed update advanced resource version");
+            WzResourceInstaller.Verify(root, patchedManifest, null);
+            File.Delete(zipPath);
             Require(!File.Exists(Path.Combine(root, "Data/empty.img")), "Deleted entry survived patch");
             Require(!File.Exists(zipPath), "Successful patch was not deleted");
-            Console.WriteLine("PASS: streaming hash (large/empty), interrupted install recovery, progress phases, corrupt pack rejection, promotion rollback, delta add/remove/reuse, wrong APK/base rejection, archive cleanup");
+            // Simulate process death after backup/move but before commit.
+            string tx = Path.Combine(root, "ResourcePatchTransaction");
+            Directory.CreateDirectory(Path.Combine(tx, "backup/Data"));
+            string victim = Path.Combine(root, "Data/new.img");
+            byte[] original = File.ReadAllBytes(victim);
+            File.Move(victim, Path.Combine(tx, "backup/Data/new.img"));
+            File.WriteAllBytes(victim, new byte[] { 0 });
+            File.WriteAllText(Path.Combine(root, "Data/added.img"), "partial");
+            File.WriteAllText(Path.Combine(tx, "journal"),
+                "1|" + Convert.ToBase64String(Encoding.UTF8.GetBytes("Data/new.img")) + "\n" +
+                "0|" + Convert.ToBase64String(Encoding.UTF8.GetBytes("Data/added.img")) + "\n");
+            WzResourcePatchInstaller.Recover(root);
+            WzResourcePatchInstaller.Recover(root); // idempotent
+            Require(Convert.ToBase64String(File.ReadAllBytes(victim)) == Convert.ToBase64String(original), "Recovery lost backup");
+            Require(!File.Exists(Path.Combine(root, "Data/added.img")), "Recovery left added file");
+            // Committed transactions must only clean backups, never roll back.
+            Directory.CreateDirectory(Path.Combine(tx, "backup/Data"));
+            File.WriteAllText(Path.Combine(tx, "backup/Data/new.img"), "old");
+            File.WriteAllText(Path.Combine(tx, "journal"), "1|" + Convert.ToBase64String(Encoding.UTF8.GetBytes("Data/new.img")) + "\n");
+            File.WriteAllText(Path.Combine(tx, "committed"), "ok");
+            WzResourcePatchInstaller.Recover(root);
+            Require(Convert.ToBase64String(File.ReadAllBytes(victim)) == Convert.ToBase64String(original), "Committed patch rolled back");
+            // Direct full extraction ignores APK baseline and content hashes.
+            string directRoot = Path.Combine(root, "direct");
+            string directZip = Path.Combine(root, "direct.zip");
+            Pack(directZip, manifest, new Dictionary<string, byte[]> { ["fresh.img"] = new byte[] { 4, 5 } });
+            WzResourceInstaller.ExtractFull(directZip, directRoot);
+            Require(File.Exists(Path.Combine(directRoot, "Data/fresh.img")), "Direct extraction failed");
+            Require(!File.Exists(directZip), "Direct archive not cleaned up");
+            Console.WriteLine("PASS: streaming hash (large/empty), interrupted install recovery, progress phases, corrupt pack rejection, promotion rollback, delta add/remove/reuse, wrong APK/base rejection, archive cleanup, online manifest and version promotion/rollback, unchanged files untouched, journal recovery and commit cleanup");
         }
         finally
         {

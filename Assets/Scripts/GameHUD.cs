@@ -77,6 +77,8 @@ public class GameHUD : MonoBehaviour
 
     void OnGUI()
     {
+        using var guiPerf = Server.Bot.BotPerf.Timer(Event.current.type == EventType.Repaint
+            ? "HUD.Repaint" : Event.current.type == EventType.Layout ? "HUD.Layout" : "HUD.Input");
         if (InterfaceHidden && !KeyConfigWindow.Visible) return;
         GUI.depth = 0;
         EnsureStyles();

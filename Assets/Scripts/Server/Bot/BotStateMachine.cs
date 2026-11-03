@@ -151,6 +151,7 @@ namespace Server.Bot
         // 每次 tick 的包装：先置 running 守卫，跑 UpdateState，由调度器管理下次触发。
         internal void Tick()
         {
+            using var perf = BotPerf.Timer("BotDecision." + botType);
             if (!running || BotScheduler.Now() < suspendedUntil) return;
             UpdateState();
         }

@@ -205,6 +205,49 @@ def is_monster_crystal(itemid: int) -> bool:
     return 4260000 <= itemid < 4270000
 
 
+OVERRIDES = os.path.join(ROOT, "content/drop-overrides.tsv")
+
+
+def apply_overrides(rows: list[tuple], gl: list[tuple]) -> tuple[list[tuple], list[tuple]]:
+    """把 content/drop-overrides.tsv 叠到源端重放结果上。
+
+    基线永远是"源端 drop_data 全量重放"，本项目自己加的玩法掉落（机器人零件、
+    低档心臟）单独放一份 TSV，方便审计"哪些行不是源端来的"。
+    同一 (怪, 道具) 覆盖基线；chance<=0 删行。
+    """
+    if not os.path.exists(OVERRIDES):
+        return rows, gl
+    mob = {(r[0], r[1]): r for r in rows}
+    glob = {(r[0], r[1]): r for r in gl}
+    added = replaced = removed = 0
+    for lineno, line in enumerate(open(OVERRIDES, encoding="utf-8-sig"), 1):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        f = [x.strip() for x in line.split("|")]
+        if len(f) != 7:
+            raise SystemExit(f"{OVERRIDES}:{lineno} 需要 7 列，实际 {len(f)}：{line}")
+        kind = f[0]
+        if kind not in ("M", "G"):
+            raise SystemExit(f"{OVERRIDES}:{lineno} 未知行类型 {kind}")
+        key = (int(f[1]), int(f[2]))
+        table = mob if kind == "M" else glob
+        had = key in table
+        chance = int(f[6])
+        if chance <= 0:
+            if had:
+                del table[key]
+                removed += 1
+            continue
+        table[key] = tuple(int(x) for x in f[1:])
+        if had:
+            replaced += 1
+        else:
+            added += 1
+    print(f"overrides: +{added} 覆盖 {replaced} 删除 {removed} ({os.path.basename(OVERRIDES)})")
+    return sorted(mob.values()), sorted(glob.values())
+
+
 def export(con: sqlite3.Connection) -> None:
     rows = con.execute(
         "SELECT dropperid, itemid, minimum_quantity, maximum_quantity, questid, chance "
@@ -215,7 +258,8 @@ def export(con: sqlite3.Connection) -> None:
     # 剔除怪物结晶的直接掉落行。
     rows = [r for r in rows if not is_monster_crystal(r[1])]
     gl = [r for r in gl if not is_monster_crystal(r[1])]
-    lines = ["# 源端 drop_data 全量重放（tools/export_field_drops.py 生成，勿手改）",
+    rows, gl = apply_overrides(rows, gl)
+    lines = ["# 源端 drop_data 全量重放 + content/drop-overrides.tsv 补充（tools/export_field_drops.py 生成，勿手改）",
              "# M|dropperid|itemid|min|max|questid|chance",
              "# G|continent|itemid|min|max|questid|chance",
              "# 注：怪物结晶（4260xxx）直接掉落已剔除，只可由原石经制作合成获得。"]
@@ -224,25 +268,30 @@ def export(con: sqlite3.Connection) -> None:
     with open(TARGET, "w", encoding="utf-8") as fp:
         fp.write("\n".join(lines) + "\n")
     print(f"wrote {TARGET}: {len(rows)} mob drop rows / {len(gl)} global rows")
-    assert_drops(con)
+    assert_drops(rows)
 
 
-def assert_drops(con: sqlite3.Connection) -> None:
-    """关键回归：二转测试图的黑色大理石（4031013）必须存在，且无 quest 限制。"""
+def assert_drops(rows: list[tuple]) -> None:
+    """关键回归：二转测试图的黑色大理石（4031013）必须存在，且无 quest 限制；
+    另外守住 content/drop-overrides.tsv 里的机器人玩法掉落，别被基线重放盖掉。"""
+    chance = {(r[0], r[1]): r[5] for r in rows}
     checks = [
-        ("2转测试怪 9000001 → 4031013", "SELECT chance FROM drop_data WHERE dropperid=9000001 AND itemid=4031013"),
-        ("2转测试怪 9000002 → 4031013", "SELECT chance FROM drop_data WHERE dropperid=9000002 AND itemid=4031013"),
-        ("2转测试怪 9000100 → 4031013", "SELECT chance FROM drop_data WHERE dropperid=9000100 AND itemid=4031013"),
-        ("2转测试怪 9000200 → 4031013", "SELECT chance FROM drop_data WHERE dropperid=9000200 AND itemid=4031013"),
-        ("2转测试怪 9000300 → 4031013", "SELECT chance FROM drop_data WHERE dropperid=9000300 AND itemid=4031013"),
+        ("2转测试怪 9000001 → 4031013", (9000001, 4031013)),
+        ("2转测试怪 9000002 → 4031013", (9000002, 4031013)),
+        ("2转测试怪 9000100 → 4031013", (9000100, 4031013)),
+        ("2转测试怪 9000200 → 4031013", (9000200, 4031013)),
+        ("2转测试怪 9000300 → 4031013", (9000300, 4031013)),
+        ("女机器人 9300133 → 4000357 机器人零件", (9300133, 4000357)),
+        ("未來機器人 8120103 → 4000357 机器人零件", (8120103, 4000357)),
+        ("女机器人 9300133 → 1672000 銀之心", (9300133, 1672000)),
     ]
     ok = True
-    for label, sql in checks:
-        row = con.execute(sql).fetchone()
-        print(("  OK  " if row else "  MISS") + " " + label + (f" chance={row[0]}" if row else ""))
-        ok = ok and bool(row)
+    for label, key in checks:
+        value = chance.get(key)
+        print(("  OK  " if value else "  MISS") + " " + label + (f" chance={value}" if value else ""))
+        ok = ok and bool(value)
     if not ok:
-        raise SystemExit("掉落表缺少二转任务道具行")
+        raise SystemExit("掉落表缺少必需行（二转任务道具或机器人玩法掉落）")
 
 
 def verify() -> None:

@@ -222,7 +222,7 @@ public sealed class NativeCashService {
                 row = db.Table("cash_items").Find(x => DbStore.Long(x, "id") == r.itemId && Own(x, c) && DbStore.Int(x, "characterid") == cid);
                 if (row == null) return "只能存入当前角色持有的现金道具";
                 var held = db.Table("inventoryitems").Find(x => DbStore.Long(x, "inventoryitemid") == DbStore.Long(row, "inventoryitemid") && DbStore.Int(x, "characterid") == cid);
-                if (held == null || DbStore.Int(held, "position") <= 0) return "请先卸下该现金装备或宠物";
+                if (held == null || !InventoryDao.IsBagPosition(DbStore.Int(held, "position"))) return "请先卸下该现金装备或宠物";
                 if (Stock(c).Count >= 1000) return "现金仓库已满";
                 row["quantity"] = (long)DbStore.Int(held, "quantity");row["petid"]=DbStore.Long(held,"petid",-1);row["expiration"]=DbStore.Long(held,"expiration",-1);
                 CharService.RemoveItem(db, DbStore.Long(row, "inventoryitemid")); row["inventoryitemid"] = 0L; row["characterid"] = 0L; return null;
@@ -236,12 +236,12 @@ public sealed class NativeCashService {
                 if (r.operation == CashOperation.Equip) {
                     string why = Catalog.CanEquip(equipId, c); if (why != null) return why;
                     int destination = Catalog.EquipSlot(equipId); if (destination == 0) return "此类装备没有可用槽位";
-                    int oldPosition = DbStore.Int(held, "position"); if (oldPosition < 1) return "已经装备";
+                    int oldPosition = DbStore.Int(held, "position"); if (!InventoryDao.IsBagPosition(oldPosition)) return "已经装备";
                     var previous = db.Table("inventoryitems").Find(x => DbStore.Int(x, "characterid") == cid && DbStore.Int(x, "inventorytype") == 1 && DbStore.Int(x, "position") == destination);
                     if (previous != null) previous["position"] = (long)oldPosition;
                     held["position"] = (long)destination;
                 } else {
-                    if (DbStore.Int(held, "position") > 0) return "该装备没有穿戴";
+                    if (InventoryDao.IsBagPosition(DbStore.Int(held, "position"))) return "该装备没有穿戴";
                     int free = FreeSlot(cid, 1, c.equipslots); if (free == 0) return "装备栏已满";
                     held["position"] = (long)free;
                 }

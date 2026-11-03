@@ -1234,7 +1234,10 @@ static class BotChecks
         var cache = new EquipMetadataCache(catalog, data);
         var output = new BotOutput();
         var custom = new BotCustomization(catalog, output);
-        check(catalog.ItemCount == 25324 && catalog.Name(1302000) != null, "原始IMG物品目录包含25324条属性及武器名称");
+        // 条数随迁入内容增长（282 机器人/心臟 +334 条），断言只锁「不少于基线」，
+        // 否则每加一批资源都要改一次这里。
+        check(catalog.ItemCount >= 25324 && catalog.Name(1302000) != null,
+            "原始IMG物品目录含装备属性与武器名称（" + catalog.ItemCount + " 条）");
         var sword = catalog.CleanEquip(1302000);
         check(sword.watk == BotItemCatalog.Int(catalog.Info(1302000), "incPAD") && sword.quantity == 1 && sword.isEquip,
             "假人干净装备使用源端IMG攻击属性与装备数量");
@@ -1341,6 +1344,31 @@ static class BotChecks
         BotTasks.ScheduleFixedRate(() => { runs++; throw new InvalidOperationException(); }, 0, 10);
         BotTasks.Drive(50); BotTasks.Drive(100);
         check(runs == 1, "独立重复任务抛异常后取消重复执行");
+        BotTasks.Stop();
+        BotTasks.Drive(100); // warm reusable snapshot and cached predicates
+        bool perfEnabled = BotPerf.Enabled; BotPerf.Enabled = false;
+        long allocated = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++) { BotTasks.Drive(100); _ = BotTasks.PendingCount; }
+        allocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
+        BotPerf.Enabled = perfEnabled;
+        check(allocated == 0, "空调度与PendingCount连续1000帧零分配（" + allocated + " bytes）");
+        var savedSink = BotPerf.Sink;
+        BotPerf.Clear(); BotPerf.Enabled = false;
+        var disabledScope = BotPerf.Timer("disabled-at-entry");
+        BotPerf.Enabled = true;
+        disabledScope.Dispose();
+        int phantomSamples = 0;
+        BotPerf.Sink = _ => phantomSamples++;
+        BotPerf.Flush();
+        BotPerf.Sink = savedSink; BotPerf.Enabled = perfEnabled;
+        check(phantomSamples == 0, "运行中开启计时不将系统开机时长计作单帧耗时");
+        int fixedRuns = 0;
+        BotScheduler.Clock = 100;
+        var repeating = BotTasks.ScheduleFixedRate(() => fixedRuns++, 0, 10);
+        BotTasks.Drive(130); BotTasks.Drive(130);
+        check(fixedRuns == 2, "固定频率保留按原截止时间逐驱动追赶语义");
+        repeating.Cancel(); BotTasks.Drive(130);
+        check(fixedRuns == 2 && BotTasks.PendingCount == 0, "取消任务不再执行并清理");
         var points = PlatformParser.ReadCoordinates("0,-10,0\n1,10,51\nbad,row\n2,10,51");
         var platform = PlatformParser.OrganizePlatform(points);
         check(platform.IsSloped && platform.sortedPoints.Count == 2 && platform.GetYAtX(0) == 25,

@@ -246,6 +246,7 @@ public sealed class BotField : MonoBehaviour
 
     void Update()
     {
+        using var framePerf = Server.Bot.BotPerf.Timer("BotField.Update");
         // 进图补建窗口内继续用进图预算（否则超过预算的假人会「每帧冒一个」）；窗口过后退回增量。
         if (Time.unscaledTime < catchUpUntil) CreateQueued(int.MaxValue, MapEnterBudgetMs);
         else CreateQueued(MaxCreatePerFrame);
@@ -592,6 +593,9 @@ public sealed class BotField : MonoBehaviour
 
     void OnGUI()
     {
+        // All hit tests below use Pointer on Repaint; balloons have no GUILayout/control state.
+        if (Event.current.type != EventType.Repaint) return;
+        using var guiPerf = Server.Bot.BotPerf.Timer("BotField.Repaint");
         if (ShopWindow.Visible) return;
         if (!synchronized && balloons.Count == 0) return;
         if (Event.current.type == EventType.Repaint && Pointer.DoubleClicked && !Pointer.Blocked && !GameWindows.AnyVisible)

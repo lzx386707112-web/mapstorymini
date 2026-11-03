@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Wz/WzResourcePatchInstaller.cs" Link="WzResourcePatchInstaller.cs" />
     <Compile Include="../../Assets/Scripts/Wz/WzResourceInstaller.cs" Link="WzResourceInstaller.cs" />
     <Compile Include="../../Assets/Scripts/Stage/MiniJson.cs" Link="MiniJson.cs" />
   </ItemGroup>

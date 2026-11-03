@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MapleDash.ScriptHarness")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c307cd909bce0e180b0f5a48a077b2ef139be794")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+aaf0b9d060e75a94b59fc674a1e06ac06246d67f")]
 [assembly: System.Reflection.AssemblyProductAttribute("MapleDash.ScriptHarness")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MapleDash.ScriptHarness")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

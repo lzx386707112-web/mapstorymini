@@ -134,7 +134,7 @@ public sealed class NativeNpcShopService
                 var row = db.Table("shops").Find(x => DbStore.Int(x, "shopid") == current);
                 result.opened = true; result.shopId = current; result.npcId = DbStore.Int(row, "npcid");
                 result.mapId = sessionMaps[r.characterId]; result.items = Stock(current);
-                foreach (var item in result.character.inventory) if (item.position > 0)
+                foreach (var item in result.character.inventory) if (InventoryDao.IsBagPosition(item.position))
                     result.sellPrices[item.inventoryType * 1000 + item.position] = SellPrice(item.itemId, TradeItemRules.Rechargeable(item.itemId) ? item.quantity : 1);
             }
             return result;
@@ -174,7 +174,7 @@ public sealed class NativeNpcShopService
             }
             return null;
         }
-        var heldItem = inv.Find(i => i.inventoryType == r.inventoryType && i.position == r.position && i.position > 0);
+        var heldItem = inv.Find(i => i.inventoryType == r.inventoryType && i.position == r.position && InventoryDao.IsBagPosition(i.position));
         if (heldItem == null) return "该背包槽位没有道具";
         if (r.operation == NpcShopOperation.Recharge)
         {

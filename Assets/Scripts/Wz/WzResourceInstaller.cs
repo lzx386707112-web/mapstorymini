@@ -90,7 +90,7 @@ public static class WzResourceInstaller
         {
             try
             {
-                foreach (string prefix in new[] { "Installing.cleanup-", "PreviousData.cleanup-" })
+                foreach (string prefix in new[] { "Installing.cleanup-", "PreviousData.cleanup-", "ResourcePatchTransaction.cleanup-" })
                     foreach (string path in Directory.GetDirectories(root, prefix + "*"))
                     {
                         try { Directory.Delete(path, true); }
@@ -111,12 +111,108 @@ public static class WzResourceInstaller
         catch (UnauthorizedAccessException) { }
     }
 
+    // 用户选择直接解压模式：不匹配 APK 清单，不计算资源哈希。
+    public static string ExtractFull(string zipPath, string root, Action<int, int> progress = null)
+    {
+        string data = Path.Combine(root, "Data");
+        Directory.CreateDirectory(data);
+        string prefix = Path.GetFullPath(data) + Path.DirectorySeparatorChar;
+        string manifest = null;
+        using (var zip = ZipFile.OpenRead(zipPath))
+        {
+            if (zip.GetEntry("resource-patch.json") != null)
+                throw new InvalidDataException("这里需要全量资源 ZIP，不能使用增量补丁");
+            int count = 0;
+            foreach (var entry in zip.Entries)
+            {
+                if (!entry.FullName.StartsWith("Data/", StringComparison.Ordinal) || entry.FullName.EndsWith("/", StringComparison.Ordinal)) continue;
+                string target = Path.GetFullPath(Path.Combine(data, entry.FullName.Substring(5)));
+                if (!target.StartsWith(prefix, StringComparison.Ordinal)) throw new InvalidDataException("资源路径无效");
+                Directory.CreateDirectory(Path.GetDirectoryName(target));
+                using (var input = entry.Open())
+                using (var output = File.Create(target)) input.CopyTo(output, 128 * 1024);
+                progress?.Invoke(++count, zip.Entries.Count);
+            }
+            var index = zip.GetEntry("resource-manifest.json");
+            if (index != null)
+            {
+                using (var reader = new StreamReader(index.Open(), Encoding.UTF8)) manifest = reader.ReadToEnd();
+                File.WriteAllText(Path.Combine(data, ".resource-manifest.json"), manifest);
+            }
+        }
+        DeleteInstalledArchive(zipPath);
+        return manifest;
+    }
+
+    public static string ReadArchiveManifest(string zipPath)
+    {
+        using (var zip = ZipFile.OpenRead(zipPath))
+        {
+            var entry = zip.GetEntry("resource-manifest.json");
+            if (entry == null || entry.Length > 64 * 1024 * 1024)
+                throw new InvalidDataException("资源包缺少有效清单");
+            using (var reader = new StreamReader(entry.Open(), Encoding.UTF8))
+            {
+                string text = reader.ReadToEnd();
+                var index = (Dictionary<string, object>)MiniJson.Parse(text);
+                if (!(index["files"] is List<object> files) || files.Count == 0)
+                    throw new InvalidDataException("资源清单没有文件");
+                return text;
+            }
+        }
+    }
+
+    // 仅信任和安装回执匹配的历史清单；回执无效时仍逐文件完整校验。
+    static Dictionary<string, string> VerifiedFiles(string root, string fallbackManifest)
+    {
+        if (fallbackManifest == null) return null;
+        try
+        {
+            string installed = Path.Combine(root, "Data/.resource-manifest.json");
+            string text = File.Exists(installed) ? File.ReadAllText(installed) : fallbackManifest;
+            string receipt = File.ReadAllText(Path.Combine(root, "NativeAssetIndex.sha256")).Trim();
+            if (receipt != Hash(Encoding.UTF8.GetBytes(text))) return null;
+            var index = (Dictionary<string, object>)MiniJson.Parse(text);
+            var result = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (Dictionary<string, object> file in (List<object>)index["files"])
+                result.Add((string)file["path"], (string)file["sha256"]);
+            return result;
+        }
+        catch (IOException) { return null; }
+        catch (UnauthorizedAccessException) { return null; }
+        catch (ArgumentException) { return null; }
+        catch (InvalidCastException) { return null; }
+        catch (KeyNotFoundException) { return null; }
+    }
+
     public static void Install(string zipPath, string root, string expectedManifest, Action<int, int> progress,
-        Action<string> phase = null)
+        Action<string> phase = null, string resourceVersionJson = null,
+        string verifiedBaseManifest = null)
     {
         string staging = Path.Combine(root, "Installing"), data = Path.Combine(root, "Data");
         string old = Path.Combine(root, "PreviousData"), receipt = Path.Combine(root, "NativeAssetIndex.sha256");
         Directory.CreateDirectory(root);
+        WzResourcePatchInstaller.Recover(root);
+        if (verifiedBaseManifest != null)
+        {
+            using (var archive = ZipFile.OpenRead(zipPath))
+            {
+                if (archive.GetEntry("resource-patch.json") != null)
+                {
+                    WzResourcePatchInstaller.Install(zipPath, root, expectedManifest, verifiedBaseManifest,
+                        resourceVersionJson, progress, phase);
+                    return;
+                }
+            }
+            phase?.Invoke("正在解压资源");
+            string extracted = ExtractFull(zipPath, root, progress);
+            if (resourceVersionJson != null)
+                File.WriteAllText(Path.Combine(data, ".resUpdate.json"), resourceVersionJson);
+            // 仅保存清单摘要供旧代码读取，不做内容校验。
+            if (extracted != null)
+                File.WriteAllText(receipt, Hash(Encoding.UTF8.GetBytes(extracted)) + "\n");
+            return;
+        }
         // Recover an interrupted directory promotion before starting another install.
         if (!Directory.Exists(data) && Directory.Exists(old)) Directory.Move(old, data);
         phase?.Invoke("正在准备资源安装");
@@ -135,6 +231,7 @@ public static class WzResourceInstaller
                 bool patch = zip.GetEntry("resource-patch.json") != null;
                 var index = (Dictionary<string, object>)MiniJson.Parse(text);
                 var files = (List<object>)index["files"];
+                var verified = patch ? VerifiedFiles(root, verifiedBaseManifest) : null;
                 int count = 0;
                 var buffer = new byte[128 * 1024];
                 phase?.Invoke(patch ? "正在应用资源补丁并校验" : "首次安装：解压并校验资源");
@@ -148,7 +245,16 @@ public static class WzResourceInstaller
                     var entry = zip.GetEntry("Data/" + relative);
                     if (entry == null && !patch) throw new InvalidDataException("资源包缺少文件: " + relative);
                     Directory.CreateDirectory(Path.GetDirectoryName(target));
-                    // Unchanged patch files come from installed Data; every file is still hashed.
+                    // 在线补丁可复用已确认的旧文件；新增/修改文件始终计算 SHA-256。
+                    if (entry == null && verified != null &&
+                        verified.TryGetValue(relative, out string previousHash) && previousHash == (string)file["sha256"])
+                    {
+                        phase?.Invoke("正在复制未变化资源（无需重复校验）");
+                        File.Copy(Path.Combine(data, relative), target);
+                        progress?.Invoke(++count, files.Count);
+                        continue;
+                    }
+                    phase?.Invoke(verified != null ? "正在安装并校验新增/修改资源" : "正在安装并完整校验资源");
                     using (var input = entry != null ? entry.Open() : File.OpenRead(Path.Combine(data, relative)))
                     using (var output = File.Create(target))
                     using (var sha = SHA256.Create())
@@ -166,6 +272,10 @@ public static class WzResourceInstaller
                     progress?.Invoke(++count, files.Count);
                 }
             }
+            // 清单与版本回执随 Data 一起切换，进程中断不会出现新版本配旧资源。
+            File.WriteAllText(Path.Combine(staging, ".resource-manifest.json"), expectedManifest);
+            if (resourceVersionJson != null)
+                File.WriteAllText(Path.Combine(staging, ".resUpdate.json"), resourceVersionJson);
             phase?.Invoke("正在完成资源安装");
             RetireDirectory(old);
             if (Directory.Exists(data)) Directory.Move(data, old);

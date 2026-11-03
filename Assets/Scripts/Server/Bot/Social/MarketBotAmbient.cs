@@ -130,9 +130,23 @@ namespace Server.Bot.Social
             life.phase = Phase.Climb; life.until = BotScheduler.Now() + 16000; int mapId = actor.mapId;
             bot.marketDirector.RunPathfind(() =>
             {
-                if (!ReferenceEquals(BotStore.GetBotById(actor.id), bot) || !bot.running || actor.mapId != mapId) return;
-                BotMovementService.Enable(actor); BotMovementService.Move(actor, dest.x, dest.y, () => Rest(life, 1800, 4500));
+                BeginClimb(bot, life, actor, mapId, dest);
             });
+        }
+
+        void BeginClimb(BotStateMachine bot, Life life, BotCharacter actor, int mapId, BotPoint dest)
+        {
+            if (!ReferenceEquals(BotStore.GetBotById(actor.id), bot) || !bot.running || actor.mapId != mapId ||
+                life.phase != Phase.Climb || actor.trade != null) return;
+            // Enable builds the navigation graph synchronously on a cache miss. Prepare
+            // both profiles on the existing worker path before entering it (as PQ bots do).
+            if (!BotMovementService.PrepareNavigation(actor))
+            {
+                BotTasks.Schedule(() => BeginClimb(bot, life, actor, mapId, dest), 100);
+                return;
+            }
+            BotMovementService.Enable(actor);
+            BotMovementService.Move(actor, dest.x, dest.y, () => Rest(life, 1800, 4500));
         }
     }
 }

@@ -461,6 +461,8 @@ public static class GameSession
         var d=Profile.Data;
         // 共享 Profile 只是当前角色的镜像，切角时必须清掉上一人的装备。
         foreach (int slot in EquipSlot.Worn) d.SetEquipSlot(slot, 0);
+        // 机器人换装槽（1200..1213）不在 EquipSlot.Worn 里，得单独清，否则换角色会继承上一只机器人的时装。
+        foreach (int slot in NativeAndroidService.ApSlots) d.SetEquipSlot(slot, 0);
         d.owned.Clear();
 
         // 背包（ETC/USE 等非装备物品同步到现有 itemIds/itemCounts）
@@ -478,10 +480,10 @@ public static class GameSession
         {
             // 装备：EQUIPPED 行（源端 inventoryitems 的 position 为 -1/-5/-6/-7/-8/-9/-10/-11）。
             // 以当前角色的数据库装备为准。
-            if (it.inventoryType == InventoryDao.Equipped && it.position < 0)
+            if (it.inventoryType == InventoryDao.Equipped && (it.position < 0 || NativeAndroidService.IsApSlot(it.position)))
             {
                 int pos = it.position;
-                if (pos == -11 || IsEquipSlot(pos)) d.SetEquipSlot(pos, it.itemId);
+                if (pos == -11 || IsEquipSlot(pos) || NativeAndroidService.IsApSlot(pos)) d.SetEquipSlot(pos, it.itemId);
                 if (pos == -11) d.owned.Add(it.itemId.ToString());
                 continue;
             }

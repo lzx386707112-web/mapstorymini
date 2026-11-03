@@ -38,10 +38,10 @@ public class SpriteAnim : MonoBehaviour
     // 表情到点回默认脸（服务端 FaceExpressionHandler 注释：5 秒超时）。
     public const float EmoteDuration = 5f;
 
-    public bool Express(int emote)
+    public bool Express(int emote, bool checkCooldown = true)
     {
         if (kind != "chars" || emote < 1 || emote > MaxEmote) return false;
-        if (Time.unscaledTime - lastExpression < EmoteCooldown) return false;
+        if (checkCooldown && Time.unscaledTime - lastExpression < EmoteCooldown) return false;
         expression = EmoteNames[emote];
         expressionDuration = EmoteDuration;
         expressionStarted = lastExpression = Time.unscaledTime;

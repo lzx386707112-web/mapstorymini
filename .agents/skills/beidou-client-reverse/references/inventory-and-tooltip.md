@@ -318,3 +318,10 @@ InventoryWindow金币由未分组11px中线对齐改为InvariantCulture N0、12p
 - `GameWindows.InvenWindow.Organize` 接真实请求，回包整份背包覆盖内存并投影 Profile；`ApplyInventoryToProfile` 改为按 `(inventoryType, position)` 排序投影，否则服务端改 position 后界面看不出变化。
 - 回归 `tools/server-check/InventoryOrganizeChecks.cs`（14 项：主键 itemId、副键数量、装备按 level、合并/超上限留余量/紧排、装备栏不合并、开关关闭、页号越界）→ `dotnet run --project tools/server-check` = **759 通过 / 0 失败**；`tools/unity-compile-check` 0 warning / 0 error。
 - 边界：`Profile.itemIds` 是 id→数量的扁平结构，同 id 多格在界面上本来就会并成一格总数，所以「合并」在 UI 上的可见度有限，服务端数据层的槽位与数量是准的；未做 Android 实机验收。
+
+
+### 2026-11-03 机器人装备描述纠正
+
+“装备通常无desc”不能实现成无条件跳过装备。相同BeiDou身份，装备入口`8E8E81`也调用`5CF69E`读取描述；非空`8E9720..8E975B`用字体7，x10、右界221，`8F4535 ->8E40E4`测量后追加窗口高度；`8E9EC1..8E9F11`在属性后绘制。复现用`inspect_beidou_client.py --fn 0x8e8252`及`--fn 0x8f4535`。
+
+当前282 BMS String/Eqp.img的`Eqp/Android/1662000`有原始desc，1672000只有name无desc。运行时166/167子目录应是Android，移植未复制String整文件，须用Items.json导出的原文回退；完整证据及边界见根目录`docs/tms282-skill/12-android-regression.md`本次反馈节。已接装备描述读取/测量/绘制，未虚构心脏文案；尚无本轮手机视觉验收。

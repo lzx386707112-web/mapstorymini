@@ -17,7 +17,9 @@ public static class NativeItemUseEffects
     }
     public static void Scroll(int id,InventoryEntry target)
     {
-        bool excluded=id==2040727 || id==2041058 || id>=2049000 && id<=2049003;
+        // 心脏卷（2616/2643 段）不在 204 段，也不吃祝福卷：源端 applyScroll 对它们只走
+        // 普通成功/失败分支，祝福卷只在 204 卷失败时保护 tuc。
+        bool excluded=id==2040727 || id==2041058 || id>=2049000 && id<=2049003 || NativeScrollService.IsHeartScroll(id);
         if(!excluded && Profile.ItemCount(2340000)>0)
         {
             NativeUtilPrompt.Confirm("你想使用祝福卷轴吗？",white=>ApplyScroll(id,target,white));
@@ -32,10 +34,24 @@ public static class NativeItemUseEffects
         if(node!=null) foreach(var item in node.Children) req.Add(Convert.ToInt32(item.Value));
         var result=GameSession.Net.UpdateEquip(new EquipPatchRequest {
             characterId=GameSession.CharacterId,inventoryItemId=target.itemRowId,scrollId=id,scrollRequirements=req.ToArray(),whiteScroll=white });
-        if(!result.ok) { BottomBar.Toast(result.error); return; }
+        // 砸卷被拒（次数不足/种类不符/适用范围不符…）必须弹窗，Toast 一闪而过看不见。
+        if(!result.ok) { NativeUtilPrompt.Notice(result.error); return; }
         GameSession.Character.inventory=result.inventory; GameSession.ApplyInventoryToProfile();
         GameLoop.I?.player?.RefreshBuffAttributes(); Profile.Save();
+        PlayScrollEffect(result.scrollResult);
         BottomBar.Toast(result.scrollResult=="success" ? "卷轴使用成功。" : result.scrollResult=="curse" ? "卷轴失败，装备已被摧毁。" : "卷轴使用失败。");
+    }
+    // 源端 SHOW_SCROLL_EFFECT → CUserLocal::ShowScrollEffect：成功与失败都播
+    // Effect/BasicEff.img/Enchant/{Success|Failure}，诅咒（装备被毁）沿用 Failure，
+    // 音效取 Sound/Game.img/Enchant{Success|Failure}。特效挂在角色脚下，跟着角色走，
+    // 所以父节点用 player.transform 而不是地图。
+    static void PlayScrollEffect(string result)
+    {
+        var player=GameLoop.I?.player;
+        if(player==null) return;
+        string frame=result=="success" ? "Success" : "Failure";
+        NativeImgAnimation.Spawn("Effect/BasicEff.img/Enchant/"+frame,player.transform,player.FeetPos,player.SortingOrder+1);
+        AudioManager.Play("Game/Enchant"+frame,1f,false);
     }
     public static string RewardBox(int id)
     {

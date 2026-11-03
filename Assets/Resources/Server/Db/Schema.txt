@@ -206,7 +206,10 @@ CREATE TABLE inventoryitems
     petid           INTEGER NOT NULL DEFAULT -1,
     flag            INTEGER NOT NULL DEFAULT 0,
     expiration      INTEGER NOT NULL DEFAULT -1,
-    giftFrom        TEXT    NOT NULL DEFAULT ''
+    giftFrom        TEXT    NOT NULL DEFAULT '',
+    -- 本项目扩展（源端无此列）：仓库行（characterid=-3）按账号隔离的标记，见 NativeStorageService。
+    -- 必须声明在 Schema 里：DbStore 只持久化/读取已声明的列，漏声明会导致仓库物品重启后"消失"。
+    storageaccountid INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE inventoryequipment

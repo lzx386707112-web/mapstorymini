@@ -130,6 +130,9 @@ public static class WzCharacter
             case 0: return "Body"; case 1: return "Head"; case 2: case 5: return "Face";
             case 3: case 4: case 6: return "Hair"; case 104: return "Coat";
             case 100: return "Cap"; case 105: return "Longcoat";
+            // 101/102/103 是脸饰/眼饰/耳饰，都收在 Character/Accessory 下。
+            // 机器人模板的 basic/accessory 就落这一段（如 1032086），不认这段整只机器人不显示。
+            case 101: case 102: case 103: return "Accessory";
             case 108: return "Glove"; case 109: return "Shield"; case 110: return "Cape";
             case 106: return "Pants"; case 107: return "Shoes";
             default:
@@ -689,17 +692,24 @@ public static class WzCharacter
         string action = walk ? "walk" : "stand";
         string cacheKey = "appearance://" + key + "/" + action + "/" + frame;
         if (cache.TryGetValue(cacheKey, out var sprite)) return sprite;
-        Dictionary<string, object> recipe;
-        if (!appearanceRecipes.TryGetValue(key, out recipe))
-        {
-            var list = new List<object>(ids.Length);
-            foreach (string id in ids) list.Add(id);
-            recipe = new Dictionary<string, object> { { "ids", list }, { "attack", "swingO1" } };
-            appearanceRecipes.Add(key, recipe);
-        }
+        Register(key, ids);
+        var recipe = appearanceRecipes[key];
         string pose = Pose(recipe, action);
         if (pose == null) return null;
         return Compose(cacheKey, recipe, pose, frame);
+    }
+
+    /// <summary>
+    /// 把一组 8 位 id 注册成合成配方，让 Art.GetClip / SpriteAnim（kind="chars"）能按 key 播动作。
+    /// 机器人实体走这条：它不进职业配方表，也不吃 EquippedWeaponId 的武器替换。
+    /// </summary>
+    public static void Register(string key, string[] ids)
+    {
+        if (string.IsNullOrEmpty(key) || ids == null || ids.Length == 0) return;
+        if (appearanceRecipes.ContainsKey(key)) return;
+        var list = new List<object>(ids.Length);
+        foreach (string id in ids) list.Add(id);
+        appearanceRecipes.Add(key, new Dictionary<string, object> { { "ids", list }, { "attack", "swingO1" } });
     }
 
     static Sprite Compose(string uri, Dictionary<string, object> recipe, string pose, int frame)

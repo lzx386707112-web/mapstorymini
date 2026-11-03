@@ -206,7 +206,10 @@ CREATE TABLE inventoryitems
     petid           INTEGER NOT NULL DEFAULT -1,
     flag            INTEGER NOT NULL DEFAULT 0,
     expiration      INTEGER NOT NULL DEFAULT -1,
-    giftFrom        TEXT    NOT NULL DEFAULT ''
+    giftFrom        TEXT    NOT NULL DEFAULT '',
+    -- 本项目扩展（源端无此列）：仓库行（characterid=-3）按账号隔离的标记，见 NativeStorageService。
+    -- 必须声明在 Schema 里：DbStore 只持久化/读取已声明的列，漏声明会导致仓库物品重启后"消失"。
+    storageaccountid INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE inventoryequipment
@@ -575,6 +578,83 @@ CREATE TABLE reports
     reason      INTEGER NOT NULL DEFAULT 0,
     chatlog     TEXT    NOT NULL DEFAULT '',
     description TEXT    NOT NULL DEFAULT ''
+);
+
+-- V2.1.69（源端）：Link 系统（LinkSystemService；同账号同世界、比当前角色更早创建
+-- 的角色可 Link，达 Lv.150 生效）。复合主键 (target_cid, source_cid) 在服务层判重
+-- （DbStore 只支持列级 PRIMARY KEY，源端 INSERT IGNORE 的语义由 AddLink 先查重实现）。
+CREATE TABLE character_link
+(
+    target_cid INTEGER NOT NULL,
+    source_cid INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- V2.1.56（源端）：师徒系统（MentorshipService）。status：0 进行 / 1 出师 / 2 解除。
+-- 源端 mentorship_wallet 以 characterid 为主键；event_log / reward_log 是幂等记账。
+CREATE TABLE mentorship_relation
+(
+    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+    master_cid             INTEGER NOT NULL,
+    master_accountid       INTEGER NOT NULL,
+    master_name            TEXT    NOT NULL,
+    apprentice_cid         INTEGER NOT NULL,
+    apprentice_accountid   INTEGER NOT NULL,
+    apprentice_name        TEXT    NOT NULL,
+    guildid                INTEGER NOT NULL DEFAULT 0,
+    status                 INTEGER NOT NULL DEFAULT 0,
+    start_master_power     INTEGER NOT NULL DEFAULT 0,
+    start_apprentice_power INTEGER NOT NULL DEFAULT 0,
+    last_master_power      INTEGER NOT NULL DEFAULT 0,
+    last_apprentice_power  INTEGER NOT NULL DEFAULT 0,
+    reward_step            INTEGER NOT NULL DEFAULT 0,
+    total_points           INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_wallet
+(
+    characterid     INTEGER NOT NULL,
+    apprentice_coin INTEGER NOT NULL DEFAULT 0,
+    virtue_coin     INTEGER NOT NULL DEFAULT 0,
+    total_points    INTEGER NOT NULL DEFAULT 0,
+    weekly_points   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_weekly_pool
+(
+    relationid       INTEGER NOT NULL,
+    week_key         TEXT    NOT NULL,
+    points           INTEGER NOT NULL DEFAULT 0,
+    claim_master     INTEGER NOT NULL DEFAULT 0,
+    claim_apprentice INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_duel
+(
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    relation_a      INTEGER NOT NULL,
+    relation_b      INTEGER NOT NULL DEFAULT 0,
+    stake           INTEGER NOT NULL DEFAULT 0,
+    points_a        INTEGER NOT NULL DEFAULT 0,
+    points_b        INTEGER NOT NULL DEFAULT 0,
+    status          INTEGER NOT NULL DEFAULT 0,
+    winner_relation INTEGER NOT NULL DEFAULT 0,
+    created_at      INTEGER NOT NULL DEFAULT 0,
+    ends_at         INTEGER NOT NULL DEFAULT 0,
+    finished_at     INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_event_log
+(
+    event_key  TEXT    NOT NULL,
+    relationid INTEGER NOT NULL,
+    points     INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_reward_log
+(
+    relationid INTEGER NOT NULL,
+    reward_key TEXT    NOT NULL
 );
 
 -- 假人档案：对齐联机的「账号表」。

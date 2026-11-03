@@ -46,7 +46,7 @@ public static class NativeCashEquipmentService
         else if(cash/10000==557)
         {
             var eq=InventoryDao.EquipmentOf(db,request.inventoryItemId);
-            if(id/1000000!=1 || position<=0 || eq==null || DbStore.Int(eq,"vicious")>=2) return Reject("请选择背包中金锤次数不足两次的装备");
+            if(id/1000000!=1 || !InventoryDao.IsBagPosition(position) || eq==null || DbStore.Int(eq,"vicious")>=2) return Reject("请选择背包中金锤次数不足两次的装备");
             if(!NativeScrollService.HasStats(CharService.ToInventoryEntry(db,item)))
             {
                 var clean=BotItemCatalog.Shared.CleanEquip(id);

@@ -582,6 +582,7 @@ public sealed class FieldDirector : MonoBehaviour
 
     void Update()
     {
+        using var framePerf = Server.Bot.BotPerf.Timer("Field.Update");
         // 假人系统的分帧预算以这一句为起点：之后（TickBots / BotField.Update）花在假人上的
         // 时间都算进同一份预算，超了就把剩下的活留到下一帧。
         Server.Bot.BotWorkPump.BeginFrame();
@@ -605,6 +606,8 @@ public sealed class FieldDirector : MonoBehaviour
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
         (GetComponent<NativePetField>() ?? gameObject.AddComponent<NativePetField>()).Tick(player,dt);
+        // 机器人（TMS 282 Android）：全场一个实体，位置跟主人脚点
+        (GetComponent<NativeAndroid>() ?? gameObject.AddComponent<NativeAndroid>()).Tick(player,dt);
 
         portalLock = Mathf.Max(0f, portalLock - dt);
         CheckPortals(player, dt);

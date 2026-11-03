@@ -76,7 +76,7 @@ namespace Server.Bot.Trade
             int maxStack = SlotMax(id, actor);
             if (maxStack <= 0 && quantity > 0) return false;
             // listById的源端槽位顺序。
-            var existing = inventory.FindAll(i => i.inventoryType == type && i.itemId == id && i.position > 0);
+            var existing = inventory.FindAll(i => i.inventoryType == type && i.itemId == id && InventoryDao.IsBagPosition(i.position));
             existing.Sort((a, b) => a.position.CompareTo(b.position));
             foreach (var item in existing)
             {

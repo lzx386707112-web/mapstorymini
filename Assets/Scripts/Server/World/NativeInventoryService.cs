@@ -109,6 +109,16 @@ public static class NativeInventoryService {
             }
             if (slot == -12 && (r.equipSlot == -12 || r.equipSlot == -13 || r.equipSlot == -15 || r.equipSlot == -16) ||
                 slot == -112 && (r.equipSlot == -112 || r.equipSlot == -113 || r.equipSlot == -115 || r.equipSlot == -116)) slot = r.equipSlot;
+            // 机器人换装槽（TMS 282 BodyPart.APHat..APRing4 = 1200..1213）：一个部件一格，
+            // 收的品类由 ApAccepts 决定（帽只进 APHat、武器只进 APWeapon，戒指四格互通）。
+            // 穿了/脱了都允许按格子走：脱下时 r.quantity==0，这里判过 ApAccepts 后 slot 就等于
+            // r.equipSlot，下面按格子找源行的分支自然成立。
+            if (NativeAndroidService.IsApSlot(r.equipSlot))
+            {
+                if (!NativeAndroidService.ApAccepts(r.equipSlot, slot))
+                    return new InventoryChangeResponse { ok = false, error = "这件装备不能放进机器人的这个换装槽" };
+                slot = r.equipSlot;
+            }
             if (slot == 0 || slot != r.equipSlot)
             {
                 // 源端 unequip（InventoryManipulator.move 的 src）由客户端指定格子，服务端不按道具
@@ -121,11 +131,17 @@ public static class NativeInventoryService {
                 slot = r.equipSlot;
             }
             var source = items.Find(x => DbStore.Int(x, "characterid") == r.characterId && DbStore.Int(x, "itemid") == r.itemId &&
-                (r.quantity == 0 ? DbStore.Int(x, "position") == slot : DbStore.Int(x, "position") > 0 && (r.sourcePosition == 0 || DbStore.Int(x, "position") == r.sourcePosition)));
+                (r.quantity == 0 ? DbStore.Int(x, "inventorytype") == InventoryDao.Equipped && DbStore.Int(x, "position") == slot
+                    : DbStore.Int(x, "inventorytype") == 1 && InventoryDao.IsBagPosition(DbStore.Int(x, "position")) && (r.sourcePosition == 0 || DbStore.Int(x, "position") == r.sourcePosition)));
             if (source == null) return new InventoryChangeResponse { ok = false, error = "没有持有这件装备" };
             int oldPos = DbStore.Int(source, "position");
             if (r.quantity == 0) {
-                int free = Free(db, c, 1);
+                // 原 InventoryManipulator.unequip(src,dst)：指定背包格必须为空，不互换。
+                int free = r.moveTo == 0 ? Free(db, c, 1) : r.moveTo;
+                if (r.moveTo != 0 && (free < 1 || free > c.equipslots || items.Find(x =>
+                    DbStore.Int(x,"characterid") == r.characterId && DbStore.Int(x,"inventorytype") == 1 &&
+                    DbStore.Int(x,"position") == free) != null))
+                    return new InventoryChangeResponse { ok = false, error = "请放到装备背包的空格" };
                 if (free == 0) return new InventoryChangeResponse { ok = false, error = "装备栏已满" };
                 source["position"] = (long)free; source["inventorytype"] = 1L;
             } else {
@@ -146,7 +162,7 @@ public static class NativeInventoryService {
             bool rechargeable=r.itemId/10000==207 || r.itemId/10000==233;
             bool arrow=r.itemId/1000==2060 || r.itemId/1000==2061;
             var source=items.Find(x=>DbStore.Int(x,"characterid")==r.characterId && DbStore.Int(x,"itemid")==r.itemId &&
-                DbStore.Int(x,"inventorytype")==2 && DbStore.Int(x,"position")==r.sourcePosition && r.sourcePosition>0);
+                DbStore.Int(x,"inventorytype")==2 && DbStore.Int(x,"position")==r.sourcePosition && InventoryDao.IsBagPosition(r.sourcePosition));
             if ((!rechargeable && !arrow) || source==null || r.quantity<short.MinValue || r.quantity>short.MaxValue)
                 return new InventoryChangeResponse { ok=false,error="弹药槽位或数量无效" };
             long remaining=Math.Max(0,(int)unchecked((short)(DbStore.Int(source,"quantity")+r.quantity)));
@@ -159,7 +175,7 @@ public static class NativeInventoryService {
         } else if (r.quantity < 0) {
             if (r.sourcePosition!=0) {
                 var source=items.Find(x=>DbStore.Int(x,"characterid")==r.characterId && DbStore.Int(x,"itemid")==r.itemId &&
-                    DbStore.Int(x,"inventorytype")==r.itemId/1000000 && DbStore.Int(x,"position")==r.sourcePosition && r.sourcePosition>0);
+                    DbStore.Int(x,"inventorytype")==r.itemId/1000000 && DbStore.Int(x,"position")==r.sourcePosition && InventoryDao.IsBagPosition(r.sourcePosition));
                 if (source==null || r.quantity==int.MinValue || DbStore.Int(source,"quantity") < -r.quantity)
                     return new InventoryChangeResponse { ok=false,error="指定槽位数量不足" };
                 int remaining=DbStore.Int(source,"quantity")+r.quantity;
@@ -197,7 +213,10 @@ public static class NativeInventoryService {
             int position=Free(db,c,type),quantity=Math.Min(remaining,max);
             if(position==0 || quantity<=0) throw new InvalidOperationException("Inventory capacity preflight mismatch");
             long id=InventoryDao.InsertItem(db,(int)c.id,itemId,type,position,quantity,pet ? petId : -1);
-            if(type==1) InventoryDao.InsertEquipment(db,id);
+            // 源端 Equip 实例自带 WZ 的 tuc（可升级次数）。本工程以前建行只写 0，
+            // 结果新到手的装备在提示框里没有「可升级次数」，砸卷时也像是「次数已用完」。
+            // 建的这一刻就按道具数据补种，之后砸卷/显示都以实例值为准。
+            if(type==1) InventoryDao.InsertEquipment(db,id,upgradeslots:Server.Bot.BotItemCatalog.Int(Server.Bot.BotItemCatalog.Shared.Info(itemId),"tuc"));
             items.Find(x=>DbStore.Long(x,"inventoryitemid")==id)["expiration"]=expiration;
             remaining-=quantity;
         }
@@ -212,7 +231,7 @@ public static class NativeInventoryService {
         {
             int remaining=r.removeCheckQuantity;
             foreach(var item in inventory)
-                if(item.position>0 && item.itemId==r.removeCheckItem)
+                if(InventoryDao.IsBagPosition(item.position) && item.itemId==r.removeCheckItem)
                 { int take=Math.Min(remaining,item.quantity); item.quantity-=take; remaining-=take; }
             inventory.RemoveAll(i=>i.quantity<=0);
         }
@@ -246,9 +265,17 @@ public static class NativeInventoryService {
             "Ma" => -5, "MaPn" => -5, "Pn" => -6, "So" => -7, "GlGw" => -8, "Gv" => -8,
             "Sr" => -9, "Si" => -10, "Wp" => -11, "WpSi" => -11, "WpSp" => -11,
             "Ri" => -12, "Pe" => -17, "Tm" => -18, "Sd" => -19, "Sh" => -20,
+            // An = 282 机器人本体（源端 islot 是 Tm，导入时按规则 11 归一化，见
+            // tools/export_solomapling_items.py ANDROID_SLOTS）。槽位 -32 是本次迁移
+            // 分配的空闲槽；-53 在本项目已是吊坠、-54 是心臟（Ht，与 282 槽 54 同义）。
+            "An" => -32,
             "Sw" => -51, "Po" => -53, "Ht" => -54, "Ba" => -55, "Em" => -56,
             "Me" => -49, "Be" => -50, _ => -Server.Bot.Decorator.BotCustomization.EquipSlotType(itemId)
         };
+        // 282 把机器人和心臟做成 cash=1 的商品（决定能否交易/出售），但它们的
+        // BodyPart 仍是装备位 53/54，不像现金装备那样进现金栏。减 100 会把机器人推到
+        // -132、心臟推到 -154（那是「宠物装备/戒指」段），装配与面板全错。
+        if (islot == "An" || islot == "Ht") return slot;
         return slot != 0 && Server.Bot.BotItemCatalog.Int(info, "cash") != 0 ? slot - 100 : slot;
     }
 
@@ -267,7 +294,7 @@ public static class NativeInventoryService {
 
         InventoryEntry source = null;
         foreach (var entry in full.inventory)
-            if (entry.itemId == r.itemId && entry.position > 0 &&
+            if (entry.itemId == r.itemId && InventoryDao.IsBagPosition(entry.position) &&
                 (r.sourcePosition == 0 || entry.position == r.sourcePosition)) { source = entry; break; }
         if (source == null) return new InventoryChangeResponse { ok = false, error = "背包里没有这件物品" };
 

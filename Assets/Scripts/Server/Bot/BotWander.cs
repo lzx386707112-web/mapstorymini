@@ -108,6 +108,7 @@ namespace Server.Bot
         // 只遍历游荡中的假人，并且顺手清理已下线/已停止的条目（swap-remove，O(1)）。
         public static void AdvanceAll(long nowMs)
         {
+            using var perf = BotPerf.Timer("BotWander.AdvanceAll");
             for (int i = active.Count - 1; i >= 0; i--)
             {
                 var bot = active[i];

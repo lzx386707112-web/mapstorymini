@@ -7,6 +7,13 @@ public static class NativeInventoryActions
     static int carriedItem,carriedPosition,carriedType;
     static bool swallowDrop,carriedFromInventory;
     public static bool Carrying => carriedItem != 0;
+    public static void CancelCarry() => carriedItem = 0;
+    public static void PickEquipped(int id, int slot)
+    {
+        if (Carrying || slot >= 0 || slot == EquipSlot.Weapon || Profile.EquipOfSlot(slot) != id) return;
+        SkillWindow.CancelSkillDrag();
+        carriedItem = id; carriedPosition = slot; carriedType = 1; carriedFromInventory = false;
+    }
     public static void Pick(int id,int inventoryPosition=0) => Pick(id,inventoryPosition,false);
     public static void PickFromInventory(int id,int inventoryPosition=0) => Pick(id,inventoryPosition,true);
     static void Pick(int id,int inventoryPosition,bool fromInventory)
@@ -26,6 +33,8 @@ public static class NativeInventoryActions
         // 放下时 0x4F3057 要求「目标窗口页签 == 载荷页签」才发 ITEM_MOVE，跨页落格直接拒绝。
         // 这里同口径：类型取道具 id 首位（1..5），等价于「页签 + 1」。
         carriedType = fromInventory ? id / 1000000 : 0;
+        if (fromInventory && carriedType == 1 && NativeAndroidWindow.Visible)
+            Debug.Log("[Android/Drag] pick item=" + id + " source=" + inventoryPosition);
     }
     public static void CarryStep()
     {
@@ -37,6 +46,8 @@ public static class NativeInventoryActions
         {
             if (Pointer.Released)
             {
+                if (Carrying && carriedFromInventory && carriedType == 1 && NativeAndroidWindow.Visible)
+                    Debug.Log("[Android/Drag] release swallowed item=" + carriedItem + " pointer=" + Pointer.Pos);
                 // 源端双击是独立消息 0x203（背包窗 vtable idx22 = 0x81D8AD，命中格 → 使用/穿戴），
                 // 第二击不进「放回原格」的丢弃路径；这里的 ConsumeClick 会把 DoubleClicked 一起清掉，
                 // 背包双击使用/穿戴因此永远无反应。DoubleClicked 必须留给 InvenWindow 的双击处理。
@@ -46,8 +57,39 @@ public static class NativeInventoryActions
             return;
         }
         if (!Carrying) return;
+        if (carriedFromInventory && carriedType == 1 && NativeAndroidWindow.Visible &&
+            (Pointer.Pressed || Pointer.Released))
+        {
+            bool hit = NativeAndroidWindow.SlotAt(Pointer.Pos, out int androidSlot);
+            Debug.Log("[Android/Drag] item=" + carriedItem + " source=" + carriedPosition +
+                " pressed=" + Pointer.Pressed + " released=" + Pointer.Released +
+                " dragEnded=" + Pointer.DragEnded + " pointer=" + Pointer.Pos +
+                " hit=" + hit + " target=" + androidSlot + " equipVisible=" + EquipWindow.Visible +
+                " npcBlocking=" + NpcSession.Blocking);
+        }
         if (Pointer.RightPressed || Input.GetKeyDown(KeyCode.Escape) || NpcSession.Blocking)
         { carriedItem = 0; return; }
+        // 装备窗 DragStart 的载荷保留实际穿着位（现金优先）；只有放到背包才请求卸下。
+        if (!carriedFromInventory && carriedType == 1 && carriedPosition < 0)
+        {
+            if (Profile.EquipOfSlot(carriedPosition) != carriedItem) { carriedItem = 0; return; }
+            if (Pointer.Pressed && EquipWindow.SlotAt(Pointer.Pos, out int cell) &&
+                EquipSlot.WornSlotOf(cell) == carriedPosition)
+            {
+                carriedItem = 0; swallowDrop = true;
+                Pointer.ConsumeClick(); Pointer.Pressed = false;
+                return;
+            }
+            if ((Pointer.Pressed || Pointer.Released && Pointer.DragEnded) && InvenWindow.Visible &&
+                InvenWindow.InventoryType == 1 && InvenWindow.SlotAt(Pointer.Pos, out int destination))
+            {
+                string error = EquipLoadout.UnequipToInventory(carriedPosition, destination);
+                if (error == null) { carriedItem = 0; swallowDrop = Pointer.Pressed; }
+                else BottomBar.Toast(error);
+                Pointer.ConsumeClick(); Pointer.Pressed = false;
+            }
+            return;
+        }
         // 松手丢弃：把物品拖出背包/窗口后直接抬手也丢到地上（源端只有点击-点击一种口径，
         // 这是按用户要求补的拖拽口径；落点必须仍是地面区，窗口/底栏/虚拟键上松手不丢）。
         if (!Pointer.Pressed)
@@ -95,9 +137,15 @@ public static class NativeInventoryActions
         carriedItem = 0;
         bool placed=EquipWindow.DropPetPotion(Pointer.Pos,id);
         if(!placed) placed=NativeVegaWindow.Drop(Pointer.Pos,id,carriedPosition);
-        if(!placed && (id/10000==204 || IsCashEquipment(id)))
+        if(!placed && (id/10000==204 || NativeScrollService.IsHeartScroll(id) || IsCashEquipment(id)))
         {
             var target=EquipWindow.EquipmentAt(Pointer.Pos) ?? InvenWindow.EquipmentAt(Pointer.Pos);
+            // 心臟穿在 -54，而装备窗底图没有这一格（282 把它放进机器人换装面板，见
+            // NativeAndroidWindow 头注释）。所以卷轴拖到那片面板的「心臟」格时，
+            // 目标是当前穿着的心臟；拖到機器人/AP 格不算（卷轴只对心臟有效）。
+            if(target==null && NativeAndroidWindow.Visible &&
+               NativeAndroidWindow.SlotAt(Pointer.Pos,out int androidCell) && androidCell==NativeAndroidService.HeartSlot)
+                target=GameSession.Character.inventory.Find(e=>e.inventoryType==1 && e.position==NativeAndroidService.HeartSlot);
             if(target!=null) { placed=true; if(IsCashEquipment(id)) NativeItemUseEffects.CashEquipment(id,target); else NativeItemUseEffects.Scroll(id,target); }
         }
         // 装备窗落格（点击口径）：先拿起、再点装备窗上的对应格子 → 直接穿上/替换。
@@ -150,6 +198,7 @@ public static class NativeInventoryActions
                 if (BottomBar.SlotRect(i).Contains(Pointer.Pos)) { QuickBarKeys.BindSkill(i, -id); placed = true; break; }
         if (!placed && carriedFromInventory && FieldAcceptsDrop(Pointer.Pos)) placed = DropToField(id, carriedPosition);
         if (placed) { swallowDrop = true; Pointer.ConsumeClick(); Pointer.Pressed = false; }
+        else carriedItem = id; // 无效落点不能静默清掉携带；允许移到正确格再次放下。
     }
 
     // 装备窗落格判定：目标格收不收这件装备。
@@ -158,6 +207,8 @@ public static class NativeInventoryActions
     static bool FitsEquipCell(int cellSlot, int itemSlot)
     {
         if (cellSlot == 0 || itemSlot == 0) return false;
+        // 机器人换装槽：收什么品类由源端 BodyPart 表决定（帽只进 APHat、武器只进 APWeapon…）
+        if (NativeAndroidService.IsApSlot(cellSlot)) return NativeAndroidService.ApAccepts(cellSlot, itemSlot);
         int cell = cellSlot <= -100 ? cellSlot + 100 : cellSlot;
         int item = itemSlot <= -100 ? itemSlot + 100 : itemSlot;
         if (cell == item) return true;
@@ -198,7 +249,7 @@ public static class NativeInventoryActions
         var player = loop == null ? null : loop.player;
         var field = loop == null ? null : loop.field;
         if (player == null || field == null || field.StateId < 0 || GameSession.Character == null) return false;
-        var entry = GameSession.Character.inventory.Find(x => x.itemId == itemId && x.position > 0 &&
+        var entry = GameSession.Character.inventory.Find(x => x.itemId == itemId && InventoryDao.IsBagPosition(x.position) &&
             (position == 0 || x.position == position));
         if (entry == null) return false;
         // 源端丢弃门控（EXE 0x4f34f5..0x4f38a1，按 info 字段分派）：
@@ -228,7 +279,7 @@ public static class NativeInventoryActions
     static void DropToFieldAsk(int itemId, int position)
     {
         var entry = GameSession.Character == null ? null :
-            GameSession.Character.inventory.Find(x => x.itemId == itemId && x.position > 0 &&
+            GameSession.Character.inventory.Find(x => x.itemId == itemId && InventoryDao.IsBagPosition(x.position) &&
                 (position == 0 || x.position == position));
         if (entry == null) return;
         if (entry.quantity > 1 && itemId / 1000000 != 1)
@@ -312,6 +363,11 @@ public static class NativeInventoryActions
     {
         carriedItem = 0;
         string error = TryUse(itemId, inventoryPosition);
+        if (NativeAndroidService.IsRobot(itemId) || NativeAndroidService.IsHeart(itemId))
+            Debug.Log("[Android/Equip] item=" + itemId + " source=" + inventoryPosition +
+                " level=" + Profile.level + " result=" + (error ?? "ok") +
+                " robot=" + Profile.EquipOfSlot(NativeAndroidService.RobotSlot) +
+                " heart=" + Profile.EquipOfSlot(NativeAndroidService.HeartSlot));
         if (!string.IsNullOrEmpty(error)) BottomBar.Toast(error);
     }
 
@@ -376,7 +432,7 @@ public static class NativeInventoryActions
         if (player == null || player.hp <= 0) return "当前无法使用物品";
         if(NativeVegaWindow.Visible && (itemId/1000000==1 || itemId/10000==204))
         {
-            var item=GameSession.Character.inventory.Find(x=>x.itemId==itemId && x.position>0 && (inventoryPosition==0 || x.position==inventoryPosition));
+            var item=GameSession.Character.inventory.Find(x=>x.itemId==itemId && InventoryDao.IsBagPosition(x.position) && (inventoryPosition==0 || x.position==inventoryPosition));
             return NativeVegaWindow.Select(item);
         }
         if (itemId / 1000000 == 1) return EquipLoadout.Equip(itemId, Profile.Attributes, inventoryPosition);
@@ -415,7 +471,7 @@ public static class NativeInventoryActions
                 if(Profile.RemoveItem(itemId,1,inventoryPosition)) Profile.GrantExperience(exp);
                 return null;
             }
-            if(itemId/10000==204) { Pick(itemId); return null; }
+            if(itemId/10000==204 || NativeScrollService.IsHeartScroll(itemId)) { Pick(itemId); return null; }
             if(itemId/10000==227) return NativeCatchItems.Use(itemId,inventoryPosition);
             if(itemId/10000==210) return NativeItemUseEffects.SummonBag(itemId,inventoryPosition);
             if(itemId/10000==228 || itemId/10000==229) return NativeItemUseEffects.SkillBook(itemId,inventoryPosition);

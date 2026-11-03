@@ -112,6 +112,7 @@ public static class QuestCatalog
             }
         }
         ScreenshotTrainingQuests.Register(cache, allIds, byNpc);
+        RobotQuests.Register(cache, allIds, byNpc);
         allIds.Sort();
         Ready = true;
         UnityEngine.Debug.Log("[Quest] Quest.wz 任务 " + allIds.Count + " 个，涉及 NPC " + byNpc.Count + " 个");

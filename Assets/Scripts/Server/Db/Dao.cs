@@ -193,6 +193,9 @@ public static class InventoryDao
     public const int Etc = 4;
     public const int Cash = 5;
 
+    // Equipped and Equip share type 1; positive Android AP slots are not bag slots.
+    public static bool IsBagPosition(int position) => position > 0 && !NativeAndroidService.IsApSlot(position);
+
     public static long InsertItem(DbStore db, int characterId, int itemId, int inventoryType, int position, int quantity, int petId=-1)
     {
         if(itemId/1000==5000 && petId<0)
@@ -270,7 +273,7 @@ public static class InventoryDao
         int sum = 0;
         foreach (var r in ItemsByCharacter(db, characterId))
         {
-            if (DbStore.Long(r, "itemid", 0) == itemId && DbStore.Long(r, "position", 0) > 0)
+            if (DbStore.Long(r, "itemid", 0) == itemId && IsBagPosition(DbStore.Int(r, "position")))
                 sum += (int)DbStore.Long(r, "quantity", 0);
         }
         return sum;
@@ -289,7 +292,7 @@ public static class InventoryDao
         {
             if (left <= 0) break;
             if (DbStore.Long(r, "itemid", 0) != itemId) continue;
-            if (DbStore.Long(r, "position", 0) < 0) continue;
+            if (!IsBagPosition(DbStore.Int(r, "position"))) continue;
             int q = (int)DbStore.Long(r, "quantity", 0);
             int take = Math.Min(q, left);
             long id = DbStore.Long(r, "inventoryitemid", 0);

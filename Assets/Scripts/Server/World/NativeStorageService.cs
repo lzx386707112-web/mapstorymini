@@ -194,7 +194,7 @@ public static class NativeStorageService
     {
         if (r.quantity < 1) return new StorageResponse { ok = true, error = "" };
         var full = CharService.Load(db, (int)c.id);
-        var row = full.inventory.Find(x => x.inventoryType == r.inventoryType && x.position == r.itemPosition);
+        var row = full.inventory.Find(x => x.inventoryType == r.inventoryType && x.position == r.itemPosition && InventoryDao.IsBagPosition(x.position));
         if (row == null || row.itemId != r.itemId)
             return new StorageResponse { ok = false, error = "背包里没有这个道具" };
         if (IsWeddingItem(row.itemId))

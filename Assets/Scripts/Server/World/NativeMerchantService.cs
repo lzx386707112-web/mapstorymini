@@ -216,7 +216,7 @@ public static class NativeMerchantService
 
         var row = db.Table("inventoryitems").Find(x => DbStore.Int(x, "characterid") == cid
             && DbStore.Int(x, "inventorytype") == r.inventoryType && DbStore.Int(x, "position") == r.itemPosition
-            && DbStore.Int(x, "position") > 0);
+            && InventoryDao.IsBagPosition(DbStore.Int(x, "position")));
         if (row == null) return new MerchantResponse { ok = false, error = "背包里没有这件道具" };
 
         var item = CharService.ToInventoryEntry(db, row);
@@ -699,7 +699,7 @@ public static class NativeMerchantService
     {
         int limit = Server.Bot.Trade.TradeItemRules.SlotLimit(actor, type);
         var occupied = new HashSet<int>();
-        foreach (var item in inventory) if (item.inventoryType == type && item.position > 0) occupied.Add(item.position);
+        foreach (var item in inventory) if (item.inventoryType == type && InventoryDao.IsBagPosition(item.position)) occupied.Add(item.position);
         for (int slot = 1; slot <= limit; slot++)
             if (!occupied.Contains(slot) && used.Add(slot)) return slot;
         return -1;

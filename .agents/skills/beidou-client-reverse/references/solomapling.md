@@ -610,3 +610,17 @@ Server 层看不到 Unity 的 `GroundItem`，所以按组队任务同一套注�
 ### 2026-11-03 长绳执行条件补核
 
 废都 `103000800` 追怪复报查明 `BotNavigationRuntime.CanWalkTowardRope` 不能只验证朝绳子的一步：窄台后续会掉层，而且旧 Waypoint 仍瞄准已经到达的起跳点。现检查整段 `BotGroundMotion.Step` 至可抓绳位置，走得通才先走近并将 Waypoint 指向绳子；否则执行导航图验证的跳抓。这是 PQ/野外共享导航的移植端修复；复现坐标、对照失败、四档跨层攻击回归与验证边界见 [组队任务接口](party-quest.md) 末节。
+
+
+## 2026-11-03 手机高负载后续诊断
+
+旧APK市场44个全局假人（同图22）时，两次BotTasks.Drive单回调聚合耗时964.69/1077.25ms；尚不能确定具体回调或归因为机器人（用户发热时未召机器人）。默认ADB目标未命中手机，显式指定序列号后可读；14:04游戏已退出且安装的仍为旧包，修改后CPU/温度没有实机结论。
+
+BotTasks改为复用待执行快照/PendingCount直接计数，保留到期排序、注册顺序、嵌套零延时任务下一次Drive执行、异常取消、固定频率补拍语义。每个注册回调加编译期CallerFilePath/CallerMemberName预生成BotTask统计名，运行期不靠IL2CPP反射；另补Field/Player/GameLoop/BotField/HUD分项计时。离线1000次空驱动+计数0字节分配；不等于已解决1秒回调或发热。BotField只在Repaint处理原有Pointer命中和无GUILayout气泡绘制，减少重复GUI事件工作，不改素材/布局/假人频率。
+
+282机器人普通水平跟随逆向、AP正槽误当背包的复现与修复、功能缺口及实机边界另见根目录docs/tms282-skill/12-android-regression.md；本次没有新增BeiDou.exe地址结论。
+
+
+### 2026-11-03 14:05新包补测
+
+市场RunPathfind实机单次526–707ms；MarketBotAmbient.Climb冷Enable同步构图入口现接既有PrepareNavigation后台预构建。另有Scheduler702ms而Tasks不足1ms未定位，新增Wander/Decision/BuildSync标签。BotPerf开启中途Scope(start=0)的十几亿毫秒假样本已修正。手机尚未运行这些后续修改，不声称已降低发热。详细设备采样、复现边界及机器人/AP外围回归见根目录docs/tms282-skill/12-android-regression.md末节。

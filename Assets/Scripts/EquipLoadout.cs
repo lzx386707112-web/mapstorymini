@@ -30,10 +30,13 @@ public static class EquipSlot
     public const int Shield = -10;
     public const int Weapon = -11;
     public const int Medal = -49;
+    // 282 机器人本体（slot 53）。心臟沿用 -54，与源端 BodyPart.MechanicalHeart 同义。
+    public const int Android = -32;
+    public const int MechanicalHeart = -54;
 
     // Paper-doll layers and stat-bearing equipped slots have different consumers.
     public static readonly int[] Appearance = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon };
-    public static readonly int[] Worn = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon, Medal, FaceAccessory, EyeAccessory, Earring, -12, -13, -15, -16, -17, -18, -19, -50, -20, -55, -56, -54, -53, -51,
+    public static readonly int[] Worn = { Hat, Top, Bottom, Shoes, Glove, Cape, Shield, Weapon, Medal, FaceAccessory, EyeAccessory, Earring, -12, -13, -15, -16, -17, -18, -19, -50, -20, -55, -56, MechanicalHeart, Android, -53, -51,
         -101, -102, -103, -104, -105, -106, -107, -108, -109, -110, -111, -112, -113, -115, -116, -117, -118, -119, -120, -149, -150, -151, -153, -154, -155, -156 };
 
     public static string NameOf(int slot)
@@ -52,6 +55,8 @@ public static class EquipSlot
             case Shield: return "盾牌";
             case Weapon: return "武器";
             case Medal: return "勋章";
+            case Android: return "机器人";
+            case MechanicalHeart: return "心臟";
             default: return "装备";
         }
     }
@@ -89,7 +94,13 @@ public static class EquipCatalog
             case 109: return "Shield";
             case 110: return "Cape";
             case 111: return "Ring";
-            case 101: case 102: case 103: case 167: return "Accessory";
+            case 101: case 102: case 103: return "Accessory";
+            // 167 段大部分是饰品，但 01672xxx 是 282 的機器人心臟（BodyPart 54），
+            // 本项目 Accessory 目录里那 56 个同名文件是 beidou 的空壳，真正有 info/像素
+            // 的是迁移进来的 Character/Android/01672xxx.img。
+            case 167: return itemId / 1000 == 1672 ? "Android" : "Accessory";
+            // 01662xxx 机器人本体（含 1666 段的 6 件特殊款）。
+            case 166: return "Android";
             default:
                 int t = itemId / 10000;
                 if (t >= 112 && t <= 119) return "Accessory";
@@ -258,6 +269,14 @@ public static class EquipLoadout
         }
         int slot = EquipSlot.SlotOf(itemId);
         if (slot == 0) return "这不是可装备的物品";
+        // 机器人换装槽（1200..1213）：道具不改自己的身体装备位，只挂到机器人身上。
+        // 源端这里也不查 reqJob/reqLevel——机器人时装纯外观，谁都能穿。
+        if (NativeAndroidService.IsApSlot(preferredSlot))
+        {
+            if (!NativeAndroidService.ApAccepts(preferredSlot, slot))
+                return "这件装备不能放进机器人的这个换装槽";
+            return MoveEquipment(itemId, preferredSlot, false, inventoryPosition);
+        }
         string mountError=NativeMount.WearError(itemId,slot);
         if(mountError!=null) return mountError;
         if (slot == -12 || slot == -112)
@@ -279,15 +298,25 @@ public static class EquipLoadout
         if (slot == EquipSlot.Medal) { NativeMedalWindow.Wear(itemId, false); return null; }
         string why = EquipCatalog.WhyNot(itemId, attrs, Profile.JobId);
         if (why != null) return why;
-        if (Profile.ItemCount(itemId) <= 0) return "背包里没有这件装备";
+        // 背包窗直接显示会话库存；发放道具后 Profile 数量镜像可能尚未同步。
+        // 穿戴按实际来源格校验，不能用镜像把真实存在的装备提前拦掉。
+        bool held = GameSession.InGame
+            ? GameSession.Character.inventory.Exists(x => x.inventoryType == InventoryDao.Equip &&
+                InventoryDao.IsBagPosition(x.position) && x.itemId == itemId && x.quantity > 0 &&
+                (inventoryPosition == 0 || x.position == inventoryPosition))
+            : Profile.ItemCount(itemId) > 0;
+        if (!held) return "背包里没有这件装备";
         return MoveEquipment(itemId, slot, false, inventoryPosition);
     }
 
-    static string MoveEquipment(int itemId, int slot, bool unequip, int inventoryPosition = 0, int petSlot = 0)
+    static string MoveEquipment(int itemId, int slot, bool unequip, int inventoryPosition = 0, int petSlot = 0, int destinationPosition = 0)
     {
         if (!GameSession.InGame) return "请先进入游戏";
         var response = GameSession.Net.ChangeInventory(new InventoryChangeRequest {
-            characterId = GameSession.CharacterId, itemId = itemId, equipSlot = slot, sourcePosition = inventoryPosition, petSlot=petSlot, equip = true, quantity = unequip ? 0 : 1 });
+            characterId = GameSession.CharacterId, itemId = itemId, equipSlot = slot, sourcePosition = inventoryPosition, petSlot=petSlot, equip = true, quantity = unequip ? 0 : 1, moveTo = destinationPosition });
+        if (NativeAndroidService.IsApSlot(slot))
+            Debug.Log("[Android/Drag] request item=" + itemId + " source=" + inventoryPosition +
+                " target=" + slot + " unequip=" + unequip + " ok=" + response.ok + " error=" + response.error);
         if (!response.ok) return response.error;
         if(slot==-18 || slot==-19 || slot==-118 || slot==-119)
         {
@@ -296,6 +325,12 @@ public static class EquipLoadout
         }
         GameSession.Character.inventory = response.inventory;
         GameSession.ApplyInventoryToProfile();
+        // 机器人装配提示（源端 Char.initAndroid 在装备后弹一次）：缺心臟、心臟档位过高都在这里报。
+        if (!unequip && (slot == NativeAndroidService.RobotSlot || slot == NativeAndroidService.HeartSlot))
+        {
+            string problem = NativeAndroidService.Resolve(GameSession.CharacterId, Profile.EquipOfSlot).reason;
+            if (!string.IsNullOrEmpty(problem)) BottomBar.Toast(problem);
+        }
         if (!unequip && itemId == 1189999 && SkillProgress.LevelOf(1016) == 0) SkillProgress.SetLearned(1016, 1);
         Profile.Save();
         return null;
@@ -304,10 +339,16 @@ public static class EquipLoadout
     public static void Unequip(int slot)
     {
         if (slot == EquipSlot.Weapon) return;
-        int itemId = Profile.EquipOfSlot(slot);
-        if (itemId <= 0) return;
-        string error = MoveEquipment(itemId, slot, true);
+        string error = UnequipToInventory(slot);
         if (error != null) BottomBar.Toast(error);
+    }
+
+    public static string UnequipToInventory(int slot, int destinationPosition = 0)
+    {
+        if (slot == EquipSlot.Weapon) return "普通武器请通过换装替换";
+        int itemId = Profile.EquipOfSlot(slot);
+        if (itemId <= 0) return "该格没有装备";
+        return MoveEquipment(itemId, slot, true, destinationPosition: destinationPosition);
     }
 
     /// <summary>当前角色套装差量（源端 Character.setItemBonus 的取用入口，FieldDirector 消费倍率类）。</summary>

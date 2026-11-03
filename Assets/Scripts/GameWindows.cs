@@ -200,6 +200,8 @@ public static class EquipWindow
     /// </summary>
     public static bool SlotAt(Vector2 pointer,out int cellSlot)
     {
+        // 机器人换装面板贴在装备窗右侧，命中优先（两块不重叠，顺序只为少算一次）
+        if (NativeAndroidWindow.SlotAt(pointer, out cellSlot)) return true;
         cellSlot = 0;
         if(!Visible || GameSession.Character==null) return false;
         int w=expanded ? FullW : SmallW,h=expanded ? FullH : SmallH;
@@ -228,7 +230,8 @@ public static class EquipWindow
     // 每格对应原 IMG 背景已有的装备位；BE2260: -18=(5,233), -19=(38,233)。
     // 行 0..6 自上而下、列 0..4 自左而右，按 backgrnd 上的中文槽位名对齐：
     //   帽子 / 勋章 额饰 戒指 戒指 / 眼饰 耳饰 肩饰 / 披风 上衣 项链 武器 盾牌 /
-    //   手套 裤裙 腰带 指环 指环 / 鞋子 副手 图腾 / 骑兽 鞍子 心脏 徽章 纹章
+    //   手套 裤裙 腰带 指环 指环 / 鞋子 副手 图腾 / 骑兽 鞍子 空白 徽章 纹章
+    // 心脏统一在机器人面板操作，原底图重复格由 NativeEquipBackdrop 清除。
     static readonly int[,] SmallCells =
     {
         { 0, EquipSlot.Hat, 0, 0, 0 },
@@ -237,7 +240,7 @@ public static class EquipWindow
         { EquipSlot.Cape, EquipSlot.Top, -17, EquipSlot.Weapon, EquipSlot.Shield },
         { EquipSlot.Glove, EquipSlot.Bottom, -50, -15, -16 },
         { 0, 0, EquipSlot.Shoes, -51, -53 },
-        { -18, -19, -54, -55, -56 },
+        { -18, -19, 0, -55, -56 },
     };
 
     // 展开态 6 列，同样按 FullBackgrnd 的槽位名对齐：
@@ -256,6 +259,10 @@ public static class EquipWindow
 
     public static void Toggle() { Visible = !Visible; if (!Visible) petVisible = false; }
 
+    /// <summary>窗口在虚拟坐标系里的左上角（机器人面板靠它贴边）。</summary>
+    public static Vector2 Position => pos;
+    public static Vector2 Size => new Vector2(expanded ? FullW : SmallW, expanded ? FullH : SmallH);
+
     public static void Draw()
     {
         if (!Visible) return;
@@ -272,9 +279,8 @@ public static class EquipWindow
             r.position = pos * S;
         }
         if (!Pointer.Down) dragging = false;
-        // 折叠态背景先用 NativeEquipBackdrop 修补一遍：图里「副手/图腾/心脏/徽章/纹章」
-        // 5 格是当年 DLL 补画后烘进去的，底块矮 3px、字带白雾；修补版把底块补满、
-        // 抹掉旧字，再由下面的循环用原版样式重写槽位名。展开态是原版 6 列图，不动。
+        // 折叠态修复原图后补槽位的文字，并移除已迁入机器人面板的重复心脏格。
+        // 展开态是原版 6 列图，没有这处重复格。
         var bg = expanded ? Tex("FullBackgrnd") : (NativeEquipBackdrop.Texture() ?? Tex("backgrnd"));
         if (bg != null) GUI.DrawTexture(r, bg);
         if (NativeUi.Button(At(r, w - 19, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
@@ -296,10 +302,13 @@ public static class EquipWindow
                 if (icon != null) GUI.DrawTexture(cellRect, icon, ScaleMode.ScaleToFit);
                 if (Event.current.type != EventType.Repaint) continue;
                 if (cellRect.Contains(Pointer.Pos)) ItemTooltip.SetHover(id, true);
-                // 双击脱下：武器必须一直持有，卸武器走背包换装
-                if (Pointer.DoubleClicked && cellRect.Contains(Pointer.Pos) && cellSlot != EquipSlot.Weapon)
+                if (press && cellRect.Contains(Pointer.Pos) && !NativeInventoryActions.Carrying)
+                    NativeInventoryActions.PickEquipped(id, slot);
+                // 只保护实际普通武器 -11；覆盖在它上面的现金武器 -111 可以卸下。
+                if (Pointer.DoubleClicked && cellRect.Contains(Pointer.Pos) && slot != EquipSlot.Weapon)
                 {
                     Pointer.ConsumeClick();
+                    NativeInventoryActions.CancelCarry();
                     if (cellSlot == EquipSlot.Medal) NativeMedalWindow.Wear(id, true);
                     else EquipLoadout.Unequip(slot);
                     if (Profile.EquipOfSlot(slot) == 0) BottomBar.Toast("已脱下" + EquipSlot.NameOf(cellSlot));
@@ -310,6 +319,15 @@ public static class EquipWindow
             NativeUi.Button(At(r, 5, 267, 46, 19), "UI/UIWindow.img/Equip/BtDetail")) { expanded = !expanded; return; }
         if (!expanded && NativeUi.Button(At(r, 102, 280, 67, 18), "UI/UIWindow.img/Equip/BtPetEquipShow"))
         { petVisible = !petVisible; petReadAt = 0; }
+        // 机器人换装入口：原底图没有这一页的图元，按钮自绘。
+        // 位置避让：BtDetail(5,267) 只有 22xx/2001 才画，那两职业把按钮右移 51px。
+        float toggleX = (Profile.JobId / 100 == 22 || Profile.JobId == 2001) ? 56f : 5f;
+        if (NativeAndroidWindow.ToggleButton(At(r, toggleX, expanded ? 268f : 280f, 46f, 18f),
+            NativeAndroidWindow.Visible, "機器人"))
+        {
+            NativeAndroidWindow.Toggle();
+            Pointer.ConsumeClick();
+        }
         if (petVisible) DrawPet(r);
     }
 
@@ -1062,6 +1080,7 @@ public static class GameWindows
         NativeMapWindows.DrawMini();
         StatWindow.Draw();
         EquipWindow.Draw();
+        NativeAndroidWindow.Draw();   // 机器人换装面板贴在装备窗右侧，必须紧跟其后（依赖它的位置）
         InvenWindow.Draw();
         ShopWindow.Draw();
         QuestWindow.Draw();

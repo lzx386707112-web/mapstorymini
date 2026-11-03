@@ -12,6 +12,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 开始分析或修改原端相关功能前，先查下表，只读取当前模块的 reference。已确定结论直接复用；只对记录缺口、矛盾或不同二进制版本继续逆向。不要因为临时反编译文件不在了就从头分析。
 
 | 当前问题 | 读取记录 |
+| 现金装备显示、时装武器双击卸下/装备窗单击拾取、背包双击、戒指气泡及名牌 | [装备窗交互与戒指](references/ring-nameplate-equip-drag-2026-11-03.md) |
 | 仓库/商店Tab3、确认/Notice布局、脚本API、滚动空轨与MTS菜单入口纠正及未完边界 | [菜单反馈补核](references/menu-feedback-2026-11-02.md) |
 | 潮流前线38组骑宠/鞍具、现金-118/-119覆盖及普通基础装备前置（原EXE已核实）、已学骑兽入口、原装备格、1902033绳索delay UOL、商城药包首屏及拖药松手绑定 | [骑宠与药包反馈](references/mount-pet-feedback-2026-11-02.md) |
 | 商城扩容、现金武器/坐骑/勋章槽位、星显示、原图聊天/名牌戒指与勋章行、十二项菜单审计、独立副本基础宿主及剩余验收 | [十二项反馈](references/menu-equipment-feedback-2026-11-01.md) |
@@ -66,7 +67,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 任务键/完成通知入口自动选择与详情展开、任务三页签/详情summary/原端Tab2布局、任务告知、达成目标FadeYesNo红气泡、QuestClear及用户授权截图重建训练任务 | [任务窗口与告知](references/quest-window-and-alarm.md) |
 | 传送门 pt 触发方式、NPC 脚下名牌宽+5/高16与Canvas字体高度/透明四角、聊天气泡九宫格与时长、新手训练营 0~4 图、`cm.warp` 目标图不存在的语义、**换图 Enter 异常导致黑幕锁死（出租车黑屏）的修复与出租车链路逐项排除** | [传送门/名牌/气泡](references/field-portal-nametag-bubble.md) |
 | 五转女神条件/永久标记/2029006面板脚本缺失回退链路及授权改为技能窗独立五转页签、装备槽位/吊坠/轮回图腾、NPC物品/原item脚本、怪物吸星大法与全物品入口审计 | [物品使用与装备槽位](references/inventory-use-and-equipment.md) |
-| 背包/装备窗物品悬浮详情：ToolTip 图集、名称/描述来源、属性/需求字段、配色与帧绘制；背包整理/合并（ITEM_SORT2/ITEM_SORT、PairedQuicksort、move 的 owner/充能分支、BtGather/BtSort 二态） | [背包与悬浮详情](references/inventory-and-tooltip.md) |
+| 背包/装备窗物品悬浮详情：ToolTip 图集、名称/描述来源、装备desc测量/追加绘制及282机器人原文回退、属性/需求字段、配色与帧绘制；背包整理/合并（ITEM_SORT2/ITEM_SORT、PairedQuicksort、move 的 owner/充能分支、BtGather/BtSort 二态） | [背包与悬浮详情](references/inventory-and-tooltip.md) |
 | 怪物手册：窗口 475x349、子控件表（两对翻页箭头 48/185 与 270/407、搜索框 49/30/120/15、两条书签栏 -7/25 与 439/506）、卡槽 5x5 命中框 8/31/33/45/27x38、战利品 4x5 网格 38/60/36/32、LeftTab 九套配色、infoPage 170x231 | [怪物手册](references/monster-book.md) |
 
 地图坐标/脚底/平台/绳梯的运行时约定另见 [mapledash-map-port](../mapledash-map-port/SKILL.md)。服务端和脚本语义仍以源端服务端/脚本为依据，不能用 EXE 的显示行为替代服务端规则。

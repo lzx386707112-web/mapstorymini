@@ -11,15 +11,36 @@ public static class NativeScrollService
     public static bool HasStats(InventoryEntry e)
         => e!=null && (e.equipmentData!=null && e.equipmentData.TryGetValue("nativeStats",out var marker) && System.Convert.ToInt32(marker)!=0 ||
             e.str!=0 || e.dex!=0 || e.int_!=0 || e.luk!=0 || e.hp!=0 || e.mp!=0 || e.watk!=0 || e.matk!=0 || e.wdef!=0 || e.mdef!=0 || e.acc!=0 || e.avoid!=0 || e.speed!=0 || e.jump!=0 || e.upgradeslots!=0 || e.starLevel!=0);
+    // 「建了行但没种值」：inventoryequipment 全 0（属性、upgradeslots、level、vicious 都是 0）。
+    // 这种行不是「砸光了次数」，而是根本没初始化过——脚本 cm.gainItem、后台发放、掉宝建行都只写
+    // 0 值；旧存档还可能被 forceUpdateItem 用客户端全 0 快照盖过（nativeStats 标记写上、值仍是 0）。
+    // 砸卷前必须按 Items.json 的 tuc 补种，否则会出现「一次没砸过却提示可升级次数不足」。
+    static bool Pristine(DbRow row)
+    {
+        if(DbStore.Int(row,"level")!=0 || DbStore.Int(row,"vicious")!=0 || DbStore.Int(row,"upgradeslots")!=0) return false;
+        for(int i=0;i<Columns.Length;i++) if(DbStore.Int(row,Columns[i])!=0) return false;
+        return true;
+    }
     static bool Clean(int id)=>id>=2049000 && id<=2049003;
     static bool Chaos(int id)=>id>=2049100 && id<=2049103 || id==2049115 || id==2049116;
     static bool Modifier(int id)=>id==2040727 || id==2041058;
-    static bool Category(int scroll,int equip)=>scroll/100==20492 ? equip/10000==111 || equip/10000==112 || equip/10000==113 : scroll/100%100==equip/10000%100;
+    // 心脏卷轴不走 204 卷轴段：2616004~2616010 未來心臟專用、2643008 妖精之心強化石、
+    // 2643009/2643010 卡勒馬特殊心臟卷。ItemInformationProvider 的 req/reqScope 数据在
+    // Items.json（tools/export_solomapling_items.py），服务端读不到 IMG，所以适用范围
+    // 只能按 167xxxx 心脏段落地。逐件限定的（未來心臟六款、妖精之心）另外用 Items.json 的
+    // req 白名单在下面校验，与源端 ItemUpgradeHandler 的 getReqItemIds 同一口径。
+    static bool HeartScroll(int id)=>IsHeartScroll(id);
+    public static bool IsHeartScroll(int id)=>id>=2616004 && id<=2616010 || id>=2643008 && id<=2643010;
+    static bool HeartEquip(int id)=>id/10000==167;
+    static bool Category(int scroll,int equip)
+        => HeartScroll(scroll) ? HeartEquip(equip)
+            : scroll/100==20492 ? equip/10000==111 || equip/10000==112 || equip/10000==113 : scroll/100%100==equip/10000%100;
     public static EquipPatchResponse Apply(DbStore db,EquipPatchRequest request,Random random=null)
     {
         random ??= new Random();
         var character=CharactersDao.FindById(db,request.characterId);
-        if(character==null || request.scrollId/10000!=204) return Reject("无效卷轴");
+        if(character==null) return Reject("无效卷轴");
+        if(request.scrollId/10000!=204 && !HeartScroll(request.scrollId)) return Reject("无效卷轴");
         var items=db.Table("inventoryitems");
         var item=items.Find(x=>DbStore.Int(x,"characterid")==request.characterId && DbStore.Long(x,"inventoryitemid")==request.inventoryItemId && DbStore.Int(x,"itemid")/1000000==1);
         var scroll=items.Find(x=>DbStore.Int(x,"characterid")==request.characterId && DbStore.Int(x,"itemid")==request.scrollId && DbStore.Int(x,"position")>0 && (request.scrollPosition==0 || DbStore.Int(x,"position")==request.scrollPosition) && DbStore.Int(x,"quantity")>0);
@@ -28,13 +49,23 @@ public static class NativeScrollService
         int id=DbStore.Int(item,"itemid"),sid=request.scrollId;
         if(request.scrollRequirements!=null && request.scrollRequirements.Length>0 && Array.IndexOf(request.scrollRequirements,id)<0) return Reject("这件装备不符合卷轴要求");
         if(!Clean(sid) && !Chaos(sid) && sid!=2049920 && !Category(sid,id)) return Reject("卷轴与装备种类不符");
+        // 心脏卷轴的逐件白名单是服务端权威：客户端虽然也会把 WZ 的 req 传上来，但 GM/脚本/
+        // 老客户端都不保证带，源端 ItemUpgradeHandler 是用 getReqItemIds 在服务端卡的。
+        if(HeartScroll(sid))
+        {
+            var required=BotItemCatalog.Shared.RequiredEquips(sid);
+            bool listed=required!=null && required.Length>0;
+            if(listed && Array.IndexOf(required,id)<0) return Reject("这件心脏不符合卷轴要求");
+            // 卡勒馬两张没有 req，只有 reqScope(167/10000)。数据缺失时宁可拒绝，也不放开整段。
+            if(!listed && !BotItemCatalog.Shared.ScopedTo(sid,id)) return Reject("这张卷轴没有适用这件心脏的数据");
+        }
         var stats=BotItemCatalog.Shared.EquipStats(sid);
         if(stats==null) return Reject("源端没有这张卷轴的数据");
         var storedEq=InventoryDao.EquipmentOf(db,request.inventoryItemId);
         var eq=new DbRow();
         if(storedEq!=null) foreach(var pair in storedEq) eq[pair.Key]=pair.Value;
         var entry=CharService.ToInventoryEntry(db,item);
-        if(!HasStats(entry))
+        if(!HasStats(entry) || Pristine(eq))
         {
             var clean=BotItemCatalog.Shared.EquipStats(id);
             for(int i=0;i<Columns.Length;i++) eq[Columns[i]]=(long)(short)(clean!=null && clean.TryGetValue(WzStats[i],out int v) ? v : 0);
@@ -43,7 +74,13 @@ public static class NativeScrollService
         int slots=DbStore.Int(eq,"upgradeslots"),level=DbStore.Int(eq,"level"),vicious=DbStore.Int(eq,"vicious");
         int total=BotItemCatalog.Int(BotItemCatalog.Shared.Info(id),"tuc");
         if(Clean(sid) && (total==0 || slots+level>=total+vicious)) return Reject("没有可恢复的升级次数");
-        if(!Clean(sid) && !Modifier(sid) && sid!=2049920 && slots<1) return Reject("装备可升级次数不足");
+        if(!Clean(sid) && !Modifier(sid) && sid!=2049920 && slots<1)
+        {
+            // 报清楚是哪件装备、还剩几次、上限几次——不然「没砸过却说次数不足」无从判断。
+            string name=BotItemCatalog.Shared.Name(id) ?? ("道具 "+id);
+            if(total<=0) return Reject(name+" 没有可升级次数（数据里 tuc=0），砸不了卷");
+            return Reject("装备可升级次数不足（"+name+"：剩 "+slots+" 次 / 共 "+total+" 次，已升级 "+level+" 次）");
+        }
         DbRow white=null;
         if(request.whiteScroll) white=items.Find(x=>DbStore.Int(x,"characterid")==request.characterId && DbStore.Int(x,"position")>0 && DbStore.Int(x,"quantity")>0 && DbStore.Int(x,"itemid")==2340001)
             ?? items.Find(x=>DbStore.Int(x,"characterid")==request.characterId && DbStore.Int(x,"position")>0 && DbStore.Int(x,"quantity")>0 && DbStore.Int(x,"itemid")==2340000);

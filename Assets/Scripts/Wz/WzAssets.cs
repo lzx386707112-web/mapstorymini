@@ -49,7 +49,12 @@ public static class WzAssets
             {
                 var asset = Resources.Load<TextAsset>("NativeAssetIndex");
                 if (asset == null) throw new FileNotFoundException("NativeAssetIndex missing; run tools/package_native_assets.py");
-                index = (Dictionary<string, object>)MiniJson.Parse(asset.text);
+                string manifest = asset.text;
+#if UNITY_ANDROID && !UNITY_EDITOR
+                string installedManifest = Path.Combine(DataRoot, ".resource-manifest.json");
+                if (File.Exists(installedManifest)) manifest = File.ReadAllText(installedManifest);
+#endif
+                index = (Dictionary<string, object>)MiniJson.Parse(manifest);
             }
             return index;
         }

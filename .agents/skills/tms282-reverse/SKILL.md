@@ -44,3 +44,25 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
   否则 282 客户端 0xE06D7363 崩（android-trace/EQUIP-CRASH.md）。
 - 出处：Lotus→史烏機器人、Damien→戴米安機器人、任务 38743→阿莎機器人+鋰之心；56 件心臟零获取记录，复刻需自配。
 - 数据 `docs/tms282-skill/data/android-{items,hearts,templates}.tsv` + 工具 `tools/ms282/export_androids.py`。
+
+**潜能/魔方**（14 文档，2026-11-03，正文 `docs/tms282-skill/14-potential-cube.md`）：
+- 词条主表 `Data/Item/ItemOption.img` 743 条：`info{string,optionType?,reqLevel?} + level/1..20|25`；
+  **无 potentialGrade**，grade 由 id 段定（同词条 10xxx/20xxx/30xxx/40xxx 四份拷贝按万位定阶；
+  060xxx level 记录 fixedGrade=1/3/5/7=rare/epic/unique/legendary）；070xxx 120 条为 282 新段。
+- 282 `Data/` 目录式 WZ 字符串只做经典 XOR（`0xaa+i`），**不叠加 AES key**；解析器
+  `tools/ms282/imglib_282_data_dir.py`，导出样例 `docs/tms282-skill/data/itemoption-entries.json`。
+- grade 四档（无 uncommon）；保底表 `Etc/CubeCeiling.img`（red 25/83/500、black 10/42/107、
+  additional 31/76/214）；费用表 `Etc/potentialCostTable.img`（傳播者路径）。
+- 魔方 id：现金 05062000~（红 5062009/黑 5062010/恢復 5062030 比较型）、附加 50625xx、
+  消耗品 2711xxx（工匠/名匠/卡勒馬系）、附加 273xxxx；282 新 UI `UICubeWz2.img` 8 窗口。
+- 服务端双路径：265 遗留 `CubeHandler`（含紫方块安全洞：handler 仍注册且信任客户端 option 列表）
+  + **282 原生 CP 0x0780 → Tms282CubeRuntime**（规则族 family()、先落 journal 再发包、
+  `char_cube282_pending/choice` 表、比较型二选一、现金基础魔方免鉴定费、眼光减免）。
+- 升阶率生效值 = `ItemConstants:122-142` per-1000 内建数组（红 15/6/2.5、黑 15/12/5、
+  BONUS_BRIGHT 20/15/7.5）；273 TSV 表被 `cube-settings.tsv` 默认停用。
+- 落库 `equips.options` 七值 CSV（o1..3,b1..3,anvil，负值=隐藏），grade 是派生冗余列；
+  附加潜能行 = options[3..5]，洗魔方永远不加第 3 行（thirdLineChance=0）。
+- 黑魔方词条锁定(preventItem)、保底(pity)、选词条、6 行、閃炫 282 服务端均**未实现**；
+  記憶 5062090/5062500/5062523 有数据无 handler。
+- 本项目 `NativeEquipmentCube.cs` 是简化自制（4007000-4007007 自造 id + expandAttribute4 JSON），
+  迁移 = 完全重写；存储 schema 与魔方范围**需用户拍板**。

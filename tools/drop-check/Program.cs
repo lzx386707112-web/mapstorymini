@@ -87,6 +87,23 @@ public static class DropCheck
             Check(rows.Count > 0, $"普通怪 {mob} 没有任何掉落行");
         }
 
+        // 3b) 机器人玩法掉落（content/drop-overrides.tsv 叠在源端基线之上）：
+        // 钢铁碎片是任务 900003/900004 的收集材料，銀之心是低档心臟的打怪兜底。
+        foreach (int mob in new[] { 9300133, 9300060, 4230111, 4230112, 9400546, 4230400, 8120102, 8120103, 9400545 })
+        {
+            var parts = DropStore.ForMob(mob).Find(r => r.item == 4000357);
+            Check(parts != null && parts.chance > 0, $"机械怪 {mob} 没有钢铁碎片 4000357 掉落");
+            var heart = DropStore.ForMob(mob).Find(r => r.item == 1672000);
+            Check(heart != null && heart.chance > 0, $"机械怪 {mob} 没有銀之心 1672000 掉落");
+        }
+        // 机器人本体不能直接掉：282 的史烏/戴米安掉落源在本项目没有美术，
+        // 改成起源之塔兑换；万一有人往基线里加了掉落行，这里会拦下来。
+        foreach (int mob in new[] { 8950110, 8880111 })
+        {
+            var body = DropStore.ForMob(mob).Find(r => r.item == 1662053 || r.item == 1662088);
+            Check(body == null, $"机器人本体不该出现在 {mob} 的掉落里（改走兑换）");
+        }
+
         // 4) 二转测试图（108000200 法师线）逐只怪统计：27 只怪里应该两种都掉道具
         Console.WriteLine("[DropCheck] 掉落表 " + mobs.Count + " 只怪 / " + globals.Count + " 条全局");
         Console.WriteLine("[DropCheck] 9000001 打 " + trials + " 只：4031013 " + hits + " 个（期望 " +

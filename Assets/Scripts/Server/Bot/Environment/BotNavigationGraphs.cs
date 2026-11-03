@@ -60,6 +60,7 @@ namespace Server.Bot.Environment
             if (map == null) return null;
             var key = Key(map, profile);
             if (graphs.TryGetValue(key, out var cached)) { Touch(key); return cached; }
+            using var perf = BotPerf.Timer("BotNavigation.BuildSync");
             var graph = new BotNavigationGraphBuilder(map, Canonical(map, profile)).Build(); Cache(key, graph); return graph;
         }
         public BotNavigationGraph Rebuild(MapRuntime map, BotMovementProfile profile = null)

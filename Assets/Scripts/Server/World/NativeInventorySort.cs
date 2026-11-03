@@ -53,7 +53,7 @@ public static class NativeInventorySort
         {
             if (DbStore.Int(row, "inventorytype") != type) continue;
             int position = DbStore.Int(row, "position");
-            if (position <= 0) continue;              // 已穿戴（position<0）不参与整理
+            if (!InventoryDao.IsBagPosition(position)) continue; // 角色装备和机器人AP穿着不参与整理
             slots.Add(new Slot { Index = position, Row = row, Item = CharService.ToInventoryEntry(db, row) });
         }
         slots.Sort((a, b) => a.Index.CompareTo(b.Index));

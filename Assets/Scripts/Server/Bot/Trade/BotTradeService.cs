@@ -175,7 +175,7 @@ namespace Server.Bot.Trade
             }
             public bool OfferFromInventory(int type, int position, int quantity, int targetSlot)
             {
-                if (ended || locked || targetSlot < 1 || targetSlot > 9 || position <= 0 || quantity < 1) return false;
+                if (ended || locked || targetSlot < 1 || targetSlot > 9 || !InventoryDao.IsBagPosition(position) || quantity < 1) return false;
                 var inventory = Clone(Inventory(actor));
                 var item = inventory.Find(i => i.inventoryType == type && i.position == position);
                 if (item == null || quantity > item.quantity || !service.rules.CanOffer(item)) return false;

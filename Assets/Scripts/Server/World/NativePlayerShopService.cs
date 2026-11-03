@@ -244,7 +244,7 @@ public static class NativePlayerShopService
         var row = db.Table("inventoryitems").Find(x => DbStore.Int(x, "characterid") == cid
             && DbStore.Int(x, "inventorytype") == r.inventoryType
             && DbStore.Int(x, "position") == r.itemPosition
-            && DbStore.Int(x, "position") > 0);
+            && InventoryDao.IsBagPosition(DbStore.Int(x, "position")));
         if (row == null) return Fail(0, "背包里没有这件道具");
 
         var item = CharService.ToInventoryEntry(db, row);

@@ -201,6 +201,17 @@ static class StorageChecks
             var arrangeOff = Call(db, cid, StorageOperation.Arrange);
             Check(arrangeOff.ok, "use_storage_item_sort 关闭时整理是无操作");
 
+            // —— 持久化往返（回归 2026-11：storageaccountid 未声明进 Schema，落盘即丢，重启后仓库清空）——
+            // 此时仓库里有整理合并后的 4000010 ×12、金币 30000。
+            db.Save();
+            db = DbStore.Open(path);
+            Check(StoredCount(db, accountId, 4000010) == 12,
+                "落盘重开后仓库物品仍在（storageaccountid 持久化）");
+            var reopened = Call(db, cid, StorageOperation.Open);
+            Check(reopened.ok && reopened.storage.meso == 30000, "落盘重开后仓库金币仍在");
+            var reopenTake = Call(db, cid, StorageOperation.TakeOut, invType: InventoryDao.Etc, index: 0);
+            Check(reopenTake.ok, "落盘重开后能正常取出仓库物品");
+
             // —— 槽位升级 ——
             var grow = Call(db, cid, StorageOperation.IncreaseSlots, slots: 8);
             Check(grow.ok && grow.storage.slots == NativeStorageService.InitialSlots + 8, "现金买 8 格 → 12 格");

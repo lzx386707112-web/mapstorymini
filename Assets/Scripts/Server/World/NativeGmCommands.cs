@@ -147,7 +147,7 @@ public sealed class NativeGmCommands
                 int type=Array.IndexOf(types,a[0]);
                 if(type<1 && a[0]!="all")throw new ArgumentException("背包栏名称无效");
                 var removed=new HashSet<long>();
-                db.Table("inventoryitems").Delete(x=> {bool match=DbStore.Int(x,"characterid")==c.id && DbStore.Int(x,"position")>0 && (a[0]=="all" || DbStore.Int(x,"inventorytype")==type);if(match)removed.Add(DbStore.Long(x,"inventoryitemid"));return match;});
+                db.Table("inventoryitems").Delete(x=> {bool match=DbStore.Int(x,"characterid")==c.id && InventoryDao.IsBagPosition(DbStore.Int(x,"position")) && (a[0]=="all" || DbStore.Int(x,"inventorytype")==type);if(match)removed.Add(DbStore.Long(x,"inventoryitemid"));return match;});
                 db.Table("inventoryequipment").Delete(x=>removed.Contains(DbStore.Long(x,"inventoryitemid")));r.changed=true;break;
             case "LootCommand":foreach(var item in CharService.Load(db,(int)c.id).inventory)r.messages.Add(item.position+": "+item.itemId+" × "+item.quantity);return r;
             case "SaveAllCommand":db.Save();r.messages.Add("角色已存档");return r;
@@ -161,7 +161,7 @@ public sealed class NativeGmCommands
             case "SetEqStatCommand":
                 Need(a,1,"!seteqstat <属性> [速度跳跃]");value=Clamp(Number(a[0]),0,short.MaxValue);int speed=a.Length>1?Clamp(Number(a[1]),0,short.MaxValue):0;
                 foreach(var held in InventoryDao.ItemsByCharacter(db,(int)c.id))
-                    if(DbStore.Int(held,"inventorytype")==1 && DbStore.Int(held,"position")>0) SetEquipment(held,value,speed);
+                    if(DbStore.Int(held,"inventorytype")==1 && InventoryDao.IsBagPosition(DbStore.Int(held,"position"))) SetEquipment(held,value,speed);
                 r.changed=true;break;
             case "ProItemCommand":
                 Need(a,2,"!proitem <装备ID> <属性> [速度跳跃]");int equipId=Number(a[0]);value=Clamp(Number(a[1]),0,short.MaxValue);speed=a.Length>2?Clamp(Number(a[2]),0,short.MaxValue):0;

@@ -83,7 +83,11 @@ internal static class Program
             return 2;
         }
 
+        // 顶层优先；顶层没有 .js 就递归。content/script-overrides 这类覆盖目录是按
+        // npc/ quest/ BeiDouSpecial/... 分层的，只扫顶层会得到 0 个文件而"全绿"。
         var files = new List<string>(Directory.GetFiles(dir, "*.js", SearchOption.TopDirectoryOnly));
+        if (files.Count == 0)
+            files.AddRange(Directory.GetFiles(dir, "*.js", SearchOption.AllDirectories));
         files.Sort(StringComparer.Ordinal);
 
         int ok = 0, parseFail = 0, runFail = 0, unsupported = 0, disposed = 0, dialogs = 0;
