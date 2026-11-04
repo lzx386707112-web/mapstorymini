@@ -2222,6 +2222,8 @@ static class BotChecks
         town.UpdateState();
         check(town.wanderState == TownWandererBot.WanderState.Idle && BotWander.IsWandering(actor),
             "城镇游荡具体类型初始化后启动原版地图游荡服务");
+        check(BotMovementService.Get(actor) == null,
+            "城镇冷启动仅登记游荡，不在生成步骤同步构建导航图");
         town.UpdateState(); town.UpdateState();
         bool chat = false, emote = false; BotOutput.Message message;
         while ((message = output.Poll()) != null) { chat |= message.kind == BotOutput.Kind.Chat; emote |= message.kind == BotOutput.Kind.Emote; }

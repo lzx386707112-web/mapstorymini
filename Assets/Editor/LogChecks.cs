@@ -3,7 +3,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-// 日志落盘 / 轮转 / 导出的自检。
+// 日志落盘 / 按日分文件 / 单文件导出的自检。
 // 日志系统最容易出的错是「以为写了其实没写」（回调没挂上、目录不可写、共享读被写句柄挡掉），
 // 这几条只能真跑一遍才知道，所以单独做一个可批处理执行的检查。
 //
@@ -47,7 +47,7 @@ public static class LogChecks
             FileLog.Boot();
             Check(FileLog.Enabled, "日志默认开启（PlayerPrefs 缺省 = 开）");
 
-            string main = Path.Combine(dir, "client.txt");
+            string main = Path.Combine(dir, "client-" + DateTime.Now.ToString("yyyy-MM-dd") + ".txt");
             Check(File.Exists(main), "启动即建日志文件");
 
             // 1) 普通日志落盘
@@ -67,12 +67,12 @@ public static class LogChecks
             Check(text.Contains(" E "), "错误级别标记正确");
 
             // 3) 导出（此时日志还很小，应该整份带走）
-            string exported = LogShare.Export();
+            string exported = LogShare.Export(main);
             Check(!string.IsNullOrEmpty(exported) && File.Exists(exported), "导出文件已生成");
             if (!string.IsNullOrEmpty(exported) && File.Exists(exported))
             {
                 string bundled = File.ReadAllText(exported);
-                Check(bundled.Contains("MapleDash 客户端日志"), "导出内容含标题头");
+                Check(bundled.Contains("会话开始"), "导出内容含会话头");
                 Check(bundled.Contains(mark), "导出内容含本次会话日志");
                 Check(bundled.Contains("屏幕"), "导出内容含设备/屏幕信息");
             }
@@ -92,17 +92,20 @@ public static class LogChecks
             FileLog.FlushNow();
             Check(FileLog.ReadShared(main, 0).Contains(onMark), "重新打开后继续写入");
 
-            // 6) 轮转：灌到 3MB 上限以上，旧内容应滚到 client.1.txt
+            // 6) 同日超过旧大小上限仍保留一份，不轮转、不丢失前文。
             for (int i = 0; i < 10; i++) FileLog.Note(new string('=', 500000));
             FileLog.FlushNow();
-            Check(File.Exists(Path.Combine(dir, "client.1.txt")), "超过 3MB 触发轮转");
-            Check(new FileInfo(main).Length < 3 * 1024 * 1024 + 1024, "当前文件不超过大小上限");
-
-            // 7) 历史文件顺序：旧 → 新，最后一个必须是当前文件
+            Check(!File.Exists(Path.Combine(dir, "client.1.txt")), "同日不按大小拆分日志");
+            Check(new FileInfo(main).Length > 3 * 1024 * 1024, "同日完整保留超过旧上限的日志");
+            string yesterday = Path.Combine(dir, "client-" + DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd") + ".txt");
+            File.WriteAllText(yesterday, "YESTERDAY-ONLY");
             var history = FileLog.HistoryFiles();
-            Check(history.Count >= 2, "历史文件列表包含轮转文件");
-            Check(history.Count > 0 && history[history.Count - 1] == Path.Combine(dir, "client.txt"),
-                  "历史列表按旧→新排序，末尾是当前文件");
+            Check(history.Contains(main) && history.Contains(yesterday), "列表包含各日期日志");
+            Check(File.ReadAllText(LogShare.Export(yesterday)) == "YESTERDAY-ONLY",
+                "分享只导出选中的日期，不混入其他日志");
+            string full = LogShare.Export(main);
+            Check(new FileInfo(full).Length == new FileInfo(main).Length,
+                "单文件导出不受旧200万字符上限截断");
 
             Debug.Log("[LogCheck] 通过 " + passed + " 失败 " + failed);
         }

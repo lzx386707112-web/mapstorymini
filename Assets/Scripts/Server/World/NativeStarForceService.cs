@@ -17,7 +17,7 @@ public sealed class StarForceResponse
     public string error = "";
     public StarForceRules.Quote quote;
     public StarForceRules.Result result;
-    public int revision;
+    public int revision, cap;
     public long meso;
     public Dictionary<string, int> derivedStats, nextStats;
     public List<InventoryEntry> inventory;
@@ -69,6 +69,7 @@ public static class NativeStarForceService
             catch (ArgumentException error) { return Reject(error.Message); }
             var baseStats = BaseStats(equipment,info);
             var response = new StarForceResponse { quote = quote, revision = revision, meso = character.meso,
+                cap = rules.Cap(itemId,level,superior),
                 derivedStats = StarForceStats.Calculate(itemId,level,stars,superior,baseStats),
                 nextStats = StarForceStats.Calculate(itemId,level,stars+1,superior,baseStats) };
             if (!request.commit) return response;
@@ -88,7 +89,7 @@ public static class NativeStarForceService
                 equipment["enhancementVersion"] = 282L;
                 equipment["starLevel"] = (long)result.stars;
                 equipment["starCount"] = (long)result.dropStreak;
-                equipment["maxStar"] = (long)rules.Cap(itemId,superior);
+                equipment["maxStar"] = (long)rules.Cap(itemId,level,superior);
                 equipment["starForceVestige"] = result.vestige ? 1L : 0L;
                 equipment["starForceRevision"] = checked((long)revision + 1);
                 if (!request.safeguard) equipment["starForceProtection"] = 0L;
@@ -108,8 +109,17 @@ public static class NativeStarForceService
             return response;
         }
     }
-    static bool Upgradable(int category) => category == 100 || category >= 101 && category <= 110 || category >= 111 && category <= 115 || category == 118
-        || category >= 121 && category < 160 || category == 167;
+    // TMS282 ItemConstants.isUpgradable: BodyPart whitelist
+    // (Ring1..4, Pendant/ExtendedPendant, Weapon, Belt, Hat, Face/EyeAccessory, Top(BodyPart.Top also
+    // covers Overall), Bottom, Shoes, Earrings, Shoulder, Gloves, Badge, Shield, Cape, MechanicalHeart).
+    // Medal(114)/PocketItem(116)/MonsterBook(117)/Emblem(119)/Totem(120)/SecondaryWeapon(135) and the
+    // 161..166 machine parts are excluded by the source, so they must stay rejected here.
+    static bool Upgradable(int category)
+        => category >= 100 && category <= 113
+        || category == 115
+        || category == 118
+        || category >= 121 && category <= 159 && category != 135
+        || category == 167;
     // ItemHandler.TransmissionResult: ordinary vestige survives intact; consume a same-ID donor.
     static StarForceResponse Restore(DbStore db, StarForceRequest request, DbRow item, DbRow equipment, StarForceRules rules, BotItemCatalog catalog)
     {

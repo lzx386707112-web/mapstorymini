@@ -25,6 +25,7 @@ namespace Server.Bot
         public int mapId;
         public bool banded;
         long nextPollMs;
+        bool navigationReady;
         public float bandLo, bandHi;
 
         static readonly Random rng = new Random();
@@ -32,22 +33,6 @@ namespace Server.Bot
         public static void Start(BotCharacter bot, bool banded, float lo, float hi)
         {
             if (bot == null || MapService.Get(bot.mapId) == null) return;
-            Environment.BotMovementService.Enable(bot);
-            if (!banded)
-            {
-                var map = MapService.Get(bot.mapId); var graph = Environment.BotMovementService.Graphs.Get(map);
-                var reachable = Environment.BotMovementService.Reachable(graph, new Environment.BotGroundIndex(map),
-                    new Environment.BotNavigationGraph.Point((int)bot.x, (int)bot.y));
-                int min = int.MaxValue, max = int.MinValue;
-                foreach (var region in graph.regions)
-                    if (!region.isRopeRegion && (reachable.Count == 0 || reachable.Contains(region.id)))
-                    { min = Math.Min(min, region.minX); max = Math.Max(max, region.maxX); }
-                if (max > min)
-                {
-                    int inset = Math.Max(30, (int)(.075 * (max - min)));
-                    if (max - inset > min + inset) { banded = true; lo = min + inset; hi = max - inset; }
-                }
-            }
             bot.wander = new BotWander { mapId = bot.mapId, banded = banded, bandLo = lo, bandHi = hi, state = State.Dwell, dwellUntilMs = 0, progressAtMs = BotScheduler.Now(), nextPollMs = BotScheduler.Now() + rng.Next(1500) };
             // 只把真正在游荡的假人放进推进表：以前每帧遍历全服在册假人（市场商人、组队伴侣等
             // 没有 wander 的也一起扫），在线人数越多这笔固定开销越大。
@@ -69,6 +54,32 @@ namespace Server.Bot
             if (!Environment.BotMovementService.Observed(bot.mapId)) return;
             var rt = MapService.Get(bot.mapId);
             if (rt == null || rt.footholds.Count == 0) { bot.moving = false; return; }
+
+            // Cold graph builds can take seconds on phones. Poll the existing worker
+            // cache before Enable/PickStroll; stopping or changing maps needs no callback cleanup.
+            if (!Environment.BotMovementService.PrepareNavigation(bot)) return;
+            if (!w.navigationReady)
+            {
+                Environment.BotMovementService.Enable(bot);
+                if (!w.banded)
+                {
+                    var graph = Environment.BotMovementService.Graphs.Get(rt);
+                    var reachable = Environment.BotMovementService.Reachable(graph,
+                        new Environment.BotGroundIndex(rt),
+                        new Environment.BotNavigationGraph.Point((int)bot.x, (int)bot.y));
+                    int min = int.MaxValue, max = int.MinValue;
+                    foreach (var region in graph.regions)
+                        if (!region.isRopeRegion && (reachable.Count == 0 || reachable.Contains(region.id)))
+                        { min = Math.Min(min, region.minX); max = Math.Max(max, region.maxX); }
+                    if (max > min)
+                    {
+                        int inset = Math.Max(30, (int)(.075 * (max - min)));
+                        if (max - inset > min + inset)
+                        { w.banded = true; w.bandLo = min + inset; w.bandHi = max - inset; }
+                    }
+                }
+                w.navigationReady = true;
+            }
 
             if (w.state == State.Dwell)
             {

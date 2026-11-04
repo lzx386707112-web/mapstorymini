@@ -16,23 +16,20 @@ using UnityEngine;
 //   · 主线程只做「入队」，写盘全在后台线程。日志回调可能来自任意线程
 //     （BotWarmup 等后台解析就是这么打日志的），所以必须用并发队列。
 //   · 写盘线程自己绝不调用 Debug.Log —— 会再次进入回调，形成递归。
-//   · 单文件 3MB 轮转，最多留 3 份历史，长期挂机不会把存储写满。
+//   · 按采集时的本机日期写 client-yyyy-MM-dd.txt，同日重启续写、跨日分文件。
 //   · 开关关闭时一行都不写（连会话头也不写），开关状态存在 PlayerPrefs。
 // ————————————————————————————————————————————————————————————
 public static class FileLog
 {
     public const string PrefKey = "log_to_file";
     const string Folder = "logs";
-    const string MainFile = "client.txt";
-    const long MaxBytes = 3L * 1024 * 1024;
-    const int KeepOld = 3;                 // client.1.txt ~ client.3.txt，1 最新
     const int MaxPending = 20000;          // 积压上限，超了丢弃（宁可丢日志，不能吃内存）
     const int FlushMs = 300;
     const int BatchLines = 400;
 
     public static bool Enabled { get; private set; }
 
-    static readonly ConcurrentQueue<string> pending = new ConcurrentQueue<string>();
+    static readonly ConcurrentQueue<(DateTime date, string text)> pending = new ConcurrentQueue<(DateTime, string)>();
     static readonly object gate = new object();
     static readonly object writeGate = new object();
     static readonly StringBuilder scratch = new StringBuilder(8192);
@@ -41,7 +38,6 @@ public static class FileLog
     static volatile bool running;
     static string dir;
     static string path;
-    static long bytes;
     static int lost;
     static bool booted;
     static string device;
@@ -108,9 +104,7 @@ public static class FileLog
             Directory.CreateDirectory(Dir);
             lock (gate)
             {
-                path = Path.Combine(Dir, MainFile);
-                var info = new FileInfo(path);
-                bytes = info.Exists ? info.Length : 0;   // 续写：先按已有长度算，否则永远触发不了轮转
+                path = DailyPath(DateTime.Now);
             }
             if (worker == null || !running)
             {
@@ -120,7 +114,7 @@ public static class FileLog
             }
             // 会话头同步写一次：文件立刻存在（刚进游戏就能导出/分享），
             // 也不怕进程被系统杀掉时连会话头都没落盘。几百字节，主线程代价可忽略。
-            Append(SessionHeader() + "\n");
+            Append(SessionHeader() + "\n", DateTime.Now.Date);
         }
         catch (Exception)
         {
@@ -151,8 +145,9 @@ public static class FileLog
         if (path == null) EnsureOpen();
         if (pending.Count >= MaxPending) { Interlocked.Increment(ref lost); return; }
 
+        var now = DateTime.Now;
         var sb = new StringBuilder(condition?.Length ?? 0 + 96);
-        sb.Append(DateTime.Now.ToString("HH:mm:ss.fff")).Append(' ');
+        sb.Append(now.ToString("HH:mm:ss.fff")).Append(' ');
         sb.Append(Level(type)).Append(' ');
         sb.Append(condition);
         if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
@@ -164,7 +159,7 @@ public static class FileLog
                 sb.Append(stackTrace.Length > 2000 ? stackTrace.Substring(0, 2000) + "…" : stackTrace);
             }
         }
-        pending.Enqueue(sb.ToString());
+        pending.Enqueue((now.Date, sb.ToString()));
     }
 
     static char Level(LogType t)
@@ -183,7 +178,7 @@ public static class FileLog
     public static void Note(string text)
     {
         if (!Enabled || string.IsNullOrEmpty(text)) return;
-        pending.Enqueue("\n===== " + text + " =====\n");
+        pending.Enqueue((DateTime.Now.Date, "\n===== " + text + " =====\n"));
     }
 
     // 设备/CPU/GPU 调一次要过 native，缓存起来；屏幕尺寸不能缓存
@@ -239,80 +234,52 @@ public static class FileLog
     static void Drain()
     {
         if (!Enabled && pending.IsEmpty) return;
-        string text;
         lock (writeGate)
         {
+            if (!pending.TryPeek(out var first)) return;
             scratch.Length = 0;
             int n = 0;
-            while (n < BatchLines && pending.TryDequeue(out string line))
+            while (n < BatchLines && pending.TryPeek(out var next) && next.date == first.date &&
+                   pending.TryDequeue(out var line))
             {
-                scratch.Append(line).Append('\n');
+                scratch.Append(line.text).Append('\n');
                 n++;
             }
             int dropped = Interlocked.Exchange(ref lost, 0);
             if (dropped > 0) scratch.Append("（日志积压，丢弃 ").Append(dropped).Append(" 行）\n");
-            if (scratch.Length == 0) return;
-            text = scratch.ToString();
+            if (scratch.Length > 0) Append(scratch.ToString(), first.date);
         }
-        Append(text);
     }
 
-    static void Append(string text)
+    static string DailyPath(DateTime date)
+        => Path.Combine(Dir, "client-" + date.ToString("yyyy-MM-dd") + ".txt");
+
+    static void Append(string text, DateTime date)
     {
         try
         {
-            byte[] data = Encoding.UTF8.GetBytes(text);
             lock (gate)
             {
-                if (path == null) return;
-                // 按剩余空间切块写：一轮 Drain 可能攒出几 MB 文本（几百行大日志），
-                // 整段写进去会让单文件直接冲破上限，轮转就形同虚设。
-                int offset = 0;
-                while (offset < data.Length)
+                Directory.CreateDirectory(Dir);
+                path = DailyPath(date);
+                using (var fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
                 {
-                    if (bytes >= MaxBytes) Rotate();
-                    long room = MaxBytes - bytes;
-                    if (room <= 0) { Rotate(); continue; }
-                    int take = (int)Math.Min(data.Length - offset, room);
-                    using (var fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
-                        fs.Write(data, offset, take);
-                    bytes += take;
-                    offset += take;
+                    byte[] data = Encoding.UTF8.GetBytes(text);
+                    fs.Write(data, 0, data.Length);
                 }
             }
         }
-        catch (Exception)
-        {
-            // 磁盘满 / 目录被删 / 权限变更：静默丢弃。写盘失败绝不能反过来影响游戏。
-        }
+        catch (Exception) { /* 日志写盘失败不能影响游戏。 */ }
     }
-
-    static void Rotate()
-    {
-        try
-        {
-            string oldest = OldPath(KeepOld);
-            if (File.Exists(oldest)) File.Delete(oldest);
-            for (int i = KeepOld - 1; i >= 1; i--)
-            {
-                string from = OldPath(i), to = OldPath(i + 1);
-                if (File.Exists(from)) { if (File.Exists(to)) File.Delete(to); File.Move(from, to); }
-            }
-            string main = Path.Combine(Dir, MainFile);
-            if (File.Exists(main)) { if (File.Exists(OldPath(1))) File.Delete(OldPath(1)); File.Move(main, OldPath(1)); }
-        }
-        catch (Exception) { }
-        bytes = 0;
-    }
-
-    static string OldPath(int index) => Path.Combine(Dir, "client." + index + ".txt");
 
     /// <summary>把队列里剩下的立刻写盘（分享前 / 退进程前）。</summary>
     public static void FlushNow()
     {
         try
         {
-            while (!pending.IsEmpty) Drain();
+            // Also wait for a batch already dequeued by the worker to finish writing.
+            lock (writeGate)
+                while (!pending.IsEmpty) Drain();
         }
         catch (Exception) { }
     }
@@ -324,13 +291,13 @@ public static class FileLog
         var list = new List<string>();
         try
         {
-            for (int i = KeepOld; i >= 1; i--)
-            {
-                string p = OldPath(i);
-                if (File.Exists(p)) list.Add(p);
-            }
-            string main = Path.Combine(Dir, MainFile);
-            if (File.Exists(main)) list.Add(main);
+            if (!Directory.Exists(Dir)) return list;
+            list.AddRange(Directory.GetFiles(Dir, "client-????-??-??.txt"));
+            // Preserve old-version logs as selectable files; never silently discard them.
+            list.AddRange(Directory.GetFiles(Dir, "client.*.txt"));
+            string legacy = Path.Combine(Dir, "client.txt");
+            if (File.Exists(legacy)) list.Add(legacy);
+            list.Sort((a, b) => File.GetLastWriteTimeUtc(a).CompareTo(File.GetLastWriteTimeUtc(b)));
         }
         catch (Exception) { }
         return list;

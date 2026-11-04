@@ -19,6 +19,13 @@
 -- 说明：源端是 MySQL(InnoDB, AUTO_INCREMENT, TIMESTAMP 默认值)。本地嵌入式存储
 -- 只借用「表名/列名/类型/默认值」结构，自增 id 与时间戳由 DbStore 模拟。
 
+CREATE TABLE native_migrations
+(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL DEFAULT '',
+    completedAt TEXT NOT NULL DEFAULT ''
+);
+
 CREATE TABLE accounts
 (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -206,7 +213,10 @@ CREATE TABLE inventoryitems
     petid           INTEGER NOT NULL DEFAULT -1,
     flag            INTEGER NOT NULL DEFAULT 0,
     expiration      INTEGER NOT NULL DEFAULT -1,
-    giftFrom        TEXT    NOT NULL DEFAULT ''
+    giftFrom        TEXT    NOT NULL DEFAULT '',
+    -- 本项目扩展（源端无此列）：仓库行（characterid=-3）按账号隔离的标记，见 NativeStorageService。
+    -- 必须声明在 Schema 里：DbStore 只持久化/读取已声明的列，漏声明会导致仓库物品重启后"消失"。
+    storageaccountid INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE inventoryequipment
@@ -239,6 +249,22 @@ CREATE TABLE inventoryequipment
     starCount            INTEGER NOT NULL DEFAULT 0,
     maxStar              INTEGER NOT NULL DEFAULT 0,
     expandAttribute4     TEXT NOT NULL DEFAULT ''
+    ,nativeStats         INTEGER NOT NULL DEFAULT 0
+    ,enhancementVersion  INTEGER NOT NULL DEFAULT 0
+    ,iIncReq             INTEGER NOT NULL DEFAULT 0
+    ,starForceRevision   INTEGER NOT NULL DEFAULT 0
+    ,starForceVestige    INTEGER NOT NULL DEFAULT 0
+    ,starForceProtection INTEGER NOT NULL DEFAULT 0
+    ,potentialGrade INTEGER NOT NULL DEFAULT 0
+    ,bonusGrade INTEGER NOT NULL DEFAULT 0
+    ,potentialRevision INTEGER NOT NULL DEFAULT 0
+    ,potentialChoice TEXT NOT NULL DEFAULT ''
+    ,potentialOption1 INTEGER NOT NULL DEFAULT 0
+    ,potentialOption2 INTEGER NOT NULL DEFAULT 0
+    ,potentialOption3 INTEGER NOT NULL DEFAULT 0
+    ,bonusOption1 INTEGER NOT NULL DEFAULT 0
+    ,bonusOption2 INTEGER NOT NULL DEFAULT 0
+    ,bonusOption3 INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE queststatus

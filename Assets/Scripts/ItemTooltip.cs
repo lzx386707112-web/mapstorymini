@@ -226,6 +226,9 @@ public static class ItemTooltip
 
     static void DrawEquipment(int id, Vector2 anchor)
     {
+        // Hover references can outlive an authoritative inventory replacement after a cube.
+        if (hoverItem != null && GameSession.Character != null)
+            hoverItem = GameSession.Character.inventory.Find(x => x.itemRowId == hoverItem.itemRowId) ?? hoverItem;
         var info = EquipCatalog.Info(id);
         if (info == null) return;
         float s = BottomBar.S;
@@ -265,14 +268,38 @@ public static class ItemTooltip
         int[] actual = hoverItem?.isEquip == true ? new[] { hoverItem.str, hoverItem.dex, hoverItem.int_, hoverItem.luk,
             hoverItem.hp, hoverItem.mp, hoverItem.watk, hoverItem.matk, hoverItem.wdef, hoverItem.mdef,
             hoverItem.acc, hoverItem.avoid, hoverItem.hands, hoverItem.speed, hoverItem.jump } : null;
+        bool version282 = hoverItem?.equipmentData != null &&
+            hoverItem.equipmentData.TryGetValue("enhancementVersion", out var version) && System.Convert.ToInt32(version) == 282;
+        bool vestige = hoverItem?.equipmentData != null &&
+            hoverItem.equipmentData.TryGetValue("starForceVestige", out var trace) && System.Convert.ToInt32(trace) != 0;
+        string[] statKeys = { "str", "dex", "int", "luk", "hp", "mp", "watk", "matk", "wdef", "mdef", "acc", "avoid", "hands", "speed", "jump" };
+        var baseStats = new Dictionary<string, int>();
+        bool native = NativeScrollService.HasStats(hoverItem);
+        for (int i = 0; i < keys.Length; i++)
+            baseStats[statKeys[i]] = version282 ? (native && actual != null ? actual[i] : info.Int(keys[i]))
+                : actual == null ? info.Int(keys[i]) : System.Math.Max(actual[i], info.Int(keys[i]));
+        int requiredLevel = info.Int("reqLevel");
+        if (hoverItem?.equipmentData != null && hoverItem.equipmentData.TryGetValue("iIncReq", out var incReq))
+            requiredLevel += System.Convert.ToInt32(incReq);
+        var starStats = version282 && !vestige
+            ? StarForceStats.Calculate(id, requiredLevel, hoverItem.starLevel, info.Int("superiorEqp") != 0, baseStats)
+            : new Dictionary<string, int>();
         for (int i = 0; i < keys.Length; i++)
         {
-            // 源端装备行是「WZ 基础 + 卷轴/星力增量」，实例里存的是合计值；
-            // 本工程有些老存档行只建了 inventoryequipment 没种基础值（全 0），
-            // 这里取两者较大值，避免整块属性看着像没穿装备。
-            int baseValue = info.Int(keys[i]);
-            int value = actual == null ? baseValue : System.Math.Max(actual[i], baseValue);
+            starStats.TryGetValue(statKeys[i], out int delta);
+            int value = baseStats[statKeys[i]] + delta;
             if (value > 0) rows.Add(new[] { labels[i], " +" + value });
+        }
+        if (version282)
+        {
+            rows.Add(new[] { vestige ? "装备痕迹 :" : "星力强化 :", " " + hoverItem.starLevel + "星" });
+            if (!vestige)
+            {
+                starStats.TryGetValue("watk", out int starAttack);
+                starStats.TryGetValue("matk", out int starMagic);
+                rows.Add(new[] { "星力攻击力 :", " +" + starAttack });
+                rows.Add(new[] { "星力魔法力 :", " +" + starMagic });
+            }
         }
         int upgrades = actual == null ? info.Int("tuc") : hoverItem.upgradeslots;
         // 老存档里存在「建了装备行但没种 WZ 值」的实例（upgradeslots 一直是 0）。
@@ -281,20 +308,38 @@ public static class ItemTooltip
             upgrades = System.Math.Max(upgrades, info.Int("tuc"));
         if (upgrades > 0) rows.Add(new[] { LUpgrades, " " + upgrades });
 
-        // —— 星级条（BeiDouSetItemCompat.dll 0x65C82B4E）——
-        // 画在装备 tooltip 的帧调用点上（EXE 0x8E7E5E / 0x8E97C3 / 0x8E97E7 三处 hook）：
-        //   条高：一列(≤15 星) 27、两列 42；每列 15 颗、步进 9px、每 5 颗多 4px、整块水平居中；
-        //   颜色：已点亮 0xFFFFD83D、未点亮 0xFF737B86。
-        // 星数/上限真源在装备实例（源端 Equip.starLevel/maxStar，由 星级强化.js 写入），
-        // 名字尾部 "N★" 解析保留为兜底（老存档/外部写名的场合）。
-        // 源端是独立 native layer 叠在框底（会压住最后一两行），这里把高度加进框里，不遮内容。
+        // 282 options belong to this equipment instance, never to the template or candidate journal.
+        if (hoverItem?.equipmentData != null)
+        {
+            int Read(string key) => hoverItem.equipmentData.TryGetValue(key, out var v) ? System.Convert.ToInt32(v) : 0;
+            int bucket = PotentialCatalog.OptionLevel(info.Int("reqLevel") + Read("iIncReq"));
+            string[] grades = { "", "特殊", "稀有", "罕见", "传说" };
+            foreach (bool bonus in new[] { false, true })
+            {
+                string prefixKey = bonus ? "bonusOption" : "potentialOption";
+                int grade = Read(bonus ? "bonusGrade" : "potentialGrade");
+                if (Read(prefixKey + "1") == 0) continue;
+                rows.Add(new[] { bonus ? "附加潜能 :" : "主潜能 :", " " + grades[System.Math.Max(0, System.Math.Min(4, grade))] });
+                for (int line = 1; line <= 3; line++)
+                {
+                    int option = Read(prefixKey + line);
+                    if (option != 0) rows.Add(new[] { option < 0 ? "未鉴定潜能" : PotentialCatalog.Shared.Describe(option, bucket), "" });
+                }
+            }
+        }
+
+        // —— 星级条 ——
+        // 282 的 tooltip 星条就是 Enchant.img/starForce/summaryStar 那三张 11x10 图标
+        // （UIToolTip.img/Item/Equip/textIcon/starForce 直接 _outlink 过去）：
+        //   步进 11px、每 5 颗多 10px（starForce/summaryStar/space X1=0/X5=10）、每行 15 颗；
+        //   颜色即原始像素：金 0xFFFFD800、尊貴蓝 0xFF75E6FE、未点亮 0xFF1D232A(70%)。
+        // 条高沿用 BeiDou DLL 的一列 27 / 两列 42 占位，星星在条内垂直居中。
         string equipName = ItemCatalog.Name(id);
         int stars = hoverItem != null ? hoverItem.starLevel : StarFromName(equipName);
-        int capacity = hoverItem != null && hoverItem.maxStar > 0
-            ? hoverItem.maxStar
-            : StarCapacity(info.Int("reqLevel"));
-        // 原「武器星之力强化」validateEquip/isWeapon excludes armour and cash weapons.
-        if (id < 1302000 || id >= 1493000 || info.Int("cash") != 0) { stars = 0; capacity = 0; }
+        // Capacity is a template/rules property, not an enhancement-version marker.
+        // A pristine item and its first successful enhancement must show the same slots.
+        int capacity = info.Int("cash") == 0 && info.Int("tuc") > 0
+            ? StarForceRules.Shared.Cap(id, requiredLevel, info.Int("superiorEqp") != 0) : 0;
         if (stars > capacity) capacity = stars;
         float starBar = capacity > 0 ? (capacity > 15 ? 42f : 27f) : 0f;
         // 星条画在**顶部**（源端 DLL 把星星 layer 锚在框顶，第一列 y=6、第二列 y=21），
@@ -369,7 +414,7 @@ public static class ItemTooltip
                 211 * s, descriptionHeight), description, descriptionStyle);
         if (capacity > 0)
             DrawStarBar(new Rect(rect.x, rect.y + 26 * s, rect.width, starBar * s),
-                capacity, stars, s);
+                capacity, stars, info.Int("superiorEqp") != 0, s);
         DrawSetPanel(rect, id, s);
     }
 
@@ -395,28 +440,11 @@ public static class ItemTooltip
         return stars;
     }
 
-    // 星条：每列 15 颗、步进 9、每 5 颗多 4px；第一列 y=6、第二列 y=21（相对条顶），整块水平居中
-    static void DrawStarBar(Rect bar, int capacity, int stars, float s)
+    // 星条：282 summaryStar 图标（11x10）、每行 15 颗、整块水平居中、条内垂直居中
+    static void DrawStarBar(Rect bar, int capacity, int stars, bool superior, float s)
     {
-        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(9 * s) };
-        var gold = new Color32(255, 216, 61, 255);   // 0xFFFFD83D
-        var dim = new Color32(115, 123, 134, 255);   // 0xFF737B86
-        int cols = capacity > 15 ? 2 : 1;
-        for (int col = 0; col < cols; col++)
-        {
-            int n = col == 0 ? Mathf.Min(15, capacity) : capacity - 15;
-            if (n <= 0) continue;
-            float width = n * 9f + (n - 1) / 5 * 4f;
-            float x = bar.x + (bar.width - width * s) * 0.5f;
-            float y = bar.y + (col == 0 ? 6f : 21f) * s;
-            for (int i = 0; i < n; i++)
-            {
-                if (i > 0 && i % 5 == 0) x += 4f * s;
-                style.normal.textColor = col * 15 + i < stars ? gold : dim;
-                GUI.Label(new Rect(x, y, 10 * s, 14 * s), "★", style);
-                x += 9f * s;
-            }
-        }
+        if (capacity <= 0 || !StarForceStars.Ready) return;
+        StarForceStars.Draw(bar.x + bar.width * .5f, bar.y + bar.height * .5f, s, stars, capacity, superior);
     }
 
     // —— 套装块（源端 BeiDouSetItemCompat.dll 的 native set panel）——

@@ -120,7 +120,7 @@ public static class GameSideMenu
         {
             glyph = "享",
             title = "分享日志",
-            desc = "导出日志，转发给开发者分析",
+            desc = "选择日期日志，转发给开发者分析",
             gameplayOnly = false,
             run = LogShare.Share,
         },
@@ -185,6 +185,7 @@ public static class GameSideMenu
     // —————————— 每帧（InputBridge.Update，早于 Pointer.Tick） ——————————
     public static void Tick()
     {
+        LogShare.Tick();
         var g = GameLoop.I;
         if (g == null || g.state != GameLoop.GameState.Playing)
         {

@@ -37,7 +37,7 @@ public static class NativeCashWindow {
         var result = Request(CashOperation.Open); ShopWindow.Visible = result != null && result.ok;
         if (ShopWindow.Visible) { category = 1; subcategory = page = lockerRow = inventoryRow = 0; previousTimeScale = Time.timeScale; Time.timeScale = 0; }
     }
-    public static void Reset() { if (ShopWindow.Visible && Time.timeScale == 0) Time.timeScale = previousTimeScale; ShopWindow.Visible = false; state = null; giftVisible = purchaseVisible = birthdayVisible = surpriseVisible = false; }
+    public static void Reset() { if (ShopWindow.Visible && Time.timeScale == 0) Time.timeScale = previousTimeScale; ShopWindow.Visible = false; state = null; giftVisible = purchaseVisible = birthdayVisible = surpriseVisible = false; NativeUtilPrompt.Clear(); }
     public static void GiftWish(int sn, string recipient)
     {
         if (!ShopWindow.Visible && GameLoop.I != null) {
@@ -49,7 +49,7 @@ public static class NativeCashWindow {
         selected = sn; target = recipient; message = messageSecond = "";
         giftVisible = true; purchaseVisible = birthdayVisible = false;
     }
-    static CashResponse Request(CashOperation operation, long itemId = 0, int inventory = 0, int[] wishes = null) {
+    static CashResponse Request(CashOperation operation, long itemId = 0, int inventory = 0, int[] wishes = null, bool notify = true) {
         if (!GameSession.InGame) { BottomBar.Toast("请先选择角色"); return null; }
         // 目录解析在 OnGUI 里做，解析失败不能让整个 HUD 每帧抛异常。
         if (GameSession.Server.Cash.Catalog == null) {
@@ -60,7 +60,7 @@ public static class NativeCashWindow {
         state = GameSession.Net.Cash(new CashRequest { characterId = GameSession.CharacterId, operation = operation,
             sn = selected, itemId = itemId, currency = currencies[currency], target = target, message = message + (messageSecond.Length > 0 ? "\r\n" + messageSecond : ""), birthday = date, inventoryType = inventory, wishes = wishes });
         SyncInventory(state.character);
-        if (!state.ok) BottomBar.Toast(state.error);
+        if (!state.ok && notify) BottomBar.Toast(state.error);
         return state;
     }
     // Inventory is server-owned; rebuild its Profile mirror without replacing quests or XP.
@@ -173,9 +173,11 @@ public static class NativeCashWindow {
         GUI.matrix = previous * Matrix4x4.TRS(scene.position, Quaternion.identity, new Vector3(scale, scale, 1));
         bool enabled = GUI.enabled;
         bool exit = false;
-        keepNormal = giftVisible || purchaseVisible;
+        // 扩容提示框（NativeUtilPrompt）与购买/赠送确认同层：背景保持正常态绘制，点击被拦截。
+        bool promptVisible = NativeUtilPrompt.Visible;
+        keepNormal = giftVisible || purchaseVisible || promptVisible;
         try {
-            GUI.enabled = enabled && !giftVisible && !purchaseVisible;
+            GUI.enabled = enabled && !giftVisible && !purchaseVisible && !promptVisible;
             Image(BackgroundNode(state.character != null ? state.character.record.job : 0).Substring(CashRoot.Length), 0, 0);
             DrawPreview();
             DrawCategories();
@@ -282,22 +284,35 @@ public static class NativeCashWindow {
             if (hi < held.Count) DrawStock(held[hi], InventoryCell(i), false);
         }
         string[] expansion = { "BtExEquip", "BtExConsume", "BtExInstall", "BtExEtc", "BtExTrunk" };
-        for (int i = 0; i < expansion.Length; i++)
-            if (Button("CSInventory/" + expansion[i], 176, 453 + 27 * i, keepNormal)) {
-                if (i < 4) {
-                    var result = Request(CashOperation.ExpandInventory, 0, i + 1);
-                    if (result != null && result.ok) BottomBar.Toast("道具栏已扩充4格");
-                }
-                else {
-                    var result=Request(CashOperation.ExpandStorage);
-                    if(result!=null && result.ok)BottomBar.Toast("仓库已扩充4格");
-                }
-            }
+        for (int i = 0; i < expansion.Length; i++) {
+            // 原端 0x46C2DD / 0x46C5F5 已在本级到顶时弹窗并直接返回：
+            // 道具栏 96 格、仓库 48 格。到顶后按钮画原端 disabled 图，点击不再发包。
+            bool full = ExpansionFull(i);
+            bool previous = GUI.enabled;
+            if (full) GUI.enabled = false;
+            bool pressed = Button("CSInventory/" + expansion[i], 176, 453 + 27 * i, keepNormal && !full);
+            GUI.enabled = previous;
+            if (!pressed) continue;
+            // 成败都给原端提示框（531「增加了背包的容量。」/ 服务端拒绝原因），Toast 一闪而过看不见。
+            var result = i < 4 ? Request(CashOperation.ExpandInventory, 0, i + 1, null, false)
+                               : Request(CashOperation.ExpandStorage, 0, 0, null, false);
+            if (result != null) NativeUtilPrompt.Notice(result.ok ? "增加了背包的容量。" : result.error);
+        }
         if (Event.current.type == EventType.ScrollWheel) {
             if (new Rect(0,318,256,104).Contains(pointer)) { lockerRow += Event.current.delta.y > 0 ? 1 : -1; Event.current.Use(); }
             else if (new Rect(0,426,170,163).Contains(pointer)) { inventoryRow += Event.current.delta.y > 0 ? 1 : -1; Event.current.Use(); }
         }
     }
+    // 原端扩容上限：道具栏 96 格（0x60）、仓库 48 格（0x30），每次 +4 格。
+    // 剩余不足 4 格即视为已扩满；服务端 NativeCashService 用同一判定。
+    static int BagSlots(int type) {
+        var record = state != null ? state.character?.record : null;
+        if (record == null) return 0;
+        return type == 1 ? record.equipslots : type == 2 ? record.useslots
+             : type == 3 ? record.setupslots : record.etcslots;
+    }
+    static bool ExpansionFull(int index) =>
+        index < 4 ? BagSlots(index + 1) + 4 > 96 : state.storageSlots + 4 > 48;
     static void DrawStock(CashStock item, Rect rect, bool locker) {
         var icon = NativeItemSource.Icon(item.itemId);
         if (icon != null) GUI.DrawTexture(new Rect(rect.x, rect.yMax - icon.height, icon.width, icon.height), icon);

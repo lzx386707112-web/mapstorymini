@@ -624,3 +624,21 @@ BotTasks改为复用待执行快照/PendingCount直接计数，保留到期排�
 ### 2026-11-03 14:05新包补测
 
 市场RunPathfind实机单次526–707ms；MarketBotAmbient.Climb冷Enable同步构图入口现接既有PrepareNavigation后台预构建。另有Scheduler702ms而Tasks不足1ms未定位，新增Wander/Decision/BuildSync标签。BotPerf开启中途Scope(start=0)的十几亿毫秒假样本已修正。手机尚未运行这些后续修改，不声称已降低发热。详细设备采样、复现边界及机器人/AP外围回归见根目录docs/tms282-skill/12-android-regression.md末节。
+
+
+## 2026-11-04 假人全图不可见诊断与冷启动游荡阻塞
+
+用户现场：人物、名字、气泡一起消失，但行为仍运行，重启不恢复；仅一个区一个频道。
+证据文件为用户提供的 `/Users/lizixian/Downloads/client.txt`（2026-11-02/03 华为 ALN-AL00 会话）。
+11-03 12:32:14 进入自由市场，后台最终44人，随后 BotField.Sync/CreateQueued 持续执行，未见 BotField.Create 或相关异常。
+这只能缩小到视图创建前的地图索引/状态过滤链，不能据此宣称根因已确认；44为全局数，并非同图数。
+环境 Step 单次24191/11247/8095ms确有长阻塞，尚不能把它等同于不可见原因。
+
+移植端修改（无新增EXE/DLL、IMG节点或UI布局结论）：
+- BotField 每次换图及日志开启时每10秒输出 `[Bot/View]`：玩家地图/世界频道、全局数、按实体mapId扫描数、索引数、离线/世界/频道过滤数、索引缺失数、可见资格数、排队数、视图数、有效Sprite数及首个同图实体的上下文。资格正常但indexMissing>0指向地图索引；wrongWorld/wrongChannel指向上下文；views/sprites差异指向创建/渲染。sprites仅代表active/enabled且非空，不证明相机可见或像素不透明。
+- BotEnvironment.Post 保留顺序/预算和异常处理，以CallerMemberName补具体步骤的耗时标签，避免仅有聚合Step无法判断哪个阶段慢。
+- BotWander.Start旧链立即Enable→Graphs.Get（按实际属性）、再Graphs.Get(Base)，冷缓存会同步构建两类导航图。现Start仅登记游荡，观察到该图后的Tick先PrepareNavigation，后台图就绪后才Enable/计算原可达区间/选点。保留原游荡间隔、区间算法、移动执行器；停止/换图沿原状态清理，无延迟回调复活旧游荡。仅此入口优化，不代表所有同步构图调用都已消除。
+
+验证结果以本次工作最终报告为准；未构建APK或验收异常用户手机，仍需新包现场日志验证不可见根因及卡顿改善。
+
+本轮实际验证：完整 server-check 1664通过/0失败（含冷启动仅登记、不同步创建移动执行器的新增回归）；Unity compile-check 0错误/0警告；git diff --check通过。日志 `/tmp/mxd-bot-view-check.log`、`/tmp/mxd-bot-view-compile.log`。未进行APK构建或手机验收。

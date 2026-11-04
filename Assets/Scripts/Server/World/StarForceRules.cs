@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 // TMS282.5 GameConstants + enhance/starforce.tsv. All probabilities use per-10000.
+// Caps: verified TMS282 client A08930 and InstanceTableWZ2 (clientCaps in JSON).
 // User override: two consecutive star drops guarantee the following attempt.
 public sealed class StarForceRules
 {
@@ -26,6 +27,7 @@ public sealed class StarForceRules
     }
     readonly Rate[] normal, superior;
     readonly Dictionary<string, object> itemCaps;
+    readonly int[] levelMinimums, normalCaps, superiorCaps;
     static StarForceRules shared;
     public static StarForceRules Shared => shared ??= new StarForceRules(PlatformRes.LoadText("Enhancement/StarForce"));
     public StarForceRules(string json)
@@ -35,7 +37,13 @@ public sealed class StarForceRules
             throw new InvalidOperationException("282 星力规则数据缺失或版本错误");
         normal = ReadRates(root, "normal", 30);
         superior = ReadRates(root, "superior", 15);
-        itemCaps = (Dictionary<string, object>)root["itemCaps"];
+        var caps = (Dictionary<string, object>)root["clientCaps"];
+        itemCaps = (Dictionary<string, object>)caps["itemCaps"];
+        levelMinimums = ReadInts(caps, "levelMinimums");
+        normalCaps = ReadInts(caps, "normal");
+        superiorCaps = ReadInts(caps, "superior");
+        if (levelMinimums.Length != 6 || normalCaps.Length != 6 || superiorCaps.Length != 6)
+            throw new InvalidOperationException("282 客户端星级上限表不完整");
     }
     static int Number(Dictionary<string, object> row, string key) => Convert.ToInt32(row[key]);
     static Rate[] ReadRates(Dictionary<string, object> root, string key, int count)
@@ -53,8 +61,17 @@ public sealed class StarForceRules
         }
         return result;
     }
-    public int Cap(int itemId, bool isSuperior)
-        => isSuperior ? 15 : itemCaps.TryGetValue(itemId.ToString(System.Globalization.CultureInfo.InvariantCulture), out var cap) ? Convert.ToInt32(cap) : 30;
+    static int[] ReadInts(Dictionary<string, object> root, string key)
+        => ((List<object>)root[key]).ConvertAll(Convert.ToInt32).ToArray();
+    // Client A08930: level = template reqLevel + instance iIncReq.
+    public int Cap(int itemId, int level, bool isSuperior)
+    {
+        if (itemCaps.TryGetValue(itemId.ToString(System.Globalization.CultureInfo.InvariantCulture), out var cap))
+            return Convert.ToInt32(cap);
+        int bucket = 0;
+        while (bucket + 1 < levelMinimums.Length && level >= levelMinimums[bucket + 1]) bucket++;
+        return (isSuperior ? superiorCaps : normalCaps)[bucket];
+    }
     Rate At(int star, bool isSuperior)
     {
         var table = isSuperior ? superior : normal;
@@ -83,7 +100,7 @@ public sealed class StarForceRules
     public Quote Preview(int itemId, int level, int star, int dropStreak, bool isSuperior,
         bool safeguardUI = false, bool protectionScroll = false, int vipGrade = 0, bool miniGame = false)
     {
-        if (star >= Cap(itemId, isSuperior)) throw new ArgumentException("装备已达到最大星级");
+        if (star >= Cap(itemId, level, isSuperior)) throw new ArgumentException("装备已达到最大星级");
         if (dropStreak < 0 || vipGrade < 0 || vipGrade > 20) throw new ArgumentOutOfRangeException();
         if (safeguardUI && !CanSafeguard(star, isSuperior)) throw new ArgumentException("防破坏保护仅适用于普通装备15至17星");
         var row = At(star, isSuperior);

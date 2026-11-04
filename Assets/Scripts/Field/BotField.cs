@@ -74,6 +74,8 @@ public sealed class BotField : MonoBehaviour
     // 进图补建窗口的截止时间（unscaledTime）；-1 表示不在窗口内。
     float catchUpUntil = -1f;
     bool synchronized;
+    float nextDiagnostic;
+    int indexedCount, offlineCount, worldCount, channelCount;
     NativeMarketField market;
 
     void OnEnable()
@@ -122,9 +124,13 @@ public sealed class BotField : MonoBehaviour
         lastSync = Time.unscaledTime;
         currentMap = mapId; currentWorld = world; currentChannel = channel; synchronized = true;
         present.Clear();
+        indexedCount = offlineCount = worldCount = channelCount = 0;
         foreach (var actor in BotRegistry.OnMap(mapId))
         {
-            if (!actor.online || actor.world != world || actor.channel != channel) continue;
+            indexedCount++;
+            if (!actor.online) { offlineCount++; continue; }
+            if (actor.world != world) { worldCount++; continue; }
+            if (actor.channel != channel) { channelCount++; continue; }
             present.Add(actor.id);
             if (!views.ContainsKey(actor.id))
             {
@@ -152,6 +158,27 @@ public sealed class BotField : MonoBehaviour
                           + MapEnterBudgetMs + "ms 预算内没建完，剩 " + pending.Count + " 个分帧续建");
         }
         else CreateQueued(MaxCreatePerFrame);
+        if (FileLog.Enabled && (mapChanged || Time.unscaledTime >= nextDiagnostic))
+        {
+            nextDiagnostic = Time.unscaledTime + 10f;
+            int actual = 0, indexMissing = 0, sprites = 0;
+            string sample = "";
+            foreach (var actor in BotRegistry.All().Values)
+                if (actor.mapId == mapId)
+                {
+                    actual++;
+                    if (actor.online && actor.world == world && actor.channel == channel && !present.Contains(actor.id)) indexMissing++;
+                    if (sample.Length == 0) sample = actor.id + ":" + actor.world + "/" + actor.channel + "/" + actor.online;
+                }
+            foreach (var view in views.Values)
+                if (view.root != null && view.root.activeInHierarchy && view.animation.Renderer != null &&
+                    view.animation.Renderer.enabled && view.animation.Renderer.sprite != null) sprites++;
+            Debug.Log("[Bot/View] map=" + mapId + " context=" + world + "/" + channel +
+                " global=" + BotRegistry.Count() + " actual=" + actual + " indexed=" + indexedCount +
+                " offline=" + offlineCount + " wrongWorld=" + worldCount + " wrongChannel=" + channelCount +
+                " indexMissing=" + indexMissing + " eligible=" + present.Count + " pending=" + pending.Count +
+                " views=" + views.Count + " sprites=" + sprites + " sample(id:world/channel/online)=" + sample);
+        }
     }
 
     // 每帧按预算补建假人视图：单个纸娃娃要混合几十张 IMG 部件，一件就可能吃掉几毫秒，

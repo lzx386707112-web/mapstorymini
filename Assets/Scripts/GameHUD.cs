@@ -87,7 +87,10 @@ public class GameHUD : MonoBehaviour
         if (ShopWindow.Visible) {
             GameWindows.TrackPanels();
             NativeCashWindow.Tick();
+            // 商城是独立的全屏场景，不走下面 GameWindows.DrawAll 那条链；扩容成败等原生
+            // 提示框必须在这里补画。弹窗的模态置灰/拦截由 NativeCashWindow.Draw 内部处理。
             NativeCashWindow.Draw();
+            NativeUtilPrompt.Draw();
             DrawNotice();
             return;
         }

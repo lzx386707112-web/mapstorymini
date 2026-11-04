@@ -79,6 +79,18 @@ public class NativeCashSceneProbe : MonoBehaviour {
             yield return Click(267+230,215+148);
             Check(!(bool)Get("giftVisible"),"gift cancellation " + size);
         }
+        // 背包/仓库扩容到顶判定（原端 0x46C2DD/0x46C5F5：+4 超过 96/48 即满）。
+        var expansionFull = typeof(NativeCashWindow).GetMethod("ExpansionFull",BindingFlags.Static|BindingFlags.NonPublic);
+        state.character.record.equipslots = state.character.record.useslots = 96;
+        state.character.record.setupslots = state.character.record.etcslots = 96;
+        state.storageSlots = 48;
+        bool fullBags = (bool)expansionFull.Invoke(null,new object[]{0}) && (bool)expansionFull.Invoke(null,new object[]{3})
+            && (bool)expansionFull.Invoke(null,new object[]{4});
+        Check(fullBags,"96-slot bags and 48-slot storage count as expansion full");
+        state.character.record.equipslots = 92;
+        state.storageSlots = 44;
+        Check(!(bool)expansionFull.Invoke(null,new object[]{0}) && !(bool)expansionFull.Invoke(null,new object[]{4}),
+            "92-slot bag and 44-slot storage still expandable");
         Debug.Log("[NativeCashSceneChecks] PASS native/widescreen screenshots, category hits, purchase/gift modal and cancel; no transactions");
         ShopWindow.Visible = false;
         EditorApplication.Exit(0);

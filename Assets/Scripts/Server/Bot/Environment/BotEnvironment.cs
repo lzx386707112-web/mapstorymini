@@ -76,10 +76,10 @@ namespace Server.Bot.Environment
         static bool yieldRequested;
 
         // 追加一小步到假人分帧泵（供城镇游荡等下游模块续接自己的流程）。
-        public static void Post(Action step)
+        public static void Post(Action step, [System.Runtime.CompilerServices.CallerMemberName] string caller = "")
         {
             if (step == null) return;
-            lock (steps) steps.Enqueue(step);
+            lock (steps) steps.Enqueue(() => { using var perf = BotPerf.Timer("BotEnvironment.Step." + caller); step(); });
             EnsurePump();
         }
 

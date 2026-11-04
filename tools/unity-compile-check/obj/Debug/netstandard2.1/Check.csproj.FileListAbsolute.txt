@@ -180,3 +180,6 @@
 /tmp/pq-visibility-compile/AssemblyCSharpCheck.deps.json
 /tmp/pq-visibility-compile/AssemblyCSharpCheck.dll
 /tmp/pq-visibility-compile/AssemblyCSharpCheck.pdb
+/tmp/mapledash-cash-expand/bin/AssemblyCSharpCheck.deps.json
+/tmp/mapledash-cash-expand/bin/AssemblyCSharpCheck.dll
+/tmp/mapledash-cash-expand/bin/AssemblyCSharpCheck.pdb

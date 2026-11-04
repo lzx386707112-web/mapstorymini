@@ -15,6 +15,17 @@ static class Program
         try { action(); } catch (ArgumentException) { checks++; return; }
         throw new Exception(message);
     }
+    struct Pixel { public int r,g,b,a; }
+    // The star canvases are small solid icons; read the most opaque pixel.
+    static Pixel StarPixel(MapleDash.Wz.ImgNode node)
+    {
+        if(node==null||node.Kind!="Canvas")return new Pixel {r=-1,g=-1,b=-1,a=-1};
+        var rgba=node.Rgba();int best=0,bestAlpha=-1;
+        for(int i=3;i<rgba.Length;i+=4)if(rgba[i]>bestAlpha){bestAlpha=rgba[i];best=i-3;}
+        return new Pixel {r=rgba[best],g=rgba[best+1],b=rgba[best+2],a=rgba[best+3]};
+    }
+    static bool Near(Pixel pixel,int r,int g,int b)
+        =>Math.Abs(pixel.r-r)<=17&&Math.Abs(pixel.g-g)<=17&&Math.Abs(pixel.b-b)<=17&&pixel.a>=250;
     static void Main()
     {
         string enchantPath=Path.GetFullPath("../MapleDashResources/Data/UI/Enchant.img");
@@ -41,6 +52,32 @@ static class Program
             }
             Walk(image.Root);
             Check(audio>0,"Original enhancement sound nodes parsed by runtime IMG reader");
+        }
+        // Star row geometry/colour the Android window and tooltip both hardcode.
+        using(var ui=new MapleDash.Wz.ImgFile(Path.GetFullPath("../MapleDashResources/Data/UI/Enchant.img")))
+        {
+            var star=ui.Root.Get("starForce/summaryStar");
+            foreach(var name in new[]{"normal","blue","empty"})
+            {
+                var node=star?.Get(name)?.TryResolve();
+                Check(node!=null&&node.Width==11&&node.Height==10,
+                    "282 summaryStar/"+name+" keeps the original 11x10 canvas");
+                var origin=node?.Get("origin");
+                Check(origin!=null&&origin.X==5&&origin.Y==5,"282 summaryStar icon anchor stays centred");
+            }
+            // 11px step with a 10px gap after every fifth star, 5px between rows.
+            Check(star!=null&&star.Int("space/X1")==0&&star.Int("space/X5")==10&&star.Int("space/Y")==5,
+                "282 summaryStar spacing is X1=0 X5=10 Y=5");
+            var summary=ui.Root.Get("starForce/vector:summary");
+            Check(summary!=null&&summary.X==209&&summary.Y==260,"Star row stays anchored on vector:summary (209,260)");
+            var gold=StarPixel(star?.Get("normal")?.TryResolve());
+            var blue=StarPixel(star?.Get("blue")?.TryResolve());
+            var dim=StarPixel(star?.Get("empty")?.TryResolve());
+            // Import re-encodes every canvas as ARGB4444 (4-bit channels), so compare within one nibble.
+            Check(Near(gold,255,216,0),"Gold star keeps the 282 #FFD800 tone");
+            Check(Near(blue,117,230,254),"Superior star keeps the 282 #75E6FE tone");
+            Check(dim.a>150&&dim.a<200&&Math.Abs(dim.r-29)<=17&&Math.Abs(dim.g-35)<=17&&Math.Abs(dim.b-42)<=17,
+                "Unlit star keeps the dim 282 tone");
         }
         var defenses=new MobDefenseCatalog(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"MobDefense.json")));
         var mobStats=new Dictionary<string,object>{{"maxHP",8L}};
@@ -86,10 +123,31 @@ static class Program
         Check(rules.Cost(1302000, 150, 15, false) == 30087200, "15-star cost falls as source formula specifies");
         Check(rules.Cost(1302000, 150, 1, true) == 55833200, "Superior cost");
         Check(rules.Cost(1122444,150,1,false)==0, "Free necklace");
-        Check(rules.Cap(1072870,false)==15 && rules.Cap(1182060,false)==22 && rules.Cap(1302000,true)==15, "Exceptional caps");
+        var levels = new[] {0,94,95,107,108,117,118,127,128,137,138,200};
+        var normalCaps = new[] {5,5,8,8,10,10,15,15,20,20,30,30};
+        var superiorCaps = new[] {3,3,5,5,8,8,10,10,12,12,15,15};
+        for (int i=0;i<levels.Length;i++)
+            foreach (bool sup in new[] {false,true})
+            {
+                int cap=(sup?superiorCaps:normalCaps)[i], level=levels[i];
+                Check(rules.Cap(1302000,level,sup)==cap,"Verified client level bracket");
+                Check(rules.Roll(cap-1,0,sup,rules.Preview(1302000,level,cap-1,0,sup),0).stars==cap,
+                    "Final legal upgrade reaches level cap");
+                Reject(()=>rules.Preview(1302000,level,cap,0,sup),"Level cap blocks next attempt");
+            }
+        Check(rules.Cap(1072870,160,false)==30 && rules.Cap(1182060,75,false)==5,
+            "Unverified server Sweetwater and badge caps do not override client");
+        Check(rules.Cap(1092123,1,false)==15 && rules.Cap(1092124,1,false)==20 && rules.Cap(1092125,1,false)==30,
+            "Client special equipment triple index overrides level cap");
+        Check(rules.Cap(1342121,1,false)==30 && rules.Cap(1354310,1,false)==30 && rules.Cap(1342125,1,false)==30,
+            "All three forced-thirty equipment groups");
+        Check(rules.Cap(1092113,150,false)==26 && rules.Cap(1342090,150,false)==27 && rules.Cap(1354309,150,false)==27,
+            "Sequential exact-ID cap overrides");
+        Check(rules.Cap(1302376,200,false)==25 && rules.Cap(1542151,200,false)==25 && rules.Cap(1403054,200,false)==25,
+            "Destiny EXE and InstanceTableWZ2 item lists both enforce twenty-five");
         Reject(()=>rules.Preview(1302000,150,14,0,false,true), "Safeguard rejected outside 15..17");
         Reject(()=>rules.Preview(1302000,150,14,0,true,true), "Superior safeguard rejected");
-        Reject(()=>rules.Preview(1072870,150,15,0,false), "Item cap enforced");
+        Reject(()=>rules.Preview(1092113,150,26,0,false), "Item cap enforced");
         var protect=rules.Preview(1302000,150,15,0,false,true);
         var scroll=rules.Preview(1302000,150,15,0,false,false,true);
         Check(protect.destroy==0 && protect.cost==rules.Cost(1302000,150,15,false)*3, "UI safeguard tripled cost");

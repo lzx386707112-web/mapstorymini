@@ -34,6 +34,17 @@ static class StarForceChecks
             check(chance.quote.success==10000 && chance.quote.destroy==0,"Chance Time预览必成且不破坏");
             var success=Send(true,1);
             check(success.ok && success.result.stars==17 && success.result.dropStreak==0,"Chance Time最大随机数仍成功并清计数");
+            var refreshed=success.inventory.Find(x=>x.itemRowId==id);
+            var beforeEntry=drop.inventory.Find(x=>x.itemRowId==id);
+            var displayedBefore=StarForceStats.Calculate(beforeEntry.itemId,150,beforeEntry.starLevel,false,
+                new System.Collections.Generic.Dictionary<string,int>{{"str",beforeEntry.str},{"watk",beforeEntry.watk}});
+            var displayedAfter=StarForceStats.Calculate(refreshed.itemId,150,refreshed.starLevel,false,
+                new System.Collections.Generic.Dictionary<string,int>{{"str",refreshed.str},{"watk",refreshed.watk}});
+            check(refreshed.starLevel==17 && refreshed.watk==100 && refreshed.str==10 &&
+                Convert.ToInt32(refreshed.equipmentData["enhancementVersion"])==282 &&
+                displayedAfter["watk"]==success.derivedStats["watk"] &&
+                refreshed.watk+displayedAfter["watk"]>beforeEntry.watk+displayedBefore["watk"],
+                "成功回包保留基础值，详情用新星级派生攻击并与正式结算一致");
             var protectedQuote=Send(false,2,9999,true);
             check(protectedQuote.ok && protectedQuote.quote.destroy==0 && protectedQuote.quote.cost==rules.Cost(1302000,150,17,false)*3,"保护报价消除破坏率且费用三倍");
             var boom=Send(true,2,3000);
@@ -65,7 +76,100 @@ static class StarForceChecks
             check(EnhancementEquipmentReset.Apply(reset)==0 && InventoryDao.EquipmentOf(reset,fresh)!=null,"完成标记重启后生效，不删除新装备");
         }
         finally {if(File.Exists(path))File.Delete(path);if(File.Exists(path+".before-equipment-282-reset.bak"))File.Delete(path+".before-equipment-282-reset.bak");}
+        CheckLevelCap(check);
+        CheckEquipmentTypes(check);
         CheckTransportMirror(check);
+    }
+    // 282 ItemConstants.isUpgradable 是 BodyPart 白名单，不是"只有武器"。
+    static void CheckEquipmentTypes(Action<bool,string> check)
+    {
+        string path=Path.Combine(Path.GetTempPath(),"mapledash_sf_types_"+Guid.NewGuid().ToString("N")+".json");
+        try
+        {
+            var db=DbStore.Create(path);
+            var rules=new StarForceRules(File.ReadAllText("Assets/Resources/Enhancement/StarForce.json"));
+            var catalog=new BotItemCatalog("{\"names\":{},\"items\":{"
+                +"\"1003561\":{\"info\":{\"reqLevel\":100,\"tuc\":7,\"incSTR\":10,\"incPDD\":100}},"
+                +"\"1050000\":{\"info\":{\"reqLevel\":35,\"tuc\":10,\"incSTR\":5,\"incPDD\":50}},"
+                +"\"1122000\":{\"info\":{\"reqLevel\":120,\"tuc\":3,\"incSTR\":15,\"incMDD\":80}},"
+                +"\"1132000\":{\"info\":{\"reqLevel\":25,\"tuc\":3,\"incSTR\":3,\"incPDD\":10}},"
+                +"\"1152052\":{\"info\":{\"reqLevel\":15,\"tuc\":2,\"incSTR\":2,\"incPDD\":5}},"
+                +"\"1182016\":{\"info\":{\"reqLevel\":10,\"tuc\":1,\"incPAD\":5,\"incPDD\":10}},"
+                +"\"1672001\":{\"info\":{\"reqLevel\":30,\"tuc\":2,\"incMHP\":50,\"incPAD\":5}},"
+                +"\"1302000\":{\"info\":{\"reqLevel\":150,\"tuc\":7,\"incPAD\":100}},"
+                +"\"1142000\":{\"info\":{\"reqLevel\":10,\"tuc\":3,\"incSTR\":5}},"
+                +"\"1190000\":{\"info\":{\"reqLevel\":10,\"tuc\":3,\"incPAD\":5}},"
+                +"\"1162000\":{\"info\":{\"reqLevel\":10,\"tuc\":3,\"incSTR\":5}},"
+                +"\"1352000\":{\"info\":{\"reqLevel\":10,\"tuc\":3,\"incPAD\":5}}"
+                +"}}");
+            int cid=(int)db.Table("characters").Insert(new DbRow {["name"]="SfTypes",["meso"]=1000000000L,["hp"]=100L,["equipslots"]=24L});
+            int slot=10;
+            StarForceResponse Preview(int itemId)
+            {
+                long id=InventoryDao.InsertItem(db,cid,itemId,1,slot++,1);
+                InventoryDao.InsertEquipment(db,id,str:5,watk:5);
+                return NativeStarForceService.Handle(db,new StarForceRequest {characterId=cid,inventoryItemId=id,commit=false},rules,catalog,new Draw(0));
+            }
+            foreach(int itemId in new[]{1003561,1050000,1122000,1132000,1152052,1182016,1672001,1302000})
+            {
+                var response=Preview(itemId);
+                check(response.ok&&response.cap==rules.Cap(itemId,BotItemCatalog.Int(catalog.Info(itemId),"reqLevel"),false),
+                    "282 可强化类型放行："+itemId+"（上限随等级档位）");
+            }
+            foreach(int itemId in new[]{1142000,1190000,1162000,1352000})
+            {
+                var response=Preview(itemId);
+                check(!response.ok&&response.error=="这件装备不能进行星力强化",
+                    "282 排除类型仍拒绝："+itemId);
+            }
+            // 出厂道具表（Assets/Resources/Bot/Items.json）里的真实防具模板也要能过闸：
+            // 帽子/套服/腰带在 282 各有独立 BodyPart，tuc>0 才允许强化。
+            string shipped=PlatformRes.LoadText("Bot/Items");
+            if(!string.IsNullOrEmpty(shipped))
+            {
+                var full=new BotItemCatalog(shipped);
+                foreach(int itemId in new[]{1003561,1050000,1132000})
+                {
+                    long id=InventoryDao.InsertItem(db,cid,itemId,1,slot++,1);
+                    InventoryDao.InsertEquipment(db,id,str:5,watk:5);
+                    var response=NativeStarForceService.Handle(db,new StarForceRequest {characterId=cid,inventoryItemId=id,commit=false},rules,full,new Draw(0));
+                    check(response.ok&&response.cap>0,"出厂防具模板可强化："+itemId);
+                }
+            }
+        }
+        finally {if(File.Exists(path))File.Delete(path);}
+    }
+    static void CheckLevelCap(Action<bool,string> check)
+    {
+        string path=Path.Combine(Path.GetTempPath(),"mapledash_sf_cap_"+Guid.NewGuid().ToString("N")+".json");
+        try
+        {
+            var db=DbStore.Create(path);
+            var rules=new StarForceRules(File.ReadAllText("Assets/Resources/Enhancement/StarForce.json"));
+            var catalog=new BotItemCatalog("{\"names\":{},\"items\":{\"1302000\":{\"info\":{\"reqLevel\":94,\"tuc\":7,\"incPAD\":10}}}}");
+            int cid=(int)db.Table("characters").Insert(new DbRow {["name"]="SfCap",["meso"]=1000000000L,["hp"]=100L,["equipslots"]=24L});
+            long id=InventoryDao.InsertItem(db,cid,1302000,1,1,1);
+            InventoryDao.InsertEquipment(db,id,watk:10);
+            var eq=InventoryDao.EquipmentOf(db,id);
+            StarForceResponse Send(bool commit,int revision=0) => NativeStarForceService.Handle(db,
+                new StarForceRequest {characterId=cid,inventoryItemId=id,commit=commit,revision=revision},rules,catalog,new Draw(0));
+            int pristineCap=rules.Cap(1302000,94,false);
+            var first=Send(true);
+            check(first.ok && first.result.stars==1 && DbStore.Int(eq,"maxStar")==pristineCap && pristineCap==5,
+                "94级新装备首星前后均为5个星位，不再跳到30");
+            eq["starLevel"]=4L;
+            var last=Send(true,1);
+            long money=last.meso;
+            check(last.ok && last.result.stars==5 && DbStore.Int(eq,"maxStar")==5,
+                "低等级装备最后一次合法强化到5星");
+            check(!Send(false,2).ok && !Send(true,2).ok && CharactersDao.FindById(db,cid).meso==money && DbStore.Int(eq,"starLevel")==5,
+                "达到等级上限后预览及直接提交均拒绝且不扣款");
+            eq["iIncReq"]=1L;
+            var raised=Send(true,2);
+            check(raised.ok && raised.result.stars==6 && DbStore.Int(eq,"maxStar")==8,
+                "94加iIncReq1按95级分档，显示和结算统一8星上限");
+        }
+        finally {if(File.Exists(path))File.Delete(path);}
     }
     static void CheckTransportMirror(Action<bool,string> check)
     {

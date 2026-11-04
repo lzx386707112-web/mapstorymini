@@ -165,6 +165,20 @@ Unity检查入口 `NativeCashSceneChecks.Run`；只用内存商品/余额fixture
 
 最终增量验证：`/tmp/mapledash-cash-review-final.log`包含NativeCashSceneChecks PASS；两种分辨率均断言赠送OK进入生日输入、未请求交易。截图保存于 `docs/hud-review/cash-{scene,buy,gift,birthday}-{800,1280}.png`。以上是隔离内存fixture，不是APK验收。
 
+## 背包/仓库扩容按钮（2026-11-04 按汇编核实）
+
+原端身份：BeiDou.exe SHA256 `1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`。
+
+- 按钮 `CSInventory/BtExEquip|BtExConsume|BtExInstall|BtExEtc|BtExTrunk`，五态俱全：`normal/pressed/disabled/mouseOver` 各有 `0` 帧（已核对 MapleDashResources/Data/UI/CashShop.img）。到顶置灰可直接用原端 `disabled/0`，禁止自绘。
+- 上限判定（客户端本级预检，服务端同规则）：
+  - 道具栏 `0x46C2DA..0x46C2E0`：当前格数 +4 > 0x60(96) → `push 0x1EB`(string491「不能增加被选的背包空格数。」) → `0x9929DD`(CUtilDlg::Notice) 弹窗并**不发包**。
+  - 仓库 `0x46C5EC..0x46C5F8`：slots +4 > 0x30(48) → `push 0x1EC`(string492「不能增加扩充仓库空间。」) → 同上 Notice。
+  - 服务端 `CashOperationHandler` action 0x06/0x07 mode0：`canGainSlots(4)` 不通过只 `enableCSActions()`，不加钱不发包；`CASH_COUNT=2000` 点。
+- 成功提示：`0x47AAA6`（道具栏，`cmp esi,5`/`cmp ebx,0x60` 校验后）与 `0x47AB82`（仓库，`cmp eax,0x30`）都是 `push 0x213`(string531「增加了背包的容量。」) → Notice(0x9929DD)。**仓库成功也用 531，不是专用文案**；随后刷新 `+0xF40` 背包窗与 `+0x15BC` 列表（0x4B15C8/0x4B16B5/0x4BA419）。
+- 确认框文本（悬停气泡/确认用途，0x4B12CD..0x4B1367）：标题 string578「增加%s背包空间」+ 正文 string579「增加%d个%s背包格子. (当前: %d 个)\r\n最多%d格.%d 点券.」，经 0x4C131C 设置（参数 1）；当前格数读 `[esi+0x447+类型*4]` 所指 vector 并 -1。
+- string580（无价格版 579）引用在 0x8Dxxxx/0x8Fxxxx 区段，与商城无关。
+- 运行时迁移（2026-11-04）：`NativeCashWindow.DrawStorage` 到顶走 `ExpansionFull`（record.equipslots/useslots/setupslots/etcslots、response.storageSlots）→ `GUI.enabled=false` 画 `disabled/0` 且不发包；点击成败均弹 `NativeUtilPrompt.Notice`（成功=531 原文，失败=服务端 error）。商城是独立场景不走 `GameWindows.DrawAll`，故 `GameHUD` 商城分支补 `NativeUtilPrompt.Draw()`；`NativeCashWindow.Draw` 把 `NativeUtilPrompt.Visible` 并入模态 gating（背景正常态绘制+拦截点击，与购买/赠送确认同约定）；`Reset()` 清提示框；`Request` 增加 `notify` 参数避免弹窗与 Toast 双报。
+
 ## 2026-10-31 商城取出、背包镜像与宠物回归
 
 本次复用上述 EXE 布局/双击结论，未新增 EXE 地址结论；仅修复移植数据链路，未更改 IMG 布局。

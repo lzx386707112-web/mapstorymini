@@ -325,3 +325,31 @@ InventoryWindow金币由未分组11px中线对齐改为InvariantCulture N0、12p
 “装备通常无desc”不能实现成无条件跳过装备。相同BeiDou身份，装备入口`8E8E81`也调用`5CF69E`读取描述；非空`8E9720..8E975B`用字体7，x10、右界221，`8F4535 ->8E40E4`测量后追加窗口高度；`8E9EC1..8E9F11`在属性后绘制。复现用`inspect_beidou_client.py --fn 0x8e8252`及`--fn 0x8f4535`。
 
 当前282 BMS String/Eqp.img的`Eqp/Android/1662000`有原始desc，1672000只有name无desc。运行时166/167子目录应是Android，移植未复制String整文件，须用Items.json导出的原文回退；完整证据及边界见根目录`docs/tms282-skill/12-android-regression.md`本次反馈节。已接装备描述读取/测量/绘制，未虚构心脏文案；尚无本轮手机视觉验收。
+
+
+### 2026-11-03 282星力详情显示纠正
+
+旧武器专属星条限制只适用于旧系统。enhancementVersion=282装备按StarForceRules.Cap显示全部支持装备的
+星级，属性行须在实例纯基础属性之上加StarForceStats.Calculate派生层，不可把该层再存回实例。
+最新实例按itemRowId解析；装备痕迹不计有效星力加成。详见根docs/tms282-skill/16-enhancement-entry.md
+「星力成功后装备详情未变化」。此次为项目显示缺口修复，无新原EXE逆向结论，身份及星条绘制证据沿用本记录。
+
+
+### 2026-11-03 客户端等级星级上限正式核实
+
+用户选择按282客户端等级分档修正。ItemTooltip不再按enhancementVersion切换星条容量，所有可星力模板
+统一调用StarForceRules.Cap(id,reqLevel+iIncReq,superiorEqp)，与预览/提交/maxStar保存相同。
+282本机EXE SHA256 def89cf3c51b5d196b90776d64a68898d722c26f8ce14f97f8c3930e9c4cfc27、
+ImageBase140000000的A08930已核实普通5/8/10/15/20/30、尊贵3/5/8/10/12/15，
+门槛95/108/118/128/138；206个特殊ID覆盖链及数据导出详见根docs/tms282-skill/08-star-force.md §19。
+不再使用282.5默认30/15或其6项特例，也不能冒用旧北斗StarCapacity。已有超限星数保留展示，继续强化拒绝。
+服务回归28通过/0失败、Unity编译0警告/0错误；未做本轮Android实机验收。
+
+
+### 2026-11-03 用户要求直观显示星数与攻击加成
+
+在既有星力强化N星说明下增加「星力攻击力 : +N」「星力魔法力 : +N」两行。
+数值直接取本次已计算的StarForceStats派生watk/matk，表示当前全部星数累计贡献，0也显示；
+上方攻击/魔法属性总值已包含该贡献，不重复加算。装备痕迹仅显示保留星数，不显示有效攻击加成。
+这是用户明确要求的说明文案适配，复用现有属性行绘制/自动高度，不新增素材或改动结算规则。
+本次仅做差异/数据流检查，未运行新编译或Android视觉验收。更新APK生效，无需修改IMG。

@@ -11,7 +11,7 @@ using UnityEngine;
 // 目的：真机出问题时，让用户自己点一下就能把日志发出来，不用连电脑 adb。
 //
 // 做法：
-//   1. 把 logs/ 下所有日志（旧→新）合并成一个 txt，超长只留尾部（最近的才是现场）；
+//   1. 列出 logs/ 下的日志，由用户选择后完整导出该文件；
 //   2. Android 上把 txt 发布到系统「下载」目录（MediaStore），拿到 content:// URI，
 //      再用系统分享面板发出去（微信/QQ/邮件都能收）；
 //   3. 任何一步失败都退化成「文件已保存到下载目录」的提示，绝不让用户一无所获。
@@ -22,34 +22,43 @@ using UnityEngine;
 // ————————————————————————————————————————————————————————————
 public static class LogShare
 {
-    const int MaxShareChars = 2_000_000;   // 合并上限（字符），超出只留最近的部分
+    static string selectedFile;
+    public static void Tick()
+    {
+        string selected = Interlocked.Exchange(ref selectedFile, null);
+        if (selected != null) ShareFile(selected);
+    }
     const string Mime = "text/plain";
 
     public static void Share()
     {
-        string file;
-        try
-        {
-            FileLog.FlushNow();          // 先把内存里积压的写完，否则分享的是"半截"日志
-            file = Export();
-        }
-        catch (Exception e)
-        {
-            BottomBar.Toast("日志导出失败：" + e.Message);
-            return;
-        }
-
-        if (file == null)
-        {
-            BottomBar.Toast("还没有日志文件，先玩一会儿再分享");
-            return;
-        }
-
+        FileLog.FlushNow();
+        var files = FileLog.HistoryFiles();
+        files.Reverse();
+        if (files.Count == 0) { BottomBar.Toast("还没有日志文件，先玩一会儿再分享"); return; }
 #if UNITY_ANDROID && !UNITY_EDITOR
-        if (!AndroidShare.Offer(file))
-            BottomBar.Toast("日志已导出：" + file);
-        else
-            BottomBar.Toast("正在打开分享…");
+        AndroidShare.Choose(files);
+#elif UNITY_EDITOR
+        var menu = new UnityEditor.GenericMenu();
+        foreach (string file in files)
+        {
+            string selected = file;
+            menu.AddItem(new GUIContent(Path.GetFileName(file)), false, () => ShareFile(selected));
+        }
+        menu.ShowAsContext();
+#else
+        BottomBar.Toast("当前平台暂不支持日志选择");
+#endif
+    }
+
+    public static void ShareFile(string selected)
+    {
+        string file;
+        try { FileLog.FlushNow(); file = Export(selected); }
+        catch (Exception e) { BottomBar.Toast("日志导出失败：" + e.Message); return; }
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if (!AndroidShare.Offer(file)) BottomBar.Toast("日志已导出：" + file);
+        else BottomBar.Toast("正在打开分享…");
 #elif UNITY_EDITOR
         UnityEditor.EditorUtility.RevealInFinder(file);
         BottomBar.Toast("日志已导出：" + Path.GetFileName(file));
@@ -58,37 +67,27 @@ public static class LogShare
 #endif
     }
 
-    /// <summary>合并日志，返回导出文件路径；没有日志返回 null。</summary>
-    public static string Export()
+    /// <summary>完整导出选中的单份日志，不合并、不截断；固定长度快照避免持续追加。</summary>
+    public static string Export(string selected)
     {
-        var files = FileLog.HistoryFiles();
-        if (files.Count == 0) return null;
-
-        // 从最新往回装：先保证现场完整，装不下就丢最旧的那份
-        var parts = new List<string>();
-        int used = 0;
-        for (int i = files.Count - 1; i >= 0 && used < MaxShareChars; i--)
-        {
-            string text = FileLog.ReadShared(files[i], MaxShareChars - used);
-            if (string.IsNullOrEmpty(text)) continue;
-            parts.Add("===== " + Path.GetFileName(files[i]) + " =====\n" + text + "\n");
-            used += text.Length;
-        }
-        if (parts.Count == 0) return null;
-        parts.Reverse();
-
-        var sb = new StringBuilder(used + 2048);
-        sb.Append("MapleDash 客户端日志\n导出时间 ")
-          .Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")).Append('\n');
-        sb.Append(FileLog.DeviceSummary()).Append('\n');
-        sb.Append("日志开关 ").Append(FileLog.Enabled ? "开" : "关").Append('\n');
-        sb.Append("--------------------------------------------------\n");
-        foreach (string part in parts) sb.Append(part);
-
+        if (!FileLog.HistoryFiles().Contains(selected)) throw new IOException("日志文件已不存在");
         string dir = Path.Combine(FileLog.Dir, "share");
         Directory.CreateDirectory(dir);
-        string outPath = Path.Combine(dir, "mapstory-log-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".txt");
-        File.WriteAllText(outPath, sb.ToString(), new UTF8Encoding(false));
+        string outPath = Path.Combine(dir, "mapstory-log-" + Path.GetFileNameWithoutExtension(selected) +
+            "-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + ".txt");
+        using (var source = new FileStream(selected, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var target = new FileStream(outPath, FileMode.Create, FileAccess.Write))
+        {
+            long remaining = source.Length;
+            var buffer = new byte[64 * 1024];
+            while (remaining > 0)
+            {
+                int read = source.Read(buffer, 0, (int)Math.Min(buffer.Length, remaining));
+                if (read == 0) break;
+                target.Write(buffer, 0, read);
+                remaining -= read;
+            }
+        }
         Cleanup(dir);
         return outPath;
     }
@@ -109,6 +108,41 @@ public static class LogShare
 #if UNITY_ANDROID && !UNITY_EDITOR
     static class AndroidShare
     {
+        public static void Choose(List<string> files)
+        {
+            try
+            {
+                var activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer")
+                    .GetStatic<AndroidJavaObject>("currentActivity");
+                var names = files.ConvertAll(Path.GetFileName).ToArray();
+                var listener = new Selection(files);
+                activity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
+                {
+                    try
+                    {
+                        var builder = new AndroidJavaObject("android.app.AlertDialog$Builder", activity);
+                        builder.Call<AndroidJavaObject>("setTitle", "选择要分享的日志");
+                        builder.Call<AndroidJavaObject>("setItems", names, listener);
+                        builder.Call<AndroidJavaObject>("show");
+                    }
+                    catch (Exception e) { Debug.LogError("[Log] 日志列表打开失败：" + e); }
+                }));
+            }
+            catch (Exception e) { BottomBar.Toast("日志列表打开失败：" + e.Message); }
+        }
+
+        sealed class Selection : AndroidJavaProxy
+        {
+            readonly List<string> files;
+            public Selection(List<string> files) : base("android.content.DialogInterface$OnClickListener")
+            { this.files = files; }
+            public void onClick(AndroidJavaObject dialog, int which)
+            {
+                // Android UI thread must not call Unity APIs. Dispatch to the game thread.
+                selectedFile = which >= 0 && which < files.Count ? files[which] : null;
+            }
+        }
+
         // 返回 false 表示连提交都没成功（调用方退化成提示路径）
         public static bool Offer(string file)
         {

@@ -27,6 +27,8 @@ import math
 import os
 from pathlib import Path
 
+from client_starforce_caps import export_caps
+
 SERVER = Path(os.path.expanduser("~/Documents/mxd/TMS282.5"))
 ENHANCE = SERVER / "data/resources/tms282/enhance"
 
@@ -192,7 +194,7 @@ def main() -> None:
     print(f"wrote {out} ({len(lines) - 1} rows)")
     if args.runtime_out:
         runtime = {"schemaVersion": 1, "scale": 10000, "normal": [], "superior": [],
-                   "itemCaps": {str(k): v for k, v in ITEM_STAR_LIMIT.items()},
+                   "clientCaps": export_caps(Path.home() / "Documents/mxd/MapleStory"),
                    "sourceSha256": {name: hashlib.sha256((ENHANCE / name).read_bytes()).hexdigest()
                                     for name in ("starforce.tsv", "starforce-caps.tsv", "starforce-settings.tsv")}}
         for sup, key in ((False, "normal"), (True, "superior")):
