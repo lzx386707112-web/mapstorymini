@@ -47,6 +47,10 @@ public static class NativeNameplate
         return tier;
     }
 
+    /// <summary>点亮档位 tier（1..10）的战力门槛（称号试炼 Claim 用，NativeTitleTrials）。</summary>
+    public static long TierRequirement(int tier)
+        => tier >= TierCount ? TopTierPower : Thresholds[tier - 1];
+
     public static string TitleOf(int series, int tier)
     {
         int s = Mathf.Clamp(series, 0, SeriesCount - 1);
@@ -64,7 +68,7 @@ public static class NativeNameplate
         Profile.Save();
     }
 
-    /// <summary>进游戏时从服务端把持久化的系列灌进本地镜像。</summary>
+    /// <summary>进游戏时从服务端把持久化的系列灌进本地镜像；称号试炼点亮档一并拉取。</summary>
     public static void RefreshFromServer()
     {
         if (!GameSession.InGame) return;
@@ -80,7 +84,11 @@ public static class NativeNameplate
         {
             Debug.LogWarning("[Nameplate] 读取称号系列失败：" + error.Message);
         }
+        NativeTitleTrials.LoadLitFromServer();
     }
+
+    /// <summary>称号试炼点亮档变化后强制 LineFor 重算（NativeTitleTrials.SaveLit 调用）。</summary>
+    public static void OnLitChanged() => cachedSeries = -1;
 
     /// <summary>是否穿着名牌戒指（源端 ItemInformationProvider.isNameTagRing 的等价判定）。</summary>
     public static bool WearsNameTagRing => NativeNameTag.WearsField("nameTag");
@@ -107,7 +115,10 @@ public static class NativeNameplate
         double now = Time.unscaledTimeAsDouble;
         if (now < cachedUntil && cachedPower == power && cachedSeries == Series) return cachedLine;
         cachedPower = power; cachedSeries = Series; cachedUntil = now + 0.5;
-        cachedLine = WearsNameTagRing ? TitleOf(cachedSeries, TierOf(power)) + " || 战斗力：" + power : null;
+        // 称号试炼：显示档位 = 已点亮最高档；一档都没点亮时回落战力自动档（兼容现状）。
+        int lit = NativeTitleTrials.Lit(cachedSeries);
+        int tier = lit > 0 ? lit - 1 : TierOf(power);
+        cachedLine = WearsNameTagRing ? TitleOf(cachedSeries, tier) + " || 战斗力：" + power : null;
         return cachedLine;
     }
     static string cachedLine;

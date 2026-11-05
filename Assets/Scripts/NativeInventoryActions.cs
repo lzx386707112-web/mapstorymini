@@ -16,6 +16,16 @@ public static class NativeInventoryActions
     }
     public static void Pick(int id,int inventoryPosition=0) => Pick(id,inventoryPosition,false);
     public static void PickFromInventory(int id,int inventoryPosition=0) => Pick(id,inventoryPosition,true);
+    static string PickOwnedItem(int id, int inventoryPosition)
+    {
+        var entry = GameSession.Character?.inventory.Find(x => x.itemId == id &&
+            InventoryDao.IsBagPosition(x.position) &&
+            (inventoryPosition == 0 || x.position == inventoryPosition));
+        if (entry == null) return "背包里没有这个物品";
+        // 双击使用卷轴仍是背包 DragStart，不能退成没有来源页/格的键位载荷。
+        PickFromInventory(id, entry.position);
+        return null;
+    }
     static void Pick(int id,int inventoryPosition,bool fromInventory)
     {
         // Native keymap item bindings are for consumables, usable setup and cash items.
@@ -67,7 +77,8 @@ public static class NativeInventoryActions
                 " hit=" + hit + " target=" + androidSlot + " equipVisible=" + EquipWindow.Visible +
                 " npcBlocking=" + NpcSession.Blocking);
         }
-        if (Pointer.RightPressed || Input.GetKeyDown(KeyCode.Escape) || NpcSession.Blocking)
+        if (Pointer.RightPressed || Input.GetKeyDown(KeyCode.Escape) ||
+            NpcSession.Blocking && !SymbolCatalog.IsSymbolSlot(carriedPosition))
         { carriedItem = 0; return; }
         if((Pointer.Pressed||Pointer.Released&&Pointer.DragEnded)&&NativeEnhancementWindow.Drop(Pointer.Pos,carriedItem,carriedPosition))
         {carriedItem=0;swallowDrop=Pointer.Pressed;Pointer.ConsumeClick();Pointer.Pressed=false;return;}
@@ -432,12 +443,14 @@ public static class NativeInventoryActions
         if (!GameSession.InGame || NpcSession.Blocking) return "当前无法使用物品";
         var player = GameLoop.I?.player;
         if (player == null || player.hp <= 0) return "当前无法使用物品";
-        if(CubeRules.GetFamily(itemId)!=null||itemId==2049400||itemId==2049401)
+        if(CubeRules.GetFamily(itemId)!=null||itemId==2049400||itemId==2049401
+            ||FlameCatalog.IsFlameItem(itemId)||itemId/1000==2590||itemId/1000==2591)
         {
             var cost=GameSession.Character.inventory.Find(x=>x.itemId==itemId&&x.position>0&&(inventoryPosition==0||x.position==inventoryPosition));
             if(cost==null)return "背包里没有这个物品";
             if(NativeEnhancementWindow.Visible)return NativeEnhancementWindow.Select(cost);
-            NativeEnhancementWindow.Open(CubeRules.GetFamily(itemId)?.bonus==true?2:1,cost);return null;
+            NativeEnhancementWindow.Open(FlameCatalog.IsFlameItem(itemId)?4:itemId/1000==2590||itemId/1000==2591?5:
+                CubeRules.GetFamily(itemId)?.bonus==true?2:1,cost);return null;
         }
         if(NativeEnhancementWindow.Visible&&itemId/1000000==1)
         {
@@ -485,7 +498,10 @@ public static class NativeInventoryActions
                 if(Profile.RemoveItem(itemId,1,inventoryPosition)) Profile.GrantExperience(exp);
                 return null;
             }
-            if(itemId/10000==204 || NativeScrollService.IsHeartScroll(itemId)) { Pick(itemId); return null; }
+            if(itemId/10000==204 || NativeScrollService.IsHeartScroll(itemId)) return PickOwnedItem(itemId, inventoryPosition);
+            // 282 核心宝石（2438xxx/2439xxx…）：252 版是 UseItemHandler 里独立分支，
+            // 打开 V 矩阵的宝石使用窗，扣道具与加 V 点都由服务端 VMatrix(op 1) 完成。
+            if(VMatrixCatalog.Gemstone(itemId) != null) { NativeVMatrixWindow.OpenGemstone(itemId); return null; }
             if(itemId/10000==227) return NativeCatchItems.Use(itemId,inventoryPosition);
             if(itemId/10000==210) return NativeItemUseEffects.SummonBag(itemId,inventoryPosition);
             if(itemId/10000==228 || itemId/10000==229) return NativeItemUseEffects.SkillBook(itemId,inventoryPosition);
@@ -642,7 +658,7 @@ public static class NativeInventoryActions
                 return "源端未启用此道具";
             if(itemId/1000==5211 || itemId/1000==5360)
                 return "此倍率券在背包中按指定时段自动生效";
-            if(IsCashEquipment(itemId)) { Pick(itemId); return null; }
+            if(IsCashEquipment(itemId)) return PickOwnedItem(itemId, inventoryPosition);
             if(itemId/10000==520)
             {
                 int meso=NativeItemSource.Node(itemId)?.Int("info/meso",-1) ?? -1;

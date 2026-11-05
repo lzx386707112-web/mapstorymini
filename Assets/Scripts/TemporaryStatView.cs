@@ -12,11 +12,16 @@ public static class TemporaryStatView
         var buffs=player != null ? player.GetComponent<NativeBuffs>() : null;
         if (buffs==null) return;
         var effects=buffs.Visible;
+        // 魔幻箭筒的箭镞是常驻状态（无时限），不进 NativeBuffs，单独占最左一格：
+        // 图标取当前箭镞对应的技能（3140010 魔法箭 / 3140011 吸血箭）。
+        bool arrow=NativeArrowMode.Active;
+        int total=effects.Count+(arrow ? 1 : 0);
         NativeBuffs.Effect hover=null;
+        bool arrowHover=false;
         for (int i=0;i<effects.Count;i++)
         {
             var effect=effects[i];
-            var rect=Slot(i,effects.Count,UiKit.W);
+            var rect=Slot(i,total,UiKit.W);
             var skill=effect.Id>0 ? SkillBook.Get(effect.Id) : null;
             if (skill==null && effect.Id>0) continue;
             var previous=GUI.color;
@@ -32,6 +37,25 @@ public static class TemporaryStatView
             GUI.color=previous;
             if (rect.Contains(Pointer.Pos)) hover=effect;
         }
+        if (arrow)
+        {
+            var rect=Slot(effects.Count,total,UiKit.W);
+            var data=SkillBook.Get(NativeArrowMode.ActiveFx);
+            var previous=GUI.color;
+            GUI.color=new Color(previous.r,previous.g,previous.b,previous.a*(210f/255f));
+            var icon=data!=null ? Art.Tex(data.icon) : null;
+            if (icon!=null) DrawCentered(rect,icon);
+            GUI.color=previous;
+            DrawQuiverCharge(rect);
+            if (rect.Contains(Pointer.Pos)) arrowHover=true;
+        }
+        if (arrowHover)
+        {
+            var toggle=SkillBook.Get(NativeArrowMode.Toggle);
+            if (toggle!=null) SkillWindow.DrawSkillData(toggle,Pointer.Pos,
+                Mathf.Max(1,SkillProgress.LevelOf(NativeArrowMode.Toggle)));
+            return;
+        }
         if (hover==null) return;
         if (hover.Id<0) ItemTooltip.DrawForStatus(-hover.Id);
         else SkillWindow.DrawSkillData(SkillBook.Get(hover.Id),Pointer.Pos,hover.Level);
@@ -41,6 +65,20 @@ public static class TemporaryStatView
             Pointer.RightPressed=false;
             Pointer.ConsumeClick();
         }
+    }
+    // 3141009 追加魔幻箭筒的装填进度：格子底边一条 2px 的条。
+    // 不开 buff 时蓝（在弹匣里攒着），开着时金（命中会消耗）。
+    static void DrawQuiverCharge(Rect slot)
+    {
+        int capacity = NativeQuiverBurst.Capacity;
+        if (capacity <= 0) return;
+        float fill = Mathf.Clamp01(NativeQuiverBurst.Loads / (float)capacity);
+        if (fill <= 0f) return;
+        var previous = GUI.color;
+        var bar = new Rect(slot.x + 3f, slot.yMax - 4f, (slot.width - 6f) * fill, 2f);
+        GUI.color = NativeQuiverBurst.Active ? new Color(1f, .82f, .25f, .95f) : new Color(.62f, .78f, 1f, .9f);
+        GUI.DrawTexture(bar, Texture2D.whiteTexture);
+        GUI.color = previous;
     }
     static void DrawCentered(Rect slot,Texture2D texture)
     {

@@ -101,6 +101,14 @@ public static class EquipCatalog
             case 167: return itemId / 1000 == 1672 ? "Android" : "Accessory";
             // 01662xxx 机器人本体（含 1666 段的 6 件特殊款）。
             case 166: return "Android";
+            // 282 徽章：1712xxx 祕法符文在 ArcaneForce，1713/1714xxx 真實符文在
+            // AuthenticForce（tools/ms282/import_growth_items.py 导入的布局）。
+            // 模板没有 islot，DirOf 不认 171 段的话 Node/Icon 全部取空。
+            case 171:
+                int sym = itemId / 1000;
+                return sym == 1712 ? "ArcaneForce"
+                     : (sym == 1713 || sym == 1714) ? "AuthenticForce"
+                     : null;
             default:
                 int t = itemId / 10000;
                 if (t >= 112 && t <= 119) return "Accessory";
@@ -377,6 +385,9 @@ public static class EquipLoadout
         var source=AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
         var bonus=source==null?new Dictionary<string,int>():new Dictionary<string,int>(source);
         AddPotentialBonus(bonus,new CharacterAttributes {level=GameSession.Character?.record.level??1});
+        var growth = NativeGrowthStats.Accumulate(GameSession.Character, Profile.level, Profile.JobId);
+        foreach (string rate in new[] { "ExpRate", "MesoRate", "DropRate" })
+            bonus[rate] = (bonus.TryGetValue(rate, out int value) ? value : 0) + growth.Get(rate);
         return bonus;
     }
 
@@ -433,6 +444,23 @@ public static class EquipLoadout
         var set = AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
         set = set == null ? new Dictionary<string,int>() : new Dictionary<string,int>(set);
         AddPotentialBonus(set,result);
+
+        // —— 282 成长系统（徽章 / 星火 / 极限属性 / 内在能力 / 灵魂）——
+        // 282 服务端只存状态、属性由客户端 7000xxx 公式算；本项目把同一份公式表在派生层结算，
+        // 结果并进同一张差量表，于是 (base+flat)×(100+pct)/100 的语义与套装完全一致。
+        var growth = NativeGrowthStats.Accumulate(GameSession.Character, result.level, Profile.JobId);
+        foreach (var stat in growth.set)
+            set[stat.Key] = (set.TryGetValue(stat.Key, out int hadStat) ? hadStat : 0) + stat.Value;
+        // —— 称号试炼统一加成（NativeTitleTrials：佩戴系列已点亮档，差量并进同一张表）——
+        foreach (var kv in NativeTitleTrials.BonusSet())
+            set[kv.Key] = (set.TryGetValue(kv.Key, out int hadTitle) ? hadTitle : 0) + kv.Value;
+        result.criticalChance += growth.criticalChance;
+        result.criticalBonus += growth.criticalBonus;
+        result.hexaDamagePercent = growth.hexaDamagePercent;
+        result.hexaBossPercent = growth.hexaBossPercent;
+        result.hexaIgnorePercent = growth.hexaIgnorePercent;
+        result.arcaneForce = growth.arcaneForce;
+        result.authenticForce = growth.authenticForce;
         // info/addition/boss 的 BOSS 伤害并进同一张差量表，交给 AdminSetItem.ApplyDamage。
         // ComputeBonus 可能是缓存实例，先复制再改。
         if (additionBoss != 0)

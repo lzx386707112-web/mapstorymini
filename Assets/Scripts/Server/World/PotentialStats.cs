@@ -28,15 +28,21 @@ public static class PotentialStats
             if(id<=0)continue; // zero=absent, negative=unappraised
             var values=catalog.ValuesAt(id,level);
             if(values==null)throw new InvalidOperationException("潜能等级档不存在："+id+"/"+level);
-            foreach(var pair in Keys)
-                if(values.TryGetValue(pair.Key,out var value))Add(result,pair.Value,Convert.ToInt32(value));
+            foreach(var pair in CalculateValues(values))Add(result,pair.Key,pair.Value);
             // User-approved correction: the client descriptions specify every nine levels.
             foreach(var pair in LevelKeys)
                 if(values.TryGetValue(pair.Key,out var value))Add(result,pair.Value,checked(Convert.ToInt32(value)*(Math.Max(0,characterLevel)/9)));
-            // User-approved correction: boss lines do not also grant general/final damage.
-            if(values.TryGetValue("incDAMr",out var damage))
-                Add(result,values.TryGetValue("boss",out var boss)&&Convert.ToInt32(boss)!=0?"BossDamage":"Damage",Convert.ToInt32(damage));
+
         }
+        return result;
+    }
+    public static Dictionary<string,int> CalculateValues(Dictionary<string,object> values)
+    {
+        var result=new Dictionary<string,int>();if(values==null)return result;
+        foreach(var pair in Keys)
+            if(values.TryGetValue(pair.Key,out var value))Add(result,pair.Value,Convert.ToInt32(value));
+        if(values.TryGetValue("incDAMr",out var damage))
+            Add(result,values.TryGetValue("boss",out var boss)&&Convert.ToInt32(boss)!=0?"BossDamage":"Damage",Convert.ToInt32(damage));
         return result;
     }
     public static void Add(Dictionary<string,int> values,string key,int amount)

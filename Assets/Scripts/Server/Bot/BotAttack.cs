@@ -55,6 +55,7 @@ namespace Server.Bot
                 case 10: case 20: case 30: return 2;
                 case 11: case 21: case 31: return 3;
                 case 12: case 22: case 32: return 4;
+                case 13: case 23: case 33: return 4;   // 五转觉醒后的独立编码（四转 ID + 1）
                 default: return 0;
             }
         }

@@ -180,6 +180,15 @@ public sealed class NativeSocialService
             string.Equals(DbStore.Str(r, "name"), name, StringComparison.OrdinalIgnoreCase));
         return row == null ? null : CharactersDao.FindById(db, DbStore.Int(row, "id"));
     }
+    // 源端 WhisperHandler 用 getPlayerStorage().getCharacterByName：只认「当前在线的角色」。
+    // 本地在线的只有本机角色和已加载的假人（跨图跨频道都算在线），存档里躺着但没 actor 的一律离线。
+    // 名字按忽略大小写比：To. 那一栏是手输的，原版也是靠客户端把名单里的名字填进去。
+    bool IsOnline(string name, int world, CharRecord self)
+    {
+        if (string.IsNullOrEmpty(name)) return false;
+        if (string.Equals(name, self.name, StringComparison.OrdinalIgnoreCase)) return true;
+        return Parties.FindIgnoreCase(name, world) != null;
+    }
     int BuddyCount(long id) => db.Table("buddies").Select(r => DbStore.Int(r, "characterid") == id && DbStore.Int(r, "pending") == 0).Count;
     DbRow Buddy(long id, long other) => db.Table("buddies").Find(r => DbStore.Int(r, "characterid") == id && DbStore.Int(r, "buddyid") == other);
     string AddBuddy(CharRecord self, SocialRequest request)
@@ -220,7 +229,11 @@ public sealed class NativeSocialService
         if (lastChat.TryGetValue((int)self.id, out var previous) && now - previous < 200) return "发送过于频繁";
         switch (request.channel)
         {
-            case NativeChatChannel.Whisper: return Find(request.target, self.world) == null ? "角色不存在" : "对方不在线";
+            case NativeChatChannel.Whisper:
+                // 源端只分两种结果：getCharacterByName 找得到 → 投递；找不到 → whisperResult(false)。
+                // 在线优先：假人是运行时 actor，不一定在 characters 表里有行，不能先查存档把它判成「不存在」。
+                if (IsOnline(request.target, self.world, self)) break;
+                return Find(request.target, self.world) == null ? "角色不存在" : "对方不在线";
             case NativeChatChannel.Party: if (Parties.For((int)self.id) == null) return "尚未加入组队"; break;
             case NativeChatChannel.Buddy: if (BuddyCount(self.id) == 0) return "好友列表为空"; break;
             case NativeChatChannel.Guild: if (self.guildid <= 0) return "尚未加入家族"; break;

@@ -123,6 +123,9 @@ public class GameLoop : MonoBehaviour
         state = GameState.Playing;
         gameOver = false; killCount = 0; elapsed = 0f;
         deaths.Clear();
+        // 特殊核心的启用状态存在 V 矩阵快照里，进图时主动拉一次；
+        // 之后开/关窗口都会再 Observe 一遍，两条路写同一个字段。
+        NativeSpecialCore.Sync();
         BuildScene();
 
         // 原版地图模式优先：只要 Field 数据存在，就不再进章节关卡。
@@ -507,6 +510,8 @@ public class GameLoop : MonoBehaviour
     {
         if (state != GameState.Playing || gameOver || e == null || !e.dead || !deaths.TrySettle(e.GetInstanceID())) return;
         killCount++;
+        // 特殊核心的击杀型计数（暴走的力量I / 魔王杀手III）。
+        NativeSpecialCore.OnKill(player);
         if (field != null) { field.OnEnemyKilled(e); return; }
         BattleRewards.Drop(e.artKey, e.transform.position);
     }
@@ -514,6 +519,7 @@ public class GameLoop : MonoBehaviour
     public void OnBossKilled(BossUnit boss)
     {
         if (state != GameState.Playing || gameOver || boss == null || !boss.dead || !deaths.TrySettle(boss.GetInstanceID())) return;
+        NativeSpecialCore.OnKill(player);
         BattleRewards.Drop(boss.def.type == "slime" ? "slimeking" : "mushmom", boss.transform.position);
     }
 
@@ -534,6 +540,9 @@ public class GameLoop : MonoBehaviour
     {
         if (gameOver) return;
         gameOver = true;
+        // 特殊核心「回归」：死亡时把其余技能的剩余冷却减 30%。必须排在 Clear 之前，
+        // 因为它要读冷却表；buff 随后一并清空（activeId 是装备状态，不受影响）。
+        NativeSpecialCore.OnPlayerDeath(player);
         player?.GetComponent<NativeBuffs>()?.Clear();
         stage?.StopSession();
         player?.GetComponent<SkillSystem>()?.CancelActions();

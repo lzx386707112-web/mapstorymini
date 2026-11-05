@@ -36,7 +36,15 @@ public static class DropTableText
                 !int.TryParse(f[off + 5], out int chance)) continue;
 
             var entry = new DropEntry { item = item, min = min, max = max, quest = quest, chance = chance };
-            if (isGlobal) { global.Add(entry); parsed++; continue; }
+            if (isGlobal)
+            {
+                // G 行第 1 列是大区（-1 = 全大区），后台「全局爆率」要按大区过滤/覆盖，
+                // 不能丢——否则所有全局行都被当成同一个 key。
+                entry.continent = int.TryParse(f[1], out int cont) ? cont : -1;
+                global.Add(entry);
+                parsed++;
+                continue;
+            }
             if (!int.TryParse(f[1], out int dropper)) continue;
             if (!mobs.TryGetValue(dropper, out var list)) mobs[dropper] = list = new List<DropEntry>();
             list.Add(entry);

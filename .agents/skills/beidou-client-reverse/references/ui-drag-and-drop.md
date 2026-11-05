@@ -261,3 +261,14 @@ cash→`Notice("这种道具不能扔掉。")`；quest→`Confirm("这种道具�
   `tools/unity-compile-check` 0 warning / 0 error。
 - **边界**：未做 Unity 编辑器交互回归与 Android 实机点选验收；跨背包页移动按源端拒绝（保持携带），
   不同 id 同页只互换、不合并；`Profile` 扁平投影仍在其它读取方（宠物/交易校验）存在，本次只改背包窗显示口径。
+
+
+## 2026-11-05 新增道具拿起后不能落格：迁移载荷修正
+
+沿用上文已核实的同一 BeiDou.exe 身份与 `0x81D42E` 来源页载荷、`0x4F3057` 同页落格门控、`0x4F30E6` 同格不发包结论；本次没有新增 EXE/282 行为推断，也不改 UI 布局或 IMG。
+
+项目缺陷：`DoubleClick → TryUse` 的 `204xxxx`（含轮回星火）/心脏卷轴、现金装备分支调用 `Pick(itemId)`，把已知来源格丢成 position=0、carriedType=0、carriedFromInventory=false。随后两种落格路径均要求 carriedFromInventory，故无法点回原格、移动或互换；这不是服务端禁止移动星火。修正为 `PickOwnedItem`：从真实背包实例解析来源（传入格号时严格匹配；快捷栏未传则取实际一堆），再调用 `PickFromInventory` 保留来源格及页签。普通键位载荷的 Pick 语义不变。
+
+检查边界：新增星火、灵魂卷轴/灵魂石、ARC/AUT/Grand 徽章、方块、核心宝石与普通/心脏卷轴的背包拿起/放回；代表道具经过实际 CarryPointerStep → InProcessTransport → NativeInventorySort.MoveItem 检查空格移动和拖动互换。入口为 `Assets/Editor/InventoryCarryChecks.cs`，使用隔离 Unity 与临时数据库，不写玩家存档。此检查只覆盖背包拖放，不代表所有新增道具的使用功能均已验收；未做 Android 真机验收。
+
+验证结果：`dotnet build tools/unity-compile-check/Check.csproj --no-restore` 0 error/0 warning；隔离 Unity `InventoryCarryChecks.Run` 退出0，`PASS audited=1750 move/swap=16`（1750种相关目录道具拿起/放回，8种代表道具各验证空格移动与拖动互换）。日志 `/tmp/mapledash-carry-regression-20261105.log`；统计含原有卷轴，不能解释为新增了1750种道具。

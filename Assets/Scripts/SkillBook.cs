@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using MapleDash.Wz;
 
 // ————————————————————————————————————————————————————————————
 // 技能书：把 Skill.wz 的整棵职业技能树搬到运行时。
@@ -23,6 +24,7 @@ public sealed class SkillData
     public bool magic;
     public bool noName;       // 源端 String.wz 缺中文名（五六转 V 技组件），UI 回退显示 id
     public bool autoLearn;   // 不是手动加点的技能（如精灵的祝福，按账号等级自动习得）
+    public bool hexa;        // 六转技能：等级由 HEXA 矩阵提升，不吃 SP（282 口径）
     public List<int[]> req = new List<int[]>();      // [前置技能id, 需要等级]
     public Dictionary<string, object> levels = new Dictionary<string, object>();
 
@@ -81,6 +83,8 @@ public static class SkillBook
             s.levels = d.TryGetValue("levels", out var lv) ? lv as Dictionary<string, object> : s.levels;
             s.autoLearn = d.TryGetValue("auto", out var au) && au != null &&
                           au.ToString().ToLowerInvariant() == "true";
+            s.hexa = d.TryGetValue("hexa", out var hx) && hx != null &&
+                     hx.ToString().ToLowerInvariant() == "true";
             // 源端 String.wz 缺名字的技能（五六转 V 技组件）：保留 id 文本，UI 不显示空白行
             s.noName = string.IsNullOrEmpty(s.name);
             if (s.noName) s.name = s.id.ToString();
@@ -131,6 +135,7 @@ public static class SkillBook
     {
         Ensure();
         if (byId.TryGetValue(id,out var d)) return d;
+        if(NativeSoulWeapon.IsSkill(id))return byId[id]=NativeSoulWeapon.Definition(id);
         // JobTree only includes its exported job list. Hidden/Aran/GM source
         // skills still need their original level rows for combat/event consumers.
         var node=WzAssets.FileRoot("Skill/"+(id/10000).ToString("D3")+".img")?.Get("skill/"+id.ToString("D7"));
@@ -170,12 +175,128 @@ public static class SkillBook
         return d == null ? 0 : d.maxLevel;
     }
 
+    // 282 有一批「只有 common、没有 level」的技能：3141005 魔幻箭筒VI、3140006 满弹爆发、
+    // 3140010/3140011 两支追加箭。Get()/Level() 对它们返回 null，数值只能从 common 取，
+    // 而 common 写的是公式字符串（"292+5*x"）而不是逐级整数。
+    //
+    // 支持 282 实际出现的写法：常量（"60"、"1.8"）、一次式（"292+5*x"、"1350+52*x"）。
+    // 公式里的 x 是等级；字段本身也叫 x 的那个（3140006.common/x=2）不受影响，
+    // 因为那是「读字段值」不是「求公式」。
+    public static float Common(int id, string key, int level, float fallback = 0f)
+    {
+        var field = CommonNode(id, key);
+        if (field == null) return fallback;
+        if (field.Value is int number) return number;
+        if (field.Value is float single) return single;
+        if (field.Value is double real) return (float)real;
+        var text = field.Value as string;
+        return string.IsNullOrEmpty(text) ? fallback : EvalCommon(text, level, fallback);
+    }
+
+    // 3140006.common/lt、rb 是 Shape2D#Vector2D，不能走数值口径。
+    public static Vector2 CommonVector(int id, string key, Vector2 fallback)
+    {
+        var field = CommonNode(id, key);
+        if (field == null || field.Kind != "Shape2D#Vector2D") return fallback;
+        return new Vector2(field.X, field.Y);
+    }
+
+    static ImgNode CommonNode(int id, string key)
+        => WzAssets.FileRoot("Skill/" + (id / 10000).ToString("D3") + ".img")
+            ?.Get("skill/" + id.ToString("D7") + "/common")?.Get(key)?.TryResolve();
+
+    // 把公式里的 x 换成等级，再按四则运算求值（+ - * / 与括号，足够覆盖 282 的 common）。
+    static float EvalCommon(string text, int level, float fallback)
+    {
+        var expression = new System.Text.StringBuilder(text.Length + 8);
+        string value = level.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        foreach (char c in text) expression.Append(c == 'x' || c == 'X' ? value : c.ToString());
+        string source = expression.ToString();
+        int at = 0;
+        float result = ParseCommonSum(source, ref at, fallback);
+        while (at < source.Length && source[at] == ' ') at++;
+        return at >= source.Length ? result : fallback;
+    }
+
+    static float ParseCommonSum(string text, ref int at, float fallback)
+    {
+        float value = ParseCommonProduct(text, ref at, fallback);
+        while (true)
+        {
+            while (at < text.Length && text[at] == ' ') at++;
+            if (at >= text.Length || (text[at] != '+' && text[at] != '-')) return value;
+            char op = text[at++];
+            float right = ParseCommonProduct(text, ref at, fallback);
+            value = op == '+' ? value + right : value - right;
+        }
+    }
+
+    static float ParseCommonProduct(string text, ref int at, float fallback)
+    {
+        float value = ParseCommonAtom(text, ref at, fallback);
+        while (true)
+        {
+            while (at < text.Length && text[at] == ' ') at++;
+            if (at >= text.Length || (text[at] != '*' && text[at] != '/')) return value;
+            char op = text[at++];
+            float right = ParseCommonAtom(text, ref at, fallback);
+            if (op == '*') value *= right;
+            else if (Mathf.Abs(right) > 0.0001f) value /= right;
+        }
+    }
+
+    static float ParseCommonAtom(string text, ref int at, float fallback)
+    {
+        while (at < text.Length && text[at] == ' ') at++;
+        if (at >= text.Length) return fallback;
+        if (text[at] == '(')
+        {
+            at++;
+            float inner = ParseCommonSum(text, ref at, fallback);
+            if (at < text.Length && text[at] == ')') at++;
+            return inner;
+        }
+        if (text[at] == '-') { at++; return -ParseCommonAtom(text, ref at, fallback); }
+        // 282 的 common 公式里只有三种函数（全库 7272 个公式字段扫出来的全集）：
+        //   d(v)    向下取整        353 处，例 15-2*d(x/2)
+        //   u(v)    向上取整        145 处，例 50+u(x/2)
+        //   logN(v) 以 N 为底取整  939 处，例 log20(x)*20+log30(x)*30
+        // 之前只认四则运算，这些公式一律返回 fallback，等于技能数值读不到。
+        if (char.IsLetter(text[at]))
+        {
+            int start = at;
+            while (at < text.Length && (char.IsLetterOrDigit(text[at]) || text[at] == '_')) at++;
+            string name = text.Substring(start, at - start);
+            while (at < text.Length && text[at] == ' ') at++;
+            if (at >= text.Length || text[at] != '(') return fallback;
+            at++;
+            float inner = ParseCommonSum(text, ref at, fallback);
+            if (at < text.Length && text[at] == ')') at++;
+            return ApplyCommonFunction(name, inner, fallback);
+        }
+        int digits = at;
+        while (at < text.Length && (char.IsDigit(text[at]) || text[at] == '.')) at++;
+        if (at == digits) return fallback;
+        return float.TryParse(text.Substring(digits, at - digits), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out float number) ? number : fallback;
+    }
+
+    static float ApplyCommonFunction(string name, float value, float fallback)
+    {
+        if (name == "d") return Mathf.Floor(value);
+        if (name == "u") return Mathf.Ceil(value);
+        if (name.Length > 3 && name.StartsWith("log") &&
+            int.TryParse(name.Substring(3), System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture, out int radix) && radix > 1 && value > 0f)
+            return Mathf.Floor(Mathf.Log(value) / Mathf.Log(radix));
+        return fallback;
+    }
+
     // BeiDouSkillCompatCore 6728149A..672818F9: explorer warrior/thief/
     // pirate extensions dispatch physically; 212/222/232 and Blaze Wizard
     // dispatch to 96928B. Hidden replay components use the same server family.
     static bool MagicDamageOf(int id, bool original)
     {
-        if (ExplorerAdvancedSkills.IsAdvanced(id)) return id / 1000000 == 2;
         int job = id / 10000;
         if (job == 1112 || job == 1212 || job == 1312 || job == 1412 || job == 1512)
             return job == 1212;
@@ -188,7 +309,7 @@ public static class SkillBook
     /// <summary>
     /// 加点上限。源端 AssignSPProcessor.java:82：
     ///   curLevel + 1 &lt;= (skill.isFourthJob() ? player.getMasterLevel(skill) : skill.getMaxLevel())
-    /// 四转技能的 masterLevel 来自 Skill.wz 的 masterLevel 节点（1121001=10、1121012=30），
+    /// 四转技能的 masterLevel 来自 Skill.wz 的 masterLevel 节点（1121001=10、1221012=30），
     /// 再被技能册（Item/Consume/0228.img，SkillBookHandler）抬到 20/30。
     /// 没有 masterLevel 节点的技能（1121006 等）不受限，直接用 maxLevel。
     /// </summary>
@@ -263,6 +384,8 @@ public static class SkillBook
             { "id", d.id }, { "kind", kind }, { "magic", d.magic },
             { "element", WzAssets.FileRoot("Skill/" + (id / 10000).ToString("D3") + ".img")
                 .Get("skill/" + id.ToString("D7"))?.Text("elemAttr") ?? "" }, { "summonInterval", 1f },
+            // skillType=3 是源端「无固定攻击框」标记，全屏技能靠它判定范围。
+            { "skillType", WzAssets.Node("Skill/" + (id / 10000).ToString("D3") + ".img/skill/" + id.ToString("D7"))?.Int("skillType") ?? 0 },
         };
         var data = new Dictionary<string, object>(row);
         data["level"] = level;
@@ -320,58 +443,6 @@ public static class SkillBookItems
 //   一转起每级 +3，转职另按 JobSystem 授予（一转 +1、四转 +3）；
 //   一转时 resetStats 按 1+(等级-10)*3 重算（法师 1+(等级-8)*3）。
 // 本地为兼容旧存档保留「新手虚拟 SP」：等级-1、封顶 6（旧公式，见 docs 适配表）。
-// 用户授权适配：原五转入口道具改为常规技能窗；完成标记仍来自原女神脚本。
-public static class ExplorerAdvancedSkills
-{
-    public const string CompletionKey = "explorer_fifth_job_completed";
-    static FullCharacter character;
-    static bool loaded, unlocked;
-
-    // 各职业原四转主动技能末项；其后的新增技能沿用 JobTree/IMG 列表及原加点数据。
-    public static bool IsAdvanced(int id)
-    {
-        int last;
-        switch (id / 10000)
-        {
-            case 112: last = 1121011; break;
-            case 122: last = 1221012; break;
-            case 132: last = 1321010; break;
-            case 212: last = 2121008; break;
-            case 222: last = 2221008; break;
-            case 232: last = 2321009; break;
-            case 312: last = 3121009; break;
-            case 322: last = 3221008; break;
-            case 412: last = 4121009; break;
-            case 422: last = 4221008; break;
-            case 512: last = 5121010; break;
-            case 522: last = 5221010; break;
-            default: return false;
-        }
-        return id > last;
-    }
-
-    public static void Invalidate() { loaded = false; }
-
-    public static bool Unlocked
-    {
-        get
-        {
-            if (!GameSession.InGame || GameSession.Character == null) return false;
-            if (!loaded || !ReferenceEquals(character, GameSession.Character))
-            {
-                var response = GameSession.Net.ScriptValue(new ScriptValueRequest {
-                    characterId = GameSession.CharacterId, name = CompletionKey });
-                character = GameSession.Character;
-                unlocked = response.value == "1";
-                loaded = true;
-            }
-            return unlocked;
-        }
-    }
-
-    public static bool Visible(int id) => !IsAdvanced(id) || Unlocked;
-}
-
 public static class SkillProgress
 {
     public const int SpPerLevel = 3;   // 源端 level_up_sp_gain
@@ -381,6 +452,7 @@ public static class SkillProgress
 
     public static int LevelOf(int id)
     {
+        if(NativeSoulWeapon.IsSkill(id))return NativeSoulWeapon.LevelOf(id);
         var d = SkillBook.Get(id);
         int lv = Profile.Data.SkillLevelOf(id);
         return d == null ? 0 : Mathf.Clamp(lv, 0, SkillBook.MasterCapOf(id));
@@ -460,7 +532,7 @@ public static class SkillProgress
     public static bool CanRaise(SkillData d)
     {
         if (d == null || d.autoLearn) return false;
-        if (!ExplorerAdvancedSkills.Visible(d.id)) return false;
+        if (d.hexa) return false;              // 六转技能只能由 HEXA 矩阵提升
         if (LevelOf(d.id) >= SkillBook.MasterCapOf(d.id)) return false;
         bool beginner = IsBeginnerSkill(d.id);
         if ((beginner ? BeginnerSp - BeginnerSpent : AvailableSp) <= 0) return false;
@@ -485,6 +557,7 @@ public static class SkillProgress
         int refund = 0;
         foreach (var d in AllSkills())
         {
+            if (d.hexa) continue;              // 六转技能等级来自 HEXA 核心，重置 SP 时既不退点也不清零
             refund += LevelOf(d.id);
             Profile.Data.SetSkillLevel(d.id, 0);
         }
@@ -506,7 +579,7 @@ public static class SkillCast
 
         var data = SkillBook.Get(skillId);
         if (data == null) { fail = "缺少技能数据"; return false; }
-        if (data.IsPassive && skillId!=1016) { fail = "被动技能无需施放"; sys.Report(fail); return false; }
+        if (data.IsPassive && skillId!=1016 && !NativeArrowMode.IsToggle(skillId)) { fail = "被动技能无需施放"; sys.Report(fail); return false; }
         if (SkillProgress.LevelOf(skillId) <= 0) { fail = "技能尚未学习（技能窗里加点）"; sys.Report(fail); return false; }
 
         if (sys.TryCastSkill(skillId)) return true;

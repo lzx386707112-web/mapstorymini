@@ -653,7 +653,7 @@ public sealed class BotField : MonoBehaviour
             }
         }
 
-        if (Event.current.type == EventType.Repaint && Pointer.RightPressed && !Pointer.Blocked && !NativeTradeWindow.Visible && !NativeUtilPrompt.Visible)
+        if (Event.current.type == EventType.Repaint && Pointer.RightPressed && !Pointer.Blocked && !NativeUi.WindowAtPointer && !NativeTradeWindow.Visible && !NativeUtilPrompt.Visible)
         {
             var camera = Camera.main;
             if (camera != null)

@@ -16,6 +16,8 @@ using UnityEngine;
 //   type 4  Scrolling     顶部滚动                          服务端 0 处
 //   type 5  Pink          聊天窗（粉色）                    服务端大量 / 脚本 143 处
 //   type 6  Lightblue     聊天窗（浅蓝）                    服务端大量 / 脚本 73 处
+//   type 8  ItemMegaphone 道具喇叭（含 item info）           PacketCreator.itemMegaphone
+//   type 12 yellowChat    聊天窗（黄）                       BotBossCombatManager
 //
 // 脚本里的典型分工（scripts/ 抽样）：
 //   type 5 —— 阻止/失败：「你不能再往前了」「封印挡住了门」
@@ -59,6 +61,14 @@ public static class NativeSystemMessage
                 // yellowChat（PacketCreator.yellowChat）：BotBossCombatManager 的黄字提示
                 // （"假人已开始集火Boss。"等）。色值对齐 BottomBar.ChatYellow。
                 BottomBar.AddChat(text, BottomBar.ChatYellow);
+                break;
+            case 8:
+                // 道具喇叭（PacketCreator.itemMegaphone 写的就是 type 8）。
+                // BeiDou.exe 0xA229B9 的表项：type 8/9/10 与 3 共用 0xA22D3A，
+                // 末端 0xA231AB 是 `push 8 / call 0x4906B5(msg, 8)` —— 和 0/5/6 一样进聊天窗，
+                // 只是类型号 8。正文由服务端拼好（假人喇叭是「名字 : 内容」），客户端不再加前缀。
+                // 单机世界广播没有别的听众，这一行就是玩家看到的东西。
+                BottomBar.AddChat(text, BottomBar.ChatWhite);
                 break;
             default:
                 BottomBar.AddChat(text, BottomBar.ChatWhite);

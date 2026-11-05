@@ -19,6 +19,7 @@ namespace Server.Bot
         readonly Dictionary<int, MarketShop> shops = new Dictionary<int, MarketShop>();
         readonly Dictionary<int, int> counts = new Dictionary<int, int>();
         readonly Dictionary<int, int> visits = new Dictionary<int, int>();
+        readonly Dictionary<int, int> visitorSlots = new Dictionary<int, int>();
         readonly List<BotTasks.Handle> pending = new List<BotTasks.Handle>();
         MarketShopGenerator generator;
         bool disposed, populated;
@@ -108,7 +109,16 @@ namespace Server.Bot
             if (shop == null || !Matches(actor, shop) || actor.trade != null || actor.id == owner) return null;
             int count = 0; foreach (int visiting in visits.Values) if (visiting == owner) count++;
             if (count >= 3) return null;
-            visits[actor.id] = owner; return shop;
+            int slot = 0;
+            while (slot < 3)
+            {
+                bool occupied = false;
+                foreach (var visit in visits)
+                    if (visit.Value == owner && visitorSlots[visit.Key] == slot) { occupied = true; break; }
+                if (!occupied) break;
+                slot++;
+            }
+            visits[actor.id] = owner; visitorSlots[actor.id] = slot; return shop;
         }
         static bool Matches(BotActor actor, MarketShop shop) => actor != null && actor.online && shop.open
             && actor.world == shop.world && actor.channel == shop.channel && actor.mapId == shop.mapId;
@@ -119,7 +129,21 @@ namespace Server.Bot
             if (shop != null && Matches(actor, shop)) return shop;
             Leave(actor.id); return null;
         }
-        public void Leave(int actor) => visits.Remove(actor);
+        public void Leave(int actor) { visits.Remove(actor); visitorSlots.Remove(actor); }
+        public List<KeyValuePair<int, int>> Visitors(int owner)
+        {
+            var result = new List<KeyValuePair<int, int>>();
+            foreach (var visit in visits)
+                if (visit.Value == owner) result.Add(new KeyValuePair<int, int>(visit.Key, visitorSlots[visit.Key]));
+            return result;
+        }
+        public bool Chat(BotActor actor, string text)
+        {
+            var shop = Visiting(actor);
+            if (shop == null || string.IsNullOrWhiteSpace(text) || text.Length > 127) return false;
+            shop.chat.Add(actor.name + " : " + text);
+            return true;
+        }
         public MarketPurchaseResult Buy(BotActor actor, int owner, int index, int quantity)
         {
             var shop = Get(owner);
@@ -189,7 +213,7 @@ namespace Server.Bot
         {
             disposed = true; foreach (var task in pending) task.Cancel(); pending.Clear();
             foreach (var shop in shops.Values) shop.open = false;
-            shops.Clear(); counts.Clear(); visits.Clear();
+            shops.Clear(); counts.Clear(); visits.Clear(); visitorSlots.Clear();
         }
     }
 }

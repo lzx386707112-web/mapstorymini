@@ -56,13 +56,12 @@ public static class NativeEquipBackdrop
         }
     }
 
-    /// <summary>保留的后补格子；心脏入口已移入专用机器人面板。</summary>
+    /// <summary>保留的后补格子；心脏和符文徽章使用各自的专用面板。</summary>
     public static readonly Gap[] Gaps =
     {
         new Gap(5, 3, -51, "副手", 0),
         new Gap(5, 4, -53, "图腾", 1),
-        new Gap(6, 3, -55, "徽章", 2),
-        new Gap(6, 4, -56, "纹章", 3),
+        new Gap(6, 4, -56, "纹章", 2),
     };
 
     public static string LabelOf(int slot)
@@ -83,9 +82,6 @@ public static class NativeEquipBackdrop
         new LabelGlyph { width = 22, rows = new uint[] {   // 图腾
             0x1573FF, 0x3FD209, 0x0252F9, 0x3FF24D, 0x115233, 0x2FD249,
             0x097397, 0x3F5221, 0x205211, 0x2F4A21, 0x106BFF } },
-        new LabelGlyph { width = 23, rows = new uint[] {   // 徽章
-            0x020154, 0x3FE17E, 0x088701, 0x7FF5FC, 0x104512, 0x1FC53B,
-            0x104552, 0x1FC2FE, 0x02023A, 0x7FF556, 0x02049A } },
         new LabelGlyph { width = 23, rows = new uint[] {   // 纹章
             0x020044, 0x3FE084, 0x0887F2, 0x7FF22A, 0x104227, 0x1FC144,
             0x104142, 0x1FC08F, 0x020150, 0x7FF22C, 0x020413 } },
@@ -109,13 +105,14 @@ public static class NativeEquipBackdrop
             // Pixels() 返回的是按 canvas 缓存的那份数组，必须复制后再改。
             var pixels = (byte[])WzAssets.Pixels(canvas).Clone();
             foreach (var gap in Gaps) Repair(pixels, w, h, gap);
-            // 用户要求心脏只保留机器人面板入口。旧格烘在原图(71,231)..(102,262)，
+            // 用户要求移除旧心脏/徽章格，分别使用机器人/符文徽章独立面板。
+            // 旧格烘在原图 y=231..262、x=71..102/104..135；
             // 用同图帽子右侧无格、无文字、无人物轮廓的32×32背景原像素覆盖，不自行绘制。
             const int blankX = GridX + 2 * Step, blankY = GridY;
-            const int heartX = GridX + 2 * Step, heartY = 231;
-            for (int y = 0; y < Cell; y++)
-                Buffer.BlockCopy(pixels, ((blankY + y) * w + blankX) * 4,
-                    pixels, ((heartY + y) * w + heartX) * 4, Cell * 4);
+            foreach (int col in new[] { 2, 3 })
+                for (int y = 0; y < Cell; y++)
+                    Buffer.BlockCopy(pixels, ((blankY + y) * w + blankX) * 4,
+                        pixels, ((231 + y) * w + GridX + col * Step) * 4, Cell * 4);
             patched = WzAssets.Upload(pixels, w, h, "EquipBackgrnd");
         }
         catch (Exception e)

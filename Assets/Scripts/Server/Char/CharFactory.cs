@@ -152,10 +152,10 @@ public static class CharFactory
             QuickslotDao.Save(db, accountId, 0);
 
             // 装备（源端位置 -5/-6/-7/-11，EQUIPPED）
-            InventoryDao.InsertItem(db, (int)id, top, InventoryDao.Equipped, EquipPosTop, 1);
-            InventoryDao.InsertItem(db, (int)id, bottom, InventoryDao.Equipped, EquipPosBottom, 1);
-            InventoryDao.InsertItem(db, (int)id, shoes, InventoryDao.Equipped, EquipPosShoes, 1);
-            InventoryDao.InsertItem(db, (int)id, weapon, InventoryDao.Equipped, EquipPosWeapon, 1);
+            CharService.AddItem(db, (int)id, top, InventoryDao.Equipped, EquipPosTop, 1);
+            CharService.AddItem(db, (int)id, bottom, InventoryDao.Equipped, EquipPosBottom, 1);
+            CharService.AddItem(db, (int)id, shoes, InventoryDao.Equipped, EquipPosShoes, 1);
+            CharService.AddItem(db, (int)id, weapon, InventoryDao.Equipped, EquipPosWeapon, 1);
             // 新手指南（ETC 背包第一位）
             InventoryDao.InsertItem(db, (int)id, cygnus ? ItemNoblesseGuide : aran ? ItemLegendsGuide : ItemBeginnersGuide, InventoryDao.Etc, 1, 1);
 

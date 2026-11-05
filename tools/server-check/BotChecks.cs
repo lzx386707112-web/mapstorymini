@@ -914,6 +914,24 @@ static class BotChecks
         snapshot.visiting.items[0].item.quantity = 900;
         snapshot.visiting.items[0].bundles = 900;
         check(merchant.items[0].item.quantity == 2 && merchant.items[0].bundles == 1, "商店快照不暴露权威商品与库存引用");
+        check(snapshot.visiting.visitors.Count == 1 && snapshot.visiting.visitors[0].id == visitor.id
+            && snapshot.visiting.visitors[0].slot == 0, "购买窗快照返回访客首座位");
+        visitor.name = "店内买家";
+        var chatResponse = protocol.Handle(new MarketRequest {characterId = visitor.id, operation = MarketOperation.Chat, text = "你好"});
+        check(chatResponse.ok && chatResponse.visiting.chat.Count == 1 && chatResponse.visiting.chat[0] == "店内买家 : 你好",
+            "购买窗聊天通过权威访问会话并返回原名字格式");
+        chatResponse.visiting.chat.Clear();
+        check(merchant.chat.Count == 1, "聊天快照不暴露权威列表");
+        check(!protocol.Handle(new MarketRequest {characterId = visitor.id, operation = MarketOperation.Chat, text = new string('a',128)}).ok,
+            "店铺聊天拒绝超长文本");
+        var secondVisitor = new BotActor {id = visitor.id+2, online = true, world = visitor.world, channel = visitor.channel, mapId = visitor.mapId};
+        shops.Visit(secondVisitor,merchant.ownerId);
+        shops.Leave(visitor.id);
+        check(shops.Visitors(merchant.ownerId).Count == 1 && shops.Visitors(merchant.ownerId)[0].Value == 1,
+            "首位离店不压缩第二访客座位");
+        check(!protocol.Handle(new MarketRequest {characterId = visitor.id, operation = MarketOperation.Chat, text = "离店后"}).ok,
+            "离店后不能继续店内聊天");
+        shops.Visit(visitor,merchant.ownerId);
         visitor.mapId++;
         snapshot = protocol.Handle(new MarketRequest {characterId = buyer.id, operation = MarketOperation.Read});
         check(snapshot.visiting == null && snapshot.shops.Count == 0, "读协议在离图后释放访问且不返回其他图商店");

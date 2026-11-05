@@ -129,6 +129,16 @@ public static class AdminGive
         // 源端 type=5 是「非装备」（宠物时 quantity 作天数），不建 inventoryequipment 行；
         // 装备一律走 type=6（gainEquip 带属性/卷位/expire）。
         long rowId = InsertItem(db, characterId, itemId, quantity, form, out _);
+        if (itemId / 1000000 == 1)
+        {
+            InventoryDao.EnsureEquipment(db, rowId);
+            if (SymbolCatalog.IsSymbol(itemId))
+            {
+                var chr = db.Table("characters").Find(x => DbStore.Long(x, "id") == characterId);
+                NativeSymbolService.Normalize(InventoryDao.EquipmentOf(db, rowId), itemId,
+                    chr == null ? 0 : DbStore.Int(chr, "job"));
+            }
+        }
         AdminBackend.LiveInventory(db, characterId, rowId, false);
     }
 

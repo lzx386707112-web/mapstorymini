@@ -38,6 +38,21 @@ from wzpy.properties import WzCanvasProperty, WzSubProperty  # noqa: E402
 
 KEY = WzKey.for_region("GMS")
 
+# 北斗当年把 TMS 五/六转技能塞进了四转 Skill/<job>.img，现已按 282 结构重做。
+# docs/legacy-advanced-deletion.json 是唯一删除清单（audit_legacy_advanced.py 产出），
+# 导出时按它过滤，防止重新导出把旧技能带回 JobTree/图标别名。
+LEGACY_DELETION = REPO / "docs" / "legacy-advanced-deletion.json"
+
+
+def load_legacy_deleted() -> dict[int, set[int]]:
+    if not LEGACY_DELETION.exists():
+        return {}
+    data = json.loads(LEGACY_DELETION.read_text(encoding="utf-8"))
+    out: dict[int, set[int]] = {}
+    for entry in data.get("delete", []):
+        out.setdefault(int(entry["job"]), set()).add(int(entry["id"]))
+    return out
+
 # —— 职业表 ——
 # 冒险家：0 → 五系一转 → 二转(+10，战士/法师有三选一分支) → 三转(+1) → 四转(+1)
 ADVENTURER = [
@@ -65,6 +80,29 @@ CYGNUS = [
     1500, 1510, 1511, 1512,
 ]
 JOBS = ADVENTURER + CYGNUS
+
+# —— 五转觉醒后的独立职业编码（四转 ID + 1）——
+# 282 的 38601..38625 六转链任务 Check/0 的 job 白名单用的就是这套编码
+# （113/123/133/213/…/1113/1213/1313，见 docs/tms282-skill/19 §2.1），
+# 角色的四转 ID 在完成 1465（五转：紀錄力量，完成覺醒）后 +1，六转链直接按新编码比对，
+# 不做 -1 归一化（17 §7 决议 2）。
+#
+# 六转技能本体在 282 的 Skill_<四转 ID + 2>.img（114/1114…，如 1141000 狂暴攻擊VI），
+# 运行时落到我们自己的 Skill/<四转 ID + 1>.img，由 tools/ms282/import_advanced_skills.py
+# 导入并写出 UI/AdvancedSkills.json；本导出器只负责把职业节点挂进 JobTree，
+# 技能清单读该文件（缺失时留空，不影响四转页）。
+ADVANCED = {
+    112: 113, 122: 123, 132: 133,
+    212: 213, 222: 223, 232: 233,
+    312: 313, 322: 323,
+    412: 413, 422: 423,
+    512: 513, 522: 523,
+    1112: 1113, 1212: 1213, 1312: 1313, 1412: 1413, 1512: 1513,
+}
+ADVANCED_OF = {v: k for k, v in ADVANCED.items()}
+# 282 的 String/Skill.img 没有 114/1114 的 bookName 节点，页签名由本项目给（显示在技能窗书条）
+ADVANCED_BOOK = "六转技能"
+ADVANCED_SKILLS = ROOT / "Assets/Resources/UI/AdvancedSkills.json"
 
 # 一转能力值门槛（AbstractPlayerInteraction.canGetFirstJob）。
 # 注意 use_auto_assign_starters_ap=true 时 canGetFirstJob 恒真，该表只用于 UI 提示。
@@ -128,6 +166,8 @@ def job_img_name(job: int) -> str:
 
 
 def tier_of(job: int) -> int:
+    if job in ADVANCED_OF:
+        return 5                      # 五转觉醒后的独立编码，技能来自六转 img
     if job in (0, 1000):
         return 0
     if job % 100 == 0:
@@ -138,6 +178,8 @@ def tier_of(job: int) -> int:
 
 
 def family_of(job: int) -> str:
+    if job in ADVANCED_OF:
+        return family_of(ADVANCED_OF[job])
     if job == 0:
         return "beginner"
     if job == 1000:
@@ -149,6 +191,10 @@ def family_of(job: int) -> str:
 
 
 def next_jobs(job: int) -> list[int]:
+    if job in ADVANCED:
+        return [ADVANCED[job]]
+    if job in ADVANCED_OF:
+        return []
     if job == 0:
         return [100, 200, 300, 400, 500]
     if job == 1000:
@@ -167,6 +213,10 @@ def advance_rule(job: int, parent: int) -> dict | None:
     SP/AP 数值逐条对齐 Character.changeJob：一转 +1SP/+0AP，二转三转 +1SP/+5AP
     （骑士团 +7AP），四转 +3SP/+5AP；resetStats 只发生在第一次转职。"""
     if tier_of(job) == 0:
+        return None
+    if tier_of(job) == 5:
+        # 五转觉醒（1465 完成）由任务钩子改码，没有 NPC 转职脚本可依，不填 advance 规则：
+        # JobSystem.CanAdvance 看到 advance==null 就会拒绝「直接转入」。
         return None
     cygnus = job >= 1000
     tier = tier_of(job)
@@ -243,6 +293,21 @@ def load_i18n_job_names() -> dict[int, str]:
     return out
 
 
+def load_advanced_skills() -> tuple[dict[int, list[int]], dict[int, dict], dict[int, str]]:
+    """六转技能清单（tools/ms282/import_advanced_skills.py 产出）。
+
+    返回 (职业 → 技能 id 列表, 技能 id → JobTree 技能数据, 技能 id → 图标源)。
+    文件不存在时三张表都为空：职业节点照挂，该技能页留空，不影响四转页。
+    """
+    if not ADVANCED_SKILLS.exists():
+        return {}, {}, {}
+    data = json.loads(ADVANCED_SKILLS.read_text(encoding="utf-8"))
+    by_job = {int(k): [int(x) for x in v] for k, v in data.get("jobs", {}).items()}
+    skills = {int(k): v for k, v in data.get("skills", {}).items()}
+    icons = {int(k): v for k, v in data.get("iconSources", {}).items()}
+    return by_job, skills, icons
+
+
 def classify(skill, level1: dict) -> str:
     """技能类型：只用于"能不能施放/怎么施放"，不参与数值。"""
     if skill.get("summon") is not None:
@@ -297,6 +362,7 @@ def main():
     old_skills = load_existing_skills()
     old_tabs = load_existing_tabs()
     i18n = load_i18n_job_names()
+    legacy_deleted = load_legacy_deleted()
 
     jobs = []
     skills: dict[str, dict] = {}
@@ -313,10 +379,13 @@ def main():
         book = (num(book.get("bookName")) or "") if book is not None else ""
 
         ids = []
+        skip = legacy_deleted.get(job, set())
         for node in skill_root.children():
             try:
                 sid = int(node.name)
             except ValueError:
+                continue
+            if sid in skip:
                 continue
             ids.append(sid)
             rows = level_rows(node)
@@ -381,7 +450,7 @@ def main():
         #   - 进阶职业列该 img 的全部技能（与旧 4 转线一致；4 转技能的 invisible=1
         #     在 v83 里表示"技能书/隐藏被动"，不代表技能窗不显示）
         if job in old_tabs:
-            listed = old_tabs[job]
+            listed = [sid for sid in old_tabs[job] if sid not in skip]
         elif tier_of(job) == 0:
             listed = [sid for sid in ids
                       if str(sid) in skills and (skills[str(sid)]["invisible"] == 0 or skills[str(sid)]["auto"])]
@@ -400,6 +469,35 @@ def main():
             "skills": listed,
             "allSkills": ids,
         })
+
+    # —— 五转觉醒后的独立编码节点（四转 ID + 1，tier 5）——
+    # 这些职业没有 NPC 转职脚本（改码点是 1465 完成的任务钩子），所以 advance=null、
+    # next 为空；技能清单读 AdvancedSkills.json（缺文件时留空）。
+    adv_ids, adv_skills, adv_icons = load_advanced_skills()
+    name_by_job = {j["id"]: j["name"] for j in jobs}
+    all_by_job = {j["id"]: j["allSkills"] for j in jobs}
+    for adv, parent in ADVANCED_OF.items():
+        ids = [sid for sid in adv_ids.get(adv, []) if sid in adv_skills]
+        for sid in ids:
+            skills[str(sid)] = adv_skills[sid]
+            if sid in adv_icons:
+                icon_sources[sid] = adv_icons[sid]
+        inherited = [sid for sid in all_by_job.get(parent, [])]
+        jobs.append({
+            "id": adv,
+            "name": name_by_job.get(parent, str(adv)),
+            "book": ADVANCED_BOOK,
+            "family": family_of(adv),
+            "tier": 5,
+            "parent": parent,
+            "next": [],
+            "advance": None,
+            "skills": ids,
+            # 六转角色仍持有四转技能：allSkills 带上父职业，GM「学会本职业全部技能」才不会漏
+            "allSkills": inherited + [sid for sid in ids if sid not in inherited],
+        })
+    if adv_ids and not any(j["skills"] for j in jobs if j["tier"] == 5):
+        print("  警告: AdvancedSkills.json 有职业键但没有可用技能数据")
 
     # 职业名只认源端 i18n（message_zh_CN.properties 的 job.name.<id>）。
     # 旧版这里会用 Assets/Resources/UI/JobSkills.json 的 jobNames 覆盖，直接把名字写歪：

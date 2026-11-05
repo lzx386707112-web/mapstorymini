@@ -158,6 +158,24 @@ public static class JobSystem
         return true;
     }
 
+    /// <summary>
+    /// 五转觉醒：把四转编码换成独立编码（四转 ID + 1）。
+    /// 282 的 38601..38625 六转链 Check/0 只认新编码（19 §2.1），而 1460 的 Check/0 仍是四转编码，
+    /// 所以改码点落在 1465「紀錄力量，完成覺醒」完成的时刻；源端那一步在缺失脚本 q1465e 里，
+    /// 客户端没有 SP/AP/HP 授予证据 —— 这里只改编码，不给成长奖励（边界已记在 docs 里）。
+    /// </summary>
+    public static bool PromoteToAdvanced()
+    {
+        int adv = JobDefs.AdvancedOf(Profile.JobId);
+        if (adv <= 0) return false;
+        if (Profile.JobId == adv) return true;
+        int from = Profile.JobId;
+        Profile.SetJob(adv);
+        Debug.Log("[JobSystem] 五转觉醒：职业编码 " + from + "(" + JobDefs.NameOf(from) + ") → "
+            + adv + "(" + JobDefs.NameOf(adv) + ")");
+        return true;
+    }
+
     /// <summary>源端 AbstractPlayerInteraction.canGetFirstJob(jobType)（:1350）。
     /// jobType：1 战士 / 2 法师 / 3 弓手 / 4 飞侠 / 5 海盗（和脚本里的常量一致）。</summary>
     public static bool CanGetFirstJob(int jobType)

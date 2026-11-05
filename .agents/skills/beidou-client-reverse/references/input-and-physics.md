@@ -292,3 +292,11 @@ NativeBuffChecks.RunAll（/tmp/mapledash-priority-four-runtime2.log）退出0；
 导致斜向经过绳子下方会被抬起。现只在脚底达到bottom后才允许抓取，不改已有原端绳梯左右跳初速。
 验证 `NativeGameplayFixChecks.Run`覆盖脚底低于绳底50px且有向上分量不附着/不抬升，以及绳身范围内正常抓取；
 `RopeJumpChecks.Run`继续验证左右跳0.5/1.3与方向门控。
+
+## 项目全局 Esc 关闭策略补齐（2026-11-05）
+
+此为用户明确要求的项目宿主行为，不作为新还原的原 EXE 规则。GameWindows 原 CloseTop 固定优先若干特殊窗，Panel 枚举遗漏极限属性、内在能力、V/HEXA、机器人、便笺、宠物排除及部分装备操作窗。现将47种可见面板统一登记到 TrackPanels 观察的打开顺序栈，AnyVisible 复用同一可见性目录；GuildGrade独立于Guild。全局 NativeUtilPrompt 先取消，其后每次只调用最后打开面板的原关闭函数；商城保留 Reset 恢复时间轴、交易保留取消协议、RPS保留 RequestLeave。未真正关闭（忙碌或原关闭函数弹确认）的窗保留栈中，不继续穿透关闭下层。V/HEXA Escape先取消内部dialog，再关闭主窗。
+
+InputBridge 保留键位编辑器、侧滑菜单、聊天、频道下拉自身的Esc处理；物理Esc不受菜单动作重新绑键影响。NPC会话内按Esc先尝试 CloseTop，没有面板再Cancel会话，覆盖拍卖脚本打开成长窗情形。按可见变化跟踪，不宣称窗口点击置顶或同帧多窗打开有精确时间戳。无IMG布局改动。
+
+验证工具 tools/check_escape_panels.py 执行生产栈及生产矩阵 Escape，窗口端点用模拟替身检验各面板关闭路由、后开先关、全局提示优先、忙碌保留及矩阵内部弹窗分层。C#编译通过；没有Android真机验收。

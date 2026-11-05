@@ -122,6 +122,10 @@ public static class NpcField
 
     public static List<QuestChoice> ChoicesFor(int npcId)
     {
+        // 日界线先同步服务端重置，不能把昨天的进行中/完成镜像当成今天的新调查。
+        foreach (int id in QuestCatalog.ForNpc(npcId))
+            if (id == WeeklyGemstoneData.Id || NativeWeeklyGemstoneService.IsDaily(id))
+            { WeeklyGemstoneQuest.Read(true); break; }
         var choices = new List<QuestChoice>();
         if (npcId == 2104 && WelcomeTutorial.CanComplete)
             choices.Add(new QuestChoice { npcId = npcId, welcome = true, complete = true });

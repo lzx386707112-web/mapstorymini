@@ -167,6 +167,7 @@ public sealed class NpcSession
     public static NpcSession Talk(int npcId, string scriptName)
     {
         CloseActive();
+        if (npcId == WeeklyGemstoneData.Npc) WeeklyGemstoneQuest.Read(true);
         // NPCTalkHandler：DUEY(9010009) 不走脚本，直接开快递窗口（哪怕这个 NPC 配了脚本）。
         if (npcId == 9010009) { NativeDeliveryWindow.Open(false); return null; }
         // FredrickHandler 0x1A：自由市场入口的弗利德里，取回雇佣商店寄存（连金币）。
@@ -266,7 +267,11 @@ public sealed class NpcSession
     {
         var say = WzAssets.FileRoot("Quest/Say.img").Get(quest.id + "/" + (end ? "1" : "0"));
         var pages = QuestPages(say);
-        if (pages.Count == 0) pages.Add(quest.info.Length > 0 ? quest.info[Math.Min(end ? 1 : 0, quest.info.Length - 1)] : quest.name);
+        // info[] 的三段与任务状态一一对应（0 可接 / 1 进行中 / 2 完成），QuestWindow 也是按
+        // stateInfo[status] 取的。没有 Quest/Say.img 时接取取第一段、交付取最后一段，
+        // 别再用固定的 [1]——那会把「进行中」的提示当成交付对白。
+        int fallback = end ? Math.Max(0, quest.info.Length - 1) : 0;
+        if (pages.Count == 0) pages.Add(quest.info.Length > 0 ? quest.info[Math.Min(fallback, quest.info.Length - 1)] : quest.name);
         int page = 0;
         // 交付对话开始前先按原端 restoreLostItem 补一次「接取时自己发过的任务道具」，
         // 否则道具丢失后 Check/1 永远不满足，任务卡死再也交不了。

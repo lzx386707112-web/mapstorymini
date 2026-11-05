@@ -216,6 +216,26 @@ public static class InventoryDao
         });
     }
 
+    // Repair a structurally incomplete equipment item only; never overwrite an existing instance.
+    public static DbRow EnsureEquipment(DbStore db, long inventoryItemId, Server.Bot.BotItemCatalog catalog = null)
+    {
+        var existing = EquipmentOf(db, inventoryItemId);
+        if (existing != null) return existing;
+        var item = db.Table("inventoryitems").Find(x => DbStore.Long(x,"inventoryitemid") == inventoryItemId);
+        int itemId = DbStore.Int(item,"itemid");
+        if (itemId / 1000000 != 1) return null;
+        catalog ??= Server.Bot.BotItemCatalog.Shared;
+        var info = catalog.Info(itemId);
+        if (info == null) return null;
+        int Read(string key) => Server.Bot.BotItemCatalog.Int(info,key);
+        InsertEquipment(db, inventoryItemId, Read("incSTR"), Read("incDEX"), Read("incINT"), Read("incLUK"),
+            Read("incMHP"), Read("incMMP"), Read("incPAD"), Read("incMAD"), Read("incPDD"), Read("incMDD"),
+            Read("incACC"), Read("incEVA"), Read("incCraft"), Read("incSpeed"), Read("incJump"), Read("tuc"));
+        var row = EquipmentOf(db, inventoryItemId);
+        row["nativeStats"] = 1L;
+        return row;
+    }
+
     public static void InsertEquipment(DbStore db, long inventoryItemId, int str = 0, int dex = 0, int intl = 0, int luk = 0,
         int hp = 0, int mp = 0, int watk = 0, int matk = 0, int wdef = 0, int mdef = 0, int acc = 0, int avoid = 0,
         int hands = 0, int speed = 0, int jump = 0, int upgradeslots = 0)
@@ -316,6 +336,8 @@ public static class QuestStatusDao
 
     public static void Upsert(DbStore db, int characterId, int questId, int status, int completed = 0)
     {
+        if (questId == WeeklyGemstoneData.Id) return; // 周任务状态由原子领奖服务持有。
+        bool newlyCompleted = status == 2 && StatusOf(db, characterId, questId) == 1;
         var t = db.Table("queststatus");
         int n = t.Update(r => SkillsDao.Eq64(r, "characterid", characterId) && SkillsDao.Eq64(r, "quest", questId), new DbRow
         {
@@ -324,6 +346,7 @@ public static class QuestStatusDao
         });
         if (n == 0)
             t.Insert(new DbRow { ["characterid"] = (long)characterId, ["quest"] = (long)questId, ["status"] = (long)status, ["completed"] = (long)completed });
+        if (newlyCompleted) NativeWeeklyGemstoneService.OnCompleted(db, characterId, questId);
     }
 
     public static int StatusOf(DbStore db, int characterId, int questId)

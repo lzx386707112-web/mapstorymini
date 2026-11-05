@@ -6,7 +6,9 @@ namespace Server.Bot.Social
     // 源端PacketCreator广播的纯数据适配。前端只消费事件，不在AI层绘制UI。
     public sealed class BotOutput
     {
-        public enum Kind { Chat, Bubble, Emote, Hint, EnableActions, Chair, Skill, Chalkboard, Guide, GuideTalk, YellowMessage, Movement, Appearance, Attack, Mount, TradeChat, Scroll, ItemMegaphone }
+        public enum Kind { Chat, Bubble, Emote, Hint, EnableActions, Chair, Skill, Chalkboard, Guide, GuideTalk, YellowMessage, Movement, Appearance, Attack, Mount, TradeChat, Scroll, ItemMegaphone,
+            // 悄悄话：点对点、跨图跨频道（源端 WHISPER 包按角色投递），只写收件人的聊天窗，不冒泡。
+            Whisper }
         public sealed class Message
         {
             public Kind kind;

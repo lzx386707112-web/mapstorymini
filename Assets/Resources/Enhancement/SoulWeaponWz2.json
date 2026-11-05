@@ -1,0 +1,6359 @@
+{
+ "rules": {
+  "LevelInfo": {
+   "2": {
+    "ReqExp": 6
+   },
+   "3": {
+    "ReqExp": 7
+   },
+   "4": {
+    "ReqExp": 8
+   },
+   "5": {
+    "ReqExp": 9
+   },
+   "6": {
+    "ReqExp": 12
+   },
+   "7": {
+    "ReqExp": 13
+   },
+   "8": {
+    "ReqExp": 14
+   },
+   "9": {
+    "ReqExp": 15
+   },
+   "10": {
+    "ReqExp": 16
+   },
+   "11": {
+    "ReqExp": 31
+   },
+   "12": {
+    "ReqExp": 34
+   },
+   "13": {
+    "ReqExp": 37
+   },
+   "14": {
+    "ReqExp": 41
+   },
+   "15": {
+    "ReqExp": 43
+   },
+   "16": {
+    "ReqExp": 47
+   },
+   "17": {
+    "ReqExp": 49
+   },
+   "18": {
+    "ReqExp": 53
+   },
+   "19": {
+    "ReqExp": 56
+   },
+   "20": {
+    "ReqExp": 59
+   },
+   "21": {
+    "ReqExp": 62
+   },
+   "22": {
+    "ReqExp": 68
+   },
+   "23": {
+    "ReqExp": 74
+   },
+   "24": {
+    "ReqExp": 80
+   },
+   "25": {
+    "ReqExp": 87
+   },
+   "26": {
+    "ReqExp": 93
+   },
+   "27": {
+    "ReqExp": 100
+   },
+   "28": {
+    "ReqExp": 106
+   },
+   "29": {
+    "ReqExp": 112
+   },
+   "30": {
+    "ReqExp": 118
+   },
+   "31": {
+    "ReqExp": 123
+   },
+   "32": {
+    "ReqExp": 135
+   },
+   "33": {
+    "ReqExp": 149
+   },
+   "34": {
+    "ReqExp": 161
+   },
+   "35": {
+    "ReqExp": 173
+   },
+   "36": {
+    "ReqExp": 187
+   },
+   "37": {
+    "ReqExp": 199
+   },
+   "38": {
+    "ReqExp": 211
+   },
+   "39": {
+    "ReqExp": 225
+   },
+   "40": {
+    "ReqExp": 237
+   },
+   "41": {
+    "ReqExp": 206
+   },
+   "42": {
+    "ReqExp": 232
+   },
+   "43": {
+    "ReqExp": 257
+   },
+   "44": {
+    "ReqExp": 282
+   },
+   "45": {
+    "ReqExp": 308
+   },
+   "46": {
+    "ReqExp": 332
+   },
+   "47": {
+    "ReqExp": 358
+   },
+   "48": {
+    "ReqExp": 383
+   },
+   "49": {
+    "ReqExp": 408
+   },
+   "50": {
+    "ReqExp": 434
+   },
+   "51": {
+    "ReqExp": 442
+   },
+   "52": {
+    "ReqExp": 490
+   },
+   "53": {
+    "ReqExp": 536
+   },
+   "54": {
+    "ReqExp": 584
+   },
+   "55": {
+    "ReqExp": 632
+   },
+   "56": {
+    "ReqExp": 678
+   },
+   "57": {
+    "ReqExp": 726
+   },
+   "58": {
+    "ReqExp": 774
+   },
+   "59": {
+    "ReqExp": 820
+   },
+   "60": {
+    "ReqExp": 868
+   },
+   "61": {
+    "ReqExp": 667
+   },
+   "62": {
+    "ReqExp": 735
+   },
+   "63": {
+    "ReqExp": 804
+   },
+   "64": {
+    "ReqExp": 873
+   },
+   "65": {
+    "ReqExp": 941
+   },
+   "66": {
+    "ReqExp": 1009
+   },
+   "67": {
+    "ReqExp": 1077
+   },
+   "68": {
+    "ReqExp": 1146
+   },
+   "69": {
+    "ReqExp": 1215
+   },
+   "70": {
+    "ReqExp": 1283
+   },
+   "71": {
+    "ReqExp": 1541
+   },
+   "72": {
+    "ReqExp": 1704
+   },
+   "73": {
+    "ReqExp": 1867
+   },
+   "74": {
+    "ReqExp": 2031
+   },
+   "75": {
+    "ReqExp": 2193
+   },
+   "76": {
+    "ReqExp": 2357
+   },
+   "77": {
+    "ReqExp": 2519
+   },
+   "78": {
+    "ReqExp": 2683
+   },
+   "79": {
+    "ReqExp": 2846
+   },
+   "80": {
+    "ReqExp": 3009
+   },
+   "81": {
+    "ReqExp": 2763
+   },
+   "82": {
+    "ReqExp": 3015
+   },
+   "83": {
+    "ReqExp": 3269
+   },
+   "84": {
+    "ReqExp": 3521
+   },
+   "85": {
+    "ReqExp": 3773
+   },
+   "86": {
+    "ReqExp": 4027
+   },
+   "87": {
+    "ReqExp": 4279
+   },
+   "88": {
+    "ReqExp": 4531
+   },
+   "89": {
+    "ReqExp": 4785
+   },
+   "90": {
+    "ReqExp": 5037
+   },
+   "91": {
+    "ReqExp": 3079
+   },
+   "92": {
+    "ReqExp": 3395
+   },
+   "93": {
+    "ReqExp": 3711
+   },
+   "94": {
+    "ReqExp": 4027
+   },
+   "95": {
+    "ReqExp": 4343
+   },
+   "96": {
+    "ReqExp": 4657
+   },
+   "97": {
+    "ReqExp": 4973
+   },
+   "98": {
+    "ReqExp": 5289
+   },
+   "99": {
+    "ReqExp": 5605
+   },
+   "100": {
+    "ReqExp": 5921
+   }
+  },
+  "GradeInfo": {
+   "1": {
+    "GradeUpReqQuestID": 68842,
+    "MaxLevel": 10,
+    "ActiveSkillID": 80012853,
+    "ActiveSkillLevel": 1,
+    "OptionRollCost": 20
+   },
+   "2": {
+    "GradeUpReqQuestID": 68843,
+    "MaxLevel": 20,
+    "ActiveSkillID": 80012853,
+    "ActiveSkillLevel": 2,
+    "OptionRollCost": 100
+   },
+   "3": {
+    "GradeUpReqQuestID": 68844,
+    "MaxLevel": 30,
+    "ActiveSkillID": 80012853,
+    "ActiveSkillLevel": 3,
+    "OptionRollCost": 200
+   },
+   "4": {
+    "GradeUpReqQuestID": 68845,
+    "MaxLevel": 40,
+    "ActiveSkillID": 80012854,
+    "ActiveSkillLevel": 1,
+    "OptionRollCost": 400
+   },
+   "5": {
+    "GradeUpReqQuestID": 68846,
+    "MaxLevel": 50,
+    "ActiveSkillID": 80012854,
+    "ActiveSkillLevel": 2,
+    "OptionRollCost": 700
+   },
+   "6": {
+    "GradeUpReqQuestID": 68847,
+    "MaxLevel": 60,
+    "ActiveSkillID": 80012854,
+    "ActiveSkillLevel": 3,
+    "OptionRollCost": 1200
+   },
+   "7": {
+    "GradeUpReqQuestID": 68848,
+    "MaxLevel": 70,
+    "ActiveSkillID": 80012855,
+    "ActiveSkillLevel": 1,
+    "OptionRollCost": 2000
+   },
+   "8": {
+    "GradeUpReqQuestID": 68849,
+    "MaxLevel": 80,
+    "ActiveSkillID": 80012855,
+    "ActiveSkillLevel": 2,
+    "OptionRollCost": 3000
+   },
+   "9": {
+    "GradeUpReqQuestID": 68850,
+    "MaxLevel": 90,
+    "ActiveSkillID": 80012856,
+    "ActiveSkillLevel": 1,
+    "OptionRollCost": 6000
+   },
+   "10": {
+    "MaxLevel": 100,
+    "ActiveSkillID": 80012856,
+    "ActiveSkillLevel": 2,
+    "OptionRollCost": 10000
+   }
+  },
+  "BossInfo": {
+   "0": {
+    "FieldSetName": "cygnus01_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68851,
+    "BossIcon": 1,
+    "Difficulty": 2
+   },
+   "1": {
+    "FieldSetName": "Chaos_ZakumBoss_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68852,
+    "BossIcon": 2,
+    "Difficulty": 4
+   },
+   "2": {
+    "FieldSetName": "rootaBanbanChaos_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68853,
+    "BossIcon": 3,
+    "Difficulty": 4
+   },
+   "3": {
+    "FieldSetName": "rootaPierreChaos_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68854,
+    "BossIcon": 4,
+    "Difficulty": 4
+   },
+   "4": {
+    "FieldSetName": "rootaQueenChaos_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68855,
+    "BossIcon": 5,
+    "Difficulty": 4
+   },
+   "5": {
+    "FieldSetName": "rootaBellumChaos_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68856,
+    "BossIcon": 6,
+    "Difficulty": 4
+   },
+   "6": {
+    "FieldSetName": "nohime_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68857,
+    "BossIcon": 7,
+    "Difficulty": 2
+   },
+   "7": {
+    "FieldSetName": "MagnusHard_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68858,
+    "BossIcon": 8,
+    "Difficulty": 3
+   },
+   "8": {
+    "FieldSetName": "papulatusChaos_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68859,
+    "BossIcon": 9,
+    "Difficulty": 4
+   },
+   "9": {
+    "FieldSetName": "bossBlackHeavenRemaster_Normal_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68860,
+    "BossIcon": 10,
+    "Difficulty": 2
+   },
+   "10": {
+    "FieldSetName": "Demian_Normal_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68861,
+    "BossIcon": 11,
+    "Difficulty": 2
+   },
+   "11": {
+    "FieldSetName": "GuardianSlime_Normal_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68862,
+    "BossIcon": 12,
+    "Difficulty": 2
+   },
+   "12": {
+    "FieldSetName": "Lucid_Easy_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68863,
+    "BossIcon": 13,
+    "Difficulty": 1
+   },
+   "13": {
+    "FieldSetName": "Will_Easy_",
+    "Grade": 1,
+    "FragmentAmount": 10,
+    "QuestID_Weekly": 68864,
+    "BossIcon": 14,
+    "Difficulty": 1
+   },
+   "14": {
+    "FieldSetName": "Lucid_Normal_",
+    "Grade": 2,
+    "FragmentAmount": 35,
+    "QuestID_Weekly": 68865,
+    "QuestID_GradeUp": 68842,
+    "BossIcon": 13,
+    "Difficulty": 2
+   },
+   "15": {
+    "FieldSetName": "Will_Normal_",
+    "Grade": 2,
+    "FragmentAmount": 35,
+    "QuestID_Weekly": 68866,
+    "QuestID_GradeUp": 68842,
+    "BossIcon": 14,
+    "Difficulty": 2
+   },
+   "16": {
+    "FieldSetName": "duskBoss_",
+    "Grade": 2,
+    "FragmentAmount": 40,
+    "QuestID_Weekly": 68867,
+    "QuestID_GradeUp": 68842,
+    "BossIcon": 15,
+    "Difficulty": 2
+   },
+   "17": {
+    "FieldSetName": "dunkelBoss_",
+    "Grade": 2,
+    "FragmentAmount": 40,
+    "QuestID_Weekly": 68868,
+    "QuestID_GradeUp": 68842,
+    "BossIcon": 16,
+    "Difficulty": 2
+   },
+   "18": {
+    "FieldSetName": "bossBlackHeavenRemaster_Hard_",
+    "Grade": 2,
+    "FragmentAmount": 45,
+    "QuestID_Weekly": 68869,
+    "QuestID_GradeUp": 68842,
+    "BossIcon": 10,
+    "Difficulty": 3
+   },
+   "19": {
+    "FieldSetName": "Demian_Hard_",
+    "Grade": 2,
+    "FragmentAmount": 50,
+    "QuestID_Weekly": 68870,
+    "QuestID_GradeUp": 68842,
+    "BossIcon": 11,
+    "Difficulty": 3
+   },
+   "20": {
+    "FieldSetName": "JinHillah_Normal_",
+    "Grade": 2,
+    "FragmentAmount": 70,
+    "QuestID_Weekly": 68873,
+    "QuestID_GradeUp": 68842,
+    "BossIcon": 17,
+    "Difficulty": 2
+   },
+   "21": {
+    "FieldSetName": "Lucid_Hard_",
+    "Grade": 3,
+    "FragmentAmount": 80,
+    "QuestID_Weekly": 68871,
+    "QuestID_GradeUp": 68843,
+    "BossIcon": 13,
+    "Difficulty": 3
+   },
+   "22": {
+    "FieldSetName": "Will_Hard_",
+    "Grade": 3,
+    "FragmentAmount": 80,
+    "QuestID_Weekly": 68872,
+    "QuestID_GradeUp": 68843,
+    "BossIcon": 14,
+    "Difficulty": 3
+   },
+   "23": {
+    "FieldSetName": "GuardianSlime_Chaos_",
+    "Grade": 3,
+    "FragmentAmount": 90,
+    "QuestID_Weekly": 68874,
+    "QuestID_GradeUp": 68843,
+    "BossIcon": 12,
+    "Difficulty": 4
+   },
+   "24": {
+    "FieldSetName": "duskBoss_Hard_",
+    "Grade": 3,
+    "FragmentAmount": 90,
+    "QuestID_Weekly": 68875,
+    "QuestID_GradeUp": 68843,
+    "BossIcon": 15,
+    "Difficulty": 4
+   },
+   "25": {
+    "FieldSetName": "dunkelBoss_Hard_",
+    "Grade": 3,
+    "FragmentAmount": 95,
+    "QuestID_Weekly": 68876,
+    "QuestID_GradeUp": 68843,
+    "BossIcon": 16,
+    "Difficulty": 3
+   },
+   "26": {
+    "FieldSetName": "JinHillah_mortal_",
+    "Grade": 3,
+    "FragmentAmount": 100,
+    "QuestID_Weekly": 68877,
+    "QuestID_GradeUp": 68843,
+    "BossIcon": 17,
+    "Difficulty": 3
+   },
+   "27": {
+    "FieldSetName": "bossSeren_Normal_",
+    "Grade": 4,
+    "FragmentAmount": 160,
+    "QuestID_Weekly": 68879,
+    "QuestID_GradeUp": 68844,
+    "BossIcon": 18,
+    "Difficulty": 2
+   },
+   "28": {
+    "FieldSetName": "BossMalitia_Normal",
+    "Grade": 4,
+    "FragmentAmount": 170,
+    "QuestID_Weekly": 68878,
+    "QuestID_GradeUp": 68844,
+    "BossIcon": 19,
+    "Difficulty": 2
+   },
+   "29": {
+    "FieldSetName": "bossKalos_easy_",
+    "Grade": 4,
+    "FragmentAmount": 180,
+    "QuestID_Weekly": 68881,
+    "QuestID_GradeUp": 68844,
+    "BossIcon": 20,
+    "Difficulty": 1
+   },
+   "30": {
+    "FieldSetName": "bossFirstAdversary_Easy_",
+    "Grade": 4,
+    "FragmentAmount": 200,
+    "QuestID_Weekly": 68882,
+    "QuestID_GradeUp": 68844,
+    "BossIcon": 21,
+    "Difficulty": 1
+   },
+   "31": {
+    "FieldSetName": "bossSeren_",
+    "Grade": 5,
+    "FragmentAmount": 250,
+    "QuestID_Weekly": 68883,
+    "QuestID_GradeUp": 68845,
+    "BossIcon": 18,
+    "Difficulty": 3
+   },
+   "32": {
+    "FieldSetName": "bossKaring_easy_",
+    "Grade": 5,
+    "FragmentAmount": 300,
+    "QuestID_Weekly": 68885,
+    "QuestID_GradeUp": 68845,
+    "BossIcon": 22,
+    "Difficulty": 1
+   },
+   "33": {
+    "FieldSetName": "bossKalos_",
+    "Grade": 5,
+    "FragmentAmount": 325,
+    "QuestID_Weekly": 68886,
+    "QuestID_GradeUp": 68845,
+    "BossIcon": 20,
+    "Difficulty": 2
+   },
+   "34": {
+    "FieldSetName": "bossFirstAdversary_Normal_",
+    "Grade": 5,
+    "FragmentAmount": 350,
+    "QuestID_Weekly": 68887,
+    "QuestID_GradeUp": 68845,
+    "BossIcon": 21,
+    "Difficulty": 2
+   },
+   "35": {
+    "FieldSetName": "bossBlackHeavenRemaster_Extreme_",
+    "Grade": 6,
+    "FragmentAmount": 450,
+    "QuestID_Weekly": 68888,
+    "QuestID_GradeUp": 68846,
+    "BossIcon": 10,
+    "Difficulty": 5
+   },
+   "36": {
+    "FieldSetName": "bossYmir_Normal_",
+    "Grade": 6,
+    "FragmentAmount": 480,
+    "QuestID_Weekly": 68889,
+    "QuestID_GradeUp": 68846,
+    "BossIcon": 23,
+    "Difficulty": 2
+   },
+   "37": {
+    "FieldSetName": "bossKaring_normal_",
+    "Grade": 6,
+    "FragmentAmount": 500,
+    "QuestID_Weekly": 68890,
+    "QuestID_GradeUp": 68846,
+    "BossIcon": 22,
+    "Difficulty": 2
+   },
+   "38": {
+    "FieldSetName": "bossKalos_chaos_",
+    "Grade": 6,
+    "FragmentAmount": 550,
+    "QuestID_Weekly": 68892,
+    "QuestID_GradeUp": 68846,
+    "BossIcon": 20,
+    "Difficulty": 4
+   },
+   "39": {
+    "FieldSetName": "bossLimbo_Normal_",
+    "Grade": 6,
+    "FragmentAmount": 600,
+    "QuestID_Weekly": 68891,
+    "QuestID_GradeUp": 68846,
+    "BossIcon": 24,
+    "Difficulty": 2
+   },
+   "40": {
+    "FieldSetName": "bossSeren_Extreme_",
+    "Grade": 7,
+    "FragmentAmount": 750,
+    "QuestID_Weekly": 68893,
+    "QuestID_GradeUp": 68847,
+    "BossIcon": 18,
+    "Difficulty": 5
+   },
+   "41": {
+    "FieldSetName": "bossBaldrix_Normal_",
+    "Grade": 7,
+    "FragmentAmount": 800,
+    "QuestID_Weekly": 68894,
+    "QuestID_GradeUp": 68847,
+    "BossIcon": 25,
+    "Difficulty": 2
+   },
+   "42": {
+    "FieldSetName": "bossKaring_hard_",
+    "Grade": 7,
+    "FragmentAmount": 900,
+    "QuestID_Weekly": 68897,
+    "QuestID_GradeUp": 68847,
+    "BossIcon": 22,
+    "Difficulty": 3
+   },
+   "43": {
+    "FieldSetName": "bossFirstAdversary_Hard_",
+    "Grade": 7,
+    "FragmentAmount": 1000,
+    "QuestID_Weekly": 68895,
+    "QuestID_GradeUp": 68847,
+    "BossIcon": 21,
+    "Difficulty": 3
+   },
+   "44": {
+    "FieldSetName": "bossLuppiter_Normal_",
+    "Grade": 8,
+    "FragmentAmount": 1200,
+    "QuestID_Weekly": 68896,
+    "QuestID_GradeUp": 68848,
+    "BossIcon": 26,
+    "Difficulty": 2
+   },
+   "45": {
+    "FieldSetName": "bossLimbo_Hard_",
+    "Grade": 8,
+    "FragmentAmount": 1400,
+    "QuestID_Weekly": 68898,
+    "QuestID_GradeUp": 68848,
+    "BossIcon": 24,
+    "Difficulty": 3
+   },
+   "46": {
+    "FieldSetName": "bossYmir_Hard_",
+    "Grade": 8,
+    "FragmentAmount": 1500,
+    "QuestID_Weekly": 68899,
+    "QuestID_GradeUp": 68848,
+    "BossIcon": 23,
+    "Difficulty": 3
+   },
+   "47": {
+    "FieldSetName": "bossBaldrix_Hard_",
+    "Grade": 9,
+    "FragmentAmount": 2400,
+    "QuestID_Weekly": 68901,
+    "QuestID_GradeUp": 68849,
+    "BossIcon": 25,
+    "Difficulty": 3
+   },
+   "48": {
+    "FieldSetName": "bossKalos_extreme_",
+    "Grade": 9,
+    "FragmentAmount": 2600,
+    "QuestID_Weekly": 68900,
+    "QuestID_GradeUp": 68849,
+    "BossIcon": 20,
+    "Difficulty": 5
+   },
+   "49": {
+    "FieldSetName": "bossFirstAdversary_Extreme_",
+    "Grade": 9,
+    "FragmentAmount": 2800,
+    "QuestID_Weekly": 68902,
+    "QuestID_GradeUp": 68849,
+    "BossIcon": 21,
+    "Difficulty": 5
+   },
+   "50": {
+    "FieldSetName": "bossKaring_extreme_",
+    "Grade": 9,
+    "FragmentAmount": 3000,
+    "QuestID_Weekly": 68903,
+    "QuestID_GradeUp": 68849,
+    "BossIcon": 22,
+    "Difficulty": 5
+   },
+   "51": {
+    "FieldSetName": "bossLuppiter_Hard_",
+    "Grade": 10,
+    "FragmentAmount": 3500,
+    "QuestID_Weekly": 68904,
+    "QuestID_GradeUp": 68850,
+    "BossIcon": 26,
+    "Difficulty": 3
+   },
+   "52": {
+    "FieldSetName": "BossMalitia_Extreme",
+    "Grade": 10,
+    "FragmentAmount": 5000,
+    "QuestID_Weekly": 68905,
+    "QuestID_GradeUp": 68850,
+    "BossIcon": 19,
+    "Difficulty": 5
+   }
+  },
+  "TransmitInfo": {
+   "StartTime": "20260730000000",
+   "EndTime": "20270101000000",
+   "GradeConversion": {
+    "2591000": 3,
+    "2591001": 2,
+    "2591002": 2,
+    "2591003": 3,
+    "2591004": 2,
+    "2591005": 3,
+    "2591006": 2,
+    "2591007": 3,
+    "2591008": 7,
+    "2591009": 2,
+    "2591280": 3,
+    "2591281": 2,
+    "2591282": 5,
+    "2591283": 3,
+    "2591284": 2,
+    "2591285": 2,
+    "2591286": 2,
+    "2591287": 3,
+    "2591496": 3,
+    "2591497": 3,
+    "2591498": 3,
+    "2591535": 3,
+    "2591536": 1,
+    "2591537": 3,
+    "2591538": 3,
+    "2591539": 3,
+    "2591540": 3,
+    "2591541": 3,
+    "2591542": 3,
+    "2591543": 4,
+    "2591562": 3,
+    "2591563": 3,
+    "2591599": 1,
+    "2591600": 3,
+    "2591601": 3,
+    "2591649": 3,
+    "2591650": 3,
+    "2591685": 3,
+    "2591686": 3,
+    "2591788": 9,
+    "2591838": 3,
+    "2591839": 3,
+    "2591840": 3,
+    "2591841": 2,
+    "2591842": 2,
+    "2591843": 2,
+    "2591844": 2,
+    "2591845": 2,
+    "2591846": 3,
+    "2591847": 3,
+    "2591848": 3
+   },
+   "AlternativeOption": {
+    "20047": 20045,
+    "20048": 20046,
+    "30047": 30041,
+    "30048": 30043,
+    "30602": 30601
+   }
+  }
+ },
+ "options": {
+  "010001": {
+   "info": {
+    "string": "STR +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 5
+    }
+   }
+  },
+  "010002": {
+   "info": {
+    "string": "DEX +#incDEX"
+   },
+   "level": {
+    "1": {
+     "incDEX": 5
+    }
+   }
+  },
+  "010003": {
+   "info": {
+    "string": "INT +#incINT"
+   },
+   "level": {
+    "1": {
+     "incINT": 5
+    }
+   }
+  },
+  "010004": {
+   "info": {
+    "string": "LUK +#incLUK"
+   },
+   "level": {
+    "1": {
+     "incLUK": 5
+    }
+   }
+  },
+  "010005": {
+   "info": {
+    "string": "MaxHP +#incMHP"
+   },
+   "level": {
+    "1": {
+     "incMHP": 200
+    }
+   }
+  },
+  "010006": {
+   "info": {
+    "string": "MaxMP +#incMMP"
+   },
+   "level": {
+    "1": {
+     "incMMP": 200
+    }
+   }
+  },
+  "010011": {
+   "info": {
+    "string": "物理攻擊力 +#incPAD"
+   },
+   "level": {
+    "1": {
+     "incPAD": 5
+    }
+   }
+  },
+  "010012": {
+   "info": {
+    "string": "魔法攻擊力 +#incMAD"
+   },
+   "level": {
+    "1": {
+     "incMAD": 5
+    }
+   }
+  },
+  "011001": {
+   "info": {
+    "string": "STR +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 3
+    }
+   }
+  },
+  "011002": {
+   "info": {
+    "string": "DEX +#incDEX"
+   },
+   "level": {
+    "1": {
+     "incDEX": 3
+    }
+   }
+  },
+  "011003": {
+   "info": {
+    "string": "INT +#incINT"
+   },
+   "level": {
+    "1": {
+     "incINT": 3
+    }
+   }
+  },
+  "011004": {
+   "info": {
+    "string": "LUK +#incLUK"
+   },
+   "level": {
+    "1": {
+     "incLUK": 3
+    }
+   }
+  },
+  "011011": {
+   "info": {
+    "string": "物理攻擊力 +#incPAD"
+   },
+   "level": {
+    "1": {
+     "incPAD": 3
+    }
+   }
+  },
+  "011012": {
+   "info": {
+    "string": "魔法攻擊力 +#incMAD"
+   },
+   "level": {
+    "1": {
+     "incMAD": 3
+    }
+   }
+  },
+  "020001": {
+   "info": {
+    "string": "STR +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 7
+    }
+   }
+  },
+  "020002": {
+   "info": {
+    "string": "DEX +#incDEX"
+   },
+   "level": {
+    "1": {
+     "incDEX": 7
+    }
+   }
+  },
+  "020003": {
+   "info": {
+    "string": "INT +#incINT"
+   },
+   "level": {
+    "1": {
+     "incINT": 7
+    }
+   }
+  },
+  "020004": {
+   "info": {
+    "string": "LUK +#incLUK"
+   },
+   "level": {
+    "1": {
+     "incLUK": 7
+    }
+   }
+  },
+  "020005": {
+   "info": {
+    "string": "MaxHP +#incMHP"
+   },
+   "level": {
+    "1": {
+     "incMHP": 300
+    }
+   }
+  },
+  "020006": {
+   "info": {
+    "string": "MaxMP +#incMMP"
+   },
+   "level": {
+    "1": {
+     "incMMP": 300
+    }
+   }
+  },
+  "020011": {
+   "info": {
+    "string": "物理攻擊力 +#incPAD"
+   },
+   "level": {
+    "1": {
+     "incPAD": 7
+    }
+   }
+  },
+  "020012": {
+   "info": {
+    "string": "魔法攻擊力 +#incMAD"
+   },
+   "level": {
+    "1": {
+     "incMAD": 7
+    }
+   }
+  },
+  "020081": {
+   "info": {
+    "string": "全屬性 +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 2,
+     "incDEX": 2,
+     "incINT": 2,
+     "incLUK": 2
+    }
+   }
+  },
+  "021001": {
+   "info": {
+    "string": "STR +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 5
+    }
+   }
+  },
+  "021002": {
+   "info": {
+    "string": "DEX +#incDEX"
+   },
+   "level": {
+    "1": {
+     "incDEX": 5
+    }
+   }
+  },
+  "021003": {
+   "info": {
+    "string": "INT +#incINT"
+   },
+   "level": {
+    "1": {
+     "incINT": 5
+    }
+   }
+  },
+  "021004": {
+   "info": {
+    "string": "LUK +#incLUK"
+   },
+   "level": {
+    "1": {
+     "incLUK": 5
+    }
+   }
+  },
+  "021011": {
+   "info": {
+    "string": "物理攻擊力 +#incPAD"
+   },
+   "level": {
+    "1": {
+     "incPAD": 5
+    }
+   }
+  },
+  "021012": {
+   "info": {
+    "string": "魔法攻擊力 +#incMAD"
+   },
+   "level": {
+    "1": {
+     "incMAD": 5
+    }
+   }
+  },
+  "021081": {
+   "info": {
+    "string": "全屬性 +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 1,
+     "incDEX": 1,
+     "incINT": 1,
+     "incLUK": 1
+    }
+   }
+  },
+  "030001": {
+   "info": {
+    "string": "STR +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 10
+    }
+   }
+  },
+  "030002": {
+   "info": {
+    "string": "DEX +#incDEX"
+   },
+   "level": {
+    "1": {
+     "incDEX": 10
+    }
+   }
+  },
+  "030003": {
+   "info": {
+    "string": "INT +#incINT"
+   },
+   "level": {
+    "1": {
+     "incINT": 10
+    }
+   }
+  },
+  "030004": {
+   "info": {
+    "string": "LUK +#incLUK"
+   },
+   "level": {
+    "1": {
+     "incLUK": 10
+    }
+   }
+  },
+  "030005": {
+   "info": {
+    "string": "MaxHP +#incMHP"
+   },
+   "level": {
+    "1": {
+     "incMHP": 400
+    }
+   }
+  },
+  "030006": {
+   "info": {
+    "string": "MaxMP +#incMMP"
+   },
+   "level": {
+    "1": {
+     "incMMP": 400
+    }
+   }
+  },
+  "030011": {
+   "info": {
+    "string": "物理攻擊力 +#incPAD"
+   },
+   "level": {
+    "1": {
+     "incPAD": 10
+    }
+   }
+  },
+  "030012": {
+   "info": {
+    "string": "魔法攻擊力 +#incMAD"
+   },
+   "level": {
+    "1": {
+     "incMAD": 10
+    }
+   }
+  },
+  "030081": {
+   "info": {
+    "string": "全屬性 +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 4,
+     "incDEX": 4,
+     "incINT": 4,
+     "incLUK": 4
+    }
+   }
+  },
+  "031001": {
+   "info": {
+    "string": "STR +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 7
+    }
+   }
+  },
+  "031002": {
+   "info": {
+    "string": "DEX +#incDEX"
+   },
+   "level": {
+    "1": {
+     "incDEX": 7
+    }
+   }
+  },
+  "031003": {
+   "info": {
+    "string": "INT +#incINT"
+   },
+   "level": {
+    "1": {
+     "incINT": 7
+    }
+   }
+  },
+  "031004": {
+   "info": {
+    "string": "LUK +#incLUK"
+   },
+   "level": {
+    "1": {
+     "incLUK": 7
+    }
+   }
+  },
+  "031011": {
+   "info": {
+    "string": "物理攻擊力 +#incPAD"
+   },
+   "level": {
+    "1": {
+     "incPAD": 7
+    }
+   }
+  },
+  "031012": {
+   "info": {
+    "string": "魔法攻擊力 +#incMAD"
+   },
+   "level": {
+    "1": {
+     "incMAD": 7
+    }
+   }
+  },
+  "031081": {
+   "info": {
+    "string": "全屬性 +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 3,
+     "incDEX": 3,
+     "incINT": 3,
+     "incLUK": 3
+    }
+   }
+  },
+  "040041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 2
+    }
+   }
+  },
+  "040042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 2
+    }
+   }
+  },
+  "040043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 2
+    }
+   }
+  },
+  "040044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 2
+    }
+   }
+  },
+  "040045": {
+   "info": {
+    "string": "MaxHP +#incMHPr%"
+   },
+   "level": {
+    "1": {
+     "incMHPr": 2
+    }
+   }
+  },
+  "040046": {
+   "info": {
+    "string": "MaxMP +#incMMPr%"
+   },
+   "level": {
+    "1": {
+     "incMMPr": 2
+    }
+   }
+  },
+  "040051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 2
+    }
+   }
+  },
+  "040052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 2
+    }
+   }
+  },
+  "040055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 2
+    }
+   }
+  },
+  "040070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 2
+    }
+   }
+  },
+  "040081": {
+   "info": {
+    "string": "全屬性 +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 7,
+     "incDEX": 7,
+     "incINT": 7,
+     "incLUK": 7
+    }
+   }
+  },
+  "040291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 7
+    }
+   }
+  },
+  "040601": {
+   "info": {
+    "string": "攻擊Boss怪物時傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 3,
+     "boss": 1
+    }
+   }
+  },
+  "041041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 1
+    }
+   }
+  },
+  "041042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 1
+    }
+   }
+  },
+  "041043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 1
+    }
+   }
+  },
+  "041044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 1
+    }
+   }
+  },
+  "041051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 1
+    }
+   }
+  },
+  "041052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 1
+    }
+   }
+  },
+  "041055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 1
+    }
+   }
+  },
+  "041070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 1
+    }
+   }
+  },
+  "041081": {
+   "info": {
+    "string": "全屬性 +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 5,
+     "incDEX": 5,
+     "incINT": 5,
+     "incLUK": 5
+    }
+   }
+  },
+  "041291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 5
+    }
+   }
+  },
+  "050041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 3
+    }
+   }
+  },
+  "050042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 3
+    }
+   }
+  },
+  "050043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 3
+    }
+   }
+  },
+  "050044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 3
+    }
+   }
+  },
+  "050045": {
+   "info": {
+    "string": "MaxHP +#incMHPr%"
+   },
+   "level": {
+    "1": {
+     "incMHPr": 3
+    }
+   }
+  },
+  "050046": {
+   "info": {
+    "string": "MaxMP +#incMMPr%"
+   },
+   "level": {
+    "1": {
+     "incMMPr": 3
+    }
+   }
+  },
+  "050051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 3
+    }
+   }
+  },
+  "050052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 3
+    }
+   }
+  },
+  "050055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 3
+    }
+   }
+  },
+  "050070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 3
+    }
+   }
+  },
+  "050081": {
+   "info": {
+    "string": "全屬性 +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 10,
+     "incDEX": 10,
+     "incINT": 10,
+     "incLUK": 10
+    }
+   }
+  },
+  "050291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 10
+    }
+   }
+  },
+  "050601": {
+   "info": {
+    "string": "攻擊Boss怪物時傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 5,
+     "boss": 1
+    }
+   }
+  },
+  "051041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 2
+    }
+   }
+  },
+  "051042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 2
+    }
+   }
+  },
+  "051043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 2
+    }
+   }
+  },
+  "051044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 2
+    }
+   }
+  },
+  "051051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 2
+    }
+   }
+  },
+  "051052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 2
+    }
+   }
+  },
+  "051055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 2
+    }
+   }
+  },
+  "051070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 2
+    }
+   }
+  },
+  "051081": {
+   "info": {
+    "string": "全屬性 +#incSTR"
+   },
+   "level": {
+    "1": {
+     "incSTR": 8,
+     "incDEX": 8,
+     "incINT": 8,
+     "incLUK": 8
+    }
+   }
+  },
+  "051291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 7
+    }
+   }
+  },
+  "060041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 5
+    }
+   }
+  },
+  "060042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 5
+    }
+   }
+  },
+  "060043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 5
+    }
+   }
+  },
+  "060044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 5
+    }
+   }
+  },
+  "060045": {
+   "info": {
+    "string": "MaxHP +#incMHPr%"
+   },
+   "level": {
+    "1": {
+     "incMHPr": 4
+    }
+   }
+  },
+  "060046": {
+   "info": {
+    "string": "MaxMP +#incMMPr%"
+   },
+   "level": {
+    "1": {
+     "incMMPr": 4
+    }
+   }
+  },
+  "060051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 5
+    }
+   }
+  },
+  "060052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 5
+    }
+   }
+  },
+  "060055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 4
+    }
+   }
+  },
+  "060070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 5
+    }
+   }
+  },
+  "060086": {
+   "info": {
+    "string": "全屬性 +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 2,
+     "incDEXr": 2,
+     "incINTr": 2,
+     "incLUKr": 2
+    }
+   }
+  },
+  "060291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 13
+    }
+   }
+  },
+  "060601": {
+   "info": {
+    "string": "攻擊Boss怪物時傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 10,
+     "boss": 1
+    }
+   }
+  },
+  "061041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 3
+    }
+   }
+  },
+  "061042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 3
+    }
+   }
+  },
+  "061043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 3
+    }
+   }
+  },
+  "061044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 3
+    }
+   }
+  },
+  "061051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 3
+    }
+   }
+  },
+  "061052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 3
+    }
+   }
+  },
+  "061055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 3
+    }
+   }
+  },
+  "061070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 3
+    }
+   }
+  },
+  "061086": {
+   "info": {
+    "string": "全屬性 +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 1,
+     "incDEXr": 1,
+     "incINTr": 1,
+     "incLUKr": 1
+    }
+   }
+  },
+  "061291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 10
+    }
+   }
+  },
+  "070041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 8
+    }
+   }
+  },
+  "070042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 8
+    }
+   }
+  },
+  "070043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 8
+    }
+   }
+  },
+  "070044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 8
+    }
+   }
+  },
+  "070045": {
+   "info": {
+    "string": "MaxHP +#incMHPr%"
+   },
+   "level": {
+    "1": {
+     "incMHPr": 6
+    }
+   }
+  },
+  "070046": {
+   "info": {
+    "string": "MaxMP +#incMMPr%"
+   },
+   "level": {
+    "1": {
+     "incMMPr": 6
+    }
+   }
+  },
+  "070051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 8
+    }
+   }
+  },
+  "070052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 8
+    }
+   }
+  },
+  "070055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 7
+    }
+   }
+  },
+  "070070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 8
+    }
+   }
+  },
+  "070086": {
+   "info": {
+    "string": "全屬性 +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 4,
+     "incDEXr": 4,
+     "incINTr": 4,
+     "incLUKr": 4
+    }
+   }
+  },
+  "070291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 20
+    }
+   }
+  },
+  "070601": {
+   "info": {
+    "string": "攻擊Boss怪物時傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 15,
+     "boss": 1
+    }
+   }
+  },
+  "071041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 6
+    }
+   }
+  },
+  "071042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 6
+    }
+   }
+  },
+  "071043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 6
+    }
+   }
+  },
+  "071044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 6
+    }
+   }
+  },
+  "071051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 6
+    }
+   }
+  },
+  "071052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 6
+    }
+   }
+  },
+  "071055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 5
+    }
+   }
+  },
+  "071070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 6
+    }
+   }
+  },
+  "071086": {
+   "info": {
+    "string": "全屬性 +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 3,
+     "incDEXr": 3,
+     "incINTr": 3,
+     "incLUKr": 3
+    }
+   }
+  },
+  "071291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 15
+    }
+   }
+  },
+  "080041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 10
+    }
+   }
+  },
+  "080042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 10
+    }
+   }
+  },
+  "080043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 10
+    }
+   }
+  },
+  "080044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 10
+    }
+   }
+  },
+  "080045": {
+   "info": {
+    "string": "MaxHP +#incMHPr%"
+   },
+   "level": {
+    "1": {
+     "incMHPr": 8
+    }
+   }
+  },
+  "080046": {
+   "info": {
+    "string": "MaxMP +#incMMPr%"
+   },
+   "level": {
+    "1": {
+     "incMMPr": 8
+    }
+   }
+  },
+  "080051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 9
+    }
+   }
+  },
+  "080052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 9
+    }
+   }
+  },
+  "080055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 10
+    }
+   }
+  },
+  "080070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 9
+    }
+   }
+  },
+  "080086": {
+   "info": {
+    "string": "全屬性 +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 7,
+     "incDEXr": 7,
+     "incINTr": 7,
+     "incLUKr": 7
+    }
+   }
+  },
+  "080291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 25
+    }
+   }
+  },
+  "080601": {
+   "info": {
+    "string": "攻擊Boss怪物時傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 20,
+     "boss": 1
+    }
+   }
+  },
+  "081041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 8
+    }
+   }
+  },
+  "081042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 8
+    }
+   }
+  },
+  "081043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 8
+    }
+   }
+  },
+  "081044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 8
+    }
+   }
+  },
+  "081051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 8
+    }
+   }
+  },
+  "081052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 8
+    }
+   }
+  },
+  "081055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 8
+    }
+   }
+  },
+  "081070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 8
+    }
+   }
+  },
+  "081086": {
+   "info": {
+    "string": "全屬性 +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 5,
+     "incDEXr": 5,
+     "incINTr": 5,
+     "incLUKr": 5
+    }
+   }
+  },
+  "081291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 20
+    }
+   }
+  },
+  "090041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 13
+    }
+   }
+  },
+  "090042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 13
+    }
+   }
+  },
+  "090043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 13
+    }
+   }
+  },
+  "090044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 13
+    }
+   }
+  },
+  "090045": {
+   "info": {
+    "string": "MaxHP +#incMHPr%"
+   },
+   "level": {
+    "1": {
+     "incMHPr": 11
+    }
+   }
+  },
+  "090046": {
+   "info": {
+    "string": "MaxMP +#incMMPr%"
+   },
+   "level": {
+    "1": {
+     "incMMPr": 11
+    }
+   }
+  },
+  "090051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 11
+    }
+   }
+  },
+  "090052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 11
+    }
+   }
+  },
+  "090055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 13
+    }
+   }
+  },
+  "090070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 11
+    }
+   }
+  },
+  "090086": {
+   "info": {
+    "string": "全屬性 +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 10,
+     "incDEXr": 10,
+     "incINTr": 10,
+     "incLUKr": 10
+    }
+   }
+  },
+  "090291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 35
+    }
+   }
+  },
+  "090601": {
+   "info": {
+    "string": "攻擊Boss怪物時傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 25,
+     "boss": 1
+    }
+   }
+  },
+  "091041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 11
+    }
+   }
+  },
+  "091042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 11
+    }
+   }
+  },
+  "091043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 11
+    }
+   }
+  },
+  "091044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 11
+    }
+   }
+  },
+  "091051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 10
+    }
+   }
+  },
+  "091052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 10
+    }
+   }
+  },
+  "091055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 11
+    }
+   }
+  },
+  "091070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 10
+    }
+   }
+  },
+  "091086": {
+   "info": {
+    "string": "全屬性 +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 8,
+     "incDEXr": 8,
+     "incINTr": 8,
+     "incLUKr": 8
+    }
+   }
+  },
+  "091291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 30
+    }
+   }
+  },
+  "100041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 15
+    }
+   }
+  },
+  "100042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 15
+    }
+   }
+  },
+  "100043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 15
+    }
+   }
+  },
+  "100044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 15
+    }
+   }
+  },
+  "100045": {
+   "info": {
+    "string": "MaxHP +#incMHPr%"
+   },
+   "level": {
+    "1": {
+     "incMHPr": 13
+    }
+   }
+  },
+  "100046": {
+   "info": {
+    "string": "MaxMP +#incMMPr%"
+   },
+   "level": {
+    "1": {
+     "incMMPr": 13
+    }
+   }
+  },
+  "100051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 12
+    }
+   }
+  },
+  "100052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 12
+    }
+   }
+  },
+  "100055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 15
+    }
+   }
+  },
+  "100070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 12
+    }
+   }
+  },
+  "100086": {
+   "info": {
+    "string": "全屬性 +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 12,
+     "incDEXr": 12,
+     "incINTr": 12,
+     "incLUKr": 12
+    }
+   }
+  },
+  "100291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 40
+    }
+   }
+  },
+  "100601": {
+   "info": {
+    "string": "攻擊Boss怪物時傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 30,
+     "boss": 1
+    }
+   }
+  },
+  "101041": {
+   "info": {
+    "string": "STR +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 14
+    }
+   }
+  },
+  "101042": {
+   "info": {
+    "string": "DEX +#incDEXr%"
+   },
+   "level": {
+    "1": {
+     "incDEXr": 14
+    }
+   }
+  },
+  "101043": {
+   "info": {
+    "string": "INT +#incINTr%"
+   },
+   "level": {
+    "1": {
+     "incINTr": 14
+    }
+   }
+  },
+  "101044": {
+   "info": {
+    "string": "LUK +#incLUKr%"
+   },
+   "level": {
+    "1": {
+     "incLUKr": 14
+    }
+   }
+  },
+  "101051": {
+   "info": {
+    "string": "物理攻擊力 +#incPADr%"
+   },
+   "level": {
+    "1": {
+     "incPADr": 11
+    }
+   }
+  },
+  "101052": {
+   "info": {
+    "string": "魔法攻擊力 +#incMADr%"
+   },
+   "level": {
+    "1": {
+     "incMADr": 11
+    }
+   }
+  },
+  "101055": {
+   "info": {
+    "string": "爆擊機率 +#incCr%"
+   },
+   "level": {
+    "1": {
+     "incCr": 14
+    }
+   }
+  },
+  "101070": {
+   "info": {
+    "string": "傷害 +#incDAMr%"
+   },
+   "level": {
+    "1": {
+     "incDAMr": 11
+    }
+   }
+  },
+  "101086": {
+   "info": {
+    "string": "全屬性 +#incSTRr%"
+   },
+   "level": {
+    "1": {
+     "incSTRr": 11,
+     "incDEXr": 11,
+     "incINTr": 11,
+     "incLUKr": 11
+    }
+   }
+  },
+  "101291": {
+   "info": {
+    "string": "無視怪物防禦率 +#ignoreTargetDEF%"
+   },
+   "level": {
+    "1": {
+     "ignoreTargetDEF": 35
+    }
+   }
+  }
+ },
+ "strings": {
+  "Message": {
+   "Error_Unknown": "因不明原因失敗。",
+   "Error_CannotActivate": "靈魂武器啟用失敗。",
+   "Error_CannotActivateProtectItem": "已鎖定的道具無法啟用。",
+   "Error_CannotActivateNotWeapon": "只有武器才可啟用。",
+   "Error_CannotActivateLowReqLevel": "只有150等級以上的道具才可啟用。",
+   "Error_CannotActivateTradableItem": "只有無法交換狀態的道具才能啟用為靈魂武器。",
+   "Error_CannotActivateAlreadyActivated": "已有武器已啟用為靈魂武器。",
+   "Error_CannotDeactivate": "靈魂武器停用失敗。",
+   "Error_CannotExpUp": "碎片使用失敗。",
+   "Error_CannotGradeUp": "靈魂等級上升失敗。",
+   "Error_CannotRollOption": "靈魂烙印設定失敗。",
+   "Error_WrongSPW": "請再次確認第2組密碼。",
+   "Error_CannotAllowedMap": "無法在此處使用。",
+   "Error_NotEnoughFragment": "靈魂碎片不足。",
+   "Error_WrongConfirmMessage": "你輸入的文字不正確。",
+   "Error_CannotDropItem": "靈魂武器無法丟棄。",
+   "Error_Blocked": "目前無法使用該功能。",
+   "Notice_ExpUpSuccess": "使用靈魂碎片，靈魂武器成長成功。",
+   "Notice_RollOptionSuccess": "靈魂烙印重設成功。",
+   "Notice_ReceiveBossFragment": "擊敗{}，獲得了{}個靈魂碎片。",
+   "Notice_CannotReceiveBossFragment": "因擊殺已獲得靈魂碎片以下的BOSS，未獲得靈魂碎片。",
+   "Notice_WeeklyResetSuccess": "<靈魂武器碎片獲得任務> 每週資訊已更新。",
+   "Notice_ConfirmRollOption": "目前靈魂武器階級：{}級\\r\\n目前屬性：{}\\r\\n重設費用：靈魂碎片{}個\\r\\n\\r\\n重設靈魂烙印時，目前持有的屬性將會消失。\\r\\n#fcFFE4FF00#靈魂烙印屬性#fcFFFFFFFF#要重設嗎？"
+  },
+  "ToolTip": {
+   "Grade": " 靈魂武器 - 第{}階級",
+   "Level": "Lv.{} (攻擊力/魔力: +{})",
+   "ActiveSkill": "可以使用{}技能"
+  },
+  "Etc": {
+   "PassiveSkillOptionDesc": "物理攻擊力／魔法攻擊力 + {}",
+   "FragmentAmount": "{}個",
+   "Grade": "{}級"
+  }
+ },
+ "quests": {
+  "68840": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 激發出靈魂潛力的方法",
+    "category": "0|0",
+    "autoStart": 1,
+    "0": "來歷不明的魔法師似乎有話想說，去看看是什麼事吧。",
+    "1": "來歷不明的魔法師似乎有話想說，去看看是什麼事吧。",
+    "2": "來歷不明的魔法師似乎有話想說，去看看是什麼事吧。",
+    "recommend": {
+     "lvmin": 200,
+     "except": null
+    },
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9330634,
+     "normalAutoStart": 1,
+     "startscript": "q68840s",
+     "lvmin": 200,
+     "start": "202607300000"
+    },
+    "1": {
+     "npc": 9330634,
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68842": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 靈魂升級 - 2級",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "infoNumber": 68841,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     },
+     "infoex": {
+      "0": {
+       "order": 1,
+       "value": "1",
+       "exVariable": "grade"
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68843": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 靈魂升級 - 3級",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "infoNumber": 68841,
+     "quest": {
+      "0": {
+       "id": 68842,
+       "state": 2,
+       "order": 1
+      }
+     },
+     "infoex": {
+      "0": {
+       "order": 1,
+       "value": "2",
+       "exVariable": "grade"
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68844": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 靈魂升級 - 4級",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "infoNumber": 68841,
+     "quest": {
+      "0": {
+       "id": 68843,
+       "state": 2,
+       "order": 1
+      }
+     },
+     "infoex": {
+      "0": {
+       "order": 1,
+       "value": "3",
+       "exVariable": "grade"
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68845": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 靈魂升級 - 5級",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "infoNumber": 68841,
+     "quest": {
+      "0": {
+       "id": 68844,
+       "state": 2,
+       "order": 1
+      }
+     },
+     "infoex": {
+      "0": {
+       "order": 1,
+       "value": "4",
+       "exVariable": "grade"
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68846": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 靈魂升級 - 6級",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "infoNumber": 68841,
+     "quest": {
+      "0": {
+       "id": 68845,
+       "state": 2,
+       "order": 1
+      }
+     },
+     "infoex": {
+      "0": {
+       "order": 1,
+       "value": "5",
+       "exVariable": "grade"
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68847": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 靈魂升級 - 7級",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "infoNumber": 68841,
+     "quest": {
+      "0": {
+       "id": 68846,
+       "state": 2,
+       "order": 1
+      }
+     },
+     "infoex": {
+      "0": {
+       "order": 1,
+       "value": "6",
+       "exVariable": "grade"
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68848": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 靈魂升級 - 8級",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "infoNumber": 68841,
+     "quest": {
+      "0": {
+       "id": 68847,
+       "state": 2,
+       "order": 1
+      }
+     },
+     "infoex": {
+      "0": {
+       "order": 1,
+       "value": "7",
+       "exVariable": "grade"
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68849": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 靈魂升級 - 9級",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "infoNumber": 68841,
+     "quest": {
+      "0": {
+       "id": 68848,
+       "state": 2,
+       "order": 1
+      }
+     },
+     "infoex": {
+      "0": {
+       "order": 1,
+       "value": "8",
+       "exVariable": "grade"
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68850": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 靈魂升級 - 10級",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "infoNumber": 68841,
+     "quest": {
+      "0": {
+       "id": 68849,
+       "state": 2,
+       "order": 1
+      }
+     },
+     "infoex": {
+      "0": {
+       "order": 1,
+       "value": "9",
+       "exVariable": "grade"
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68851": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 西格諾斯(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68852": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 殘暴炎魔(混沌)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68853": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 斑斑(混沌)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68854": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 比艾樂(混沌)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68855": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 血腥皇后(混沌)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68856": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 貝倫(混沌)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68857": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 濃姬(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68858": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 梅格耐斯(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68859": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 拉圖斯(混沌)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68860": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 史烏(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68861": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 戴米安(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68862": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 守護天使綠水靈(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68863": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 露希妲(簡單)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68864": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 威爾(簡單)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68865": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 露希妲(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68866": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 威爾(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68867": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 戴斯克(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68868": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 頓凱爾(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68869": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 史烏(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68870": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 戴米安(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68871": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 露希妲(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68872": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 威爾(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68873": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 真‧希拉(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68874": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 守護天使綠水靈(混沌)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68875": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 戴斯克(混沌)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68876": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 頓凱爾(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68877": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 真‧希拉(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68878": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 瑪麗西亞(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68879": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 受選的賽蓮(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68881": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 監視者卡洛斯(簡單)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68882": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 最初的敵對者(簡單)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68883": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 受選的賽蓮(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68885": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 咖凌(簡單)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68886": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 監視者卡洛斯(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68887": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 最初的敵對者(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68888": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 史烏(終極)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68889": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 燦爛的凶星(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68890": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 咖凌(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68891": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 林波(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68892": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 監視者卡洛斯(混沌)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68893": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 受選的賽蓮(終極)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68894": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 巴德利斯(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68895": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 最初的敵對者(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68896": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 尤比太(普通)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68897": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 咖凌(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68898": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 林波(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68899": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 燦爛的凶星(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68900": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 監視者卡洛斯(終極)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68901": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 巴德利斯(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68902": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 最初的敵對者(終極)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68903": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 咖凌(終極)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68904": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 尤比太(困難)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  },
+  "68905": {
+   "QuestInfo": {
+    "name": "[靈魂武器] 瑪麗西亞(終極)1人擊破",
+    "resignBlocked": 1,
+    "disableAtStartTab": 1,
+    "disableAtPerformTab": 1,
+    "disableAtCompleteTab": 1,
+    "disableAtNPC": 1,
+    "disableAtCompleteBalloon": 1,
+    "autoStart": 1,
+    "autoAccept": 1,
+    "category": "99|0",
+    "demand": {
+     "explain": null
+    },
+    "reward": {
+     "item": null,
+     "explain": {
+      "summaryDemand": {
+       "order": 1
+      }
+     }
+    }
+   },
+   "Check": {
+    "0": {
+     "npc": 9010000,
+     "normalAutoStart": 1,
+     "lvmin": 200,
+     "quest": {
+      "0": {
+       "id": 68840,
+       "state": 2,
+       "order": 1
+      }
+     }
+    },
+    "1": {
+     "order": 1
+    }
+   },
+   "Act": {
+    "0": null,
+    "1": null
+   },
+   "Say": {
+    "0": null,
+    "1": null
+   }
+  }
+ },
+ "skills": {
+  "80012853": {
+   "common": {
+    "maxLevel": 3,
+    "time": "40",
+    "cooltime": "120",
+    "indiePadR": "3+x*2+x/3",
+    "indieMadR": "3+x*2+x/3",
+    "x": "1",
+    "dummyStr": "2.5+x*2.5"
+   },
+   "string": {
+    "name": "靈魂鬥志",
+    "desc": "借助蘊含在武器內的靈魂之力，\\n一定時間內增加自己的攻擊力和魔力。",
+    "h": "#time秒內自身攻擊力增加 #indiePadR%，魔力增加 #indieMadR%\\n冷卻時間 #cooltime秒\\n不受冷卻時間初始化的效果影響。"
+   }
+  },
+  "80012854": {
+   "common": {
+    "maxLevel": 3,
+    "time": "40",
+    "cooltime": "120",
+    "indiePadR": "13+x*7+x/3",
+    "indieMadR": "13+x*7+x/3",
+    "x": "1",
+    "dummyStr": "12.5+x*7.5"
+   },
+   "string": {
+    "name": "靈魂鬥志",
+    "desc": "激發蘊含在武器內的強大靈魂之力，一定時間內增加自己的攻擊力和魔力。",
+    "h": "#time秒內自身攻擊力增加 #indiePadR%，魔力增加 #indieMadR%\\n冷卻時間 #cooltime秒\\n不受冷卻時間初始化的效果影響。"
+   }
+  },
+  "80012855": {
+   "common": {
+    "maxLevel": 2,
+    "time": "40",
+    "cooltime": "120",
+    "indiePadR": "60+x*10",
+    "indieMadR": "60+x*10",
+    "x": "1",
+    "dummyStr": "60+x*10"
+   },
+   "string": {
+    "name": "靈魂鬥志",
+    "desc": "完全接納蘊含在武器內的強大靈魂之力，一定時間內增加自己的攻擊力和魔力。",
+    "h": "#time秒內自身攻擊力增加 #indiePadR%，魔力增加 #indieMadR%\\n冷卻時間 #cooltime秒\\n不受冷卻時間初始化的效果影響。"
+   }
+  },
+  "80012856": {
+   "common": {
+    "maxLevel": 2,
+    "time": "40",
+    "cooltime": "120",
+    "indiePadR": "90+10*x",
+    "indieMadR": "90+10*x",
+    "x": "1",
+    "dummyStr": "90+10*x"
+   },
+   "string": {
+    "name": "靈魂鬥志",
+    "desc": "與蘊含在武器內的強大靈魂之力合為一體，一定時間內增加自己的攻擊力和魔力。",
+    "h": "#time秒內自身攻擊力增加 #indiePadR%，魔力增加 #indieMadR%\\n冷卻時間 #cooltime秒\\n不受冷卻時間初始化的效果影響。"
+   }
+  }
+ }
+}

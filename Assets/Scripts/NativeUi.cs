@@ -41,6 +41,8 @@ public static class NativeUi
     {
         get
         {
+            // Live geometry also covers the first frame after opening or resizing a matrix popup.
+            if (NativeVMatrixWindow.AtPointer || NativeHexaMatrixWindow.AtPointer) return true;
             foreach (var entry in windows.Values)
                 if (entry.visible() && (entry.rect.Contains(Pointer.Pos) ||
                     (Pointer.Down || Pointer.Released) && entry.rect.Contains(Pointer.PressPosition))) return true;

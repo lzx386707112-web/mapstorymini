@@ -109,9 +109,16 @@ def main():
     missing: list[int] = []
     extra: list[int] = []
     seen: set[int] = set()
+    skipped = 0
 
     for job in tree["jobs"]:
         jid = int(job["id"])
+        # 六转职业（tier>=5）在原端 Skill.wz 里没有对应 img：它们的技能来自
+        # 282（定义文件是 Skill/<四转ID+2>.img），由 import_advanced_skills.py 负责，
+        # 逐字段比对在 export_advanced_skills.py 里做。
+        if job.get("tier", 0) >= 5:
+            skipped += 1
+            continue
         node = wz(f"Skill/{jid:03d}").get("skill")
         if node is None:
             diffs.append(f"[job {jid}] Skill.wz 缺少 skill 节点")
@@ -195,8 +202,21 @@ def main():
             if ({"denominator", "damage"} & keys) and "mad" in keys:
                 flags.append(f"{sid} {s['name']}: damage 与 mad 同时存在（magic 判定取 mad）")
 
-    print(f"JobTree: {len(skills)} 技能 / jobs {len(tree['jobs'])}")
+    # 两类已知增量，不算差异：
+    #   legacy_deleted —— 旧 TMS 五/六转技能已物理删除（docs/legacy-advanced-deletion.json）；
+    #   advanced      —— 六转技能整批来自 282（Assets/Resources/UI/AdvancedSkills.json）。
+    deletion_path = REPO / "docs/legacy-advanced-deletion.json"
+    legacy_deleted = {int(e["id"]) for e in json.loads(deletion_path.read_text())["delete"]} \
+        if deletion_path.is_file() else set()
+    advanced_path = ROOT / "Assets/Resources/UI/AdvancedSkills.json"
+    advanced = {int(s) for ids in json.loads(advanced_path.read_text())["jobs"].values() for s in ids} \
+        if advanced_path.is_file() else set()
+    missing = [sid for sid in missing if sid not in legacy_deleted]
+    extra = [sid for sid in extra if sid not in advanced]
+
+    print(f"JobTree: {len(skills)} 技能 / jobs {len(tree['jobs'])}（跳过六转 {skipped} 个，源端无对应 img）")
     print(f"WZ 侧核对技能: {len(seen)}")
+    print(f"已知增量: 旧技能已删 {len(legacy_deleted)} / 282 六转 {len(advanced)}")
     print(f"字段差异: {len(diffs)}   WZ 有但 JobTree 缺: {len(missing)}   JobTree 多出: {len(extra)}   自洽告警: {len(flags)}")
     if not args.brief:
         for block, items in (("== 字段差异 ==", diffs), ("== 缺失 ==", missing),

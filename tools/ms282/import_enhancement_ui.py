@@ -22,14 +22,39 @@ from wzpy.reader import WzBinaryReader
 from wzpy.writer import encode_image_body, _read_sound_payload
 
 SECTIONS = {
+    # UI/Enchant.img is a layout image: every canvas is an _outlink into the 215 MB
+    # UI/_Canvas/Enchant.img. Importing the whole file inlines all of it (110 MB), so the
+    # whitelist below is exactly what NativeEnhancementWindow / StarForceStars / ItemTooltip
+    # draw. Everything else is dead weight for this client:
+    #   fullScreen_starForce  ~45 MB  430-frame 1368x768 star-force result movie, never played
+    #   effect/*              ~44 MB  in-window animations; NativeItemUseEffects uses
+    #                                 Effect/BasicEff.img/Enchant instead
+    #   choiceBox/eff         ~14 MB  cube reveal animation, the window opens the box directly
     "UI/Enchant.img": ["common", "none", "starForce", "potential", "additionalPotential", "traceTransfer",
-                       "fullScreen_starForce", "fullScreen_potential", "fullScreen_additionalPotential",
-                       "effect/starForce", "effect/potential", "effect/addtionalPotential",
+                       "bonusStat", "soulWeapon",
+                       "fullScreen_potential/choiceBox/canvas:baseBefore",
+                       "fullScreen_potential/choiceBox/canvas:baseAfter",
+                       "fullScreen_potential/choiceBox/layer:mouseOver",
+                       "fullScreen_potential/choiceBox/title",
+                       "fullScreen_potential/choiceBox/detail",
+                       "fullScreen_additionalPotential/choiceBox/canvas:baseBefore",
+                       "fullScreen_additionalPotential/choiceBox/canvas:baseAfter",
+                       "fullScreen_additionalPotential/choiceBox/layer:mouseOver",
+                       "fullScreen_additionalPotential/choiceBox/title",
+                       "fullScreen_additionalPotential/choiceBox/detail",
+                       "fullScreen_bonusStat/choiceBox/canvas:baseBefore",
+                       "fullScreen_bonusStat/choiceBox/canvas:baseAfter",
+                       "fullScreen_bonusStat/choiceBox/layer:mouseOver",
+                       "fullScreen_bonusStat/choiceBox/title",
+                       "fullScreen_bonusStat/choiceBox/detail",
+                       "fullScreen_bonusStat/choiceBox/sum",
+                       "fullScreen_bonusStat/choiceBox/atkPow/imgFont",
                        "sound/starForce", "sound/potential", "sound/additionalPotential", "costItemID",
                        "particle/tab_yellow", "particle/tab_blue", "particle/itemIcon_waitEquip_yellow",
                        "particle/itemIcon_onEquip_yellow", "particle/itemIcon_waitEquip_blue",
                        "particle/itemIcon_onEquip_blue", "particle/fullScreen_potential_highlight"],
-    "UI/UICubeWz2.img": None,
+    # UI/UICubeWz2.img（282 独立魔方窗，双击魔方道具触发的窄窗）2026-11-04 清理：
+    # 本项目双击魔方走 NativeEnhancementWindow 页签流（Enchant.img），零代码引用，确认不接入。
 }
 
 
@@ -45,6 +70,7 @@ def encode_argb4444(image):
 class Importer:
     def __init__(self, source):
         self.source = source
+        self.source_overrides = {}
         self.images = {}
         self.hashes = {}
         self.pixel_cache = {}
@@ -53,7 +79,7 @@ class Importer:
 
     def image(self, rel):
         if rel not in self.images:
-            raw = (self.source / rel).read_bytes()
+            raw = self.source_overrides[rel] if rel in self.source_overrides else (self.source / rel).read_bytes()
             self.hashes[rel] = hashlib.sha256(raw).hexdigest()
             img = WzImage.from_bytes(raw, key=WzKey.for_region("BMS"), name=rel)
             img.parse()
@@ -105,14 +131,20 @@ class Importer:
         if not isinstance(node, WzCanvasProperty):
             raise ValueError("Pixel link does not target Canvas")
         if key not in self.pixel_cache:
-            image = decode_canvas(node, region="BMS")
+            if node.format + node.format2 in (2050, 4098):
+                # Shared 282 BC3/BC7 decoder; output still follows the same ARGB4444 contract.
+                from img_bake import decode_rgba
+                from PIL import Image
+                image = Image.fromarray(decode_rgba(node, self.image(rel)), "RGBA")
+            else:
+                image = decode_canvas(node, region="BMS")
             self.pixel_cache[key] = (image.width, image.height, encode_argb4444(image))
         return self.pixel_cache[key]
 
     def convert(self, rel, sections):
         self.image(rel)
         # Keep the cached source tree intact: links may target nodes outside selected UI branches.
-        image = WzImage.from_bytes((self.source / rel).read_bytes(), key=WzKey.for_region("BMS"), name=rel)
+        image = WzImage.from_bytes(self.source_overrides[rel] if rel in self.source_overrides else (self.source / rel).read_bytes(), key=WzKey.for_region("BMS"), name=rel)
         image.parse()
         # Stage converted pixels only after every link has been resolved from pristine originals.
         staged = []

@@ -238,12 +238,51 @@ public static class NpcApi
         // —— 金币 / 经验 / 等级 ——
         cm.Set("getMeso", Ret(_ => N(Profile.gold)));
         cm.Set("getNameplateSeries", Ret(_ => N(Math.Max(0, Math.Min(8, ReadCharacterInteger("nameplate_title_series"))))));
+        // 「未选择咖位」判定：扩展键从未写入过（读原始值而不是钳制后的 0）。
+        cm.Set("hasNameplateSeries", Ret(_ => B(ReadCharacterRaw("nameplate_title_series") != null)));
         // Character.setNameplateSeries 会广播 0x17C；单机里「广播」就是刷新脚下那一行。
         cm.Set("setNameplateSeries", Fn(c =>
         {
             int series = Math.Max(0, Math.Min(NativeNameplate.SeriesCount - 1, Int(c, 0)));
             WriteCharacterValue("nameplate_title_series", series.ToString());
             NativeNameplate.SetSeries(series);
+        }));
+        // —— 称号试炼（NativeTitleTrials；服务端校验，脚本只做展示）——
+        cm.Set("getTitleTrial", Ret(c =>
+        {
+            int series = Math.Max(0, Math.Min(NativeNameplate.SeriesCount - 1, Int(c, 0)));
+            int lit = NativeTitleTrials.Lit(series);
+            int next = Math.Min(NativeNameplate.TierCount, lit + 1);
+            long count = NativeTitleTrials.Count(series);
+            long need = NativeTitleTrials.Need(series, next);
+            bool canClaim = lit < NativeNameplate.TierCount && CanClaimTitleTier(series);
+            var info = new JsHostObject(null);
+            Lenient(info, "titleTrial");
+            // 字段存纯值（项目约定，同 BossDamageGrowth 的 growth.Set(...)）；Ret 会包成 JS 函数，
+            // 脚本里 t.lit + 1 会得到 NaN。
+            info.Set("series", N(series));
+            info.Set("lit", N(lit));
+            info.Set("next", N(next));
+            info.Set("cnt", N(count));
+            info.Set("need", N(need));
+            info.Set("canClaim", B(canClaim));
+            return info;
+        }));
+        // 每档试炼计数要求（面板逐档展示用）。
+        cm.Set("getTitleTrialNeed", Ret(c => N(NativeTitleTrials.Need(
+            Math.Max(0, Math.Min(NativeNameplate.SeriesCount - 1, Int(c, 0))),
+            Math.Max(1, Math.Min(NativeNameplate.TierCount, Int(c, 1)))))));
+        // 点亮：返回 {ok, message}，不抛异常——面板要把失败原因展示给玩家。
+        cm.Set("claimTitleTier", Ret(c =>
+        {
+            int series = Math.Max(0, Math.Min(NativeNameplate.SeriesCount - 1, Int(c, 0)));
+            string error = NativeTitleTrials.Claim(series, out string granted);
+            string message = error ?? ("点亮成功！" + granted);
+            var result = new JsHostObject(null);
+            Lenient(result, "titleTrialClaim");
+            result.Set("ok", B(error == null));
+            result.Set("message", S(message));
+            return result;
         }));
         cm.Set("getPqPoints", Ret(_ => N(ReadCharacterInteger("副本积分"))));
         cm.Set("getPqTotalPoints", Ret(_ => N(ReadCharacterInteger("副本总积分"))));
@@ -533,6 +572,26 @@ public static class NpcApi
             System.Globalization.CultureInfo.InvariantCulture, out int number) ? number : 0;
     }
 
+    // 原始扩展值（不钳制、区分「从未写入」的 null），hasNameplateSeries 用。
+    static string ReadCharacterRaw(string key)
+    {
+        if (!GameSession.InGame) return null;
+        return GameSession.Net.ScriptValue(new ScriptValueRequest {
+            characterId = GameSession.CharacterId, name = key }).value;
+    }
+
+    // 称号试炼：下一档当前是否可点亮（战力 + 计数双门槛，与 Claim 同口径）。
+    static bool CanClaimTitleTier(int series)
+    {
+        var player = GameLoop.I?.player;
+        if (player == null) return false;
+        int lit = NativeTitleTrials.Lit(series);
+        int next = lit + 1;
+        if (next > NativeNameplate.TierCount) return false;
+        if (NativeNameplate.PowerOf(player) < NativeNameplate.TierRequirement(next)) return false;
+        return NativeTitleTrials.Count(series) >= NativeTitleTrials.Need(series, next);
+    }
+
     // 写角色扩展值（对应源端 CharacterExtendStore；ExtendType.CHARACTER_EXTEND 那一路）。
     static void WriteCharacterValue(string key, string value)
     {
@@ -548,8 +607,6 @@ public static class NpcApi
         int period = call.ArgCount > index ? (JsConvert.ToBoolean(call.Arg(index)) ? 1 : 2) : 0;
         var response = GameSession.Net.ScriptValue(new ScriptValueRequest { characterId = GameSession.CharacterId,
             account = account, write = write, period = period, name = Str(call, 0), value = write ? Str(call, 1) : null });
-        if (write && !account && period == 0 && Str(call, 0) == ExplorerAdvancedSkills.CompletionKey)
-            ExplorerAdvancedSkills.Invalidate();
         return response.value == null ? (JsValue)JsNull.Value : S(response.value);
     }
 
@@ -777,6 +834,16 @@ public static class NpcApi
         cm.Set("showInstruction", Fn(c => ToastIfAny(Str(c, 0))));
         cm.Set("showInfoText", Fn(c => ToastIfAny(Str(c, 0))));
         cm.Set("openEnhancement", Fn(c => NativeEnhancementWindow.Open(Int(c,0))));
+        // 282 成长系统的三个入口：参数 0..5 是星火/灵魂页签的起始页，不传按 0（星力）开。
+        cm.Set("openFlame", Fn(c => NativeEnhancementWindow.Open(4)));
+        cm.Set("openSoul", Fn(c => NativeEnhancementWindow.Open(5)));
+        cm.Set("openSymbol", Fn(c => NativeSymbolWindow.Open()));
+        cm.Set("openHyperStat", Fn(c => NativeHyperStatWindow.Open()));
+        cm.Set("openInnerAbility", Fn(c => NativeInnerAbilityWindow.Open()));
+        // 五/六转：源端是任务脚本里的 openUI(V 矩阵 / HEXA)，这里给脚本一个显式入口，
+        // 免得只有 GM 命令能开窗（任务链交付时 AdvancementProgress 也会自动弹）。
+        cm.Set("openVMatrix", Fn(c => NativeVMatrixWindow.Open()));
+        cm.Set("openHexaMatrix", Fn(c => NativeHexaMatrixWindow.Open()));
         cm.Set("openUI", Fn(c => { }));    // UIType 窗口枚举未迁移
         cm.Set("changeMusic", Fn(c => { }));   // 无 BGM 系统
         cm.Set("lockUI", Fn(c => PlayerCtrl.ScriptUiLock++));

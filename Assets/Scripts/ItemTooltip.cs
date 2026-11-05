@@ -328,6 +328,41 @@ public static class ItemTooltip
             }
         }
 
+        // —— 282 成长系统：徽章 / 星火 / 灵魂（都挂在实例行上，模板里没有）——
+        if (hoverItem != null && SymbolCatalog.IsSymbol(hoverItem.itemId))
+        {
+            // 282 EquipSymbol：等级 1..20（圣徽 11）、经验 / 本级门槛、按装备给的 ARC/AUT 点数。
+            var symbol = SymbolCatalog.Of(hoverItem.itemId);
+            if (symbol != null)
+            {
+                int level = hoverItem.symbolLevel < 1 ? 1 : hoverItem.symbolLevel;
+                int need = symbol.GrowthCost(level);
+                rows.Add(new[] { "徽章等级 :", " Lv" + level + " / " + symbol.maxLevel });
+                rows.Add(new[] { "徽章经验 :", " " + hoverItem.symbolExp + " / " + need });
+                rows.Add(new[] { symbol.IsArcane ? "ARC :" : "AUT :", " +" + hoverItem.symbolInc });
+                // 升级时写进装备行的主属性（282 的 setInc 同口径），单独列一行避免和 inc 混淆。
+                string column = NativeSymbolService.MainStatColumn(Profile.JobId);
+                int mainStat = column == "dex" ? hoverItem.dex : column == "int" ? hoverItem.int_
+                    : column == "luk" ? hoverItem.luk : column == "hp" ? hoverItem.hp : hoverItem.str;
+                if (mainStat > 0) rows.Add(new[] { column == "hp" ? "HP增加 :" : "主属性增加 :", " +" + mainStat });
+            }
+        }
+        else if (hoverItem != null)
+        {
+            foreach (var line in NativeGrowthStats.DescribeFlame(hoverItem))
+                if (line.value > 0) rows.Add(new[] { "星火 · " + line.label + " :", " +" + line.value });
+            if (!string.IsNullOrEmpty(hoverItem.flameChoice)) rows.Add(new[] { "星火：", " 有待确认的结果" });
+            if (hoverItem.soulSocketId > 0)
+            {
+                rows.Add(new[] { "灵魂插槽 :", " 已开启" });
+                if (hoverItem.soulItemId > 0)
+                    rows.Add(new[] { "灵魂 :", " " + ItemCatalog.Name(hoverItem.soulItemId) });
+                var soul = SoulCatalog.Of(hoverItem.soulOption);
+                if (soul != null && !string.IsNullOrEmpty(soul.key))
+                    rows.Add(new[] { "灵魂属性 :", " " + soul.key + " +" + soul.value });
+            }
+        }
+
         // —— 星级条 ——
         // 282 的 tooltip 星条就是 Enchant.img/starForce/summaryStar 那三张 11x10 图标
         // （UIToolTip.img/Item/Equip/textIcon/starForce 直接 _outlink 过去）：

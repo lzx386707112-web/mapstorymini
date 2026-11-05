@@ -18,6 +18,9 @@ namespace MapleDash.Wz
         public int Width, Height, Format, X, Y;
         public int SoundLengthMs;
         public byte[] SoundHeader, SoundData;
+        // Canvas#Video（282 全屏技能视频）：载荷是完整 MCV0 文件，直接喂 McvPlayback。
+        public int VideoType;
+        public byte[] VideoData;
         internal byte[] Pixels;
         public ImgNode Get(string path)
         {
@@ -36,6 +39,23 @@ namespace MapleDash.Wz
         {
             var v = Get(path)?.Value;
             return v == null ? fallback : Convert.ToInt32(v);
+        }
+        // WZ 的 vector 节点（Shape2D#Vector2D）把坐标存在 X/Y 字段里，**不是** x/y 子节点。
+        // 用 Int("x") 读会一路 Get("x") 拿到 null 再静默退回 0——整个窗口的元素就全堆到左上角
+        // （2026-11-04 V/HEXA 矩阵窗打开一片空白、左上角挤着一堆图标就是这个）。
+        // 路径传 "" 表示读节点自身；子节点同时兼容 x/y 子属性（少数 UI 这么存）。
+        public bool TryVector(string path, out int x, out int y)
+        {
+            x = y = 0;
+            var n = string.IsNullOrEmpty(path) ? TryResolve() : Get(path)?.TryResolve();
+            if (n == null) return false;
+            if (n.Kind == "Shape2D#Vector2D") { x = n.X; y = n.Y; return true; }
+            var vx = n.Get("x")?.Value;
+            var vy = n.Get("y")?.Value;
+            if (vx == null || vy == null) return false;
+            x = Convert.ToInt32(vx);
+            y = Convert.ToInt32(vy);
+            return true;
         }
         public string Text(string path, string fallback = "") => Get(path)?.Value as string ?? fallback;
         // 原端 CData::GetItem 对解析不到的 UOL 返回 null，调用方按「没有这个节点」跳过；
@@ -280,8 +300,21 @@ namespace MapleDash.Wz
                     n.SoundData=reader.ReadBytes(audioLength);
                     if(n.SoundData.Length!=audioLength)throw new EndOfStreamException();
                     break;
+                // 282 全屏技能视频（MCV0）：reserved(1) + hasChildren(1) +
+                // [reserved(2) + children] + videoType(1) + len(cint) + payload。
+                // 拆开而不是整块吞掉，播放端要的是 payload 本身。
+                case "Canvas#Video":
+                    reader.ReadByte();
+                    if (reader.ReadByte() == 1) { reader.ReadUInt16(); Properties(n); }
+                    n.VideoType = reader.ReadByte();
+                    int videoLength = Int();
+                    if (videoLength < 0 || videoLength > end - reader.BaseStream.Position)
+                        throw new InvalidDataException("IMG video length mismatch: " + n.Name);
+                    n.VideoData = reader.ReadBytes(videoLength);
+                    if (reader.BaseStream.Position != end) reader.BaseStream.Position = end;
+                    break;
                 // Preserve these opaque high-version payloads for their consumers.
-                case "Canvas#Video": case "RawData":
+                case "RawData":
                     n.Value=reader.ReadBytes(checked((int)(end-reader.BaseStream.Position)));
                     break;
                 default: throw new NotSupportedException("IMG extended type " + n.Kind);

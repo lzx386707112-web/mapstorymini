@@ -34,6 +34,30 @@ def android_strings(path):
             for c in node.children() if c.name.isdigit()}
 
 
+def symbol_strings(path):
+    """282 ARC/AUT/Grand 徽章（1712xxx/1713xxx/1714xxx）的名字与说明。
+
+    GMS083 的 String/Eqp.img 没有这三个分支；282 客户端把它们放在
+    Eqp/ArcaneForce、Eqp/AuthenticForce 下（1712007 只在服务端存在，客户端没有）。
+    """
+    img = WzImage.from_bytes(path.read_bytes(), key=WzKey.for_region("BMS"))
+    tree = img.parse()
+    if img.truncated or img.parse_warnings:
+        raise ValueError(f"Incomplete 282 strings: {path}: {img.parse_warnings}")
+    eqp = tree.get("Eqp")
+    out = {}
+    for branch in ("ArcaneForce", "AuthenticForce"):
+        node = eqp.get(branch)
+        if node is None:
+            continue
+        for c in node.children():
+            if not c.name.isdigit():
+                continue
+            out[str(int(c.name))] = {field: c.get(field).value for field in ("name", "desc")
+                                     if c.get(field) is not None}
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data", type=Path, default=ROOT.parent / "MapleDashResources/Data")
@@ -180,6 +204,20 @@ def main():
             if desc and item_id not in descriptions:
                 descriptions[item_id] = desc
         print(f"282 Consume string fallback: {filled} names", flush=True)
+
+    # 徽章名字同样来自 282 客户端的 String/Eqp.img（放在扫描之后，items 才齐全）。
+    if args.android_string.is_file():
+        symbols = symbol_strings(args.android_string)
+        filled = 0
+        for item_id, fields in symbols.items():
+            if item_id not in items:      # 只给本项目确实导入的徽章补名字
+                continue
+            if "name" in fields:
+                names.setdefault(item_id, fields["name"])
+                filled += 1
+            if fields.get("desc"):
+                descriptions.setdefault(item_id, fields["desc"])
+        print(f"282 symbol string fallback: {filled} names", flush=True)
 
     # 心脏卷轴的属性只存在于宿主 Item img（_Canvas 树只有像素），这里兜一道，
     # 免得 _Canvas 又一次把 info 覆盖成空表。

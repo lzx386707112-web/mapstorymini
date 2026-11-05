@@ -84,7 +84,7 @@ else if (ItemConstants.isHiredMerchant(itemId)) new HiredMerchant(...) // 503xxx
 | `backgrnd6` | 525x553 | 雇佣商店底图（503 用这张） |
 | `backgrnd2` / `backgrnd3` / `backgrnd4` / `backgrnd5` | 233x143 / 233x276 / 203x270 / 267x270 | 子对话框（上架 / 黑名单 / 访客 / 已售出） |
 | `select` | 162x35 | 行选中底 |
-| `soldout` | 199x35 | 卖空盖章 |
+| `soldout` | 199x35 | 原素材存在；购买窗售罄实际为0x80FFFFFF遮罩，见2026-11-04补核 |
 | `bar` | 103x17 | 聊天输入条 |
 
 坐标（与 `NativeMarketWindow` 共用同一套）：

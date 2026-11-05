@@ -165,7 +165,7 @@ public sealed class NativeMobController : MonoBehaviour
         if (list != null) foreach (var entry in list.Children)
         {
             int id = entry.Int("skill"), level = entry.Int("level");
-            var data = WzAssets.FileRoot("Skill/MobSkill.img").Get(id + "/level/" + level);
+            var data = MobSkillNode(id, level);
             if (data == null) { Debug.LogWarning("[MobSkill] Missing " + id + "/" + level); continue; }
             var c = new Cast { id = id, level = level, action = entry.Int("action", skills.Count + 1),
                 mp = data.Int("mpCon"), hp = data.Int("hp", 100), x = data.Int("x", 1), y = data.Int("y", 1),
@@ -181,6 +181,22 @@ public sealed class NativeMobController : MonoBehaviour
             skills.Add(c);
         }
         encounter.OnSpawn(mob);
+    }
+
+    // 怪物技能按 id 分片存放（tools/split_skill_assets.py）：
+    //   Skill/MobSkill/<id>.img          常规
+    //   Skill/MobSkill/<id>/<level>.img  单 id 过大时按等级再拆
+    // 路径尾巴保持原样（<id>/level/<n>），所以两种形态只差文件名。
+    static ImgNode MobSkillNode(int id, int level)
+    {
+        string tail = id + "/level/" + level;
+        string flat = "Skill/MobSkill/" + id + ".img";
+        if (WzAssets.HasFile(flat)) return WzAssets.FileRoot(flat).Get(tail);
+        string deep = "Skill/MobSkill/" + id + "/" + level + ".img";
+        if (WzAssets.HasFile(deep)) return WzAssets.FileRoot(deep).Get(tail);
+        // 未拆分的旧包仍可读（升级前的数据）。
+        return WzAssets.HasFile("Skill/MobSkill.img")
+            ? WzAssets.FileRoot("Skill/MobSkill.img").Get(tail) : null;
     }
 
     public static int AnimationMillis(ImgNode frames)
@@ -648,6 +664,7 @@ public sealed class NativeMobController : MonoBehaviour
                 operation=BossOperation.RecordKill,encounter=killId });
             if(result.ok && !string.IsNullOrEmpty(result.message))NativeSystemMessage.Drop(5,result.message);
             NativeHuntRuntime.MonsterKilled(mob.fieldMobId);
+            NativeTitleTrials.CountKill();   // 称号试炼·玄幻：累计击杀（同 InGame 守卫口径）
         }
         encounter.OnKilled(mob);
         if (revives.Count == 0) return;

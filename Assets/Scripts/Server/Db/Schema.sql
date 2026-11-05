@@ -265,6 +265,128 @@ CREATE TABLE inventoryequipment
     ,bonusOption1 INTEGER NOT NULL DEFAULT 0
     ,bonusOption2 INTEGER NOT NULL DEFAULT 0
     ,bonusOption3 INTEGER NOT NULL DEFAULT 0
+    -- 徽章（祕法符文 1712 / 真實符文 1713 / 豪華真實符文 1714）：等级、经验、五维外的 inc（ARC/AUT 点数）。
+    -- 282 服务端 EquipSymbol 三字段同名（arcLevel/arcExp/inc）；isSacred 由 itemId 推导，不落盘。
+    ,symbolLevel INTEGER NOT NULL DEFAULT 0
+    ,symbolExp INTEGER NOT NULL DEFAULT 0
+    ,symbolInc INTEGER NOT NULL DEFAULT 0
+    -- 轮回星火：282 Equip.exGradeOption，每行 exGrade*10+tier，按 1000 进制打包（勿拆列）。
+    ,exGradeOption BIGINT NOT NULL DEFAULT 0
+    -- 黑星火/深渊星火的待确认结果（json：{"options":[...],"meso":n}），空串 = 没有待确认。
+    -- 282 是"摇完先进待确认状态、前后对比窗选保留/替换"，本项目没有会话内临时态，落 journal。
+    ,flameChoice TEXT NOT NULL DEFAULT ''
+    ,flameRevision INTEGER NOT NULL DEFAULT 0
+    -- 灵魂武器：开孔器 id（2590xxx 尾数）、灵魂石 id（2591xxx）、soulID=1+id%2591000、属性代码。
+    ,soulSocketId INTEGER NOT NULL DEFAULT 0
+    ,soulItemId INTEGER NOT NULL DEFAULT 0
+    ,soulOptionId INTEGER NOT NULL DEFAULT 0
+    ,soulOption INTEGER NOT NULL DEFAULT 0
+);
+
+-- 282 角色成长：极限属性 / 内在能力 / 灵魂能量。
+-- 源端把当前预设存在任务 QR（2498 hyperstats=N、CHARACTER_POTENTIAL_PRESET potential=N，
+-- CHAR_POT 的荣誉值在 Char 上），本项目单机没有任务 QR 通道，改成一张角色级表。
+-- 注意：本文件的注释必须独占一行。DbStore.Parse 只剥掉以 -- 开头的整行，
+-- 行尾注释会被当成列定义（曾把 "honorExp BIGINT ... -- 说明" 解析出名叫 -- 的假列，
+-- 落盘后整段 JSON 失灵，重开库后 hyperstats/后续表全部读不回来）。
+CREATE TABLE character_growth
+(
+    characterid    INTEGER PRIMARY KEY,
+    -- 内在能力洗练用的荣誉值
+    honorExp       BIGINT  NOT NULL DEFAULT 0,
+    -- 极限属性当前预设 0..2
+    hyperPreset    INTEGER NOT NULL DEFAULT 0,
+    -- 内在能力当前预设 0..2
+    abilityPreset  INTEGER NOT NULL DEFAULT 0,
+    -- 锁定的行号，逗号分隔（如 0,2）
+    abilityLock    TEXT    NOT NULL DEFAULT '',
+    -- 循环器摇出的待确认三行（json），空串 = 没有待确认
+    abilityChoice  TEXT    NOT NULL DEFAULT '',
+    -- 灵魂能量（源端 SoulMP 临时状态的 xOption）
+    soulMp         INTEGER NOT NULL DEFAULT 0,
+    soulMax        INTEGER NOT NULL DEFAULT 0,
+    -- 魔幻箭筒VI 当前箭镞：0=未开启 1=魔法箭 2=吸血箭。
+    -- 箭筒是纯客户端结算（282 服务端零实现），但「模式」必须跟着角色走，
+    -- 换角色/重登要恢复，所以和成长状态存在一起。
+    quiverMode     INTEGER NOT NULL DEFAULT 0
+);
+
+-- 极限属性加点（源端 hyperstats 表 charid/index/skillid/slv；index 即预设）
+CREATE TABLE hyperstats
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid INTEGER NOT NULL DEFAULT 0,
+    preset      INTEGER NOT NULL DEFAULT 0,
+    skillid     INTEGER NOT NULL DEFAULT 0,
+    slv         INTEGER NOT NULL DEFAULT 0
+);
+
+-- 内在能力三行 × 三预设（源端 characterpotentials charid/preset/potkey/skillid/slv/grade）
+CREATE TABLE characterpotentials
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid INTEGER NOT NULL DEFAULT 0,
+    preset      INTEGER NOT NULL DEFAULT 0,
+    potkey      INTEGER NOT NULL DEFAULT 0,
+    skillid     INTEGER NOT NULL DEFAULT 0,
+    slv         INTEGER NOT NULL DEFAULT 0,
+    grade       INTEGER NOT NULL DEFAULT 0
+);
+
+-- V 矩阵 / HEXA 矩阵（282 五转与六转的核心成长系统）。
+-- 源端把 V 矩阵状态挂 VMatrixInfo（points/revision + 每核心 level/selected/expiresAt），
+-- HEXA 挂 Char 上的 solErda/solErdaFragments 与 hexaSkill/hexaStat 列表；
+-- 本项目沿用「一张角色级状态表 + 一张明细表」的口径。
+-- 注意：本文件的注释必须独占一行（DbStore.Parse 只剥整行 --，行尾注释会变成假列）。
+CREATE TABLE vmatrix_state
+(
+    characterid INTEGER PRIMARY KEY,
+    points      BIGINT  NOT NULL DEFAULT 0,
+    revision    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE vmatrix_cores
+(
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid    INTEGER NOT NULL DEFAULT 0,
+    coreid         INTEGER NOT NULL DEFAULT 0,
+    level          INTEGER NOT NULL DEFAULT 0,
+    selected       INTEGER NOT NULL DEFAULT 0,
+    expiresat      BIGINT  NOT NULL DEFAULT 0,
+    protectedlevel INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE hexa_state
+(
+    characterid  INTEGER PRIMARY KEY,
+    solerda      BIGINT NOT NULL DEFAULT 0,
+    fragments    BIGINT NOT NULL DEFAULT 0,
+    solerdagauge BIGINT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE hexa_skills
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid INTEGER NOT NULL DEFAULT 0,
+    coreid      INTEGER NOT NULL DEFAULT 0,
+    level       INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE hexa_stats
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid INTEGER NOT NULL DEFAULT 0,
+    coreid      INTEGER NOT NULL DEFAULT 0,
+    preset      INTEGER NOT NULL DEFAULT 0,
+    level       INTEGER NOT NULL DEFAULT 0,
+    stat1       INTEGER NOT NULL DEFAULT 0,
+    stat2       INTEGER NOT NULL DEFAULT 0,
+    stat3       INTEGER NOT NULL DEFAULT 0,
+    weight      INTEGER NOT NULL DEFAULT 0,
+    level1      INTEGER NOT NULL DEFAULT 0,
+    level2      INTEGER NOT NULL DEFAULT 0,
+    level3      INTEGER NOT NULL DEFAULT 0,
+    applied     INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE queststatus

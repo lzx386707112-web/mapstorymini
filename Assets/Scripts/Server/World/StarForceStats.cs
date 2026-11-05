@@ -51,7 +51,8 @@ public static class StarForceStats
                         if (star >= 15) delta += Attack[star - 15, bracket];
                         if (weapon)
                         {
-                            if (star <= 14) delta += (int)(value * .02);
+                            // 用户指定：低攻击新手武器每星至少 +1；不增加原本为零的属性。
+                            if (star <= 14) delta += value > 0 ? Math.Max(1, (int)(value * .02)) : 0;
                             else
                             {
                                 delta += star == 22 ? 13 : star == 23 ? 12 : star == 24 ? 11 : star == 25 ? 10

@@ -1049,7 +1049,7 @@ public sealed class FieldDirector : MonoBehaviour
             var buffs=GameLoop.I?.player?.GetComponent<NativeBuffs>();
             var award=Server.Bot.BotPartyExperience.Calculate(GameServer.Local.Db,bots.parties,bots.Player(GameSession.CharacterId),
                 (int)Art.Num(mob.stats,"level",1),exp,(e.NativeController!=null ? e.NativeController.MaximumHp : (long)e.hpMax)+e.TotalHealed,
-                e.DamageContributions,(float)rates.expRate,(float)rates.expRate,
+                e.DamageContributions,(float)AdminSetItem.ApplyRate(EquipLoadout.CurrentSetBonus(),"ExpRate",rates.expRate),(float)rates.expRate,
                 buffs?.Value("HOLY_SYMBOL") ?? 0,GameConfigDao.GetBool(GameServer.Local.Db,"use_full_holy_symbol",false),
                 buffs?.Value("EXP_INCREASE") ?? 0,buffs?.HasStat("EXP_BUFF")==true,e.NativeController?.Showdown ?? 0);
             reputationCalls=award.reputationCalls;

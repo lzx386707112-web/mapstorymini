@@ -159,6 +159,41 @@ namespace Server.Bot
             Types.Pq.PqDirector.OnChat(player, text);
             return true;
         }
+        // 悄悄话走「按角色投递」：源端 WhisperHandler.handleWhisper 不要求同图同频道，
+        // 只要求 getPlayerStorage().getCharacterByName 拿得到人。本地对端是假人，
+        // 它没有第二个客户端能显示，所以收到后按台词库回一句，落在玩家聊天窗的悄悄话行。
+        readonly Dictionary<int, long> whisperReplyAt = new Dictionary<int, long>();
+        static readonly Random whisperRng = new Random();
+        public bool ReceiveWhisper(int playerId, string targetName, string text)
+        {
+            if (disposed || string.IsNullOrWhiteSpace(text) || string.IsNullOrEmpty(targetName) ||
+                !players.TryGetValue(playerId, out var player)) return false;
+            if (string.Equals(targetName, player.name, StringComparison.OrdinalIgnoreCase)) return false;
+            var target = parties.FindIgnoreCase(targetName, player.world);
+            if (target == null || target.id == playerId) return false;
+            long now = BotScheduler.Clock;
+            // 连刷同一句时假人不跟着复读；源端对端是一个真人在读，这里用 1.2 秒窗口近似。
+            if (whisperReplyAt.TryGetValue(playerId, out long last) && now - last < 1200) return true;
+            whisperReplyAt[playerId] = now;
+            BotTasks.Schedule(() =>
+            {
+                if (disposed) return;
+                string line = WhisperLine();
+                if (line == null) return;
+                BotTypeManager.Output.Send(Social.BotOutput.Kind.Whisper, target, line, targetId: playerId);
+            }, 800 + whisperRng.Next(1200));
+            return true;
+        }
+        static string WhisperLine()
+        {
+            string[] nodes = { "Greeting", "WhatsUp", "Interesting", "Rumors" };
+            try
+            {
+                return BotTypeManager.Dialogue.RandomLine("SocialBotDialogue.yaml", "SocialBot",
+                    nodes[whisperRng.Next(nodes.Length)]);
+            }
+            catch (Exception) { return null; }
+        }
         // 高频只读用途（观察/巡逻）：绝不 Join、绝不重复 Build。没就绪就返回 null，
         // 由调用方下一帧再问；就绪时会顺手登记进 MapService，之后直接命中缓存。
         MapRuntime NonBlockingMap(int id)
@@ -248,7 +283,7 @@ namespace Server.Bot
             return actor;
         }
         public void RemovePlayer(int id)
-        { partyGrind.Stop(id); shops.Leave(id); if (players.TryGetValue(id, out var actor)) { actor.trade?.Decline(); actor.online = false; } parties.EndSession(id); players.Remove(id); BotTypeManager.Messenger.Leave(id); observers.Refresh(); }
+        { partyGrind.Stop(id); shops.Leave(id); if (players.TryGetValue(id, out var actor)) { actor.trade?.Decline(); actor.online = false; } parties.EndSession(id); players.Remove(id); BotTypeManager.Messenger.Leave(id); whisperReplyAt.Remove(id); observers.Refresh(); }
         public BotActor Player(int id) => players.TryGetValue(id,out var actor) ? actor : null;
         public IEnumerable<BotActor> Players => players.Values;
         public void Drive(long nowMs)

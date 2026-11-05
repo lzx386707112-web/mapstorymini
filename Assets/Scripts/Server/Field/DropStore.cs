@@ -63,6 +63,35 @@ public static class DropStore
         lock (gate) return new List<DropEntry>(global);
     }
 
+    // —————————— 基线（只读资源）单独读取 ——————————
+    // 后台「怪物爆率 / 全局爆率」要把基线与 DB 覆盖分开看：列表读 Snapshot() 的合并视图，
+    // 删除时要判断「这条掉落是资源自带的，还是后台新加的」——自带的那条删掉之后只剩墓碑
+    // （chance=0），不能真删否则会回退成基线（等于没删）。所以这里暴露基线本身。
+    public static List<DropEntry> BaselineForMob(int mobId)
+    {
+        var table = JsonDrops != null ? JsonDrops() : null;
+        if (table == null || !table.TryGetValue(mobId, out var rows)) return new List<DropEntry>();
+        return new List<DropEntry>(rows);
+    }
+
+    public static List<DropEntry> BaselineGlobal()
+    {
+        return JsonGlobalDrops != null ? new List<DropEntry>(JsonGlobalDrops()) : new List<DropEntry>();
+    }
+
+    public static DropEntry BaselineEntry(bool global, int owner, int item)
+    {
+        if (global)
+        {
+            foreach (var e in BaselineGlobal())
+                if (e.continent == owner && e.item == item) return e;
+            return null;
+        }
+        foreach (var e in BaselineForMob(owner))
+            if (e.item == item) return e;
+        return null;
+    }
+
     public static Dictionary<int, List<DropEntry>> All()
     {
         var snap = Snapshot();
@@ -90,7 +119,7 @@ public static class DropStore
             if (JsonGlobalDrops != null) global = new List<DropEntry>(JsonGlobalDrops());
 
             // 怪物结晶（etc 4260xxx）禁止直接掉落：只能由原石经制作合成获得。
-            ExcludeMonsterCrystals(drops, global);
+            ExcludeUnsupportedDrops(drops, global);
 
             if (db == null) return drops;
 
@@ -119,26 +148,35 @@ public static class DropStore
                     }
                 }
             }
-            if (db.HasTable("drop_data_global") && db.Table("drop_data_global").rows.Count > 0)
+            if (db.HasTable("drop_data_global"))
             {
-                global = new List<DropEntry>();
+                // 与怪物掉落同一套覆盖语义：按 (大区, 道具) 覆盖基线、新道具追加、
+                // chance<=0 = 删除。以前这里是「DB 有任意行就整表替换基线」，后台加
+                // 一条全局掉落会把源端 6 条基线全冲掉（后台只看到新增那条，游戏里也是）。
                 foreach (var row in db.Table("drop_data_global").rows)
-                    global.Add(FromRow(row, true));
+                {
+                    var entry = FromRow(row, true);
+                    int at = global.FindIndex(e => e.continent == entry.continent && e.item == entry.item);
+                    if (entry.chance <= 0) { if (at >= 0) global.RemoveAt(at); continue; }
+                    if (at >= 0) global[at] = entry; else global.Add(entry);
+                }
             }
 
             // DB 覆盖层也可能误加怪物结晶掉落，按同一规则剔除。
-            ExcludeMonsterCrystals(drops, global);
+            ExcludeUnsupportedDrops(drops, global);
             return drops;
         }
 
         /// <summary>怪物结晶（etc 4260xxx 命名空间）禁止直接掉落：只可由原石经制作合成获得。</summary>
-        static bool IsMonsterCrystal(int item) => item >= 4260000 && item < 4270000;
+        // 2435719 的旧神秘河 10% 自定义掉落已撤销；282 怪物产出的是 2435902。
+        // 同时屏蔽旧存档 DB 覆盖，避免资源更新后又把旧规则加回来。背包物品不受影响。
+        static bool IsUnsupportedDrop(int item) => (item >= 4260000 && item < 4270000) || item == 2435719;
 
-        static void ExcludeMonsterCrystals(Dictionary<int, List<DropEntry>> mobs, List<DropEntry> globals)
+        static void ExcludeUnsupportedDrops(Dictionary<int, List<DropEntry>> mobs, List<DropEntry> globals)
         {
             foreach (var kv in mobs)
-                kv.Value.RemoveAll(e => IsMonsterCrystal(e.item));
-            globals.RemoveAll(e => IsMonsterCrystal(e.item));
+                kv.Value.RemoveAll(e => IsUnsupportedDrop(e.item));
+            globals.RemoveAll(e => IsUnsupportedDrop(e.item));
             foreach (var key in mobs.Keys.Where(k => mobs[k].Count == 0).ToList())
                 mobs.Remove(key);
         }

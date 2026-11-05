@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using MapleDash.Wz;
 
 // RangedAttackHandler 1394..1502; selection and consumption are separate gates.
 public static class NativeProjectiles
 {
     public struct Cost { public int Item,Position,Count; public bool Allowed; }
+    // 旧 TMS 五/六转的弹道豁免类。这些 id 已随旧迁移下线，迁移 282 技能时按新 id 重建。
     public static bool NightWalkerReplay(int id) => id>=14121003 && id<=14121008 || id>=14121014 && id<=14121018 ||
         id>=14121027 && id<=14121028 || id>=14121030 && id<=14121036;
     public static bool WindArcherReplay(int id) => id>=13121003 && id<=13121005 || id>=13121009 && id<=13121018 ||
@@ -12,9 +14,47 @@ public static class NativeProjectiles
     public static bool IsRangedSkill(int id)
     {
         int job=id/10000;
+        // 282 的五六转段要一并算远程，否则 ProjectileRange 会退回 300px：
+        //   314 神射手 / 324 箭神（弓弩）  414 隐士（拳套飞镖）
+        //   524 船长（枪）                 1314 风灵使者（弓）  1414 夜行者（飞镖）
+        // 424（侠盗）/ 514（冲锋队长）/ 1514（奇袭者）拿短刀·拳套·指虎，是近战，不能进这里。
         return id==4001344 || id==14001004 || id==5001003 ||
-            ((job>=300 && job<=322 || job>=410 && job<=412 || job>=520 && job<=522 ||
-              job>=1300 && job<=1312 || job>=1410 && job<=1412) && id!=3101003 && id!=3201003);
+            ((job>=300 && job<=324 || job>=410 && job<=414 || job>=520 && job<=524 ||
+              job>=1300 && job<=1314 || job>=1410 && job<=1414) && id!=3101003 && id!=3201003);
+    }
+
+    // 远程技能「要不要扣弹药」和「射程按远程算」是两件事，必须分开判。
+    //
+    // 282 的远程技能把 info/bulletCount 全删了（远程段 73 个 attack VI 技能一个都没有），
+    // 所以旧口径（IsRangedSkill 就扣弹）会把 3141500 这种 HEXA 精通被动也吃箭。
+    // 改成按「有没有真实的发射物层」判定，全库远程段只有 20 个技能带层：
+    //   3141004 箭座VI ball+flipBall、3241006/3241007 光速神弩VI shootobj、
+    //   5241013 子弹盛宴 shootobj、5241002/5241003 召唤型 ball ……
+    // hideBullet（19 个）只是不画箭矢贴图，照样消耗；noBulletConsume 才是豁免。
+    public static bool ConsumesAmmo(int id)
+    {
+        if (!IsRangedSkill(id)) return false;
+        var row=SkillBook.Get(id)?.Level(SkillProgress.LevelOf(id));
+        if (Art.Int(row,"bulletCount") > 0) return true;   // 083 的技能保留原判定
+        return HasProjectileLayer(id);
+    }
+
+    static readonly Dictionary<int,bool> projectileLayer=new Dictionary<int,bool>();
+
+    static bool HasProjectileLayer(int id)
+    {
+        if (projectileLayer.TryGetValue(id,out var known)) return known;
+        // 定义查不到时按「要消耗」处理：宁可扣，也不要让远程技能白嫖弹药。
+        bool value=true;
+        var node=WzAssets.Node("Skill/"+(id/10000).ToString("D3")+".img/skill/"+id.ToString("D7"))?.TryResolve();
+        if (node!=null)
+        {
+            value=node.Get("ball")!=null || node.Get("shootobj")!=null || node.Get("flipBall")!=null;
+            // 全库只有 4141001 四飞闪VI 带这个节点，源端明确「不消耗箭矢」。
+            if (value && node.Get("noBulletConsume")!=null) value=false;
+        }
+        projectileLayer[id]=value;
+        return value;
     }
     public static bool Matches(int item,WeaponKind weapon,int weaponId,int level)
     {
@@ -46,7 +86,7 @@ public static class NativeProjectiles
         }
         cost.Allowed=cost.Item!=0 || soulArrow || mm || skill==11101004 || skill==15111007 ||
             skill==14101006 || skill==4111004 || skill==13101005;
-        if (cost.Item!=0 && !soulArrow && !shadowClaw && skill!=14121003 && skill!=11101004 && skill!=15111007 && skill!=14101006)
+        if (cost.Item!=0 && !soulArrow && !shadowClaw && skill!=11101004 && skill!=15111007 && skill!=14101006)
         {
             cost.Count=nw || wa || mm ? 1 : required;
             if (bulletConsume!=0) cost.Count=unchecked((sbyte)(bulletConsume*(partner ? 2 : 1)));

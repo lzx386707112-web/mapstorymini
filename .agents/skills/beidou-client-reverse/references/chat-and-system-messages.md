@@ -33,6 +33,10 @@ SERVERMESSAGE
 | 4 | `Scrolling` | 无 | 不需要（服务端 0 处调用） |
 | 5 | `Pink` | 无 | 需要 |
 | 6 | `Lightblue` | 无 | 需要 |
+| 8 | `ItemMegaphone` | 频道、是否带耳朵、道具信息（pos + addItemInfo） | **喇叭，本轮已确认落聊天窗**（见第十一节） |
+| 9 / 10 | 未命名（同 3/8 分支） | 同 3 | 服务端未调用 |
+| 12 | `yellowChat` | 无 | 需要（黄） |
+| 13 | 未命名（同 12/0 分支） | 无 | 客户端内部类型号，不是包里的 type |
 
 ---
 
@@ -88,11 +92,12 @@ public void mapMessage(int type, String message) {
 | --- | --- | --- | --- | --- | --- |
 | 0 | `[Notice]` | 15 | 1 | 聊天窗（浅蓝） | 通用公告 |
 | 1 | `Popup` | 164 | 18 | **居中弹窗**（点 OK 关） | 严重错误：背包已满、未知错误 |
-| 2 | `Megaphone` | 2 | — | 喇叭 | 跨频道，不接 |
-| 3 | `SuperMegaphone` | 4 | — | 超级喇叭 | 跨频道，不接 |
+| 2 | `Megaphone` | 2 | — | 喇叭 | 跨频道，落聊天窗 |
+| 3 | `SuperMegaphone` | 4 | — | 超级喇叭 | 跨频道，落聊天窗 |
 | 4 | `Scrolling` | 0 | 0 | 顶部滚动 | 服务端从未调用，可不实现 |
 | 5 | `Pink` | 大量 | 143 | 聊天窗（**粉色**） | 阻止 / 失败 |
 | 6 | `Lightblue` | 大量 | 73 | 聊天窗（浅蓝） | 条件 / 说明 |
+| 8 | `ItemMegaphone` | 假人/道具喇叭 | — | 聊天窗 | `PacketCreator.itemMegaphone` |
 
 脚本抽样得到的分工规律（`scripts/` 下逐条读过）：
 
@@ -192,7 +197,8 @@ call 0x445b4b        ; 格式化
 | `SERVERMESSAGE` + type 分派 | `NativeSystemMessage.Drop(type, text)` |
 | type 0 / 5 / 6 → 聊天窗 | `BottomBar.AddChat(text, color)` |
 | type 1 → 居中弹窗 | **暂退回 `BottomBar.Toast`**（缺版面参数，见第八节） |
-| type 2 / 3 → 喇叭 | 不接（单机无跨频道） |
+| type 2 / 3 → 喇叭 | 不接（单机无跨频道），落点已确认是聊天窗 |
+| type 8 → 道具喇叭 | `NativeSystemMessage.Drop(8, …)` → 聊天窗白字（正文由发送端拼好） |
 | type 4 → 滚动 | 不接（服务端 0 处调用） |
 | `Character.message(m)` → `dropMessage(5, m)` | `NpcApi` 的 `message` 直接 `Drop(5, …)` |
 | `dropMessage` / `playerMessage` / `mapMessage` | `NpcApi.DropNotice(c)`，按参数个数分流 |
@@ -384,3 +390,44 @@ LoginFlow.OpenKeyboard 的「同框不重开、只在Done/Canceled收、LostFocu
 已抽成共享桥 `NativeEditKeyboard`（`Assets/Scripts/NativeEditKeyboard.cs`），
 供数量/文本弹窗、CUtilDlgEx文本窗、仓库金币框统一复用。详细接线与回归边界见
 [UI 拖动语义](ui-drag-and-drop.md) 的「数量/文本输入框的移动端软键盘」小节。
+
+## 十一、喇叭类 type（2 / 3 / 8 / 9 / 10）都落聊天窗（2026-11-05 坐实）
+
+入口 `0xA22785` 的跳转表在 `0xA236D3`，14 项实测：
+
+| type | 目标 | type | 目标 |
+| --- | --- | --- | --- |
+| 0 | `0xA229C0` | 7 | `0xA235FA` |
+| 1 | `0xA22B85` | 8 | `0xA22D3A` |
+| 2 | `0xA22B95` | 9 | `0xA22D3A` |
+| 3 | `0xA22D3A` | 10 | `0xA22D3A` |
+| 4 | `0xA234D1` | 11 | `0xA231E8` |
+| 5 | `0xA23542` | 12 | `0xA22AA4` |
+| 6 | `0xA23546` | 13 | `0xA22AA4` |
+
+两个喇叭分支的末端都调同一个聊天窗入口 `0x4906B5`，只是第二参（聊天日志类型号）不同：
+
+```asm
+; type 2（Megaphone） 0xA22CD0
+00a22cd0 push 0xd
+00a22cd2 push eax
+00a22cd3 call 0x4906b5        ; 类型号 13
+
+; type 3/8/9/10（Super / ItemMegaphone） 0xA231A5
+00a231a5 lea  eax, [ebp - 0x20]
+00a231a8 push 8
+00a231aa push eax
+00a231ab call 0x4906b5        ; 类型号 8
+```
+
+结论：
+
+1. **喇叭不是独立窗口**，和 type 0/5/6 一样进底栏聊天日志，区别只在类型号（8 / 13）。
+   所以"单机没有跨频道"不是不接喇叭的理由 —— 落点本来就在聊天窗。
+2. 正文由**服务端拼好**：`MegaphoneCommands.BotItemMegaphone` 下发
+   `fakechar.getName() + " : " + message`，客户端不再加前缀（与 type 0 的 `[Notice] ` 不同）。
+3. `PacketCreator.itemMegaphone` 写的 type 是 **8**，不是 2；包里带 `channel-1`、`whisper`、
+   道具 pos + `addItemInfo`，但客户端这层只用到正文（类型号 8 决定颜色，绘制函数未定位）。
+4. 颜色仍是未坐实项：类型号 8 对应的常量在绘制函数里，本轮没跟到；本工程沿用
+   "玩家自己发喇叭 = 聊天窗白字" 的既定口径（见第七节对照表）。
+

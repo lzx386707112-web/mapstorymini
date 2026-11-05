@@ -39,6 +39,15 @@ public sealed class InventoryEntry
     // 星之力（源端 Equip.java 的 maxStar/starLevel/starCount，DB 列同名）：
     //   starLevel 当前星级。enhancementVersion=282 时 starCount 是连续实际掉星次数（2 次后必成）；旧规则在切换时清空。
     public int maxStar, starLevel, starCount;
+    // 徽章（源端 EquipSymbol 的 arcLevel/arcExp/inc）：等级 1..20、经验、按装备给的 ARC/AUT 点数。
+    public int symbolLevel, symbolExp, symbolInc;
+    // 轮回星火（源端 Equip.exGradeOption）：每行 exGrade*10+tier，按 1000 进制打包，必须整字段读写。
+    public long exGradeOption;
+    // 星火待确认状态（黑星火/深渊星火的前后二选一）；空串 = 没有待确认。
+    public string flameChoice = "";
+    public int flameRevision;
+    // 灵魂武器：开孔器 id / 灵魂石 id / soulID / 属性代码。
+    public int soulSocketId, soulItemId, soulOptionId, soulOption;
 }
 
 public sealed class KeymapEntry
@@ -79,6 +88,13 @@ public sealed class FullCharacter
     public List<QuestEntry> quests = new List<QuestEntry>();
     public List<MacroEntry> macros = new List<MacroEntry>();
     public long quickslotKeymap;
+    // 282 角色成长：character_growth 行的镜像（荣誉值 / 当前预设 / 锁定行 / 待确认 / 灵魂能量）。
+    public GrowthState growth = new GrowthState();
+    public SoulWeaponWz2State soulWeapon = new SoulWeaponWz2State();
+    // 极限属性加点（全部预设）与内在能力三行（全部预设）。
+    public List<HyperStatEntry> hyperstats = new List<HyperStatEntry>();
+    public List<PotentialEntry> potentials = new List<PotentialEntry>();
+    public List<HexaStatView> hexaStats = new List<HexaStatView>();
 }
 
 public static class CharService
@@ -90,9 +106,13 @@ public static class CharService
         // 旧后台 max(position)+1 曾把新发放装备写进 AP 穿着位。
         // 只恢复品类不匹配的行，保留实例/属性；正常机器人时装不动。
         bool repairedAndroidSlots = false;
+        bool repairedEquipment = false;
         foreach (var row in InventoryDao.ItemsByCharacter(db, characterId))
         {
             int slot = DbStore.Int(row, "position"), item = DbStore.Int(row, "itemid");
+            long rowId = DbStore.Long(row,"inventoryitemid");
+            if (item / 1000000 == 1 && InventoryDao.EquipmentOf(db,rowId) == null)
+                repairedEquipment |= InventoryDao.EnsureEquipment(db,rowId) != null;
             if (DbStore.Int(row, "inventorytype") != InventoryDao.Equip ||
                 !NativeAndroidService.IsApSlot(slot) ||
                 NativeAndroidService.ApAccepts(slot, NativeInventoryService.EquipmentSlotOf(item))) continue;
@@ -101,10 +121,11 @@ public static class CharService
             row["position"] = (long)free;
             repairedAndroidSlots = true;
         }
-        if (repairedAndroidSlots) db.Save();
+        if (repairedAndroidSlots || repairedEquipment) db.Save();
         if(InventoryDao.ExpireItems(db,characterId,System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())) db.Save();
-        var full = new FullCharacter { record = rec };
+        var full = new FullCharacter { record = rec, soulWeapon = NativeSoulWeaponWz2Service.Read(db,characterId) };
 
+        if (NativeMatrixSkills.Sync(db, characterId)) db.Save();
         foreach (var r in SkillsDao.ByCharacter(db, characterId))
             full.skills.Add(new SkillEntry
             {
@@ -145,6 +166,10 @@ public static class CharService
             });
 
         full.quickslotKeymap = QuickslotDao.Load(db, rec.accountid);
+        full.growth = GrowthDao.Load(db, characterId);
+        full.hyperstats = GrowthDao.HyperStats(db, characterId);
+        full.potentials = GrowthDao.Potentials(db, characterId);
+        full.hexaStats = NativeHexaMatrixService.Stats(db,characterId);
         return full;
     }
 
@@ -187,6 +212,16 @@ public static class CharService
             e.maxStar = (int)Convert(eq, "maxStar");
             e.starLevel = (int)Convert(eq, "starLevel");
             e.starCount = (int)Convert(eq, "starCount");
+            e.symbolLevel = (int)Convert(eq, "symbolLevel");
+            e.symbolExp = (int)Convert(eq, "symbolExp");
+            e.symbolInc = (int)Convert(eq, "symbolInc");
+            e.exGradeOption = Convert(eq, "exGradeOption");
+            e.flameChoice = DbStore.Str(eq, "flameChoice") ?? "";
+            e.flameRevision = (int)Convert(eq, "flameRevision");
+            e.soulSocketId = (int)Convert(eq, "soulSocketId");
+            e.soulItemId = (int)Convert(eq, "soulItemId");
+            e.soulOptionId = (int)Convert(eq, "soulOptionId");
+            e.soulOption = (int)Convert(eq, "soulOption");
         }
         return e;
     }
@@ -211,17 +246,22 @@ public static class CharService
                 ["name"] = m.name, ["shout"] = m.shout,
             });
         }
+        var matrixSkills = NativeMatrixSkills.Levels(db,cid);
         foreach (var s in full.skills)
-            SkillsDao.Upsert(db, cid, s.skillId, s.skillLevel, s.masterLevel, s.expiration);
+            if (!matrixSkills.ContainsKey(s.skillId)) SkillsDao.Upsert(db, cid, s.skillId, s.skillLevel, s.masterLevel, s.expiration);
         foreach (var q in full.quests)
             QuestStatusDao.Upsert(db, cid, q.quest, q.status, q.completed);
+        // 成长三表（character_growth / hyperstats / characterpotentials）不在这里回写：
+        // 它们的权威副本由 NativeSymbolService 等成长服务自己按事务写库（与装备/星力同口径），
+        // 若此处再从内存覆盖，一次服务端写库后忘记同步内存就会把玩家进度抹掉。
     }
 
     // 背包增删（掉宝/消耗/穿脱都走这里）
     public static long AddItem(DbStore db, int characterId, int itemId, int inventoryType, int position, int quantity, bool equipStats = false)
     {
         long id = InventoryDao.InsertItem(db, characterId, itemId, inventoryType, position, quantity);
-        if (equipStats) InventoryDao.InsertEquipment(db, id);
+        if (itemId / 1000000 == 1) InventoryDao.EnsureEquipment(db, id);
+        else if (equipStats) InventoryDao.InsertEquipment(db, id);
         return id;
     }
 

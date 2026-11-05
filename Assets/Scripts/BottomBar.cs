@@ -110,6 +110,7 @@ public static class BottomBar
         if (GameLoop.I == null || GameLoop.I.player == null) return;
         if (GameLoop.I.state != GameLoop.GameState.Playing) return;
 
+        EnsureBotBroadcastSink();
         DrawPlate();
         DrawChat();
         // 左段（LV/名字/HP/MP/EXP）画在底板之上；顺序反了会被整条底板盖掉
@@ -121,6 +122,33 @@ public static class BottomBar
         // 小图标为独立入口，放在聊天条右侧，不与展开的快捷格重叠。
         DrawSmallButtons();
         DrawClaim();
+    }
+
+    // 假人「对玩家说话」的全局落点：聊天窗是全局组件，而 BotField 只在有假人的地图上才挂。
+    // 悄悄话按角色投递、喇叭是整个 world 广播，两者都不该受「同图」限制，所以挂在这里。
+    static bool botBroadcastSink;
+    static void EnsureBotBroadcastSink()
+    {
+        if (botBroadcastSink) return;
+        botBroadcastSink = true;
+        Server.Bot.BotTypeManager.Output.Published += message =>
+        {
+            if (string.IsNullOrEmpty(message.text)) return;
+            switch (message.kind)
+            {
+                case Server.Bot.Social.BotOutput.Kind.Whisper:
+                    if (message.targetId != GameSession.CharacterId) return;
+                    var sender = Server.Bot.BotRegistry.Get(message.actorId);
+                    AddChat("[悄悄话] " + (sender != null ? sender.name : "?") + " : " + message.text, ChatPink);
+                    break;
+                case Server.Bot.Social.BotOutput.Kind.ItemMegaphone:
+                    // 正文已由发送端按源端 BotItemMegaphone 拼成「名字 : 内容」，
+                    // 客户端只负责塞进聊天窗（SERVERMESSAGE type 8 → 0x4906B5(msg, 8)），不再补前缀。
+                    // 道具展示（包里的 item）没有对应渲染，与玩家自己发喇叭的既定口径一致。
+                    AddChat(message.text, ChatWhite);
+                    break;
+            }
+        };
     }
 
     static void DrawPlate()

@@ -59,7 +59,7 @@ public static class CombatRules
         damage *= Math.Max(0,1-.01*diff);
         int ignoreDefense=0;
         if(a.setItemBonus!=null)a.setItemBonus.TryGetValue("IgnoreDefense",out ignoreDefense);
-        damage *= PercentageDefense.Multiplier(NativeCombatData.Int(target,magic ? "MDRate" : "PDRate"),ignoreDefense);
+        damage *= PercentageDefense.Multiplier(NativeCombatData.Int(target,magic ? "MDRate" : "PDRate"),100-(100-ignoreDefense)*(1-a.hexaIgnorePercent/100.0));
         bool critical = !magic && critRoll < Math.Max(0,Math.Min(1,a.criticalChance));
         if (!magic) damage *= (skill == null ? 100 : skill.DamagePercent) / 100.0 + (critical ? a.criticalBonus : 0);
         double element = ElementModifier(target,skill == null ? "" : skill.Element);
@@ -67,7 +67,7 @@ public static class CombatRules
         // ≡ MapleMap 收到攻击后 SetItemManager.applyDamage：套装 Damage%/Boss|NormalDamage%/FinalDamage%
         if (damage > 0 && a.setItemBonus != null)
             damage = AdminSetItem.ApplyDamage(a.setItemBonus, NativeCombatData.Int(target,"boss",0) != 0,
-                (long)Math.Ceiling(damage));
+                (long)Math.Ceiling(damage),a.hexaDamagePercent+(NativeCombatData.Int(target,"boss",0)!=0 ? a.hexaBossPercent : 0));
         return Resolve(damage,critical,damageCap);
     }
 
@@ -120,5 +120,13 @@ public sealed class SkillRuntimeState
         if (double.IsNaN(now) || double.IsNaN(duration) || duration < 0 || Remaining(now) > 0) return false;
         ReadyAt = now + duration;
         return true;
+    }
+    // 特殊核心（回归 / 没有结束的攻击 / 忍耐II / 耐性I）的「剩余冷却时间减少 N%」：
+    // 按剩余量打折，已经转好的技能不受影响。
+    public void Reduce(double now, int percent)
+    {
+        double left = Remaining(now);
+        if (left <= 0 || percent <= 0) return;
+        ReadyAt = now + left * (1 - Math.Min(100, percent) / 100.0);
     }
 }

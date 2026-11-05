@@ -201,7 +201,21 @@ devtest|DevtestCommand|6
 倍率|ShowRatesCommand|0
 jk|DisposeCommand|0
 解卡|DisposeCommand|0
-帮助|HelpCommand|0";
+帮助|HelpCommand|0
+symbol|OpenSymbolCommand|3
+hyperstat|OpenHyperStatCommand|3
+innerability|OpenInnerAbilityCommand|3
+flame|OpenFlameCommand|3
+soul|OpenSoulCommand|3
+vmatrix|OpenVMatrixCommand|3
+hexa|OpenHexaMatrixCommand|3
+符文徽章|OpenSymbolCommand|3
+极限属性|OpenHyperStatCommand|3
+内在能力|OpenInnerAbilityCommand|3
+轮回星火|OpenFlameCommand|3
+灵魂武器|OpenSoulCommand|3
+V矩阵|OpenVMatrixCommand|3
+HEXA矩阵|OpenHexaMatrixCommand|3";
 
     // 描述 = 源端 i18n（<类名>.message1）；gm4 的 bot 系列在源端就是英文字符串字面量
     public const string Descriptions = @"
@@ -216,6 +230,13 @@ HelpCommand|展示可用的gm指令
 JoinEventCommand|参加当前的活动
 LeaveEventCommand|离开当前活动
 MapOwnerClaimCommand|开启地图归属
+OpenSymbolCommand|打开符文徽章窗（ARC/AUT）
+OpenHyperStatCommand|打开极限属性窗
+OpenInnerAbilityCommand|打开内在能力窗
+OpenFlameCommand|打开轮回星火页签
+OpenSoulCommand|打开灵魂武器页签
+OpenVMatrixCommand|打开V矩阵窗
+OpenHexaMatrixCommand|打开HEXA矩阵窗
 OnlineCommand|展示所有在线的玩家信息
 RanksCommand|展示玩家排名信息
 RatesCommand|展示玩家倍率

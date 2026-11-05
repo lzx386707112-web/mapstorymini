@@ -159,6 +159,29 @@ public static class MenuFeedbackChecks
         Require(NativeNameplate.TitleOf(0,0)=="乾元玄阶" && NativeNameplate.TitleOf(0,9)=="无敌大帝" &&
             NativeNameplate.TitleOf(8,0)=="无个性者" && NativeNameplate.TitleOf(8,9)=="超觉醒者" &&
             NativeNameplate.TitleOf(99,99)=="超觉醒者","original 9x10 nameplate title table");
+        // 称号试炼（NativeTitleTrials）：点亮档的战力门槛与 .titles 阈值一致；
+        // 计数要求公式边界；统一加成表按用户上限标定（四维≤100/攻魔≤150/HP≤5500/防≤200）。
+        Require(NativeNameplate.TierRequirement(1)==10000 && NativeNameplate.TierRequirement(9)==2000000000L &&
+            NativeNameplate.TierRequirement(10)==10000000000L,"title trial power requirement uses the .titles thresholds");
+        Require(NativeTitleTrials.Need(0,1)==0 && NativeTitleTrials.Need(0,2)==1000 &&
+            NativeTitleTrials.Need(0,10)==256000 && NativeTitleTrials.Need(1,10)==2560 &&
+            NativeTitleTrials.Need(2,10)==273 && NativeTitleTrials.Need(4,10)==1800 &&
+            NativeTitleTrials.Need(7,10)==45 && NativeTitleTrials.Need(8,10)==90 &&
+            NativeTitleTrials.Need(0,11)==long.MaxValue,"title trial per-tier count requirements");
+        GameSession.Net.ScriptValue(new ScriptValueRequest {characterId=cid,write=true,
+            name="title_trial_lit",value="3,0,0,0,0,0,0,0,0"});
+        NativeTitleTrials.LoadLitFromServer();
+        Require(NativeTitleTrials.Lit(0)==3,"title trial lit tiers round-trip through extend_value");
+        NativeNameplate.SetSeries(0);
+        var trialBonus=new Dictionary<string,int>();
+        foreach (var kv in NativeTitleTrials.BonusSet()) trialBonus[kv.Key]=kv.Value;
+        Require(trialBonus.Count==9 && trialBonus["STR"]==11 && trialBonus["PAD"]==16 &&
+            trialBonus["HP"]==600 && trialBonus["PDD"]==22 && trialBonus["MDD"]==22,
+            "title trial flat bonus set at lit tier 3");
+        GameSession.Net.ScriptValue(new ScriptValueRequest {characterId=cid,write=true,
+            name="title_trial_lit",value="0,0,0,0,0,0,0,0,0"});
+        NativeTitleTrials.LoadLitFromServer();
+        Require(!NativeTitleTrials.BonusSet().GetEnumerator().MoveNext(),"no bonus when nothing is lit");
         // info/addition：戒指的附加暴击/暴伤/BOSS 伤害/条件属性。源端和 inc* 是两套字段，
         // 只有打进真面板才算生效（Character.reapplyLocalStats 之后才用得上）。
         var addAttrs = new CharacterAttributes { level = 29 };

@@ -454,6 +454,38 @@ public static class Pointer
     {
         Clicked = DoubleClicked = Released = false;
     }
+    // Temporarily hide the complete pointer gesture from layers painted below its owner.
+    // Restore before drawing that owner; never change the next Tick's held-button state.
+    public struct InputMask : System.IDisposable
+    {
+        bool active;
+        readonly Vector2 pos, press;
+        readonly bool down, pressed, released, clicked, twice, rightDown, rightPressed, rightReleased;
+        readonly bool dragging, dragStarted, dragEnded;
+        public InputMask(bool hide)
+        {
+            active = hide; pos = Pos; press = PressPosition;
+            down = Down; pressed = Pressed; released = Released; clicked = Clicked; twice = DoubleClicked;
+            rightDown = RightDown; rightPressed = RightPressed; rightReleased = RightReleased;
+            dragging = Dragging; dragStarted = DragStarted; dragEnded = DragEnded;
+            if (!hide) return;
+            Pos = PressPosition = new Vector2(-10000, -10000);
+            Down = Pressed = Released = Clicked = DoubleClicked = false;
+            RightDown = RightPressed = RightReleased = false;
+            Dragging = DragStarted = DragEnded = false;
+        }
+        public void Dispose()
+        {
+            if (!active) return;
+            active = false; Pos = pos; PressPosition = press;
+            Down = down; Pressed = pressed; Released = released; Clicked = clicked; DoubleClicked = twice;
+            RightDown = rightDown; RightPressed = rightPressed; RightReleased = rightReleased;
+            Dragging = dragging; DragStarted = dragStarted; DragEnded = dragEnded;
+        }
+    }
+    public static bool HitsWindow(Rect rect) => rect.Contains(Pos) ||
+        (Down || Released || DragEnded) && rect.Contains(PressPosition);
+
     static float lastClickTime = -10f;
     static Vector2 lastClickPosition;
     static bool doubleCandidate;
@@ -685,7 +717,11 @@ public class InputBridge : MonoBehaviour
         // 物理方向键和屏上十字键都能用。
         if (dialogInput && !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible)
         {
-            if (Input.GetKeyDown(KeyCode.Escape) || InputHub.Pressed(GameAction.Menu)) NpcSession.Active?.Cancel();
+            if (Input.GetKeyDown(KeyCode.Escape) || InputHub.Pressed(GameAction.Menu))
+            {
+                // 拍卖脚本可在NPC会话中打开成长窗；先关闭面板，不能只取消下层会话。
+                if (!GameWindows.CloseTop()) NpcSession.Active?.Cancel();
+            }
             else if (InputHub.Pressed(GameAction.NpcTalk)) NpcDialogUi.ContinueWithTalkKey();
             else if (InputHub.Pressed(GameAction.Up)) NpcDialogUi.MoveSelection(-1);
             else if (InputHub.Pressed(GameAction.Down)) NpcDialogUi.MoveSelection(1);
@@ -723,7 +759,7 @@ public class InputBridge : MonoBehaviour
         // NPC 对话）在这里让出去，避免一次按键关掉两层。
         bool escapeOwnedElsewhere = KeyConfigWindow.Visible || VirtualControlsEditor.Visible ||
             GameSideMenu.Blocking || BottomBar.ChatFocused || BottomBar.ChannelListOpen || dialogInput || NpcSession.Blocking;
-        if (!escapeOwnedElsewhere && InputHub.Pressed(GameAction.Menu))
+        if (!escapeOwnedElsewhere && (Input.GetKeyDown(KeyCode.Escape) || InputHub.Pressed(GameAction.Menu)))
             NativeKeyActions.Execute(GameAction.Menu);
         if (KeyConfigWindow.Visible || VirtualControlsEditor.Visible || NpcSession.Blocking)
         {

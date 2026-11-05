@@ -43,10 +43,19 @@ public class SkillFx : MonoBehaviour
         follow=target;hasFollow=true;enemy=target.GetComponent<EnemyUnit>();boss=target.GetComponent<BossUnit>();followOffset=transform.position-target.position;
     }
     public void Stop() { gameObject.SetActive(false); Destroy(gameObject); }
+    // 282 的 shootobj/info/deleteAlpha=1 表示「消失前渐隐」，弹道命中瞬间整层消失会闪。
+    // 淡出期间 Update 继续推进帧，alpha 逐帧乘上去。
+    float fadeAlpha=1, fadeDuration, fadeElapsed;
+    bool fading;
+    public void FadeOut(float duration)
+    {
+        if(fading || duration<=0)return;
+        fading=true;fadeDuration=Mathf.Max(.01f,duration);fadeElapsed=0;
+    }
     void ShowFrame()
     {
         var f=clip.frames[index];sr.sprite=Art.FrameAt(f.file,f.origin);sr.sortingOrder=baseOrder+f.z;
-        sr.color=new Color(1,1,1,f.alpha0);
+        sr.color=new Color(1,1,1,f.alpha0*fadeAlpha);
     }
     void Update()
     {
@@ -69,6 +78,12 @@ public class SkillFx : MonoBehaviour
             }
             ShowFrame();
         }
-        var f=clip.frames[index];sr.color=new Color(1,1,1,Mathf.Lerp(f.alpha0,f.alpha1,frameElapsed/f.delay));
+        if(fading)
+        {
+            fadeElapsed+=Time.deltaTime;
+            fadeAlpha=Mathf.Clamp01(1-fadeElapsed/fadeDuration);
+            if(fadeAlpha<=0){Stop();return;}
+        }
+        var f=clip.frames[index];sr.color=new Color(1,1,1,Mathf.Lerp(f.alpha0,f.alpha1,frameElapsed/f.delay)*fadeAlpha);
     }
 }

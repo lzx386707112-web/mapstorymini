@@ -87,30 +87,7 @@ public static class SkillWindow
     }
 
     static Dictionary<string, object> Line => SkillBook.TreeForJob(Profile.JobId);
-    static List<Dictionary<string, object>> Tabs
-    {
-        get
-        {
-            var tabs = SkillBook.Tabs(Line);
-            Dictionary<string, object> fifth = null;
-            for (int i = 0; i < tabs.Count; i++)
-            {
-                if (!(tabs[i]["skills"] is List<object> skills)) continue;
-                var regular = new List<object>();
-                var advanced = new List<object>();
-                foreach (var raw in skills)
-                    (ExplorerAdvancedSkills.IsAdvanced(int.Parse(raw.ToString())) ? advanced : regular).Add(raw);
-                if (advanced.Count == 0) continue;
-                var source = tabs[i];
-                tabs[i] = new Dictionary<string, object>(source) { ["skills"] = regular };
-                if (Art.Int(source, "job") == Profile.JobId && ExplorerAdvancedSkills.Unlocked)
-                    fifth = new Dictionary<string, object>(source) {
-                        ["name"] = "五转", ["book"] = "五转技能（含六转）", ["skills"] = advanced };
-            }
-            if (fifth != null) tabs.Add(fifth);
-            return tabs;
-        }
-    }
+    static List<Dictionary<string, object>> Tabs => SkillBook.Tabs(Line);
 
     static List<int> TabSkills()
     {
@@ -124,10 +101,7 @@ public static class SkillWindow
         var list = new List<int>();
         if (tabs[tab].TryGetValue("skills", out var raw))
             foreach (var o in (List<object>)raw)
-            {
-                int id = int.Parse(o.ToString());
-                if (ExplorerAdvancedSkills.Visible(id)) list.Add(id);
-            }
+                list.Add(int.Parse(o.ToString()));
         // Character.equippedItem grants Frenzy outside the fixed beginner display list.
         if (Art.Int(tabs[tab], "job") == 0 && SkillProgress.LevelOf(1016) > 0 && !list.Contains(1016))
             list.Add(1016);
@@ -152,7 +126,12 @@ public static class SkillWindow
             PlayerPrefs.DeleteKey("debug_skillwin");
             Visible = true;
         }
-        if (!Visible) { CancelDrag(); return; }      // 任何关窗路径都要把手上的技能收回去
+        if (!Visible)
+        {
+            if (externalCarry) HandleDrop();
+            else CancelDrag();
+            return;
+        }
         if (GameLoop.I == null || GameLoop.I.player == null) return;
         if (pos.x < 0f) pos = new Vector2(18f, 70f);
         ClampWindow();
@@ -273,20 +252,6 @@ public static class SkillWindow
             bool on = i == tab;
             var plate = At(win, TabLeft(i, tabs.Count), TabY, TabWidth(tabs.Count), TabH);
             DrawTabPlate(plate, on);
-
-            // 用户授权：原IMG的细黑V改为与其他页签匹配的白色描边文字；底板仍用Tab2。
-            if (i == 5 && (string)tabs[i]["name"] == "五转")
-            {
-                var label = new Rect(plate.x, plate.y + TabGlyphY * S, plate.width, 12f * S);
-                var style = Style(12, Color.black, TextAnchor.MiddleCenter);
-                style.fontStyle = FontStyle.Bold;
-                if (on)
-                    foreach (var offset in new[] { Vector2.left, Vector2.right, Vector2.up, Vector2.down })
-                        GUI.Label(new Rect(label.position + offset * S, label.size), "V", style);
-                style.normal.textColor = Color.white;
-                GUI.Label(label, "V", style);
-                continue;
-            }
 
             var glyph = Wz("UI/UIWindow.img/Skill/Tab/" + (on ? "enabled" : "disabled") + "/" + i);
             if (glyph == null) continue;
@@ -1028,6 +993,7 @@ public static class SkillWindow
     // 双击走 0x203。也就是说源端是「点一下拿起、再点一下放下」，不是按住拖。
     static int dragId;
     static bool carrying;          // 手上有技能（源端 DragStart 之后的状态）
+    static bool externalCarry;
 
     // 给虚拟按键层用：手上有没有技能、是哪个
     public static bool Dragging => dragId != 0 && carrying;
@@ -1037,6 +1003,7 @@ public static class SkillWindow
     {
         dragId = 0;
         carrying = false;
+        externalCarry = false;
     }
 
     // 手上有技能时右键 / 关窗都要能收回去
@@ -1052,7 +1019,8 @@ public static class SkillWindow
     }
 
     // 自检用：不经过 IMGUI 直接把某个技能拿到手上
-    public static void PickForTest(int id) { dragId = id; carrying = id != 0; }
+    public static void PickSkill(int id) { dragId = id; carrying = id != 0; externalCarry = carrying; }
+    public static void PickForTest(int id) => PickSkill(id);
 
     // 自检用：把手上的技能放到指定屏幕坐标（原端「再点一下放下」）
     public static bool DropAt(Vector2 point)

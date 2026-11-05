@@ -52,8 +52,15 @@ public partial class SkillSystem : MonoBehaviour
     // 快捷格/技能窗按技能 id 查冷却
     public float RemainingById(int id)
         => states.TryGetValue(id, out var st) ? (float)st.Remaining(Time.realtimeSinceStartupAsDouble) : 0f;
-    public float CooldownOf(int id)
+    // 特殊核心的「剩余冷却时间减少 N%」（回归 30% / 没有结束的攻击 20% / 忍耐II 20% / 耐性I 25%）。
+    // 只压剩余量，已经转好的技能不动；源端同样是 undefined cooldown 的技能不参与。
+    public void ReduceCooldowns(int percent)
     {
+        if (percent <= 0) return;
+        double now = Time.realtimeSinceStartupAsDouble;
+        foreach (var state in states.Values) state.Reduce(now, percent);
+    }
+    public float CooldownOf(int id)    {
         var data = SkillBook.Get(id);
         if (data == null) return 0f;
         int lv = Mathf.Max(1, SkillProgress.LevelOf(id));
@@ -94,6 +101,7 @@ public partial class SkillSystem : MonoBehaviour
     public bool TryCastSkill(int skillId)
     {
         LastFailure = null;
+        if(NativeSoulWeapon.IsSkill(skillId)){string failure=NativeSoulWeapon.Cast(skillId);return failure==null || Reject(failure);}
         var data = SkillBook.Get(skillId);
         if (data == null) return Reject("缺少技能数据");
         int level = SkillProgress.LevelOf(skillId);
@@ -114,6 +122,18 @@ public partial class SkillSystem : MonoBehaviour
             if(failure!=null) return Reject(failure);
             State(1016).TryStart(Time.realtimeSinceStartupAsDouble,1200);
             p.PlayNativeSkill(1016); return true;
+        }
+        // 魔幻箭筒VI（3141005）是 passive 形态的「箭镞切换」开关：
+        // 使用一次切到下一支箭镞并播对应 mode/N，不施法、不耗蓝、无冷却。
+        if (NativeArrowMode.IsToggle(skillId))
+        {
+            if (p == null || p.hp <= 0 || GameLoop.I?.field == null ||
+                GameLoop.I.state != GameLoop.GameState.Playing || GameLoop.I.gameOver)
+                return Reject("当前无法切换箭镞");
+            if (!NativeArrowMode.CooledDown) return Reject("箭镞切换中");
+            string label = NativeArrowMode.Switch(p);
+            Report(label);
+            return true;
         }
         if (data.IsPassive && !InstantSelfSkill(skillId)) return Reject("被动技能无需施放");
         var native = SkillBook.Native(skillId, level);
@@ -165,7 +185,9 @@ public partial class SkillSystem : MonoBehaviour
         // cannot reduce the caster to zero; reject before MP/cooldown mutation.
         if (s.native.HpCost > 0 && p.hp <= s.native.HpCost) return Reject("生命不足（需要大于 " + s.native.HpCost + "）");
         var costRow=SkillBook.Get(s.native.Id)?.Level(s.native.Level);
-        bool ranged=s.native.Kind=="Attack" && !s.native.Magic && NativeProjectiles.IsRangedSkill(s.native.Id);
+        // 射程口径（IsRangedSkill）与弹药消耗口径（ConsumesAmmo）必须分开：
+        // 282 有 69 个远程 VI 技能没有任何发射物层，不该吃箭。
+        bool ranged=s.native.Kind=="Attack" && !s.native.Magic && NativeProjectiles.ConsumesAmmo(s.native.Id);
         var projectile=ranged ? NativeProjectiles.For(p,s.native.Id,s.native.Level) : default;
         if (ranged && !projectile.Allowed) return Reject("缺少可用弹药");
         int itemId=Art.Int(costRow,"itemCon"),itemCount=Art.Int(costRow,"itemConNo");
@@ -184,9 +206,23 @@ public partial class SkillSystem : MonoBehaviour
             if (starId==0) return Reject("技能所需飞镖不足");
         }
         // SkillEffectHandler only broadcasts the key-down start; costs belong to each attack packet.
-        if (!continuousShot && boundHeldAction.HasValue && NativeHeldSkill.Continuous(s.native.Id))
+        // 连射判定：旧表三只四转技能 + 源端 info/rapidAttack（五六转同名技能全靠它）。
+        bool rapid = !continuousShot && boundHeldAction.HasValue &&
+            (NativeHeldSkill.Continuous(s.native.Id) || NativeSkillVfx.RapidAttack(s.native.Id));
+        if (rapid)
         {
             StartHeld(s,boundHeldAction.Value);
+            return true;
+        }
+        // 蓄力型（雷霆万钧VI / 元素之炎VI）：有 keydown 循环层与 keydownend 收手段，
+        // 但没有 rapidAttack。按住只累积表现、不逐发结算；松手才走一次正常施法。
+        // 挨个塞进连射路径会把蓄力变成每 100ms 打一发，伤害与 MP 全错。
+        bool charge = !continuousShot && boundHeldAction.HasValue && !rapid &&
+            NativeSkillVfx.HasLayer(s.vfx,"keydown") &&
+            NativeSkillVfx.HasLayer(s.vfx,"keydownend");
+        if (charge)
+        {
+            StartHeld(s,boundHeldAction.Value,true);
             return true;
         }
         // StatEffect.applyTo: primary caster consumes itemCon/itemConNo only.
@@ -252,6 +288,11 @@ public partial class SkillSystem : MonoBehaviour
 
         bool replay = BeginReplay(s, p.FeetPos, p.facing);
         NativeBuffs.For(p).ApplySkill(s.native.Id, s.native.Level, NativeBuffs.Now);
+        // 3141009 追加魔幻箭筒：common 只有 time/cooltime，没有任何属性 stat，
+        // NativeBuffs.ApplySkill 会因为 stats 为空直接返回 false，所以持续时间自己管。
+        if (NativeQuiverBurst.IsSkill(s.native.Id)) NativeQuiverBurst.Activate(s.native.Level);
+        // 特殊核心里 cooltime 型（魔王杀手II / 破坏防具II / 自动恢复 / 一击必杀I）靠施法触发。
+        NativeSpecialCore.OnSkillUse(p);
         if (s.native.Kind == "Summon")
         {
             RemoveBuffSummon(s.native.Id);
@@ -269,8 +310,9 @@ public partial class SkillSystem : MonoBehaviour
     }
 
     // StatEffect.calcHPChange/calcMPChange and SpecialMoveHandler.MP_RECOVERY.
+    // 3141005 魔幻箭筒VI 虽然源端标 passive，但它是可主动按的箭镞切换，不能按被动藏起来。
     public static bool InstantSelfSkill(int id) => id==2301002 || id==5101005 || id==4211001 || id==2311001 || id==5121010 ||
-        id==9101000 || NativeBuffs.IsHerosWill(id);
+        id==9101000 || NativeBuffs.IsHerosWill(id) || NativeArrowMode.IsToggle(id);
     void ApplyInstantSelf(NativeSkillDefinition d)
     {
         var row=SkillBook.Get(d.Id)?.Level(d.Level);
@@ -361,6 +403,15 @@ public partial class SkillSystem : MonoBehaviour
 
     bool InRange(Vector3 position, NativeSkillDefinition d, Vector2 origin, int facing)
     {
+        // 全屏技能（skillType=3：天怒/暴风雪/火流星/终极攻击…）源端没有 lt/rb，
+        // 按相机可见宽度判定，否则会退回身前 200px、只能打到贴脸的一只怪。
+        if (d.FullScreen)
+        {
+            var camera = Camera.main;
+            if (camera == null) return true;
+            float half = camera.orthographicSize * camera.aspect + 1f;
+            return Mathf.Abs(position.x - camera.transform.position.x) <= half;
+        }
         var delta = (Vector2)position - origin;
         float x = delta.x * facing;
         // WZ 左朝向攻击框，世界坐标 Y 向上。
@@ -493,6 +544,18 @@ public partial class SkillSystem : MonoBehaviour
                 }
                 if (s.art == "dragon" || s.art == "dash") e.Push(direction, d);
             }
+        }
+        // 魔幻箭筒（3141005）的箭镞：直接攻击命中后按 u%/w% 掷一次骰，追加魔法箭伤害或吸血回复。
+        // 只对主技能生效（子技能/召唤不重复触发），且每次施法只掷一次，不随目标数放大。
+        if (d.Id==s.native.Id && d.Kind=="Attack" && hits>0 && p.UsesRangedWeapon)
+            NativeArrowMode.OnHit(p, targets[0], targets[0].transform.position.x >= origin.x ? 1 : -1);
+        // 特殊核心的攻击型计数：源端按「技能的每次攻击」算 1 次，
+        // 所以一次结算要计 attackCount × 命中目标数，而不是只计 1。
+        if (d.Id==s.native.Id && d.Kind=="Attack" && hits>0)
+        {
+            int ticks = Mathf.Max(1, d.HitCount) * hits;
+            int targetId = targets[0] != null ? targets[0].GetInstanceID() : 0;
+            for (int i=0;i<ticks;i++) NativeSpecialCore.OnAttack(p, targetId);
         }
         // The client captures damage while hidden; the server cancels the state
         // on receiving the attack, so all lines must use the pre-cancellation stats.

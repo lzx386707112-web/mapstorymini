@@ -113,7 +113,12 @@ public sealed class PlayerProfileData
     public void ResetQuest(int id)
     {
         questStarted?.Remove(id);
-        questCompleted?.Remove(id);
+        int completedIndex = questCompleted?.IndexOf(id) ?? -1;
+        if (completedIndex >= 0)
+        {
+            questCompleted.RemoveAt(completedIndex);
+            if (questCompletedAt != null && completedIndex < questCompletedAt.Count) questCompletedAt.RemoveAt(completedIndex);
+        }
         if (questCompletedAt != null)
             while (questCompletedAt.Count < (questCompleted?.Count ?? 0)) questCompletedAt.Add(0);
         if (questProgress != null)

@@ -259,10 +259,13 @@ def export(con: sqlite3.Connection) -> None:
     rows = [r for r in rows if not is_monster_crystal(r[1])]
     gl = [r for r in gl if not is_monster_crystal(r[1])]
     rows, gl = apply_overrides(rows, gl)
+    from ms282.gemstone_drops import replace_legacy
+    rows, gl = replace_legacy(rows, gl)
     lines = ["# 源端 drop_data 全量重放 + content/drop-overrides.tsv 补充（tools/export_field_drops.py 生成，勿手改）",
              "# M|dropperid|itemid|min|max|questid|chance",
              "# G|continent|itemid|min|max|questid|chance",
-             "# 注：怪物结晶（4260xxx）直接掉落已剔除，只可由原石经制作合成获得。"]
+             "# 注：怪物结晶（4260xxx）直接掉落已剔除，只可由原石经制作合成获得。",
+             "# 核心宝石改用 TMS282 Mob.initCustomizedDrops + mob_drops.json；概率由 /10000 换算，8643012 保留两次独立抽取。"]
     lines += ["M|%d|%d|%d|%d|%d|%d" % r for r in rows]
     lines += ["G|%d|%d|%d|%d|%d|%d" % r for r in gl]
     with open(TARGET, "w", encoding="utf-8") as fp:

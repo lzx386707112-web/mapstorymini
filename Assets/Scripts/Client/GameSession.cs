@@ -75,7 +75,7 @@ public static class GameSession
         {
             var rates=Net.Community(new CommunityRequest { characterId=owner,operation=CommunityOperation.Read });
             var set=owner==CharacterId ? EquipLoadout.CurrentSetBonus() : null;
-            return (AdminSetItem.ApplyRate(set,"DropRate",rates.dropRate),rates.mesoRate);
+            return (AdminSetItem.ApplyRate(set,"DropRate",rates.dropRate),AdminSetItem.ApplyRate(set,"MesoRate",rates.mesoRate));
         };
         global::Server.Bot.BotTypeManager.GrantTutorialAdmin = GrantTutorialAdmin;
         global::Server.Bot.BotTypeManager.ApplySkillEffect = ApplyBotSkillEffect;
@@ -223,7 +223,7 @@ public static class GameSession
         });
         if (res != null && res.ok && Character != null)
         {
-            if(res.inventory!=null) {Character.inventory=res.inventory;ApplyInventoryToProfile();}
+            if(res.inventory!=null) {Character.inventory=res.inventory;MarkStatsDirty();ApplyInventoryToProfile();}
             Character.record.map = res.mapId;
             Character.record.hp = res.hp;
             Character.record.mp = res.mp;
@@ -386,6 +386,15 @@ public static class GameSession
 
     // —————————————————— DB → 现有玩法数据 ——————————————————
 
+    // 成长系统的面板结算按「内容指纹」缓存（见 NativeGrowthStats.Accumulate），
+    // 指纹已经能自动发现背包/成长表的变化；这里保留一个显式失效口，
+    // 给「换了 inventory 引用但内容恰好一致」这种边角情况兜底。
+    public static void MarkStatsDirty()
+    {
+        if (Character == null) return;
+        NativeGrowthStats.Invalidate();
+    }
+
     public static void ReloadAfterCommand()
     {
         var fresh = CharService.Load(Server.Db, CharacterId);
@@ -397,6 +406,15 @@ public static class GameSession
         Character.quests = fresh.quests;
         Character.keymap = fresh.keymap;
         Character.quickslotKeymap = fresh.quickslotKeymap;
+        // 成长三表（徽章/星火/灵魂挂在 inventoryequipment 上，随 inventory 一起回来；
+        // 极限属性/内在能力/荣誉值在独立表里，必须单独搬，否则窗口读到的还是洗练前的行）。
+        Character.growth = fresh.growth;
+        Character.hyperstats = fresh.hyperstats;
+        Character.potentials = fresh.potentials;
+        Character.hexaStats = fresh.hexaStats;
+        // 箭镞模式跟着角色走：growth 刚被换掉，这里同步一次当前角色的箭筒状态。
+        NativeArrowMode.Sync();
+        MarkStatsDirty();
         ApplyToProfile();
         var player = GameLoop.I?.player;
         if (player != null)
@@ -509,6 +527,7 @@ public static class GameSession
         foreach (var item in actor.character.inventory) inventory.Add(item.Copy());
         Character.inventory=inventory;
         Character.tradeRevision=actor.character.tradeRevision;
+        MarkStatsDirty();
         ApplyInventoryToProfile(); Profile.Save();
     }
 

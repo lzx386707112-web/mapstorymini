@@ -7,11 +7,47 @@ description: TMS282 客户端/服务端逆向与逻辑分析结论沉淀。分�
 
 TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Documents/mxd/TMS282.5`）的已确定逻辑记录。
 规则来源：mxd-android/AGENTS.md 规则 8-12。282 服务端是 swordie 架构 Java 源码（`source/src/main/java/net/swordie/ms`），
-**无 js 脚本**（`data/scripts` 为空），原 js 的逻辑全部以 Java 分发实现（`BossManager`/`ScriptManagerImpl`/`CustomFieldScripts`）。
+**本地套件不包含游戏脚本**（`套件驗證.txt:6` 明示；`data/scripts` 为空，源码及所附 JAR 的
+`GAME_SCRIPTS_ENABLED=false`）。有部分 Java 玩法实现，但**不能说原脚本逻辑全部由 Java 替代**；
+任务分发仍需外部 `.py/.js`。复现、边界及旧文档纠正见 `docs/tms282-skill/18-advancement-evidence-search.md`。
 
 域内细节见 `references/`：
 
+- **战斗力（逆向中）**：工作区根`docs/tms282-skill/30-combat-power.md`，5F3C7E0两次完整快照相减→5E82B40→12F9A60，StatCalibration双校正及int64截断；原服务器0.7 magic number不可视为EXE公式，用户明确禁止以攻魔差额替代。
+
+- **新版灵魂武器（进行中）**：`docs/tms282-skill/29-soul-weapon-wz2.md`（实际正文在工作区根docs），原状态布局/被动公式/150级启用与GradeInfo/BossInfo已核，用户允许替换旧开孔并补服务器缺失规则；248成长检查通过，但转换/烙印分支/BossFragment/星火战斗力尚未完成，勿宣称完整迁移。
+
+- **核心宝石与符文装备窗口纠正**：`docs/tms282-skill/28-gemstones-symbol-panel.md`，17件真实道具、移除旧83怪10%掉落、282动态124怪2435902与静态双抽取；用户不迁服务器赠礼；已授权按 IMG 重建周任务（两日调查→3颗、UTC+8周四重置、事务去重）。EXE `4A05040`实际用UIEquip/Equip/Symbol，slotPos为左上角，撤回旧UIAuthenticForce“卡片中心”猜测；Grand额外汇总字段已核实为装备实例三字段，采用用户批准TSV补齐显示及收益，215项成长检查通过；非EXE等级公式。
+
+- 当前项目五六转重迁移（2026-11-04）：`docs/tms282-skill/17-project-advanced-remigration.md`，
+  仅 17 条已有终转路线，目录漏项、当前 VMatrix 新路径与原版任务证据缺口；任务证据补齐前不实施。
+- 五六转任务深查（2026-11-04）：`docs/tms282-skill/18-advancement-evidence-search.md`，
+  当前客户端 29,235 张数字地图扫描、剧情图/Graph 候选目标、三份 Lua 解码、JAR 缺脚本与停用证据；
+  纠正 `state=1` 被误写为完成、五转三女神并行任务遗漏及六转伪线性链。
+
 - `lucid-boss.md` — 露希妲（普通 boss 副本 + 變身燃燒 LucidDream）完整逻辑
+- `will-boss.md` — **威爾**（2026-11-05）：三阶段 + 月光计 + P1 双次元门槛（Tms282WillPhase1）、
+  242 技能族、282 opcode 0x086C..0x0881、BossWill.img 段表（0=easy鏡面/1=normal 8880340s/2=hard 8880300s/3=easy）；
+  套件 Easy 车道无召唤分支；normal 车道 mob 无 _Canvas（待解 pack 确认）。
+- `gloom-boss.md` — **戴斯克/Gloom**（2026-11-05）：套件无状态机/召唤（结构性断链），mob=8644650(N)/8644655(C)
+  lv255、HP=1337 占位、三技能全 onlyOtherSkill；内部代号 dusk、无 Etc img/无开场演出、WILL_DUSK_GAUGE 是死包。
+- `darknell-boss.md` — **頓凱爾/Darknell**（2026-11-05）：套件无状态机/召唤，mob=8645009(N)/8645066(H) lv265、
+  HP=1337 占位、260-1..4 难度差；BossDunkel.img=AreaWarning 0..9；与黑魔法师共用 preQuest 35815。
+- `seren-boss.md` — **受選的賽蓮/Seren**（2026-11-05）：车道=地图千位（hard 8880600/normal 8880630/extreme 8880650），
+  P2 核+HpLinkMob 分时身体（offset 1/5/7/10）、太阳计+时钟（108/72/108/72 度、120s 周期，官方规则=套件重构近似）；
+  套件常量 SEREN_EXTREME_FIGHT_MAP=410002080 是 bug（实际 P2=410002260）；HP=2.1e9 占位。
+  **8880342/8880344 撞号警示**：本项目星火挂的「塞伦 8880342/8880344」与 282 威爾 P3 本体/P1 上半身同号。
+- **符文系统**（2026-11-04，正文 `docs/tms282-skill/27-rune-system.md`）：9 种古代之輪
+  （RuneType 0..8）、生成条件（有怪/非 boss/非城镇/`feature.rune`）、重生 5min/冷却 4min、
+  CP0580-0582 + 0x04FE/0x0547 挑战协议（48B 密文、tokenB 逐动作常量表、60s 过期、换图清除）、
+  逐类型 buff（含 CTS852 稜镜召唤、reason 必须精确 80002889、CP04B4 临时技能权限不出图）、
+  经验与专有效果分离（80002280=100%/80003910=200%）。
+  回归补遗：符文技能全在 `Packs/Skill_00007.ms` 分组 `Skill/8000NN.img`（带 `runeSkill` 标志），
+  官方文案/数值表见 27 §8；联动含 FixCoolTime 冷却改写（Char:8592）、Evan 輪之堅持
+  （runeBuffTimerR 服务端未实现）、V 矩阵双路径（新引擎 cond=rune + legacy 400007006/7/11）、
+  任务 runeAct、落雷攻击包 maximumMobCount 特例、BLOCKED_RUNE_MAPS 多重语义复用；死代码与
+  「挑战 UI 不在旧 WZ 树、推断 EXE 原生绘制」见 27 §9/§7；超越之輪 5s vs 文案 2s 冲突待 EXE 核。
+  本项目 Assets 无任何 rune 实现。
 - `skill-system.md` — **技能子系统**：数据双层拆分（`.ms` 定义层 + `_Canvas` 像素层）、
   `common` 公式 schema vs `level` 旧 schema、公式 DSL 的 `logN` 取整语义、25 族特效层、
   MCV0（VP9 双流 + alpha）容器、EXE 关键函数 RVA（`0x589d140`/`0xdc5c80`/`0x111e390`…）、
@@ -66,3 +102,23 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
   記憶 5062090/5062500/5062523 有数据无 handler。
 - 本项目 `NativeEquipmentCube.cs` 是简化自制（4007000-4007007 自造 id + expandAttribute4 JSON），
   迁移 = 完全重写；存储 schema 与魔方范围**需用户拍板**。
+
+- 五转核心槽图标错位及用户授权居中：`docs/tms282-skill/20-v-hexa-panel.md` §7.6；普通/特殊槽中心(29,28)/(33,28)，不将IMG位置向量解释冒称为已核实EXE算法。
+
+- 五六转弹窗穿透与功能审计：`docs/tms282-skill/20-v-hexa-panel.md` §7.7；不能把布局/事务PASS当作技能属性已生效，核心等级同步、HEXA前置与属性玩法仍有明确缺口。
+
+- 五六转核心功能补齐与源端错误纠正（2026-11-04）：`docs/tms282-skill/20-v-hexa-panel.md` §7.8；技能等级投影、reqForActivation保留ID、属性三线/保存/应用/费用及用户批准职业倍率；op8是二级密码不是改名，连击5秒复位已接，符文事件与完整演出仍有边界。
+
+- V/HEXA 帮助与表现补充（2026-11-04）：`docs/tms282-skill/20-v-hexa-panel.md` §7.9；用户授权重编分页帮助，原按钮tooltip、技能/特殊/属性核心悬浮、HEXA激活/强化/属性结果窗；selected仅单帧，activatable六帧。粒子及未定锚点特效仍有边界。
+
+- 五六转主面板穿透复报（2026-11-04）：`docs/tms282-skill/20-v-hexa-panel.md` §7.10；早期HUD在DrawAll之前处理输入、AnyVisible漏矩阵、主窗空白未消费；完整Pointer mask与10项行为检查，实机仍待验收。
+
+- 全局确认框无法点击复报（2026-11-04）：`docs/tms282-skill/20-v-hexa-panel.md` §7.11；矩阵ownsPointer先吞掉YesNo点击，修为全局prompt独占最外层mask；生产DrawAll分发6场景通过，移除修复可复现旧错。
+
+- 成长属性显示联查（2026-11-05）：`docs/tms282-growth-systems.md` 末节；内在/极限/称号常规加成统一结算，StatWindow改读PlayerCtrl最终属性以包含临时增益；特殊内在unsettled与速度/跳跃显示仍有明确边界。
+
+- 极限属性命令直升级缓存（2026-11-05）：`docs/tms282-growth-systems.md` 末节；200级未分配339点，面板按等级变化重读、预览前同步等级，无需逐级发点。
+
+- 极限点数复报与符文卸下（2026-11-05）：第28篇末节，原POINT白底+近白字的显示遗漏已修；符文槽改读会话库存，接右键/背包拖拽卸下，220项成长检查通过，未真机验收。
+
+- 星火/灵魂按钮与完整性审计（2026-11-05）：`docs/tms282-skill/16-enhancement-entry.md`末节；材料框/高亮缺页前缀、双击入口、星火数值补全与黑星火journal恢复已修；SoulMP/灵魂技能、实际攻击力比较及原版二选一布局仍有明确缺口。

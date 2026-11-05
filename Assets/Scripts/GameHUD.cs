@@ -95,6 +95,13 @@ public class GameHUD : MonoBehaviour
             return;
         }
 
+        // Matrix windows own their pointer before any lower HUD/drag handler runs.
+        bool matrixPointer = NativeUtilPrompt.Visible || NativeSymbolWindow.AtPointer || NativeVMatrixWindow.AtPointer || NativeHexaMatrixWindow.AtPointer;
+        bool underlayEnabled = GUI.enabled;
+        var underlayPointer = new Pointer.InputMask(matrixPointer);
+        GUI.enabled = underlayEnabled && !matrixPointer;
+        try
+        {
         NativeInventoryActions.CarryStep();
         GmTimers.Tick();
         // 原版底部栏：底板 → 左段状态条 → 右侧按钮 + 快捷格（都在 BottomBar 里按顺序画）
@@ -108,6 +115,13 @@ public class GameHUD : MonoBehaviour
         NativeScreenEffect.Draw();
         QuestAlarm.Draw();
         TemporaryStatView.Draw();
+
+        }
+        finally
+        {
+            underlayPointer.Dispose();
+            GUI.enabled = underlayEnabled;
+        }
 
         // 浮窗（技能窗/能力值/帮助…）
         GameWindows.DrawAll();

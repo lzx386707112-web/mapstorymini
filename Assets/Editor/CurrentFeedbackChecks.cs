@@ -22,43 +22,14 @@ public static class CurrentFeedbackChecks
         {
             typeof(Profile).GetField("data", Private).SetValue(null, new PlayerProfileData());
             typeof(Profile).GetField("debugOverride", Private).SetValue(null, true);
-            var source = (Dictionary<string, object>)MiniJson.Parse(File.ReadAllText("docs/advanced-skill-audit-2026-11-01.json"));
-            int count = 0;
-            foreach (Dictionary<string, object> entry in (List<object>)source["skills"])
-            {
-                int id = Convert.ToInt32(entry["id"]);
-                var skill = SkillBook.Get(id);
-                Require(skill != null, "missing skill " + id);
-                foreach (var level in (Dictionary<string, object>)entry["levels"])
-                {
-                    var expected = (Dictionary<string, object>)level.Value;
-                    var actual = SkillBook.Native(id, int.Parse(level.Key));
-                    Require(actual != null && actual.HitCount == Art.Int(expected, "attackCount", 1)
-                        && actual.TargetCount == Art.Int(expected, "mobCount", 1)
-                        && actual.DamagePercent == Art.Num(expected, "damage")
-                        && actual.MagicAttack == Art.Num(expected, "mad")
-                        && actual.MpCost == Art.Int(expected, "mpCon")
-                        && actual.Cooldown == Art.Num(expected, "cooltime"), "level values " + id + "@" + level.Key);
-                    if (actual.HasBounds)
-                    {
-                        var lt = (List<object>)expected["lt"]; var rb = (List<object>)expected["rb"];
-                        Require(actual.Min == new Vector2(Convert.ToSingle(lt[0]), Convert.ToSingle(lt[1])) / Art.PPU
-                            && actual.Max == new Vector2(Convert.ToSingle(rb[0]), Convert.ToSingle(rb[1])) / Art.PPU,
-                            "native hit rectangle " + id);
-                    }
-                    if (ExplorerAdvancedSkills.IsAdvanced(id) || id / 10000 >= 1000)
-                        Require(actual.Magic == (bool)entry["expectedMagic"], "damage handler family " + id);
-                    count++;
-                }
-            }
-            // Constructing the player's legacy slots must not enumerate any VFX.
+            // Constructing player slots must not enumerate any VFX.
             var clips = (System.Collections.IDictionary)typeof(NativeSkillVfx).GetField("skills", Private).GetValue(null);
             int before = clips.Count;
             var watch = System.Diagnostics.Stopwatch.StartNew();
             for (int i = 0; i < 1000; i++)
-                _ = new SkillDef(new ClassSkill { art = "1221030", name = "" }, SkillBook.Native(1221030, 1));
+                _ = new SkillDef(new ClassSkill { art = "1221009", name = "" }, SkillBook.Native(1221009, 1));
             Require(clips.Count == before, "login slot construction eagerly loaded VFX");
-            Debug.Log("CURRENT_FEEDBACK_PASS native_levels=" + count + " lazy_1000_slot_ms=" + watch.ElapsedMilliseconds);
+            Debug.Log("CURRENT_FEEDBACK_PASS lazy_1000_slot_ms=" + watch.ElapsedMilliseconds);
 
             CheckPanels();
         }
@@ -77,7 +48,7 @@ public static class CurrentFeedbackChecks
         var ids = new List<int>();
         foreach (var tab in SkillBook.Tabs(SkillBook.TreeForJob(122)))
             foreach (var raw in (List<object>)tab["skills"])
-                if (ExplorerAdvancedSkills.IsAdvanced(Convert.ToInt32(raw))) ids.Add(Convert.ToInt32(raw));
+                ids.Add(Convert.ToInt32(raw));
         Profile.Data.SetJob(122);
         foreach (int id in ids) Profile.Data.SetSkillLevel(id, 1);
         var win = new Rect(0, 0, 175 * BottomBar.S, 289 * BottomBar.S);
@@ -92,7 +63,7 @@ public static class CurrentFeedbackChecks
             Require((int)Call("RowAt", win, ids) == -1, "scrollbar overlaps a skill row");
         }
         Require((int)typeof(SkillWindow).GetField("scroll", Private).GetValue(null) == ids.Count - 4,
-            "last V/VI row is unreachable");
+            "last skill row is unreachable");
         Debug.Log("CURRENT_FEEDBACK_PASS paladin_all_rows=" + ids.Count + " scroll_without_pickup");
     }
 

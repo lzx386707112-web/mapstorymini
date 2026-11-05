@@ -203,9 +203,9 @@ public static class Profile
     }
 
     // —— 任务（原端 Character.getQuest / updateQuestStatus）——
-    public static int QuestStatus(int id) => Data.QuestStatusOf(id);
-    public static bool IsQuestStarted(int id) => Data.QuestStatusOf(id) == PlayerProfileData.QuestStartedState;
-    public static bool IsQuestCompleted(int id) => Data.QuestStatusOf(id) == PlayerProfileData.QuestCompletedState;
+    public static int QuestStatus(int id) => id == WeeklyGemstoneData.Id && GameSession.InGame ? WeeklyGemstoneQuest.Status() : Data.QuestStatusOf(id);
+    public static bool IsQuestStarted(int id) => QuestStatus(id) == PlayerProfileData.QuestStartedState;
+    public static bool IsQuestCompleted(int id) => QuestStatus(id) == PlayerProfileData.QuestCompletedState;
     public static long QuestCompletedTime(int id) => Data.QuestCompletedTime(id);
     public static void StartQuest(int id) { Data.SetQuestStarted(id); Save(); }
     public static void CompleteQuest(int id) { Data.SetQuestCompleted(id); Save(); }
@@ -240,6 +240,9 @@ public static class Profile
         // 经验是 long：300 级需求已到 1.6e17，不能再钳到 int.MaxValue
         amount+=NativeEquipmentEffects.PendantBonus(amount);
         amount+=NativeEquipmentEffects.RingExpBonus(amount);
+        // 特殊核心「克服的经验I / 轮的经验I」：N 秒内经验获得量 +50%。
+        int specialExp=NativeSpecialCore.ExpPercent;
+        if (specialExp>0) amount+=amount*specialExp/100;
         if (GameLoop.I?.player?.GetComponent<NativeMobDebuffs>()?.Has(124) == true) amount /= 2;
         if (amount <= 0) return 0;
         int before = Data.level;
@@ -307,7 +310,7 @@ public static class Profile
     // 防具槽位（与 EquipSlot 常量对应；源端在 inventoryitems 表里，单机走本地 JSON，DB 表结构仍对齐）
     public static int EquipOfSlot(int slot)
     {
-        if(GameSession.InGame && NativePetItems.IsPetSlot(slot))
+        if(GameSession.InGame && (NativePetItems.IsPetSlot(slot) || SymbolCatalog.IsSymbolSlot(slot)))
             return GameSession.Character.inventory.Find(x=>x.inventoryType==InventoryDao.Equipped && x.position==slot)?.itemId ?? 0;
         return Data.EquipOfSlot(slot);
     }

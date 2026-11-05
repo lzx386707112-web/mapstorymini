@@ -14,11 +14,11 @@
     <Compile Include="RebirthChecks.cs" />
     <Compile Include="GmCommandChecks.cs" />
     <Compile Include="NativeSystemChecks.cs" />
+    <Compile Include="ChatChecks.cs" />
     <Compile Include="BotChecks.cs" />
     <Compile Include="BotPerfChecks.cs" />
     <Compile Include="DropChecks.cs" />
     <Compile Include="InventoryOrganizeChecks.cs" />
-    <Compile Include="InventoryMoveChecks.cs" />
     <Compile Include="InventoryMoveChecks.cs" />
     <Compile Include="PqChecks.cs" />
     <Compile Include="DueyChecks.cs" />
@@ -34,12 +34,16 @@
     <Compile Include="RpsChecks.cs" />
     <Compile Include="GachaChecks.cs" />
     <Compile Include="CashEquipChecks.cs" />
+    <Compile Include="GrowthChecks.cs" />
+    <Compile Include="WeeklyGemstoneChecks.cs" />
     <Compile Include="AndroidChecks.cs" />
     <Compile Include="ScrollChecks.cs" />
     <Compile Include="EquipUnequipChecks.cs" />
     <Compile Include="NoteChecks.cs" />
     <Compile Include="TvChecks.cs" />
     <Compile Include="CarnivalChecks.cs" />
+    <Compile Include="MatrixChecks.cs" />
+    <Compile Include="AdvancedQuestChecks.cs" />
     <Compile Include="../../Assets/Scripts/Server/**/*.cs" />
     <Compile Include="../../Assets/Scripts/Scripting/*.cs" />
     <!-- 纯 C# 的共享常量/曲线（不含 UnityEngine），Server 侧也引用它们 -->

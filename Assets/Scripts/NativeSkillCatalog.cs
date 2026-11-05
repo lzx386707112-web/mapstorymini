@@ -9,6 +9,10 @@ public sealed class NativeSkillDefinition
     public readonly Vector2 Min, Max;
     public readonly string Kind, Element;
     public readonly bool Magic, HasBounds;
+    // 282 用 info/skillType=3 标记「无固定攻击框」的技能：天怒VI(2341010)、
+    // 暴风雪VI(2241004)、火流星VI(2140013)、终极攻击VI、战舰鲸鱼号VI…
+    // 这些技能源端本来就没有 lt/rb，判定覆盖整个屏幕，不是身前 200px。
+    public readonly bool FullScreen;
 
     public NativeSkillDefinition(Dictionary<string, object> skill, Dictionary<string, object> level)
     {
@@ -30,6 +34,7 @@ public sealed class NativeSkillDefinition
         HasBounds = level.ContainsKey("lt") && level.ContainsKey("rb");
         Min = Point(level, "lt", new Vector2(-Art.Num(level, "range", 200), -100));
         Max = Point(level, "rb", new Vector2(0, 100));
+        FullScreen = !HasBounds && (int)Art.Num(skill, "skillType") == 3;
     }
 
     static Vector2 Point(Dictionary<string, object> d, string key, Vector2 fallback)

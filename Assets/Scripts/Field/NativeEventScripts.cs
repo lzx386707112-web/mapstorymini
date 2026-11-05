@@ -102,6 +102,17 @@ public sealed class NativeEventScripts : MonoBehaviour
                 map.Geometry.npcs.Add(new Server.Field.MapNpcPosition {id=id,x=x,
                     y=(int)Server.Field.MapService.SnapToGround(map.Scope,x,y),dynamic=true});
             };
+            host.service.Completed=instance=>
+            {
+                if(GameServer.Local==null || !GameSession.InGame || instance.MaximumPlayerCount!=1 ||
+                    host.service.GetInstance(GameSession.CharacterId)!=instance)return;
+                // Source CygnusBattle.js: 271040100, 8850000..8850011, clearPQ only after final boss.
+                // Do not equate BeiDou's custom Lucid fury encounter with a 282 difficulty.
+                string fieldSet=instance.EventName=="CygnusBattle"?"cygnus01_":instance.EventName;
+                int fragments=NativeSoulWeaponWz2Service.OnBossClear(GameServer.Local.Db,GameSession.CharacterId,fieldSet,true);
+                GameSession.Character.soulWeapon=NativeSoulWeaponWz2Service.Read(GameServer.Local.Db,GameSession.CharacterId);
+                if(fragments>0)NativeSystemMessage.Drop(5,"[灵魂武器] 获得灵魂碎片 "+fragments+" 个。");
+            };
             host.service.AwardClearQuestPoints=player=>
             {
                 if(!((player as JsHostObject)?.Get("getId") is JsFunction getId) ||

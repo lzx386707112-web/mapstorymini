@@ -109,5 +109,8 @@ public sealed class GameServer
     void RouteBotChat(SocialRequest request)
     {
         if (request.channel == NativeChatChannel.All) bots?.ReceiveChat(request.characterId, request.text);
+        // 悄悄话是点对点的（源端 WhisperHandler 跨图跨频道都送达），不能混进地图聊天队列；
+        // 本地对端只能是假人，由它按台词库回一句到玩家聊天窗。
+        else if (request.channel == NativeChatChannel.Whisper) bots?.ReceiveWhisper(request.characterId, request.target, request.text);
     }
 }

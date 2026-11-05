@@ -155,6 +155,7 @@ public sealed class FieldMob
 public sealed class FieldDropEntry
 {
     public int item, min, max, quest, chance;
+    public int continent = -1;   // 仅全局掉落：大区（-1 = 全大区）
 }
 
 public sealed class FieldItemInfo
@@ -301,7 +302,11 @@ public static class FieldCatalog
         {
             var list = new List<DropEntry>();
             foreach (var e in GlobalDrops)
-                list.Add(new DropEntry { item = e.item, min = e.min, max = e.max, quest = e.quest, chance = e.chance });
+                list.Add(new DropEntry
+                {
+                    item = e.item, min = e.min, max = e.max, quest = e.quest,
+                    chance = e.chance, continent = (int)e.continent,
+                });
             return list;
         };
 
@@ -326,7 +331,11 @@ public static class FieldCatalog
         }
         GlobalDrops.Clear();
         foreach (var e in glob)
-            GlobalDrops.Add(new FieldDropEntry { item = e.item, min = e.min, max = e.max, quest = e.quest, chance = e.chance });
+            GlobalDrops.Add(new FieldDropEntry
+            {
+                item = e.item, min = e.min, max = e.max, quest = e.quest,
+                chance = e.chance, continent = (int)e.continent,
+            });
         return true;
     }
 

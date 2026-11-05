@@ -37,6 +37,20 @@ public static class Program
             Console.WriteLine($"通过 {passed} / 失败 {failed}");
             return failed == 0 ? 0 : 1;
         }
+        if (args.Length > 0 && args[0] == "--matrix")
+        {
+            MatrixChecks.Run(Check);
+            AdvancedQuestChecks.Run(Check);
+            Console.WriteLine($"通过 {passed} / 失败 {failed}");
+            return failed == 0 ? 0 : 1;
+        }
+        if (args.Length > 0 && args[0] == "--growth")
+        {
+            GrowthChecks.Run(Check);
+            WeeklyGemstoneChecks.Run(Check);
+            Console.WriteLine($"通过 {passed} / 失败 {failed}");
+            return failed == 0 ? 0 : 1;
+        }
         if (args.Length > 0 && args[0] == "--party-grind")
         {
             BotChecks.CheckPartyGrindRuntime(Check);
@@ -416,6 +430,7 @@ public static class Program
 
         Console.WriteLine();
         NativeSystemChecks.Run(Check);
+        ChatChecks.Run(Check);
         GmCommandChecks.Run(Check);
         BotChecks.Run(Check);
         BotPerfChecks.Run();
@@ -436,11 +451,14 @@ public static class Program
         RpsChecks.Run(Check);
         GachaChecks.Run(Check);
         CashEquipChecks.Run(Check);
+        GrowthChecks.Run(Check);
         AndroidChecks.Run(Check);
         ScrollChecks.Run(Check);
         NoteChecks.Run(Check);
         TvChecks.Run(Check);
         CarnivalChecks.Run(Check);
+        MatrixChecks.Run(Check);
+        AdvancedQuestChecks.Run(Check);
         Console.WriteLine("通过 " + passed + " / 失败 " + failed);
         File.Delete(dbPath);
         return failed == 0 ? 0 : 1;

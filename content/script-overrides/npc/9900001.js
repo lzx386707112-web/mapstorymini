@@ -33,8 +33,10 @@ var ICON_CASH = "#fUI/CashShop.img/CashItem/0#";                     // 游戏�
 var ICON_CAP = "#fUI/Basic.img/CheckBox/1#";                         // 当前破功 (12x12)
 var ICON_POINT = "#fUI/GuildBBS.img/GuildBBS/Emoticon/Basic/2#";     // 副本积分 (18x18)
 
-// 标题 MAPLE（字母道具图标）
-var TITLE_MAPLE = "#i03994071# #i03994059# #i03994074# #i03994070# #i03994063#";
+// 标题 MAPLE STORY（字母道具图标，Item/Install/0399.img，A=3994059 按序偏移）
+//   M=3994071 A=3994059 P=3994074 L=3994070 E=3994063
+//   S=3994077 T=3994078 O=3994073 R=3994076 Y=3994083
+var TITLE_MAPLE = "#i03994071# #i03994059# #i03994074# #i03994070# #i03994063# #i03994077# #i03994078# #i03994073# #i03994076# #i03994083#";
 
 // ============================================================
 // 称号（咖位）数据 —— 与 patch_nameplate_series.py 的 SERIES / THRESHOLDS 一一对应
@@ -120,6 +122,11 @@ function 构建主菜单() {
     文本 += 空行() + 分区标题("日常功能") + "\r\n";
     文本 += 菜单行([[0, "自由市场"], [1, "传送系统"], [2, "快捷商店"], [3, "一键出售"]]);
     文本 += 菜单行([[4, "随身仓库"], [5, "各种兑换"], [6, "任务大厅"], [7, "新人福利"]]);
+    // 五转 / 六转技能面板：等级到了且完成对应转职才出现，GM 恒定可见。
+    var 矩阵入口 = 构建矩阵入口();
+    if (矩阵入口.length > 0) {
+        文本 += 菜单行(矩阵入口);
+    }
 
     // ---- 每日日常 ----
     文本 += 空行() + 分区标题("每日日常") + "\r\n";
@@ -128,9 +135,12 @@ function 构建主菜单() {
 
     // ---- 角色提升 ----
     文本 += 空行() + 分区标题("角色成长") + "\r\n";
-    文本 += 菜单行([[12, "装备中心"], [13, "战力系统"], [14, "究极进化"], [15, "技能中心"]]);
-    文本 += 菜单行([[27, "血衣合成"], [28, "怪物卡戒"], [29, "Boss成长"], [31, "机器人兑换"]]);
+    文本 += 菜单行([[12, "装备中心"], [13, "战力系统"], [15, "技能中心"]]); // 究极进化(14)隐藏
+    文本 += 菜单行([[27, "血衣合成"], [28, "怪物卡戒"], [29, "Boss成长"], [31, "机器人"]]);
     文本 += 菜单行([[32, "星力强化"], [33, "主潜能"], [34, "附加潜能"], [35, "痕迹复原"]]);
+    // 282 成长系统：星火/灵魂走装备强化窗的新页签，徽章/极限属性/内在能力各自独立成窗。
+    文本 += 菜单行([[36, "轮回星火"], [37, "灵魂武器"], [38, "符文徽章"], [39, "极限属性"]]);
+    文本 += 菜单行([[40, "内在能力"], [43, "符文领取"], [44, "称号试炼"]]);
 
     // ---- 其他功能 ----
     文本 += 空行() + 分区标题("其他功能") + "\r\n";
@@ -156,10 +166,39 @@ function 空行() {
     return "\r\n".repeat(分区间空行);
 }
 
+// ============================================================
+// 五转 / 六转技能面板入口
+//
+// 门槛与 282 原节点一致（Quest/Check.img）：
+//   五转 V 矩阵   = level >= 200 && quest(1465) 完成
+//   六转 HEXA 矩阵 = level >= 260 && quest(38625) 完成
+// 不满足就整条不出现（不是置灰）。GM 免门槛直接显示 —— 服务端
+// NativeVMatrixService / NativeHexaMatrixService 对 gm>0 同步豁免，
+// 所以 GM 点进去是真能用，而不只是能开窗。
+// ============================================================
+function 构建矩阵入口() {
+    var 条目 = [];
+    var 是GM = false;
+    try {
+        是GM = cm.getPlayer().isGM();
+    } catch (e) {
+        是GM = false;
+    }
+    var 等级 = cm.getLevel();
+    if (是GM || (等级 >= 200 && cm.isQuestCompleted(1465))) {
+        条目.push([41, "五转技能"]);
+    }
+    if (是GM || (等级 >= 260 && cm.isQuestCompleted(38625))) {
+        条目.push([42, "六转技能"]);
+    }
+    return 条目;
+}
+
 function 构建信息栏() {
     var p = cm.getPlayer();
     var 战力 = 取战力(p);
-    var 咖位 = 取称号(战力);
+    // 称号系列没选过时显示「未选择咖位」，不再默认按玄幻显示（cm.hasNameplateSeries）。
+    var 咖位 = cm.hasNameplateSeries() ? 取称号(战力) : "未选择咖位";
     var 金币 = cm.getMeso();
     var 点券 = p.getCashShop().getCash(1);
     var 破功 = 取伤害上限(p);
@@ -352,6 +391,14 @@ function doSelect(selection) {
         case 7:// 新人福利
             openNpc("新人福利");
             break;
+        case 41:// 五转技能面板（V 矩阵；入口条件见 构建矩阵入口）
+            cm.dispose();
+            cm.openVMatrix();
+            break;
+        case 42:// 六转技能面板（HEXA 矩阵；入口条件见 构建矩阵入口）
+            cm.dispose();
+            cm.openHexaMatrix();
+            break;
 
         // ---------- 每日日常 ----------
         case 8:// 每日签到
@@ -407,6 +454,32 @@ function doSelect(selection) {
         case 35:
             cm.dispose();
             cm.openEnhancement(selection - 32);
+            break;
+        case 36: // 轮回星火（装备强化窗第 5 页签）
+            cm.dispose();
+            cm.openFlame();
+            break;
+        case 37: // 灵魂武器（装备强化窗第 6 页签）
+            cm.dispose();
+            cm.openSoul();
+            break;
+        case 38: // 符文徽章（ARC / AUT）
+            cm.dispose();
+            cm.openSymbol();
+            break;
+        case 39: // 极限属性
+            cm.dispose();
+            cm.openHyperStat();
+            break;
+        case 40: // 内在能力
+            cm.dispose();
+            cm.openInnerAbility();
+            break;
+        case 43: // 符文领取（282 徽章获取口径：任务/活动发白板，本项目没有对应任务，主菜单代发）
+            claimSymbols();
+            break;
+        case 44: // 称号试炼（挑战解锁称号 + 里程碑名牌戒指）
+            openNpc("称号试炼");
             break;
         case 31:// 机器人兑换（黄金枫叶货架，原在各种兑换二级菜单）
             openNpc("机器人兑换");
@@ -477,6 +550,54 @@ function doSelect(selection) {
 function openNpc(scriptName) {
     cm.dispose();
     cm.openNpc(9900001, scriptName);
+}
+
+// ============================================================
+// 符文徽章领取（282 口径的「入门白板」发放）
+//
+// 282 官方里 ARC/AUT/Grand 徽章由任务/活动经 giveSymbol 发放（SymbolCouponExchange
+// 兑换券、HungryMuto PQ 等），本项目没有对应任务载体，由主菜单代发一套入门白板：
+//   1712001 祕法符文：消逝的旅途（ARC）
+//   1713000 真實符文：賽爾尼溫（AUT）
+//   1714000 豪華真實符文：塔拉哈特（Grand）
+// 白板初始化（Lv1 + symbolInc + 主属性）在 NativeInventoryService.AddItems 里
+// 按 282 createSymbolEquipment 口径落库，这里只管「缺哪件发哪件」。
+// haveItemWithId(id, true) 连装备栏（含已穿上）一起查，升级/合并过的也算已拥有，
+// 不会重复发放。1712000 通用祕法符文是 282 不允许成长的特殊项，不发。
+// 等级门槛：徽章属五转（200 级）后的成长内容，低于 200 级只弹提示、不发放。
+// ============================================================
+function claimSymbols() {
+    if (cm.getLevel() < 200) {
+        cm.sendOk("200级以后才可以领取");
+        cm.dispose();
+        return;
+    }
+    var 符文 = [
+        [1712001, "祕法符文：消逝的旅途"],
+        [1713000, "真實符文：賽爾尼溫"],
+        [1714000, "豪華真實符文：塔拉哈特"]
+    ];
+    var 待发 = "";
+    var 已有 = "";
+    for (var n = 0; n < 符文.length; n++) {
+        if (cm.haveItemWithId(符文[n][0], true)) {
+            已有 += (已有 == "" ? "" : "、") + 符文[n][1];
+        } else {
+            if (cm.gainItem(符文[n][0], 1) == null) {
+                cm.sendOk("背包空间不足，请先腾出装备栏。");
+                cm.dispose();
+                return;
+            }
+            待发 += (待发 == "" ? "" : "、") + 符文[n][1];
+        }
+    }
+    if (待发 == "") {
+        cm.sendOk("你已拥有全部入门符文徽章（" + 已有 + "）。\r\n穿上后可在「符文徽章」窗口合并与升级。");
+        cm.dispose();
+        return;
+    }
+    cm.sendOk("已发放：" + 待发 + "\r\n（Lv1 白板，与 282 任务发放口径一致）\r\n\r\n双击穿上后，打开「符文徽章」窗口即可合并升级。");
+    cm.dispose();
 }
 
 function 拍卖系统() {

@@ -187,13 +187,16 @@ public sealed class DbStore
 
     void Parse(string sql)
     {
-        // 去掉行注释，按 ; 切语句
+        // 去掉注释，按 ; 切语句。
+        // 整行注释直接跳过；行尾注释必须剥掉，否则 `exp BIGINT NOT NULL DEFAULT 0,   -- 说明`
+        // 会被 SplitTop 当成两个列定义，多出一个名叫 "--" 的假列（WriteRow 还会写出重复 JSON 键，
+        // 严重时整段 tables 无法回读——2026-11-04 character_growth 就这么把 hyperstats 之后全丢了）。
         var sb = new StringBuilder();
         foreach (var line in sql.Replace("\r\n", "\n").Split('\n'))
         {
             var t = line.Trim();
             if (t.StartsWith("--")) continue;
-            sb.Append(line).Append('\n');
+            sb.Append(StripTrailingComment(line)).Append('\n');
         }
         foreach (var stmt in sb.ToString().Split(';'))
         {
@@ -202,6 +205,20 @@ public sealed class DbStore
             if (s.StartsWith("CREATE TABLE", StringComparison.OrdinalIgnoreCase)) ParseCreate(s);
             else if (s.StartsWith("INSERT INTO", StringComparison.OrdinalIgnoreCase)) ParseInsert(s);
         }
+    }
+
+    // 剥掉行尾 `-- …` 注释（单引号字符串内的 -- 不动，例如 DEFAULT '--' 这类字面量）。
+    static string StripTrailingComment(string line)
+    {
+        bool quote = false;
+        for (int i = 0; i < line.Length; i++)
+        {
+            char c = line[i];
+            if (quote) { if (c == '\'') quote = false; continue; }
+            if (c == '\'') { quote = true; continue; }
+            if (c == '-' && i + 1 < line.Length && line[i + 1] == '-') return line.Substring(0, i);
+        }
+        return line;
     }
 
     void ParseCreate(string stmt)

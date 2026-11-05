@@ -12,8 +12,8 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 开始分析或修改原端相关功能前，先查下表，只读取当前模块的 reference。已确定结论直接复用；只对记录缺口、矛盾或不同二进制版本继续逆向。不要因为临时反编译文件不在了就从头分析。
 
 | 当前问题 | 读取记录 |
-| 282星级等级分档A08930、206个特殊ID覆盖与可复现导出 | [282星力](../../../../docs/tms282-skill/08-star-force.md) |
-| 拍卖角色成长282星力/主附潜能/痕迹入口、90%/70%赋予卷与待选结果恢复 | [强化入口](../../../../docs/tms282-skill/16-enhancement-entry.md) |
+| 282星级等级分档A08930、206个特殊ID覆盖、可复现导出及用户指定新手武器每星攻击保底+1 | [282星力](../../../../docs/tms282-skill/08-star-force.md) |
+| 星火/灵魂材料框与高亮路径、双击入口、黑星火journal恢复及未完整迁移边界；拍卖角色成长282星力/主附潜能/痕迹入口、90%/70%赋予卷与待选结果恢复、缺属性行修复/防破坏按钮/星力数值区 | [强化入口](../../../../docs/tms282-skill/16-enhancement-entry.md) |
 | 现金装备显示、时装武器双击卸下/装备窗单击拾取、背包双击、戒指气泡及名牌 | [装备窗交互与戒指](references/ring-nameplate-equip-drag-2026-11-03.md) |
 | 仓库/商店Tab3、确认/Notice布局、脚本API、滚动空轨与MTS菜单入口纠正及未完边界 | [菜单反馈补核](references/menu-feedback-2026-11-02.md) |
 | 潮流前线38组骑宠/鞍具、现金-118/-119覆盖及普通基础装备前置（原EXE已核实）、已学骑兽入口、原装备格、1902033绳索delay UOL、商城药包首屏及拖药松手绑定 | [骑宠与药包反馈](references/mount-pet-feedback-2026-11-02.md) |
@@ -28,7 +28,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 建号中文名字、长度规则、重名与错误提示 | [角色命名](references/character-name.md) |
 | 登录包序、新账号声明→性别、Notice/TOS/VScr6 素材与坐标、单张滑块与鼠标捕获纠正 | [登录链路与弹窗](references/login-flow.md) |
 | 组队头顶血条代码绘制52×10/脚底(-26,-89)、纠正PartyHP窗口混淆 | [六项反馈及血条纠正](references/six-fixes-meso-drop-party-hp-2026-11-02.md) |
-| SoloMapling 假人生成、调度、地图索引、迁移缺口、地面掉落权威服务、野外伴侣全图分工/Boss优先/巡逻聊天/拾取暂避与切图跟随（2026-11-03） | [假人系统](references/solomapling.md) |
+| SoloMapling 假人生成、调度、地图索引、迁移缺口、地面掉落权威服务、野外伴侣全图分工/Boss优先/巡逻聊天/拾取暂避与切图跟随（2026-11-03）、雇佣完整摊位shop/backgrnd前后层级、店招脚点偏移/原Canvas尺寸与中文名牌、购买窗库存数字/售罄遮罩/访客与聊天（2026-11-04） | [假人系统](references/solomapling.md) |
 | 文件版本、地址、字符串池、复现工具（递归下降 `--fn` / 字段映射 `--fields` / 任意 DLL 的 `pe_module.py`）、**先翻 Compat DLL 拿 exe 入口**、反编译陷阱（线性 sweep 会失步） | [二进制与工具](references/binary-and-tools.md) |
 | ijl15/2ijl15 职责、手机用版本差异、分辨率补丁与 Android 适配价值 | [DLL 与手机适配](references/ijl15-mobile-adaptation.md) |
 | 自定义DLL身份、V/VI视频表版本差异、MCV双流/Android解码、Boss标记选片、数字首位/后续位与Miss、伤害皮肤、V/VI回放/雷枪12按、追击/雷枪numeric动作、天气粒子/地面/声音、skillback合同与迁移边界 | [自定义功能 DLL](references/custom-dll-systems.md) |
@@ -62,7 +62,7 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 | 皮奥任务箱子、Reactor原地图生成、普攻残影选箱、四击状态机、原JS/SQL掉落、任务物品拾取与刷新 | [任务箱子与Reactor](references/reactor-boxes.md) |
 | showIntro/goAdventure/goLith 世界坐标过场、Shape2D位移、原始声音、事件宿主生命周期、startInstance 重载/实例回收与怪物公园六图闭环 | [地图过场与事件实例](references/map-intro-and-events.md) |
 | 右上角辅助技能状态栏、32px 布局、剩余时间遮罩与迁移缺口 | [临时状态栏](references/temporary-stat-view.md) |
-| 数量弹窗白字/2px正文边距、compact分支纠正（9A8716：右下Basic确定+取消，非左下结束对话）、鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义、背包道具丢到地上（ITEM_MOVE action=0）、**背包格到格移动/合并/互换（ITEM_MOVE action>0，0x4F3057 同页+非同格才发包，Inventory.move 三分支）**、**丢弃/出售数量弹窗的移动端软键盘桥（NativeEditKeyboard：同框不重开/只在 Done·Canceled 收/每事件先读快照，三处输入框统一接入）** | [UI 拖动语义](references/ui-drag-and-drop.md) |
+| 数量弹窗白字/2px正文边距、compact分支纠正（9A8716：右下Basic确定+取消，非左下结束对话）、**2026-11-05 星火/卷轴/现金装备双击丢来源格导致无法放回及换位的修正**、鼠标消息分派、键位窗/技能窗/组合栏的 DragStart 与放下语义、背包道具丢到地上（ITEM_MOVE action=0）、**背包格到格移动/合并/互换（ITEM_MOVE action>0，0x4F3057 同页+非同格才发包，Inventory.move 三分支）**、**丢弃/出售数量弹窗的移动端软键盘桥（NativeEditKeyboard：同框不重开/只在 Done·Canceled 收/每事件先读快照，三处输入框统一接入）** | [UI 拖动语义](references/ui-drag-and-drop.md) |
 | 事件倒计时 CLOCK 面板：258×58 底图/小时底图、四数字槽 86/112/179/205、y=12、前导零与 3600 秒切换 | [事件倒计时](references/event-timer-clock.md) |
 | 废都103000800长绳Waypoint死点/24条跨层追怪与攻击回调验证/近身攻击不被收券抢占、假人导航/视图统一BotMapId、战斗/掉落保留负Scope（两次编号方案冲突纠正）/六人资格上限缺键/跨层假人追怪/券与通行证掉落补核、废都进图卡顿（导航后台构建/分帧生成/829ms离线基线）、组队任务招募/阶段/领奖 NPC：`em.getEligibleParty` 未绑定导致的「对话脚本出错」、`party.toArray`、`em.getMonster`、`map.getPlayers`/`spawnAllMonsterIdFromMapSpawnList`、组队搜索开关与副本公告、假人陪跑的队伍编号 vs 角色 id 混用 | [组队任务接口](references/party-quest.md) |
 | Say.img无JS问答ask/stop选错分支、NPC Java导入/日期/global this/命令元数据/21点入口与正式API审计口径、三处源脚本授权覆盖、ijl15对话正文480高度补丁、NPC 对话窗口精确布局/字体/按钮、VScr4、`#L` 图文、`#y/u`任务引用、`#q/s`技能名/图、`#@`NPC名、`#W`原图与atoi参数审计、sendPrev 上一页+确定/对话键任务菜单与接受页推进、灯泡 autoStart/日期筛选、NPC进行中QuestIcon1/stop对白与完成条件击杀计数、截图问候入口/交付奖励10000→4→1、fieldType82青苹果外观、建号路线与远程任务脚本 | [NPC 对话窗口](references/npc-dialog.md) |
@@ -100,3 +100,5 @@ description: 复用并维护 BeiDou.exe 及配套 DLL 的已核实功能模块�
 不确定内容放在明确标记的“待核实”部分，保留下一处应追踪的函数或字段，不把它写成实现要求。发现记录不足时只补查不足部分；AGENTS 要求的用户决策仍照常执行，已有授权不重复询问。
 
 现有 `tools/inspect_beidou_client.py` 作为复现入口，不在 skill 内复制一套分析器。旧文档 `docs/original-ui-input-analysis.md` 已改为本 skill 的索引；新知识只维护一份正文。
+
+- 全局 Esc 面板优先补齐（2026-11-05）：见 `references/input-and-physics.md` 末节，47种面板统一关闭栈、V/HEXA子弹窗分层、NPC脚本面板优先；属于用户指定宿主行为。

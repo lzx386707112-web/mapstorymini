@@ -1383,12 +1383,15 @@ public class PlayerCtrl : MonoBehaviour
     {
         if (hp <= 0f || Time.unscaledTime < invulnUntil) return;
         RefreshAttributes();
+        // 特殊核心的受击型计数（忍耐 / 忍耐II / 耐性I / 反抗I / 克服的经验I）。
+        // 放在无敌帧判定之后：无敌期间的接触不该算「被打到」。
+        NativeSpecialCore.OnHit(this);
         // Physical contact/attacks first roll avoidance; a MISS never applies knockback.
         if(!magic && attacker!=null && dmg>0 && CombatRules.PhysicalMiss(
             Mathf.FloorToInt(Attributes.avoidability+Attributes.dex*.25f+Attributes.luk*.5f),
             NativeCombatData.Int(attacker.CombatStats,"acc"),Attributes.level,attackerLevel,Profile.JobId,Random.Range(0,10000000))) dmg=0;
         dmg = CombatRules.Incoming(dmg, Attributes, magic, attackerLevel, Random.value,
-            GetComponent<NativeBuffs>()?.Value("INVINCIBLE") ?? 0).Amount;
+            Mathf.Max(GetComponent<NativeBuffs>()?.Value("INVINCIBLE") ?? 0, NativeSpecialCore.Invincible ? 100 : 0)).Amount;
         if (dmg <= 0)
         {
             // Native -1500 timer approaches zero by +30 each tick; it blocks
@@ -1619,7 +1622,38 @@ public class PlayerCtrl : MonoBehaviour
             if (hpBuff!=0) Attributes.maxHp=(int)System.Math.Max(50,System.Math.Min(50000,Attributes.maxHp+(long)Attributes.maxHp*hpBuff/100));
             if (mpBuff!=0) Attributes.maxMp=(int)System.Math.Max(5,System.Math.Min(50000,Attributes.maxMp+(long)Attributes.maxMp*mpBuff/100));
         }
+        ApplySpecialCore();
     }
+
+    // 特殊核心（V 矩阵 type==2）的增益走套装同一条 setItemBonus 通道，
+    // 这样 CombatRules / AdminSetItem 不用为它单开一条分支。
+    // setItemBonus 由 WithWeapon 带过来、可能和 Profile 共享引用，先拷贝再改，
+    // 否则一次上报会把加成本地写进存档用的那份字典。
+    void ApplySpecialCore()
+    {
+        int damage = NativeSpecialCore.DamagePercent;
+        int boss = NativeSpecialCore.BossDamagePercent;
+        int ignore = NativeSpecialCore.IgnoreDefensePercent;
+        int crit = NativeSpecialCore.CriticalPercent;
+        if (damage == 0 && boss == 0 && ignore == 0 && crit == 0) return;
+        var bonus = Attributes.setItemBonus == null
+            ? new System.Collections.Generic.Dictionary<string, int>()
+            : new System.Collections.Generic.Dictionary<string, int>(Attributes.setItemBonus);
+        if (damage != 0) bonus["Damage"] = (bonus.TryGetValue("Damage", out int d) ? d : 0) + damage;
+        if (boss != 0) bonus["BossDamage"] = (bonus.TryGetValue("BossDamage", out int b) ? b : 0) + boss;
+        if (ignore != 0) bonus["IgnoreDefense"] = (bonus.TryGetValue("IgnoreDefense", out int i) ? i : 0) + ignore;
+        Attributes.setItemBonus = bonus;
+        if (crit > 0) Attributes.criticalChance = Mathf.Min(1f, Attributes.criticalChance + crit / 100f);
+    }
+    // 能力值窗与攻击共用最终结算，包含临时增益和特殊核心，不写回基础AP属性。
+    public CharacterAttributes ReadCombatAttributes(out int physicalAttack, out int magicalAttack)
+    {
+        RefreshAttributes();
+        physicalAttack = weaponAttack;
+        magicalAttack = magicAttack;
+        return Attributes;
+    }
+
     public void RefreshBuffAttributes()
     {
         float previousHpMax=hpMax,previousMpMax=mpMax;

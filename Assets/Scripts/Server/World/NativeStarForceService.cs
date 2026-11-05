@@ -48,7 +48,12 @@ public static class NativeStarForceService
             // Zero's paired weapon and restoration must be implemented as a single operation, never half-updated.
             if (category == 156 || category == 157) return Reject("零职业双武器强化链尚未接入");
             var equipment = InventoryDao.EquipmentOf(db, request.inventoryItemId);
-            if (equipment == null) return Reject("装备实例数据缺失");
+            if (equipment == null)
+            {
+                equipment = InventoryDao.EnsureEquipment(db, request.inventoryItemId, catalog);
+                if (equipment == null) return Reject("装备模板缺失，无法恢复装备实例");
+                db.Save();
+            }
             if(NativePotentialService.IsReserved(db,request.inventoryItemId))return Reject("请先选择方块候选结果");
             if (request.sacrificeInventoryItemId > 0) return Restore(db,request,item,equipment,rules,catalog);
             if (DbStore.Int(equipment,"starForceVestige") != 0) return Reject("装备痕迹需要先复原");

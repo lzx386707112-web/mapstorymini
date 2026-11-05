@@ -7,6 +7,16 @@ static class StarForceChecks
     sealed class Draw : Random { readonly int value; public Draw(int value) {this.value=value;} public override int Next(int max) => value; }
     public static void Run(Action<bool,string> check)
     {
+        var starterStats = new System.Collections.Generic.Dictionary<string,int>{{"watk",17},{"matk",0}};
+        var starter = StarForceStats.Calculate(1302000,0,5,false,starterStats);
+        check(starter["watk"]==5 && starter["matk"]==0 && starterStats["watk"]==17,
+            "新手武器满五星累计攻击+5，不增加零魔法力且不修改基础值");
+        var staff = StarForceStats.Calculate(1372005,0,5,false,
+            new System.Collections.Generic.Dictionary<string,int>{{"watk",13},{"matk",23}});
+        check(staff["watk"]==5 && staff["matk"]==5,"低攻击法杖的非零物攻及魔攻每星至少+1");
+        var normal = StarForceStats.Calculate(1302000,150,15,false,
+            new System.Collections.Generic.Dictionary<string,int>{{"watk",100}});
+        check(normal["watk"]==30,"原本每星至少+1的武器保留原2%截断规则");
         string path=Path.Combine(Path.GetTempPath(),"mapledash_sf_"+Guid.NewGuid().ToString("N")+".json");
         var db=DbStore.Create(path);
         var rules=new StarForceRules(File.ReadAllText("Assets/Resources/Enhancement/StarForce.json"));
@@ -76,6 +86,7 @@ static class StarForceChecks
             check(EnhancementEquipmentReset.Apply(reset)==0 && InventoryDao.EquipmentOf(reset,fresh)!=null,"完成标记重启后生效，不删除新装备");
         }
         finally {if(File.Exists(path))File.Delete(path);if(File.Exists(path+".before-equipment-282-reset.bak"))File.Delete(path+".before-equipment-282-reset.bak");}
+        CheckMissingInstances(check);
         CheckLevelCap(check);
         CheckEquipmentTypes(check);
         CheckTransportMirror(check);
@@ -136,6 +147,42 @@ static class StarForceChecks
                     check(response.ok&&response.cap>0,"出厂防具模板可强化："+itemId);
                 }
             }
+        }
+        finally {if(File.Exists(path))File.Delete(path);}
+    }
+    static void CheckMissingInstances(Action<bool,string> check)
+    {
+        string path=Path.Combine(Path.GetTempPath(),"mapledash_sf_missing_"+Guid.NewGuid().ToString("N")+".json");
+        try
+        {
+            var db=DbStore.Create(path);
+            int cid=(int)db.Table("characters").Insert(new DbRow {["name"]="SfMissing",["meso"]=1000000000L,["hp"]=100L,["equipslots"]=24L});
+            var rules=new StarForceRules(File.ReadAllText("Assets/Resources/Enhancement/StarForce.json"));
+            var catalog=new BotItemCatalog("{\"names\":{},\"items\":{\"1302000\":{\"info\":{\"reqLevel\":150,\"tuc\":7,\"incSTR\":10,\"incPAD\":100}}}}");
+            long id=InventoryDao.InsertItem(db,cid,1302000,1,1,1);
+            var preview=NativeStarForceService.Handle(db,new StarForceRequest {characterId=cid,inventoryItemId=id},rules,catalog);
+            var eq=InventoryDao.EquipmentOf(db,id);
+            check(preview.ok && eq!=null && DbStore.Int(eq,"watk")==100 && DbStore.Int(eq,"upgradeslots")==7 &&
+                CharactersDao.FindById(db,cid).meso==1000000000L,
+                "缺属性行装备按模板补齐原ID实例，预览不扣款");
+            var reopened=DbStore.Open(path);
+            check(DbStore.Int(InventoryDao.EquipmentOf(reopened,id),"watk")==100,
+                "实例修复独立持久化，不需要先强化成功");
+            var success=NativeStarForceService.Handle(db,new StarForceRequest {characterId=cid,inventoryItemId=id,commit=true},rules,catalog,new Draw(0));
+            check(success.ok && success.result.stars==1 && DbStore.Int(eq,"watk")==100 && success.derivedStats["watk"]>0,
+                "补齐实例可直接强化，星力加成不烘焙基础属性");
+            eq["watk"]=777L;eq["upgradeslots"]=2L;
+            InventoryDao.EnsureEquipment(db,id,catalog);
+            CharService.Load(db,cid);
+            check(DbStore.Int(eq,"watk")==777 && DbStore.Int(eq,"upgradeslots")==2 && DbStore.Int(eq,"starLevel")==1,
+                "已有自定义属性、卷位、星数不被读档或修复覆盖");
+            long legacy=InventoryDao.InsertItem(db,cid,1002000,1,2,1);
+            var loaded=CharService.Load(db,cid);
+            check(InventoryDao.EquipmentOf(db,legacy)!=null && loaded.inventory.Find(x=>x.itemRowId==legacy)?.equipmentData!=null,
+                "读档补齐旧新手和发放装备的属性行并同步背包");
+            long added=CharService.AddItem(db,cid,1002000,1,3,1);
+            check(InventoryDao.EquipmentOf(db,added)!=null,
+                "通用新增装备即创建实例，不再依赖可选equipStats标记");
         }
         finally {if(File.Exists(path))File.Delete(path);}
     }

@@ -31,6 +31,8 @@ public static class NativePotentialService
     public static bool BlocksTransfer(DbStore db,InventoryEntry item)
     {
         if(item==null)return false;
+        var held=db.Table("inventoryitems").Find(x=>DbStore.Long(x,"inventoryitemid")==item.itemRowId);
+        if(held!=null && NativeSoulWeaponWz2Service.IsBound(db,DbStore.Int(held,"characterid"),item.itemRowId))return true;
         var row=InventoryDao.EquipmentOf(db,item.itemRowId);
         if(row!=null&&(DbStore.Int(row,"starForceVestige")!=0||!string.IsNullOrEmpty(DbStore.Str(row,"potentialChoice"))))return true;
         var data=item.equipmentData;

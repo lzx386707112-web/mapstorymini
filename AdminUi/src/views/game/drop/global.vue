@@ -46,12 +46,14 @@
         :bordered="{ cell: true }"
       >
         <template #columns>
-          <a-table-column
-            title="ID"
-            data-index="id"
-            :width="80"
-            align="center"
-          />
+          <a-table-column title="ID" :width="80" align="center">
+            <template #cell="{ record }">
+              <!-- 有覆盖行时显示 drop_data_global 行 id；纯基线行没有行 id，显示「基线」 -->
+              <span v-if="record.dbId > 0">{{ record.dbId }}</span>
+              <a-tag v-else-if="record.id !== 0" size="small">基线</a-tag>
+              <span v-else>—</span>
+            </template>
+          </a-table-column>
           <a-table-column title="大区ID" :width="100" align="center">
             <template #cell="{ record }">
               <a-input-number

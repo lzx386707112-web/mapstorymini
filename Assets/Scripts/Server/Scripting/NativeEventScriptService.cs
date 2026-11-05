@@ -27,6 +27,7 @@ public sealed class NativeEventScriptService
     // showWrongEffect（答错特效）。
     public Action<Instance,int> WrongEffect;
     public Action<JsValue> AwardClearQuestPoints;
+    public Action<Instance> Completed;
     public Action<Instance,int,JsValue,JsValue> SpawnNpc;
     // EventInstanceManager.showClearEffect：源端是「clear 特效 + Party1/Clear 音效」，
     // 有 gate 时再加 environmentChange。移植端由客户端宿主接成可见的完成提示。
@@ -381,6 +382,8 @@ public sealed class NativeEventScriptService
         // monsterKilled 时用它记 BOSS 战绩，dispose 时替它摘频道表。
         public Expedition Exped {get;internal set;}
         public int PlayerCount=>players.Count;
+        public int MaximumPlayerCount {get;private set;}
+        public string EventName=>manager.Name;
         // 原生宿主（SeedTowerCompat 等）读实例属性用：源端 eim.getProperty 的直读版。
         public string Property(string key) => properties.TryGetValue(key,out var value) ? value : null;
         // playerGrid 的直读版（eim.gridCheck 的 C# 侧）。组队任务陪跑的假人用它读出
@@ -686,8 +689,9 @@ public sealed class NativeEventScriptService
         }
         public void SetCleared()
         {
-            if(Disposed)return;
+            if(Disposed || Cleared)return;
             Cleared=true;
+            service.Completed?.Invoke(this);
             // EventInstanceManager.setEventCleared awards quest points before releasing
             // the lobby. Disposing the instance here would cancel finishVoyage/end.
             foreach(var player in new List<JsValue>(players.Values))
@@ -753,7 +757,7 @@ public sealed class NativeEventScriptService
         {
             if(Disposed || player is JsNull || player is JsUndefined)return;
             int id=manager.Id(player);if(players.ContainsKey(id))return;
-            players.Add(id,player);service.membership[id]=this;
+            players.Add(id,player);MaximumPlayerCount=Math.Max(MaximumPlayerCount,players.Count);service.membership[id]=this;
             if(entry)Invoke("playerEntry",Host,player);
         }
         public void Unregister(JsValue player)

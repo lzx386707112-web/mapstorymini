@@ -225,7 +225,14 @@ public static class NativeInventoryService {
             // 源端 Equip 实例自带 WZ 的 tuc（可升级次数）。本工程以前建行只写 0，
             // 结果新到手的装备在提示框里没有「可升级次数」，砸卷时也像是「次数已用完」。
             // 建的这一刻就按道具数据补种，之后砸卷/显示都以实例值为准。
-            if(type==1) InventoryDao.InsertEquipment(db,id,upgradeslots:Server.Bot.BotItemCatalog.Int(Server.Bot.BotItemCatalog.Shared.Info(itemId),"tuc"));
+            if(type==1) {
+                InventoryDao.InsertEquipment(db,id,upgradeslots:Server.Bot.BotItemCatalog.Int(Server.Bot.BotItemCatalog.Shared.Info(itemId),"tuc"));
+                // 282 giveSymbol/createSymbolEquipment 口径：符文徽章发下来就是 Lv1 白板
+                //（symbolInc=初始值 + 主属性 300/500）。不做的话面板 ARC/AUT 与主属性
+                // 在首次打开徽章窗（NativeSymbolService.Normalize 才触发）前永远是 0。
+                if (SymbolCatalog.IsSymbol(itemId))
+                    NativeSymbolService.Normalize(InventoryDao.EquipmentOf(db,id), itemId, c.job);
+            }
             items.Find(x=>DbStore.Long(x,"inventoryitemid")==id)["expiration"]=expiration;
             remaining-=quantity;
         }
@@ -266,6 +273,10 @@ public static class NativeInventoryService {
     public static int EquipmentSlotOf(int itemId)
     {
         var info = Server.Bot.BotItemCatalog.Shared.Info(itemId);
+        // 282 徽章（祕法符文 1712 / 真實符文 1713 / 豪華真實符文 1714）在模板里没有 islot——
+        // 源端把它们单独收在 Char 的 arcane/sacred 集合里，靠 EquipSymbol 自己的槽段区分。
+        // 这里先把它们接到独立负槽段（-201..-222），否则穿戴会走到「这不是可装备的物品」。
+        if (SymbolCatalog.IsSymbol(itemId)) return SymbolCatalog.SlotOf(itemId);
         // ItemInformationProvider.canWearEquipment -> constants.inventory.EquipSlot:
         // the original IMG islot, including Wp/Tm/Sd absent from the old ID-only mapping.
         string islot = info != null && info.TryGetValue("islot", out var value) ? value as string : null;
@@ -306,6 +317,9 @@ public static class NativeInventoryService {
             if (entry.itemId == r.itemId && InventoryDao.IsBagPosition(entry.position) &&
                 (r.sourcePosition == 0 || entry.position == r.sourcePosition)) { source = entry; break; }
         if (source == null) return new InventoryChangeResponse { ok = false, error = "背包里没有这件物品" };
+
+        if(NativeSoulWeaponWz2Service.IsBound(db,characterId,source.itemRowId))
+            return new InventoryChangeResponse {ok=false,error="请先停用灵魂武器再丢弃"};
 
         // 源端客户端拦现金道具（EXE 0x5d4a2b 读 info/cash → 0x372「这种道具不能扔掉」）；服务端再兜一层。
         var itemInfo = Server.Bot.BotItemCatalog.Shared.Info(r.itemId);

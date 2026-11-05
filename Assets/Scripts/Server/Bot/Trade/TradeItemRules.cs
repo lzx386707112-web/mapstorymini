@@ -29,6 +29,11 @@ namespace Server.Bot.Trade
         public int SlotMax(int id, BotActor actor)
         {
             var info = catalog.Info(id);
+            // 282 新增道具（V 核心宝石 2439xxx/2438411、索尔艾尔达 2638879、碎片 4009548…）
+            // 不在 GMS083 的 Bot/Items.json 里，info 为 null。以前这里返回 0，
+            // 于是 NativeInventoryService.AddItems 的「容量预检」直接抛
+            // InvalidOperationException（道具永远发不出去）。按 WZ 默认口径兜底：装备 1、其它 100。
+            if (info == null) return id / 1000000 == 1 ? 1 : 100;
             int value = 0;
             if (info != null)
             {

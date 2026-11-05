@@ -135,6 +135,13 @@ public sealed class NativeBuffs : MonoBehaviour
         foreach (int previous in removed) Removed?.Invoke(previous);
         GetComponent<PlayerCtrl>()?.RefreshBuffAttributes();
     }
+    public void ApplySoulWeapon(int id,int level,int durationMs)
+    {
+        double now=Now;
+        var effect=new Effect {Id=id,Level=level,DurationMs=durationMs,Started=now,Until=now+durationMs/1000.0};
+        // Actual percentages are settled once, in NativeGrowthStats.
+        effect.Stats["SOUL_WEAPON_ACTIVE"]=1;Register(effect);
+    }
     public void ApplyItem(int itemId,Dictionary<string,int> stats,int durationMs,double now)
     {
         var effect=new Effect { Id=-itemId,DurationMs=durationMs,Started=now,Until=now+durationMs/1000.0,

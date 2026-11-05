@@ -642,3 +642,127 @@ BotTasks改为复用待执行快照/PendingCount直接计数，保留到期排�
 验证结果以本次工作最终报告为准；未构建APK或验收异常用户手机，仍需新包现场日志验证不可见根因及卡顿改善。
 
 本轮实际验证：完整 server-check 1664通过/0失败（含冷启动仅登记、不同步创建移动执行器的新增回归）；Unity compile-check 0错误/0警告；git diff --check通过。日志 `/tmp/mxd-bot-view-check.log`、`/tmp/mxd-bot-view-compile.log`。未进行APK构建或手机验收。
+
+
+### 2026-11-04 雇佣店招不可见与英文名后缀修复（纠正10-30布局结论）
+
+二进制仍为 BeiDou.exe SHA256
+`1b91cf5bd0f88eb2324bfdec39a7329eab970e863cbb253ee209b2fc6df134b2`，ImageBase `0x400000`。
+资源 `MapleDashResources/Data/Item/Cash/0503.img` SHA256
+`4ea26550bdecab733937478c0685af94a2d36ea5e6f9b12b1e7dfa1500a3760b`。
+
+**覆盖上文10-30“挂在stand帧80px头顶上方”的实现结论**：此前未核实独立气泡创建链，
+将全Canvas再向上移86px，且假定全部皮肤166×166，造成招牌错位/可能移出视野。
+`0x97A3FB` 加载相同素材不能作为独立雇佣商人的布局依据。
+
+确定调用链与状态：
+
+- 源端 `PacketCreator.spawnHiredMerchantBox`：ownerId、permit、x/y、foothold、ownerName
+  之后为 type=5、objectId、description、permit%100、1、4。
+- `0x510E83` 处理生成：`0x510F0B -> 0x50D56C` 建店员/脚下名牌；
+  `0x510F14 -> 0x50D897` 继续解码店铺气泡。
+- `0x50D897` 将type存对象+90；非零才读objectId/description/skin/count/max，
+  `0x50D944 -> 0x48BBCA`，参数type5，垂直偏移参数arg+10=0，附着店员世界向量；type0删除气泡。
+- `0x48BD83..0x48C0DB` 的type5分支：读 `Item/Cash/0503.img`，字符串3456
+  `050300%02d/skin`（格式参数permit%100），再取3458 `signboard`。
+- `0x48C49C/0x48C4B6` 读取Canvas origin，供板内内容定位。
+  `0x48DF57..0x48DFA5` 定x=-width/2（整数截断），y=-height+arg10+7；
+  `0x48E8AB..0x48E8CE` 再减arg10和5，因此此链最终相对脚点为
+  **(-width/2, -height+2)**，不再减店员高度，也不在这里减Canvas origin。
+- 店名：`0x48DCC3` 取font1，`0x98CB81`跳表第1项为`0x98A7DF`，
+  `0x98A83A..0x98A86D` 明确12px/FF000000（黑字）。
+  `0x48DD1E` 行宽100，`0x48DDDD..0x48DDFC` 首行origin+(8,8)，
+  `0x48DEF8..0x48DF10` 次行origin+(8,22)。旧白字描边/居中140×64无依据，删除。
+
+当前IMG逐款尺寸与origin（只读GMS密钥解析）：
+
+| permit尾号 | signboard尺寸 | origin |
+|---|---|---|
+| 00/01/06 | 166×166 | (14,17) |
+| 02/03 | 137×150 | (19,2) |
+| 04/05 | 160×161 | (28,13) |
+| 08/09 | 143×182 | (6,34) |
+| 10/11 | 151×191 | (11,13) |
+| 12 | 193×184 | (28,8) |
+
+迁移：`NativeMarketField.OnGUI` 按实际Canvas大小计算店招位置，板内使用原origin、
+两行100px宽/14px行距黑字；双击雇佣店招复用`NativeMarketWindow.Visit(ownerId)`。
+用户允许翻译或删除英文后缀，选择将`'s Hired Merchant`显示为`的雇佣商店`；
+原黑底清角名牌几何不变。这是用户授权中文本地化，不是原EXE字符串改变。
+
+复现：`python3 tools/inspect_beidou_client.py <BeiDou.exe> --fn <上述函数地址>`；
+`--strings <临时json>`查3456/3458/1414。WZ用源端`tool/wz-python`的
+`WzImage.from_file(..., key=WzKey.for_region('GMS'))`读取skin/signboard/Canvas origin。
+验证边界：12款原店招逐款解码、尺寸/锚点和两行文字范围检查通过；
+`dotnet build tools/unity-compile-check/Check.csproj --no-restore` 0错误/0警告；
+`git diff --check`通过。
+未进行Android实机画面验收；miniroom锁/访客计数叠层、店员say/effect动画及
+514人物店铺的专属PSSkin链不在此次修复完成声明内。
+
+
+### 2026-11-04 假人商店购买窗：数量、中文价格、访客、聊天与售罄
+
+原端身份沿用上节BeiDou.exe SHA256。此次复核函数：
+`--fn 0x6FB99D`、`--fn 0x6FA4B2`、`--fn 0x6FC3FD`。
+
+- `0x6FBE6E..0x6FBEE2`：207/233可充能、2/3/4类堆叠道具以及两个特殊分类
+  会进入数量绘制；`0x6FBEFE..0x6FBF1D` 明确数量=商品记录+4（单捆数量）×+0（剩余捆数），
+  传`0x988345`，锚点(8,行顶+23)。项目普通堆叠/可充能改用原
+  `UI/Basic.img/ItemNo/{digit}`画总库存，替代普通GUI字体的捆数。
+  两个特殊分类`0x4863D5/0x486845`尚未展开，不声称全物品例外覆盖。
+- `0x6FC044/0x6FC07B`格式串415/416为`%d for %s mesos.`和`%s mesos.`。
+  用户要求中文，移植改为`N个 / P 金币`和`P 金币`，保留单捆单价语义。
+- **纠正此前soldout用法**：`0x6FBE2E`记录+0（剩余捆数）为0时，
+  `0x6FBE46..0x6FBE58`在(7,行顶)填199×35、ARGB=0x80FFFFFF。
+  NativeMarketWindow删除soldout图片盖章，改照搬此原代码白色遮罩；购买键同时检查剩余捆数。
+- 访客锚点`0x6FC3FD`：slot0为店员(53,127)，其余slot为((slot+2)*95,127)。
+  源Java HiredMerchant访客槽getVisitorSlot从0起，聊天包slot+1；本项目访客0/1/2
+  对应窗slot1/2/3，即(285/380/475,127)。前端复用既有WzCharacter纸娃娃合成与pivot绘制。
+  MarketShopService新记稳定visitorSlots，离开清槽，不压缩其余座位；快照返回访客id/name/character/slot。
+- 原输入框`0x6FA648..0x6FA65F`为(238,323),231×15。
+  `0x6FA9E4`字符串2618=`UI/UIWindow.img/PersonalShop/BtEnter`；
+  `0x6FAA4B..0x6FAA5B`按钮(482,321)。使用原按钮图，支持Enter和移动输入法Done，
+  复用NativeEditKeyboard每GUI事件先Sync、同框不重开、仅Done/Canceled收键盘。
+- 源`PlayerInteractionHandler` CHAT分支按trade/playerShop/minigame/hiredMerchant分派；
+  `HiredMerchant.sendMessage`拼`名字 : 文本`、记录messages并广播给访客。
+  新增MarketOperation.Chat，仅当前真实访问会话可发；快照返回独立chat列表，离图/离店拒绝。
+  127字符上限复用项目通用聊天限制；不声称本次已核实原控件的最终字符上限。
+
+迁移/验证边界：右侧聊天记录当前在原底图白色内容区显示最近11行（14px步进），
+尚未复核原聊天记录滚动、完整配色/自动换行及假人店员的聊天应答；不为它新增虚构AI。
+数量/售罄/原按钮/访客锚点有上述原端依据；中文价格是用户授权本地化。
+新增服务端回归覆盖访客首座、离店不压缩、聊天回显、快照隔离、超长拒绝及离店拒绝。
+验证：完整server-check **2207通过/0失败**（`/tmp/mxd-market-feedback-server.log`）；
+Unity全脚本编译0错误/0警告；`git diff --check`通过。
+售罄遮罩按原调用顺序在图标后、数量/名称/价格前绘制，避免额外淡化文字。
+Android实机输入与画面仍待验收。
+
+
+### 2026-11-04 地图完整摊位：补齐 shop / backgrnd
+
+用户明确缺失的是地图店员周围的完整摊位，并非购买窗口。二进制与0503.img身份沿用上节SHA256。
+此前只迁移signboard，故只有招牌；不能以“店招已显示”代表完整皮肤已迁移。
+
+已核实 `0x48BBCA(type5)`：`0x48D11F`字符串1676=shop，
+`0x48D1A0`字符串5619=backgrnd；`0x48D3BC..48D3C6`将shop插入气泡this+0x10层，
+`0x48D602..48D60C`将backgrnd插入this+0x14层。两层非鼠标悬停分支，随type5创建。
+`0x48EA0E..48EA3C`及`0x48EAC0..48EAEE`使用与signboard相同的
+(this+48, this+4C-arg-5)，即世界脚点的(-signboard.width/2, -signboard.height+2)。
+宽度除2按整数截断。Canvas origin不另加到共同画布左上角；Unity按原origin建Sprite后，
+以左上角+origin放置轴心，抵消Sprite自身原点，保留全画布透明留白。
+
+层级依据：`0x48D6DB..48D6F7` shop深度=(vector+130*3000-vector+134)*10-0x3FFF8AD4；
+`0x50DC40..50DC58` employee为同式-0x3FFF8AD5；
+`0x48D731..48D749` backgrnd为(上述差值-0x6665AAF)*10，即同式-0x3FFF8AD6。
+所以backgrnd < employee < shop，迁移在既有店员sortingOrder300两侧使用299/301。
+背景是摊内后景，shop是摊棚/柜台前景，均直接引用原Canvas，未自绘或重新缩放。
+
+实现：NativeMarketField.Synchronize创建两层世界SpriteRenderer；清除店铺/换图同步销毁。
+招牌文字与现有双击入口保持既有链路。生成器使用的5030000/1/2/4/8逐项解码，
+三层各自尺寸/origin一致，分别166×166/(14,17)、166×166/(14,17)、
+137×150/(19,2)、160×161/(28,13)、143×182/(6,34)。
+复现：inspect_beidou_client.py --fn 0x48BBCA / 0x48E85A / 0x50DC09；
+使用源tool/wz-python GMS解析对应permit/skin/{shop,backgrnd,signboard}。
+验证边界：原资源五款三层解码通过；Android现场画面待验收；本次未扩展effect/say动画或514皮肤链。
+
+本轮Unity compile-check：0错误/0警告；git diff --check通过。未构建APK或执行Android实机验收。

@@ -113,6 +113,9 @@ public static class QuestCatalog
         }
         ScreenshotTrainingQuests.Register(cache, allIds, byNpc);
         RobotQuests.Register(cache, allIds, byNpc);
+        // 五转 / 六转进阶链（GMS083 的 Quest.wz 里没有 1460/386xx，只能自己带一份）
+        AdvancedQuests.Register(cache, allIds, byNpc);
+        WeeklyGemstoneQuest.Register(cache, allIds, byNpc);
         allIds.Sort();
         Ready = true;
         UnityEngine.Debug.Log("[Quest] Quest.wz 任务 " + allIds.Count + " 个，涉及 NPC " + byNpc.Count + " 个");

@@ -89,9 +89,11 @@ public static class StatWindow
         Image(r, "backgrnd", 0, 0);
         if (NativeUi.Button(At(r, WinW - 19, 5, 12, 12), "UI/Basic.img/BtClose")) { Visible = false; return; }
         var p = GameLoop.I.player;
-        var attrs = Profile.Attributes;
+        int watk, matk;
+        var weapon = WeaponDefs.Get(Profile.equipWeapon);
+        var combat = p.ReadCombatAttributes(out watk, out matk);
         string[] values = { Profile.playerName, "", Profile.level.ToString(), "-",
-            Mathf.CeilToInt(p.hp) + " / " + Mathf.CeilToInt(p.hpMax), Mathf.CeilToInt(p.mp) + " / " + Mathf.CeilToInt(p.mpMax),
+            Mathf.CeilToInt(p.hp) + " / " + combat.maxHp, Mathf.CeilToInt(p.mp) + " / " + combat.maxMp,
             Profile.experience + " (" + (Profile.ExpRatio * 100).ToString("0.##") + "%)", "0" };
         int[] textY = { 33, 55, 79, 96, 115, 133, 151, 169 };
         for (int i = 0; i < values.Length; i++) Text(r, values[i], 61, textY[i]);
@@ -124,7 +126,7 @@ public static class StatWindow
                 DrawAuto(r, "BtAuto2", 217, false);
             }
             else DrawAuto(r, "BtAuto", 197, false);
-            int[] stats = { attrs.str, attrs.dex, attrs.intelligence, attrs.luk };
+            int[] stats = { combat.str, combat.dex, combat.intelligence, combat.luk };
             for (int i = 0; i < stats.Length; i++)
             {
                 // 未转职新手只开放 STR/DEX，INT/LUK 用原端 Disabled 素材压住标签
@@ -148,9 +150,6 @@ public static class StatWindow
         if (dx + 218 * S > UiKit.W) dx = Mathf.Max(0, r.x - 217 * S);
         var dr = new Rect(dx, r.y + 144 * S, 218 * S, 203 * S);
         Image(dr, "backgrnd2", 0, 0);
-        int watk, matk;
-        var weapon = WeaponDefs.Get(Profile.equipWeapon);
-        var combat = attrs.WithWeapon(weapon, 0, out watk, out matk);
         bool dexWeapon = weapon.kind == WeaponKind.bow || weapon.kind == WeaponKind.crossbow || weapon.kind == WeaponKind.gun;
         int main = weapon.kind == WeaponKind.claw ? combat.luk : dexWeapon ? combat.dex : combat.str;
         int secondary = weapon.kind == WeaponKind.claw ? combat.dex + combat.str : dexWeapon ? combat.str : combat.dex;
@@ -230,8 +229,8 @@ public static class EquipWindow
     // 每格对应原 IMG 背景已有的装备位；BE2260: -18=(5,233), -19=(38,233)。
     // 行 0..6 自上而下、列 0..4 自左而右，按 backgrnd 上的中文槽位名对齐：
     //   帽子 / 勋章 额饰 戒指 戒指 / 眼饰 耳饰 肩饰 / 披风 上衣 项链 武器 盾牌 /
-    //   手套 裤裙 腰带 指环 指环 / 鞋子 副手 图腾 / 骑兽 鞍子 空白 徽章 纹章
-    // 心脏统一在机器人面板操作，原底图重复格由 NativeEquipBackdrop 清除。
+    //   手套 裤裙 腰带 指环 指环 / 鞋子 副手 图腾 / 骑兽 鞍子 空白 空白 纹章
+    // 心脏在机器人面板、符文徽章在独立窗口操作；旧心脏/徽章格由 NativeEquipBackdrop 清除。
     static readonly int[,] SmallCells =
     {
         { 0, EquipSlot.Hat, 0, 0, 0 },
@@ -240,7 +239,7 @@ public static class EquipWindow
         { EquipSlot.Cape, EquipSlot.Top, -17, EquipSlot.Weapon, EquipSlot.Shield },
         { EquipSlot.Glove, EquipSlot.Bottom, -50, -15, -16 },
         { 0, 0, EquipSlot.Shoes, -51, -53 },
-        { -18, -19, 0, -55, -56 },
+        { -18, -19, 0, 0, -56 },
     };
 
     // 展开态 6 列，同样按 FullBackgrnd 的槽位名对齐：
@@ -279,7 +278,7 @@ public static class EquipWindow
             r.position = pos * S;
         }
         if (!Pointer.Down) dragging = false;
-        // 折叠态修复原图后补槽位的文字，并移除已迁入机器人面板的重复心脏格。
+        // 折叠态修复原图后补槽位的文字，并移除旧心脏/徽章格。
         // 展开态是原版 6 列图，没有这处重复格。
         var bg = expanded ? Tex("FullBackgrnd") : (NativeEquipBackdrop.Texture() ?? Tex("backgrnd"));
         if (bg != null) GUI.DrawTexture(r, bg);
@@ -923,15 +922,15 @@ public static class GameMenuWindow
 // 所有浮窗的统一绘制顺序（技能窗在最后，压在虚拟键盘之上）
 public static class GameWindows
 {
-    public static bool AnyVisible =>
-        StatWindow.Visible || EquipWindow.Visible || InvenWindow.Visible ||
-        ShortcutWindow.Visible || HelpWindow.Visible || GameMenuWindow.Visible ||
-        SkillWindow.Visible || QuestWindow.Visible || KeyConfigWindow.Visible ||
-        NativeMapWindows.WorldVisible || NativeSocialWindow.Visible || NativeMonsterBook.Visible ||
-        NativeCommunityWindow.Visible || NativeGuildWindow.Visible || NativeGuildGradeWindow.Visible ||
-        NativeMedalWindow.Visible || ShopWindow.Visible || GameOptWindow.Visible ||
-        SysOptWindow.Visible || ChannelWindow.Visible ||
-        NativeEnhancementWindow.Visible || NativeVegaWindow.Visible || NativeResetWindow.Visible || NativeSpResetWindow.Visible || NativeTeleportWindow.Visible || NativeTradeWindow.Visible || NativeUtilPrompt.Visible || NativeCharacterInfo.Visible || NativeCharacterMenu.Visible || NativeMarketWindow.Visible || NativeNpcShopWindow.Visible || NativeDeliveryWindow.Visible || NativeMerchantWindow.Visible || NativeMakerWindow.Visible || NativeRankingWindow.Visible || NativePlayerShopWindow.Visible || NativeItemSearchWindow.Visible || NativeStorageWindow.Visible || NativeClaimWindow.Visible || NativeRpsWindow.Visible || NativeRemoteGachaponWindow.Visible;
+    public static bool AnyVisible
+    {
+        get
+        {
+            if (NativeUtilPrompt.Visible || KeyConfigWindow.Visible) return true;
+            foreach (var panel in panels) if (VisibleOf(panel)) return true;
+            return false;
+        }
+    }
 
     // ——————————————— Esc 分层关闭 ———————————————
     // 原版 Esc 是「系统菜单」键，但用户要求：只要有面板开着，Esc 先关面板。
@@ -943,6 +942,7 @@ public static class GameWindows
         Stat, Equip, Inven, Shop, Quest, Shortcut, Help, GameMenu, Skill,
         World, Social, MonsterBook, Community, Guild, Medal, NpcShop, Delivery, Merchant, Maker, Ranking, PlayerShop, ItemSearch, Storage, Claim, Rps, RemoteGachapon,
         GameOpt, SysOpt, Channel,
+        Symbol, HyperStat, InnerAbility, VMatrix, HexaMatrix, Enhancement, Vega, ApReset, SpReset, Teleport, CharacterMenu, CharacterInfo, Trade, Market, Android, Memo, PetExclusion, GuildGrade,
     }
     static readonly Panel[] panels = (Panel[])System.Enum.GetValues(typeof(Panel));
     static readonly List<Panel> openOrder = new List<Panel>();
@@ -952,6 +952,24 @@ public static class GameWindows
     {
         switch (p)
         {
+            case Panel.Symbol: return NativeSymbolWindow.Visible;
+            case Panel.HyperStat: return NativeHyperStatWindow.Visible;
+            case Panel.InnerAbility: return NativeInnerAbilityWindow.Visible;
+            case Panel.VMatrix: return NativeVMatrixWindow.Visible;
+            case Panel.HexaMatrix: return NativeHexaMatrixWindow.Visible;
+            case Panel.Enhancement: return NativeEnhancementWindow.Visible;
+            case Panel.Vega: return NativeVegaWindow.Visible;
+            case Panel.ApReset: return NativeResetWindow.Visible;
+            case Panel.SpReset: return NativeSpResetWindow.Visible;
+            case Panel.Teleport: return NativeTeleportWindow.Visible;
+            case Panel.CharacterMenu: return NativeCharacterMenu.Visible;
+            case Panel.CharacterInfo: return NativeCharacterInfo.Visible;
+            case Panel.Trade: return NativeTradeWindow.Visible;
+            case Panel.Market: return NativeMarketWindow.Visible;
+            case Panel.Android: return NativeAndroidWindow.Visible;
+            case Panel.Memo: return NativeMemoWindow.Visible;
+            case Panel.PetExclusion: return NativePetExclusionWindow.Visible;
+            case Panel.GuildGrade: return NativeGuildGradeWindow.Visible;
             case Panel.Stat: return StatWindow.Visible;
             case Panel.Equip: return EquipWindow.Visible;
             case Panel.Inven: return InvenWindow.Visible;
@@ -976,7 +994,7 @@ public static class GameWindows
             case Panel.Social: return NativeSocialWindow.Visible;
             case Panel.MonsterBook: return NativeMonsterBook.Visible;
             case Panel.Community: return NativeCommunityWindow.Visible;
-            case Panel.Guild: return NativeGuildWindow.Visible || NativeGuildGradeWindow.Visible;
+            case Panel.Guild: return NativeGuildWindow.Visible;
             case Panel.Medal: return NativeMedalWindow.Visible;
             case Panel.GameOpt: return GameOptWindow.Visible;
             case Panel.SysOpt: return SysOptWindow.Visible;
@@ -989,6 +1007,24 @@ public static class GameWindows
     {
         switch (p)
         {
+            case Panel.Symbol: NativeSymbolWindow.Close(); return;
+            case Panel.HyperStat: NativeHyperStatWindow.Close(); return;
+            case Panel.InnerAbility: NativeInnerAbilityWindow.Close(); return;
+            case Panel.VMatrix: NativeVMatrixWindow.Escape(); return;
+            case Panel.HexaMatrix: NativeHexaMatrixWindow.Escape(); return;
+            case Panel.Enhancement: NativeEnhancementWindow.Close(); return;
+            case Panel.Vega: if (!NativeVegaWindow.Busy) NativeVegaWindow.Close(); return;
+            case Panel.ApReset: NativeResetWindow.Close(); return;
+            case Panel.SpReset: NativeSpResetWindow.Close(); return;
+            case Panel.Teleport: NativeTeleportWindow.Close(); return;
+            case Panel.CharacterMenu: NativeCharacterMenu.Close(); return;
+            case Panel.CharacterInfo: NativeCharacterInfo.Close(); return;
+            case Panel.Trade: NativeTradeWindow.Close(); return;
+            case Panel.Market: NativeMarketWindow.Close(); return;
+            case Panel.Android: NativeAndroidWindow.Visible = false; return;
+            case Panel.Memo: NativeMemoWindow.Close(); return;
+            case Panel.PetExclusion: NativePetExclusionWindow.Close(); return;
+            case Panel.GuildGrade: NativeGuildGradeWindow.Reset(); return;
             case Panel.Stat: StatWindow.Visible = false; return;
             case Panel.Equip: EquipWindow.Visible = false; return;
             case Panel.Inven: InvenWindow.Visible = false; return;
@@ -1003,7 +1039,7 @@ public static class GameWindows
             case Panel.ItemSearch: NativeItemSearchWindow.Close(); return;
             case Panel.Storage: NativeStorageWindow.Close(); return;
             case Panel.Claim: NativeClaimWindow.Close(); return;
-            case Panel.Rps: NativeRpsWindow.Close(); return;
+            case Panel.Rps: NativeRpsWindow.RequestLeave(); return;
             case Panel.RemoteGachapon: NativeRemoteGachaponWindow.Close(); return;
             case Panel.Quest: QuestWindow.Visible = false; return;
             case Panel.Shortcut: ShortcutWindow.Visible = false; return;
@@ -1039,30 +1075,12 @@ public static class GameWindows
     public static bool CloseTop()
     {
         if (NativeUtilPrompt.Visible) { NativeUtilPrompt.Cancel(); return true; }
-        if (NativeEnhancementWindow.Visible) { NativeEnhancementWindow.Close(); return true; }
-        if (NativeVegaWindow.Visible) { if(!NativeVegaWindow.Busy) NativeVegaWindow.Close(); return true; }
-        if (NativeResetWindow.Visible) { NativeResetWindow.Close(); return true; }
-        if (NativeSpResetWindow.Visible) { NativeSpResetWindow.Close(); return true; }
-        if (NativeTeleportWindow.Visible) { NativeTeleportWindow.Close(); return true; }
-        if (NativeCharacterMenu.Visible) { NativeCharacterMenu.Close(); return true; }
-        if (NativeCharacterInfo.Visible) { NativeCharacterInfo.Close(); return true; }
-        if (NativeTradeWindow.Visible) { NativeTradeWindow.Close(); return true; }
-        if (NativeMarketWindow.Visible) { NativeMarketWindow.Close(); return true; }
-        if (NativeDeliveryWindow.Visible) { NativeDeliveryWindow.Close(); return true; }
-        if (NativeMerchantWindow.Visible) { NativeMerchantWindow.Close(); return true; }
-        if (NativeMakerWindow.Visible) { NativeMakerWindow.Close(); return true; }
-        if (NativeRankingWindow.Visible) { NativeRankingWindow.Close(); return true; }
-        if (NativePlayerShopWindow.Visible) { NativePlayerShopWindow.Close(); return true; }
-        if (NativeItemSearchWindow.Visible) { NativeItemSearchWindow.Close(); return true; }
-        if (NativeStorageWindow.Visible) { NativeStorageWindow.Close(); return true; }
-        if (NativeClaimWindow.Visible) { NativeClaimWindow.Close(); return true; }
-        if (NativeRpsWindow.Visible) { NativeRpsWindow.RequestLeave(); return true; }
-        if (NativeRemoteGachaponWindow.Visible) { NativeRemoteGachaponWindow.Close(); return true; }
+        if(NativeSoulWeaponPanel.HasModal){NativeSoulWeaponPanel.CloseModal();return true;}
         TrackPanels();
         if (openOrder.Count == 0) return false;
         var top = openOrder[openOrder.Count - 1];
-        openOrder.RemoveAt(openOrder.Count - 1);
         ClosePanel(top);
+        if (!VisibleOf(top)) openOrder.Remove(top);
         lastVisible[top] = VisibleOf(top);
         return true;
     }
@@ -1071,15 +1089,19 @@ public static class GameWindows
     {
         TrackPanels();
         ItemTooltip.Reset();
+        NativeSoulWeapon.Tick();
         NativeCashWindow.Tick();
         NativeDeliveryWindow.Tick();
         NativeItemSearchWindow.Tick();
         bool enabled = GUI.enabled;
-        bool shield=NativeEnhancementWindow.AtPointer;
-        var pointerPosition=Pointer.Pos;
-        bool pointerPressed=Pointer.Pressed,pointerReleased=Pointer.Released,pointerClicked=Pointer.Clicked,pointerDouble=Pointer.DoubleClicked;
-        if(shield){Pointer.Pos=new Vector2(-10000,-10000);Pointer.Pressed=Pointer.Released=Pointer.Clicked=Pointer.DoubleClicked=false;}
-        GUI.enabled &= !NativeUtilPrompt.Visible;
+        // The global confirmation/input dialog is above every window, including matrices.
+        var promptPointer = new Pointer.InputMask(NativeUtilPrompt.Visible);
+        bool hexaShield = NativeHexaMatrixWindow.AtPointer;
+        bool matrixShield = hexaShield || NativeVMatrixWindow.AtPointer;
+        bool symbolShield = !matrixShield && NativeSymbolWindow.AtPointer;
+        bool shield=NativeEnhancementWindow.AtPointer || matrixShield || symbolShield;
+        var pointerMask = new Pointer.InputMask(shield);
+        GUI.enabled &= !NativeUtilPrompt.Visible && !shield;
         try
         {
         NativeMapWindows.DrawMini();
@@ -1127,8 +1149,18 @@ public static class GameWindows
         GameMenuWindow.Draw();
         ShortcutWindow.Draw();
         NativeVegaWindow.Draw();
-        if(shield){Pointer.Pos=pointerPosition;Pointer.Pressed=pointerPressed;Pointer.Released=pointerReleased;Pointer.Clicked=pointerClicked;Pointer.DoubleClicked=pointerDouble;shield=false;}
+        if(shield && !matrixShield && !symbolShield){pointerMask.Dispose();shield=false;GUI.enabled=enabled && !NativeUtilPrompt.Visible;}
         NativeEnhancementWindow.Draw();
+        // 282 角色成长的三扇独立窗（徽章 / 极限属性 / 内在能力）
+        if(symbolShield){pointerMask.Dispose();shield=false;GUI.enabled=enabled && !NativeUtilPrompt.Visible;}
+        NativeSymbolWindow.Draw();
+        NativeHyperStatWindow.Draw();
+        NativeInnerAbilityWindow.Draw();
+        // 282 五六转的核心成长窗（V 矩阵 / HEXA 矩阵）
+        if(shield && !hexaShield){pointerMask.Dispose();shield=false;GUI.enabled=enabled && !NativeUtilPrompt.Visible;}
+        NativeVMatrixWindow.Draw();
+        if(shield){pointerMask.Dispose();shield=false;GUI.enabled=enabled && !NativeUtilPrompt.Visible;}
+        NativeHexaMatrixWindow.Draw();
         NativeResetWindow.Draw();
         NativeSpResetWindow.Draw();
         NativeTeleportWindow.Draw();
@@ -1137,7 +1169,8 @@ public static class GameWindows
         finally
         {
             GUI.enabled = enabled;
-            if(shield){Pointer.Pos=pointerPosition;Pointer.Pressed=pointerPressed;Pointer.Released=pointerReleased;Pointer.Clicked=pointerClicked;Pointer.DoubleClicked=pointerDouble;}
+            if(shield){pointerMask.Dispose();}
+            promptPointer.Dispose();
         }
         NativeUtilPrompt.Draw();
         UiPreviewHook.Emit();

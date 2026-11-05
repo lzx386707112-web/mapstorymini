@@ -41,6 +41,7 @@ public static class QuestLogic
 
     public static bool CanStart(QuestDef q, int npcId, out string reason)
     {
+        if (q.id == WeeklyGemstoneData.Id) return WeeklyGemstoneQuest.Can(false,npcId,out reason);
         int status = Profile.QuestStatus(q.id);
         if (status == PlayerProfileData.QuestStartedState) { reason = "任务已在进行中"; return false; }
         if (status == PlayerProfileData.QuestCompletedState && q.startReq.interval <= 0)
@@ -53,6 +54,7 @@ public static class QuestLogic
 
     public static bool CanComplete(QuestDef q, int npcId, out string reason)
     {
+        if (q.id == WeeklyGemstoneData.Id) return WeeklyGemstoneQuest.Can(true,npcId,out reason);
         if (Profile.QuestStatus(q.id) != PlayerProfileData.QuestStartedState) { reason = "任务未开始"; return false; }
         return Check(q.completeReq, q.id, npcId, out reason);
     }
@@ -225,6 +227,7 @@ public static class QuestLogic
     public static bool Start(QuestDef q, int npcId, bool applyActions)
     {
         if (q == null) return false;
+        if (q.id == WeeklyGemstoneData.Id) return WeeklyGemstoneQuest.Run(false);
         if (applyActions) Apply(q.startAct, q.id);
         Profile.StartQuest(q.id);
         Debug.Log("[Quest] 接取 " + q.id + " " + q.name + " (NPC " + npcId + ")");
@@ -234,8 +237,16 @@ public static class QuestLogic
     public static bool Complete(QuestDef q, int npcId, bool applyActions)
     {
         if (q == null) return false;
+        if (q.id == WeeklyGemstoneData.Id)
+        {
+            if (!WeeklyGemstoneQuest.Run(true)) return false;
+            QuestAlarm.Remove(q.id); QuestNotice.RemoveReady(q.id); QuestNotice.Push(q.name);
+            return true;
+        }
         if (applyActions) Apply(q.completeAct, q.id);
         Profile.CompleteQuest(q.id);
+        if (NativeWeeklyGemstoneService.IsDaily(q.id)) WeeklyGemstoneQuest.Invalidate();
+        AdvancementProgress.OnQuestCompleted(q.id);   // 五六转写入点：mission1..4 / 38625（见 AdvancementProgress.cs）
         QuestAlarm.Remove(q.id);
         QuestNotice.RemoveReady(q.id);
         QuestNotice.Push(q.name);

@@ -167,8 +167,29 @@ public interface ITransport
     EquipPatchResponse UpdateEquip(EquipPatchRequest req);
     StarForceResponse StarForce(StarForceRequest req);
     PotentialResponse Potential(PotentialRequest req);
+    SymbolResponse Symbol(SymbolRequest req);
+    WeeklyGemstoneResponse WeeklyGemstone(WeeklyGemstoneRequest req);
+    HyperStatResponse HyperStat(HyperStatRequest req);
+    AbilityResponse InnerAbility(AbilityRequest req);
+    FlameResponse Flame(FlameRequest req);
+    SoulResponse Soul(SoulRequest req);
     SlotRemoveResponse RemoveSlot(SlotRemoveRequest req);
+    VMatrixResponse VMatrix(VMatrixRequest req);
+    HexaResponse Hexa(HexaRequest req);
+    HexaConvertResponse HexaConvert(HexaConvertRequest req);
     void EndSocialSession(int characterId);
+}
+
+public sealed class HexaConvertRequest
+{
+    public int characterId, itemId, count;
+}
+
+public sealed class HexaConvertResponse
+{
+    public bool ok = true;
+    public string error = "";
+    public long solErda;
 }
 
 /// <summary>
@@ -211,18 +232,105 @@ public sealed class InProcessTransport : ITransport
             return response;
         }
     }
-    void RefreshEnhancementMirror(int characterId)
+    public WeeklyGemstoneResponse WeeklyGemstone(WeeklyGemstoneRequest r) => NativeWeeklyGemstoneService.Handle(server.Db,r);
+    public SymbolResponse Symbol(SymbolRequest r)
     {
+        lock(server.Db)
+        {
+            if(r!=null&&server.ActiveBotPlayer(r.characterId)?.trade!=null)
+                return new SymbolResponse {ok=false,error="交易中不能强化徽章"};
+            var response=NativeSymbolService.Handle(server.Db,r);
+            if(response.ok&&r.commit)RefreshEnhancementMirror(r.characterId);
+            return response;
+        }
+    }
+    public HyperStatResponse HyperStat(HyperStatRequest r)
+    {
+        lock(server.Db)
+        {
+            var response=NativeHyperStatService.Handle(server.Db,r);
+            if(response.ok&&r.commit)RefreshGrowthMirror(r.characterId);
+            return response;
+        }
+    }
+    public AbilityResponse InnerAbility(AbilityRequest r)
+    {
+        lock(server.Db)
+        {
+            var response=NativeInnerAbilityService.Handle(server.Db,r);
+            if(response.ok&&r.commit)RefreshGrowthMirror(r.characterId);
+            return response;
+        }
+    }
+    public FlameResponse Flame(FlameRequest r)
+    {
+        lock(server.Db)
+        {
+            if(r!=null&&server.ActiveBotPlayer(r.characterId)?.trade!=null)
+                return new FlameResponse {ok=false,error="交易中不能使用星火"};
+            var response=NativeFlameService.Handle(server.Db,r);
+            if(response.ok&&r.commit)RefreshEnhancementMirror(r.characterId);
+            return response;
+        }
+    }
+    public SoulResponse Soul(SoulRequest r)
+    {
+        lock(server.Db)
+        {
+            if(r!=null&&server.ActiveBotPlayer(r.characterId)?.trade!=null)
+                return new SoulResponse {ok=false,error="交易中不能变更灵魂"};
+            var response=NativeSoulService.Handle(server.Db,r);
+            if(response.ok&&r.commit)RefreshEnhancementMirror(r.characterId);
+            return response;
+        }
+    }
+    // 成长三表不挂在 inventory 上，单独把服务端内存里的角色刷一遍，
+    // 否则客户端窗口读的还是旧预设/旧行（下次 SaveToDb 也会用旧值）。
+    // 这里必须走 ActiveBotPlayer 而不是 GameSession —— Protocol 会被 tools/server-check
+    // 直接编译（Client/ 不在工程里），碰 GameSession 立刻 CS0103。
+    void RefreshGrowthMirror(int characterId)
+    {
+        var actor = server.ActiveBotPlayer(characterId);
+        if (actor?.character == null) return;
+        var fresh = CharService.Load(server.Db, characterId);
+        if (fresh == null) return;
+        actor.character.growth = fresh.growth;
+        actor.character.hyperstats = fresh.hyperstats;
+        actor.character.potentials = fresh.potentials;
+        NativeGrowthStats.Invalidate();
+    }
+    void RefreshEnhancementMirror(int characterId)    {
         var actor=server.ActiveBotPlayer(characterId);
         if(actor?.character==null)return;
         var current=CharService.Load(server.Db,characterId);
         actor.character.inventory=current.inventory;
+        actor.character.soulWeapon=current.soulWeapon;
         actor.character.record.meso=current.record.meso;
+        NativeGrowthStats.Invalidate();
         // Reuse the existing inventory/economy revision gate in SynchronizePlayer
         // and SaveCharacter so an older client snapshot cannot refund a cube.
         actor.character.tradeRevision++;
     }
     public SlotRemoveResponse RemoveSlot(SlotRemoveRequest r) => NativeEquipService.RemoveSlot(server.Db, r);
+    public VMatrixResponse VMatrix(VMatrixRequest r)
+    {
+        lock(server.Db) return NativeVMatrixService.Handle(server.Db,r);
+    }
+    public HexaResponse Hexa(HexaRequest r)
+    {
+        lock(server.Db) return NativeHexaMatrixService.Handle(server.Db,r);
+    }
+    public HexaConvertResponse HexaConvert(HexaConvertRequest r)
+    {
+        lock(server.Db)
+        {
+            if(r!=null&&server.ActiveBotPlayer(r.characterId)?.trade!=null)
+                return new HexaConvertResponse {ok=false,error="交易中不能转换灵魂艾尔达"};
+            var res=NativeHexaMatrixService.Convert(server.Db,r.characterId,r.itemId,r.count);
+            if(res.ok)RefreshEnhancementMirror(r.characterId);
+            return new HexaConvertResponse {ok=res.ok,error=res.error,solErda=res.solErda};
+        }
+    }
     public bool HasNpcShop(int npcId) => server.NpcShops.HasNpc(npcId);
     public NpcShopResponse NpcShop(NpcShopRequest r) => server.NpcShops.Handle(r);
     public DueyResponse Duey(DueyRequest r) => NativeDueyService.Handle(server.Db, r);

@@ -1,0 +1,313 @@
+{
+ "source": "VMatrix.json cores[type=2] 的 special.cond/effect + desc 文案数值（400007xxx 在客户端没有 Skill 定义，数值只能来自 desc）",
+ "cores": {
+  "30000000": {
+   "id": 30000000,
+   "name": "暴走的力量I",
+   "desc": "擊倒120名敵人時，10秒內傷害增加20%/每60秒僅發動1次/若30秒內未累積擊倒敵人的次數，則重置次數",
+   "cond": {
+    "type": "killCount",
+    "cooltime": 60000,
+    "count": 120,
+    "validtime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "damage",
+    "value": 20,
+    "duration": 10000
+   },
+   "skill": 400007002
+  },
+  "30000001": {
+   "id": 30000001,
+   "name": "致命的一擊I",
+   "desc": "每攻擊1000次，10秒內爆擊機率增加100%/每60秒僅發動1次/若30秒內未累積攻擊次數，則重置次數",
+   "cond": {
+    "type": "attackCount",
+    "cooltime": 60000,
+    "count": 1000,
+    "validtime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "critical",
+    "value": 100,
+    "duration": 10000
+   },
+   "skill": 400007003
+  },
+  "30000002": {
+   "id": 30000002,
+   "name": "破壞防具I",
+   "desc": "攻擊相同怪物800次(技能的每次攻擊都算1次)時，10秒內無視防禦率增加100%/每60秒僅發動1次/若30秒內未累積攻擊次數，則重置次數",
+   "cond": {
+    "type": "attackCountMob",
+    "cooltime": 60000,
+    "count": 800,
+    "validtime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "ignoreDefense",
+    "value": 100,
+    "duration": 10000
+   },
+   "skill": 400007005
+  },
+  "30000006": {
+   "id": 30000006,
+   "name": "克服的經驗I",
+   "desc": "每受到100次攻擊，20秒內經驗值獲得量增加50%/每30秒僅發動1次/若30秒內未累積受擊次數，則重置次數",
+   "cond": {
+    "type": "hitCount",
+    "cooltime": 30000,
+    "count": 100,
+    "validtime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "exp",
+    "value": 50,
+    "duration": 20000
+   },
+   "skill": 400007011
+  },
+  "30000008": {
+   "id": 30000008,
+   "name": "魔王殺手I",
+   "desc": "攻擊時有0.1%機率在10秒內攻擊Boss怪物時傷害增加50%/每30秒僅發動1次",
+   "cond": {
+    "type": "prob",
+    "prob": 0.001,
+    "cooltime": 30000,
+    "validtime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "bossDamage",
+    "value": 50,
+    "duration": 10000
+   },
+   "skill": 400007008
+  },
+  "30000009": {
+   "id": 30000009,
+   "name": "魔王殺手II",
+   "desc": "每120秒使用技能時，10秒內攻擊Boss怪物時傷害增加50%",
+   "cond": {
+    "type": "cooltime",
+    "cooltime": 120000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "bossDamage",
+    "value": 50,
+    "duration": 10000
+   },
+   "skill": 400007014
+  },
+  "30000010": {
+   "id": 30000010,
+   "name": "魔王殺手III",
+   "desc": "擊倒30名敵人時，10秒內攻擊Boss怪物時傷害增加50%/每10秒僅發動1次/若30秒內未累積擊倒敵人的次數，則重置次數",
+   "cond": {
+    "type": "killCount",
+    "cooltime": 10000,
+    "count": 30,
+    "validtime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "bossDamage",
+    "value": 50,
+    "duration": 10000
+   },
+   "skill": 400007015
+  },
+  "30000012": {
+   "id": 30000012,
+   "name": "破壞防具II",
+   "desc": "每120秒使用技能時， 10秒間無視防禦率100%",
+   "cond": {
+    "type": "cooltime",
+    "cooltime": 120000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "ignoreDefense",
+    "value": 100,
+    "duration": 10000
+   },
+   "skill": 400007016
+  },
+  "30000014": {
+   "id": 30000014,
+   "name": "回歸",
+   "desc": "死亡時，除不受冷卻時間減少與重置影響的技能外，其餘技能的剩餘冷卻時間減少30%/每60秒僅發動1次 ",
+   "cond": {
+    "type": "die",
+    "cooltime": 60000,
+    "validtime": 30000
+   },
+   "effectType": "reduceCooltime",
+   "effect": {
+    "stat": "cooltime",
+    "value": 30
+   },
+   "skill": 400007102
+  },
+  "30000015": {
+   "id": 30000015,
+   "name": "沒有結束的攻擊",
+   "desc": "連續擊殺為50的倍數時，除不受冷卻時間減少與重置影響的技能外，其餘技能的剩餘冷卻時間減少20%/每75秒僅發動1次/若10秒內未累積連續擊殺次數，則重置次數",
+   "cond": {
+    "type": "combokill",
+    "cooltime": 75000,
+    "count": 50,
+    "validtime": 30000
+   },
+   "effectType": "reduceCooltime",
+   "effect": {
+    "stat": "cooltime",
+    "value": 20
+   },
+   "skill": 400007103
+  },
+  "30000016": {
+   "id": 30000016,
+   "name": "自動恢復",
+   "desc": "每30秒使用技能時恢復100%HP",
+   "cond": {
+    "type": "cooltime",
+    "cooltime": 30000
+   },
+   "effectType": "heal",
+   "effect": {
+    "stat": "heal",
+    "value": 100
+   },
+   "skill": 400007104
+  },
+  "30000017": {
+   "id": 30000017,
+   "name": "忍耐",
+   "desc": "每受到100次攻擊，10秒內無敵/每30秒僅發動1次/若30秒內未累積受擊次數，則重置次數",
+   "cond": {
+    "type": "hitCount",
+    "cooltime": 30000,
+    "count": 100,
+    "validtime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "invincible",
+    "value": 100,
+    "duration": 10000
+   },
+   "skill": 400007006
+  },
+  "30000018": {
+   "id": 30000018,
+   "name": "忍耐II",
+   "desc": "每受到100次攻擊，除不受冷卻時間減少與重置影響的技能外，其餘技能的剩餘冷卻時間減少20%/每60秒僅發動1次/若60秒內未累積受擊次數，則重置次數",
+   "cond": {
+    "type": "hitCount",
+    "cooltime": 60000,
+    "count": 100,
+    "validtime": 60000
+   },
+   "effectType": "reduceCooltime",
+   "effect": {
+    "stat": "cooltime",
+    "value": 20
+   },
+   "skill": 400007107
+  },
+  "30000019": {
+   "id": 30000019,
+   "name": "只對一個I",
+   "desc": "攻擊相同怪物800次(技能的每次攻擊都算1次)時，10秒內爆擊機率增加100%/每60秒僅發動1次/若30秒內未累積攻擊次數，則重置次數",
+   "cond": {
+    "type": "attackCountMob",
+    "cooltime": 60000,
+    "count": 800,
+    "validtime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "critical",
+    "value": 100,
+    "duration": 10000
+   },
+   "skill": 400007017
+  },
+  "30000021": {
+   "id": 30000021,
+   "name": "輪的經驗I",
+   "desc": "每當發動輪時，20秒內經驗值獲得量增加50%。",
+   "cond": {
+    "type": "rune",
+    "cooltime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "exp",
+    "value": 50,
+    "duration": 20000
+   },
+   "skill": 400007007
+  },
+  "30000022": {
+   "id": 30000022,
+   "name": "耐性I",
+   "desc": "每被攻擊100次，除不受冷卻時間減少及初始化影響的技能外，其餘技能剩餘再使用冷卻時間減少25% / 每30秒僅可發動1次 / 30秒內被攻擊次數未累積則計數初始化",
+   "cond": {
+    "type": "hitCount",
+    "cooltime": 30000,
+    "count": 100,
+    "validtime": 30000
+   },
+   "effectType": "reduceCooltime",
+   "effect": {
+    "stat": "cooltime",
+    "value": 25
+   },
+   "skill": 400007106
+  },
+  "30000023": {
+   "id": 30000023,
+   "name": "一擊必殺I",
+   "desc": "每30秒攻擊時，在4秒內傷害增加100%",
+   "cond": {
+    "type": "cooltime",
+    "cooltime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "damage",
+    "value": 100,
+    "duration": 4000
+   },
+   "skill": 400007013
+  },
+  "30000024": {
+   "id": 30000024,
+   "name": "反擊I",
+   "desc": "每被攻擊20次，2秒內傷害增加100%/ 每30秒僅可發動1次 / 30秒內被攻擊次數未累積則計數初始\r\n化",
+   "cond": {
+    "type": "hitCount",
+    "cooltime": 30000,
+    "count": 20,
+    "validtime": 30000
+   },
+   "effectType": "selfbuff",
+   "effect": {
+    "stat": "damage",
+    "value": 100,
+    "duration": 2000
+   },
+   "skill": 400007010
+  }
+ }
+}

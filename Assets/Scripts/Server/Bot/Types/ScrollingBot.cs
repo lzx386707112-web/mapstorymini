@@ -69,7 +69,10 @@ namespace Server.Bot.Types
                         tradeInventory.SetMain(sale); tradeWants.Reset();
                         tradeWants.mesoWanted=economy.Price(pricing.EquipValue(sale));
                         string line=dialogue.RandomLine("ScrollingBotDialogue.yaml",botType,"AdvertiseSale");
-                        output.Send(BotOutput.Kind.ItemMegaphone,chr,line?.Replace("%PRICE%",MarketEconomy.Shorthand(tradeWants.mesoWanted)),item:sale);
+                        // MegaphoneCommands.BotItemMegaphone 下发的正文就是 name + " : " + message，
+                        // 客户端只把它塞进聊天窗（SERVERMESSAGE type 8），不补前缀。
+                        line=line?.Replace("%PRICE%",MarketEconomy.Shorthand(tradeWants.mesoWanted));
+                        output.Send(BotOutput.Kind.ItemMegaphone,chr,line==null?null:chr.name+" : "+line,item:sale);
                         tradeMode=TradeMode.SELLING;
                     }
                     waitUntil=BotScheduler.Now()+300000+random.Next(180001); CurrentStep=Step.WaitingAfterAd; break;

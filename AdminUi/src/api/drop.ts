@@ -27,7 +27,11 @@ export function insertDrop(data: DropState) {
 }
 
 export function deleteDrop(data: DropState) {
-  return axios.delete(`/drop/v1/deleteDropData/${data.id}`);
+  // 基线行没有真实行 id（后端给的是负数合成键），所以把定位用的 (怪物, 道具) 一起带上；
+  // 后端按这两个值判断「删的是基线自带掉落（写 chance=0 墓碑）还是纯覆盖行（真删）」。
+  return axios.delete(`/drop/v1/deleteDropData/${data.id}`, {
+    params: { dropperId: data.dropperId, itemId: data.itemId },
+  });
 }
 
 export function getGlobalDrop(data: DropConditionState) {
@@ -43,5 +47,7 @@ export function insertGlobalDrop(data: DropState) {
 }
 
 export function deleteGlobalDrop(data: DropState) {
-  return axios.delete(`/drop/v1/deleteGlobalDropData/${data.id}`);
+  return axios.delete(`/drop/v1/deleteGlobalDropData/${data.id}`, {
+    params: { continent: data.continent, itemId: data.itemId },
+  });
 }

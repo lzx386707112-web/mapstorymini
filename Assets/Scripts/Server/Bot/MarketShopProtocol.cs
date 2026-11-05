@@ -3,11 +3,18 @@ using System.Collections.Generic;
 
 namespace Server.Bot
 {
-    public enum MarketOperation { Read, Visit, Buy, Leave }
+    public enum MarketOperation { Read, Visit, Buy, Leave, Chat }
     public sealed class MarketRequest
     {
         public int characterId, ownerId, itemIndex, quantity;
         public MarketOperation operation;
+        public string text;
+    }
+    public sealed class MarketVisitorSnapshot
+    {
+        public int id, slot;
+        public string name;
+        public FullCharacter character;
     }
     public sealed class MarketShopSnapshot
     {
@@ -15,6 +22,8 @@ namespace Server.Bot
         public string ownerName, description;
         public bool playerStore;
         public readonly List<MarketShopStock> items = new List<MarketShopStock>();
+        public readonly List<string> chat = new List<string>();
+        public readonly List<MarketVisitorSnapshot> visitors = new List<MarketVisitorSnapshot>();
         public static MarketShopSnapshot Of(MarketShop shop)
         {
             if (shop == null || !shop.open) return null;
@@ -22,6 +31,7 @@ namespace Server.Bot
                 ownerName = shop.ownerName, description = shop.description, playerStore = shop.playerStore};
             foreach (var stock in shop.items) copy.items.Add(new MarketShopStock {item = stock.item.Copy(),
                 price = stock.price, bundles = stock.bundles, exists = stock.exists});
+            copy.chat.AddRange(shop.chat);
             return copy;
         }
     }
@@ -56,10 +66,22 @@ namespace Server.Bot
                         : response.purchase == MarketPurchaseResult.InventoryFull ? "背包空间不足"
                         : response.purchase == MarketPurchaseResult.OwnerMesoFull ? "店主无法持有更多金币" : "商品或商店状态已变更";
                     break;
+                case MarketOperation.Chat:
+                    response.ok = service.Chat(actor, request.text);
+                    if (!response.ok) response.error = "无法发送店铺聊天";
+                    break;
                 case MarketOperation.Leave: service.Leave(actor.id); break;
             }
             foreach (var shop in service.OnMap(actor.world, actor.channel, actor.mapId)) response.shops.Add(MarketShopSnapshot.Of(shop));
             response.visiting = MarketShopSnapshot.Of(service.Visiting(actor));
+            if (response.visiting != null)
+                foreach (var entry in service.Visitors(response.visiting.ownerId))
+                {
+                    var visitor = players(entry.Key);
+                    if (visitor == null || service.Visiting(visitor)?.ownerId != response.visiting.ownerId) continue;
+                    response.visiting.visitors.Add(new MarketVisitorSnapshot
+                        {id = visitor.id, slot = entry.Value, name = visitor.name, character = visitor.character});
+                }
             return response;
         }
     }

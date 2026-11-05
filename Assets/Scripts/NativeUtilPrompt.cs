@@ -25,6 +25,12 @@ public static class NativeUtilPrompt
     { Clear(); text = prompt; input = value.ToString(); minimum = min; maximum = max; number = done; numberSelectPending = true; }
     public static void Confirm(string prompt, Action<bool> done)
     { Clear(); text = prompt; answer = done; }
+    public static void Pages(string title, string[] pages, int index = 0)
+    {
+        if (pages == null || index >= pages.Length) return;
+        Clear(); text = title + " (" + (index + 1) + "/" + pages.Length + ")\n\n" + pages[index];
+        notice = true; answer = next => { if (next) Pages(title, pages, index + 1); };
+    }
     public static void Notice(string prompt)
     { Clear(); text = prompt; notice = true; answer = _ => { }; }
     public static void Text(string prompt, string value, int min, int max, Action<string> done)
@@ -169,6 +175,15 @@ public static class NativeUtilPrompt
             }
             else { var callback = answer; Clear(); callback?.Invoke(true); }
         }
-        finally { GUI.matrix = matrix; Drawing = false; }
+        finally
+        {
+            GUI.matrix = matrix; Drawing = false;
+            // This modal owns the whole click, even on its background or when its callback closes it.
+            if (Event.current.type == EventType.Repaint)
+            {
+                Pointer.ConsumeClick();
+                Pointer.Pressed = Pointer.RightPressed = Pointer.RightReleased = false;
+            }
+        }
     }
 }

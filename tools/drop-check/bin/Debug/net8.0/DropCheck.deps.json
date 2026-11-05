@@ -72,17 +72,17 @@
           }
         }
       },
-      "UnityEngine.InputLegacyModule/0.0.0.0": {
+      "UnityEditor/0.0.0.0": {
         "runtime": {
-          "UnityEngine.InputLegacyModule.dll": {
+          "UnityEditor.dll": {
             "assemblyVersion": "0.0.0.0",
             "fileVersion": "0.0.0.0"
           }
         }
       },
-      "UnityEditor/0.0.0.0": {
+      "UnityEngine.InputLegacyModule/0.0.0.0": {
         "runtime": {
-          "UnityEditor.dll": {
+          "UnityEngine.InputLegacyModule.dll": {
             "assemblyVersion": "0.0.0.0",
             "fileVersion": "0.0.0.0"
           }
@@ -635,12 +635,12 @@
       "serviceable": false,
       "sha512": ""
     },
-    "UnityEngine.InputLegacyModule/0.0.0.0": {
+    "UnityEditor/0.0.0.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""
     },
-    "UnityEditor/0.0.0.0": {
+    "UnityEngine.InputLegacyModule/0.0.0.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""

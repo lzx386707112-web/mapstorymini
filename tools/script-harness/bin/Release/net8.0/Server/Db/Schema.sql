@@ -19,6 +19,13 @@
 -- 说明：源端是 MySQL(InnoDB, AUTO_INCREMENT, TIMESTAMP 默认值)。本地嵌入式存储
 -- 只借用「表名/列名/类型/默认值」结构，自增 id 与时间戳由 DbStore 模拟。
 
+CREATE TABLE native_migrations
+(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL DEFAULT '',
+    completedAt TEXT NOT NULL DEFAULT ''
+);
+
 CREATE TABLE accounts
 (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -206,7 +213,10 @@ CREATE TABLE inventoryitems
     petid           INTEGER NOT NULL DEFAULT -1,
     flag            INTEGER NOT NULL DEFAULT 0,
     expiration      INTEGER NOT NULL DEFAULT -1,
-    giftFrom        TEXT    NOT NULL DEFAULT ''
+    giftFrom        TEXT    NOT NULL DEFAULT '',
+    -- 本项目扩展（源端无此列）：仓库行（characterid=-3）按账号隔离的标记，见 NativeStorageService。
+    -- 必须声明在 Schema 里：DbStore 只持久化/读取已声明的列，漏声明会导致仓库物品重启后"消失"。
+    storageaccountid INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE inventoryequipment
@@ -239,6 +249,144 @@ CREATE TABLE inventoryequipment
     starCount            INTEGER NOT NULL DEFAULT 0,
     maxStar              INTEGER NOT NULL DEFAULT 0,
     expandAttribute4     TEXT NOT NULL DEFAULT ''
+    ,nativeStats         INTEGER NOT NULL DEFAULT 0
+    ,enhancementVersion  INTEGER NOT NULL DEFAULT 0
+    ,iIncReq             INTEGER NOT NULL DEFAULT 0
+    ,starForceRevision   INTEGER NOT NULL DEFAULT 0
+    ,starForceVestige    INTEGER NOT NULL DEFAULT 0
+    ,starForceProtection INTEGER NOT NULL DEFAULT 0
+    ,potentialGrade INTEGER NOT NULL DEFAULT 0
+    ,bonusGrade INTEGER NOT NULL DEFAULT 0
+    ,potentialRevision INTEGER NOT NULL DEFAULT 0
+    ,potentialChoice TEXT NOT NULL DEFAULT ''
+    ,potentialOption1 INTEGER NOT NULL DEFAULT 0
+    ,potentialOption2 INTEGER NOT NULL DEFAULT 0
+    ,potentialOption3 INTEGER NOT NULL DEFAULT 0
+    ,bonusOption1 INTEGER NOT NULL DEFAULT 0
+    ,bonusOption2 INTEGER NOT NULL DEFAULT 0
+    ,bonusOption3 INTEGER NOT NULL DEFAULT 0
+    -- 徽章（祕法符文 1712 / 真實符文 1713 / 豪華真實符文 1714）：等级、经验、五维外的 inc（ARC/AUT 点数）。
+    -- 282 服务端 EquipSymbol 三字段同名（arcLevel/arcExp/inc）；isSacred 由 itemId 推导，不落盘。
+    ,symbolLevel INTEGER NOT NULL DEFAULT 0
+    ,symbolExp INTEGER NOT NULL DEFAULT 0
+    ,symbolInc INTEGER NOT NULL DEFAULT 0
+    -- 轮回星火：282 Equip.exGradeOption，每行 exGrade*10+tier，按 1000 进制打包（勿拆列）。
+    ,exGradeOption BIGINT NOT NULL DEFAULT 0
+    -- 黑星火/深渊星火的待确认结果（json：{"options":[...],"meso":n}），空串 = 没有待确认。
+    -- 282 是"摇完先进待确认状态、前后对比窗选保留/替换"，本项目没有会话内临时态，落 journal。
+    ,flameChoice TEXT NOT NULL DEFAULT ''
+    ,flameRevision INTEGER NOT NULL DEFAULT 0
+    -- 灵魂武器：开孔器 id（2590xxx 尾数）、灵魂石 id（2591xxx）、soulID=1+id%2591000、属性代码。
+    ,soulSocketId INTEGER NOT NULL DEFAULT 0
+    ,soulItemId INTEGER NOT NULL DEFAULT 0
+    ,soulOptionId INTEGER NOT NULL DEFAULT 0
+    ,soulOption INTEGER NOT NULL DEFAULT 0
+);
+
+-- 282 角色成长：极限属性 / 内在能力 / 灵魂能量。
+-- 源端把当前预设存在任务 QR（2498 hyperstats=N、CHARACTER_POTENTIAL_PRESET potential=N，
+-- CHAR_POT 的荣誉值在 Char 上），本项目单机没有任务 QR 通道，改成一张角色级表。
+-- 注意：本文件的注释必须独占一行。DbStore.Parse 只剥掉以 -- 开头的整行，
+-- 行尾注释会被当成列定义（曾把 "honorExp BIGINT ... -- 说明" 解析出名叫 -- 的假列，
+-- 落盘后整段 JSON 失灵，重开库后 hyperstats/后续表全部读不回来）。
+CREATE TABLE character_growth
+(
+    characterid    INTEGER PRIMARY KEY,
+    -- 内在能力洗练用的荣誉值
+    honorExp       BIGINT  NOT NULL DEFAULT 0,
+    -- 极限属性当前预设 0..2
+    hyperPreset    INTEGER NOT NULL DEFAULT 0,
+    -- 内在能力当前预设 0..2
+    abilityPreset  INTEGER NOT NULL DEFAULT 0,
+    -- 锁定的行号，逗号分隔（如 0,2）
+    abilityLock    TEXT    NOT NULL DEFAULT '',
+    -- 循环器摇出的待确认三行（json），空串 = 没有待确认
+    abilityChoice  TEXT    NOT NULL DEFAULT '',
+    -- 灵魂能量（源端 SoulMP 临时状态的 xOption）
+    soulMp         INTEGER NOT NULL DEFAULT 0,
+    soulMax        INTEGER NOT NULL DEFAULT 0,
+    -- 魔幻箭筒VI 当前箭镞：0=未开启 1=魔法箭 2=吸血箭。
+    -- 箭筒是纯客户端结算（282 服务端零实现），但「模式」必须跟着角色走，
+    -- 换角色/重登要恢复，所以和成长状态存在一起。
+    quiverMode     INTEGER NOT NULL DEFAULT 0
+);
+
+-- 极限属性加点（源端 hyperstats 表 charid/index/skillid/slv；index 即预设）
+CREATE TABLE hyperstats
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid INTEGER NOT NULL DEFAULT 0,
+    preset      INTEGER NOT NULL DEFAULT 0,
+    skillid     INTEGER NOT NULL DEFAULT 0,
+    slv         INTEGER NOT NULL DEFAULT 0
+);
+
+-- 内在能力三行 × 三预设（源端 characterpotentials charid/preset/potkey/skillid/slv/grade）
+CREATE TABLE characterpotentials
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid INTEGER NOT NULL DEFAULT 0,
+    preset      INTEGER NOT NULL DEFAULT 0,
+    potkey      INTEGER NOT NULL DEFAULT 0,
+    skillid     INTEGER NOT NULL DEFAULT 0,
+    slv         INTEGER NOT NULL DEFAULT 0,
+    grade       INTEGER NOT NULL DEFAULT 0
+);
+
+-- V 矩阵 / HEXA 矩阵（282 五转与六转的核心成长系统）。
+-- 源端把 V 矩阵状态挂 VMatrixInfo（points/revision + 每核心 level/selected/expiresAt），
+-- HEXA 挂 Char 上的 solErda/solErdaFragments 与 hexaSkill/hexaStat 列表；
+-- 本项目沿用「一张角色级状态表 + 一张明细表」的口径。
+-- 注意：本文件的注释必须独占一行（DbStore.Parse 只剥整行 --，行尾注释会变成假列）。
+CREATE TABLE vmatrix_state
+(
+    characterid INTEGER PRIMARY KEY,
+    points      BIGINT  NOT NULL DEFAULT 0,
+    revision    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE vmatrix_cores
+(
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid    INTEGER NOT NULL DEFAULT 0,
+    coreid         INTEGER NOT NULL DEFAULT 0,
+    level          INTEGER NOT NULL DEFAULT 0,
+    selected       INTEGER NOT NULL DEFAULT 0,
+    expiresat      BIGINT  NOT NULL DEFAULT 0,
+    protectedlevel INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE hexa_state
+(
+    characterid  INTEGER PRIMARY KEY,
+    solerda      BIGINT NOT NULL DEFAULT 0,
+    fragments    BIGINT NOT NULL DEFAULT 0,
+    solerdagauge BIGINT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE hexa_skills
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid INTEGER NOT NULL DEFAULT 0,
+    coreid      INTEGER NOT NULL DEFAULT 0,
+    level       INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE hexa_stats
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    characterid INTEGER NOT NULL DEFAULT 0,
+    coreid      INTEGER NOT NULL DEFAULT 0,
+    preset      INTEGER NOT NULL DEFAULT 0,
+    level       INTEGER NOT NULL DEFAULT 0,
+    stat1       INTEGER NOT NULL DEFAULT 0,
+    stat2       INTEGER NOT NULL DEFAULT 0,
+    stat3       INTEGER NOT NULL DEFAULT 0,
+    weight      INTEGER NOT NULL DEFAULT 0,
+    level1      INTEGER NOT NULL DEFAULT 0,
+    level2      INTEGER NOT NULL DEFAULT 0,
+    level3      INTEGER NOT NULL DEFAULT 0,
+    applied     INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE queststatus
@@ -565,6 +713,95 @@ CREATE TABLE command_info (
     default_level INTEGER NOT NULL DEFAULT 0
 );
 
+-- V1.0.36：举报记录（ReportHandler.addReport；reporttime 存 Unix 毫秒）
+CREATE TABLE reports
+(
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    reporttime  INTEGER NOT NULL DEFAULT 0,
+    reporterid  INTEGER NOT NULL,
+    victimid    INTEGER NOT NULL,
+    reason      INTEGER NOT NULL DEFAULT 0,
+    chatlog     TEXT    NOT NULL DEFAULT '',
+    description TEXT    NOT NULL DEFAULT ''
+);
+
+-- V2.1.69（源端）：Link 系统（LinkSystemService；同账号同世界、比当前角色更早创建
+-- 的角色可 Link，达 Lv.150 生效）。复合主键 (target_cid, source_cid) 在服务层判重
+-- （DbStore 只支持列级 PRIMARY KEY，源端 INSERT IGNORE 的语义由 AddLink 先查重实现）。
+CREATE TABLE character_link
+(
+    target_cid INTEGER NOT NULL,
+    source_cid INTEGER NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- V2.1.56（源端）：师徒系统（MentorshipService）。status：0 进行 / 1 出师 / 2 解除。
+-- 源端 mentorship_wallet 以 characterid 为主键；event_log / reward_log 是幂等记账。
+CREATE TABLE mentorship_relation
+(
+    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+    master_cid             INTEGER NOT NULL,
+    master_accountid       INTEGER NOT NULL,
+    master_name            TEXT    NOT NULL,
+    apprentice_cid         INTEGER NOT NULL,
+    apprentice_accountid   INTEGER NOT NULL,
+    apprentice_name        TEXT    NOT NULL,
+    guildid                INTEGER NOT NULL DEFAULT 0,
+    status                 INTEGER NOT NULL DEFAULT 0,
+    start_master_power     INTEGER NOT NULL DEFAULT 0,
+    start_apprentice_power INTEGER NOT NULL DEFAULT 0,
+    last_master_power      INTEGER NOT NULL DEFAULT 0,
+    last_apprentice_power  INTEGER NOT NULL DEFAULT 0,
+    reward_step            INTEGER NOT NULL DEFAULT 0,
+    total_points           INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_wallet
+(
+    characterid     INTEGER NOT NULL,
+    apprentice_coin INTEGER NOT NULL DEFAULT 0,
+    virtue_coin     INTEGER NOT NULL DEFAULT 0,
+    total_points    INTEGER NOT NULL DEFAULT 0,
+    weekly_points   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_weekly_pool
+(
+    relationid       INTEGER NOT NULL,
+    week_key         TEXT    NOT NULL,
+    points           INTEGER NOT NULL DEFAULT 0,
+    claim_master     INTEGER NOT NULL DEFAULT 0,
+    claim_apprentice INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_duel
+(
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    relation_a      INTEGER NOT NULL,
+    relation_b      INTEGER NOT NULL DEFAULT 0,
+    stake           INTEGER NOT NULL DEFAULT 0,
+    points_a        INTEGER NOT NULL DEFAULT 0,
+    points_b        INTEGER NOT NULL DEFAULT 0,
+    status          INTEGER NOT NULL DEFAULT 0,
+    winner_relation INTEGER NOT NULL DEFAULT 0,
+    created_at      INTEGER NOT NULL DEFAULT 0,
+    ends_at         INTEGER NOT NULL DEFAULT 0,
+    finished_at     INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_event_log
+(
+    event_key  TEXT    NOT NULL,
+    relationid INTEGER NOT NULL,
+    points     INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE mentorship_reward_log
+(
+    relationid INTEGER NOT NULL,
+    reward_key TEXT    NOT NULL
+);
+
 -- 假人档案：对齐联机的「账号表」。
 -- 联机里每个玩家账号唯一，所以别人看到他永远是同一张脸、同一个名字；假人现在照这个来：
 -- 几百条档案一次性预置好，之后只读不改，同一个 id 永远同一套外观 + 同一个名字。
@@ -623,4 +860,79 @@ CREATE TABLE storages (
     world INTEGER NOT NULL,
     slots INTEGER NOT NULL DEFAULT 0,
     meso INTEGER NOT NULL DEFAULT 0
+);
+
+-- 快递 ← 源端 V1.0.9__create_dueyi.sql。
+-- 源端列名是 PackageId/ReceiverId/SenderName/Mesos/TIMESTAMP/Message/Checked/Type；
+-- 这里改小写，TIMESTAMP 用 sendtime 存毫秒（源端是 SQL TIMESTAMP，比较时按 30 天过期）。
+-- dueyitems 关联 inventoryitems：包裹里的物品行 characterid = -1，不属于任何角色。
+CREATE TABLE dueypackages (
+    packageid  INTEGER PRIMARY KEY AUTOINCREMENT,
+    receiverid INTEGER NOT NULL DEFAULT 0,
+    sendername TEXT    NOT NULL DEFAULT '',
+    mesos      INTEGER NOT NULL DEFAULT 0,
+    sendtime   INTEGER NOT NULL DEFAULT 0,
+    message    TEXT    NULL,
+    checked    INTEGER NOT NULL DEFAULT 1,
+    type       INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE dueyitems (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    packageid       INTEGER NOT NULL DEFAULT 0,
+    inventoryitemid INTEGER NOT NULL DEFAULT 0
+);
+
+-- 雇佣商店（HiredMerchant）← 源端 playershopitem/inventorymerchant + characters.MerchantMesos/HasMerchant。
+-- 源端把店主物品存在 inventoryitems（type=ItemFactory.MERCHANT=6）并用 inventorymerchant 存 bundles；
+-- 本项目 inventoryitems.type 已经是「道具大分类」（itemId/1000000），所以店内存货行用
+-- characterid = -2（不与快递的 -1 混用）表示「无主」，merchantitems 记录槽位/份数/单价。
+CREATE TABLE hiredmerchants (
+    ownerid     INTEGER PRIMARY KEY,
+    mapid       INTEGER NOT NULL DEFAULT 0,
+    x           INTEGER NOT NULL DEFAULT 0,
+    y           INTEGER NOT NULL DEFAULT 0,
+    permitid    INTEGER NOT NULL DEFAULT 0,
+    description TEXT    NOT NULL DEFAULT '',
+    open        INTEGER NOT NULL DEFAULT 0,
+    published   INTEGER NOT NULL DEFAULT 0,
+    starttime   INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE merchantitems (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    ownerid         INTEGER NOT NULL DEFAULT 0,
+    slot            INTEGER NOT NULL DEFAULT 0,
+    inventoryitemid INTEGER NOT NULL DEFAULT 0,
+    bundles         INTEGER NOT NULL DEFAULT 0,
+    price           INTEGER NOT NULL DEFAULT 0
+);
+
+-- Fredrick 寄存提醒 ← V1.0.13__create_fredstorage.sql（timestamp 存毫秒）
+CREATE TABLE fredstorage (
+    cid       INTEGER PRIMARY KEY,
+    daynotes  INTEGER NOT NULL DEFAULT 0,
+    timestamp INTEGER NOT NULL DEFAULT 0
+);
+
+-- HiredMerchant.sold：成交记录（店主窗口的「已售出」列表）
+CREATE TABLE merchantsold (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    ownerid  INTEGER NOT NULL DEFAULT 0,
+    buyer    TEXT    NOT NULL DEFAULT '',
+    itemid   INTEGER NOT NULL DEFAULT 0,
+    quantity INTEGER NOT NULL DEFAULT 0,
+    meso     INTEGER NOT NULL DEFAULT 0,
+    time     INTEGER NOT NULL DEFAULT 0
+);
+
+-- 便签 ← V1.0.27__create_notes.sql（MEMO_RESULT：商城送礼提醒 / 回复送礼便签 / Fredrick 寄存提醒）
+CREATE TABLE notes (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    "to"      TEXT    NOT NULL DEFAULT '',
+    "from"    TEXT    NOT NULL DEFAULT '',
+    message   TEXT    NOT NULL DEFAULT '',
+    timestamp INTEGER NOT NULL DEFAULT 0,
+    fame      INTEGER NOT NULL DEFAULT 0,
+    deleted   INTEGER NOT NULL DEFAULT 0
 );

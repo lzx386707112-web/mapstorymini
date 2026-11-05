@@ -48,6 +48,10 @@ public sealed class JobDef
 
     public bool IsBeginner => tier == 0;
     public bool IsCygnus => id >= 1000;
+
+    /// <summary>五转觉醒后的独立编码（四转 ID + 1，tier 5）：282 的 38601..38625 只认这套编码，
+    /// 六转技能存放在该职业自己的 Skill/&lt;编码&gt;.img（不与四转 img 混放）。</summary>
+    public bool IsAdvanced => tier >= 5;
 }
 
 public static class JobDefs
@@ -185,6 +189,24 @@ public static class JobDefs
         return byId.TryGetValue(jobId, out var def) ? def.next : Empty;
     }
     static readonly List<int> Empty = new List<int>();
+
+    /// <summary>该职业五转觉醒后的编码（四转 ID + 1）；不是四转职业返回 0。
+    /// JobTree 的 next 里挂着这条边，但对方 advance==null（改码走 1465 任务钩子），
+    /// 所以 CanAdvance 仍然拒绝"直接转入"，只有 PromoteToAdvanced 会走这里。</summary>
+    public static int AdvancedOf(int jobId)
+    {
+        Ensure();
+        foreach (int next in NextOf(jobId))
+            if (byId.TryGetValue(next, out var def) && def.IsAdvanced) return next;
+        return 0;
+    }
+
+    /// <summary>该职业的五转前编码（独立编码 → 四转 ID）；本身不是独立编码则原样返回。</summary>
+    public static int BaseOf(int jobId)
+    {
+        Ensure();
+        return byId.TryGetValue(jobId, out var def) && def.IsAdvanced ? def.parent : jobId;
+    }
 
     /// <summary>
     /// 装备 reqJob 位掩码里本职业的那一位（源端 GameConstants.getJobNiche + EquipmentCatalogService.matchesJob）：

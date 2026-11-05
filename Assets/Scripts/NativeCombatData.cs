@@ -34,6 +34,10 @@ public sealed class CharacterAttributes
     public int weaponDefense, magicDefense, accuracy, avoidability;
     public int equipmentSpeed, equipmentJump;
     public float mastery = 0.1f, criticalChance, criticalBonus;
+    public float hexaDamagePercent,hexaBossPercent,hexaIgnorePercent;
+    // 282 徽章带来的 ARC / AUT 力量（源端 EquipSymbol.getInc，按件累加）。
+    // 不进四维，走「怪物有 ARC/AUT 门槛时的伤害增减」口径，能力值窗单独一行显示。
+    public int arcaneForce, authenticForce;
     // 身上套装差量（≡ Character.setItemBonus）。EquipLoadout.Apply 结算时填充，
     // CombatRules.Attack 消费 Damage%/BossDamage%/FinalDamage%；null 表示未结算过。
     public System.Collections.Generic.Dictionary<string, int> setItemBonus;

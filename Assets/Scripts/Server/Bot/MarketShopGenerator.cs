@@ -35,6 +35,7 @@ namespace Server.Bot
         public MarketShopType? tertiary;
         public readonly List<MarketShopStock> items = new List<MarketShopStock>();
         public readonly List<MarketSoldItem> sold = new List<MarketSoldItem>();
+        public readonly List<string> chat = new List<string>();
     }
 
     // ArtificialFreeMarket + ArtificialShopGenerator。商店数据与地图展示分离。

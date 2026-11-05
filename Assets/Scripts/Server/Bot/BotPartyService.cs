@@ -33,6 +33,17 @@ namespace Server.Bot
             foreach (var actor in BotRegistry.All().Values) if (actor.online && actor.world == world && actor.name == name) return actor;
             return null;
         }
+        // 悄悄话专用：To. 那一栏是手输的，源端靠客户端把名单里的名字填进去，这里放宽到忽略大小写。
+        // 组队/讯息邀请仍走 Find()（源端 getCharacterByName 精确匹配）。
+        public BotActor FindIgnoreCase(string name, int world)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            foreach (var actor in players.Values)
+                if (actor.online && actor.world == world && string.Equals(actor.name, name, StringComparison.OrdinalIgnoreCase)) return actor;
+            foreach (var actor in BotRegistry.All().Values)
+                if (actor.online && actor.world == world && string.Equals(actor.name, name, StringComparison.OrdinalIgnoreCase)) return actor;
+            return null;
+        }
         public BotActor Get(int id) => players.TryGetValue(id,out var actor) ? actor : BotRegistry.Get(id);
         public Party For(int id) => membership.TryGetValue(id,out int party) && parties.TryGetValue(party,out var value) ? value : null;
         // 队伍 id 与角色 id 是两套编号（nextId 从 1000000001 起），For()/Get() 收的都是角色 id。

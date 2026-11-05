@@ -17,6 +17,14 @@ public static partial class NativeGmCommandHost
         var db=GameSession.Server.Db;
         switch(name)
         {
+            // 282 成长系统的窗口入口：服务端只做权限校验，窗口归客户端。
+            case "OpenSymbolCommand":NativeSymbolWindow.Open();return r;
+            case "OpenHyperStatCommand":NativeHyperStatWindow.Open();return r;
+            case "OpenInnerAbilityCommand":NativeInnerAbilityWindow.Open();return r;
+            case "OpenVMatrixCommand":NativeVMatrixWindow.Open();return r;
+            case "OpenHexaMatrixCommand":NativeHexaMatrixWindow.Open();return r;
+            case "OpenFlameCommand":NativeEnhancementWindow.Open(4);return r;
+            case "OpenSoulCommand":NativeEnhancementWindow.Open(5);return r;
             case "WarpCommand":
                 Warp(field,player,N(a),a.Length>1?a[1]:null);break;
             case "GotoCommand":
