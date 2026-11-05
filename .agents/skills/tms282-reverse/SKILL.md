@@ -15,7 +15,7 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
 
 - **战斗力（逆向中）**：工作区根`docs/tms282-skill/30-combat-power.md`，5F3C7E0两次完整快照相减→5E82B40→12F9A60，StatCalibration双校正及int64截断；原服务器0.7 magic number不可视为EXE公式，用户明确禁止以攻魔差额替代。
 
-- **新版灵魂武器（进行中）**：`docs/tms282-skill/29-soul-weapon-wz2.md`（实际正文在工作区根docs），原状态布局/被动公式/150级启用与GradeInfo/BossInfo已核，用户允许替换旧开孔并补服务器缺失规则；248成长检查通过，但转换/烙印分支/BossFragment/星火战斗力尚未完成，勿宣称完整迁移。
+- **新版灵魂武器（进行中）**：`docs/tms282-skill/29-soul-weapon-wz2.md`（实际正文在工作区根docs），原状态布局/被动公式/150级启用与GradeInfo/BossInfo已核，用户允许替换旧开孔并补服务器缺失规则；2026-11-05 用户另行要求移除旧材料及取消不可交易前置，启用不再写永久交易限制，绑定期间仍限制转移；转换/烙印分支/BossFragment/星火战斗力仍有边界，勿宣称完整迁移。
 
 - **核心宝石与符文装备窗口纠正**：`docs/tms282-skill/28-gemstones-symbol-panel.md`，17件真实道具、移除旧83怪10%掉落、282动态124怪2435902与静态双抽取；用户不迁服务器赠礼；已授权按 IMG 重建周任务（两日调查→3颗、UTC+8周四重置、事务去重）。EXE `4A05040`实际用UIEquip/Equip/Symbol，slotPos为左上角，撤回旧UIAuthenticForce“卡片中心”猜测；Grand额外汇总字段已核实为装备实例三字段，采用用户批准TSV补齐显示及收益，215项成长检查通过；非EXE等级公式。
 
@@ -28,14 +28,31 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
 - `lucid-boss.md` — 露希妲（普通 boss 副本 + 變身燃燒 LucidDream）完整逻辑
 - `will-boss.md` — **威爾**（2026-11-05）：三阶段 + 月光计 + P1 双次元门槛（Tms282WillPhase1）、
   242 技能族、282 opcode 0x086C..0x0881、BossWill.img 段表（0=easy鏡面/1=normal 8880340s/2=hard 8880300s/3=easy）；
-  套件 Easy 车道无召唤分支；normal 车道 mob 无 _Canvas（待解 pack 确认）。
+  **Easy 与 Normal 同入口/同战斗图，实际召 Normal 8880340 系（不是"无召唤"）**；Easy 是官方正式难度
+  （16.5 兆，mob 用 8880360 系 lv235，套件零引用）、官方三档 16.5/25.2/126 兆；
+  `GameConstants` 与 `BossHelper` 对 8880342 的难度归属自相矛盾（BossHelper 对）；
+  normal 车道 mob 无 `_Canvas` 但 `Packs/Mob_00000.ms` 内有完整 img（MsUnpack 已证实，非缺资源）。
 - `gloom-boss.md` — **戴斯克/Gloom**（2026-11-05）：套件无状态机/召唤（结构性断链），mob=8644650(N)/8644655(C)
-  lv255、HP=1337 占位、三技能全 onlyOtherSkill；内部代号 dusk、无 Etc img/无开场演出、WILL_DUSK_GAUGE 是死包。
-- `darknell-boss.md` — **頓凱爾/Darknell**（2026-11-05）：套件无状态机/召唤，mob=8645009(N)/8645066(H) lv265、
-  HP=1337 占位、260-1..4 难度差；BossDunkel.img=AreaWarning 0..9；与黑魔法师共用 preQuest 35815。
+  lv255、**HP=957,809,713 / 3,064,991,082（dat 与 MOB_HP 同值，合成曲线非官方；官方 26T / 114.6T）**、
+  三技能全 onlyOtherSkill（213=AreaWarning、186=AreaForce 都在枚举内，252=BlackMageGloom 有枚举无实现）；
+  内部代号 dusk、无 Etc img/无开场演出、WILL_DUSK_GAUGE 是死包；官方 7 类招式已作为反推锚点。
+- `darknell-boss.md` — **頓凱爾/Darknell**（2026-11-05 三轮）：套件无状态机/召唤，mob=8645009(N)/8645066(H) lv265、
+  **HP=1,225,996,433 / 2,451,992,866（dat + BOSS_CONTEXT_HP；官方 26T / 160T）**；
+  **`AreaWarning 0..9 = 5 精英 Boss × 2 招`**（eliteBossAir 只落 5/7、ball 只落 1/2、同色配对三重互锁，
+  预警 2790–3870ms）；**`260-1..4 = 召唤两把剑 Ancestion(8645010)/Ascendion(8645011)`**，hard 用 8645066/67；
+  `fieldType=204` 是**枚举缺口**（FieldType 上限 152，Will 182/Gloom 262/Seren 271 同样超限，
+  别家都有专属 Java 类、只有 Darknell 没有）；BossDunkel.img 265 完整 463 canvas、282 只剩 140 行骨架；
+  与黑魔法师共用 preQuest 35815；掉落表齐全。
 - `seren-boss.md` — **受選的賽蓮/Seren**（2026-11-05）：车道=地图千位（hard 8880600/normal 8880630/extreme 8880650），
-  P2 核+HpLinkMob 分时身体（offset 1/5/7/10）、太阳计+时钟（108/72/108/72 度、120s 周期，官方规则=套件重构近似）；
-  套件常量 SEREN_EXTREME_FIGHT_MAP=410002080 是 bug（实际 P2=410002260）；HP=2.1e9 占位。
+  P2 核+HpLinkMob 分时身体（offset 1/5/7/10）、太阳计+时钟（**套件 108/72/108/72 度 @120s，
+  官方是 420s / 103-103-51-103 度**：正午 120s、夕阳 120s、**午夜 60s**、黎明 120s）；
+  **官方太阳计 6 条规则里套件只实现「残量继承」**（午夜 −1／耗竭全队强退／整周期回补 +1／35 次上限／
+  午夜形态不计增 全缺，套件满计只眩晕 3s 而非官方 5s）；
+  **形态专属技已坐实：263=正午、264=P1 主技+夕阳、260=午夜、黎明无技**（wz282 skill 节点，wz265 层全无）；
+  **260 跨 boss 共用**（Darknell lv1–4／Seren lv5–7，实现须按 templateId 分流）；
+  套件常量 SEREN_EXTREME_FIGHT_MAP=410002080 是 bug（该图 fieldType=0 的 hard 尾图，实际 P2=410002260）；
+  **HP 分档：P1 本体=dat 21 亿占位须自配，P2 核=15.7/31.4/86.3 亿**（BossHpConstants）；
+  `Seren.spawn` 零调用方且 `firstenter_4100021x0` 会压掉 XML first-enter ⇒ 现成套件进场空场。
   **8880342/8880344 撞号警示**：本项目星火挂的「塞伦 8880342/8880344」与 282 威爾 P3 本体/P1 上半身同号。
 - **符文系统**（2026-11-04，正文 `docs/tms282-skill/27-rune-system.md`）：9 种古代之輪
   （RuneType 0..8）、生成条件（有怪/非 boss/非城镇/`feature.rune`）、重生 5min/冷却 4min、

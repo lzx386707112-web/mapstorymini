@@ -25808,42 +25808,6 @@
    "sha256": "72995e97acb044dc90a5099cab2a2d7621c3864cd4a9495fb2e02897361d5309"
   },
   {
-   "path": "Character/Cap/01002590.img",
-   "sha256": "14e3d5fcf9d5b491f49c77902d551bee48683ca0464356dd9d858e200832f10c"
-  },
-  {
-   "path": "Character/Cap/01002591.img",
-   "sha256": "96ae413c0007f0e03b7213805f5ad032c72965f53ab315f883f85415278776bf"
-  },
-  {
-   "path": "Character/Cap/01002592.img",
-   "sha256": "ee4d1979025fa0b6418d8cf711fb41930a822ed65ce6b9a652ade65bc27fcbb3"
-  },
-  {
-   "path": "Character/Cap/01002593.img",
-   "sha256": "7902bbbb29abf9d428f27b1084faa3bae4f00f401dd58c451136626fdb0dc55e"
-  },
-  {
-   "path": "Character/Cap/01002594.img",
-   "sha256": "001e0006c859842258c27114d04d58a5a8c7a3b5066462a31807b606237ab214"
-  },
-  {
-   "path": "Character/Cap/01002596.img",
-   "sha256": "1e302de6653d9f3f9c7bafda770e75b5cecfe5406c54e266ee9268406911c5ad"
-  },
-  {
-   "path": "Character/Cap/01002597.img",
-   "sha256": "71818da50958340325f40e2caa981eef0787236797b7d6921afc1317f22f0cb8"
-  },
-  {
-   "path": "Character/Cap/01002598.img",
-   "sha256": "12f15edbbbc76c712708ac0297a9157c04aafe726c6f8b072097582c97e8bdb8"
-  },
-  {
-   "path": "Character/Cap/01002599.img",
-   "sha256": "9fb920b757b4fad0d3c5ecc6d27dc7445d463a803f3d4e451f2255c39aed9b3f"
-  },
-  {
    "path": "Character/Cap/01002600.img",
    "sha256": "eb643e372c5a993cc5e01cc892450b8e265f20aef210eba44165d9d97166619f"
   },
@@ -37616,26 +37580,6 @@
    "sha256": "ecd113cfe33c18fd61a04c8e14bbcc4c7d36dbe47bd75818f95f54b68996c4c5"
   },
   {
-   "path": "Character/Cape/01102590.img",
-   "sha256": "818934f73ba7a92f6d4375ab936e6e234b86e73ddc9c4b5a0d7b486d896a748d"
-  },
-  {
-   "path": "Character/Cape/01102591.img",
-   "sha256": "5fd0bc18a022bb014d24ee6eba9253917e5b4fcf4ac5fb6d0200b335f967ce2b"
-  },
-  {
-   "path": "Character/Cape/01102592.img",
-   "sha256": "04e5766d7700df3369c1bffecd19f49f8800e155ac5a3e54a37dd469a83743ee"
-  },
-  {
-   "path": "Character/Cape/01102593.img",
-   "sha256": "fbbf746d4f469a6c75b0e6b35121dfa3e278a49d25cf4f7ebaa11dfac179e686"
-  },
-  {
-   "path": "Character/Cape/01102595.img",
-   "sha256": "0bdb03078d82f29d6c01b0a0b8842d4ff672c20dec589f277573dd1b48606cc8"
-  },
-  {
    "path": "Character/Cape/01102601.img",
    "sha256": "4bac75ed891c0c5749924e8f0f50670024b3e20aca4aa754bddd4b23302e5b6a"
   },
@@ -43734,10 +43678,6 @@
   {
    "path": "Character/Face/00020258.img",
    "sha256": "f8deab7d6f96c23099735122e8a4b5fcd3ec46fe1c316c9b96bc7869fec644ae"
-  },
-  {
-   "path": "Character/Face/00020259.img",
-   "sha256": "a942133185943295e258ccdd838b26b94ec82ea9504fabbbd2c630dd488d0b91"
   },
   {
    "path": "Character/Face/00020260.img",
@@ -104636,10 +104576,6 @@
    "sha256": "92944dd4cd2054bc2245559c7196ebd8f9bd9389852e0aee7426f142c3025271"
   },
   {
-   "path": "Character/Longcoat/01050259.img",
-   "sha256": "2e5801a92d35f91026f172505d18d0c4a2bcb3e818e77c7e8722427a2028046c"
-  },
-  {
    "path": "Character/Longcoat/01050260.img",
    "sha256": "5a89a87d6a44522c58ad30bde30d06fbcf14b319acc078dd8f965b9702ef94eb"
   },
@@ -116454,26 +116390,6 @@
   {
    "path": "Character/PetEquip/01802589.img",
    "sha256": "b63c5d2d384e3ac80171da1db2ac11670742b93663d476e70e42c8c128dbce1b"
-  },
-  {
-   "path": "Character/PetEquip/01802590.img",
-   "sha256": "6b9d3930c72b2929bbdaed75c7476d031a58b58dfea48c4811b375959af8b9ef"
-  },
-  {
-   "path": "Character/PetEquip/01802591.img",
-   "sha256": "d60de8dc29271a7cdfb0c0c22a66f034c86db5839af6589d79f359db3dbc5471"
-  },
-  {
-   "path": "Character/PetEquip/01802593.img",
-   "sha256": "9efa8a3b8dbedfa0ef3832327ab6e64033a8a7e6e92ac772e2b7671f49a17dd4"
-  },
-  {
-   "path": "Character/PetEquip/01802596.img",
-   "sha256": "8ca5bd12149594739439c89e34fb536bfa984ba0d71ded0fc1fbf3cae9821ad9"
-  },
-  {
-   "path": "Character/PetEquip/01802597.img",
-   "sha256": "f69c19a1234c088e18d1aa94546451c4b323815ffd212fc16c70c97450755788"
   },
   {
    "path": "Character/PetEquip/01802600.img",
@@ -141760,38 +141676,6 @@
    "sha256": "e7c7af7134237708cdd550cc85bb628007055e178ad3215ae081ef801a501a31"
   },
   {
-   "path": "Character/Weapon/01702590.img",
-   "sha256": "958446888424560afb97ef6f5131864a19f0955162399d612b4a3f9dfb54b02f"
-  },
-  {
-   "path": "Character/Weapon/01702591.img",
-   "sha256": "7a72ec15bdbf85a6d320efed8cc1fae590bdc66940ba12c58739c7e2758284bd"
-  },
-  {
-   "path": "Character/Weapon/01702593.img",
-   "sha256": "21b5168bfed7e0f55d254f284e5075472b49f31c972fed20c953abd8b8838424"
-  },
-  {
-   "path": "Character/Weapon/01702594.img",
-   "sha256": "be910b017bc742b36a07c9da0c7013b1491fb467fd4633686cc05353f1ae1a88"
-  },
-  {
-   "path": "Character/Weapon/01702595.img",
-   "sha256": "84c9dcfc07ba99e7aea402b457cae06635a7f84758f46bfb5c84191e035003d4"
-  },
-  {
-   "path": "Character/Weapon/01702597.img",
-   "sha256": "13d85300490d44621f3f16187ef2f8e002e23e8481c01a33b387a85c63f317c4"
-  },
-  {
-   "path": "Character/Weapon/01702598.img",
-   "sha256": "ecb0ad8a5dccd52bf34ddce2afd7be0eb45463fe0befbea3f2da250c0edae218"
-  },
-  {
-   "path": "Character/Weapon/01702599.img",
-   "sha256": "86abc3e8d1436f8ad39605896fef21e6b68748153fc673e95a189ad782bfcbcc"
-  },
-  {
    "path": "Character/Weapon/01702600.img",
    "sha256": "f1215c65bad913af83a6ab1d6f4773df19cb4b78271fb3b33b95195b6f9da706"
   },
@@ -148776,10 +148660,6 @@
    "sha256": "54d885c897535ecbdb04e1633da991a06b1534d6dda37a3c2fa222390553d5e9"
   },
   {
-   "path": "Item/Consume/0259.img",
-   "sha256": "1e72a907ede3ef11acf78f4e26b656d9c3b84c24f0c38f5c0b1a7a434076be3e"
-  },
-  {
    "path": "Item/Consume/0261.img",
    "sha256": "f502300b586a8be22770f7f874b663925822a8dc3cea3d8693975085aa8db763"
   },
@@ -148798,10 +148678,6 @@
   {
    "path": "Item/Consume/_Canvas/0243.img",
    "sha256": "05dce35652a699a9b1d78c3e904b8f2fb9127dd0faa227f50115f78ab9afef2a"
-  },
-  {
-   "path": "Item/Consume/_Canvas/0259.img",
-   "sha256": "a324a2fe9b63501ee94c8a678ee9963b67859511c4256a87026acf371c2d22ee"
   },
   {
    "path": "Item/Consume/_Canvas/0261.img",
@@ -183396,10 +183272,6 @@
    "sha256": "0a1121345f9181b6938c383f7dcacb24409b7f22373a86cc4a8e7640d378e20d"
   },
   {
-   "path": "Mob/9300259.img",
-   "sha256": "fda3d369a9172337d3b0666ba9ba2fdd9e7a122ca4768b8cfecff738be2291da"
-  },
-  {
    "path": "Mob/9300260.img",
    "sha256": "0999757cf8af83945f97490c1c035eb6d10e193200cf7b84da5dc7c6f554458c"
   },
@@ -184674,10 +184546,6 @@
   {
    "path": "Mob/9400258.img",
    "sha256": "7d09bd5044e2a708f51cf1c826e3196d95fc2fd40d97949504306c66fda105c4"
-  },
-  {
-   "path": "Mob/9400259.img",
-   "sha256": "d33539f0f5e153a03c4208c4a07cd463b57d515dd536cdef4df634a9f874e761"
   },
   {
    "path": "Mob/9400260.img",
@@ -189210,10 +189078,6 @@
   {
    "path": "Mob/9800258.img",
    "sha256": "46b36cd5921ce92f04d1cc0e3b01e4c943075ed469b8225281fceb6d701ba5d5"
-  },
-  {
-   "path": "Mob/9800259.img",
-   "sha256": "158da8975f17e8ee2c9864730c629fa71b49df43cedd6565be011444b08bcff1"
   },
   {
    "path": "Mob/9800260.img",
@@ -206129,46 +205993,6 @@
   },
   {
    "path": "Npc/9902589.img",
-   "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
-  },
-  {
-   "path": "Npc/9902590.img",
-   "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
-  },
-  {
-   "path": "Npc/9902591.img",
-   "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
-  },
-  {
-   "path": "Npc/9902592.img",
-   "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
-  },
-  {
-   "path": "Npc/9902593.img",
-   "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
-  },
-  {
-   "path": "Npc/9902594.img",
-   "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
-  },
-  {
-   "path": "Npc/9902595.img",
-   "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
-  },
-  {
-   "path": "Npc/9902596.img",
-   "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
-  },
-  {
-   "path": "Npc/9902597.img",
-   "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
-  },
-  {
-   "path": "Npc/9902598.img",
-   "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
-  },
-  {
-   "path": "Npc/9902599.img",
    "sha256": "b6fc22669a615e9a43c12a323e19d94a681ea441f002d258d0d2b785728c5cbf"
   },
   {

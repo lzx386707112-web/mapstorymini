@@ -171,6 +171,7 @@ public sealed class DbStore
         store.LoadSchema();
         if (File.Exists(dbPath)) store.ReadJson(File.ReadAllText(dbPath));
         else { store.Save(); }
+        if(InventoryDao.PurgeRetiredSoulMaterials(store)>0)store.Save();
         GameConfigDao.EnsureLevelCaps(store);
         return store;
     }

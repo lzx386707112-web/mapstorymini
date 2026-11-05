@@ -170,7 +170,8 @@ public static class DropStore
         /// <summary>怪物结晶（etc 4260xxx 命名空间）禁止直接掉落：只可由原石经制作合成获得。</summary>
         // 2435719 的旧神秘河 10% 自定义掉落已撤销；282 怪物产出的是 2435902。
         // 同时屏蔽旧存档 DB 覆盖，避免资源更新后又把旧规则加回来。背包物品不受影响。
-        static bool IsUnsupportedDrop(int item) => (item >= 4260000 && item < 4270000) || item == 2435719;
+        static bool IsUnsupportedDrop(int item) => (item >= 4260000 && item < 4270000) || item == 2435719
+            || item/1000==2590 || item/1000==2591;
 
         static void ExcludeUnsupportedDrops(Dictionary<int, List<DropEntry>> mobs, List<DropEntry> globals)
         {

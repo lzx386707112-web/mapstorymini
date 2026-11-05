@@ -426,60 +426,34 @@ static class GrowthChecks
             check(keepNew.ok && DbStore.Long(bossEq, "exGradeOption") == NativeFlameService.Pack(black2.candidate),
                 "选保留新结果时写入新打包值");
 
-            // ——— 13. 灵魂服务：开孔 / 镶魂 ———
-            int cid4 = NewCharacter(db, "SoulTest", 112);
-            // 0259 导入（tools/ms282/import_soul_items.py）后，卷轴/灵魂石必须有模板和名字，
-            // 否则服务再正确，玩家也拿不到、看不懂。
-            check(Server.Bot.BotItemCatalog.Shared.Info(2590002) != null &&
-                Server.Bot.BotItemCatalog.Int(Server.Bot.BotItemCatalog.Shared.Info(2590002), "success") == 100,
-                "0259 开孔器进道具表，且 2590002 是 100% 卷");
-            check(!string.IsNullOrEmpty(Server.Bot.BotItemCatalog.Shared.Name(2591010)), "0259 灵魂石有名字");
-            check(!string.IsNullOrEmpty(Server.Bot.BotItemCatalog.Shared.Name(2590028)), "0259 卷轴有名字");
-            long weapon = InventoryDao.InsertItem(db, cid4, 1302214, InventoryDao.Equipped, -11, 1);  // rlvl 75
-            InventoryDao.InsertEquipment(db, weapon);
-            var weaponEq = InventoryDao.EquipmentOf(db, weapon);
-            long enchanter = InventoryDao.InsertItem(db, cid4, 2590002, InventoryDao.Equip, 5, 1);
-            long soulStone = InventoryDao.InsertItem(db, cid4, 2591010, InventoryDao.Equip, 6, 1);
-
-            var soulPreview = NativeSoulService.Handle(db, new SoulRequest { characterId = cid4, inventoryItemId = weapon });
-            check(soulPreview.ok && soulPreview.socketId == 0 && soulPreview.soulMax == 1000, "灵魂预览报空槽/能量上限");
-
-            var noSocket = NativeSoulService.Handle(db, new SoulRequest
-            { characterId = cid4, inventoryItemId = weapon, soulInventoryItemId = soulStone, operation = SoulOperation.Enchant, commit = true });
-            check(!noSocket.ok && noSocket.error.Contains("插槽"), "没有插槽时镶魂被拒");
-
-            var socket = NativeSoulService.Handle(db, new SoulRequest
-            { characterId = cid4, inventoryItemId = weapon, soulInventoryItemId = enchanter, operation = SoulOperation.Socket, commit = true });
-            check(socket.ok && socket.success && socket.socketId == 2, "2590002 开孔成功（100% 卷），槽号 = id % 2590000");
-            check(db.Table("inventoryitems").Select(x => DbStore.Long(x, "inventoryitemid") == enchanter).Count == 0,
-                "开孔器被消耗");
-
-            long enchanter2 = InventoryDao.InsertItem(db, cid4, 2590002, InventoryDao.Equip, 7, 1);
-            var again = NativeSoulService.Handle(db, new SoulRequest
-            { characterId = cid4, inventoryItemId = weapon, soulInventoryItemId = enchanter2, operation = SoulOperation.Socket, commit = true });
-            check(!again.ok && again.error.Contains("已经有"), "已开孔的武器不能再开");
-
-            var enchant = NativeSoulService.Handle(db, new SoulRequest
-            { characterId = cid4, inventoryItemId = weapon, soulInventoryItemId = soulStone, operation = SoulOperation.Enchant, commit = true });
-            check(enchant.ok && enchant.soulId == 11 && enchant.optionCode == 101, "2591010 → soulID 11 / 属性代码 101");
-            check(enchant.optionKey == "STR" && enchant.optionValue == 3, "101 = STR +3");
-            check(DbStore.Int(weaponEq, "soulSocketId") == 2 && DbStore.Int(weaponEq, "soulItemId") == 2591010 &&
-                DbStore.Int(weaponEq, "soulOptionId") == 11 && DbStore.Int(weaponEq, "soulOption") == 101,
-                "镶魂四列落盘");
-
-            long hat = InventoryDao.InsertItem(db, cid4, 1002000, InventoryDao.Equipped, -1, 1);
-            InventoryDao.InsertEquipment(db, hat);
-            long enchanter3 = InventoryDao.InsertItem(db, cid4, 2590002, InventoryDao.Equip, 8, 1);
-            var hatSocket = NativeSoulService.Handle(db, new SoulRequest
-            { characterId = cid4, inventoryItemId = hat, soulInventoryItemId = enchanter3, operation = SoulOperation.Socket, commit = true });
-            check(!hatSocket.ok && hatSocket.error.Contains("武器"), "非武器不能开孔");
-
-            long lowWeapon = InventoryDao.InsertItem(db, cid4, 1302000, InventoryDao.Equipped, -12, 1); // rlvl 15
-            InventoryDao.InsertEquipment(db, lowWeapon);
-            long enchanter4 = InventoryDao.InsertItem(db, cid4, 2590002, InventoryDao.Equip, 9, 1);
-            var lowSocket = NativeSoulService.Handle(db, new SoulRequest
-            { characterId = cid4, inventoryItemId = lowWeapon, soulInventoryItemId = enchanter4, operation = SoulOperation.Socket, commit = true });
-            check(!lowSocket.ok && lowSocket.error.Contains("等级不足"), "低于 75 级的武器不能开孔");
+            // ——— 13. 旧灵魂材料退役，保留武器转换元数据 ———
+            int cid4=NewCharacter(db,"SoulTest",112);
+            check(Server.Bot.BotItemCatalog.Shared.Info(2590002)==null &&
+                Server.Bot.BotItemCatalog.Shared.Info(2591010)==null,"旧灵魂材料已移出道具目录");
+            long weapon=InventoryDao.InsertItem(db,cid4,1302214,InventoryDao.Equipped,-11,1);
+            InventoryDao.InsertEquipment(db,weapon);
+            var weaponEq=InventoryDao.EquipmentOf(db,weapon);
+            weaponEq["soulItemId"]=2591010L; weaponEq["soulOption"]=101L;
+            // Simulate a pre-migration save, bypassing the now-blocked grant API.
+            foreach(int id in new[]{2590002,2591010})
+                db.Table("inventoryitems").Insert(new DbRow { ["characterid"]=(long)cid4,
+                    ["itemid"]=(long)id,["inventorytype"]=2L,["position"]=5L,["quantity"]=1L });
+            db.Table("extrastorage").Insert(new DbRow { ["characterid"]=(long)cid4,["itemid"]=2591010L,["quantity"]=1L });
+            db.Table("drop_data").Insert(new DbRow { ["dropperid"]=8800002L,["itemid"]=2590004L,["chance"]=100L });
+            db.Save();
+            var retired=DbStore.Open(db.FilePath);
+            check(!InventoryDao.ItemsByCharacter(retired,cid4).Exists(r=>InventoryDao.IsRetiredSoulMaterial(DbStore.Int(r,"itemid"))),
+                "重开存档删除全部旧灵魂材料");
+            check(retired.Table("extrastorage").Select(r=>InventoryDao.IsRetiredSoulMaterial(DbStore.Int(r,"itemid"))).Count==0 &&
+                retired.Table("drop_data").Select(r=>InventoryDao.IsRetiredSoulMaterial(DbStore.Int(r,"itemid"))).Count==0,
+                "仓储与旧掉落覆盖同步清理");
+            check(DbStore.Int(InventoryDao.EquipmentOf(retired,weapon),"soulItemId")==2591010 &&
+                DbStore.Int(InventoryDao.EquipmentOf(retired,weapon),"soulOption")==101,"保留武器旧灵魂转换数据");
+            bool retiredGrantBlocked=false;
+            try{InventoryDao.InsertItem(retired,cid4,2590002,InventoryDao.Use,5,1);}
+            catch(InvalidOperationException){retiredGrantBlocked=true;}
+            check(retiredGrantBlocked,"旧材料不能经发放接口重新出现");
+            InventoryDao.PurgeRetiredSoulMaterials(db);
 
             // ——— 14. 极限属性服务：加点 / 退点 / 洗点 / 切预设 ———
             int cid5 = NewCharacter(db, "HyperTest", 112, 50000000L);
@@ -688,12 +662,13 @@ static class GrowthChecks
             long modernWeapon=InventoryDao.InsertItem(db,modernCid,1302134,InventoryDao.Equipped,-11,1);
             InventoryDao.InsertEquipment(db,modernWeapon);
             var modernRow=db.Table("inventoryitems").Find(x=>DbStore.Long(x,"inventoryitemid")==modernWeapon);
-            modernRow["flag"]=8L;
+            modernRow["flag"]=0L;
             SoulResponse Modern(SoulOperation op,int amount=0,long? revision=null,DateTimeOffset? at=null)
                 =>NativeSoulWeaponWz2Service.Handle(db,new SoulRequest {characterId=modernCid,inventoryItemId=modernWeapon,
                     operation=op,commit=true,amount=amount,revision=revision??NativeSoulWeaponWz2Service.Read(db,modernCid).revision},new Random(1),at);
             var modern=Modern(SoulOperation.ActivateModern);
             check(modern.ok&&modern.modern.weapon==modernWeapon&&modern.modern.level==1,"新版启用绑定真实装备实例");
+            check(DbStore.Int(modernRow,"flag")==0,"可交易武器允许启用且不被永久改为不可交易");
             var modernCharacter=CharService.Load(db,modernCid);
             modernCharacter.inventory.Add(new InventoryEntry {itemId=1302000,position=-10,quantity=1,soulOption=101});
             var modernStats=NativeGrowthStats.Accumulate(modernCharacter,200,112);

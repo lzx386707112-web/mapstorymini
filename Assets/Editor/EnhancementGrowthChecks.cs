@@ -25,8 +25,6 @@ public static class EnhancementGrowthChecks
             typeof(NativeInventoryService).GetMethod("AddItems",Flags).Invoke(null,new object[]{db,CharactersDao.FindById(db,cid),1302134,1,-1L,-1});
             typeof(NativeInventoryService).GetMethod("AddItems",Flags).Invoke(null,new object[]{db,CharactersDao.FindById(db,cid),2048716,2,-1L,-1});
             typeof(NativeInventoryService).GetMethod("AddItems",Flags).Invoke(null,new object[]{db,CharactersDao.FindById(db,cid),2048753,1,-1L,-1});
-            typeof(NativeInventoryService).GetMethod("AddItems",Flags).Invoke(null,new object[]{db,CharactersDao.FindById(db,cid),2590002,1,-1L,-1});
-            typeof(NativeInventoryService).GetMethod("AddItems",Flags).Invoke(null,new object[]{db,CharactersDao.FindById(db,cid),2591010,1,-1L,-1});
             var server=new GameServer();
             typeof(GameServer).GetProperty("Db").SetValue(server,db);
             typeof(GameSession).GetProperty("Net").SetValue(null,new InProcessTransport(server));
@@ -47,8 +45,11 @@ public static class EnhancementGrowthChecks
             Require(Field<FlameResponse>("flame").candidate.Exists(x=>x.value>0),"recovered candidate has values");
             Require(NativeEnhancementWindow.ChooseFlame(true)==null,"recovered choice commits");
             var weapon=Find(1302134);
-            db.Table("inventoryitems").Find(DbStore.Eq("inventoryitemid",weapon.itemRowId))["flag"]=8L;
             NativeEnhancementWindow.Open(5);
+            Require(NativeEnhancementWindow.Select(new InventoryEntry {itemId=2590002})!=null&&Field<InventoryEntry>("material")==null,
+                "modern panel explains retired socket material instead of silently accepting it");
+            Require(NativeEnhancementWindow.Select(new InventoryEntry {itemId=2591010})!=null&&Field<InventoryEntry>("material")==null,
+                "modern panel explains retired soul material instead of silently accepting it");
             NativeEnhancementWindow.Select(weapon);
             typeof(NativeSoulWeaponPanel).GetField("selected",Flags).SetValue(null,weapon);
             bool Send(SoulOperation op)=>(bool)typeof(NativeSoulWeaponPanel).GetMethod("Send",Flags).Invoke(null,new object[]{op,0});

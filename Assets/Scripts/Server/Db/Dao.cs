@@ -196,8 +196,30 @@ public static class InventoryDao
     // Equipped and Equip share type 1; positive Android AP slots are not bag slots.
     public static bool IsBagPosition(int position) => position > 0 && !NativeAndroidService.IsApSlot(position);
 
+    public static bool IsRetiredSoulMaterial(int itemId) => itemId / 1000 == 2590 || itemId / 1000 == 2591;
+
+    // User-authorized retirement of the old socket/enchant consumables. Keep
+    // soul fields on weapons: the new system still needs them for conversion.
+    public static int PurgeRetiredSoulMaterials(DbStore db)
+    {
+        int removed=0;
+        foreach(var row in new List<DbRow>(db.Table("inventoryitems").rows))
+            if(IsRetiredSoulMaterial(DbStore.Int(row,"itemid")))
+            {
+                long id=DbStore.Long(row,"inventoryitemid");
+                removed+=db.Table("inventoryitems").Delete(DbStore.Eq("inventoryitemid",id));
+                db.Table("inventoryequipment").Delete(DbStore.Eq("inventoryitemid",id));
+                foreach(string link in new[]{"dueyitems","merchantitems"})
+                    if(db.HasTable(link))db.Table(link).Delete(DbStore.Eq("inventoryitemid",id));
+            }
+        foreach(string table in new[]{"extrastorage","shopitems","drop_data","drop_data_global"})
+            if(db.HasTable(table))removed+=db.Table(table).Delete(row=>IsRetiredSoulMaterial(DbStore.Int(row,"itemid")));
+        return removed;
+    }
+
     public static long InsertItem(DbStore db, int characterId, int itemId, int inventoryType, int position, int quantity, int petId=-1)
     {
+        if(IsRetiredSoulMaterial(itemId))throw new InvalidOperationException("旧灵魂附魔石和灵魂宝珠已移除，请使用新版灵魂武器系统");
         if(itemId/1000==5000 && petId<0)
             petId=(int)db.Table("pets").Insert(new DbRow { ["name"]=Server.Bot.BotItemCatalog.Shared.Name(itemId),["level"]=1L,["closeness"]=0L,["fullness"]=100L,["summoned"]=0L,["flag"]=0L });
         return db.Table("inventoryitems").Insert(new DbRow

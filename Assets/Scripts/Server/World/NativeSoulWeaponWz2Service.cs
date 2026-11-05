@@ -81,7 +81,6 @@ public static class NativeSoulWeaponWz2Service
                 {
                     var info=Server.Bot.BotItemCatalog.Shared.Info(DbStore.Int(target,"itemid"));
                     if(Server.Bot.BotItemCatalog.Int(info,"reqLevel")+DbStore.Int(equip,"iIncReq")<150)error="只有150级以上的武器才可启用";
-                    else if((DbStore.Int(target,"flag")&8)==0 && Server.Bot.BotItemCatalog.Int(info,"tradeBlock")==0)error="只有无法交易的武器才可启用";
                     else if(DbStore.Int(target,"position")<=-100 || NativeAndroidService.IsApSlot(DbStore.Int(target,"position")))error="这件武器不能启用";
                 }
             }
@@ -110,7 +109,6 @@ public static class NativeSoulWeaponWz2Service
                 {
                     s.weapon=r.inventoryItemId;s.unlocked=true;
                     if(!s.converted)ConvertLegacy(equip,s,now);
-                    target["flag"]=(long)(DbStore.Int(target,"flag")|8);
                     // New system replaces legacy socket/soul bonuses on this weapon.
                     foreach(string key in new[]{"soulSocketId","soulOptionId","soulItemId","soulOption"})equip[key]=0L;
                 }

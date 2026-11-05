@@ -327,7 +327,10 @@ slv 分支服务端逻辑：
 - 任务 dat：`dat282/quests/{34330,100089,16995,36117,100102,102931,102932,102933,102934,102961}.dat`（變身燃燒
   5 个 LucidBoss 首杀任务 102931-934/102961 **dat282 全有**，dat265 没有属正常——overlay 覆盖）；
   **34360/102401/102930/600384/102883/102963 是 QR 值型任务，两层都无 dat**（`createQuestWithQRValue` 运行时现建，正常）。
-- 掉落：`TMS282.5/data/resources/mob_drops.json` 含 8880156（音乐盒 hard）条目。
+- 掉落：音乐盒 8880156 **两个文件都有**——`TMS282.5/data/resources/mob_drops.json` 27 条（265 生成表）、
+  `data/resources/tms282/mob_drops.json` 35 条（282 overlay）。`DropData.load` 是**按 mob 整体替换**
+  （overlay 里出现过该 mobId 就把 base 的同 mob 行全删掉，不是追加）⇒ 实际生效的是 overlay 的 35 条。
+  文件是 `[{mobId,...}]` 列表，按 `mobId` 过滤。
 - 客户端任务表现资源：`Data/Quest/QuestData/`（25033 个）。
 
 ## 9. 迁移/验证边界（对本项目）

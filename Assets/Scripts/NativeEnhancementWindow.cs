@@ -28,6 +28,8 @@ public static class NativeEnhancementWindow
     static Vector2 position,grab;
     static readonly Dictionary<string,Texture2D> compactTextures=new Dictionary<string,Texture2D>();
     static string error;
+    const string LegacySoulMaterialMessage="已切换为282新版灵魂武器，不再消耗旧附魔石或灵魂宝珠。请放入武器后点击武器格启用，成长和重设烙印使用灵魂碎片。";
+    static bool IsLegacySoulMaterial(int id)=>id/1000==SoulCatalog.EnchanterBase/1000||id/1000==SoulCatalog.SoulBase/1000;
     public static bool Visible {get;private set;}
     // One stable outer canvas for all tabs, including an outstanding cube choice.
     // 星火/灵魂页签的素材是完整 418x720，没有可裁的空白，所以按页签放宽外框。
@@ -90,6 +92,8 @@ public static class NativeEnhancementWindow
         foreach(var item in GameSession.Character.inventory)
             if(!string.IsNullOrEmpty(item.flameChoice))
             {equipment=item;material=null;page=4;Preview();break;}
+        if(page==5&&material!=null&&IsLegacySoulMaterial(material.itemId))
+        {material=null;BottomBar.Toast(LegacySoulMaterialMessage);}
     }
     public static string Select(InventoryEntry item)
     {
@@ -106,13 +110,11 @@ public static class NativeEnhancementWindow
         {
             // 当前停在星火/灵魂页签时，先按页签认自己的道具，别被方块族抢走。
             if(page==4&&FlameCatalog.CreateTypeOf(item.itemId)>=0){material=item;Preview();return error;}
-            if(page==5&&(item.itemId/1000==SoulCatalog.EnchanterBase/1000||item.itemId/1000==SoulCatalog.SoulBase/1000))
-            {material=item;Preview();return error;}
+            if(IsLegacySoulMaterial(item.itemId))
+            {page=5;material=null;Preview();return LegacySoulMaterialMessage;}
             var family=CubeRules.GetFamily(item.itemId);
             bool scroll=item.itemId==2049400||item.itemId==2049401;
             if(FlameCatalog.CreateTypeOf(item.itemId)>=0){page=4;material=item;Preview();return error;}
-            if(item.itemId/1000==SoulCatalog.EnchanterBase/1000||item.itemId/1000==SoulCatalog.SoulBase/1000)
-            {page=5;material=item;Preview();return error;}
             if(family==null&&!scroll)return "此物品不是已接入的强化道具";
             page=family?.bonus==true?2:1;material=item;
         }

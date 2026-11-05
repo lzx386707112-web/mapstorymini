@@ -119,6 +119,8 @@ def main() -> None:
     ap.add_argument("--dest", type=Path, default=DEFAULT_DEST)
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args()
+    if args.write:
+        raise SystemExit("旧开孔器/灵魂石已按用户要求退役；禁止重新导入。新版使用 import_soul_weapon_wz2.py。")
     src, dest = args.src.resolve(), args.dest.resolve()
 
     from wzpy import WzImage, WzKey

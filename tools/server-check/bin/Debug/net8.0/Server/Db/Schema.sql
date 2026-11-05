@@ -276,7 +276,7 @@ CREATE TABLE inventoryequipment
     -- 282 是"摇完先进待确认状态、前后对比窗选保留/替换"，本项目没有会话内临时态，落 journal。
     ,flameChoice TEXT NOT NULL DEFAULT ''
     ,flameRevision INTEGER NOT NULL DEFAULT 0
-    -- 灵魂武器：开孔器 id（2590xxx 尾数）、灵魂石 id（2591xxx）、soulID=1+id%2591000、属性代码。
+    -- 旧灵魂字段仅保留给新版迁移读取；2590xxx/2591xxx 消耗品已退役。
     ,soulSocketId INTEGER NOT NULL DEFAULT 0
     ,soulItemId INTEGER NOT NULL DEFAULT 0
     ,soulOptionId INTEGER NOT NULL DEFAULT 0
