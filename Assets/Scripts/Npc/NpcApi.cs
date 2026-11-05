@@ -1547,8 +1547,8 @@ public static class NpcApi
         p.Set("getJob", Ret(_ => BuildJob(QuestLogic.PlayerJob)));
         // Character.isCygnus()（Character.java:6118）→ getJobType()==1，
         // getJobType() = job.getId()/1000（:5190），即 job ∈ [1000,1999] 的骑士团。
-        // 缺了它 npc/9900008.js 五转女神在骑士团分支上直接抛「undefined is not a function」
-        //（冒险家因为 && 短路躲过去，所以只绑冒险家测不出来）。
+        // npc/9900008（五转女神）已改成纯流程说明、不再用它，但 npc/1101001、9209000、
+        // map/onUserEnter/910510000 等仍在调用，不能撤。
         p.Set("isCygnus", Ret(_ => B(QuestLogic.PlayerJob / 1000 == 1)));
         // Character.getFishLevel()（源端 V1.9.9__insert_fishing_items.sql 给 characters 加的 fishLevel 列）
         p.Set("getFishLevel", Ret(_ => N(GameSession.Character?.record.fishLevel ?? 1)));

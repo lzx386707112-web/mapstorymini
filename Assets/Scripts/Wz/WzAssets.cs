@@ -177,6 +177,14 @@ public static class WzAssets
         string key = AliasKey(relative);
         var entries = (Dictionary<string, object>)Index["aliases"];
         if (entries.TryGetValue(key, out var entry)) return Node((string)((Dictionary<string, object>)entry)["source"]);
+        // 技能图标不依赖别名表：五转核心技能 860 多条，索引里只登记了导出过的 1176 条，
+        // 一律按「别名缺失」处理的话，普力特的祝福（400001024）这类共通核心直接是空图标。
+        // 图标位置只由 id 决定，和 SkillBook.Get 走同一套路径直读 IMG。
+        const string SkillPrefix = "skillicon/";
+        if (key.StartsWith(SkillPrefix, StringComparison.Ordinal) &&
+            int.TryParse(key.Substring(SkillPrefix.Length), out int skillId) &&
+            Node("Skill/" + (skillId / 10000).ToString("D3") + ".img/skill/" + skillId.ToString("D7") + "/icon") is ImgNode icon)
+            return icon;
         if (missing.Add(key)) Debug.LogWarning("[WzAssets] Unmapped resource: " + relative);
         return null;
     }

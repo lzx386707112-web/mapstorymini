@@ -257,3 +257,235 @@ Snow2 分支会回退到全零密钥。
 | 120 字段 → 结构体偏移 | `docs/tms282-skill/data/skillinfo-fields.tsv` |
 | 图层名 → 枚举值 | `docs/tms282-skill/data/effect-layer-enum.tsv` |
 | 星力 30+15 档规则表 | `docs/tms282-skill/data/starforce-table.tsv` |
+
+---
+
+## 9. 技能「子状态 id」：同名技能族里的 invisible buff（2026-11-05）
+
+**结论**：282 的六转技能族里有一类 `type=buff / invisible=1` 的 id **不是玩家能按的技能**，
+而是母技能施放后由客户端挂上的内部状态。本项目 `check_skill_effects.py` 曾把它们
+误算成「buff 但无 stat／按下没反应」（19 条里的 12 条），属于统计口径错误，不是 12 个待做技能。
+
+**四条判据**（都可复现，工具 `tools/ms282/export_skill_states.py`）：
+1. 形状：`level/1` 只有 `time` / `subTime` / 单个字母，无 `mpCon` / `damage` / `attackCount`；
+   （`1241501` 例外：`common` 里带了母技能冷却的投影 `cooltime=360`，但原始节点
+   `Skill/124.img/skill/1241501` 只有 `common/tile/screen`，**没有 info / effect / level**，
+   是领域状态对象，不是可施放技能 —— 形状判据要看节点，不能只看字段名）；
+2. 文案：`String/Skill.img`（BMS 密钥）里这些 id **只有 desc、没有 h**，同名兄弟 id 有完整 h
+   （`2141502`↔`2141500`、`2341012`↔`2341011`、`5141501`↔`5141500`、`14141021`↔`14141017`）；
+3. 数值：状态 id 的 `common` 是母技能 `level/1` 的静态投影
+   （`2141502.time=20,x=10` == `2141500.lv1`；`14141021.time=7` == `14141017.lv1`；
+   `4240017.time=3,x=9` == `4240016.lv1.w=3,v=9`）；
+4. 语义：母技能 h 直接写出状态效果 ——
+   `11141500`「使用時#w2秒內最終傷害增加#q2%」→ `11141501(time=20,y=q2)`；
+   `2341011`「賦予無視HP歸零一次的加持效果」→ `2341012(time=600)`；
+   `5141500`「在#time秒內…使用五轉技能時觸發水龍鬥氣」→ `5141501.skillList` 13 条 +
+   5 个伤害体 `5141502..6`（damage 589/897/930/992/1136 与母技能 y/w/v/s4/q 逐级对应）；
+   `4240016`「隱身術持續#v秒以上時，強化為暗影之刃」「在煙霧彈或暗影霧殺內…立即套用」
+   → `4240017(time=w=3)` + 升级伤害体 `4241019`（q2/q/s），常态体是 `4241018`（x/u/y）。
+
+**迁移边界**：`NativeSkillStates.json` 现登记 **13 条** parent/time/role/evidence
+（2026-11-05 补入 `1241501 聖域展開`，见 §11）；运行时 `NativeSkillStates` 只做
+「母技能施放 → 记时限 → 供查询」。已接真实消费方的 10 条：
+`11141501`（FinalDamage 时效增益，alias y→FinalDamage）、`2341012`（致死免疫一次）、
+`5141501`（水龙斗气 2s 冷却 / 最多 8 次 / 5 段连击）、`4240014` + `4240017`（暗影之刃升级）、
+`2241504` / `3141501` / `4141502` / `14141021`（§10 周期领域）、
+`1241501`（§11 圣域 procGate，500ms 冷却 / 不限次数），
+以及 §12 补齐的最后 3 条：`2141502`（元素吸收锁满 10 层 → FinalDamage +30）、
+`5141001`（超级闪‧连杀技能替换）、`4241005`（黑暗面隐身回避 + 冷却）。
+**13 条全部有真实消费方**，不再有 timer-only 状态。
+
+**验证**：`python3 tools/ms282/export_skill_states.py`、`check_skill_states.py`、
+`check_skill_effects.py`（无 stat 数 19→7→4→**1**，只剩 `400001004`）、
+`check_skill_mechanics.py`；Unity 编译 0/0。
+
+---
+
+## 10. 周期领域：子状态期间按 `subTime` 反复结算同族伤害体（2026-11-05）
+
+**结论**：§9 里「只是计时器」的 4 条其实都能落地，而且数值不需要猜。282 在这些 VI
+母技能的 h 里把周期、次数、目标数、追加伤害全写死了，同族的 invisible 攻击体就是
+伤害体，其 `damage/attackCount/mobCount` 与母技能的字母字段 **30 级逐行相等**。
+子状态的 `subTime` 是毫秒周期，与 h 里的「每 #s2 秒 / 每隔 #s 秒」严格对得上：
+
+| 状态 / 母技能 | 周期 | 持续 | 伤害体 | 逐级自证 |
+|---|---|---|---|---|
+| `2241504` / `2241500` 殛凍領域 | `subTime=2000ms` = `s2(2)×1000` | `time=30` | `2241501` | `damage=q2` `attackCount=q3` `mobCount=s` |
+| `3141501` / `3141500` 箭影紛飛 | `subTime=3000ms` = `s(3)×1000` | `time=30`，最多 `q2=7` 次 | `3141502` | `damage=x` `attackCount=y` `mobCount=z` |
+| `4141502` / `4141500` 禁咒之符 | `subTime=1900ms` | `time=60` | `4141501` | `damage=y` `attackCount=v` `mobCount=u` `bulletCount=z(5)` |
+| `14141021` / `14141017` 闇黑天魔VI | 召唤体 `14141020.subTime=1470ms` | 召唤体 `time=60`（状态 `time=7` 只是触发窗口） | `14141020` | `damage=w2` `attackCount=w3` `mobCount=w` |
+
+h 原文（判断触发条件的依据）：
+- `2241500`「#time秒內出現流動閃電的冰寒地帶／每#s2秒…#c魔力迸發#：最多對#s名敵人以#q2%的傷害攻擊#q3次」；
+- `3141500`「最後一次箭矢洗禮後，#time秒內**攻擊命中時**，每隔#s秒發動…#q2次」⇒ 不是自动周期，要命中才启动，且总次数上限 7；
+- `4141500`「生成#z個在#time秒內經過隨機路徑、以#y%的傷害對最多#u名敵人攻擊#v次的巨型飛鏢」，
+  desc「永劫時空中形成的飛標會**優先追蹤最大HP最高的BOSS怪物**」⇒ 复用 `SeekingTargets` 的 boss/maxHP 排序；
+- `14141017`「套用#c暗影蝙蝠期間# #s秒內，每#t2秒召喚…弱化蝙蝠群」⇒ 状态窗口内**后续技能命中**才召唤。
+
+**落盘**：`Assets/Resources/NativeFieldZones.json`（4 条），
+`tools/ms282/export_field_zones.py` 只登记「字段名映射」，具体数值从 282 表逐级读并自校验；
+`check_field_zones.py` 五项守卫（表结构 / 数值回算 / C# 逐键消费 / 反向孤儿 / 接线）。
+运行时 `Assets/Scripts/NativeFieldZones.cs`（`SkillSystem` 的 partial）：
+- `StartFieldZones` 接在 `NativeSkillStates.Activate` 之后（onCast 两条）；
+- `TriggerFieldZonesOnHit` 接在 `TriggerReactiveSkills`（onHit 一条、状态窗口内技能命中一条）；
+- 协程复用 `FireProc` 的换算管线：母技能 damage% 面板行 → 伤害体 damage%，
+  范围用母技能 `lt/rb`，换图/死亡/重复施放用 generation 中止；`ClearFieldZones` 挂换图清理。
+
+**简化口径（与原版的已知偏差）**：`area` 模式每周期按母技能范围取 `mobCount` 个目标各打一次伤害体；
+`boss` 模式（`4141502`）每周期让 5 个飞镖各追一个目标（取 boss/maxHP 排序前 5），
+未实现单个飞镖的「最多 15 名溅射」与随机路径动画。特效仍走 `PlayNativeReplayEffect(伤害体 id)`。
+
+**后记（同日续做，见 §12）**：当时列在这里的 `2141502` 元素吸收、`4241005` 隐身回避、
+`5141001` 技能替换，以及 4 条真缺口里的 `5141011` / `400041001` / `400041061`
+都已落地成真实机制；`4240014` 暗影雾杀仍由暗影之刃 proc 的 `AltState` 消费。
+**唯一未实现的是 `400001004` 實用的戰鬥命令**（等级 +1，需改 `SkillBook` 等级解析），
+按用户要求本轮不做。
+
+**验证**：`export_field_zones.py` / `check_field_zones.py --table` 4 条 0 不一致；
+Unity 编译 0/0、server-check 2246/0、面板 5 守卫 + 4 个技能守卫全 PASS。
+
+---
+
+## 11. 剩余缺口的定性：圣域子状态 / 刺客刻印 / 强化核心（2026-11-05）
+
+把 §9–§10 之后「buff 仍无 stat」的 7 条逐条查 282 原文，其中 **3 条不是待做功能**：
+
+### ① `1241501 聖域展開` 是第 13 条子状态（口径纠正，不是缺口）
+`Skill/124.img/skill/1241501` 只有 `common/tile/screen/variableNumList`，
+**没有 `info` / `effect` / `level`**；`String/Skill.img` 里 h 为空，只有 desc。
+母技能 `1241500` 有完整 h：
+「連續#u秒內形成聖域，聖騎士在聖域內進行攻擊時，發動最多對#v名的敵人以#y%的傷害攻擊#z次的審判之光，
+冷卻時間是#t秒」。`1241501.time=30 == u`；`common.cooltime=360` 只是母技能冷却的投影
+（所以形状判据不能只看字段名，见 §9 ①）。
+
+审判之光伤害体 `1241502`：`skillList` 15 条触发名单、`cooltimeMS=500`、
+`damage=600+20*x`（620..1200）== 母 `y`、`attackCount=13` == `z`、`mobCount=5` == `v`，
+**30 级逐级相等**。母技能 `t=0` 是占位，冷却必须取伤害体的 `cooltimeMS`，
+把 500 当秒会变成 8 分钟一次。
+落 `NativeSkillStates.json`（`role=procGate`），复用海龙霸拳的 `TriggerStateChains`：
+扩展支持 `cooldownMs` 与 `maxActivations=0`（不限次数，由状态 30 秒收口）。
+
+### ② `4141003 刺客刻印VI` 是两段式 proc，标记按**敌人个体**记
+h「攻擊時以#prop%的機率留下暗殺者的標記，再次攻擊該敵方時，生成並發射#bulletCount個
+傷害#dummyStr%的飛鏢」；desc「飛鏢會優先攻擊最大HP最高的敵方」。
+伤害体 `4141004.damage` 与 `dummyStr` 30 级逐级相等（317..520）。
+新增 `ProcMode.MarkPerTarget`：第一次按 `prop=65%` 给该敌人打标记（`dotTime=20` 秒寿命），
+再次命中同一敌人时消耗标记，在 `range=500` 内按 boss/maxHP 降序取 `bulletCount=3`
+（不超过 `mobCount=4`）个目标结算飞镖。**不能**复用 `TryBrand` 的按技能 id 全局计数。
+
+### ③ `500004073 強化暗影侍從/暗影瞬移` 是字段覆盖，不产出 stat
+h「暗影侍從延伸的最終傷害反映率#x%，暗影瞬移持續時間增加為#time秒」：
+`x=76..105` 覆盖 `400041028.x=46..75`（暗影飞镖倍率），
+`time=46..55` 覆盖 `400041095.time=30..45`（暗影瞬移时长）。
+两条都是**替换不是相加**（级差与 400041028.x 完全相同，整体抬高 30）。
+落 `NativeSkillOverrides.json` + `export_skill_overrides.py` / `check_skill_overrides.py`；
+`NativeSkillOverrides.Scale/DurationSeconds/IsDurationTarget` 分别接到
+`NativeProcSkills` 的倍率换算、`NativeBuffs.SkillDuration`、`ApplySkill` 的 summon 放行。
+顺带修了暗影瞬移本体：`info` 没有 effect/skillType，`ApplySkill` 原会因为
+`OverTime()` 与 `stats.Count==0` 双重拒绝 ⇒ `NativeSummon.HasSource` 为假、影子立刻消失；
+现在用 `SUMMON_DURATION` 注册标记放行（`shared` 里已声明）。
+
+### 剩余真缺口（已在 §12 收敛到 1 条）
+`5141011` 海龙石、`400041001` 散式投擲、`400041061` 飛閃起爆符以及 3 条 timer-only
+状态都在 §12 落地。**只剩 `400001004` 實用的戰鬥命令**（`x=1` 全技能等级 +1，
+按 desc 只限 4 转及以下且排除 5/6 转/超技能，需动 `SkillBook` 等级解析，影响面最大），
+本轮按用户要求明确跳过。
+
+**验证**：`export_skill_states.py` 13 条 0 不一致、`export_skill_overrides.py` 1 条 0 不一致；
+6 个技能守卫 + 面板 5 守卫全 PASS；Unity 编译 0/0、server-check 2246/0。
+
+---
+
+## 12. 最后 6 条：资源 / 追加方向 / 符咒 / 技能替换 / 元素吸收 / 隐身回避（2026-11-05）
+
+把 §9–§11 之后剩下的 3 条「buff 无 stat」真缺口（`5141011` / `400041001` /
+`400041061`）与 3 条 timer-only 子状态（`2141502` / `5141001` / `4241005`）全部落地。
+**它们都不是属性 buff**，所以 `NativeBuffs.SkillStats` 永远返回空、按下去没有反应；
+每条需要自己的实体。数值全部来自 `Assets/Resources/NativeSkillMechanics.json`
+（`tools/ms282/export_skill_mechanics.py` 逐级自证 + h 原文证据），C# 不复制伤害常量。
+
+### ① `5141011 海龍石VI` — 资源计数 + 突击状态 + 被动加伤
+h「消耗`#u`個海龍石，`#time`秒內可發動突擊技能」「每次發動海龍技能時可獲得1個海龍石，
+最多可持有`#u`個」「`[被動效果：海龍之怒VI傷害增加#damPlus%p]`」。
+`u=5 / time=15 / w3=10`。触发名单来自 282 原始节点的两份 `skillList`：
+`5141013`（海龙突击VI）= 5101012 / 5111002 / 5121016 / 5141015，
+`5141014`（海龙怒击VI）= 5121007 / 5141000 / 5141002。
+两个伤害体的 `damage/attackCount/mobCount` 与母技能 `damage/attackCount/mobCount`、
+`z/w2/w` **30 级逐行相等**（母技能 common 里就写着 `465+8*x` / `463+13*x` 的投影）。
+运行时：命中名单内技能 +1 石（上限 5）；攒满才能按键（`MechanicCastGate` 在扣 MP / 物品
+之前拒绝，不会空放）；15 秒状态内每次命中结算两个伤害体，最多 `w3=10` 次
+（h「對同一名敵人發動`#w3`次攻擊時消失」）。
+**简化口径**：`damPlus` 乘在同族突击伤害体的倍率上 —— 原版指名的 `5140004/5141006/5141008`
+是 passive / invisible 体，本工程没有独立施放链，直接照抄会变成死代码；
+`FireDragonBonus` 仍保留，若那两个体将来作为 `cast` 出现会另外结算。
+
+### ② `400041001 散式投擲` — 追加方向
+h「`#time`秒期間使用投擲類技能時一次向多個方向投擲／三飛閃：追加4方向，
+追加方向以`#u`%的傷害攻擊最多`#dummyStr`名敵人／四飛閃：追加3方向，
+追加方向以`#damage`%的傷害攻擊最多`#dummyStr2`名敵人」。
+`Skill/40004.img` 里 `400041017.common.damage=290 == 母技能 u`、
+`400041018.common.damage=379 == 母技能 damage`；追加方向 4/3 与这两个体的
+`bulletCount` 3/4 互补（合计 7）。触发名单取 `400041061.skillList` 的 13 条投掷技能。
+运行时：20..30 秒窗口内投掷技能命中 → 按三/四飞闪分组结算 `directions` 次，
+每次对 `dummyStr/dummyStr2=4` 名目标打 `u/damage`%。未实现方向动画，
+用 `ProcTargets` 的目标池代替「多个方向」，属于已知偏差。
+
+### ③ `400041061 飛閃起爆符` — 符咒计数，主/被动互斥
+h「投擲手裏劍的攻擊技能命中敵人時…最多`#v`名敵人…`#z`%的傷害攻擊`#q`次的爆炸」
+「每`#u`秒會準備1個爆炸符咒」「`#time`秒內可使用`#x`個爆炸符咒」「主動效果和被動效果
+不會同時發動」「最少`#s`個到最多`#w`個符咒」。
+`x=46 / time=60 / u=10 / subTime=10000ms == u×1000 / s=2 / w=4 / q=5 / v=6`。
+爆炸体 `400041062.common.damage=475+19*x` 与母技能 `z`（494..1045）**30 级逐行相等**，
+`attackCount=q=5`、`mobCount=v=6`。
+运行时：主动施放给 46 个符咒并关闭被动累积；窗口外每 10 秒攒 1 个；
+投掷技能命中消耗 `min(可用, w)` 个（不足 `s=2` 不触发），每个符咒结算一次爆炸。
+爆炸体不在 UI 技能表里，倍率直接读母技能 `z`，登记为 `bodyFromParentField`。
+
+### ④ `5141001 超級閃‧連殺` — 技能替换
+`5141000` h「發動海龍怒擊時，`#x`秒內可使用超級閃‧連殺」，`x=10 == 5141001.time=10`；
+desc「海龍怒擊發動時，一定時間內閃．連殺VI變更為超級閃．連殺」。
+`5141014.skillList` 是「发动海龙怒击」的触发名单；替换体 `5141002`（本体 3 段）+ 冲击波
+`5141003`（10 段，`damage == 5141000.w2`、`attackCount == q2`、`mobCount == v2` 逐级相等）。
+运行时 `ResolveMechanicReplacement` 在 `BeginCast` 最开头把 `SkillDef.native` 换成
+`5141002`，命中后 `FireReplacementShock` 追加 `5141003`。这是**真替换**，不是追加伤害。
+
+### ⑤ `2141502 劇毒煉獄` — 元素吸收上限
+母技能 `2141500` h「`#time`秒內元素吸收的上限擴充至`#x`堆疊數」，
+desc「讓元素吸收的上限提升，**固定為最大堆疊數**」，`x=10`。
+元素吸收本体 `Skill/210.img/skill/2100009.common = {x:3, y:5}`，
+h「按照自己的技能來給的持續性傷害，增加最終傷害`#x`%。最多適用`#y`個」
+⇒ 每层 +3% FinalDamage、默认上限 5 层；状态期间锁满 10 层 = **+30%**。
+落 `NativeSkillStates.json` 的 `timedEffect` + `effectKey/effectPct/elementAbsorbCap`，
+`NativeSkillMechanics.AddTimedEffect` 注入 `NativeBuffs.SkillStats`，走既有 `shared` 的
+`FinalDamage` 与 `setItemBonus` 管线，没有新开乘区。
+**简化口径**：本工程没有「按自己 DOT 层数」的实体，按 desc 直接锁满层数，
+没有实现逐层累积过程。
+
+### ⑥ `4241005 黑暗面` — 隐身回避 + 解除后冷却
+母技能 `4001003` h「迴避依照最大HP的比率造成傷害的攻擊時，會等隱身術解除後
+依照迴避的次數套用冷卻時間`#cooltime`秒，最多可重疊到`#y`次」；
+`4001003.common = {cooltime:3, y:5, w2:20}`，状态 `4241005 = {time:6, w2:20, subTime:4000}`。
+本工程 `TakeBossDamage` 是 Boss 百分比/固定伤害的唯一通路（`NativeMobController` 的
+`fixDamR` / `deadlyAttack` 都走这里），所以挂在这里最贴合「按最大HP 比率的攻击」。
+运行时：隐身状态期间整段回避并计数（单窗口上限 `w2=20`）；状态结束或再次按隐身术键
+（desc「再次使用隱身術技能鍵即可解除」）时按 `min(次数, y=5) × 3 秒` 给隐身术叠冷却，
+`MechanicCastGate` 在施放前拦住。物理接触伤害不受影响。
+
+### 落盘与接线
+- 新增 `NativeSkillMechanics.json` + meta、`Assets/Scripts/NativeSkillMechanics.cs` + meta
+  （`public static class NativeSkillMechanics` 读表 + `SkillSystem` partial 跑实体）、
+  `export_skill_mechanics.py` / `check_skill_mechanics.py`（五项守卫）。
+- `SkillSystem.BeginCast`：`ResolveMechanicReplacement` → `MechanicCastGate`（**所有消耗之前**）
+  → `OnMechanicCast`；`CancelActions` 加 `ClearMechanics`。
+- `NativeSkillFollowups.TriggerReactiveSkills` 加 `OnMechanicHit`（命中后结算，复用
+  `ProcTargets` / `ProcSource` / `NativeSkillReplay.Adapt` / `ApplyReplayHit`）。
+- `PlayerCtrl.TakeBossDamage` 加 `TryEvadeHpRatioDamage`；
+  `NativeBuffs.SkillStats` 的 timedEffect 分支加 `AddTimedEffect`。
+- `check_skill_effects.py` 的 special 加入 6 条 ⇒ 「buff 无 stat」 **4→1**，
+  只剩用户明确排除的 `400001004`。
+
+**验证**：`export_skill_mechanics.py` 6 条 0 不一致；`check_skill_mechanics.py`、
+`check_skill_states.py`（13 条）、`check_skill_effects.py`、`check_proc_skills.py`、
+`check_shields.py`、`check_field_zones.py`、`check_skill_overrides.py` 全 0 不一致；
+Unity 编译 0 Warning / 0 Error、server-check 2246/0、面板 5 守卫 PASS。
+

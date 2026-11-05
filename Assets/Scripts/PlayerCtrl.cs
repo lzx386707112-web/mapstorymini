@@ -18,6 +18,8 @@ public class PlayerCtrl : MonoBehaviour
     public const float BaseInterval = 0.55f, BaseReach = 2.3f;
     WeaponDef weapon;
     public bool UsesRangedWeapon => weapon.kind==WeaponKind.bow || weapon.kind==WeaponKind.crossbow || weapon.kind==WeaponKind.gun || weapon.kind==WeaponKind.claw;
+    // 終極之弓/終極之弩 这类「必须手持某类武器」的被动要按具体武器判，不能用「远程」一概而论。
+    public WeaponKind WeaponType => weapon.kind;
     CharacterAttributes baseAttributes;
     public CharacterAttributes Attributes { get; private set; }
     int weaponAttack, magicAttack;
@@ -1366,6 +1368,8 @@ public class PlayerCtrl : MonoBehaviour
             GetComponent<SkillSystem>()?.NativeBasicRangedHit(e,hit,dir);
         if (e == null || e.dead) return;
         e.TakeHit(hit, dir);
+        // 終極之弓/終極之弩：普通攻击命中后按 prop 追加一次（282 的「使用直接攻擊的攻擊技能後」）。
+        if (!e.dead) GetComponent<SkillSystem>()?.NativeBasicProcHit(e, hit, dir);
     }
 
     void HitBoss(BossUnit b, DamageResult hit)
@@ -1375,6 +1379,7 @@ public class PlayerCtrl : MonoBehaviour
             GetComponent<SkillSystem>()?.NativeBasicRangedHit(b,hit,facing);
         if (b == null || b.dead) return;
         b.TakeHit(hit, facing);
+        if (!b.dead) GetComponent<SkillSystem>()?.NativeBasicProcHit(b, hit, facing);
     }
 
     public bool CanReceiveContact => hp>0 && Time.unscaledTime>=invulnUntil;
@@ -1428,6 +1433,21 @@ public class PlayerCtrl : MonoBehaviour
         dmg=NativeBuffs.PassiveIncoming((int)dmg,attacker!=null ? buffs?.Value("COMBO_BARRIER") ?? 0 : 0,
             damageFrom!=-3 && damageFrom!=-4 && achillesLevel>0 ? Art.Int(SkillBook.Get(achillesId)?.Level(achillesLevel),"x") : 0,
             damageFrom!=-3 && damageFrom!=-4 && defenseLevel>0 ? Art.Int(SkillBook.Get(21120004)?.Level(defenseLevel),"x") : 0);
+        // 护盾（NativeShields）：吃防御与 Achilles/高防之后的伤害，剩下的才交给
+        // Magic Guard / Meso Guard 分摊 —— 与「先打护盾、再动 MP」的直觉一致。
+        var shields=GetComponent<NativeShields>();
+        float absorbed=shields!=null ? shields.Absorb(ref dmg) : 0f;
+        if (dmg <= 0f && absorbed > 0f)
+        {
+            // 全额吸收：仍然算「被打到」（受击表情 + 无敌帧），但不掉血、不击退。
+            TickContactTint();
+            contactTintStarted = Time.unscaledTime;
+            contactTintActive = true;
+            invulnUntil = Time.unscaledTime + 1.5f;
+            vis?.ShowHitExpression();
+            DamageText.Show(DamageAnchor, 0, "blue");
+            return;
+        }
         if (buffs != null)
         {
             bool magicGuard=buffs.HasStat("MAGIC_GUARD"), mesoGuard=buffs.HasStat("MESOGUARD");
@@ -1459,6 +1479,7 @@ public class PlayerCtrl : MonoBehaviour
             vy = -(float)ContactImpulse(-vy * Art.PPU, -270) / Art.PPU;
         }
         vis?.ShowHitExpression();
+        if (hp <= 0f && ConsumeHeavenDoor()) hp = 1f;   // 天堂之門VI：無視HP歸零一次
         if (vis != null && hp <= 0f) vis.PlayOnce("die");
         DamageText.Show(DamageAnchor, dmg, "blue");
         if (hp <= 0f && GameLoop.I != null) GameLoop.I.OnPlayerDead();
@@ -1471,6 +1492,15 @@ public class PlayerCtrl : MonoBehaviour
     {
         if (hp <= 0f || dmg <= 0) return;
         RefreshAttributes();
+        // 跌落伤害同样先吃护盾；被全部吸收就不算受击（不进 1.5 秒受击冷却）。
+        var shields = GetComponent<NativeShields>();
+        if (shields != null)
+        {
+            float fall = dmg;
+            shields.Absorb(ref fall);
+            dmg = Mathf.Max(0, Mathf.FloorToInt(fall));
+            if (dmg <= 0) return;
+        }
         float previousHp = hp, previousMp = mp;
         var buffs = GetComponent<NativeBuffs>();
         if (buffs != null)
@@ -1493,9 +1523,27 @@ public class PlayerCtrl : MonoBehaviour
         invulnUntil = Time.unscaledTime + 1.5f;
         BeginNativeAlert();
         vis?.ShowHitExpression();
+        if (hp <= 0f && ConsumeHeavenDoor()) hp = 1f;   // 天堂之門VI：無視HP歸零一次
         if (vis != null && hp <= 0f) vis.PlayOnce("die");
         DamageText.Show(DamageAnchor, dmg, "blue");
         if (hp <= 0f && GameLoop.I != null) GameLoop.I.OnPlayerDead();
+    }
+
+    // 2341011 天堂之門VI h「對周圍的隊員賦予無視HP歸零一次的加持效果」；
+    // 子状态 2341012 记录时限，这里把它当一次性消耗品，触发后立刻失效。
+    bool ConsumeHeavenDoor()
+    {
+        var states = GetComponent<NativeSkillStates>();
+        if (states == null) return false;
+        foreach (int id in NativeSkillStates.AllIds())
+        {
+            if (!NativeSkillStates.IsDeathGuard(id) || !states.Has(id)) continue;
+            states.Consume(id);
+            BottomBar.Toast("天堂之门：无视一次 HP 归零");
+            DamageText.Show(DamageAnchor, 0, "blue");
+            return true;
+        }
+        return false;
     }
 
     // 0x9B227F..0x9B239B preserves an already faster velocity in the impulse direction.
@@ -1514,6 +1562,15 @@ public class PlayerCtrl : MonoBehaviour
     public void TakeBossDamage(float value)
     {
         if (hp <= 0 || value <= 0) return;
+        // 黑暗面 4241005 / 隐身术 4001003 h「迴避依照最大HP的比率造成傷害的攻擊時」：
+        // TakeBossDamage 是 Boss 百分比/固定伤害的唯一通路，隐身期间整段回避并计数，
+        // 解除后由 NativeSkillMechanics.SettleDarkSight 折算隐身术冷却。
+        var skillSystem = GetComponent<SkillSystem>();
+        if (skillSystem != null && skillSystem.TryEvadeHpRatioDamage())
+        {
+            DamageText.Miss(DamageAnchor, 1f, "violet");
+            return;
+        }
         float previousHp=hp;
         hp = Mathf.Max(0,hp-value);
         NativePetAutopot.OnLoss(this,previousHp,mp);
@@ -1602,7 +1659,9 @@ public class PlayerCtrl : MonoBehaviour
     {
         baseAttributes = Profile.Attributes;
         var buffs = GetComponent<NativeBuffs>();
-        int attack = buffs != null ? buffs.Value("WATK") : 0;
+        // PAD/MAD 是技能 buff 的 flat 攻击/魔力（如 1141006 剑士意念VI「增加攻击力#indiePad」）。
+        // 它们必须并进 WithWeapon 的 attackBuff，否则 ApplyStat 之后才写就赶不上结算。
+        int attack = buffs != null ? buffs.Value("WATK") + buffs.Value("PAD") : 0;
         Attributes = baseAttributes.WithWeapon(weapon, attack + (Time.unscaledTime < attackBonusUntil ? Mathf.RoundToInt(attackBonus) : 0),
             out weaponAttack, out magicAttack);
         Attributes.weaponDefense+=partyGrindDefense;
@@ -1612,7 +1671,7 @@ public class PlayerCtrl : MonoBehaviour
             Attributes.magicDefense += buffs.Value("MDEF");
             Attributes.accuracy += buffs.Value("ACC");
             Attributes.avoidability += buffs.Value("AVOID");
-            magicAttack += buffs.Value("MATK");
+            magicAttack += buffs.Value("MATK") + buffs.Value("MAD");
             int warrior=buffs.Value("MAPLE_WARRIOR");
             Attributes.str += baseAttributes.str*warrior/100;
             Attributes.dex += baseAttributes.dex*warrior/100;
@@ -1622,7 +1681,26 @@ public class PlayerCtrl : MonoBehaviour
             if (hpBuff!=0) Attributes.maxHp=(int)System.Math.Max(50,System.Math.Min(50000,Attributes.maxHp+(long)Attributes.maxHp*hpBuff/100));
             if (mpBuff!=0) Attributes.maxMp=(int)System.Math.Max(5,System.Math.Min(50000,Attributes.maxMp+(long)Attributes.maxMp*mpBuff/100));
         }
+        // 攻魔百分比（400051033 超速动能「#time秒内武器纯攻击力增加#x%」）：
+        // flat 那一步在 WithWeapon 里已经结算过，百分比只能在最终攻魔上折一次。
+        if (buffs != null)
+        {
+            int padPct = buffs.Value("PADPct"), madPct = buffs.Value("MADPct");
+            if (padPct != 0) weaponAttack = weaponAttack * (100 + padPct) / 100;
+            if (madPct != 0) magicAttack = magicAttack * (100 + madPct) / 100;
+        }
         ApplySpecialCore();
+        // 爆击强化 400031023：h「#time秒内爆击几率可超过100%，且依照爆击几率的#x%增加爆击的伤害」。
+        // 只有这条 buff 在场时才把「超过 100% 的暴击率」折算成暴击伤害；否则超出部分没有收益
+        // （暴击判定本来就被 Min(1,…) 截住）。放在 ApplySpecialCore 之后：要按最终暴击率算。
+        float over=0f;
+        if (buffs!=null && buffs.Value("CRIT_REINFORCE")>0)
+        {
+            int level=Mathf.Max(1,SkillProgress.LevelOf(400031023));
+            int x=Art.Int(SkillBook.Get(400031023)?.Level(level),"x");
+            if (x>0) over=Mathf.Max(0f,Attributes.criticalChance-1f)*x/100f;
+        }
+        Attributes.overCritBonus=over;
     }
 
     // 特殊核心（V 矩阵 type==2）的增益走套装同一条 setItemBonus 通道，
@@ -1635,12 +1713,28 @@ public class PlayerCtrl : MonoBehaviour
         int boss = NativeSpecialCore.BossDamagePercent;
         int ignore = NativeSpecialCore.IgnoreDefensePercent;
         int crit = NativeSpecialCore.CriticalPercent;
-        if (damage == 0 && boss == 0 && ignore == 0 && crit == 0) return;
+        int normal = 0, final = 0;
+        // 技能 buff 的独立倍率（#time秒内 伤害/无视防御/爆击/最终伤害）：
+        // 字段被 NativeSkillEffects 认出来之后由 NativeBuffs 承载，
+        // 这里并进同一条 setItemBonus 通道，CombatRules 不用知道它们来自技能。
+        var buffs = GetComponent<NativeBuffs>();
+        if (buffs != null)
+        {
+            damage += buffs.Value("Damage");
+            boss   += buffs.Value("BossDamage");
+            ignore += buffs.Value("IgnoreDefense");
+            crit   += buffs.Value("CriticalChance");
+            normal += buffs.Value("NormalDamage");
+            final  += buffs.Value("FinalDamage");
+        }
+        if (damage == 0 && boss == 0 && ignore == 0 && crit == 0 && normal == 0 && final == 0) return;
         var bonus = Attributes.setItemBonus == null
             ? new System.Collections.Generic.Dictionary<string, int>()
             : new System.Collections.Generic.Dictionary<string, int>(Attributes.setItemBonus);
         if (damage != 0) bonus["Damage"] = (bonus.TryGetValue("Damage", out int d) ? d : 0) + damage;
         if (boss != 0) bonus["BossDamage"] = (bonus.TryGetValue("BossDamage", out int b) ? b : 0) + boss;
+        if (normal != 0) bonus["NormalDamage"] = (bonus.TryGetValue("NormalDamage", out int n) ? n : 0) + normal;
+        if (final != 0) bonus["FinalDamage"] = (bonus.TryGetValue("FinalDamage", out int f) ? f : 0) + final;
         if (ignore != 0) bonus["IgnoreDefense"] = (bonus.TryGetValue("IgnoreDefense", out int i) ? i : 0) + ignore;
         Attributes.setItemBonus = bonus;
         if (crit > 0) Attributes.criticalChance = Mathf.Min(1f, Attributes.criticalChance + crit / 100f);

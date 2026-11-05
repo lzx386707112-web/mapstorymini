@@ -8,8 +8,9 @@ public static class NativeSoulWeapon
     public static int LevelOf(int id)
     {
         var c=GameSession.Character;var s=c?.soulWeapon;
-        return s!=null && s.Equipped(c) && SoulWeaponWz2Catalog.Int(SoulWeaponWz2Catalog.Grade(s.grade),"ActiveSkillID")==id
-            ? SoulWeaponWz2Catalog.Int(SoulWeaponWz2Catalog.Grade(s.grade),"ActiveSkillLevel") : 0;
+        var bound=s?.Active;
+        return bound!=null && s.Equipped(c) && SoulWeaponWz2Catalog.Int(SoulWeaponWz2Catalog.Grade(bound.grade),"ActiveSkillID")==id
+            ? SoulWeaponWz2Catalog.Int(SoulWeaponWz2Catalog.Grade(bound.grade),"ActiveSkillLevel") : 0;
     }
     public static SkillData Definition(int id)
     {

@@ -37,6 +37,14 @@ public static class NativeUi
     // Keep the last geometry so the bottom bar can hit-test before painting windows.
     public static void RegisterWindow(string key, Rect rect, System.Func<bool> visible)
         => windows[key] = (rect, visible);
+    // 层级判定用：读回上一帧登记的窗口矩形（同样在 UiKit 坐标下）。
+    // 面板管理器据此判断指针压在哪个窗口上，决定谁置顶、谁被遮挡。
+    public static bool TryWindowRect(string key, out Rect rect)
+    {
+        if (windows.TryGetValue(key, out var entry) && entry.visible()) { rect = entry.rect; return true; }
+        rect = new Rect();
+        return false;
+    }
     public static bool WindowAtPointer
     {
         get

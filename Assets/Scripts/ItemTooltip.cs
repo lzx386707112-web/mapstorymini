@@ -168,16 +168,6 @@ public static class ItemTooltip
             rect.y + (y - (origin?.Y ?? 0)) * s, texture.width * s, texture.height * s), texture);
     }
 
-    static void DrawIcon(Rect rect, int id, float header, float s)
-    {
-        Fill(new Rect(rect.x + 10 * s, rect.y + (header + 32) * s, 68 * s, 68 * s), new Color32(255,255,255,160));
-        var icon = NativeItemSource.Icon(id);
-        if (icon == null) return;
-        var origin = NativeItemSource.IconNode(id)?.Get("origin");
-        GUI.DrawTexture(new Rect(rect.x + (12 - 2 * (origin?.X ?? 0)) * s,
-            rect.y + (header + 98 - 2 * (origin?.Y ?? 0)) * s, icon.width * 2 * s, icon.height * 2 * s), icon);
-    }
-
     // —— 中文标签 ——
     // 源端 EXE 的字符串池是英文，中文由 ijl15.dll 启动时按「字符串池 id」逐条替换：
     // .rdata 里一张 1914 条的 {int id; std::string 中文} 表（0x10036948，步长 0x1C），
@@ -203,26 +193,6 @@ public static class ItemTooltip
         "单手剑", "单手斧", "单手钝器", "短刀", "", "", "", "短杖", "长杖", "", "双手剑",
         "双手斧", "双手钝器", "枪", "矛", "弓", "弩", "拳套", "指节", "短枪"
     };
-
-    // 8E8252 -> 8ED0D2 (requirements) / 8F3BC3 (property rows).
-    // 职业图标行：这些 canvas 自带左右透明边（beginner 40 宽里只有 23px 是实心、
-    // warrior 左边 9px 全透明），按 canvas 宽顺序排会显得「新手→战士」中间空一大截。
-    // 这里按实心像素范围 + 固定 6px 间距排，六格看起来才是等距的。
-    static readonly string[] JobNames = { "beginner", "warrior", "magician", "bowman", "thief", "pirate" };
-    static readonly int[] JobPaint = { 0, 23, 9, 32, 1, 36, 2, 36, 0, 23, 3, 26 };  // 每职业 (实心左, 实心右)
-    static readonly float[] JobX = BuildJobX();
-
-    static float[] BuildJobX()
-    {
-        var xs = new float[JobNames.Length];
-        float cursor = 10f;     // 与源端职业行起点一致（0x8ED3xx push 0xa）
-        for (int i = 0; i < xs.Length; i++)
-        {
-            xs[i] = cursor - JobPaint[i * 2];
-            cursor += (JobPaint[i * 2 + 1] - JobPaint[i * 2]) + 6f;
-        }
-        return xs;
-    }
 
     static void DrawEquipment(int id, Vector2 anchor)
     {
@@ -257,7 +227,6 @@ public static class ItemTooltip
                 case 114: category = "勋章"; break;        // 630
             }
         }
-        if (!string.IsNullOrEmpty(category)) rows.Add(new[] { LCategory, " " + category });
         if (prefix >= 130 && prefix <= 149 && info.Get("attackSpeed") != null)
         {
             int speed = info.Int("attackSpeed");
@@ -284,11 +253,30 @@ public static class ItemTooltip
         var starStats = version282 && !vestige
             ? StarForceStats.Calculate(id, requiredLevel, hoverItem.starLevel, info.Int("superiorEqp") != 0, baseStats)
             : new Dictionary<string, int>();
+        var flameStats = new int[keys.Length];
+        // Same flat-stat mapping as NativeGrowthStats.ApplyFlameStat; percentages stay separate.
+        int[][] flameColumns = { new[]{0}, new[]{1}, new[]{2}, new[]{3}, new[]{0,1}, new[]{0,2},
+            new[]{0,3}, new[]{1,2}, new[]{1,3}, new[]{2,3}, new[]{6}, new[]{7}, new[]{8},
+            new[]{4}, new[]{5}, new[]{13}, new[]{14} };
+        foreach (var flame in NativeGrowthStats.DescribeFlame(hoverItem))
+            if (flame.statVal >= 0 && flame.statVal < flameColumns.Length)
+                foreach (int column in flameColumns[flame.statVal]) flameStats[column] += flame.value;
         for (int i = 0; i < keys.Length; i++)
         {
             starStats.TryGetValue(statKeys[i], out int delta);
-            int value = baseStats[statKeys[i]] + delta;
-            if (value > 0) rows.Add(new[] { labels[i], " +" + value });
+            int value = baseStats[statKeys[i]] + delta + flameStats[i];
+            if (value > 0)
+            {
+                string detail = " +" + value;
+                if (delta != 0 || flameStats[i] != 0)
+                {
+                    detail += " (" + baseStats[statKeys[i]];
+                    if (delta != 0) detail += " <color=#FFCC00>+" + delta + "</color>";
+                    if (flameStats[i] != 0) detail += " <color=#0AE3AD>+" + flameStats[i] + "</color>";
+                    detail += ")";
+                }
+                rows.Add(new[] { labels[i], detail });
+            }
         }
         if (version282)
         {
@@ -350,8 +338,22 @@ public static class ItemTooltip
         else if (hoverItem != null)
         {
             foreach (var line in NativeGrowthStats.DescribeFlame(hoverItem))
-                if (line.value > 0) rows.Add(new[] { "星火 · " + line.label + " :", " +" + line.value });
+                if (line.value > 0 && line.statVal >= 17) rows.Add(new[] { "星火 · " + line.label + " :", " +" + line.value });
             if (!string.IsNullOrEmpty(hoverItem.flameChoice)) rows.Add(new[] { "星火：", " 有待确认的结果" });
+            var modernSoul=GameSession.Character?.soulWeapon;
+            // 成长按武器实例存：悬停任意一把练过的武器都显示它自己的进度。
+            var bound=modernSoul?.Of(hoverItem.itemRowId);
+            if(bound!=null)
+            {
+                bool activated=modernSoul.weapon==hoverItem.itemRowId;
+                bool effective=activated && modernSoul.Equipped(GameSession.Character);
+                rows.Add(new[] {"灵魂武器 · ", "第"+bound.grade+"阶段"});
+                rows.Add(new[] {"", "Lv. "+bound.level+"（攻击力／魔法力：+"+SoulWeaponWz2Catalog.PassiveAttack(bound.level)+"）"});
+                string optionText = SoulWeaponWz2Catalog.DescribeOption(bound.option);
+                if (bound.option > 0) rows.Add(new[] {"", optionText});
+                string usable=effective?"可使用":activated?"装备后可使用":"启用并装备后可使用";
+                rows.Add(new[] {"", usable+"「"+SoulWeaponWz2Catalog.SkillName(bound.grade)+"」技能"});
+            }
             if (hoverItem.soulSocketId > 0)
             {
                 rows.Add(new[] { "灵魂插槽 :", " 已开启" });
@@ -370,87 +372,277 @@ public static class ItemTooltip
         //   颜色即原始像素：金 0xFFFFD800、尊貴蓝 0xFF75E6FE、未点亮 0xFF1D232A(70%)。
         // 条高沿用 BeiDou DLL 的一列 27 / 两列 42 占位，星星在条内垂直居中。
         string equipName = ItemCatalog.Name(id);
+        if (string.IsNullOrEmpty(equipName)) equipName = WzNames.Item(id);
+        if (string.IsNullOrEmpty(equipName)) equipName = id.ToString();
         int stars = hoverItem != null ? hoverItem.starLevel : StarFromName(equipName);
         // Capacity is a template/rules property, not an enhancement-version marker.
         // A pristine item and its first successful enhancement must show the same slots.
-        int capacity = info.Int("cash") == 0 && info.Int("tuc") > 0
+        int capacity = info.Int("cash") == 0 && info.Int("tuc") > 0 && info.Int("exceptUpgrade") == 0 && info.Int("exUpgradeBlock") == 0
             ? StarForceRules.Shared.Cap(id, requiredLevel, info.Int("superiorEqp") != 0) : 0;
         if (stars > capacity) capacity = stars;
         float starBar = capacity > 0 ? (capacity > 15 ? 42f : 27f) : 0f;
-        // 星条画在**顶部**（源端 DLL 把星星 layer 锚在框顶，第一列 y=6、第二列 y=21），
-        // 下面所有内容整体下移一个条高，否则星星会压在名字/图标上。
-        float dy = capacity > 0 ? starBar + 4f : 0f;
-
-        // 0x8E8E43 的高度：0xA6(166) + 行数×0x10(16) + 名称换行/附加段 + 星条
-        // BeiDou 8E8E81 reads equipment desc too; 8E973A/8E9756 measures it
-        // with font 7 at x=10, right=221, then appends it after the stat rows.
+        // User-requested screenshot layout; geometry/colors/artwork come from
+        // UIToolTip.img/Item/Equip. This is not a claim of EXE pixel equivalence.
+        const float width = 324, margin = 15, bodyWidth = width - margin * 2;
+        var body = new GUIStyle { font = UiKit.Font, fontSize = 12, wordWrap = true,
+            richText = true, padding = new RectOffset(), margin = new RectOffset() };
+        body.normal.textColor = Color.white;
+        var title = new GUIStyle(body) { fontSize = 14, fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.UpperCenter };
+        var gray = new GUIStyle(body); gray.normal.textColor = new Color32(183,191,197,255);
+        float nameY = 6 + starBar;
+        float nameHeight = title.CalcHeight(new GUIContent(equipName), bodyWidth);
+        float iconY = nameY + nameHeight + 22;
+        float contentY = iconY + 82;
+        var requirements = new List<string[]>();
+        requirements.Add(new[] { "装备种类", category ?? "装备" });
+        requirements.Add(new[] { "要求等级", "Lv. " + requiredLevel });
+        string[] reqKeys = { "reqSTR", "reqDEX", "reqINT", "reqLUK", "reqPOP" };
+        string[] reqNames = { "力量", "敏捷", "智力", "运气", "人气" };
+        for (int i = 0; i < reqKeys.Length; i++)
+            if (info.Int(reqKeys[i]) > 0) requirements.Add(new[] { reqNames[i], info.Int(reqKeys[i]).ToString() });
+        int jobMask = info.Int("reqJob");
+        string[] jobLabels = { "战士", "魔法师", "弓箭手", "飞侠", "海盗" };
+        string jobRequirement = jobMask == 0 ? "全职业" : jobMask == -1 ? "新手" : "";
+        for (int i = 0; jobMask > 0 && i < jobLabels.Length; i++)
+            if ((jobMask & (1 << i)) != 0) jobRequirement += (jobRequirement.Length > 0 ? "／" : "") + jobLabels[i];
+        requirements.Add(new[] { "可用职业", jobRequirement });
+        float reqHeight = 0;
+        foreach (var requirement in requirements)
+            reqHeight += Mathf.Max(16, body.CalcHeight(new GUIContent(requirement[1]), width - 100 - margin));
+        contentY += reqHeight + 8;
+        var rowHeights = new List<float>();
+        foreach (var row in rows)
+        {
+            float rh = Mathf.Max(16, body.CalcHeight(new GUIContent(row[0] + row[1]), bodyWidth - 15));
+            if (PotentialHeader(row[0])) rh += 9;
+            rowHeights.Add(rh);
+        }
         string description = FormatDescription(ItemCatalog.Desc(id));
-        var descriptionStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(12 * s),
-            wordWrap = true, richText = true };
-        descriptionStyle.normal.textColor = Color.white;
         float descriptionHeight = string.IsNullOrEmpty(description) ? 0
-            : descriptionStyle.CalcHeight(new GUIContent(description), 211 * s);
-        float height = (166 + rows.Count * 16 + starBar) * s + descriptionHeight;
-        var p = anchor;
-        var rect = new Rect(Mathf.Clamp(p.x, 0, Mathf.Max(0, UiKit.W - 236 * s)),
-            Mathf.Clamp(p.y + 20 * s, 0, Mathf.Max(0, UiKit.H - height)), 236 * s, height);
-        LastEquipRect = rect;
-        DrawFrame(rect, s);
-        var title = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(12 * s) };
-        title.normal.textColor = Color.white;
-        GUI.Label(new Rect(rect.x + 18 * s, rect.y + 10 * s, 208 * s, 20 * s), equipName, title);
-        Canvas(rect, "Dot/0", 15, 15, s);
-        DrawIcon(rect, id, dy, s);
-        var a = Profile.Attributes;
-        string[] req = { "reqLevel", "reqSTR", "reqDEX", "reqINT", "reqLUK", "reqPOP" };
-        string[] sprites = { "reqLEV", "reqSTR", "reqDEX", "reqINT", "reqLUK", "reqPOP" };
-        int[] have = { a.level, a.str, a.dex, a.intelligence, a.luk, GameSession.Character?.record?.fame ?? 0 };
-        for (int i = 0; i < req.Length; i++)
+            : body.CalcHeight(new GUIContent(description), bodyWidth) + 8;
+        // User-requested mobile overflow: flow rows into original-skin columns.
+        var setRows = SetRowsFor(id, out string setTitle);
+        var rowColumns = new List<int>();
+        var rowPositions = new List<float>();
+        var columnHeights = new List<float>();
+        float maxHeight = 0;
+        int setColumns = 0, setRowsPerColumn = 0;
+        s = Mathf.Max(.01f, Mathf.Min(s, (UiKit.H - 8) / (contentY + 44)));
+        for (int attempt = 0; attempt < 8; attempt++)
         {
-            int need = info.Int(req[i]);
-            string root = (have[i] >= need ? "Can/" : "Cannot/");
-            Canvas(rect, root + sprites[i], 94, 32 + dy + i * 12, s);
-            float x = 144;
-            if (need == 0 && i == 5) Canvas(rect, root + "none", x, 32 + dy + i * 12, s);
-            else foreach (char digit in need.ToString())
+            maxHeight = (UiKit.H - 8) / s;
+            FlowEquipRows(rows, rowHeights, contentY, descriptionHeight, maxHeight,
+                rowColumns, rowPositions, columnHeights);
+            setRowsPerColumn = Mathf.Max(2, Mathf.FloorToInt((maxHeight - 38) / 16));
+            setColumns = setRows.Count == 0 ? 0 : (setRows.Count + setRowsPerColumn - 1) / setRowsPerColumn;
+            float totalWidth = columnHeights.Count * 328 - 4 + setColumns * 240;
+            float fit = (UiKit.W - 8) / totalWidth;
+            if (s <= fit + .0001f) break;
+            s = Mathf.Max(.01f, fit);
+        }
+        float equipmentWidth = columnHeights.Count * 328 - 4;
+        float groupWidth = equipmentWidth + setColumns * 240;
+        float groupHeight = 0;
+        foreach (float ch in columnHeights) groupHeight = Mathf.Max(groupHeight, ch);
+        if (setColumns > 0) groupHeight = Mathf.Max(groupHeight, 38 + Mathf.Min(setRows.Count, setRowsPerColumn) * 16);
+        float groupX = Mathf.Clamp(anchor.x, 4, Mathf.Max(4, UiKit.W - groupWidth * s - 4));
+        float groupY = Mathf.Clamp(anchor.y + 20 * s, 4, Mathf.Max(4, UiKit.H - groupHeight * s - 4));
+        var rect = new Rect(groupX, groupY, width * s, columnHeights[0] * s);
+        LastEquipRect = new Rect(groupX, groupY, equipmentWidth * s, groupHeight * s);
+        var oldMatrix = GUI.matrix;
+        var oldColor = GUI.color;
+        var oldContentColor = GUI.contentColor;
+        bool oldEnabled = GUI.enabled;
+        GUI.enabled = true;
+        GUI.color = Color.white;
+        GUI.contentColor = Color.white;
+        try
+        {
+            GUI.matrix = oldMatrix * Matrix4x4.TRS(new Vector3(rect.x, rect.y, 0), Quaternion.identity, new Vector3(s, s, 1));
+            for (int column = 0; column < columnHeights.Count; column++)
             {
-                Canvas(rect, root + digit, x, 32 + dy + i * 12, s);
-                x += 6;
+                float left = column * 328, ch = columnHeights[column];
+                EquipTexture("frame/common/mid", new Rect(left, 0, width, ch));
+                EquipTexture("frame/common/top", new Rect(left, 0, width, 30));
+                EquipTexture("frame/common/btm", new Rect(left, ch - 12, width, 12));
             }
+            if (capacity > 0)
+                DrawEquipStars(width, starBar, capacity, stars, info.Int("superiorEqp") != 0);
+            GUI.Label(new Rect(margin, nameY, bodyWidth, nameHeight), equipName, title);
+            // Match the authoritative trade flags; do not mark every equipment bound.
+            bool bound = hoverItem != null && (hoverItem.flag & 8) != 0;
+            bool restricted = info.Int("tradeBlock") == 1 || info.Int("accountSharable") == 1 || info.Int("quest") == 1;
+            if (bound || restricted && (hoverItem == null || (hoverItem.flag & 16) == 0))
+            {
+                var restriction = new GUIStyle(body) { alignment = TextAnchor.UpperCenter };
+                restriction.normal.textColor = new Color32(255,153,0,255);
+                GUI.Label(new Rect(margin, nameY + nameHeight, bodyWidth, 16), "无法交换", restriction);
+            }
+            EquipTexture("frame/common/line", new Rect(0, iconY - 7, width, 3));
+            EquipTexture("itemIcon/base", new Rect(margin, iconY, 78, 78));
+            var icon = NativeItemSource.Icon(id);
+            var origin = NativeItemSource.IconNode(id)?.Get("origin");
+            if (icon != null)
+                GUI.DrawTexture(new Rect(margin + 6 - 2 * (origin?.X ?? 0), iconY + 72 - 2 * (origin?.Y ?? 0),
+                    icon.width * 2, icon.height * 2), icon);
+            var state = new GUIStyle(title) { alignment = TextAnchor.MiddleCenter, fontSize = 18, fontStyle = FontStyle.Bold };
+            state.normal.textColor = gray.normal.textColor;
+            GUI.Label(new Rect(100, iconY + 18, 209, 32),
+                hoverItem != null && hoverItem.position < 0 ? "当前穿戴中的装备" : "未穿戴的装备", state);
+            string categoryText = category ?? "装备";
+            float categoryWidth = gray.CalcSize(new GUIContent(categoryText)).x + 18;
+            float categoryX = width - margin - categoryWidth;
+            EquipTexture("frame/common/category/w", new Rect(categoryX, iconY + 57, 8, 14));
+            EquipTexture("frame/common/category/c", new Rect(categoryX + 8, iconY + 57, categoryWidth - 16, 14));
+            EquipTexture("frame/common/category/e", new Rect(categoryX + categoryWidth - 8, iconY + 57, 8, 14));
+            GUI.Label(new Rect(categoryX, iconY + 56, categoryWidth, 16), categoryText,
+                new GUIStyle(gray) { alignment = TextAnchor.UpperCenter });
+            float requirementY = iconY + 82;
+            foreach (var requirement in requirements)
+            {
+                float rh = Mathf.Max(16, body.CalcHeight(new GUIContent(requirement[1]), width - 100 - margin));
+                GUI.Label(new Rect(margin, requirementY, 85, rh), requirement[0], gray);
+                GUI.Label(new Rect(100, requirementY, width - 100 - margin, rh), requirement[1], body);
+                requirementY += rh;
+            }
+            EquipTexture("frame/common/line", new Rect(0, contentY - 6, width, 3));
+            float y = contentY;
+            string potentialKind = null, potentialGrade = null;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                float columnX = rowColumns[i] * 328;
+                y = rowPositions[i];
+                bool header = PotentialHeader(row[0]);
+                if (header)
+                {
+                    EquipTexture("frame/common/line", new Rect(columnX, y + 2, width, 3));
+                    y += 9;
+                    potentialKind = row[0].StartsWith("附加") ? "additionalPotential" : "potential";
+                    int grade = 0;
+                    if (hoverItem?.equipmentData != null && hoverItem.equipmentData.TryGetValue(
+                        potentialKind == "potential" ? "potentialGrade" : "bonusGrade", out var g)) grade = System.Convert.ToInt32(g);
+                    potentialGrade = new[] { "normal", "rare", "epic", "unique", "legendary" }[Mathf.Clamp(grade, 0, 4)];
+                }
+                else if (row[1].Length != 0) potentialKind = null;
+                var style = new GUIStyle(body);
+                float x = margin;
+                if (potentialKind != null)
+                {
+                    // Only the section heading has the grade color; option text stays white.
+                    if (header) style.normal.textColor = PotentialColor(potentialGrade);
+                    EquipNode("textIcon/" + potentialKind + "/" + (header ? "title/" : "detail/") + potentialGrade, columnX + margin, y);
+                    x += header ? 15 : 12;
+                }
+                else if (row[0].StartsWith("星火")) style.normal.textColor = new Color32(10,227,173,255);
+                GUI.Label(new Rect(columnX + x, y, width - margin - x, rowHeights[i]), row[0] + row[1], style);
+                y += rowHeights[i] - (header ? 9 : 0);
+            }
+            if (descriptionHeight > 0)
+                GUI.Label(new Rect((columnHeights.Count - 1) * 328 + margin,
+                    columnHeights[columnHeights.Count - 1] - descriptionHeight - 6, bodyWidth, descriptionHeight), description, body);
         }
-        string[] jobs = JobNames;
-        float[] jobX = JobX;
-        if (info.Get("level") == null)
+        finally
         {
-            Canvas(rect, "GrowthDisabled/itemLEV", 94, 104 + dy, s);
-            Canvas(rect, "GrowthDisabled/itemEXP", 94, 116 + dy, s);
-            Canvas(rect, "GrowthDisabled/none", 148, 104 + dy, s);
-            Canvas(rect, "GrowthDisabled/none", 148, 116 + dy, s);
+            GUI.matrix = oldMatrix;
+            GUI.color = oldColor;
+            GUI.contentColor = oldContentColor;
+            GUI.enabled = oldEnabled;
         }
-        int mask = info.Int("reqJob");
-        for (int i = 0; i < jobs.Length; i++)
-        {
-            bool allowed = i == 0 ? mask <= 0 : mask == 0 || mask != -1 && (mask & (1 << (i - 1))) != 0;
-            Canvas(rect, (allowed ? "Can/" : "Cannot/") + jobs[i], jobX[i], 133 + dy, s);
-        }
-        Fill(new Rect(rect.x + 6 * s, rect.y + (152 + dy) * s, rect.width - 12 * s, s), Color.white);
-        var label = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(12 * s) };
-        label.normal.textColor = new Color32(250,232,203,255);
-        var valueStyle = new GUIStyle(label); valueStyle.normal.textColor = Color.white;
+        DrawSetColumns(new Vector2(groupX + (equipmentWidth + 4) * s, groupY),
+            setRows, setTitle, setRowsPerColumn, s);
+    }
+
+    static void FlowEquipRows(List<string[]> rows, List<float> heights, float firstY,
+        float descriptionHeight, float limit, List<int> columns, List<float> positions, List<float> pageHeights)
+    {
+        columns.Clear(); positions.Clear(); pageHeights.Clear();
+        int column = 0;
+        float y = firstY;
         for (int i = 0; i < rows.Count; i++)
         {
-            float y = rect.y + (159 + dy + i * 16) * s;
-            float labelWidth = label.CalcSize(new GUIContent(rows[i][0])).x;
-            GUI.Label(new Rect(rect.x + 10 * s, y, 216 * s, 13 * s), rows[i][0], label);
-            GUI.Label(new Rect(rect.x + 10 * s + labelWidth, y, 216 * s - labelWidth, 13 * s), rows[i][1], valueStyle);
+            float keep = heights[i];
+            // Keep potential headings with their options and soul headings with their details.
+            if (PotentialHeader(rows[i][0]) || rows[i][0].StartsWith("灵魂武器"))
+                for (int next = i + 1; next < rows.Count && rows[next][1].Length == 0; next++) keep += heights[next];
+            if (y + keep + 12 > limit && y > 15)
+            {
+                pageHeights.Add(y + 12); column++; y = 15;
+            }
+            columns.Add(column); positions.Add(y); y += heights[i];
         }
-        if (descriptionHeight > 0)
-            GUI.Label(new Rect(rect.x + 10 * s, rect.y + (161 + dy + rows.Count * 16) * s,
-                211 * s, descriptionHeight), description, descriptionStyle);
-        if (capacity > 0)
-            DrawStarBar(new Rect(rect.x, rect.y + 26 * s, rect.width, starBar * s),
-                capacity, stars, info.Int("superiorEqp") != 0, s);
-        DrawSetPanel(rect, id, s);
+        if (descriptionHeight > 0 && y + descriptionHeight + 12 > limit)
+        {
+            pageHeights.Add(y + 12); y = 15;
+        }
+        pageHeights.Add(y + descriptionHeight + 12);
+    }
+
+    const string EquipAtlas = "UI/UIToolTip.img/Item/Equip/";
+
+    static ImgNode equipmentSkin;
+    static ImgNode EquipSkinNode(string path)
+    {
+        if (equipmentSkin == null)
+        {
+            var bundled = Resources.Load<TextAsset>("UI/EquipmentTooltip");
+            if (bundled != null)
+            {
+                using (var image = new ImgFile(bundled.bytes, "UI/UIToolTip.img"))
+                    equipmentSkin = image.Root.Get("Item/Equip");
+            }
+            else equipmentSkin = WzAssets.Node(EquipAtlas.TrimEnd('/'));
+        }
+        return equipmentSkin?.Get(path)?.TryResolve();
+    }
+
+    static void DrawEquipStars(float width, float height, int capacity, int stars, bool superior)
+    {
+        int rows = StarForceStars.Rows(capacity);
+        float top = 4 + (height - StarForceStars.BlockHeight(rows)) * .5f;
+        for (int row = 0; row < rows; row++)
+        {
+            int count = Mathf.Min(15, capacity - row * 15);
+            float left = (width - StarForceStars.RowWidth(count)) * .5f;
+            for (int i = 0; i < count; i++)
+                EquipTexture("textIcon/starForce/" + (row * 15 + i < stars ? (superior ? "blue" : "star") : "empty"),
+                    new Rect(left + i * 11 + i / 5 * 10, top + row * 15, 11, 10));
+        }
+    }
+
+    static Color32 PotentialColor(string grade)
+    {
+        switch (grade)
+        {
+            case "rare": return new Color32(102,255,255,255);
+            case "epic": return new Color32(187,119,255,255);
+            case "unique": return new Color32(255,204,0,255);
+            case "legendary": return new Color32(204,255,0,255);
+            default: return new Color32(133,145,159,255);
+        }
+    }
+
+    static bool PotentialHeader(string label) => label == "主潜能 :" || label == "附加潜能 :";
+
+    static void EquipTexture(string path, Rect rect)
+    {
+        var node = EquipSkinNode(path);
+        // Some original icon states are vectors (no artwork), not Canvas nodes.
+        if (node == null || node.Kind != "Canvas") return;
+        var texture = WzAssets.Texture(node);
+        if (texture != null) GUI.DrawTexture(rect, texture);
+    }
+
+    static void EquipNode(string path, float x, float y)
+    {
+        var node = EquipSkinNode(path);
+        // Some original icon states are vectors (no artwork), not Canvas nodes.
+        if (node == null || node.Kind != "Canvas") return;
+        var texture = WzAssets.Texture(node);
+        if (texture == null) return;
+        var origin = EquipSkinNode(path)?.Get("origin");
+        GUI.DrawTexture(new Rect(x - (origin?.X ?? 0), y - (origin?.Y ?? 0), texture.width, texture.height), texture);
     }
 
     // 装备等级 → 星级上限（dll 0x65C81949 的跳表，等价于 GMS 星之力上限表）
@@ -490,9 +682,16 @@ public static class ItemTooltip
     static List<AdminSetItem.SetPanel> setCache;
     static readonly List<int> wornBuffer = new List<int>();
 
-    static void DrawSetPanel(Rect equip, int itemId, float s)
+    sealed class SetRow
     {
-        if (itemId <= 0) return;
+        public string text, slot;
+        public Color32 color;
+        public float inset;
+    }
+
+    static List<SetRow> SetRowsFor(int itemId, out string title)
+    {
+        title = null;
         wornBuffer.Clear();
         if (GameSession.Character != null)
             foreach (var it in GameSession.Character.inventory)
@@ -505,94 +704,58 @@ public static class ItemTooltip
             setCache = AdminSetItem.PanelsFor(itemId, wornBuffer);
             setCacheKey = key;
         }
-        var panels = setCache;
-        if (panels.Count == 0) return;
-        var panel = panels[0];
-
-        int tierRows = 0;
-        foreach (var t in panel.Tiers) tierRows += 1 + t.Stats.Count;
-        float slotEnd = 25f + panel.Slots.Count * 16f;
-        float h = slotEnd + (panel.Tiers.Count > 0 ? 19f + tierRows * 16f : 0f) + 8f;
-
-        // 属性一多（八件套三档几十行）会比屏幕还高：面板自己放不下时，把每档属性并成一行自动折行，
-        // 信息不丢，高度回到可用范围。源端按候选 alt 总数估高度，本身就会留白，这里按实际行数。
-        bool compact = h > UiKit.H - 8f;
-        if (compact)
+        var result = new List<SetRow>();
+        if (setCache.Count == 0) return result;
+        var panel = setCache[0];
+        title = panel.Name + " (" + panel.EquippedCount + "/" + panel.CompleteCount + ")";
+        var gold = new Color32(255,225,55,255);
+        var gray = new Color32(144,148,157,255);
+        foreach (var slot in panel.Slots)
         {
-            float body = 0f;
-            foreach (var t in panel.Tiers) body += PackStats(t.Stats).Count * 16f;
-            h = slotEnd + 19f + body + 8f;
-        }
-
-        // 面板位置（源端 0x65C83012 段）：x = 装备框右侧 + 4、y = 装备框顶部，即**并排**在右边，
-        // 不是叠在装备框下面。旧实现「贴下方 + 放不下就往上翻」会把装备框整个盖住，
-        // 只剩底部几行露出来，看起来就像装备面板没画。
-        var rect = SetPanelRect(equip, h, s, UiKit.W, UiKit.H);
-        LastSetRect = rect;
-        DrawFrame(rect, s);
-
-        var gold = new Color32(255, 225, 55, 255);
-        // 字号与装备框属性行一致（12）：源端两侧行距都是 16，9 号字摆在双倍行距里明显偏小
-        // （用户 2026-10-29 反馈「下方属性描述的文字又很小」）。
-        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(12 * s) };
-        style.normal.textColor = gold;
-        var center = new GUIStyle(style) { alignment = TextAnchor.MiddleCenter };
-        var right = new GUIStyle(style) { alignment = TextAnchor.MiddleRight };
-        var goldStyle = new GUIStyle(style);
-        var white = new GUIStyle(style); white.normal.textColor = Color.white;
-        var gray = new GUIStyle(style); gray.normal.textColor = new Color32(144, 148, 157, 255);
-        var pale = new GUIStyle(style); pale.normal.textColor = new Color32(210, 210, 210, 255);
-
-        // 标题：套装名 (已穿/完整)
-        GUI.Label(new Rect(rect.x + 8 * s, rect.y + 5 * s, (236 - 16) * s, 16 * s),
-            panel.Name + " (" + panel.EquippedCount + "/" + panel.CompleteCount + ")", center);
-
-        // 装备行
-        for (int i = 0; i < panel.Slots.Count; i++)
-        {
-            var slot = panel.Slots[i];
             var alt = slot.Alts.Count > 0 ? slot.Alts[0] : null;
-            foreach (var a in slot.Alts) if (a.Equipped) { alt = a; break; }
-            foreach (var a in slot.Alts) if (a.ItemId == itemId) { alt = a; break; }
+            foreach (var candidate in slot.Alts) if (candidate.Equipped) { alt = candidate; break; }
+            foreach (var candidate in slot.Alts) if (candidate.ItemId == itemId) { alt = candidate; break; }
             if (alt == null) continue;
-            var st = alt.ItemId == itemId ? goldStyle : (alt.Equipped ? white : gray);
-            float y = rect.y + (25 + i * 16 - 2) * s;
-            GUI.Label(new Rect(rect.x + 8 * s, y, 150 * s, 16 * s), alt.Name, st);
-            GUI.Label(new Rect(rect.x + 158 * s, y, 70 * s, 16 * s), "(" + alt.SlotName + ")", right);
+            result.Add(new SetRow { text = alt.Name, slot = "(" + alt.SlotName + ")",
+                color = alt.ItemId == itemId ? gold : alt.Equipped ? (Color32)Color.white : gray });
         }
-
-        if (panel.Tiers.Count == 0) return;
-        float seY = rect.y + (slotEnd + 1) * s;
-        GUI.Label(new Rect(rect.x + 8 * s, seY, (236 - 16) * s, 16 * s), "套装效果", goldStyle);
-
-        float y2 = rect.y + (slotEnd + 17) * s;
-        if (compact)
+        if (panel.Tiers.Count > 0) result.Add(new SetRow { text = "套装效果", color = gold });
+        foreach (var tier in panel.Tiers)
         {
-            // 每行按属性粒度装箱，绝不把「最大HP +100」从数字中间切开
-            foreach (var t in panel.Tiers)
-            {
-                bool active = panel.EquippedCount >= t.Required;
-                var lines = PackStats(t.Stats);
-                for (int i = 0; i < lines.Count; i++)
-                {
-                    string text = i == 0 ? ("[" + t.Required + "件] " + lines[i]) : ("  " + lines[i]);
-                    GUI.Label(new Rect(rect.x + 8 * s, y2, (236 - 16) * s, 16 * s), text,
-                        active ? pale : gray);
-                    y2 += 16 * s;
-                }
-            }
-            return;
+            bool active = panel.EquippedCount >= tier.Required;
+            result.Add(new SetRow { text = "[" + tier.Required + "件]", color = active ? (Color32)Color.white : gray });
+            foreach (var stat in tier.Stats)
+                result.Add(new SetRow { text = SetStatName(stat.Key) + " +" + stat.Value + SetStatSuffix(stat.Key),
+                    inset = 8, color = active ? new Color32(210,210,210,255) : gray });
         }
-        foreach (var t in panel.Tiers)
+        return result;
+    }
+
+    static void DrawSetColumns(Vector2 origin, List<SetRow> rows, string title, int perColumn, float s)
+    {
+        if (rows.Count == 0) return;
+        int columns = (rows.Count + perColumn - 1) / perColumn;
+        float tallest = (38 + Mathf.Min(rows.Count, perColumn) * 16) * s;
+        LastSetRect = new Rect(origin.x, origin.y, (columns * 240 - 4) * s, tallest);
+        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.Max(1, Mathf.RoundToInt(12 * s)) };
+        for (int column = 0; column < columns; column++)
         {
-            bool active = panel.EquippedCount >= t.Required;
-            GUI.Label(new Rect(rect.x + 8 * s, y2, (236 - 16) * s, 16 * s), "[" + t.Required + "件]", active ? white : gray);
-            y2 += 16 * s;
-            foreach (var kv in t.Stats)
+            int start = column * perColumn, count = Mathf.Min(perColumn, rows.Count - start);
+            var rect = new Rect(origin.x + column * 240 * s, origin.y, 236 * s, (38 + count * 16) * s);
+            DrawFrame(rect, s);
+            style.normal.textColor = new Color32(255,225,55,255);
+            GUI.Label(new Rect(rect.x + 8*s, rect.y + 5*s, 220*s, 16*s), title,
+                new GUIStyle(style) { alignment = TextAnchor.MiddleCenter });
+            for (int i = 0; i < count; i++)
             {
-                string text = SetStatName(kv.Key) + " +" + kv.Value + SetStatSuffix(kv.Key);
-                GUI.Label(new Rect(rect.x + 16 * s, y2, (236 - 24) * s, 16 * s), text, active ? pale : gray);
-                y2 += 16 * s;
+                var row = rows[start + i];
+                style.normal.textColor = row.color;
+                float y = rect.y + (25 + i * 16) * s;
+                GUI.Label(new Rect(rect.x + (8 + row.inset)*s, y,
+                    (row.slot == null ? 220 - row.inset : 150)*s, 16*s), row.text, style);
+                if (row.slot != null)
+                    GUI.Label(new Rect(rect.x + 158*s, y, 70*s, 16*s), row.slot,
+                        new GUIStyle(style) { alignment = TextAnchor.MiddleRight });
             }
         }
     }
@@ -612,30 +775,7 @@ public static class ItemTooltip
         return new Rect(x, y, w, ph);
     }
 
-    // 紧凑模式的装箱：按属性整段折行，一行约 17 个字符宽（236-16=220px，12 号字）
-    static List<string> PackStats(List<KeyValuePair<string, int>> stats)
-    {
-        const int perLine = 17;
-        var lines = new List<string>();
-        var cur = new System.Text.StringBuilder();
-        foreach (var kv in stats)
-        {
-            string piece = SetStatName(kv.Key) + " +" + kv.Value + SetStatSuffix(kv.Key);
-            if (cur.Length > 0 && cur.Length + 1 + piece.Length > perLine)
-            {
-                lines.Add(cur.ToString());
-                cur.Length = 0;
-            }
-            if (cur.Length > 0) cur.Append(' ');
-            cur.Append(piece);
-        }
-        if (cur.Length > 0) lines.Add(cur.ToString());
-        if (lines.Count == 0) lines.Add("—");
-        return lines;
-    }
 
-    // DLL 里属性 key 走 strstr 匹配：PAD→攻击力、MAD→魔法攻击力、HP→最大HP、MP→最大MP、
-    // FinalDamage→最终伤害、BossDamage→Boss伤害、ExpRate→经验获得、DropRate→掉落率、MesoRate→金币获得。
     static string SetStatName(string key)
     {
         if (key == null) return "属性";

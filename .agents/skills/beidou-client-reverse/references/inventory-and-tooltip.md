@@ -363,3 +363,125 @@ ImageBase140000000的A08930已核实普通5/8/10/15/20/30、尊贵3/5/8/10/12/15
 替换裸数字，封顶不显示下一星；中间以中文显示累计星力加成及本次差值，概率补全失败不破坏/破坏标签。
 详见根docs/tms282-skill/16-enhancement-entry.md「2026-11-04」节（节点、来源、验证与未验收边界）。
 本次未改变282上限/概率/费用，不新增EXE结论；星力49项、全服务1664项通过，手机实机未验收。
+
+
+### 2026-11-05 用户截图指定的装备详情卡
+
+用户明确要求按其截图调整布局。`ItemTooltip.DrawEquipment`改用282原始
+`UI/UIToolTip.img/Item/Equip`皮肤，全部装备统一显示324逻辑宽；普通物品提示不变。
+这是截图授权的布局适配，不是新发现的EXE调用链或逐像素复刻结论。
+
+资源证据/复现：`tools/ms282/dump_img_tree.py UI/UIToolTip.img --branch Item/Equip`；
+`tools/ms282/import_equipment_tooltip.py`复用既有Importer，闭包解析_outlink，
+转GMS编码/ARGB4444并逐节点、像素负载校验。原文件及闭包SHA256、36张Canvas、
+原始节点参数保存在工作区根`docs/tms282-skill/data/equipment-tooltip-import.json`。
+已核实frame/common top324×30、mid324×1、btm324×12、line324×3，
+space.frameMarginX=15、frameMarginY=10、reqInfoOffsetX=100；
+font/common/itemName14粗体、normal12白、gray B7BFC5，
+starForce FFCC00、bonusStat 0AE3AD、potential各品级颜色直接读取原节点。
+本轮未新增282 EXE函数地址结论。
+
+迁移：原星条置顶，名称居中，原装备图标及origin按2倍显示，右侧显示实例真实穿戴状态及类别，
+下方保留等级/属性/职业需求，属性自动折行，主/附潜能原图标与分隔，
+星力派生值以黄色括号拆分，星火绿字仍独立列出。灵魂原有信息全部保留。
+超长卡按屏幕可用高/宽统一缩放，测量和绘制同字体/内容宽，避免底部裁失。
+截图里的战力比较、交易标记、套装/技能说明及星火并入属性总行并未在本轮新增，
+不填示例值、不将星火独立行冒称为总属性；现有单独套装面板继续贴侧边。
+编译0warning/0error；Unity实拍验证结果待本节后续补记，Android尚未验收。
+
+
+### 2026-11-05 详情卡透明框与配色复报纠正
+
+透明原因已定位为项目调用错误：`WzAssets.Texture(string)`参数走别名表，
+而新导入UIToolTip只登记files、未登记aliases；导致背景/线/图标全部返回null。
+改为`Texture(Node(EquipAtlas+path))`直接读取原IMG，不能用旧北斗自绘帧掩盖。
+绘制前保存并重置GUI.color/contentColor，结束恢复，避免继承外层染色。
+潜能标题用已记录品级色表，详情词条白色；移除下方重复分类行（分类已在图标旁原底板显示）。
+此前“已完成”仅有编译而未看截图，不能作为视觉通过依据。
+本次Unity实际四场景截图已生成并检查12星武器裁图，背景/图标底/分隔正常；
+`/tmp/equip-layout-fixed`仅为临时截图，复现入口仍是仓库TooltipPreview.Run。
+编译0warning/0error；Android实机与完整潜能灵魂长面板仍未验收。
+
+
+### 2026-11-05 星条、实机资源与完整内容复查
+
+手机 Unity 日志已复现 FileNotFoundException：/sdcard/mapstory/Data/UI/UIToolTip.img，
+使 DrawEquipment 中断而整卡消失。外置资源已补传；同时将同一份转换IMG以
+Assets/Resources/UI/EquipmentTooltip.bytes随APK打包，优先解析该TextAsset，
+不再要求新版渲染代码和外置皮肤碰巧同步。此修复需新APK生效。
+
+新增星条闭包后共41张Canvas、9363字节；textIcon/starForce/normal实际灰色，
+不能当点亮星使用；star节点_outlink才是Enchant summaryStar/normal金星，
+转换后中心像素FFFFDD00，empty为空星，blue尊贵星。
+部分潜能detail/normal为Vector而不是Canvas；绘制前检查Kind，不能盲取Texture。
+所有GUI矩阵、颜色和enabled均try/finally恢复。
+
+需求信息按固定两列（标签x15、值x100）逐行测量；固定星火属性用与
+NativeGrowthStats.ApplyFlameStat相同映射并入总值，绿字括号；百分比仍独立，
+不把全属性百分比错误直接相加。星力黄色括号；无独立卷轴贡献来源时不虚构紫字。
+灵魂保留阶段、等级被动、可用选项和技能说明，压缩冗余解释。
+交易提示沿用NativePlayerShopService相同flag8/16和tradeBlock/accountSharable/quest判定。
+
+TooltipPreview真实窗口悬停/SetHover+Flush共17场景已出图：0/12星、帽子套装、
+主附潜能0..4级及隐藏、满15属性+六潜能+星火+现代灵魂、旧灵魂、装备痕迹、
+符文、右下边缘和普通物品。完整长卡712逻辑高，边界及GUI矩阵断言无失败；
+本轮编译0warning/0error。星图纠正后第二轮17场景也全部出图并复核金星/完整长卡；手机新版APK未验收。
+
+背景颜色边界：原common/mid转换后的中心RGBA=(34,51,51,255)，确实偏绿；
+非GUI染色。参考图偏灰蓝，ARGB4444精度与原皮肤差异仍在，不能冒称逐像素一致。
+本轮没有新EXE逆向结论；源文件身份和各_outlink仍见equipment-tooltip-import.json。
+
+
+### 2026-11-05 用户指出两行星条漏测后补测
+
+此前17场景只有15槽武器，不构成两行星条验证。现TooltipPreview新增真实
+1302343神秘之影单手剑（模板reqLevel200/tuc8），断言StarForceRules.Cap=30；
+0/15/16/30星及30星+六潜能/星火/灵魂/右下边缘共5场景，总场景22。
+实际截图按每颗星中心采样金色，逐行点亮数分别为[0,0]/[15,0]/[15,1]/[15,15]，
+完整长卡也是[15,15]；人工检查名称未重叠、第二行及底部灵魂可见，长卡712高。
+截图复现目录/tmp/equip-two-row，入口仍TooltipPreview.Run；这是Unity模拟，
+不能作为Android实机两行星条验收。前一APK构建被SIGTERM终止，不能声称已安装。
+
+补测视觉边界：右下长卡实拍中InputHub的GameSideMenu悬浮球（GUI.depth=-300）
+遮住卡右侧穿戴状态区域。星条/名称/底部没有裁失，但不能由此声称全卡无遮挡；
+本轮未改全局菜单层级，后续验收必须保留这一缺口。
+
+
+### 2026-11-05 实机1402267复报：封印创世模板与名称缺口
+
+用户截图明确itemId1402267，Source String/Eqp.img/Eqp/Weapon/1402267/name=
+「封印的創世雙手劍」。Bot/Items.json此前有info却无names条目，ItemCatalog/WzNames
+最终退为「道具1402267」。export_solomapling_items.py之前282 String回填只覆盖
+Android及Symbol；现从同一282客户端Eqp全部分类补齐已导入且缺失的名称/描述，
+保留已有名称；本次实际新增1585个名称。源String身份仍记录在Items.json.sources。
+
+该模板reqLevel200、incPAD340、exceptUpgrade1、exUpgradeBlock1、无tuc；
+NativeStarForceService原本要求tuc>0。前次tooltip因IsWeapon/version282等条件过宽
+错误显示两行空星，已收紧cash0、tuc>0且无禁止强化标记；已有真实非零星数仍保留显示，
+不凭截图生成金星或改存档。源码名及标记复现：dump_img_tree.py
+String/Eqp.img --branch Eqp/Weapon/1402267 与导出的Character/Weapon/01402267.img info。
+这属于源资源/现有服务规则核对，未新增EXE结论。
+
+TooltipPreview新增用户指定sealed-genesis场景，检查真实名称、0星封印模板及第6阶段
+Lv1灵魂；实际出图名称正常、错误空星消失，普通30槽对照仍绘制两行。
+Unity编译0warning/0error；截图/tmp/equip-sealed-genesis。Bot/Items.json随APK内置，
+仅更新外置IMG不能更新此名称表；本轮未声称Android已安装或验收。
+
+
+### 2026-11-05 手机长详情自动续栏（用户明确授权布局适配）
+
+用户要求显示不全时在右侧另悬浮一块分割。复用本记录原UIToolTip common
+324宽背景/分隔素材，新增FlowEquipRows按测量后的完整行装栏，续栏顶15；
+主附潜能标题尽量与三条词条成组，灵魂标题与后续说明成组，顺序不改。
+原整卡按高度缩小改为优先正常BottomBar.S，按屏幕可用高度拆成多栏，
+栏间4逻辑像素；只有总宽装不下才缩放并重新排版，避免屏幕边缘越界。
+套装沿用本记录已核实原代码帧/236宽/12字号/16行高，槽位与各档属性
+同样按屏幕高续栏，不再只夹顶边留下底部裁失。整组先算宽高统一夹屏，
+装备续栏和套装互不覆盖；LastEquipRect记录全部装备栏包围框。
+这是用户授权的新排版，不声称源EXE本来支持自动分栏；未新增EXE地址结论。
+
+验证：TooltipPreview全部23场景，1280x720与1280x600两轮；两行30星+15属性
++六潜能+星火+灵魂+套装/右下角实拍，在600高时拆成两栏装备、两栏套装，
+底部技能及套装7件档可见。新增LastSetRect屏内/不与装备组重叠断言，
+编译0warning/0error；复现目录/tmp/equip-columns、/tmp/equip-columns-mobile。
+手机APK本轮未安装；右侧全局悬浮按钮仍可能遮住局部，这不是分栏边界断言范围。

@@ -227,12 +227,124 @@ def simplify(text: str) -> str:
         return text
 
 
-def classify(node, common: dict) -> str:
+# ——— 282 里「伤害写在单字母字段上」的技能 ———
+# 这些 common 用的是每个技能自己约定的占位字母，含义只能从 String.wz 的 h 模板读出来，
+# 不能按字母猜、也不能跨技能套用（同一个字母在不同的技能里含义不同）。
+# 不登记就会整条技能「能按、有动画、不掉血」。
+COMMON_ALIAS = {
+    12141007: {"z": "damage"},                     # 極致熾烈VI
+    400021030: {"v": "damage", "s": "attackCount", "q": "mobCount"},   # 落雷凝聚
+    400011052: {"q": "damage", "s": "mobCount", "z": "attackCount", "v": "time"},  # 祝福之鎚
+}
+
+
+def apply_alias(skill_id: int, fields: dict) -> None:
+    """按 COMMON_ALIAS 把占位字母补成引擎认识的字段（原字段保留，同名不覆盖）。"""
+    for source_name, target_name in COMMON_ALIAS.get(skill_id, {}).items():
+        if source_name in fields and target_name not in fields:
+            fields[target_name] = fields[source_name]
+
+
+# ——— 「damage 只在别的动作触发时结算」的技能 ———
+#
+# 这批技能 common 里确实有 damage/attackCount，`classify()` 按字段判会得到 attack，
+# 但它们不是能手动按出来的攻击：String.wz 的 h 模板写的是「命中 N 次 / 攻击时概率 /
+# 受到伤害时」才发动。当成 attack 的后果是双重的 —— 按下去多一次假结算，而且因为
+# 定义层没有 lt/rb，会用「身前 200px」兜底框打到本不该被打的怪。
+#
+# 值 = (判定类型, 依据)。依据一律抄 h 模板原文，改判前先回去读那一段。
+# passive：完全由别的技能/受击触发，连施放动作都没有 ⇒ BeginCast 直接拒绝。
+# buff   ：本身是可施放的 Buff/开关，伤害由它带来的 proc 结算，施放时不结算。
+PROC_SKILLS = {
+    # 終極攻擊系列：主攻击命中后按 prop 概率追加一击，282 四条同构。
+    1140009: ("passive", "終極攻擊VI：h「#prop%機率發動可造成#damage%傷害#attackCount次的終極攻擊」"),
+    1240008: ("passive", "終極攻擊VI：h「攻擊命中時，#prop%機率發動…追加攻擊」"),
+    1340007: ("passive", "終極之槍VI：h「#prop%機率發動可造成#damage%傷害#attackCount次的終極攻擊」"),
+    3240014: ("passive", "終極之弩VI：h「以#prop%機率發動可造成#damage%傷害的終極攻擊」"),
+    # 命中计数触发
+    12140015: ("passive", "魔法爆發VI：h「命中#x次時，下次…將產生以#damage%的傷害攻擊#attackCount次的追加攻擊」"),
+    14141019: ("passive", "深淵黑暗：h「飛鏢系列技能命中#x次時，發動將造成#damage%傷害#attackCount次的深淵重擊」"),
+    1340004: ("passive", "闇靈復仇VI：h「黑騎士的直接攻擊技能命中時，有#prop%機率對敵人發動攻擊」"),
+    14141004: ("passive", "暗影蝙蝠VI：h「每命中#z次時，會召喚可維持#w秒的暗影蝙蝠」"),
+    14141012: ("passive", "飢餓蝙蝠VI：h「每當使用飛鏢的技能命中#z次時，召喚1隻可維持#w秒的飢餓蝙蝠」"),
+    5140004: ("passive", "海龍VI：h「發動海龍技能時消耗MP#s」＝強化被動，自己不是可施放技能"),
+    # Buff / 开关：伤害是 buff 期间的 proc
+    13141003: ("buff", "風暴使者VI：h「#time秒內攻擊時以#prop%機率召喚巨大弓箭」"),
+    1141006: ("buff", "劍士意念VI：h「#time秒內…每隔一段時間形成…劍擊」"),
+    # 燎原之火VI 的 desc 写「開關技能」，但 h 写的才是效果：命中时按 prop 生成火之壁。
+    # 没有 time 字段 ⇒ BuffRoll 的计时期刊无从启动，按 buff 处理只会「按下去什么都不发生」，
+    # 所以判 passive（真正的触发在 NativeProcSkills 的 Roll 模式里）。
+    2141007: ("passive", "燎原之火VI：h「施展火焰魔法時，有#prop%的機率生成火之壁…」"),
+    400011055: ("buff", "極樂之境：h「在#time秒內可使用#w次交叉冥河」"),
+    400041001: ("buff", "散式投擲：h「在#time秒期間使用投擲類技能時一次向多個方向投擲」"),
+    400041008: ("buff", "影之槍：h「在#time秒期間進行…暗屬性攻擊時生成影子槍」"),
+    5141011: ("buff", "海龍石VI：h「#time秒內可發動突擊技能」"),
+    # 自足的追加攻击（母体合一，自带 cooltimeMS 再发动冷却）
+    500001016: ("passive", "突擊爆發：h「直接攻擊的技能命中時，對所有命中的敵人發動以#damage%的傷害#attackCount次攻擊的劍擊，劍擊再發動冷卻時間#t秒」"),
+    500001020: ("passive", "突擊爆發(黑暗長槍版)：h「直接攻擊的技能命中時，對所有命中的敵人產生黑暗長槍，以#damage%的傷害#attackCount次」"),
+    # ——— 以下是「母技能 + 追加攻击体」里的伤害体 ———
+    # info/type=53 + finalAttack=1 已能自动判成 passive（见 classify），
+    # 这里登记是为了留下逐条的母子取证：每条体的 damage/attackCount 都等于
+    # 母技能 h 里引用的那个字母字段（x/y/w），数值逐级相等。
+    2341010: ("passive", "天怒VI(追加體)：母 2341009 h「[終極攻擊系列技能]…有#prop%機率發動將造成#x%傷害的天使的懲罰」，x=195+7*x==本體 damage"),
+    2140013: ("passive", "火流星VI(追加體)：母 2141012 h「…#prop%機率召喚將造成#x%傷害的火流星墜落」，x=231+7*x==本體 damage"),
+    2241004: ("passive", "暴風雪VI(追加體)：母 2241003 h「…#prop%機率對單一敵方降下以#x%傷害的暴風雪」，x=250+5*x==本體 damage"),
+    5140010: ("passive", "戰艦鯨魚號VI(追加體)：母 5141009 h「…#x%機率以#y%傷害追加攻擊#w次」，x=100==prop、y=205+11*x==damage、w=2==attackCount"),
+    12141016: ("passive", "魔法爆發VI(追加體)：母 12140015 h「命中#x次時…以#damage%的傷害攻擊#attackCount次的追加攻擊」，本體與母技能 damage 同源"),
+    1341005: ("passive", "闇靈復仇VI(追加體)：母 1340004 h「命中時，有#prop%機率對敵人發動攻擊，每次對最多#mobCount名敵人造成#damage%傷害#attackCount次」，本體與母技能同源"),
+    1341006: ("passive", "闇靈懲戒：母 1340004 h「復仇的烙印集滿3個時，將消耗所有烙印並發動闇靈懲戒：造成#s%傷害#s2次」，s=133+3*x==damage、s2=5==attackCount"),
+}
+
+
+def info_int(node, name: str) -> int:
+    info = node.get("info")
+    if info is None:
+        return 0
+    child = info.get(name)
+    if child is None:
+        return 0
+    try:
+        return int(getattr(child, "value", 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def classify(node, common: dict, common_names=(), skill_id: int = 0) -> str:
+    forced = PROC_SKILLS.get(skill_id)
+    if forced is not None:
+        return forced[0]
+    # 282 的「終極攻擊系列技能」追加攻击体：info/type=53 + finalAttack=1。
+    # 这是字段级判据，不靠 h 文案猜：全库（17 个职业定义 img + 五转 4000x）
+    # type=53 共 12 条，其中 10 条带 finalAttack=1，每一条都能在 String.wz 里
+    # 找到一条母技能，其 h 写「[終極攻擊系列技能] 直接攻擊的技能命中時，有#prop%
+    # 機率…#x%傷害」，且母技能的 x/y/w 与本组件的 damage/attackCount 逐级相等
+    # （天怒 2341009.x=405 == 2341010.damage / 战舰鲸鱼号 5141009.y=535 == 5140010.damage）。
+    # 另两条 type=53：1140005 狂暴劍痕是真技能（有 lt/rb、有 h、**无 prop**），
+    # 1240008 终极攻击VI 只是缺 finalAttack 字段但带 prop —— 所以判据取
+    # 「finalAttack=1 或 common 里有 prop」，两条路都能命中，且都不会误伤 1140005。
+    if info_int(node, "type") == 53 and (info_int(node, "finalAttack") == 1 or "prop" in common):
+        return "passive"
     if node.get("summon") is not None:
         return "summon"
     if any(k in common for k in ("damage", "fixdamage", "mad", "attackCount")):
         return "attack"
+    # V 技能按职业分流伤害：common/attackInfo/<jobId>/{damage,attackCount}。
+    # 只在 common 下面才会看到 attackInfo（「蜘蛛之镜」这类 40+ 职业变体），
+    # 而 level_rows 只收标量字段、把子节点整棵跳过 ⇒ 必须另看子节点名。
+    if "attackInfo" in common_names or "attackInfo" in common:
+        return "attack"
     if any(k in common for k in ("time", "prop")):
+        return "buff"
+    # 有冷却却既无 damage 也无 time 的主动技能（连接绳索、瞬移、满载骰子、
+    # 超载魔力、落雷凝聚…）：282 用 cooltime 表示「可主动按」，不是被动。
+    # 但 invisible 的除外——天堂神罚(2341505)/暗影手里剑(4140012)/风之圣谕(13141505)
+    # 只有 cooltime + invisible=1、连 action/effect/hit 都没有，那是被动触发的内部冷却标记。
+    if "cooltime" in common:
+        marker = node.get("invisible")
+        return "passive" if marker is not None and getattr(marker, "value", 0) else "buff"
+    # 连冷却都没有、但带动作/特效/弹道分支的（祝福之锤的 ball、落雷凝聚的 action）：
+    # 同样只能主动施放。真正的被动没有这些分支。
+    if any(node.get(k) is not None for k in ("action", "effect", "ball", "hit", "screen")):
         return "buff"
     return "passive"
 
@@ -293,6 +405,7 @@ def export_job(base: int, adv: int, warnings: list[str]) -> tuple[list[int], dic
         if max_level <= 0:
             warnings.append(f"{sid} maxLevel=0（跳过）")
             continue
+        apply_alias(sid, fields)
         rows = expand(fields, max_level)
         if not rows:
             warnings.append(f"{sid} 等级行为空（跳过）")
@@ -325,7 +438,7 @@ def export_job(base: int, adv: int, warnings: list[str]) -> tuple[list[int], dic
             "job": sid // 10000,
             "maxLevel": max_level,
             "masterLevel": 0,
-            "type": classify(node, fields),
+            "type": classify(node, fields, [c.name for c in common_node.children()], sid),
             "invisible": invisible,
             "auto": False,
             "hexa": True,             # 六转技能由 HEXA 矩阵提升，不花 SP

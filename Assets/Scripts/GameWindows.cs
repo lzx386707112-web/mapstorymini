@@ -47,11 +47,22 @@ public static class StatWindow
         var tex = Tex(node);
         if (tex != null) GUI.DrawTexture(At(r, x, y, tex.width, tex.height), tex);
     }
-    static void Text(Rect r, string text, float x, float y, int width = 135)
+    static void Text(Rect r, string text, float x, float y, int width = 135, int size = 11)
     {
-        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(11 * S), clipping = TextClipping.Clip };
+        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(size * S), clipping = TextClipping.Clip };
         style.normal.textColor = Color.black;
         GUI.Label(At(r, x, y, width, 16), text, style);
+    }
+    /// <summary>
+    /// 四维的「基础值（+叠加值）」：基础 = AP 分配值（Profile.Attributes），
+    /// 叠加 = 面板最终值 − 基础值（装备 inc*、套装、潜力、星力、282 成长、增益）。
+    /// 无叠加时只写基础值，不给满屏 (+0)。
+    /// </summary>
+    static string StatLine(int baseValue, int total)
+    {
+        int bonus = total - baseValue;
+        if (bonus == 0) return baseValue.ToString();
+        return baseValue + " (" + (bonus > 0 ? "+" : "") + bonus + ")";
     }
     public static void Toggle() { Visible = !Visible; }
 
@@ -68,7 +79,12 @@ public static class StatWindow
         string text = "    能力点将按如下方式分配：\n\n";
         for (int i = 0; i < 4; i++) text += "     " + names[i] + " : +" + plan[i] + "\n";
         int job = Profile.JobId;
-        NativeUtilPrompt.Confirm(text, yes => { if (yes && Profile.JobId == job) Profile.AssignAutoAp(plan); });
+        NativeUtilPrompt.Confirm(text, yes =>
+        {
+            if (!yes || Profile.JobId != job) return;
+            // 分配被拒（AP 不足 / 已达上限）必须弹提示框，否则点了确认像没生效
+            if (!Profile.AssignAutoAp(plan)) NativeUtilPrompt.Notice("能力点不足，无法按该方案分配。");
+        });
     }
 
     public static void Draw()
@@ -127,6 +143,11 @@ public static class StatWindow
             }
             else DrawAuto(r, "BtAuto", 197, false);
             int[] stats = { combat.str, combat.dex, combat.intelligence, combat.luk };
+            // 基础值取存档 AP 分配（与穿戴门槛同源：门槛比面板值，括号里就是面板比基础多出来那部分）
+            var baseAttrs = Profile.Attributes;
+            int[] baseStats = { baseAttrs.str, baseAttrs.dex, baseAttrs.intelligence, baseAttrs.luk };
+            // 数字右边界别压到 x=153 的加号按钮（原端箭头共用 x=153）
+            const int StatWidth = ApArrowX - 61 - 4;
             for (int i = 0; i < stats.Length; i++)
             {
                 // 未转职新手只开放 STR/DEX，INT/LUK 用原端 Disabled 素材压住标签
@@ -134,7 +155,9 @@ public static class StatWindow
                 //   骑士团初心者 1000 与冒险家新手共用它，能力点规则却不同）
                 if (Profile.JobId == 0 && i >= 2)
                     Image(r, "Disabled/" + (i == 2 ? "INT" : "LUK"), 8, 244 + i * 18);
-                Text(r, stats[i].ToString(), 61, 244 + i * 18);
+                string line = StatLine(baseStats[i], stats[i]);
+                // 六位数叠加会顶到按钮，长串降一档字号（11 → 9），不裁不挤压
+                Text(r, line, 61, 244 + i * 18, StatWidth, line.Length > 12 ? 9 : 11);
                 var up = At(r, ApArrowX, 247 + i * 18, 12, 12);
                 if (!Profile.CanAssignAp(i)) Image(r, "BtApUp/disabled/0", ApArrowX, 247 + i * 18);
                 else if (NativeUi.Button(up, "UI/UIWindow.img/Stat/BtApUp")) Profile.AssignAp(i);
@@ -937,16 +960,26 @@ public static class GameWindows
     // 为了「后开的先关」，这里按打开顺序记录一个栈；打开入口五花八门
     // （快捷键 / 底部栏按钮 / 快捷菜单），所以在绘制阶段统一观测可见性变化，
     // 不要求每个入口都记得来登记。
+    // 顺序 = 绘制层级的初始顺序（越靠后越在上）。运行时会按「谁被点中就浮上来」重排，
+    // 见文件末尾的 zOrder / BringToFront。
     enum Panel
     {
-        Stat, Equip, Inven, Shop, Quest, Shortcut, Help, GameMenu, Skill,
-        World, Social, MonsterBook, Community, Guild, Medal, NpcShop, Delivery, Merchant, Maker, Ranking, PlayerShop, ItemSearch, Storage, Claim, Rps, RemoteGachapon,
-        GameOpt, SysOpt, Channel,
-        Symbol, HyperStat, InnerAbility, VMatrix, HexaMatrix, Enhancement, Vega, ApReset, SpReset, Teleport, CharacterMenu, CharacterInfo, Trade, Market, Android, Memo, PetExclusion, GuildGrade,
+        MiniMap, Stat, Equip, Android, Inven, Shop, Quest, Help, Skill, World, Social, MonsterBook,
+        CommunityBoard, AdBoard, Community, Guild, GuildGrade, Medal, Trade, Market, NpcShop, Delivery,
+        Merchant, Maker, Ranking, PlayerShop, ItemSearch, Storage, Claim, Rps, Memo, MapleTv,
+        CarnivalHud, CarnivalLobby, RemoteGachapon, CharacterInfo, CharacterMenu,
+        GameOpt, SysOpt, Channel, GameMenu, Shortcut,
+        Symbol, HyperStat, InnerAbility, VMatrix, HexaMatrix, Enhancement, Vega, ApReset, SpReset,
+        Teleport, KeyConfig,
+        // 只参与 Esc 关闭：宠物排除窗画在角色信息窗内部，没有独立绘制层
+        PetExclusion,
     }
     static readonly Panel[] panels = (Panel[])System.Enum.GetValues(typeof(Panel));
     static readonly List<Panel> openOrder = new List<Panel>();
     static readonly Dictionary<Panel, bool> lastVisible = new Dictionary<Panel, bool>();
+    // 本帧新打开、等待置顶的面板（TrackPanels 只登记，重排留给 DrawAll，保持 Esc 栈逻辑纯粹）
+    static Panel raisedPanel;
+    static bool raisedPending;
 
     static bool VisibleOf(Panel p)
     {
@@ -999,6 +1032,16 @@ public static class GameWindows
             case Panel.GameOpt: return GameOptWindow.Visible;
             case Panel.SysOpt: return SysOptWindow.Visible;
             case Panel.Channel: return ChannelWindow.Visible;
+            case Panel.KeyConfig: return KeyConfigWindow.Visible;
+            // 以下不是独立窗口（小地图常驻 / 宿主窗口内部的附属层），只占一个绘制槽位，
+            // 因此永远不参与「谁置顶」，也不进 Esc 关栈。
+            case Panel.MiniMap:
+            case Panel.CommunityBoard:
+            case Panel.AdBoard:
+            case Panel.MapleTv:
+            case Panel.CarnivalHud:
+            case Panel.CarnivalLobby:
+                return false;
         }
         return false;
     }
@@ -1055,6 +1098,7 @@ public static class GameWindows
             case Panel.GameOpt: GameOptWindow.Close(); return;
             case Panel.SysOpt: SysOptWindow.Close(); return;
             case Panel.Channel: ChannelWindow.Close(); return;
+            case Panel.KeyConfig: KeyConfigWindow.Close(); return;
         }
     }
 
@@ -1067,7 +1111,7 @@ public static class GameWindows
             if (now == before) continue;
             lastVisible[p] = now;
             openOrder.Remove(p);
-            if (now) openOrder.Add(p);
+            if (now) { openOrder.Add(p); raisedPanel = p; raisedPending = true; }
         }
     }
 
@@ -1088,91 +1132,215 @@ public static class GameWindows
     public static void DrawAll()
     {
         TrackPanels();
+        // 新打开的面板一律浮到最上（原版行为：后开的窗压住先开的窗）
+        if (raisedPending) { BringToFront(raisedPanel); raisedPending = false; }
         ItemTooltip.Reset();
         NativeSoulWeapon.Tick();
         NativeCashWindow.Tick();
         NativeDeliveryWindow.Tick();
         NativeItemSearchWindow.Tick();
+
+        // 层级不再写死：先看指针压在哪个窗口上，按下就把它搬到最上，
+        // 本帧的绘制顺序随即按新的 zOrder 生效。
+        var pressed = TopPanelAtPointer();
+        if (pressed.HasValue && Pointer.Pressed) BringToFront(pressed.Value);
+        int top = pressed.HasValue ? zOrder.IndexOf(pressed.Value) : -1;
+
         bool enabled = GUI.enabled;
         // The global confirmation/input dialog is above every window, including matrices.
         var promptPointer = new Pointer.InputMask(NativeUtilPrompt.Visible);
-        bool hexaShield = NativeHexaMatrixWindow.AtPointer;
-        bool matrixShield = hexaShield || NativeVMatrixWindow.AtPointer;
-        bool symbolShield = !matrixShield && NativeSymbolWindow.AtPointer;
-        bool shield=NativeEnhancementWindow.AtPointer || matrixShield || symbolShield;
-        var pointerMask = new Pointer.InputMask(shield);
-        GUI.enabled &= !NativeUtilPrompt.Visible && !shield;
+        GUI.enabled &= !NativeUtilPrompt.Visible;
         try
         {
-        NativeMapWindows.DrawMini();
-        StatWindow.Draw();
-        EquipWindow.Draw();
-        NativeAndroidWindow.Draw();   // 机器人换装面板贴在装备窗右侧，必须紧跟其后（依赖它的位置）
-        InvenWindow.Draw();
-        ShopWindow.Draw();
-        QuestWindow.Draw();
-        HelpWindow.Draw();
-        SkillWindow.Draw();
-        NativeMapWindows.DrawWorld();
-        NativeSocialWindow.Draw();
-        NativeMonsterBook.Draw();
-        NativeCommunityWindow.DrawBoard();
-        NativeAdBoard.Draw();   // 黑板：原端 0x48A935 type1003 → 0x4890C4 气泡布局（旧占位框与新黑板同画会重叠，故替换位置紧随其后）
-        NativeCommunityWindow.Draw();
-        NativeGuildWindow.Draw();
-        NativeGuildGradeWindow.Draw();   // BtInfo 的附属窗，必须跟着主窗一起进绘制链
-        NativeMedalWindow.Draw();
-        NativeTradeWindow.Draw();
-        NativeMarketWindow.Draw();
-        NativeNpcShopWindow.Draw();
-        NativeDeliveryWindow.Draw();
-        NativeMerchantWindow.Draw();
-        NativeMakerWindow.Draw();
-        NativeRankingWindow.Draw();
-        NativePlayerShopWindow.Draw();
-        NativeItemSearchWindow.Draw();
-        NativeStorageWindow.Draw();
-        NativeClaimWindow.Draw();
-        NativeRpsWindow.Draw();
-        NativeMemoWindow.Draw();
-        NativeMapleTvDisplay.Draw();
-        NativeCarnivalHud.Draw();
-        NativeCarnivalLobby.Draw();
-        NativeRemoteGachaponWindow.Draw();
-        NativeCharacterInfo.Draw();
-        NativeCharacterMenu.Draw();
-        // 目录菜单里开出来的三个窗（源端只有底图，实现见 NativeSettingsWindows.cs）
-        GameOptWindow.Draw();
-        SysOptWindow.Draw();
-        ChannelWindow.Draw();
-        // 底栏两个弹出菜单画在最后：它是贴着底栏的浮层，要压在其它窗口之上
-        GameMenuWindow.Draw();
-        ShortcutWindow.Draw();
-        NativeVegaWindow.Draw();
-        if(shield && !matrixShield && !symbolShield){pointerMask.Dispose();shield=false;GUI.enabled=enabled && !NativeUtilPrompt.Visible;}
-        NativeEnhancementWindow.Draw();
-        // 282 角色成长的三扇独立窗（徽章 / 极限属性 / 内在能力）
-        if(symbolShield){pointerMask.Dispose();shield=false;GUI.enabled=enabled && !NativeUtilPrompt.Visible;}
-        NativeSymbolWindow.Draw();
-        NativeHyperStatWindow.Draw();
-        NativeInnerAbilityWindow.Draw();
-        // 282 五六转的核心成长窗（V 矩阵 / HEXA 矩阵）
-        if(shield && !hexaShield){pointerMask.Dispose();shield=false;GUI.enabled=enabled && !NativeUtilPrompt.Visible;}
-        NativeVMatrixWindow.Draw();
-        if(shield){pointerMask.Dispose();shield=false;GUI.enabled=enabled && !NativeUtilPrompt.Visible;}
-        NativeHexaMatrixWindow.Draw();
-        NativeResetWindow.Draw();
-        NativeSpResetWindow.Draw();
-        NativeTeleportWindow.Draw();
-        ItemTooltip.Flush();
+            for (int i = 0; i < zOrder.Count; i++)
+            {
+                var panel = zOrder[i];
+                // 被更上层窗口盖住的面板必须看不到这根指针，否则先画的下层会抢走点击
+                // （IMGUI 里同一 depth 内先画的先处理事件，顺序正好和视觉层级相反）。
+                // 只遮指针、不动 GUI.enabled：否则被遮住的窗口按钮会画成 disabled 灰图。
+                if (top < 0 || i >= top) { DrawPanel(panel); continue; }
+                var covered = new Pointer.InputMask(true);
+                try { DrawPanel(panel); }
+                finally { covered.Dispose(); }
+            }
+            ItemTooltip.Flush();
         }
         finally
         {
             GUI.enabled = enabled;
-            if(shield){pointerMask.Dispose();}
             promptPointer.Dispose();
         }
         NativeUtilPrompt.Draw();
         UiPreviewHook.Emit();
+    }
+
+    // ——————————————— 面板层级 ———————————————
+    // 绘制顺序即层级（后画 = 在上）。zOrder 的初始值和旧的硬编码绘制链一致，
+    // 之后由「新开置顶」和「点击置顶」两件事驱动重排。
+    static readonly List<Panel> zOrder = new List<Panel>
+    {
+        Panel.MiniMap, Panel.Stat, Panel.Equip, Panel.Android, Panel.Inven, Panel.Shop,
+        Panel.Quest, Panel.Help, Panel.Skill, Panel.World, Panel.Social, Panel.MonsterBook,
+        Panel.CommunityBoard, Panel.AdBoard, Panel.Community, Panel.Guild, Panel.GuildGrade,
+        Panel.Medal, Panel.Trade, Panel.Market, Panel.NpcShop, Panel.Delivery, Panel.Merchant,
+        Panel.Maker, Panel.Ranking, Panel.PlayerShop, Panel.ItemSearch, Panel.Storage, Panel.Claim,
+        Panel.Rps, Panel.Memo, Panel.MapleTv, Panel.CarnivalHud, Panel.CarnivalLobby,
+        Panel.RemoteGachapon, Panel.CharacterInfo, Panel.CharacterMenu,
+        Panel.GameOpt, Panel.SysOpt, Panel.Channel, Panel.GameMenu, Panel.Shortcut,
+        Panel.Vega, Panel.Enhancement, Panel.Symbol, Panel.HyperStat, Panel.InnerAbility,
+        Panel.VMatrix, Panel.HexaMatrix, Panel.ApReset, Panel.SpReset, Panel.Teleport,
+        Panel.KeyConfig,
+    };
+
+    // 贴着宿主画、且必须紧跟在宿主之后的附属窗（顺序不能拆）
+    static bool IsFollower(Panel p) => p == Panel.Android || p == Panel.GuildGrade;
+    static Panel HostOf(Panel p) => p == Panel.Android ? Panel.Equip : p == Panel.GuildGrade ? Panel.Guild : p;
+
+    static void BringToFront(Panel p)
+    {
+        if (IsFollower(p)) p = HostOf(p);
+        int at = zOrder.IndexOf(p);
+        if (at < 0) return;
+        var block = new List<Panel> { p };
+        if (p == Panel.Equip) block.Add(Panel.Android);
+        else if (p == Panel.Guild) block.Add(Panel.GuildGrade);
+        // 已经在最上（含附属窗已就位）就不用动
+        if (at == zOrder.Count - block.Count) return;
+        foreach (var b in block) zOrder.Remove(b);
+        zOrder.AddRange(block);
+    }
+
+    // 窗口矩形来自各窗口自己的 RegisterWindow 登记（上一帧几何，够快也够准）
+    static readonly Dictionary<Panel, string[]> hitKeys = new Dictionary<Panel, string[]>
+    {
+        { Panel.Stat, new[] { "StatWindow" } },
+        { Panel.Equip, new[] { "EquipWindow" } },
+        { Panel.Android, new[] { "AndroidWindow" } },
+        { Panel.Inven, new[] { "InvenWindow" } },
+        { Panel.Quest, new[] { "QuestWindow" } },
+        { Panel.Skill, new[] { "SkillWindow" } },
+        { Panel.World, new[] { "NativeMapWindows" } },
+        { Panel.Social, new[] { "NativeSocialWindow" } },
+        { Panel.MonsterBook, new[] { "NativeMonsterBook" } },
+        { Panel.Community, new[] { "NativeCommunityWindow" } },
+        { Panel.Guild, new[] { "NativeGuildWindow" } },
+        { Panel.GuildGrade, new[] { "NativeGuildGradeWindow" } },
+        { Panel.Trade, new[] { "NativeTradeWindow" } },
+        { Panel.Market, new[] { "NativeMarketWindow" } },
+        { Panel.NpcShop, new[] { "NativeNpcShopWindow" } },
+        { Panel.Delivery, new[] { "NativeDeliveryWindow" } },
+        { Panel.Merchant, new[] { "NativeMerchantWindow" } },
+        { Panel.Maker, new[] { "NativeMakerWindow" } },
+        { Panel.Ranking, new[] { "NativeRankingWindow" } },
+        { Panel.PlayerShop, new[] { "NativePlayerShopWindow" } },
+        { Panel.ItemSearch, new[] { "NativeItemSearchWindow" } },
+        { Panel.Storage, new[] { "NativeStorageWindow" } },
+        { Panel.Claim, new[] { "NativeClaimWindow" } },
+        { Panel.Rps, new[] { "NativeRpsWindow" } },
+        { Panel.RemoteGachapon, new[] { "NativeRemoteGachaponWindow" } },
+        { Panel.CharacterInfo, new[] { "NativeCharacterInfo" } },
+        { Panel.CharacterMenu, new[] { "NativeCharacterMenu" } },
+        { Panel.Memo, new[] { "NativeMemoWindow" } },
+        { Panel.Channel, new[] { "ChannelWindow" } },
+        { Panel.CarnivalLobby, new[] { "NativeCarnivalLobby" } },
+        { Panel.Vega, new[] { "NativeVegaWindow" } },
+        { Panel.ApReset, new[] { "NativeResetWindow" } },
+        { Panel.SpReset, new[] { "NativeSpResetWindow" } },
+        { Panel.Teleport, new[] { "NativeTeleportWindow" } },
+        { Panel.Symbol, new[] { "NativeSymbolWindow" } },
+        { Panel.HyperStat, new[] { "NativeHyperStatWindow" } },
+        { Panel.InnerAbility, new[] { "NativeInnerAbilityWindow" } },
+        { Panel.VMatrix, new[] { "NativeVMatrixWindow" } },
+        { Panel.HexaMatrix, new[] { "NativeHexaMatrixWindow" } },
+        { Panel.Enhancement, new[] { "NativeEnhancementWindow", "NativeEnhancementChoice", "SoulWeaponWz2Modal" } },
+        { Panel.KeyConfig, new[] { "KeyConfigWindow" } },
+    };
+
+    static bool PanelAtPointer(Panel p)
+    {
+        if (!hitKeys.TryGetValue(p, out var keys)) return false;
+        for (int i = 0; i < keys.Length; i++)
+            if (NativeUi.TryWindowRect(keys[i], out var r) && Pointer.HitsWindow(r)) return true;
+        return false;
+    }
+
+    // 指针压住的最上层可见面板；都在它下面则返回 null
+    static Panel? TopPanelAtPointer()
+    {
+        for (int i = zOrder.Count - 1; i >= 0; i--)
+        {
+            var p = zOrder[i];
+            if (!VisibleOf(p)) continue;
+            if (PanelAtPointer(p)) return p;
+        }
+        return null;
+    }
+
+    static void DrawPanel(Panel p)
+    {
+        switch (p)
+        {
+            case Panel.MiniMap: NativeMapWindows.DrawMini(); return;
+            case Panel.Stat: StatWindow.Draw(); return;
+            case Panel.Equip: EquipWindow.Draw(); return;
+            // 机器人换装面板贴在装备窗右侧，必须紧跟其后（依赖它的位置）
+            case Panel.Android: NativeAndroidWindow.Draw(); return;
+            case Panel.Inven: InvenWindow.Draw(); return;
+            case Panel.Shop: ShopWindow.Draw(); return;
+            case Panel.Quest: QuestWindow.Draw(); return;
+            case Panel.Help: HelpWindow.Draw(); return;
+            case Panel.Skill: SkillWindow.Draw(); return;
+            case Panel.World: NativeMapWindows.DrawWorld(); return;
+            case Panel.Social: NativeSocialWindow.Draw(); return;
+            case Panel.MonsterBook: NativeMonsterBook.Draw(); return;
+            // 黑板：原端 0x48A935 type1003 → 0x4890C4 气泡布局（旧占位框与新黑板同画会重叠，故紧随其后）
+            case Panel.CommunityBoard: NativeCommunityWindow.DrawBoard(); return;
+            case Panel.AdBoard: NativeAdBoard.Draw(); return;
+            case Panel.Community: NativeCommunityWindow.Draw(); return;
+            case Panel.Guild: NativeGuildWindow.Draw(); return;
+            // BtInfo 的附属窗，必须跟着主窗一起进绘制链
+            case Panel.GuildGrade: NativeGuildGradeWindow.Draw(); return;
+            case Panel.Medal: NativeMedalWindow.Draw(); return;
+            case Panel.Trade: NativeTradeWindow.Draw(); return;
+            case Panel.Market: NativeMarketWindow.Draw(); return;
+            case Panel.NpcShop: NativeNpcShopWindow.Draw(); return;
+            case Panel.Delivery: NativeDeliveryWindow.Draw(); return;
+            case Panel.Merchant: NativeMerchantWindow.Draw(); return;
+            case Panel.Maker: NativeMakerWindow.Draw(); return;
+            case Panel.Ranking: NativeRankingWindow.Draw(); return;
+            case Panel.PlayerShop: NativePlayerShopWindow.Draw(); return;
+            case Panel.ItemSearch: NativeItemSearchWindow.Draw(); return;
+            case Panel.Storage: NativeStorageWindow.Draw(); return;
+            case Panel.Claim: NativeClaimWindow.Draw(); return;
+            case Panel.Rps: NativeRpsWindow.Draw(); return;
+            case Panel.Memo: NativeMemoWindow.Draw(); return;
+            case Panel.MapleTv: NativeMapleTvDisplay.Draw(); return;
+            case Panel.CarnivalHud: NativeCarnivalHud.Draw(); return;
+            case Panel.CarnivalLobby: NativeCarnivalLobby.Draw(); return;
+            case Panel.RemoteGachapon: NativeRemoteGachaponWindow.Draw(); return;
+            case Panel.CharacterInfo: NativeCharacterInfo.Draw(); return;
+            case Panel.CharacterMenu: NativeCharacterMenu.Draw(); return;
+            // 目录菜单里开出来的三个窗（源端只有底图，实现见 NativeSettingsWindows.cs）
+            case Panel.GameOpt: GameOptWindow.Draw(); return;
+            case Panel.SysOpt: SysOptWindow.Draw(); return;
+            case Panel.Channel: ChannelWindow.Draw(); return;
+            // 贴着底栏的浮层
+            case Panel.GameMenu: GameMenuWindow.Draw(); return;
+            case Panel.Shortcut: ShortcutWindow.Draw(); return;
+            case Panel.Vega: NativeVegaWindow.Draw(); return;
+            case Panel.Enhancement: NativeEnhancementWindow.Draw(); return;
+            // 282 角色成长的三扇独立窗（徽章 / 极限属性 / 内在能力）
+            case Panel.Symbol: NativeSymbolWindow.Draw(); return;
+            case Panel.HyperStat: NativeHyperStatWindow.Draw(); return;
+            case Panel.InnerAbility: NativeInnerAbilityWindow.Draw(); return;
+            // 282 五六转的核心成长窗（V 矩阵 / HEXA 矩阵）
+            case Panel.VMatrix: NativeVMatrixWindow.Draw(); return;
+            case Panel.HexaMatrix: NativeHexaMatrixWindow.Draw(); return;
+            case Panel.ApReset: NativeResetWindow.Draw(); return;
+            case Panel.SpReset: NativeSpResetWindow.Draw(); return;
+            case Panel.Teleport: NativeTeleportWindow.Draw(); return;
+            // 键位设置窗也进这条链：它曾经固定画在 DrawAll 之后，导致永远压住其它面板
+            case Panel.KeyConfig: KeyConfigWindow.Draw(); return;
+        }
     }
 }

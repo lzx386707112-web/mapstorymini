@@ -59,7 +59,9 @@ function action(mode, type, selection) {
 
 function 系列列表() {
     var 文本 = "\r\n\t\t\t#e#b【称号试炼】#k#n\r\n\r\n";
-    文本 += "#d点亮 = 战力达标 + 试炼计数达标；每点亮 1/5/8/10 档发名牌戒指里程碑。#k\r\n\r\n";
+    文本 += "#d点亮 = 战力达标 + 试炼计数达标；每点亮 1/5/8/10 档发名牌戒指里程碑。#k\r\n";
+    文本 += 当前咖位();
+    文本 += "\r\n";
     for (var i = 0; i < 系列名.length; i++) {
         var t = cm.getTitleTrial(i);
         var 状态;
@@ -94,6 +96,22 @@ function 档位列表(s) {
         }
     }
     return 文本;
+}
+
+// 当前佩戴的咖位（称号系列）。没选过系列时源端 titleState = 0：
+// 名片不显示称号行、称号加成也不生效，这里要给玩家一句明确提示。
+function 当前咖位() {
+    try {
+        if (!cm.hasNameplateSeries()) {
+            return "#r当前未选择咖位#k：称号不会显示在名片上，也不提供加成（先到「咖位选择」挑一个）。\r\n";
+        }
+        var s = cm.getNameplateSeries();
+        if (s >= 0 && s < 系列名.length) {
+            return "当前佩戴咖位：#b【" + 系列名[s] + "】#k\r\n";
+        }
+    } catch (e) {
+    }
+    return "";
 }
 
 // 第 t 档（1..10）的称号文本（与 9900001 称号表一致，仅展示用）

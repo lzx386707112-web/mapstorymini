@@ -17,8 +17,11 @@ using UnityEngine;
 public static class FreeMarketMenuChecks
 {
     const int FreeMarketMap = 910000000;
-    // 910000000 的 life 里全部 type=n 的 NPC
-    static readonly int[] Targets = { 9030000, 9030100, 9063168, 9071003, 9330045, 9900008, 9900009 };
+    // 910000000 的 life 里全部 type=n 的 NPC（9030000 弗兰德里已改由原生窗口接管，见 NativeHandled）
+    static readonly int[] Targets = { 9030100, 9063168, 9071003, 9330045, 9900008, 9900009 };
+    // 已迁到原生窗口的 NPC：NpcSession.Talk 直接 return null（没有 .js 可点），
+    // 这是**预期**行为，不能算「打不开」。目前只有 9030000 → NativeMerchantWindow.Retrieve()。
+    static readonly int[] NativeHandled = { 9030000 };
     // 这两个源端就没有 .js：9250025 是电视（info.MapleTV=1），9000069 彪鲁只冒头顶气泡（info/speak）。
     // 走 NpcField.Interact 的「点击」路径验证不会再弹「没有对白脚本」。
     static readonly int[] Silent = { 9250025, 9000069 };
@@ -39,6 +42,7 @@ public static class FreeMarketMenuChecks
     sealed class Snap
     {
         public bool opened = true;
+        public bool native;          // 已迁原生窗口：Talk 返回 null 是预期
         public bool visible;
         public bool closed;
         public bool disposed;
@@ -74,7 +78,7 @@ public static class FreeMarketMenuChecks
                 typeof(GameSession).GetProperty(pair.Key, flags).GetSetMethod(true).Invoke(null, new[] { pair.Value });
             Profile.Data.level = 200;
             Profile.Data.gold = 500000000;
-            Profile.Data.SetJob(112);              // 冒险家四转英雄：五转女神走的是冒险家分支
+            Profile.Data.SetJob(112);              // 冒险家四转英雄：常规四转角色（9900008 已与职业无关）
             // 椅子商店/逼王戒走点券（getCashShop().getCash(1)），不给余额就只能测到「点券不足」一条路
             server.Transport.Cash(new CashRequest { characterId = id, operation = CashOperation.AdjustBalance,
                 currency = 1, amount = 99999999 });
@@ -88,12 +92,17 @@ public static class FreeMarketMenuChecks
                 Lines.Add("──────── npc/" + npc + " " + WzNames.Npc(npc));
                 Probe(npc, new List<Step>());
             }
-            // 骑士团分支单独再跑一遍：五转女神的第二条路 isCygnus() 只在非冒险家时才会被调用
-            Profile.Data.SetJob(11);
-            Visited.Clear();
-            nodeBudget = MaxNodesPerNpc;
-            Lines.Add("──────── npc/9900008 五转女神（骑士团 job=11）");
-            Probe(9900008, new List<Step>());
+            // 已迁原生窗口的 NPC：Talk 返回 null 是预期，只验「没有抛异常、没有残留会话」
+            Lines.Add("──────── 原生窗口 NPC");
+            foreach (int npc in NativeHandled)
+            {
+                Visited.Clear();
+                nodeBudget = MaxNodesPerNpc;
+                Lines.Add("──────── npc/" + npc + " " + WzNames.Npc(npc));
+                Probe(npc, new List<Step>());
+            }
+            // 五转女神（9900008）2026-11-05 起只讲五六转流程，不再按职业分支，
+            // 所以这里不用再单独用骑士团（job=11）跑第二遍。
 
             Lines.Add("──────── 无脚本 NPC（点击路径 NpcField.Interact）");
             foreach (int npc in Silent)
@@ -132,6 +141,12 @@ public static class FreeMarketMenuChecks
         var snap = Replay(npcId, path);
         string label = Label(npcId, path);
 
+        if (snap.native)
+        {
+            Lines.Add("  " + label + "  · 原生窗口接管（无对白脚本，非异常）");
+            okCount++;
+            return;
+        }
         if (!snap.opened)
         {
             Lines.Add("  " + label + "  ✗ 打不开（没有脚本 / 脚本为空）");
@@ -199,6 +214,7 @@ public static class FreeMarketMenuChecks
                 return snap;
             }
             snap.opened = false;
+            if (Array.IndexOf(NativeHandled, npcId) >= 0) { snap.native = true; snap.opened = true; }
             return snap;
         }
         snap.error = FirstError();

@@ -52,7 +52,11 @@ public static class CombatRules
         bool dexWeapon = w.kind == WeaponKind.bow || w.kind == WeaponKind.crossbow || w.kind == WeaponKind.gun;
         int main = w.kind == WeaponKind.claw ? a.luk : dexWeapon ? a.dex : a.str;
         int secondary = w.kind == WeaponKind.claw ? a.dex + a.str : dexWeapon ? a.str : a.dex;
-        double maximum = magic ? MaxMagicDamage(a.intelligence,matk,skill.MagicAttack) :
+        // 282 的魔法技能把倍率写在 mad 里；但 V/HEXA 整批没有 mad（526 条无一带），
+        // 它们的倍率写在 damage%。mad 缺位时按 100 收口，再由下面的 damage% 相乘，
+        // 否则 MaxMagicDamage 尾部 ×0 会把整条技能打死。
+        double magicAttack = skill == null || skill.MagicAttack <= 0 ? 100 : skill.MagicAttack;
+        double maximum = magic ? MaxMagicDamage(a.intelligence,matk,magicAttack) :
             MaxPhysicalDamage(main,secondary,watk,w.multiplier);
         double minimum = magic ? maximum * .5 : ((w.multiplier * main * .9 * Math.Max(.1, Math.Min(1,a.mastery)) + secondary) * watk / 100.0);
         double damage = minimum + (maximum-minimum) * Math.Max(0,Math.Min(1,roll));
@@ -61,7 +65,15 @@ public static class CombatRules
         if(a.setItemBonus!=null)a.setItemBonus.TryGetValue("IgnoreDefense",out ignoreDefense);
         damage *= PercentageDefense.Multiplier(NativeCombatData.Int(target,magic ? "MDRate" : "PDRate"),100-(100-ignoreDefense)*(1-a.hexaIgnorePercent/100.0));
         bool critical = !magic && critRoll < Math.Max(0,Math.Min(1,a.criticalChance));
-        if (!magic) damage *= (skill == null ? 100 : skill.DamagePercent) / 100.0 + (critical ? a.criticalBonus : 0);
+        // 282 的 V/HEXA 技能把伤害写在 damage% 里、mad 整条留空（526 条无一带 mad），
+        // 只有 info/magicDamage=1 说明它走魔法管线。这种「魔法但没有 mad」的技能
+        // 仍要乘 damage%，否则法师的 V 技能只剩裸魔攻、伤害掉两个数量级。
+        // 有 mad 的技能保持原口径：mad 本身就是倍率，再由 MaxMagicDamage 相乘。
+        if (!magic || skill.MagicAttack <= 0)
+            // 爆击强化 400031023 的「超出 100% 的暴击率折算成暴击伤害」只加在暴击段上；
+            // overCritBonus 在没有那条 buff 时恒为 0，所以既有口径不变。
+            damage *= (skill == null ? 100 : skill.DamagePercent) / 100.0 +
+                      (critical ? a.criticalBonus + a.overCritBonus : 0);
         double element = ElementModifier(target,skill == null ? "" : skill.Element);
         damage = element == 0 ? 0 : Math.Max(1,damage * element);
         // ≡ MapleMap 收到攻击后 SetItemManager.applyDamage：套装 Damage%/Boss|NormalDamage%/FinalDamage%
@@ -99,6 +111,10 @@ public static class CombatRules
         if (double.IsNaN(attack) || attack <= 0) return new DamageResult(0,false);
         double defense = magic ? a.magicDefense : a.weaponDefense;
         double value = attack * System.Math.Max(0,1-.01*System.Math.Max(0,a.level-attackerLevel)) * (.85 + .3 * Math.Max(0,Math.Min(1,roll))) - defense * (magic ? .6 : .5);
+        // 满额无敌 = 完全免伤。InvincibleDamage 会把伤害归零，但尾部的 Math.Max(1, …)
+        // 又把它抬回 1 点 —— 过去「无敌」每次受击还掉 1 血。虚无型态（在#time间进入无敌）
+        // 与特殊核心的无敌都走这条路，且对魔法同样生效（真无敌不该分物理魔法）。
+        if (invincible >= 100) return new DamageResult(0,false);
         // 0x7933B2..0x7933E6: physical damage, after defense, before minimum/integer conversion.
         if (!magic) value=InvincibleDamage(value,invincible);
         return Resolve(Math.Max(1,value),false,long.MaxValue);

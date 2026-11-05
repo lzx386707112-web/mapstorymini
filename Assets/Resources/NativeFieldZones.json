@@ -1,0 +1,107 @@
+{
+  "note": "282 六转周期领域：子状态挂上后按 subTime 周期结算同族伤害体；数值逐级自证",
+  "source": "tools/ms282/export_field_zones.py",
+  "zones": {
+    "14141021": {
+      "bodies": [
+        14141020
+      ],
+      "checks": {
+        "14141020": {
+          "attackCount": "w3",
+          "damage": "w2",
+          "mobCount": "w"
+        }
+      },
+      "durationField": "body.time",
+      "durationSec": 60,
+      "evidence": "套用#c暗影蝙蝠期间# #s秒内，每#t2秒召唤对最多#w名敌人以#w2%的伤害攻击#w3次的弱化蝙蝠群",
+      "intervalField": "subTime",
+      "intervalMs": 1470,
+      "maxActivations": 0,
+      "mobCount": 6,
+      "name": "暗黑天魔VI",
+      "parent": 14141017,
+      "projectiles": 1,
+      "state": 14141021,
+      "targetMode": "area",
+      "trigger": "onSkillHitWhileState"
+    },
+    "2241504": {
+      "bodies": [
+        2241501
+      ],
+      "checks": {
+        "2241501": {
+          "attackCount": "q3",
+          "damage": "q2",
+          "mobCount": "s"
+        }
+      },
+      "durationField": "parent.time",
+      "durationSec": 30,
+      "evidence": "每#s2秒冰寒地带上#c迸发#渗透敌人体内的寒冰与闪电魔力，对敌人造成追加伤害",
+      "intervalField": "s2",
+      "intervalMs": 2000,
+      "maxActivations": 0,
+      "mobCount": 15,
+      "name": "殛冻领域",
+      "parent": 2241500,
+      "projectiles": 1,
+      "state": 2241504,
+      "targetMode": "area",
+      "trigger": "onCast"
+    },
+    "3141501": {
+      "bodies": [
+        3141502
+      ],
+      "checks": {
+        "3141502": {
+          "attackCount": "y",
+          "damage": "x",
+          "mobCount": "z"
+        }
+      },
+      "durationField": "parent.time",
+      "durationSec": 30,
+      "evidence": "最后一次箭矢洗礼后，#time秒内攻击命中时，每隔#s秒发动最多锁定#z名敌方，以#x%伤害攻击#y次的箭矢洗礼#q2次",
+      "intervalField": "s",
+      "intervalMs": 3000,
+      "maxActivations": 7,
+      "mobCount": 15,
+      "name": "箭影纷飞",
+      "parent": 3141500,
+      "projectiles": 1,
+      "state": 3141501,
+      "targetMode": "area",
+      "trigger": "onHit"
+    },
+    "4141502": {
+      "bodies": [
+        4141501
+      ],
+      "checks": {
+        "4141501": {
+          "attackCount": "v",
+          "bulletCount": "z",
+          "damage": "y",
+          "mobCount": "u"
+        }
+      },
+      "durationField": "parent.time",
+      "durationSec": 60,
+      "evidence": "生成#z个在#time秒内经过随机路径、以#y%的伤害对最多#u名敌人攻击#v次的巨型飞镖",
+      "intervalField": "subTime",
+      "intervalMs": 1900,
+      "maxActivations": 0,
+      "mobCount": 15,
+      "name": "禁咒之符",
+      "parent": 4141500,
+      "projectiles": 5,
+      "state": 4141502,
+      "targetMode": "boss",
+      "trigger": "onCast"
+    }
+  }
+}

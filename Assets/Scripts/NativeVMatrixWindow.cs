@@ -34,7 +34,14 @@ public static class NativeVMatrixWindow
     static int gemItem, specialScroll;
     static int resultBefore, resultAfter;
 
+    // 手上拿着的核心：源端 V 矩阵单击拿起、双击开强化，快捷栏靠「点一下放下」完成绑定
+    // （与技能窗 SkillWindow 同一套语义，见 SkillWindow.DropOnSlot 的 DragStart 注释）。
+    static bool carrying;
+    static int carryCore, carrySkill;
+    static int pressSlot = -1;      // 按下位置落在哪个核心槽（拖动时用来判断「拖核心」还是「拖窗口」）
+
     public static bool Visible => visible;
+    public static bool Carrying => visible && carrying;
     public static bool AtPointer => visible && (dragging || Pointer.HitsWindow(WindowRect()));
 
     static float Width => specialOpen ? SpecialLeft + SpecialW : W;
@@ -45,6 +52,7 @@ public static class NativeVMatrixWindow
 
     public static void Escape()
     {
+        if (carrying) { CancelCarry(); return; }
         if (dialog != Dialog.None) { dialog = Dialog.None; return; }
         Close();
     }
@@ -53,6 +61,7 @@ public static class NativeVMatrixWindow
     {
         visible = dragging = positioned = specialOpen = false;
         state = null; error = null; selected = -1; dialog = Dialog.None;
+        CancelCarry();
     }
 
     public static void Open()
@@ -80,6 +89,8 @@ public static class NativeVMatrixWindow
         error = response.eligible ? null : response.error;
         if (selected >= 0 && CoreOf(selected) == null) selected = -1;
         NativeSpecialCore.Observe(response);
+        // 核心等级 → 技能等级：刚升完级还没重拉角色数据时也能立刻施放。
+        VMatrixLevels.Capture(response, owner);
     }
 
     /// <summary>下发一条操作；commit=false 只拿预览。失败文案留在窗口里，不关窗。</summary>
@@ -94,7 +105,7 @@ public static class NativeVMatrixWindow
         if (response == null) return null;
         if (!response.ok) { error = response.error; BottomBar.Toast(response.error); return response; }
         error = null;
-        if (commit) { state = response; GameSession.ReloadAfterCommand(); }
+        if (commit) { state = response; GameSession.ReloadAfterCommand(); VMatrixLevels.Capture(response, owner); }
         // 特殊核心是「全局只允许一个」，战斗侧要知道当前那个是谁，这里跟随快照同步。
         NativeSpecialCore.Observe(response);
         return response;
@@ -148,11 +159,22 @@ public static class NativeVMatrixWindow
         GrowthUi.R = window;
         // 抓手 = 整条标题栏（排除右上关闭/帮助），特殊核心子窗打开时也要能拖；
         // slop 让整块面板都能抓（按下后走 6px 才转成拖动，点核心/按钮不受影响）。
-        if (dialog == Dialog.None && GrowthUi.Drag(ref dragging, ref positioned, ref position, ref grab, Width, H, WindowRect, 46f, 100f,
+        // 但按住落在核心格上的那一段手势归「把核心拖到快捷格」，不能再兼作窗口拖动。
+        if (Pointer.Pressed) pressSlot = dialog == Dialog.None ? SlotAt(Pointer.Pos) : -1;
+        else if (!Pointer.Down) pressSlot = -1;
+        if (dialog == Dialog.None && !carrying && pressSlot < 0 &&
+            GrowthUi.Drag(ref dragging, ref positioned, ref position, ref grab, Width, H, WindowRect, 46f, 100f,
                 owner: typeof(NativeVMatrixWindow), slop: 6f))
             window = WindowRect();
         GrowthUi.R = window;
         NativeUi.RegisterWindow("NativeVMatrixWindow", window, () => visible);
+        if (Pointer.DragStarted && !carrying && pressSlot >= 0 && dialog == Dialog.None)
+        {
+            var dragged = CoreOf(pressSlot);
+            if (dragged != null) PickCore(pressSlot, dragged.coreId, dragged);
+        }
+        // 手上有核心时点到面板空白处 = 放回，避免一直挂在指针上。
+        if (carrying && Pointer.Clicked && pressSlot < 0) CancelCarry();
 
         MatrixPresentation.Begin();
         bool parentEnabled = GUI.enabled;
@@ -190,6 +212,132 @@ public static class NativeVMatrixWindow
         }
     }
 
+    // —————————————— 核心拿起 / 放下（拖到快捷栏） ——————————————
+
+    static void PickCore(int slot, int coreId, VMatrixCoreView view)
+    {
+        var definition = VMatrixCatalog.Core(coreId);
+        int[] skills = view != null && view.skills != null && view.skills.Length > 0
+            ? view.skills : definition != null ? definition.skills : new int[0];
+        // 这些是「操作被拒」，按项目的提示分层走弹窗（CUtilDlg Notice3）而不是 Toast：
+        // Toast 只停在底部几秒，手指还按在核心上手一松就飘完了，玩家根本不知道刚才没绑上。
+        if (skills.Length == 0) { NativeUtilPrompt.Notice("这个核心没有可以绑定的技能。"); return; }
+        // 強化核心（type 1）连的是 400004xxx 包装技能：它本身不施放任何东西，只在装上后给
+        // psdSkill 里的既有技能加最终伤害（400004008 = damR_5th 2x%，maxLevel 60）。
+        // 绑到快捷格上按了没反应，所以这里直接说清楚，不要拿「未收录」搪塞。
+        if (definition != null && definition.IsBoost)
+        {
+            NativeUtilPrompt.Notice("這是強化核心，本身不施放技能，只提升既有技能的傷害，不能綁到快捷欄。");
+            return;
+        }
+        // 走到这里还取不到技能，才是真的缺口：JobTree 与 VMatrixSkills 都没有、IMG 里也没有
+        // common/level。正常情况下不会命中（SkillBook.Get 会直读 IMG 兜底）。
+        if (SkillBook.Get(skills[0]) == null)
+        {
+            NativeUtilPrompt.Notice("这个核心连接的技能（" + skills[0] + "）在技能表里找不到，暂时不能绑到快捷栏。");
+            return;
+        }
+        carrying = true;
+        carryCore = coreId;
+        carrySkill = skills[0];
+        selected = slot;
+        BottomBar.Toast("点一下快捷格放下「" + (view?.name ?? definition?.name ?? "核心") + "」");
+    }
+
+    static void CancelCarry()
+    {
+        carrying = false;
+        carryCore = 0;
+        carrySkill = 0;
+    }
+
+    static int SlotAt(Vector2 point)
+    {
+        if (state == null) return -1;
+        for (int slot = 0; slot < 31; slot++)
+        {
+            var anchor = SlotAnchor(slot);
+            if (GrowthUi.At(anchor.x - 34, anchor.y - 39, 68, 76).Contains(point)) return slot;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// 手上核心找落点。必须排在 BottomBar.Draw 之前：快捷格在那条链里先吃掉点击
+    /// （背包把道具拖到快捷格也是同一处先判，见 NativeInventoryActions.CarryStep）。
+    /// </summary>
+    public static void CarryStep()
+    {
+        if (!carrying) return;
+        if (!visible) { CancelCarry(); return; }
+        if (!Pointer.Clicked && !Pointer.DragEnded) return;
+        // 收起状态下 SlotRect 一律是 Rect.zero，落点永远判不中——直接说清楚，别静默取消。
+        if (BottomBar.QuickCollapsed)
+        {
+            NativeUtilPrompt.Notice("快捷栏处于收起状态，先展开快捷栏再绑定。");
+            CancelCarry();
+            return;
+        }
+        // 落点优先于「窗口自己吃掉这次点击」：矩阵窗口 506 宽居中，右缘会压住快捷栏最左
+        // 两格，先判 AtPointer 会让那两格永远绑不上。手上有核心且指针在快捷格上，
+        // 玩家要的就是绑定，不必再问这次点击属于哪个窗口。
+        // 抬起点和按下点都试一次：鼠标是从核心一路拖到快捷格再松手（落点＝Pos），
+        // 手机是「点核心拿起 → 点快捷格放下」（落点＝PressPosition），两条路都要能中。
+        if (TryDropOnQuickSlot(Pointer.Pos) || TryDropOnQuickSlot(Pointer.PressPosition))
+        {
+            Pointer.ConsumeClick();
+            Pointer.Pressed = false;
+            return;
+        }
+        // 落在矩阵窗口内：交给 DrawSlots（拿起另一颗 / 点回自己放回）。
+        if (Pointer.Clicked && AtPointer) return;
+        CancelCarry();
+    }
+
+    static bool TryDropOnQuickSlot(Vector2 point)
+    {
+        for (int i = 0; i < QuickSlots.Count; i++)
+        {
+            if (!BottomBar.SlotRect(i).Contains(point)) continue;
+            // 快捷栏 26 格里默认只有前 8 格有键（Shift/Insert/Home/PgUp/Ctrl/Delete/End/PgDn），
+            // 落在后面没配键的格子上，原来直接弹「这一格还没有选择按键」——可玩家眼里那就是
+            // 整条键盘，往中间一拖就永远绑不上。改成落到第一个「有键且空着」的格子，并说明去向。
+            int target = i;
+            if (QuickBarKeys.Of(target) == KeyCode.None)
+            {
+                target = QuickBarKeys.FreeKeyedSlot();
+                if (target < 0)
+                {
+                    NativeUtilPrompt.Notice("快捷栏里配了按键的技能格都占满了。先在键盘设置里给空着的格子指定按键，再回来绑定。");
+                    CancelCarry();
+                    return true;
+                }
+            }
+            // 成功要回一句，否则手指一松只看到图标冒出来，不知道绑到了第几格、哪个键。
+            if (QuickBarKeys.BindSkill(target, carrySkill))
+            {
+                string tail = "（" + KeyMap.Label(QuickBarKeys.Of(target)) + "）";
+                BottomBar.Toast(target == i
+                    ? "已绑定到快捷格 " + (target + 1) + tail
+                    : "这一格没有按键，已改绑到快捷格 " + (target + 1) + tail);
+            }
+            CancelCarry();
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>手上核心的跟随图标。画在 HUD 层（GameWindows 之后），不受面板指针遮罩影响。</summary>
+    public static void DrawCarryGhost()
+    {
+        if (!carrying) return;
+        var texture = carrySkill != 0 ? WzAssets.Texture("skillicon/" + carrySkill) : null;
+        if (texture == null) return;
+        float size = 32f * BottomBar.S;
+        GUI.DrawTexture(new Rect(Pointer.Pos.x - size * .5f, Pointer.Pos.y - size * .5f, size, size),
+            texture, ScaleMode.ScaleToFit);
+    }
+
     static void DrawPoints()
     {
         var anchor = Vector("main/vector:vPointCount", 302, 61);
@@ -203,6 +351,41 @@ public static class NativeVMatrixWindow
     {
         GUI.DrawTexture(GrowthUi.At(x + (frameWidth - icon.width) / 2f,
             y + 28f - icon.height / 2f, icon.width, icon.height), icon);
+    }
+
+    // 等级槽在原底图里的实测范围：本地 x 9..48、y 50..58（58x68 槽框，图标槽 12..45/11..44），
+    // 中心 (28.5,54)。core/levelNumber 是 5px 高的点阵数字，上沿落在 51.5，取 52 正好居中。
+    //
+    // 旧实现把 font:levelCount(12px) 用 UpperLeft 画在 core/vector:currentLevelPos 上：
+    // 这组矢量是给点阵数字留的左上角，字高 12 比整条槽（9px）还高，而且 GrowthUi 的
+    // 字号下限就是 12 —— 必然压到槽框下沿、也偏左，这就是面板上「数字对不上」的来源。
+    // 原图自带数字就用原图，别再让字体替它排版。
+    const float LevelBarCenterX = 28.5f, LevelBarTopY = 52f, LevelDigitGap = 1f;
+
+    // 点数阵图直接量宽再画：31 个槽每帧各两趟，不建数组/List，避免 UI 重绘时白白产垃圾。
+    static Texture2D LevelDigit(char digit)
+    {
+        var node = WzAssets.Node(Img + "core/levelNumber/" + digit);
+        return node == null ? null : WzAssets.Texture(node);
+    }
+
+    static void DrawLevelNumber(int level, float left, float top)
+    {
+        string text = level.ToString(CultureInfo.InvariantCulture);
+        float width = 0f;
+        for (int i = 0; i < text.Length; i++)
+        {
+            var texture = LevelDigit(text[i]);
+            if (texture == null) return;   // 缺一张就整组不画，别只留半个数字
+            width += texture.width + (i > 0 ? LevelDigitGap : 0f);
+        }
+        float x = left + LevelBarCenterX - width / 2f, y = top + LevelBarTopY;
+        for (int i = 0; i < text.Length; i++)
+        {
+            var texture = LevelDigit(text[i]);
+            GUI.DrawTexture(GrowthUi.At(x, y, texture.width, texture.height), texture);
+            x += texture.width + LevelDigitGap;
+        }
     }
 
     static void DrawSlots()
@@ -229,14 +412,7 @@ public static class NativeVMatrixWindow
                     ? null : WzAssets.Texture("skillicon/" + view.skills[0]);
                 if (icon != null)
                     DrawCoreIcon(icon, bx, by, 58f);
-                if (view != null && view.level > 0)
-                {
-                    // 等级数字的格子内偏移是 core/vector:currentLevelPos(-14,13)，占位从格中心算。
-                    var levelPos = Vector("core/vector:currentLevelPos", -14, 13);
-                    GrowthUi.ShadowText(Img + "core/", view.level.ToString(CultureInfo.InvariantCulture),
-                        anchor.x + levelPos.x, anchor.y + levelPos.y, 44, "font:levelCount",
-                        TextAnchor.UpperLeft, 12);
-                }
+                if (view != null && view.level > 0) DrawLevelNumber(view.level, bx, by);
             }
             if (hover && GUI.enabled && view != null)
                 MatrixPresentation.Skill(view.skills, view.level, view.name, view.desc);
@@ -251,13 +427,24 @@ public static class NativeVMatrixWindow
             if (slot == selected)
                 GrowthUi.Veil(bx, by, 58, 68, new Color(1f, 1f, 1f, .18f));
 
-            if (!GUI.enabled || !GrowthUi.Repaint || !Pointer.Clicked || !hover) continue;
+            if (!GUI.enabled || !GrowthUi.Repaint || !hover) continue;
+            // 双击 = 开强化弹窗（源端 V 矩阵的双击口径）；单击 = 拿起核心，再点快捷格放下。
+            if (Pointer.DoubleClicked)
+            {
+                Pointer.ConsumeClick();
+                CancelCarry();
+                selected = coreId == 0 ? -1 : slot;
+                if (coreId == 0) continue;
+                dialogCore = coreId;
+                targetLevel = view?.level ?? 0;
+                dialog = Dialog.Upgrade;
+                continue;
+            }
+            if (!Pointer.Clicked) continue;
             Pointer.ConsumeClick();
-            selected = coreId == 0 ? -1 : slot;
-            if (coreId == 0) continue;
-            dialogCore = coreId;
-            targetLevel = view?.level ?? 0;
-            dialog = Dialog.Upgrade;
+            if (coreId == 0) { CancelCarry(); selected = -1; continue; }
+            if (carrying && carryCore == coreId) { CancelCarry(); continue; }   // 点回自己 = 放回原处
+            PickCore(slot, coreId, view);
         }
     }
 

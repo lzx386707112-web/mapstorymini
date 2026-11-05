@@ -10,6 +10,8 @@ public sealed class NativeBuffs : MonoBehaviour
     {
         public int Id, Level;
         public double Until, Started, NextRecovery, NextDragonBlood, NextBeholderHeal, NextBeholderBuff;
+        // 秘术超越 400001021：每 y 秒掉一阶段，阶段值直接写在 FinalDamage 上。
+        public double NextArcaneDecay;
         public int DurationMs;
         public bool NoShadow;
         public readonly Dictionary<string,int> Stats = new Dictionary<string,int>();
@@ -24,13 +26,25 @@ public sealed class NativeBuffs : MonoBehaviour
     static readonly HashSet<string> shared = new HashSet<string> {
         "COUPON_EXP1","COUPON_EXP2","COUPON_EXP3","COUPON_EXP4","COUPON_DRP1","COUPON_DRP2","COUPON_DRP3",
         "MESO_UP_BY_ITEM","ITEM_UP_BY_ITEM","RESPECT_PIMMUNE","RESPECT_MIMMUNE","DEFENSE_ATT","DEFENSE_STATE",
-        "WATK","WDEF","MATK","MDEF","ACC","AVOID","SPEED","JUMP"
+        "WATK","WDEF","MATK","MDEF","ACC","AVOID","SPEED","JUMP",
+        // 技能增益（NativeSkillEffects）：这些是「按占比叠加」的属性，不属于
+        // applyBuffEffect 的 singleton 语义。不声明成 shared，后放的同名 buff 会把
+        // 先放的整个顶掉（Register 的 !shared 分支），两个 +伤害的技能只能剩一个。
+        "Damage","NormalDamage","FinalDamage","IgnoreDefense","CriticalChance","ExpRate","DropRate",
+        "HP","HPPct","PAD","MAD","PADPct","MADPct","PDDPct","STRPct","DEXPct","INTPct","LUKPct",
+        // 爆击强化 400031023 的注册标记（消费方：PlayerCtrl.RefreshBuffAttributes）。
+        "CRIT_REINFORCE",
+        // 强化核心接管的 summon（暗影瞬移 400041095）：本身没有属性字段，
+        // 靠这个标记让 ApplySkill 能注册，NativeSummon 才认 HasSource 而存活。
+        "SUMMON_DURATION"
     };
     static bool ConfigBool(string key,bool fallback=false) => GameServer.Local == null ? fallback : GameConfigDao.GetBool(GameServer.Local.Db,key,fallback);
     static string Config(string key,string fallback) => GameServer.Local == null ? fallback : GameConfigDao.Get(GameServer.Local.Db,key,fallback);
     public static int SkillDuration(int id,int level)
     {
-        int duration=Art.Int(SkillBook.Get(id)?.Level(level),"time")*1000;
+        // 500004073 强化暗影瞬移：持续时间改由核心自己的 time 字段决定（46..55 秒），
+        // 没学核心时原样用技能自己的 time（30..45 秒）。见 NativeSkillOverrides。
+        int duration=NativeSkillOverrides.DurationSeconds(id,Art.Int(SkillBook.Get(id)?.Level(level),"time"))*1000;
         if (!ConfigBool("use_buff_everlasting")) return duration;
         var custom=MiniJson.Parse(Config("job_buff_custom_time_list","{\"4121006\":1800000,\"2121004\":60000,\"2221004\":60000,\"2321004\":60000}")) as Dictionary<string,object>;
         if (custom != null && custom.TryGetValue(id.ToString(),out var value) && Convert.ToInt32(value)>0) return Convert.ToInt32(value);
@@ -43,7 +57,15 @@ public sealed class NativeBuffs : MonoBehaviour
     public static NativeBuffs For(PlayerCtrl player) => player.GetComponent<NativeBuffs>() ?? player.gameObject.AddComponent<NativeBuffs>();
     public IReadOnlyList<Effect> Visible { get { Tick(Now); return visible; } }
     public int Value(string stat) { Tick(Now); return winners.TryGetValue(stat,out var effect) ? effect.Stats[stat] : 0; }
-    public static bool IsHerosWill(int id) => ((List<object>)Contract["herosWill"]).Exists(v=>Convert.ToInt32(v)==id);
+    // Hero's Will 同族。服务端的 isHerosWill 表来自 GMS083 的 StatEffect.isHerosWill，
+    // 那里没有 282 的 V 技能，所以 400001009 艾尔达斯的意志只能在这里补。
+    // 判据不是名字，是数值形状：十二职业的 1121011/1221012/…/5121008 全是
+    // time=1 + cooltime=360 + 单一资源消耗（mpCon=30）；400001009 是 time=1 +
+    // cooltime=330 + hpCon=100，结构一致，只差消耗的是 HP。
+    // 另外 1121011 的 h 同样只写「消耗MP #mpCon，再次使用冷却时间 #cooltime秒」——
+    // 这套技能的 h 从来不写「解除异常」，所以「h 没有效果描述」不构成拒绝理由。
+    public static bool IsHerosWill(int id) => id == 400001009 ||
+        ((List<object>)Contract["herosWill"]).Exists(v=>Convert.ToInt32(v)==id);
     static Dictionary<string,object> Contract
     {
         get
@@ -64,6 +86,21 @@ public sealed class NativeBuffs : MonoBehaviour
         var root = WzAssets.Node("Skill/" + (id/10000).ToString("D3") + ".img/skill/" + id.ToString("D7"));
         var row = SkillBook.Get(id)?.Level(level);
         var result = new Dictionary<string,int>();
+        // 暗影瞬移这类由强化核心接管时长的 summon 没有任何属性字段，
+        // 但必须让 ApplySkill 注册成功，否则 NativeSummon.HasSource 为假、影子立刻消失。
+        // 放在最前面：这种 id 可能连 WZ 的 effect 节点都没有，下面的 root==null 会提前 return。
+        if (NativeSkillOverrides.IsDurationTarget(id)) result["SUMMON_DURATION"]=1;
+        // 子状态 id（11141501 银河星爆）自己没有 effect/skillType，OverTime 判 false，
+        // 也没有 GMS083 的 WZ 节点可查。它由母技能施放时挂上，增益字段全在
+        // NativeSkillEffects 的 alias 里（y → FinalDamage），不需要走下面那套 statups。
+        if (NativeSkillStates.IsTimedEffect(id))
+        {
+            if (row != null) NativeSkillEffects.AddBuff(result, id, row);
+            // 剧毒炼狱 2141502：元素吸收锁满 10 层 ⇒ FinalDamage +30（表内直给值，
+            // 没有「字段 → stat」映射可走 alias）。见 NativeSkillMechanics.AddTimedEffect。
+            NativeSkillMechanics.AddTimedEffect(result, id);
+            return result;
+        }
         if (root == null || row == null) return result;
         bool overtime=OverTime(id,root);
         bool summon = ((List<object>)Contract["summons"]).Exists(v => Convert.ToInt32(v) == id);
@@ -84,14 +121,42 @@ public sealed class NativeBuffs : MonoBehaviour
                 result[(string)pair[0]]=value;
             }
         int morph=Art.Int(row,"morph"); if (morph>0) result["MORPH"]=morph;
+        // 秘术超越 400001021：h「將潛藏的魔力開放至#x階段，每1階段魔力，最終傷害增加#z%，
+        // 每#y秒開放階段減少」。满阶段 = x × z，之后每 y 秒掉 z（见 TickPeriodic）。
+        // 单字母字段只在这一条上有这个含义，所以就地判定，不进全局映射表。
+        if (id == 400001021)
+        {
+            int stages = Art.Int(row,"x"), perStage = Art.Int(row,"z");
+            if (stages > 0 && perStage > 0) result["FinalDamage"] = stages * perStage;
+        }
+        // 爆击强化 400031023：唯一的数值字段是 x（「依照爆击几率的#x%增加爆击的伤害」），
+        // 但这个 x 是「暴击率超出部分的折算比」，不是某个属性本身 —— 直接写进 stat 表
+        // 会变成「暴击率 +50%」这种东西。所以只放一个标记让 ApplySkill 能注册（否则
+        // stats 为空会直接 return false，连图标都没有），真正的换算在
+        // PlayerCtrl.RefreshBuffAttributes 里读 x 完成。
+        if (id == 400031023) result["CRIT_REINFORCE"] = 1;
         if (((List<object>)Contract["mapChairs"]).Exists(v=>Convert.ToInt32(v)==id)) result["MAP_CHAIR"]=1;
         if (result.ContainsKey("RECOVERY") && ConfigBool("use_ultra_recovery")) result["RECOVERY"]*=10;
+        // 282 的百分比增益（indieDamR / indieIgnoreMobpdpR / cr / nbdR / indieMadR …）：
+        // 上面那批只认 pad/mad 这类 flat 字段，所以这些技能以前 stats 为空 ⇒ ApplySkill 直接
+        // return false（按得下去、不生效、连图标都没有）。字段语义与映射表在
+        // tools/ms282/export_skill_effects.py 生成，见 NativeSkillEffects。
+        NativeSkillEffects.AddBuff(result,id,row);
+        // 纯无敌型（虚无型态 400021060）：「在#time间进入无敌」，没有别的效果字段。
+        // 持续时间照旧由 time 决定（SkillDuration），这里只补一个满额 INVINCIBLE。
+        NativeShields.BuffInvincible(result,id);
         return result;
     }
     public bool ApplySkill(int id, int level, double now)
     {
         var root=WzAssets.Node("Skill/"+(id/10000).ToString("D3")+".img/skill/"+id.ToString("D7"));
-        if (root==null || !OverTime(id,root) && !((List<object>)Contract["summons"]).Exists(v=>Convert.ToInt32(v)==id)) return false;
+        bool stateEffect=NativeSkillStates.IsTimedEffect(id);
+        bool overridden=NativeSkillOverrides.IsDurationTarget(id);
+        bool summon=((List<object>)Contract["summons"]).Exists(v=>Convert.ToInt32(v)==id) || overridden;
+        // timedEffect 子状态没有 info/effect 节点，别拿 OverTime 把它挡掉；
+        // 真正的注册入口是 NativeSkillStates.ActivateState（母技能施放时）。
+        // overridden 的 summon 时长来自强化核心，不依赖 WZ 的 effect 节点，同样放行。
+        if (!stateEffect && !overridden && (root==null || (!OverTime(id,root) && !summon))) return false;
         var stats=SkillStats(id,level);
         if (stats.Count==0) return false; // Monster-only effects must not become player icons.
         int duration=SkillDuration(id,level);
@@ -100,6 +165,7 @@ public sealed class NativeBuffs : MonoBehaviour
         effect.NextDragonBlood=now+4;
         effect.NextBeholderHeal=now+Art.Int(LearnedRow(1320008),"x");
         effect.NextBeholderBuff=now+Art.Int(LearnedRow(1320009),"x");
+        effect.NextArcaneDecay=now+Mathf.Max(1,Art.Int(SkillBook.Get(id)?.Level(level),"y",10));
         foreach (var pair in stats) effect.Stats.Add(pair.Key,pair.Value);
         Register(effect);
         return true;
@@ -311,6 +377,22 @@ public sealed class NativeBuffs : MonoBehaviour
             blood.NextDragonBlood=now+4;
             player.hp=Mathf.Clamp(player.hp-blood.Stats["DRAGONBLOOD"],0,player.hpMax);
             if (player.hp<=0) { Clear(); GameLoop.I?.OnPlayerDead(); return; }
+        }
+        // 秘术超越 400001021：「每#y秒開放階段減少」，阶段值就是 FinalDamage 里的 z 的倍数。
+        // 30 秒持续、每 10 秒掉一阶段，掉到 0 就等价于满阶段加成消失，不必提前结束 buff。
+        // 注意 winners 的键是 stat 名而不是技能 id，这里要按 id 在 active 里找。
+        var arcane=active.Find(e=>e.Id==400001021);
+        if (arcane!=null && now>=arcane.NextArcaneDecay)
+        {
+            var row=LearnedRow(400001021);
+            int step=Mathf.Max(1,Art.Int(row,"z",1));
+            arcane.NextArcaneDecay=now+Mathf.Max(1,Art.Int(row,"y",10));
+            if (arcane.Stats.TryGetValue("FinalDamage",out int left) && left>0)
+            {
+                arcane.Stats["FinalDamage"]=Mathf.Max(0,left-step);
+                Rebuild();
+                player.RefreshBuffAttributes();
+            }
         }
         var beholder=active.Find(e=>e.Id==1321007);
         if (beholder==null) return;

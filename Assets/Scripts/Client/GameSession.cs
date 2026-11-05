@@ -339,6 +339,9 @@ public static class GameSession
         NativeRemoteGachaponWindow.Reset();
         NativeMakerWindow.Reset();
         NativeRankingWindow.Reset();
+        // 核心等级镜像是按角色快照建的：退到选角就必须清，否则下一个角色会用上一个角色的
+        // V 矩阵等级去通过 SkillProgress.LevelOf 的校验（跨职业放技能）。
+        VMatrixLevels.Clear();
         // 源端断线由 Channel 通知事件实例（Client.java:969）；单机在这里补同一次回调，
         // 必须在 Character 置空之前，事件实例才反查得到玩家。
         if (InGame) global::NativeEventScripts.PlayerDisconnected();
@@ -374,6 +377,7 @@ public static class GameSession
         NativeRemoteGachaponWindow.Reset();
         NativeMakerWindow.Reset();
         NativeRankingWindow.Reset();
+        VMatrixLevels.Clear();   // 同上：核心等级镜像随角色销毁
         if (InGame) global::NativeEventScripts.PlayerDisconnected();
         Net?.EndSocialSession(CharacterId);
         InGame = false;

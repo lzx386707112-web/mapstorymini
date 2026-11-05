@@ -1,33 +1,55 @@
-// 用户授权适配：五转完成后在常规技能窗显示五六转技能，不再发放入口道具。
-var status = -1;
-var selectedOption = -1;
-var selectedTargetJob = null;
+/**
+ * @description 五转女神（9900008，自由市场 910000000）—— 五六转流程说明
+ *
+ * 2026-11-05 用户拍板：这个 NPC 只负责讲流程，原来那套
+ * 「冒险家五转解锁 / 骑士团四转 / 英雄币合成」整段删除，不再有任何转职与收费逻辑。
+ *
+ * 文案的真值来源（改文案前先核对，不要在这里另立一套）：
+ *   - 任务链数据：Assets/Resources/Quests/advanced.json
+ *   - 完成时的写入点：Assets/Scripts/Quest/AdvancementProgress.cs
+ *   - 入口链路：docs/tms282-skill/17-project-advanced-remigration.md §8.2
+ *   - 回归：tools/check_advanced_quests.py 会核对本脚本仍在讲 1460 / 38601 这条链
+ *
+ * 名字口径（String/Npc.img 实际显示名，别写成文档里的旧称呼）：
+ *   2140001 = 旁觀者（時間神殿深處 270010111）
+ *   9900001 = 昨日小睡（自由市场，传送系统入口）
+ *   9900008 = 五转女神（本脚本）
+ */
 
-var HERO_COIN_ID = 4310060;
-var HERO_COIN_MATERIALS = [4251200, 4251201, 4251202];
-var CORE_GEMSTONE_ID = 2435719;
-var CORE_GEMSTONE_COUNT = 100;
-var ADVANCEMENT_LEVEL = 180;
-var ADVANCEMENT_MESO = 500000000;
-var ADVANCEMENT_CASH = 10000;
-var EXPLORER_FIFTH_JOB_ITEM_ID = 2029006;
-var EXPLORER_FIFTH_JOB_COMPLETED_KEY = "explorer_fifth_job_completed";
-var EXPLORER_FOURTH_JOBS = {
-    112: true, 122: true, 132: true,
-    212: true, 222: true, 232: true,
-    312: true, 322: true,
-    412: true, 422: true,
-    512: true, 522: true
-};
-var CYGNUS_FOURTH_JOBS = {
-    11: {id: 1112, name: "魂骑士"},
-    12: {id: 1212, name: "炎术士"},
-    13: {id: 1312, name: "风灵使者"},
-    14: {id: 1412, name: "夜行者"},
-    15: {id: 1512, name: "奇袭者"}
-};
+var 已打开 = false;
+
+// 五转：等级 200 起，按「接取顺序」排。1462/1463/1464 并行，但都要求 1461 已接。
+var 五转任务 = [
+    [1460, "5轉：艾爾達斯的呼喚"],
+    [1481, "5轉：挑戰新力量所需的準備"],
+    [1461, "5轉：祝福女神的庇佑與你同在"],
+    [1465, "5轉：紀錄力量，完成覺醒"]
+];
+
+// 六转：等级 260 起，一条顺序链，每一环都要求上一环已完成。
+var 六转任务 = [
+    [38601, "統合的次元"],
+    [38602, "未曾存在的艾爾達"],
+    [38603, "艾爾達中的女神(1)"],
+    [38604, "微弱的聲音"],
+    [38605, "艾爾達中的女神(2)"],
+    [38606, "聲音的真面目"],
+    [38607, "艾爾達中的女神(3)"],
+    [38608, "前往靈魂艾爾達之內"],
+    [38609, "全新的時代"],
+    [38624, "新的力量"],
+    [38625, "HEXA矩陣"]
+];
+
+var 女神石任务 = [
+    [1462, "楓之谷"],
+    [1463, "格蘭蒂斯"],
+    [1464, "瑪斯特利亞"]
+];
 
 function start() {
+    // 引擎实例可能复用，显式重置，不依赖变量初值
+    已打开 = false;
     action(1, 0, 0);
 }
 
@@ -36,256 +58,227 @@ function action(mode, type, selection) {
         cm.dispose();
         return;
     }
+    if (!已打开) {
+        已打开 = true;
+        显示主菜单();
+        return;
+    }
+    if (selection === 0) {
+        显示主菜单();
+        return;
+    }
+    // 100=五转 101=六转 102=我的进度 103=怎么去 104=技能面板
+    if (selection >= 100 && selection <= 104) {
+        显示主题(selection - 100);
+        return;
+    }
+    cm.dispose();
+}
 
-    status++;
-    if (status === 0) {
-        var jobId = cm.getPlayer().getJob().getId();
-        var isExplorer = EXPLORER_FOURTH_JOBS[jobId] === true;
-        if (!isExplorer && !cm.getPlayer().isCygnus()) {
-            cm.sendOk("当前职业还没开放，你就等吧！");
-            cm.dispose();
-            return;
+// ============================================================
+// 主菜单
+// ============================================================
+function 显示主菜单() {
+    var 文本 = "#e#b五转女神#k#n\r\n";
+    文本 += "#d这里只讲五六转怎么走，已经不再办理转职。#k\r\n";
+    文本 += "#d" + 进度摘要() + "#k\r\n\r\n";
+    文本 += 菜单行([[100, "五转流程 200级"], [101, "六转流程 260级"]]);
+    文本 += 菜单行([[102, "看我的进度"], [103, "怎么去神殿"]]);
+    文本 += 菜单行([[104, "技能面板在哪"]]);
+    cm.sendSimple(文本);
+}
+
+// 一行两格：按显示宽度补空格对齐。不用制表符——全角字符下 \t 会把整行撑爆。
+function 菜单行(条目列表) {
+    var 行 = "";
+    for (var n = 0; n < 条目列表.length; n++) {
+        行 += "#L" + 条目列表[n][0] + "##b[" + 条目列表[n][1] + "]#k#l";
+        if (n < 条目列表.length - 1) {
+            var 补 = 24 - 取显示宽("[" + 条目列表[n][1] + "]");
+            行 += " ".repeat(补 > 0 ? 补 : 1);
         }
+    }
+    return 行 + "\r\n";
+}
 
-        if (isExplorer) {
-            cleanupExplorerFifthJobItemIfLocked();
-        } else {
-            selectedTargetJob = getCygnusFourthJob(jobId);
-            if (selectedTargetJob === null) {
-                cm.sendOk("请先完成骑士团的一转，再来找我吧！");
-                cm.dispose();
-                return;
+// 1 个汉字/全角符号算 2，其余算 1
+function 取显示宽(文本) {
+    var 宽 = 0;
+    for (var i = 0; i < 文本.length; i++) {
+        宽 += 文本.charCodeAt(i) > 0xFF ? 2 : 1;
+    }
+    return 宽;
+}
+
+function 进度摘要() {
+    var 等级 = cm.getLevel();
+    var 五转 = cm.isQuestCompleted(1465) ? "五转 #g已完成" : "五转 #r未完成";
+    var 六转 = cm.isQuestCompleted(38625) ? "六转 #g已完成" : "六转 #r未完成";
+    return "当前：Lv." + 等级 + " · " + 五转 + "#d · " + 六转;
+}
+
+function 显示主题(序号) {
+    if (序号 === 0) {
+        cm.sendSimple(构建五转页());
+    } else if (序号 === 1) {
+        cm.sendSimple(构建六转页());
+    } else if (序号 === 2) {
+        cm.sendSimple(构建进度页());
+    } else if (序号 === 3) {
+        cm.sendSimple(构建路线页());
+    } else if (序号 === 4) {
+        cm.sendSimple(构建面板页());
+    } else {
+        显示主菜单();
+    }
+}
+
+// ============================================================
+// 五转
+// ============================================================
+function 构建五转页() {
+    var 文本 = "#e#b【五转流程】#k#n\r\n";
+    文本 += "#d门槛：等级 #r200#k#d，没有其它收费。#k\r\n\r\n";
+    文本 += "#b1.#k #b1460 " + 五转任务[0][1] + "#k\r\n";
+    文本 += "   #d在時間神殿深處找「旁觀者」接。#k\r\n";
+    文本 += "#b2.#k #b1481 " + 五转任务[1][1] + "#k\r\n";
+    文本 += "   #d原端要星力 100 / 武器 10，这里只确认一次。#k\r\n";
+    文本 += "#b3.#k 接 #b1461 " + 五转任务[2][1] + "#k\r\n";
+    文本 += "   #d然后三条女神任务可以并行做：#k\r\n";
+    文本 += "   #b1462#k 楓之谷  #b1463#k 格蘭蒂斯  #b1464#k 瑪斯特利亞\r\n";
+    文本 += "#b4.#k 三块祕石都拿到，回去交 #b1461#k\r\n";
+    文本 += "#b5.#k 接并交 #b1465 " + 五转任务[3][1] + "#k\r\n";
+    文本 += "   #d交掉这一步就是五转完成，V 矩阵会自动弹出来。#k\r\n";
+    文本 += "\r\n#r注意#k：五转#r不直接发技能#k。\r\n";
+    文本 += "技能要用#b核心宝石#k在 #bV 矩阵#k 里开成核心，再用 V 点升级；\r\n";
+    文本 += "#b1478 V矩陣#k 就是矩阵的使用说明。\r\n";
+    文本 += "#d旧收费（英雄币/核心宝石/金币/点券）已全部取消。#k\r\n";
+    文本 += "\r\n#L0##b[返回]#k#l";
+    return 文本;
+}
+
+// ============================================================
+// 六转
+// ============================================================
+function 构建六转页() {
+    var 文本 = "#e#b【六转流程】#k#n\r\n";
+    文本 += "#d门槛：等级 #r260#k#d，且已完成五转（1465）。#k\r\n\r\n";
+    文本 += "一条顺序链，每一环都要求上一条已完成：\r\n\r\n";
+    for (var i = 0; i < 六转任务.length; i++) {
+        文本 += "#b" + (i + 1) + ".#k #b" + 六转任务[i][0] + "#k " + 六转任务[i][1] + "\r\n";
+    }
+    文本 += "\r\n交掉 #b38624#k 时 #bHEXA 矩陣#k 直接解锁，38625 一起标记完成。\r\n";
+    文本 += "#d中间不能跳步，也别指望从灯泡直接跳到中段。#k\r\n";
+    文本 += "\r\n#r六转核心要五转核心打底#k：\r\n";
+    文本 += "精通核心需对应五转#b强化核心 40 级#k，\r\n";
+    文本 += "强化核心需对应五转#b技能核心 25 级#k。\r\n";
+    文本 += "\r\n#L0##b[返回]#k#l";
+    return 文本;
+}
+
+// ============================================================
+// 我的进度（全部读真实任务状态，不做本地推算）
+// ============================================================
+function 构建进度页() {
+    var 等级 = cm.getLevel();
+    var 文本 = "#e#b【我的进度】#k#n\r\n";
+    文本 += "#d等级#k：#r" + 等级 + "#k  #d(五转 200 / 六转 260)#k\r\n\r\n";
+
+    var 五转完成 = cm.isQuestCompleted(1465);
+    文本 += "#b五转#k：" + (五转完成 ? "#g已完成#k" : "#r未完成#k") + "\r\n";
+    if (!五转完成) {
+        var 下一步 = 五转下一步();
+        if (下一步 !== null) 文本 += "#d下一步：#k" + 下一步 + "\r\n";
+    } else if (!cm.isQuestCompleted(1478)) {
+        文本 += "#d可选：#k#b1478 V矩陣#k #d(V 矩阵的使用说明)#k\r\n";
+    }
+
+    文本 += "\r\n#b六转#k：" + (cm.isQuestCompleted(38625) ? "#g已完成#k" : "#r未完成#k") + "\r\n";
+    var 六步 = 六转下一步();
+    if (六步 !== null) 文本 += "#d下一步：#k" + 六步 + "\r\n";
+
+    if (等级 < 200) {
+        文本 += "\r\n#d等级还没到 200，先练级，到了再来找我。#k\r\n";
+    }
+    文本 += "\r\n#d任务窗里能直接看到这几条的状态。#k\r\n";
+    文本 += "\r\n#L0##b[返回]#k#l";
+    return 文本;
+}
+
+function 五转下一步() {
+    if (cm.isQuestCompleted(1465)) return null;
+    if (!cm.isQuestCompleted(1460)) return "接 #b1460 " + 五转任务[0][1] + "#k";
+    if (!cm.isQuestCompleted(1481)) return "接 #b1481 " + 五转任务[1][1] + "#k";
+    if (!cm.isQuestCompleted(1461)) {
+        if (cm.isQuestStarted(1461) || 已碰过女神石()) {
+            var 缺 = [];
+            for (var i = 0; i < 女神石任务.length; i++) {
+                if (!cm.isQuestCompleted(女神石任务[i][0])) {
+                    缺.push("#b" + 女神石任务[i][0] + "#k " + 女神石任务[i][1]);
+                }
             }
-            if (jobId === selectedTargetJob.id) {
-                cm.sendOk("小伙子，想碰瓷？");
-                cm.dispose();
-                return;
-            }
+            if (缺.length > 0) return "做三女神： " + 缺.join("、");
+            return "三块祕石齐了，回去交 #b1461#k";
         }
-
-        var menu = "#e#b五转女神#k#n\r\n\r\n";
-        menu += "#L0##b" + (isExplorer ? "完成冒险家五转" : "完成骑士团四转") + "#k#l\r\n";
-        menu += "#L1##b合成英雄币#k#l";
-        cm.sendSimple(menu);
-        return;
+        return "接 #b1461 " + 五转任务[2][1] + "#k";
     }
-
-    if (status === 1) {
-        var currentJobId = cm.getPlayer().getJob().getId();
-        selectedOption = selection;
-        if (selectedOption === 0) {
-            if (EXPLORER_FOURTH_JOBS[currentJobId] === true) {
-                prepareExplorerFifthJob();
-            } else {
-                cm.sendYesNo(buildAdvancementPrompt());
-            }
-            return;
-        }
-        if (selectedOption === 1) {
-            cm.sendYesNo(buildCraftPrompt());
-            return;
-        }
-        cm.dispose();
-        return;
-    }
-
-    if (status === 2) {
-        if (selectedOption === 0) {
-            var currentJobId = cm.getPlayer().getJob().getId();
-            if (EXPLORER_FOURTH_JOBS[currentJobId] === true) {
-                unlockExplorerFifthJob();
-            } else {
-                advanceCygnus();
-            }
-            return;
-        }
-        if (selectedOption === 1) {
-            craftHeroCoin();
-            return;
-        }
-        return;
-    }
-
-    cm.dispose();
+    return "接并交 #b1465 " + 五转任务[3][1] + "#k";
 }
 
-function prepareExplorerFifthJob() {
-    cleanupExplorerFifthJobItemIfLocked();
-    if (cm.getPlayer().getLevel() < ADVANCEMENT_LEVEL) {
-        cm.sendOk("冒险家五转需要达到 " + ADVANCEMENT_LEVEL + " 级。");
-        cm.dispose();
-        return;
+function 已碰过女神石() {
+    for (var i = 0; i < 女神石任务.length; i++) {
+        var id = 女神石任务[i][0];
+        if (cm.isQuestStarted(id) || cm.isQuestCompleted(id)) return true;
     }
-    if (isExplorerFifthJobCompleted()) {
-        grantCompletedExplorerFifthJobItem();
-        return;
-    }
-    cm.sendYesNo(buildExplorerFifthJobPrompt());
+    return false;
 }
 
-function isExplorerFifthJobCompleted() {
-    return cm.getCharacterExtendValue(EXPLORER_FIFTH_JOB_COMPLETED_KEY) == "1";
-}
-
-function cleanupExplorerFifthJobItemIfLocked() {
-    if (!isExplorerFifthJobCompleted() && cm.haveItem(EXPLORER_FIFTH_JOB_ITEM_ID, 1)) {
-        cm.removeAll(EXPLORER_FIFTH_JOB_ITEM_ID);
-    }
-}
-
-function grantCompletedExplorerFifthJobItem() {
-    cm.sendOk("你已完成冒险家五转，五六转技能已显示在技能面板中，无需使用道具。");
-    cm.dispose();
-}
-
-function buildExplorerFifthJobPrompt() {
-    var text = "#e冒险家五转解锁#n\r\n\r\n";
-    text += buildAdvancementRequirementsText();
-    text += "\r\n满足全部条件后，五六转技能将直接显示在技能面板中，确定要继续吗？";
-    return text;
-}
-
-function unlockExplorerFifthJob() {
-    var jobId = cm.getPlayer().getJob().getId();
-    if (EXPLORER_FOURTH_JOBS[jobId] !== true) {
-        cm.sendOk("当前职业还没开放，你就等吧！");
-        cm.dispose();
-        return;
-    }
-    cleanupExplorerFifthJobItemIfLocked();
-    if (isExplorerFifthJobCompleted()) {
-        grantCompletedExplorerFifthJobItem();
-        return;
-    }
-
-    var missing = getMissingAdvancementRequirements();
-    if (missing.length > 0) {
-        cm.sendOk("尚未满足五转条件：\r\n" + missing.join("\r\n"));
-        cm.dispose();
-        return;
-    }
-    deductAdvancementCosts();
-    cm.saveOrUpdateCharacterExtendValue(EXPLORER_FIFTH_JOB_COMPLETED_KEY, "1");
-    cm.sendOk("冒险家五转解锁成功，五六转技能已显示在技能面板中，无需使用道具。");
-    cm.dispose();
-}
-
-function getCygnusFourthJob(jobId) {
-    var branch = Math.floor(jobId / 100);
-    return CYGNUS_FOURTH_JOBS[branch] || null;
-}
-
-function buildAdvancementPrompt() {
-    var text = "#e骑士团四转：#b" + selectedTargetJob.name + "#k#n\r\n\r\n";
-    text += buildAdvancementRequirementsText();
-    text += "\r\n满足全部条件后将直接完成四转，确定要继续吗？";
-    return text;
-}
-
-function buildAdvancementRequirementsText() {
-    var text = "需要满足以下条件：\r\n";
-    text += "等级达到 #r" + ADVANCEMENT_LEVEL + "#k  #d(当前 " + cm.getPlayer().getLevel() + ")#k\r\n";
-    text += "#i" + HERO_COIN_ID + "# #b#t" + HERO_COIN_ID + "##k × 1";
-    text += "  #d(持有 " + cm.itemQuantity(HERO_COIN_ID) + ")#k\r\n";
-    text += "#i" + CORE_GEMSTONE_ID + "# #b#t" + CORE_GEMSTONE_ID + "##k × " + CORE_GEMSTONE_COUNT;
-    text += "  #d(持有 " + cm.itemQuantity(CORE_GEMSTONE_ID) + ")#k\r\n";
-    text += "金币 #r" + cm.numberWithCommas(ADVANCEMENT_MESO) + "#k";
-    text += "  #d(持有 " + cm.numberWithCommas(cm.getMeso()) + ")#k\r\n";
-    text += "点券 #r" + cm.numberWithCommas(ADVANCEMENT_CASH) + "#k";
-    text += "  #d(持有 " + cm.numberWithCommas(cm.getPlayer().getCashShop().getCash(1)) + ")#k\r\n";
-    return text;
-}
-
-function getMissingAdvancementRequirements() {
-    var missing = [];
-    if (cm.getPlayer().getLevel() < ADVANCEMENT_LEVEL) {
-        missing.push("等级需要达到 " + ADVANCEMENT_LEVEL + " 级");
-    }
-    if (!cm.haveItem(HERO_COIN_ID, 1)) {
-        missing.push("#i" + HERO_COIN_ID + "# #t" + HERO_COIN_ID + "# × 1");
-    }
-    if (!cm.haveItem(CORE_GEMSTONE_ID, CORE_GEMSTONE_COUNT)) {
-        missing.push("#i" + CORE_GEMSTONE_ID + "# #t" + CORE_GEMSTONE_ID + "# × " + CORE_GEMSTONE_COUNT);
-    }
-    if (cm.getMeso() < ADVANCEMENT_MESO) {
-        missing.push("金币 " + cm.numberWithCommas(ADVANCEMENT_MESO));
-    }
-    if (cm.getPlayer().getCashShop().getCash(1) < ADVANCEMENT_CASH) {
-        missing.push("点券 " + cm.numberWithCommas(ADVANCEMENT_CASH));
-    }
-    return missing;
-}
-
-function deductAdvancementCosts() {
-    cm.gainItem(HERO_COIN_ID, -1);
-    cm.gainItem(CORE_GEMSTONE_ID, -CORE_GEMSTONE_COUNT);
-    cm.gainMeso(-ADVANCEMENT_MESO);
-    cm.getPlayer().getCashShop().gainCash(1, -ADVANCEMENT_CASH);
-}
-
-function advanceCygnus() {
-    var jobId = cm.getPlayer().getJob().getId();
-    var targetJob = getCygnusFourthJob(jobId);
-    if (!cm.getPlayer().isCygnus() || targetJob === null) {
-        cm.sendOk("当前职业还没开放，你就等吧！");
-        cm.dispose();
-        return;
-    }
-    if (jobId === targetJob.id) {
-        cm.sendOk("小伙子，想碰瓷？");
-        cm.dispose();
-        return;
-    }
-
-    var missing = getMissingAdvancementRequirements();
-    if (missing.length > 0) {
-        cm.sendOk("尚未满足四转条件：\r\n" + missing.join("\r\n"));
-        cm.dispose();
-        return;
-    }
-
-    deductAdvancementCosts();
-    cm.changeJobById(targetJob.id);
-    cm.sendOk("恭喜你完成骑士团四转，成为#b" + targetJob.name + "#k！");
-    cm.dispose();
-}
-
-function buildCraftPrompt() {
-    var text = "#e合成 #i" + HERO_COIN_ID + "# #b#t" + HERO_COIN_ID + "##k × 1#n\r\n\r\n";
-    text += "需要以下材料：\r\n";
-    for (var i = 0; i < HERO_COIN_MATERIALS.length; i++) {
-        var itemId = HERO_COIN_MATERIALS[i];
-        text += "#i" + itemId + "# #b#t" + itemId + "##k × 1";
-        text += "  #d(持有 " + cm.itemQuantity(itemId) + ")#k\r\n";
-    }
-    text += "\r\n确定要合成吗？";
-    return text;
-}
-
-function craftHeroCoin() {
-    var missing = [];
-    for (var i = 0; i < HERO_COIN_MATERIALS.length; i++) {
-        var itemId = HERO_COIN_MATERIALS[i];
-        if (!cm.haveItem(itemId, 1)) {
-            missing.push("#i" + itemId + "# #t" + itemId + "# × 1");
+function 六转下一步() {
+    if (!cm.isQuestCompleted(1465)) return "先完成五转（1465）";
+    if (cm.isQuestCompleted(38625)) return null;
+    if (cm.getLevel() < 260) return "等级到 260 后接 #b38601#k 統合的次元";
+    for (var i = 0; i < 六转任务.length; i++) {
+        if (!cm.isQuestCompleted(六转任务[i][0])) {
+            return "接 #b" + 六转任务[i][0] + "#k " + 六转任务[i][1];
         }
     }
+    return null;
+}
 
-    if (missing.length > 0) {
-        cm.sendOk("材料不足：\r\n" + missing.join("\r\n"));
-        cm.dispose();
-        return;
-    }
-    if (!cm.canHold(HERO_COIN_ID, 1)) {
-        cm.sendOk("其他栏背包空间不足，请整理后再来。");
-        cm.dispose();
-        return;
-    }
+// ============================================================
+// 怎么去時間神殿
+// ============================================================
+function 构建路线页() {
+    var 文本 = "#e#b【怎么去時間神殿】#k#n\r\n\r\n";
+    文本 += "#b1.#k 自由市场找 #b昨日小睡#k → #b传送系统#k → 「时间神殿」\r\n";
+    文本 += "   #d（1 万金币，落点 270000100）#k\r\n";
+    文本 += "#b2.#k 一路往里走：270000000 → 270010000 → #b270010100#k\r\n";
+    文本 += "#b3.#k 270010100 的那道门要看任务：\r\n";
+    文本 += "   必须已完成 #b3501 追隨追憶之路的人1#k。\r\n";
+    文本 += "   #d没做的话会被弹回 270010000。#k\r\n";
+    文本 += "   #d先把記憶之路那条线（3500 起）做掉。#k\r\n";
+    文本 += "#b4.#k 过了门是 270010110，再进一扇门就是 #b270010111#k，\r\n";
+    文本 += "   往地图上方走，就能看到 #b旁觀者#k。\r\n";
+    文本 += "#b5.#k 老路线也行：#b31165 [阿卡伊勒]探索時間裂縫#k → 時間裂縫 → 神殿\r\n";
+    文本 += "\r\n#d两条路都通，走传送系统最省事。#k\r\n";
+    文本 += "\r\n#L0##b[返回]#k#l";
+    return 文本;
+}
 
-    for (var materialIndex = 0; materialIndex < HERO_COIN_MATERIALS.length; materialIndex++) {
-        cm.gainItem(HERO_COIN_MATERIALS[materialIndex], -1);
-    }
-    cm.gainItem(HERO_COIN_ID, 1);
-    cm.sendOk("合成成功，获得 #i" + HERO_COIN_ID + "# #b#t" + HERO_COIN_ID + "##k × 1。");
-    cm.dispose();
+// ============================================================
+// 技能面板入口
+// ============================================================
+function 构建面板页() {
+    var 文本 = "#e#b【技能面板在哪】#k#n\r\n\r\n";
+    文本 += "转职本身不发技能，五转 / 六转技能都在矩阵里：\r\n\r\n";
+    文本 += "#b· V 矩阵（五转）#k\r\n";
+    文本 += "  #d交掉 1465 时自动打开；之后也能进。#k\r\n";
+    文本 += "  #d自由市场 昨日小睡 → 日常功能 →「五转技能」#k\r\n";
+    文本 += "#b· HEXA 矩陣（六转）#k\r\n";
+    文本 += "  #d交掉 38624 时自动打开；之后也能进。#k\r\n";
+    文本 += "  #d自由市场 昨日小睡 → 日常功能 →「六转技能」#k\r\n";
+    文本 += "\r\n#d这两个入口只在对的等级 + 完成对应转职后才出现，#k\r\n";
+    文本 += "#d没满足条件看不见也正常。#k\r\n";
+    文本 += "\r\n#L0##b[返回]#k#l";
+    return 文本;
 }

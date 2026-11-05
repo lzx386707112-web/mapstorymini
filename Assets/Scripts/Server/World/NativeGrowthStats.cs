@@ -80,7 +80,8 @@ public static class NativeGrowthStats
         {
             int h = level * 397 ^ job;
             var soul=character.soulWeapon;
-            if(soul!=null){h=h*31+(int)soul.revision;h=h*31+soul.level;h=h*31+soul.option;
+            if(soul!=null){var bound=soul.Active;
+                h=h*31+(int)soul.revision;h=h*31+(bound?.level??0);h=h*31+(bound?.option??0);
                 h=h*31+(soul.activeUntil>DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()?1:0);}
             var growth = character.growth;
             if (growth != null) h = h * 31 + growth.hyperPreset * 7 + growth.abilityPreset;
@@ -139,12 +140,13 @@ public static class NativeGrowthStats
     static void AccumulateSoulWeapon(FullCharacter character,GrowthStatDelta delta)
     {
         var soul=character.soulWeapon;if(soul==null || !soul.unlocked || !soul.Equipped(character))return;
-        int attack=SoulWeaponWz2Catalog.PassiveAttack(soul.level);delta.Add("PAD",attack);delta.Add("MAD",attack);
-        foreach(var stat in PotentialStats.CalculateValues(SoulWeaponWz2Catalog.OptionStats(soul.option)))
+        var bound=soul.Active??new SoulGrowth();
+        int attack=SoulWeaponWz2Catalog.PassiveAttack(bound.level);delta.Add("PAD",attack);delta.Add("MAD",attack);
+        foreach(var stat in PotentialStats.CalculateValues(SoulWeaponWz2Catalog.OptionStats(bound.option)))
             if(stat.Key=="CriticalChance")delta.criticalChance+=stat.Value/100f;
             else delta.Add(stat.Key,stat.Value);
         if(soul.activeUntil>DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
-        {int rate=SoulWeaponWz2Catalog.ActiveAttackPercent(soul.grade);delta.Add("PADPct",rate);delta.Add("MADPct",rate);}
+        {int rate=SoulWeaponWz2Catalog.ActiveAttackPercent(bound.grade);delta.Add("PADPct",rate);delta.Add("MADPct",rate);}
     }
 
     static void AccumulateHexa(FullCharacter character,int job,GrowthStatDelta delta)

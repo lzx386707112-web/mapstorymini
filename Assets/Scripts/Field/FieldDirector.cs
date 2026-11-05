@@ -1049,7 +1049,8 @@ public sealed class FieldDirector : MonoBehaviour
             var buffs=GameLoop.I?.player?.GetComponent<NativeBuffs>();
             var award=Server.Bot.BotPartyExperience.Calculate(GameServer.Local.Db,bots.parties,bots.Player(GameSession.CharacterId),
                 (int)Art.Num(mob.stats,"level",1),exp,(e.NativeController!=null ? e.NativeController.MaximumHp : (long)e.hpMax)+e.TotalHealed,
-                e.DamageContributions,(float)AdminSetItem.ApplyRate(EquipLoadout.CurrentSetBonus(),"ExpRate",rates.expRate),(float)rates.expRate,
+                e.DamageContributions,(float)(AdminSetItem.ApplyRate(EquipLoadout.CurrentSetBonus(),"ExpRate",rates.expRate)
+                    *(100+(buffs?.Value("ExpRate") ?? 0))/100.0),(float)rates.expRate,
                 buffs?.Value("HOLY_SYMBOL") ?? 0,GameConfigDao.GetBool(GameServer.Local.Db,"use_full_holy_symbol",false),
                 buffs?.Value("EXP_INCREASE") ?? 0,buffs?.HasStat("EXP_BUFF")==true,e.NativeController?.Showdown ?? 0);
             reputationCalls=award.reputationCalls;
@@ -1067,6 +1068,9 @@ public sealed class FieldDirector : MonoBehaviour
             bool full=GameServer.Local!=null && GameConfigDao.GetBool(GameServer.Local.Db,"use_full_holy_symbol",false);
             float personal=exp*Server.Bot.BotPartyExperience.StatusMultiplier(buffs?.Value("HOLY_SYMBOL") ?? 0,false,full,e.NativeController?.Showdown ?? 0);
             personal*=(float)AdminSetItem.ApplyRate(set,"ExpRate",rates.expRate);
+            // 时效经验增益（实用的祈祷「经验值增加#x%」）不在 set 里，单独叠一层
+            int buffExp=buffs?.Value("ExpRate") ?? 0;
+            if (buffExp!=0) personal*=(100+buffExp)/100f;
             personal+=buffs?.Value("EXP_INCREASE") ?? 0;
             if (buffs?.HasStat("EXP_BUFF")==true) personal*=2;
             Profile.GrantExperience((long)System.Math.Floor((double)personal+.5));
@@ -1124,12 +1128,16 @@ public sealed class FieldDirector : MonoBehaviour
         if (e.IsBoss && GameSession.InGame)
             dropRate = rsp.familyDropRate * GameSession.Net.Boss(new BossRequest { characterId = GameSession.CharacterId }).dropRate;
         var set = EquipLoadout.CurrentSetBonus();
+        var buffs=GameLoop.I?.player?.GetComponent<NativeBuffs>();
         dropRate = AdminSetItem.ApplyRate(set, "DropRate", dropRate);
+        // 「实用的祈祷」这类技能在 #time 秒内加掉宝率（h 明写 #v%）：时效增益在 NativeBuffs
+        // 里，不在 set 里，得单独乘一次。
+        int buffDrop=buffs?.Value("DropRate") ?? 0;
+        if (buffDrop!=0) dropRate=(float)(dropRate*(100+buffDrop)/100.0);
         int showdown=e.NativeController?.Showdown ?? 0;
         if (showdown!=0) dropRate=(float)(dropRate*(1.0+showdown/100.0));
         // ≡ MapleMap.java:757 mesos × chr.getMesoRate()（世界 meso_rate × 套装 MesoRate%）
         mesoRate = AdminSetItem.ApplyRate(set, "MesoRate", mesoRate);
-        var buffs=GameLoop.I?.player?.GetComponent<NativeBuffs>();
         int? mesoUp=buffs?.HasStat("MESOUP")==true ? (int?)buffs.Value("MESOUP") : null;
         FieldLoot.Roll(mob.id, (itemId, qty, d) =>
         {

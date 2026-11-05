@@ -195,7 +195,18 @@ public static class QuestWindow
         bool old = GUI.enabled;
         GUI.enabled = old && status == PlayerProfileData.QuestStartedState && (q.id < 1200 || q.id >= 1400);
         if (QuestUi.Button("UI/UIWindow.img/UtilDlgEx/BtQGiveup", 245 + 242, 372))
-        { Profile.ResetQuest(q.id); selectedId = 0; NpcField.InvalidateMarkers(); }
+        {
+            // 放弃任务不可逆，必须走确认框（提示框而不是一闪而过的文字）
+            int id = q.id;
+            string name = q.name;
+            NativeUtilPrompt.Confirm("放弃任务「" + name + "」后进度会清空，确定要放弃吗？", yes =>
+            {
+                if (!yes) return;
+                Profile.ResetQuest(id);
+                selectedId = 0;
+                NpcField.InvalidateMarkers();
+            });
+        }
         GUI.enabled = old && status == PlayerProfileData.QuestStartedState && (q.id < 1200 || q.id >= 1400) && QuestAlarm.CanTrack(q);
         if (QuestUi.Button("UI/UIWindow.img/Quest/BtAlert", 245 + 150, 372)) QuestAlarm.Track(q.id);
         GUI.enabled = old;

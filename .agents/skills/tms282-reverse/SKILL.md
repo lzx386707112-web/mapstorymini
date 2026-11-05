@@ -13,6 +13,8 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
 
 域内细节见 `references/`：
 
+- **灵魂武器显示反馈（2026-11-05）**：第29篇“确认文字、图标及装备详情反馈”；Notice文字烘焙导致缩放难读，使用既有原版动态确认框；ActiveSkill光效中心(402,267)、32px图标左上(386,251)；新版账本绑定信息补入装备详情并刷新即时属性。Unity面板→传输→数据库回归通过，Android画面仍需用户复验。
+
 - **战斗力（逆向中）**：工作区根`docs/tms282-skill/30-combat-power.md`，5F3C7E0两次完整快照相减→5E82B40→12F9A60，StatCalibration双校正及int64截断；原服务器0.7 magic number不可视为EXE公式，用户明确禁止以攻魔差额替代。
 
 - **新版灵魂武器（进行中）**：`docs/tms282-skill/29-soul-weapon-wz2.md`（实际正文在工作区根docs），原状态布局/被动公式/150级启用与GradeInfo/BossInfo已核，用户允许替换旧开孔并补服务器缺失规则；2026-11-05 用户另行要求移除旧材料及取消不可交易前置，启用不再写永久交易限制，绑定期间仍限制转移；转换/烙印分支/BossFragment/星火战斗力仍有边界，勿宣称完整迁移。
@@ -35,19 +37,27 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
 - `gloom-boss.md` — **戴斯克/Gloom**（2026-11-05）：套件无状态机/召唤（结构性断链），mob=8644650(N)/8644655(C)
   lv255、**HP=957,809,713 / 3,064,991,082（dat 与 MOB_HP 同值，合成曲线非官方；官方 26T / 114.6T）**、
   三技能全 onlyOtherSkill（213=AreaWarning、186=AreaForce 都在枚举内，252=BlackMageGloom 有枚举无实现）；
-  内部代号 dusk、无 Etc img/无开场演出、WILL_DUSK_GAUGE 是死包；官方 7 类招式已作为反推锚点。
-- `darknell-boss.md` — **頓凱爾/Darknell**（2026-11-05 三轮）：套件无状态机/召唤，mob=8645009(N)/8645066(H) lv265、
+  内部代号 dusk、无 Etc img/无开场演出、WILL_DUSK_GAUGE 是死包；
+  **落地口径已定**（血量用官方 26T/114.6T + 自建触发循环：主触手 55s → 激光 +20s → 雾暴 30s → 陨石 25s）。
+- `darknell-boss.md` — **頓凱爾/Darknell**（2026-11-05 四轮）：**§0 是全套神秘河 boss 的「冲突裁决原则」**
+  （客户端表现 > 客户端数据 > 官方机制 > 自建）；套件无状态机/召唤，mob=8645009(N)/8645066(H) lv265、
   **HP=1,225,996,433 / 2,451,992,866（dat + BOSS_CONTEXT_HP；官方 26T / 160T）**；
   **`AreaWarning 0..9 = 5 精英 Boss × 2 招`**（eliteBossAir 只落 5/7、ball 只落 1/2、同色配对三重互锁，
-  预警 2790–3870ms）；**`260-1..4 = 召唤两把剑 Ancestion(8645010)/Ascendion(8645011)`**，hard 用 8645066/67；
-  `fieldType=204` 是**枚举缺口**（FieldType 上限 152，Will 182/Gloom 262/Seren 271 同样超限，
-  别家都有专属 Java 类、只有 Darknell 没有）；BossDunkel.img 265 完整 463 canvas、282 只剩 140 行骨架；
+  预警 2790–3870ms；3=Brain Scrambler / 8=Octopunch 由帧长定序）；精英出场**每掉 1/3 血 +1 只**
+  （N: >66%1 / 33–66%2 / <33%3；H: 开局 2 / <50%3），间隔自建 20s；
+  **`260-1..4 = 召唤剑`**（N→8645010/8645011；H→8645066 本体外观/8645067 隐形），
+  判据是 `MobSkillStat.v`(ordinal 28) 槽——263/264 的 v 为空，只有 260 有值；
+  **堕落勇士 = 8645003(N, 100 亿)/8645069(H, 300 亿)**，由场类召唤（本体 skill 里没有）；
+  `fieldType=204` 是**枚举缺口**（FieldType 上限 152，Will 182/Lucid 147/Gloom 262·202/黑魔法师 199/
+  Seren 271 同样超限，`getByVal` 全 null）；`world/boss/` 只有 Will/Seren/SerenFight/Lucid 四个相关类，
+  **Gloom/黑魔法师/Darknell 三者都没有专属类**，只剩击杀计数 + 通用通关；BossDunkel.img 265 完整 463 canvas、282 只剩 140 行骨架；
   与黑魔法师共用 preQuest 35815；掉落表齐全。
 - `seren-boss.md` — **受選的賽蓮/Seren**（2026-11-05）：车道=地图千位（hard 8880600/normal 8880630/extreme 8880650），
-  P2 核+HpLinkMob 分时身体（offset 1/5/7/10）、太阳计+时钟（**套件 108/72/108/72 度 @120s，
-  官方是 420s / 103-103-51-103 度**：正午 120s、夕阳 120s、**午夜 60s**、黎明 120s）；
-  **官方太阳计 6 条规则里套件只实现「残量继承」**（午夜 −1／耗竭全队强退／整周期回补 +1／35 次上限／
-  午夜形态不计增 全缺，套件满计只眩晕 3s 而非官方 5s）；
+  P2 核+HpLinkMob 分时身体（offset 1/5/7/10）、太阳计+时钟（**套件 108/72/108/72 度 @120s 全错；官方 420s、
+  四段 **120/130/40/130** 秒（度数 103/111/34/112），且**段长会被诅咒动态扣减**：午夜 −= 40s/(人数×3+5)）；
+  **太阳计官方 8 条套件几乎全错**（Normal 上限 1200、满计眩晕 5s、午夜扣减上限 35 次、整周期回补、
+  归零全队失败、午夜形态不涨计、P1→P2 清零；套件只对上 H/E 的 1000）；
+  **黎明形态是「打护盾」不是打血**（护盾=下轮正午回血量，黎明受击加厚），每段末 Ray of Light（一人中→全队 1000%）；
   **形态专属技已坐实：263=正午、264=P1 主技+夕阳、260=午夜、黎明无技**（wz282 skill 节点，wz265 层全无）；
   **260 跨 boss 共用**（Darknell lv1–4／Seren lv5–7，实现须按 templateId 分流）；
   套件常量 SEREN_EXTREME_FIGHT_MAP=410002080 是 bug（该图 fieldType=0 的 hard 尾图，实际 P2=410002260）；
@@ -72,7 +82,22 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
   （V 矩阵核心宝石→核心、HEXA 核心前置 `reqForActivation`、索尔艾尔达消耗）与**星力要点**
   （任务 `1481` 的 `totalStarForce=100`、279 概率表、费用公式、4 个服务端缺口）。
   **五/六转共 1,618 条技能，全量正文在 `mxd-android/docs/tms282-skill/`（8 篇 + 5 份数据集）**，
-  本 skill 只留开工所需事实。
+  本 skill 只留开工所需事实。**§9 技能「子状态 id」**：同名技能族里 `invisible=1`、
+  只有 desc 没有 h、level/1 只有 time 的 buff id 是母技能施放后挂上的内部状态，
+  不是可按技能（12 条，先前被误计为「无 stat buff」）；母技能 h 与字段投影是判据。
+  **§10 周期领域**：其中 4 条（殛冻领域 / 箭影纷飞 / 禁咒之符 / 暗黑天魔VI）按状态
+  `subTime` 周期结算同族伤害体，周期与 `damage/attackCount/mobCount` 在母技能 h 和
+  level 行里 30 级逐行自证；表 `NativeFieldZones.json`、守卫 `check_field_zones.py`。
+  **§11 剩余缺口定性**：`1241501` 圣域展开是第 13 条子状态（原始节点无 info/effect/level，
+  `cooltime` 只是母技能投影；再发动冷却取伤害体 `cooltimeMS=500` 而非母技能 `t=0`）；
+  `4141003` 刺客刻印VI 是标记按敌人个体记的两段式 proc；`500004073` 是字段覆盖核心
+  （`NativeSkillOverrides.json`）。
+  **§12 最后 6 条**：`5141011` 海龙石（资源/消耗门/突击伤害体）、`400041001` 散式投掷
+  （追加方向）、`400041061` 飞闪起爆符（符咒主被动互斥）、`5141001` 超级闪连杀
+  （`BeginCast` 真替换）、`2141502` 元素吸收（锁满 10 层 → FinalDamage +30）、
+  `4241005` 黑暗面（隐身回避 `TakeBossDamage` + 解除后冷却），统一走
+  `NativeSkillMechanics.json` / `check_skill_mechanics.py`。
+  **真缺口只剩 `400001004` 实用的战斗命令**（等级 +1，需改 `SkillBook`，本轮按用户要求跳过）。
 
 **武器进化路线**（09 文档，2026-11-03）：
 - 武器段：1212=露米娜丝闪耀魔杖、1222=天使破坏者灵魂射手、1232=恶魔复仇者魔剑(Desperado)、
@@ -139,3 +164,7 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
 - 极限点数复报与符文卸下（2026-11-05）：第28篇末节，原POINT白底+近白字的显示遗漏已修；符文槽改读会话库存，接右键/背包拖拽卸下，220项成长检查通过，未真机验收。
 
 - 星火/灵魂按钮与完整性审计（2026-11-05）：`docs/tms282-skill/16-enhancement-entry.md`末节；材料框/高亮缺页前缀、双击入口、星火数值补全与黑星火journal恢复已修；SoulMP/灵魂技能、实际攻击力比较及原版二选一布局仍有明确缺口。
+
+- **截图指定装备详情卡（2026-11-05）**：beidou-client-reverse的`references/inventory-and-tooltip.md`末节；原UIToolTip 324px皮肤、36张Canvas转GMS/ARGB4444，导入身份/节点报告在根docs/tms282-skill/data/equipment-tooltip-import.json。截图适配不冒称EXE完整布局复刻。
+
+- 手机超长装备/套装详情自动右侧续栏（2026-11-05，用户授权布局）：beidou-client-reverse/references/inventory-and-tooltip.md末节；原素材、按行分栏、整组夹屏，720/600高模拟与手机验收边界分开记录。

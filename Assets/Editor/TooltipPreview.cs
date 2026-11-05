@@ -43,6 +43,7 @@ public static class TooltipPreview
     const int SetHat = 1003242, SetTop = 1052357, SetShoes = 1072521;
     const int SetGlove = 1082314, SetCape = 1102294, SetWeapon = 1302169;
     const int StarWeapon = 1302081;      // 永恒破甲剑，reqLevel 120 → 15 星上限，incPAD 110
+    const int TwoRowWeapon = 1302343; // 神秘之影单手剑，reqLevel200，真实30星槽模板
     const int Potion = 2000000;
 
     sealed class Scene
@@ -57,9 +58,28 @@ public static class TooltipPreview
     {
         return new List<Scene>
         {
+            new Scene { key = "sealed-genesis", title = "用户实机1402267封印创世剑 · 名称/禁强化/灵魂", itemId = 1402267, forceStars = 0 },
             new Scene { key = "weapon-0star",  title = "武器 · 0★（星条全灰，验证位置）", itemId = StarWeapon, forceStars = 0 },
             new Scene { key = "weapon-12star", title = "武器 · 12★ / 15（金灰对比）", itemId = StarWeapon, forceStars = 12 },
+            new Scene { key = "two-row-0", title = "两行30槽 · 0星", itemId = TwoRowWeapon, forceStars = 0 },
+            new Scene { key = "two-row-15", title = "两行30槽 · 首行15星", itemId = TwoRowWeapon, forceStars = 15 },
+            new Scene { key = "two-row-16", title = "两行30槽 · 跨行16星", itemId = TwoRowWeapon, forceStars = 16 },
+            new Scene { key = "two-row-30", title = "两行30槽 · 满30星", itemId = TwoRowWeapon, forceStars = 30 },
+            new Scene { key = "two-row-growth", title = "两行星条+完整长内容+右下边缘", itemId = TwoRowWeapon, forceStars = 30 },
             new Scene { key = "equip-hat-set", title = "帽子 + 套装面板（宝石套 6/8）", itemId = SetHat },
+            new Scene { key = "hover-inventory", title = "真实背包格悬停", itemId = StarWeapon },
+            new Scene { key = "potential-hidden", title = "未鉴定潜能", itemId = StarWeapon },
+            new Scene { key = "potential-grade-0", title = "未定品级潜能", itemId = StarWeapon },
+            new Scene { key = "potential-grade-1", title = "特殊主附潜能", itemId = StarWeapon },
+            new Scene { key = "potential-grade-2", title = "稀有主附潜能", itemId = StarWeapon },
+            new Scene { key = "potential-grade-3", title = "罕见主附潜能", itemId = StarWeapon },
+            new Scene { key = "potential-grade-4", title = "传说主附潜能", itemId = StarWeapon },
+            new Scene { key = "full-growth", title = "满属性/星力/六潜能/星火/灵魂长内容", itemId = StarWeapon },
+            new Scene { key = "soul-legacy", title = "旧灵魂插槽", itemId = StarWeapon },
+            new Scene { key = "hover-equipped", title = "真实装备窗悬停", itemId = SetHat },
+            new Scene { key = "vestige", title = "装备痕迹", itemId = StarWeapon },
+            new Scene { key = "symbol", title = "符文成长装备", itemId = 1712001 },
+            new Scene { key = "edge-bottom-right", title = "右下角长内容", itemId = StarWeapon },
             new Scene { key = "item-potion",   title = "普通物品 · 红色药水", itemId = Potion },
         };
     }
@@ -98,7 +118,7 @@ public static class TooltipPreview
         File.WriteAllText(Path.Combine(dir, "report.txt"),
             "MapleDash 悬浮框对照图（TooltipPreview）\n" +
             "时间 " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "\n" +
-            "真实存档装备 + 真实 WZ 素材，PreviewDraw 定点绘制，按真实外框裁切。\n\n");
+            "真实WZ素材；原存档与临时内存模拟组合；SetHover/Flush及真实窗口悬停；按真实外框裁切。\n\n");
 
         EditorPrefs.SetBool(K_HAD, PlayerPrefs.HasKey(SnapKey));
         EditorPrefs.SetString(K_SNAP, PlayerPrefs.GetString(SnapKey, ""));
@@ -244,7 +264,111 @@ public static class TooltipPreview
         UiPreviewHook.SolidBackdrop = true;
         UiPreviewHook.Draw = () =>
         {
-            ItemTooltip.PreviewDraw(id, anchor, inst);
+            var character = GameSession.Character;
+            var inventory = character.inventory;
+            var soul = character.soulWeapon;
+            var pointer = Pointer.Pos;
+            var matrix = GUI.matrix;
+            var visible = InvenWindow.Visible;
+            var sample = inst?.Copy() ?? new InventoryEntry { itemId = id, isEquip = ItemCatalog.IsEquip(id), quantity = 1 };
+            sample.itemRowId = 987654321;
+            sample.equipmentData = sample.equipmentData ?? new Dictionary<string,object>();
+            bool growth = key == "full-growth" || key == "edge-bottom-right" || key == "two-row-growth";
+            if (key.StartsWith("potential-") || growth)
+            {
+                int grade = key.StartsWith("potential-grade-") ? int.Parse(key.Substring(key.Length - 1)) : 4;
+                sample.equipmentData["enhancementVersion"] = 282;
+                sample.equipmentData["potentialGrade"] = grade;
+                sample.equipmentData["bonusGrade"] = grade;
+                for (int line = 1; line <= 3; line++)
+                {
+                    sample.equipmentData["potentialOption" + line] = key == "potential-hidden" ? -30041 : 30041;
+                    sample.equipmentData["bonusOption" + line] = key == "potential-hidden" ? -22041 : 22041;
+                }
+            }
+            if (growth)
+            {
+                sample.starLevel = 15; sample.position = -11;
+                sample.str = sample.dex = sample.int_ = sample.luk = 999;
+                sample.hp = sample.mp = 9999; sample.watk = sample.matk = 999;
+                sample.wdef = sample.mdef = sample.acc = sample.avoid = 999;
+                sample.hands = sample.speed = sample.jump = 99;
+                sample.exGradeOption = NativeFlameService.Pack(new List<FlameLine> {
+                    new FlameLine { statVal = 0, exGrade = 0, tier = 7 },
+                    new FlameLine { statVal = 10, exGrade = 17, tier = 7 },
+                    new FlameLine { statVal = 18, exGrade = 21, tier = 7 } });
+                sample.flameChoice = "pending";
+            }
+            if (scene.forceStars >= 0) sample.starLevel = scene.forceStars;
+            if (key.StartsWith("two-row-"))
+            {
+                int cap = StarForceRules.Shared.Cap(id, EquipCatalog.Info(id).Int("reqLevel"), false);
+                if (cap != 30) throw new Exception("两行测试模板不是30星槽：" + cap);
+            }
+            if (key == "soul-legacy") { sample.soulSocketId = 1; sample.soulItemId = 2591001; sample.soulOption = 101; }
+            if (key == "vestige") { sample.equipmentData["enhancementVersion"] = 282; sample.equipmentData["starForceVestige"] = 1; sample.starLevel = 15; }
+            if (key == "symbol") { sample.symbolLevel = 20; sample.symbolInc = 220; sample.str = 2200; }
+            character.inventory = new List<InventoryEntry>(inventory);
+            character.inventory.Insert(0, sample);
+            try
+            {
+                if (key == "sealed-genesis")
+                {
+                    if (ItemCatalog.Name(id) != "封印的創世雙手劍") throw new Exception("用户实机装备名称仍缺失");
+                    character.soulWeapon = new SoulWeaponWz2State { weapon = sample.itemRowId, level = 1, grade = 6 };
+                }
+                if (growth) character.soulWeapon = new SoulWeaponWz2State { weapon = sample.itemRowId, level = 81, grade = 9, option = 1 };
+                if (key == "hover-equipped")
+                {
+                    sample.position = -1; sample.inventoryType = -1;
+                    character.inventory = new List<InventoryEntry> { sample };
+                    bool equipVisible = EquipWindow.Visible;
+                    EquipWindow.Visible = true;
+                    var pos = (Vector2)typeof(EquipWindow).GetField("pos", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
+                    Pointer.Pos = new Vector2((pos.x + 54) * BottomBar.S, (pos.y + 51) * BottomBar.S);
+                    ItemTooltip.Reset();
+                    try { EquipWindow.Draw(); }
+                    finally { EquipWindow.Visible = equipVisible; }
+                    if (!ItemTooltip.HasHover || ItemTooltip.HoverId != id) throw new Exception("真实装备窗悬停未注册装备");
+                    ItemTooltip.Flush();
+                }
+                else if (key == "hover-inventory")
+                {
+                    sample.position = 1; sample.inventoryType = 1;
+                    character.inventory = new List<InventoryEntry> { sample };
+                    InvenWindow.Visible = true;
+                    typeof(InvenWindow).GetField("tab", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, 0);
+                    typeof(InvenWindow).GetField("scroll", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, 0);
+                    var pos = (Vector2)typeof(InvenWindow).GetField("pos", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
+                    Pointer.Pos = new Vector2((pos.x + 24) * BottomBar.S, (pos.y + 66) * BottomBar.S);
+                    ItemTooltip.Reset();
+                    InvenWindow.Draw();
+                    if (!ItemTooltip.HasHover || ItemTooltip.HoverId != id) throw new Exception("真实背包悬停未注册装备");
+                    ItemTooltip.Flush();
+                }
+                else
+                {
+                    Pointer.Pos = (key == "edge-bottom-right" || key == "two-row-growth") ? new Vector2(UiKit.W - 1, UiKit.H - 1) : anchor;
+                    ItemTooltip.Reset();
+                    ItemTooltip.SetHover(id, sample.position < 0, sample);
+                    ItemTooltip.Flush();
+                }
+                var drawn = ItemTooltip.LastEquipRect;
+                if (drawn.width <= 1 || drawn.height <= 1 || drawn.xMin < -1 || drawn.yMin < -1 || drawn.xMax > UiKit.W + 1 || drawn.yMax > UiKit.H + 1)
+                    throw new Exception("详情框越界: " + drawn);
+                if (ItemTooltip.LastSetRect.HasValue)
+                {
+                    var innerSet = ItemTooltip.LastSetRect.Value;
+                    if (innerSet.Overlaps(drawn) || innerSet.xMin < -1 || innerSet.yMin < -1 || innerSet.xMax > UiKit.W + 1 || innerSet.yMax > UiKit.H + 1)
+                        throw new Exception("套装分栏越界或重叠: " + innerSet + " / " + drawn);
+                }
+                if (GUI.matrix != matrix) throw new Exception("详情绘制未恢复GUI.matrix");
+            }
+            finally
+            {
+                character.inventory = inventory; character.soulWeapon = soul;
+                Pointer.Pos = pointer; InvenWindow.Visible = visible;
+            }
             float w = Mathf.Max(1f, UiKit.W), h = Mathf.Max(1f, UiKit.H);
             var r = ItemTooltip.LastEquipRect;
             normEquip = new Rect(r.x / w, r.y / h, r.width / w, r.height / h);

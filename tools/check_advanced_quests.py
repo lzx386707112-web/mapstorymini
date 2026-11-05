@@ -196,6 +196,18 @@ def main() -> int:
     assert '构建矩阵入口' in daily, '矩阵入口不在「日常功能」分区'
     print('Q menu: 日常功能 41 五转技能 / 42 六转技能（200+1465 / 260+38625，GM 直显）PASS')
 
+    # 8. 自由市场 五转女神（9900008）：2026-11-05 起只做「五六转流程说明」。
+    #    它讲的是玩家进游戏后唯一能查到的流程文案，跑偏就等于把玩家带错路：
+    #    链头 1460/38601、终点 1465/38625 与入口门禁 3501 必须都在文案里；
+    #    同时守住「旧功能已删」——冒险家五转解锁/骑士团四转/英雄币合成的专用 ID 不许回潮。
+    guide = packs.get('npc/9900008') or ''
+    assert guide, 'npc/9900008 不在脚本包里'
+    for token in ('1460', '1465', '38601', '38625', '3501', '旁觀者'):
+        assert token in guide, f'9900008.js 的流程说明缺 {token}'
+    for gone in ('4310060', '2029006', 'explorer_fifth_job_completed', 'changeJobById', 'HERO_COIN'):
+        assert gone not in guide, f'9900008.js 仍残留旧功能代码：{gone}'
+    print('Q guide: 9900008 五转女神只讲流程（1460->1465 / 38601->38625，含 3501 门禁）PASS')
+
     print('OK — 五/六转任务链的 NPC、地图、分类、门禁、灯泡与主菜单入口全部对齐 282')
     return 0
 

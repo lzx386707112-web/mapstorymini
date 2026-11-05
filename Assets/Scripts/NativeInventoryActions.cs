@@ -121,9 +121,9 @@ public static class NativeInventoryActions
                     int equipId = carriedItem, equipFrom = carriedPosition;
                     carriedItem = 0;
                     string equipError = EquipLoadout.Equip(equipId, Profile.Attributes, equipFrom, equipCell);
-                    if (equipError != null) BottomBar.Toast(equipError);
+                    if (equipError != null) NativeUtilPrompt.Notice(equipError);
                 }
-                else BottomBar.Toast("这件装备不能放在" + EquipSlot.NameOf(equipCell) + "这一格");
+                else NativeUtilPrompt.Notice("这件装备不能放在" + EquipSlot.NameOf(equipCell) + "这一格");
                 Pointer.ConsumeClick(); return;
             }
             // 按住拖动到另一格再松手：同样走 ITEM_MOVE（项目补的拖拽口径，必须要求真的拖动过，
@@ -169,12 +169,12 @@ public static class NativeInventoryActions
             if(FitsEquipCell(equipCellPress,EquipSlot.SlotOf(id)))
             {
                 string equipError = EquipLoadout.Equip(id, Profile.Attributes, carriedPosition, equipCellPress);
-                if(equipError!=null) BottomBar.Toast(equipError);
+                if(equipError!=null) NativeUtilPrompt.Notice(equipError);
                 placed = true;
             }
             else
             {
-                BottomBar.Toast("这件装备不能放在" + EquipSlot.NameOf(equipCellPress) + "这一格");
+                NativeUtilPrompt.Notice("这件装备不能放在" + EquipSlot.NameOf(equipCellPress) + "这一格");
                 carriedItem = id;   // 格子不收，保留携带，别把道具吞掉
                 return;
             }
@@ -381,7 +381,12 @@ public static class NativeInventoryActions
                 " level=" + Profile.level + " result=" + (error ?? "ok") +
                 " robot=" + Profile.EquipOfSlot(NativeAndroidService.RobotSlot) +
                 " heart=" + Profile.EquipOfSlot(NativeAndroidService.HeartSlot));
-        if (!string.IsNullOrEmpty(error)) BottomBar.Toast(error);
+        if (!string.IsNullOrEmpty(error))
+        {
+            // 双击是玩家明确的動作：穿不上 / 用不了必须弹提示框说明原因，
+            // Toast 一闪而过等于没提示（源端这类拒绝也是弹 CUtilDlg）。
+            NativeUtilPrompt.Notice(error);
+        }
     }
 
     // StatEffect: item time is milliseconds; Alchemist scales duration by y.

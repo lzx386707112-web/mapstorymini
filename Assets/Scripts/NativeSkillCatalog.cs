@@ -9,10 +9,15 @@ public sealed class NativeSkillDefinition
     public readonly Vector2 Min, Max;
     public readonly string Kind, Element;
     public readonly bool Magic, HasBounds;
-    // 282 用 info/skillType=3 标记「无固定攻击框」的技能：天怒VI(2341010)、
-    // 暴风雪VI(2241004)、火流星VI(2140013)、终极攻击VI、战舰鲸鱼号VI…
-    // 这些技能源端本来就没有 lt/rb，判定覆盖整个屏幕，不是身前 200px。
+    // 282 的「没有固定攻击框」有三档标记：
+    //   info/skillType=3  —— 天怒VI(2341010)、暴风雪VI(2241004)、火流星VI(2140013)、终极攻击VI…
+    //   info/areaAttack=1 —— 范围攻击（日月力量、暗灵冲击、火炎神之怒号、巨鲨狂浪…）
+    //   五六转技能        —— V/HEXA 全库没有一条写 lt/rb，定义层只给标记不给框
+    // 三者都按相机可见范围判定。退回「身前 200px」的后果不是保守而是错：15 个目标的大招
+    // 只能打到贴脸的一只怪。判据与清单见 docs/tms282-skill/20-v-hexa-panel.md §7.15。
     public readonly bool FullScreen;
+    // 源端「没有固定攻击框但确实是大范围攻击」：skillType=3 / info/areaAttack / 五六转。
+    public readonly bool AreaAttack;
 
     public NativeSkillDefinition(Dictionary<string, object> skill, Dictionary<string, object> level)
     {
@@ -34,7 +39,14 @@ public sealed class NativeSkillDefinition
         HasBounds = level.ContainsKey("lt") && level.ContainsKey("rb");
         Min = Point(level, "lt", new Vector2(-Art.Num(level, "range", 200), -100));
         Max = Point(level, "rb", new Vector2(0, 100));
-        FullScreen = !HasBounds && (int)Art.Num(skill, "skillType") == 3;
+        bool vMatrix = skill["vMatrix"] is bool vm && vm;
+        // 只对攻击型生效：召唤物有自己的一套射程（NativeSummon.AttackRange），
+        // 让它吃「可见范围」会把毒领域/炮击艇的召唤物变成全屏炮台。
+        // range 优先级在它之上：四转技能用 range 给圆形半径，不能被「可见范围」顶掉。
+        // 四转技能不套这条（它们要么有 lt/rb、要么有 range，剩下的是 200px 口径），
+        // 只有五六转 —— 282 的 V/HEXA 全库没有一条写 lt/rb —— 才按可见范围判。
+        AreaAttack = Kind == "Attack" && ((int)Art.Num(skill, "skillType") == 3 || vMatrix);
+        FullScreen = !HasBounds && !level.ContainsKey("range") && AreaAttack;
     }
 
     static Vector2 Point(Dictionary<string, object> d, string key, Vector2 fallback)

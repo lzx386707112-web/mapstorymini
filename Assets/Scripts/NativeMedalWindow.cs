@@ -7,10 +7,12 @@ public static class NativeMedalWindow {
     static int tab;
     public static void Toggle() { Visible = !Visible; }
     public static void Wear(int item, bool unequip) {
-        if (item / 10000 != 114 || Profile.ItemCount(item) <= 0 && Profile.EquipOfSlot(EquipSlot.Medal) != item) { BottomBar.Toast("没有持有这枚勋章"); return; }
-        string why = EquipCatalog.WhyNot(item, Profile.Attributes, Profile.JobId); if (!unequip && why != null) { BottomBar.Toast(why); return; }
+        // 勋章也属于「面板上的操作」：穿不上要弹提示框说原因，不能只闪一行字
+        if (item / 10000 != 114 || Profile.ItemCount(item) <= 0 && Profile.EquipOfSlot(EquipSlot.Medal) != item) { NativeUtilPrompt.Notice("没有持有这枚勋章"); return; }
+        // 门槛按面板最终属性判（与 EquipLoadout.Equip 同口径），否则靠装备加成够了也会被拦。
+        string why = EquipCatalog.WhyNot(item, EquipLoadout.PanelAttributes(), Profile.JobId); if (!unequip && why != null) { NativeUtilPrompt.Notice(why); return; }
         var result = GameSession.Net.ChangeInventory(new InventoryChangeRequest { characterId = GameSession.CharacterId, itemId = item, equip = true, equipSlot = -49, quantity = unequip ? 0 : 1 });
-        if (!result.ok) { BottomBar.Toast(result.error); return; }
+        if (!result.ok) { NativeUtilPrompt.Notice(result.error); return; }
         GameSession.Character.inventory = result.inventory;
         GameSession.ApplyInventoryToProfile();
         Profile.Save();

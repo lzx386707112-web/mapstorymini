@@ -705,7 +705,34 @@ static class GrowthChecks
             var reopenedModern=NativeSoulWeaponWz2Service.Read(DbStore.Open(path),modernCid);
             check(reopenedModern.weapon==modernWeapon&&reopenedModern.weekly["13"]==10,"重开库保留绑定与本周奖励");
             check(Modern(SoulOperation.DeactivateModern).ok&&!NativeSoulWeaponWz2Service.IsBound(db,modernCid,modernWeapon),"停用解除操作限制");
-            check(NativeSoulWeaponWz2Service.Read(db,modernCid).option==modern.modern.option,"停用保留角色成长与烙印");
+            var deactivated=NativeSoulWeaponWz2Service.Read(db,modernCid);
+            check(deactivated.weapon==0 && deactivated.Of(modernWeapon)!=null && deactivated.Of(modernWeapon).option==modern.modern.option,
+                "停用解绑但保留该武器自己的成长与烙印");
+            // 换绑另一件武器：等级/阶级/经验/烙印跟着武器实例走，碎片与Boss记录仍角色级。
+            SoulResponse ModernOn(long itemId,SoulOperation op)
+                =>NativeSoulWeaponWz2Service.Handle(db,new SoulRequest {characterId=modernCid,inventoryItemId=itemId,operation=op,commit=true,
+                    revision=NativeSoulWeaponWz2Service.Read(db,modernCid).revision},new Random(1),weekStart);
+            var beforeSwitch=NativeSoulWeaponWz2Service.Read(db,modernCid);
+            int keptLevel=beforeSwitch.Of(modernWeapon).level, keptOption=beforeSwitch.Of(modernWeapon).option;
+            int keptFragments=beforeSwitch.fragments;
+            long secondWeapon=InventoryDao.InsertItem(db,modernCid,1302343,InventoryDao.Equipped,1,1);
+            InventoryDao.InsertEquipment(db,secondWeapon);
+            var switched=ModernOn(secondWeapon,SoulOperation.ActivateModern);
+            check(switched.ok&&switched.modern.Of(secondWeapon).level==1&&switched.modern.Of(secondWeapon).grade==1&&
+                switched.modern.Of(secondWeapon).option==0,"换绑的新武器有自己从1级1阶起的进度");
+            check(switched.modern.Of(secondWeapon).option==0&&switched.modern.level==1&&switched.modern.option==0,
+                "面板镜像跟随当前启用武器");
+            check(switched.modern.Of(modernWeapon).level==keptLevel&&switched.modern.Of(modernWeapon).option==keptOption,
+                "换绑不覆盖上一件武器的进度");
+            check(switched.modern.fragments==keptFragments,"换绑不影响角色碎片");
+            var perWeapon=NativeSoulWeaponWz2Service.Read(DbStore.Open(path),modernCid);
+            check(perWeapon.Has(modernWeapon)&&perWeapon.Has(secondWeapon)&&perWeapon.Of(secondWeapon).level==1&&
+                perWeapon.Of(modernWeapon).option==keptOption,"重开库保留每件武器各自的进度");
+            check(ModernOn(secondWeapon,SoulOperation.DeactivateModern).ok,"停用新武器");
+            var restored=ModernOn(modernWeapon,SoulOperation.ActivateModern);
+            check(restored.ok&&restored.modern.Of(modernWeapon).level==keptLevel&&restored.modern.Of(modernWeapon).option==keptOption,
+                "换回原武器恢复它自己的成长");
+            check(Modern(SoulOperation.DeactivateModern).ok,"收尾停用");
             check(SoulWeaponWz2Catalog.PassiveAttack(1)==21&&SoulWeaponWz2Catalog.PassiveAttack(60)==80&&SoulWeaponWz2Catalog.PassiveAttack(61)==82&&SoulWeaponWz2Catalog.PassiveAttack(100)==160,"被动攻击采用EXE分段公式");
             // tooltip 与结算层共用 DescribeFlame：拆包 → 补数值 → 标签
             var described = NativeGrowthStats.DescribeFlame(flameWeapon);

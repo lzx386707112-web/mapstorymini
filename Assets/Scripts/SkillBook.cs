@@ -26,6 +26,10 @@ public sealed class SkillData
     public bool autoLearn;   // 不是手动加点的技能（如精灵的祝福，按账号等级自动习得）
     public bool hexa;        // 六转技能：等级由 HEXA 矩阵提升，不吃 SP（282 口径）
     public List<int[]> req = new List<int[]>();      // [前置技能id, 需要等级]
+    // 五转共通技能里「伤害按职业分流」的那几条（艾尔达斯的降临/蜘蛛之镜/烈阳印记）：
+    // 282 把 damage/attackCount 放在 common/attackInfo/<四转职业ID>/ 下，common 顶层没有 damage。
+    // 形状 { 职业: { 等级: { damage, attackCount, … } } }，取行见 SkillBook.JobAttackRow。
+    public Dictionary<string, object> attackInfo;
     public Dictionary<string, object> levels = new Dictionary<string, object>();
 
     public Dictionary<string, object> Level(int lv)
@@ -55,6 +59,11 @@ public static class SkillBook
     static readonly List<Dictionary<string, object>> lines = new List<Dictionary<string, object>>();
     static readonly Dictionary<int, Dictionary<string, object>> lineByJob = new Dictionary<int, Dictionary<string, object>>();
     static Dictionary<string, object> jobNames = new Dictionary<string, object>();
+    // 核心技能的中文名/说明：项目自己的 String/Skill.img 只有四转那 960 条，五转 V 核心
+    // 连名字都没有（400011006 惡魔覺醒 之类），界面上只能显示 id。282 的 String/Skill.img
+    // 有全量条目，导出成 VMatrixSkills.json 的 names 段，Get() 直读 IMG 时按 id 兜底。
+    static readonly Dictionary<int, string> matrixNames = new Dictionary<int, string>();
+    static readonly Dictionary<int, string> matrixDescs = new Dictionary<int, string>();
 
     public static void Ensure()
     {
@@ -95,6 +104,11 @@ public static class SkillBook
                         s.req.Add(new[] { int.Parse(reqPair[0].ToString()), int.Parse(reqPair[1].ToString()) });
             // Extended physical skills also carry mad. The compat dispatch, not
             // the presence of that field, selects their physical/magic handler.
+            // V/HEXA 反过来：526 条没有一条带 mad，法师的 V 技能靠 282 的
+            // info/magicDamage=1 标记（导出层写成 magic:true），只看 mad 会
+            // 让火毒/冰雷/主教拿物理攻击力结算。
+            if (d.TryGetValue("magic", out var magicFlag) && magicFlag is bool magicTrue && magicTrue)
+                s.magic = true;
             foreach (var row in s.levels.Values)
                 if (row is Dictionary<string, object> rd && rd.ContainsKey("mad")) { s.magic = true; break; }
             s.magic = MagicDamageOf(s.id, s.magic);
@@ -129,6 +143,84 @@ public static class SkillBook
         }
 
         if (root.TryGetValue("jobNames", out var jn2)) jobNames = jn2 as Dictionary<string, object>;
+
+        LoadMatrixSkills();
+    }
+
+    /// <summary>
+    /// 五转（V 核心）/六转核心连接的技能：JobTree 只导出四转与 xxxVI 两条线，
+    /// 400001xxx / 40002xxxx 这些核心技能一条都没有，于是「核心能强化、却绑不上快捷栏也放不出来」。
+    /// 这里读 tools/ms282/export_vhexa_skills.py 导出的 UI/VMatrixSkills.json
+    /// （282 定义层 common 公式按 1..maxLevel 展开，与 JobTree 同一口径），只补缺不覆盖。
+    /// 等级仍由 NativeMatrixSkills 投影到 skills 表 → Profile，SkillProgress 不用另开分支。
+    /// </summary>
+    static void LoadMatrixSkills()
+    {
+        var asset = Resources.Load<TextAsset>("UI/VMatrixSkills");
+        if (asset == null) { Debug.LogWarning("[SkillBook] 缺少 UI/VMatrixSkills.json，五转核心技能不可施放"); return; }
+        var root = MiniJson.Parse(asset.text) as Dictionary<string, object>;
+        if (root == null || !root.TryGetValue("skills", out var raw) || !(raw is Dictionary<string, object> table))
+        { Debug.LogWarning("[SkillBook] VMatrixSkills.json 解析失败"); return; }
+
+        foreach (var pair in table)
+        {
+            if (!(pair.Value is Dictionary<string, object> d)) continue;
+            int id = (int)Art.Num(d, "id");
+            // JobTree 已收录的同 id（1141000 这类 xxxVI）以 JobTree 为准，不让两套导出分叉。
+            if (id == 0) continue;
+            if (byId.TryGetValue(id, out var existing))
+            {
+                // 但 282 的 info/magicDamage 标记只写在这份 VMatrixSkills 里（JobTree 那条
+                // 来自另一条导出链，没有 magic 字段）。不补的话，2141000 火焰之袭VI、2341000
+                // 天使之箭VI 这些法师 HEXA 技能又会被判成物理，拿物理攻击力结算。
+                if (d.TryGetValue("magic", out var magicOn) && magicOn is bool magicOnTrue && magicOnTrue)
+                    existing.magic = true;
+                continue;
+            }
+            var s = new SkillData
+            {
+                id = id,
+                maxLevel = Mathf.Max(1, (int)Art.Num(d, "maxLevel", 1)),
+                masterLevel = (int)Art.Num(d, "masterLevel"),
+                job = (int)Art.Num(d, "job"),
+                name = d.TryGetValue("name", out var n) ? n as string : "",
+                desc = d.TryGetValue("desc", out var de) ? de as string : "",
+                type = d.TryGetValue("type", out var t) ? t as string : "attack",
+                icon = d.TryGetValue("icon", out var ic) ? ic as string : "",
+                hexa = true,   // 不吃 SP：等级只跟核心等级走
+            };
+            s.levels = d.TryGetValue("levels", out var lv) ? lv as Dictionary<string, object> : s.levels;
+            // 按职业分流的伤害表（只有艾尔达斯的降临/蜘蛛之镜/烈阳印记这三条带）
+            if (d.TryGetValue("attackInfo", out var ai) && ai is Dictionary<string, object> aiTable)
+                s.attackInfo = aiTable;
+            s.noName = string.IsNullOrEmpty(s.name);
+            if (s.noName) s.name = id.ToString();
+            if (d.TryGetValue("req", out var rq) && rq is List<object> reqList)
+                foreach (var item in reqList)
+                    if (item is List<object> reqPair && reqPair.Count >= 2)
+                        s.req.Add(new[] { int.Parse(reqPair[0].ToString()), int.Parse(reqPair[1].ToString()) });
+            // 同 LoadMatrixSkills：V/HEXA 的 magic 来自 282 的 info/magicDamage，
+            // 落盘成 magic:true 字段（这批技能没有 mad）。
+            if (d.TryGetValue("magic", out var matrixMagic) && matrixMagic is bool matrixMagicTrue && matrixMagicTrue)
+                s.magic = true;
+            foreach (var row in s.levels.Values)
+                if (row is Dictionary<string, object> rd && rd.ContainsKey("mad")) { s.magic = true; break; }
+            s.magic = MagicDamageOf(s.id, s.magic);
+            byId[s.id] = s;
+        }
+
+        // names 段覆盖「所有核心引用的技能」（含未迁移职业组、含強化核心的包装技能），
+        // 只补名字/说明，不参与数学计算。与本表同源，少一个资源文件少一处不同步。
+        if (!root.TryGetValue("names", out var namesRaw) || !(namesRaw is Dictionary<string, object> nameTable)) return;
+        foreach (var pair in nameTable)
+        {
+            if (!int.TryParse(pair.Key, out int nameId) || !(pair.Value is Dictionary<string, object> row)) continue;
+            if (row.TryGetValue("name", out var value) && value as string is string text && text.Length > 0)
+                matrixNames[nameId] = text;
+            if (row.TryGetValue("desc", out var detail) && detail as string is string body && body.Length > 0)
+                matrixDescs[nameId] = body;
+            // 本表已有的条目名字非空，这里只在 IMG 直读路径里兜底，不改已有记录。
+        }
     }
 
     public static SkillData Get(int id)
@@ -136,15 +228,30 @@ public static class SkillBook
         Ensure();
         if (byId.TryGetValue(id,out var d)) return d;
         if(NativeSoulWeapon.IsSkill(id))return byId[id]=NativeSoulWeapon.Definition(id);
-        // JobTree only includes its exported job list. Hidden/Aran/GM source
-        // skills still need their original level rows for combat/event consumers.
+        // JobTree 只收录已迁移的职业线；其余核心技能、追加强化技能的包装技能都要直读 IMG。
         var node=WzAssets.FileRoot("Skill/"+(id/10000).ToString("D3")+".img")?.Get("skill/"+id.ToString("D7"));
         var levels=node?.Get("level");
-        if (levels==null) return null;
+        var common=node?.Get("common");
+        // 282 起一大批技能（五转 V / HEXA / 強化核心的包装技能 400004xxx）只写 common 公式，
+        // **没有 level 行**。旧实现「levels==null 就 return null」把这类技能判成不存在，
+        // 表现就是「核心能强化，却绑不上快捷栏、也放不出技能」。这里按 common 展开成与
+        // level 同形的行，公式语义与 Common()/EvalCommon 完全一致（d/u/logN/四则）。
+        int commonMax=common?.Int("maxLevel") ?? 0;
+        if (levels==null && commonMax<=0) return null;
         var text=WzAssets.FileRoot("String/Skill.img")?.Get(id.ToString("D7"));
-        d=new SkillData { id=id,job=id/10000,name=text?.Text("name") ?? "",desc=text?.Text("desc") ?? "",
+        string skillName=text?.Text("name") ?? "";
+        string skillDesc=text?.Text("desc") ?? "";
+        // 项目自己的 String/Skill.img 没有五转条目（只有四转那 960 条），名字从 282 的导出来。
+        if (skillName.Length==0) matrixNames.TryGetValue(id, out skillName);
+        if (string.IsNullOrEmpty(skillDesc)) matrixDescs.TryGetValue(id, out skillDesc);
+        d=new SkillData { id=id,job=id/10000,name=skillName ?? "",desc=skillDesc ?? "",
             masterLevel=node.Int("masterLevel"),icon=node.Get("icon")!=null ? "wz://Skill/"+(id/10000).ToString("D3")+".img/skill/"+id.ToString("D7")+"/icon" : "",type="passive" };
-        foreach (var level in levels.Children)
+        if (levels==null)
+        {
+            for (int level=1; level<=commonMax; level++) d.levels[level.ToString()]=ExpandCommon(common,level);
+            d.maxLevel=commonMax;
+        }
+        else foreach (var level in levels.Children)
         {
             if (!int.TryParse(level.Name,out int number)) continue;
             var row=new Dictionary<string,object>();
@@ -159,14 +266,42 @@ public static class SkillBook
             if (row.ContainsKey("mad")) d.magic=true;
         }
         if (d.maxLevel==0) return null;
+        // 282 用 info/magicDamage=1 标「走魔法管线」：V/HEXA 的 common 一条 mad 都没有。
+        if (node.Int("info/magicDamage")!=0) d.magic=true;
         d.magic=MagicDamageOf(id,d.magic);
-        var first=d.Level(1);
+        var first=d.Level(1) ?? new Dictionary<string,object>();
         if (node.Get("summon")!=null) d.type="summon";
         else if (first.ContainsKey("damage") || first.ContainsKey("fixdamage") || first.ContainsKey("mad") || first.ContainsKey("attackCount")) d.type="attack";
         else if (first.ContainsKey("time") || first.ContainsKey("prop")) d.type="buff";
         d.noName=string.IsNullOrEmpty(d.name);if(d.noName)d.name=id.ToString();
         byId[id]=d;
         return d;
+    }
+
+    // common（282 的公式层）→ 与 level/N 同形的等级行。
+    //   · 常数（mpCon=250、maxLevel=30）原样搬
+    //   · 公式（"30+x"、"50+d(x/2)"、"log20(x)*20"）按等级求值，整数就写 int，
+    //     真的带小数（"1.8"、x/3）才写 float，保持与 WZ 原始 level 行同一取值口径
+    //   · 矢量（lt/rb）保留 {x,y} 列表，和 level 行解析出来的形状一致
+    // 求值失败（不是公式也不是数）的字段直接跳过：宁可没有这个键，也不写个 0 骗下游。
+    static Dictionary<string,object> ExpandCommon(ImgNode common, int level)
+    {
+        var row=new Dictionary<string,object>();
+        foreach (var field in common.Children)
+        {
+            var value=field.TryResolve();
+            if (value==null) continue;
+            if (value.Kind=="Shape2D#Vector2D") { row[field.Name]=new List<object>{value.X,value.Y}; continue; }
+            if (value.Value is int number) { row[field.Name]=number; continue; }
+            if (value.Value is float single) { row[field.Name]=single; continue; }
+            if (value.Value is double real) { row[field.Name]=real; continue; }
+            if (!(value.Value is string formula) || formula.Length==0) continue;
+            float expanded=EvalCommon(formula,level,float.NaN);
+            if (float.IsNaN(expanded)) continue;
+            float rounded=Mathf.Round(expanded);
+            row[field.Name]=Mathf.Abs(expanded-rounded)<0.0001f ? (object)(int)rounded : expanded;
+        }
+        return row;
     }
 
     public static int MaxLevelOf(int id)
@@ -379,17 +514,53 @@ public static class SkillBook
         var row = d?.Level(level);
         if (row == null) return null;
         string kind = SpecialKind(id) ?? (d.IsSummon ? "Summon" : d.IsBuff ? "Buff" : d.IsPassive ? "Passive" : "Attack");
+        var wz = WzAssets.Node("Skill/" + (id / 10000).ToString("D3") + ".img/skill/" + id.ToString("D7"));
         var skill = new Dictionary<string, object>
         {
             { "id", d.id }, { "kind", kind }, { "magic", d.magic },
             { "element", WzAssets.FileRoot("Skill/" + (id / 10000).ToString("D3") + ".img")
                 .Get("skill/" + id.ToString("D7"))?.Text("elemAttr") ?? "" }, { "summonInterval", 1f },
             // skillType=3 是源端「无固定攻击框」标记，全屏技能靠它判定范围。
-            { "skillType", WzAssets.Node("Skill/" + (id / 10000).ToString("D3") + ".img/skill/" + id.ToString("D7"))?.Int("skillType") ?? 0 },
+            { "skillType", wz?.Int("skillType") ?? 0 },
+            // info/areaAttack 是源端「范围攻击」标记（info2 里也写一份）：五六转技能
+            // 一律没有 lt/rb，靠它说明「这是大范围攻击」。诊断/守卫用，判定见 NativeSkillCatalog。
+            { "areaAttack", Mathf.Max(wz?.Int("info/areaAttack") ?? 0, wz?.Int("info2/areaAttack") ?? 0) },
+            // 五六转技能：V 是 id≥400000000，HEXA 由核心等级提升（hexa 标记）。
+            { "vMatrix", d.hexa || id / 1000000 >= 400 },
         };
         var data = new Dictionary<string, object>(row);
         data["level"] = level;
+        // 只有 attackInfo 型技能会真的写进 damage/attackCount；其余技能这里是空转。
+        var jobRow = JobAttackRow(d, level);
+        if (jobRow != null) foreach (var pair in jobRow) data[pair.Key] = pair.Value;
         return new NativeSkillDefinition(skill, data);
+    }
+
+    // 艾尔达斯的降临(400001036) / 蜘蛛之镜(400001039) / 烈阳印记(400001059)：
+    // 282 把 common/attackInfo/<四转职业ID>/{damage,attackCount} 按职业拆开
+    // （h 模板写的是 #damage% / #attackCount 次，客户端取自己那一行），
+    // 所以同一条技能的伤害随职业变化 —— 不能用某一个职业的数摊平。
+    //
+    // 取值顺序：当前职业精确命中 → 同一条支线（113 六转英雄 / 112 四转英雄 都落到 112 那一行）→ 无。
+    // 都取不到就保持原样（DamagePercent=0），不会拿别的职业的伤害冒充。
+    // 注意除数是 10 不是 100：五六转编码是「四转 ID + 1」（113/123/…/1213），
+    // 用 /100 会把 123 圣骑士错算到 112 英雄那一条。
+    static Dictionary<string, object> JobAttackRow(SkillData d, int level)
+    {
+        if (d?.attackInfo == null) return null;
+        string key = level.ToString();
+        if (d.attackInfo.TryGetValue(Profile.JobId.ToString(), out var exact) &&
+            exact is Dictionary<string, object> exactLevels &&
+            exactLevels.TryGetValue(key, out var exactRow))
+            return exactRow as Dictionary<string, object>;
+        int family = Profile.JobId / 10, best = int.MaxValue;
+        foreach (var pair in d.attackInfo)
+            if (int.TryParse(pair.Key, out int other) && other / 10 == family && other < best) best = other;
+        if (best == int.MaxValue) return null;
+        return d.attackInfo.TryGetValue(best.ToString(), out var fallback) &&
+               fallback is Dictionary<string, object> fallbackLevels &&
+               fallbackLevels.TryGetValue(key, out var fallbackRow)
+            ? fallbackRow as Dictionary<string, object> : null;
     }
 }
 
@@ -453,6 +624,9 @@ public static class SkillProgress
     public static int LevelOf(int id)
     {
         if(NativeSoulWeapon.IsSkill(id))return NativeSoulWeapon.LevelOf(id);
+        // 五转核心连接的技能：等级跟核心走（服务端 NativeMatrixSkills 投影进 skills 表，
+        // 面板快照给了更及时的一份，见 VMatrixLevels）。
+        if (VMatrixLevels.TryGet(id, out int matrixLevel)) return matrixLevel;
         var d = SkillBook.Get(id);
         int lv = Profile.Data.SkillLevelOf(id);
         return d == null ? 0 : Mathf.Clamp(lv, 0, SkillBook.MasterCapOf(id));
@@ -529,18 +703,33 @@ public static class SkillProgress
 
     // 前置技能没满点时不能加（原版 req 节点）；自动习得的技能（精灵的祝福）永远不能手动加点；
     // 四转技能还要受 masterLevel 限制（技能册可突破）。新手只能点 1000/1001/1002 三个。
-    public static bool CanRaise(SkillData d)
+    // 返回 null = 可加点；否则是给玩家看的原因（面板用提示框显示，不能只丢日志）。
+    public static string WhyNot(SkillData d)
     {
-        if (d == null || d.autoLearn) return false;
-        if (d.hexa) return false;              // 六转技能只能由 HEXA 矩阵提升
-        if (LevelOf(d.id) >= SkillBook.MasterCapOf(d.id)) return false;
+        if (d == null) return "没有这个技能的数据";
+        if (d.autoLearn) return "这个技能会随等级自动习得，不能手动加点";
+        if (d.hexa) return d.id >= 400000000
+            ? "这个技能只能在 V 矩阵里提升（核心等级）"
+            : "六转技能只能在 HEXA 矩阵中提升";
+        if (LevelOf(d.id) >= SkillBook.MasterCapOf(d.id))
+            return "「" + NameOf(d) + "」已达最高等级 " + SkillBook.MasterCapOf(d.id) + " 级";
         bool beginner = IsBeginnerSkill(d.id);
-        if ((beginner ? BeginnerSp - BeginnerSpent : AvailableSp) <= 0) return false;
-        if (Profile.JobId == 0 && d.id != 1000 && d.id != 1001 && d.id != 1002) return false;
+        if ((beginner ? BeginnerSp - BeginnerSpent : AvailableSp) <= 0)
+            return beginner ? "可使用的新手技能点不足" : "SP 不足，无法继续提升技能";
+        if (Profile.JobId == 0 && d.id != 1000 && d.id != 1001 && d.id != 1002)
+            return "新手只能提升基础技能";
         foreach (var r in d.req)
-            if (LevelOf(r[0]) < r[1]) return false;
-        return true;
+        {
+            if (LevelOf(r[0]) >= r[1]) continue;
+            var pre = SkillBook.Get(r[0]);
+            return "需要先把「" + (pre != null ? NameOf(pre) : r[0].ToString()) + "」提升到 " + r[1] + " 级";
+        }
+        return null;
     }
+
+    static string NameOf(SkillData d) => string.IsNullOrEmpty(d.name) ? d.id.ToString() : d.name;
+
+    public static bool CanRaise(SkillData d) => WhyNot(d) == null;
 
     public static bool Raise(SkillData d)
     {
@@ -708,8 +897,28 @@ public static class QuickBarKeys
     public static bool BindSkill(int displayIndex, int skillId)
     {
         var key = Of(displayIndex);
-        if (key == KeyCode.None) { BottomBar.Toast("请先在键盘设置中为此快捷格选择按键"); return false; }
+        // 绑键被拒一律走弹窗：矩阵面板打开时底部 Toast 被面板压住，玩家只看到「拖了没反应」。
+        if (key == KeyCode.None) { NativeUtilPrompt.Notice("这一格还没有选择按键，请先在键盘设置里给它指定一个键。"); return false; }
         return BindSkillToKey(key, skillId);
+    }
+
+    /// <summary>
+    /// 第一个「配了键、还没有技能」的显示格；找不到返回 -1。
+    /// 快捷栏 26 格里默认只有前 8 格有键，拖到后面那些空格子上没法直接绑（没有键就没有
+    /// 触发入口），落点判定用这个找替代格，别让玩家以为拖上去没反应。
+    /// </summary>
+    public static int FreeKeyedSlot()
+    {
+        for (int i = 0; i < QuickSlots.Count; i++)
+        {
+            var key = Of(i);
+            if (key == KeyCode.None) continue;
+            // 显示键必须和这一格实际动作键一致，否则绑上去图标会出现在别的格。
+            if (KeyMap.Of(QuickSlots.Action(i)) != key) continue;
+            if (SkillSlot(key) >= 0) continue;      // 这个键已经绑了技能
+            return i;
+        }
+        return -1;
     }
 
     public static bool BindSkillToKey(KeyCode key, int skillId)
@@ -718,9 +927,45 @@ public static class QuickBarKeys
         if (slot < 0)
             for (int i = 0; i < QuickSlots.Count; i++)
                 if (QuickSlots.Id(i) == 0 || KeyMap.Of(QuickSlots.Action(i)) == KeyCode.None) { slot = i; break; }
-        if (slot < 0) { BottomBar.Toast("技能绑定已满"); return false; }
+        if (slot < 0) { NativeUtilPrompt.Notice("快捷栏的技能格已经满了，先清掉一格再绑定。"); return false; }
         KeyMap.Bind(QuickSlots.Action(slot), key);
         QuickSlots.Bind(slot, skillId);
         return true;
     }
+}
+
+/// <summary>
+/// V 核心连接技能的等级镜像（skillId → 核心等级）。
+///
+/// 服务端 NativeMatrixSkills 已经把核心等级投影进 skills 表（升级时与登录时各同步一次），
+/// 但客户端在「刚升完级 → 立刻绑键施放」这条路径上还没重拉角色数据，LevelOf 会读到 0，
+/// 表现就是「核心能强化却放不出来」。这里用面板快照顶一段，等下次登录自然回落到存档。
+///
+/// 只装 V 矩阵（type 0/1/2）响应里的 core.skills；六转技能不在这里，仍走 HEXA 投影。
+/// </summary>
+public static class VMatrixLevels
+{
+    static readonly Dictionary<int, int> levels = new Dictionary<int, int>();
+    static int owner = -1;
+
+    public static void Clear() { levels.Clear(); owner = -1; }
+
+    /// <summary>整份重建：快照里没出现的技能自然回落到 skills 表。</summary>
+    public static void Capture(VMatrixResponse response, int characterId)
+    {
+        if (owner != characterId) { levels.Clear(); owner = characterId; }
+        if (response?.cores == null) return;
+        levels.Clear();
+        foreach (var core in response.cores)
+        {
+            if (core == null || core.skills == null) continue;
+            foreach (int skill in core.skills)
+            {
+                if (skill == 0) continue;
+                if (!levels.TryGetValue(skill, out int old) || core.level > old) levels[skill] = core.level;
+            }
+        }
+    }
+
+    public static bool TryGet(int skillId, out int level) => levels.TryGetValue(skillId, out level);
 }

@@ -58,6 +58,25 @@ def symbol_strings(path):
     return out
 
 
+def equipment_strings(path):
+    """Read every equipment branch from the actual 282 client, not server XML."""
+    img = WzImage.from_bytes(path.read_bytes(), key=WzKey.for_region("BMS"))
+    tree = img.parse()
+    if img.truncated or img.parse_warnings:
+        raise ValueError(f"Incomplete 282 strings: {path}: {img.parse_warnings}")
+    out = {}
+    def visit(node):
+        if node.name.isdigit() and node.get("name") is not None:
+            out[str(int(node.name))] = {field: node.get(field).value for field in ("name", "desc")
+                                      if node.get(field) is not None}
+            return
+        for child in node.children():
+            if hasattr(child, "children"):
+                visit(child)
+    visit(tree.get("Eqp"))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data", type=Path, default=ROOT.parent / "MapleDashResources/Data")
@@ -218,6 +237,16 @@ def main():
             if fields.get("desc"):
                 descriptions.setdefault(item_id, fields["desc"])
         print(f"282 symbol string fallback: {filled} names", flush=True)
+
+    # All imported equipment need names, including sealed Genesis weapons.
+    if args.android_string.is_file():
+        for item_id, fields in equipment_strings(args.android_string).items():
+            if item_id not in items:
+                continue
+            if fields.get("name"):
+                names.setdefault(item_id, fields["name"])
+            if fields.get("desc"):
+                descriptions.setdefault(item_id, fields["desc"])
 
     # 心脏卷轴的属性只存在于宿主 Item img（_Canvas 树只有像素），这里兜一道，
     # 免得 _Canvas 又一次把 info 覆盖成空表。

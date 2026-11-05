@@ -151,6 +151,9 @@ public partial class SkillSystem : MonoBehaviour
     bool BeginCast(SkillDef s,bool continuousShot=false)
     {
         LastFailure = null;
+        // 超级闪‧连杀：海龙怒击状态期间把闪‧连杀VI的按键替换成 5141002 本体，
+        // 命中后再追加 5141003 冲击波。必须早于下面所有按 id 的校验。
+        s = ResolveMechanicReplacement(s);
         var game = GameLoop.I;
         if (p == null || p.hp <= 0 || game == null || game.state != GameLoop.GameState.Playing || game.gameOver)
             return Reject("当前无法释放技能");
@@ -225,6 +228,10 @@ public partial class SkillSystem : MonoBehaviour
             StartHeld(s,boundHeldAction.Value,true);
             return true;
         }
+        // 资源型技能（海龙石VI 攒满 5 个才能发动）与黑暗面的隐身术追加冷却。
+        // 放在所有物品/弹药/MP 消耗之前，失败时不消耗任何东西。
+        string mechanicGate = MechanicCastGate(s.native.Id, s.native.Level);
+        if (mechanicGate != null) return Reject(mechanicGate);
         // StatEffect.applyTo: primary caster consumes itemCon/itemConNo only.
         // All local rejection gates precede the authoritative inventory mutation.
         if (itemCount>0 && !Profile.RemoveItem(itemId,itemCount)) return Reject("技能所需物品扣除失败");
@@ -249,6 +256,12 @@ public partial class SkillSystem : MonoBehaviour
         }
         ApplyInstantSelf(s.native);
         NativeSkillVideo.PlaySkill(s.native.Id, p);
+        // 周期自动攻击（祝福之鎚 30 秒 / 每 1.8 秒一次）：首次结算仍走下面的正常路径，
+        // 这里只挂后续周期。见 NativeSkillFollowups.RepeatAttackSkills。
+        StartRepeatingAttack(s);
+        // Buff 期间概率触发的 proc（風暴使者VI / 影之槍）：这两条的 common 没有属性字段，
+        // NativeBuffs.ApplySkill 会拒绝注册，所以持续时间由 NativeProcSkills 自己记。
+        StartProcBuff(s);
 
         if (s.native.Kind=="Teleport")
         {
@@ -288,6 +301,20 @@ public partial class SkillSystem : MonoBehaviour
 
         bool replay = BeginReplay(s, p.FeetPos, p.facing);
         NativeBuffs.For(p).ApplySkill(s.native.Id, s.native.Level, NativeBuffs.Now);
+        // 282 子状态：母技能施放后挂上 invisible 状态（银河星爆的最终伤害增益、
+        // 海龙霸拳的水龙斗气、暗影雾杀的区域…）。它们不是玩家能按的 buff，没有 stat。
+        NativeSkillStates.For(p).Activate(s.native.Id, s.native.Level);
+        // 资源型 / 追加方向 / 符咒 / 隐身回避：施放成功后扣资源、开窗口。
+        OnMechanicCast(s, p.FeetPos, p.facing);
+        // 周期领域（殛冻领域 / 禁咒之符）：子状态挂上后按 subTime 反复结算同族伤害体。
+        // 数值与证据见 tools/ms282/export_field_zones.py。
+        StartFieldZones(s, p.FeetPos, p.facing);
+        // 护盾类（突击之盾VI / 西尔芙之壁）：护盾是会被消耗的池子，不是属性 stat，
+        // ApplySkill 注册不了（那几个技能的 info 是 type=10/11，既无 skillType=2 也无 effect 节点）。
+        // 字段语义见 tools/ms282/export_skill_shields.py。
+        var shields = NativeShields.For(p);
+        if (shields.Activate(s.native.Id, s.native.Level, p.hpMax))
+            BottomBar.Toast("护盾 " + Mathf.RoundToInt(shields.Remaining));
         // 3141009 追加魔幻箭筒：common 只有 time/cooltime，没有任何属性 stat，
         // NativeBuffs.ApplySkill 会因为 stats 为空直接返回 false，所以持续时间自己管。
         if (NativeQuiverBurst.IsSkill(s.native.Id)) NativeQuiverBurst.Activate(s.native.Level);
@@ -380,6 +407,8 @@ public partial class SkillSystem : MonoBehaviour
             (SkillFxPlan.Get(s.art)?.impact ?? 0);
         if (delay > 0) yield return new WaitForSeconds(delay);
         HitAt(s,s.native,origin,facing);
+        // 落雷凝聚（400021030）一次施法放 common/w 道闪电，首道由上面结算，其余在这里补。
+        StartThunderSeries(s,origin,facing);
     }
 
     static bool NativeWarriorMelee(int id) => id == 1001004 || id == 1001005;
@@ -565,6 +594,8 @@ public partial class SkillSystem : MonoBehaviour
             else p.GetComponent<NativeBuffs>()?.OnCloseAttack();
         }
         if(d.Id==s.native.Id && d.Kind!="Summon")TriggerReactiveSkills(s,captured,origin,facing);
+        // 海神护体 15140010：「连接技能命中时生成保护罩」，命中即累积，不需要按键。
+        if (d.Id==s.native.Id && hits>0 && d.Kind!="Summon") NativeShields.OnSkillHit(p, p.hpMax);
         return hits;
     }
     public static int DrainRecovery(int skillId,long cumulativeDamage,long monsterMaxHp,int playerMaxHp,int percent)
@@ -580,13 +611,21 @@ public partial class SkillSystem : MonoBehaviour
         StopHeld(false);
         StopAllCoroutines();
         spearCombo.Reset();
+        ResetProcState();
+        ClearFieldZones();
+        ClearMechanics();
         ClearNativeReplayEffects();
         NativeSkillVideo.Stop(NativeSkillVideo.Channel.PlayerSkill);
         ClearVisuals();
         foreach (var summon in summons.Values)
             if (summon != null) { summon.gameObject.SetActive(false); Destroy(summon.gameObject); }
         summons.Clear(); actionUntil = 0;
-        if (p != null) p.CancelRush();
+        // 护盾 / 子状态都是技能生成物，换图/死亡要一起清掉，不能带进下一张图。
+        if (p != null) {
+            p.GetComponent<NativeShields>()?.Clear();
+            p.GetComponent<NativeSkillStates>()?.Clear();
+            p.CancelRush();
+        }
     }
     void RemoveBuffSummon(int id)
     {

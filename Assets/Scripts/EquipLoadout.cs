@@ -305,6 +305,8 @@ public static class EquipLoadout
         }
         string mountError=NativeMount.WearError(itemId,slot);
         if(mountError!=null) return mountError;
+        // 门槛一律按面板最终属性判（源端 canWearEquipment 用 chr.getTotalStr()）。
+        var check = CheckAttributes(attrs);
         if (slot == -12 || slot == -112)
         {
             bool cash = slot == -112;
@@ -317,12 +319,12 @@ public static class EquipLoadout
         if (slot == EquipSlot.Weapon)
         {
             if (!WeaponDefs.TryGet(itemId.ToString(), out var weapon)) return "这件武器的穿戴尚未接入";
-            string error = EquipCatalog.WhyNot(itemId, attrs, Profile.JobId);
+            string error = EquipCatalog.WhyNot(itemId, check, Profile.JobId);
             if (error != null) return error;
             return MoveEquipment(itemId, slot, false, inventoryPosition);
         }
         if (slot == EquipSlot.Medal) { NativeMedalWindow.Wear(itemId, false); return null; }
-        string why = EquipCatalog.WhyNot(itemId, attrs, Profile.JobId);
+        string why = EquipCatalog.WhyNot(itemId, check, Profile.JobId);
         if (why != null) return why;
         // 背包窗直接显示会话库存；发放道具后 Profile 数量镜像可能尚未同步。
         // 穿戴按实际来源格校验，不能用镜像把真实存在的装备提前拦掉。
@@ -366,7 +368,8 @@ public static class EquipLoadout
     {
         if (slot == EquipSlot.Weapon) return;
         string error = UnequipToInventory(slot);
-        if (error != null) BottomBar.Toast(error);
+        // 脱不下（装备栏已满 / 目标格被占）要弹提示框，不能让玩家点了没反应
+        if (error != null) NativeUtilPrompt.Notice(error);
     }
 
     public static string UnequipToInventory(int slot, int destinationPosition = 0)
@@ -385,6 +388,9 @@ public static class EquipLoadout
         var source=AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
         var bonus=source==null?new Dictionary<string,int>():new Dictionary<string,int>(source);
         AddPotentialBonus(bonus,new CharacterAttributes {level=GameSession.Character?.record.level??1});
+        // 技能被动的倍率类（经验#expR%）也走这张表：FieldDirector 的经验结算读
+        // CurrentSetBonus() 而不是 PlayerCtrl 那份，两条路都得有。
+        NativeSkillEffects.AddPassive(bonus);
         var growth = NativeGrowthStats.Accumulate(GameSession.Character, Profile.level, Profile.JobId);
         foreach (string rate in new[] { "ExpRate", "MesoRate", "DropRate" })
             bonus[rate] = (bonus.TryGetValue(rate, out int value) ? value : 0) + growth.Get(rate);
@@ -445,6 +451,11 @@ public static class EquipLoadout
         set = set == null ? new Dictionary<string,int>() : new Dictionary<string,int>(set);
         AddPotentialBonus(set,result);
 
+        // —— 282 技能属性被动（h 里的「[被动效果：…]」段）——
+        // 这段是学会即生效、与 buff 持续时间无关的属性（全属性+6、力量+30/最大HP+1500、
+        // 直接投入AP的能力值+%、最终伤害+%、最大HP+%）。过去没有任何管道结算它们。
+        NativeSkillEffects.AddPassive(set);
+
         // —— 282 成长系统（徽章 / 星火 / 极限属性 / 内在能力 / 灵魂）——
         // 282 服务端只存状态、属性由客户端 7000xxx 公式算；本项目把同一份公式表在派生层结算，
         // 结果并进同一张差量表，于是 (base+flat)×(100+pct)/100 的语义与套装完全一致。
@@ -493,6 +504,38 @@ public static class EquipLoadout
         result.setItemBonus = set;    // CombatRules.Attack 的 Damage% 消费（源端 Character.setItemBonus）
         watk = w;
         matk = System.Math.Min(2000, result.intelligence + m);
+        return result;
+    }
+
+    /// <summary>
+    /// 面板上的最终属性（能力值窗显示的那一份）。穿戴门槛必须比它，不能比 AP 分配的基础值：
+    /// 源端 ItemInformationProvider.canWearEquipment 比的是 chr.getTotalStr()/getTotalDex()…，
+    /// 而 getTotal* 已经把已穿装备的 incSTR、套装、潜力、buff 全算进去了。
+    /// 以前这里传 Profile.Attributes（只有 base），于是面板力量 1419 也报「力量不足 600」。
+    /// 能力值窗走 PlayerCtrl.ReadCombatAttributes 那条结算，直接复用它保证同源。
+    /// </summary>
+    public static CharacterAttributes PanelAttributes()
+    {
+        var player = GameLoop.I != null ? GameLoop.I.player : null;
+        if (player != null) return player.ReadCombatAttributes(out _, out _);
+        // 未进游戏（编辑器 harness / 角色选择界面）没有 PlayerCtrl，退回同一套派生层结算。
+        return Apply(Profile.Attributes, WeaponDefs.Get(Profile.equipWeapon), 0, out _, out _);
+    }
+
+    /// <summary>
+    /// 门槛判定用的属性：以面板值为准，同时兼容调用方传入的仿真属性（编辑器 harness 会直接
+    /// new CharacterAttributes{str=999} 来验别的分支）。逐项取大，只会放宽不会误拦。
+    /// </summary>
+    static CharacterAttributes CheckAttributes(CharacterAttributes baseline)
+    {
+        var panel = PanelAttributes();
+        if (baseline == null) return panel;
+        var result = panel.Copy();
+        result.level = Mathf.Max(result.level, baseline.level);
+        result.str = Mathf.Max(result.str, baseline.str);
+        result.dex = Mathf.Max(result.dex, baseline.dex);
+        result.intelligence = Mathf.Max(result.intelligence, baseline.intelligence);
+        result.luk = Mathf.Max(result.luk, baseline.luk);
         return result;
     }
 }

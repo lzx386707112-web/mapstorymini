@@ -34,6 +34,10 @@ public sealed class CharacterAttributes
     public int weaponDefense, magicDefense, accuracy, avoidability;
     public int equipmentSpeed, equipmentJump;
     public float mastery = 0.1f, criticalChance, criticalBonus;
+    // 爆击强化 400031023：「爆击几率可超过100%，且依照爆击几率的#x%增加爆击的伤害」。
+    // 只有这条 buff 在场时才非 0（PlayerCtrl.RefreshBuffAttributes 写入），
+    // 否则超 100% 的暴击率不会产生任何收益。
+    public float overCritBonus;
     public float hexaDamagePercent,hexaBossPercent,hexaIgnorePercent;
     // 282 徽章带来的 ARC / AUT 力量（源端 EquipSymbol.getInc，按件累加）。
     // 不进四维，走「怪物有 ARC/AUT 门槛时的伤害增减」口径，能力值窗单独一行显示。

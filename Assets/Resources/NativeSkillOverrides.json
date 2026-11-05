@@ -1,0 +1,16 @@
+{
+  "note": "282 强化核心：把被强化技能的字段替换成核心自己的数值；不是 stat 增益",
+  "overrides": {
+    "500004073": {
+      "durationField": "time",
+      "durationTarget": 400041095,
+      "evidence": "暗影侍从延伸的最终伤害反映率#x%，暗影瞬移持续时间增加为#time秒",
+      "evidenceDuration": "消耗MP #mpCon，召唤固定在一个地点的影子并维持#time秒期间，可交换位置最多#w次 影子重新召唤冷却时间#t秒 冷却时间 #cooltime秒",
+      "evidenceScale": "消耗MP #mpCon，在#time秒期间召唤影子 #c暗影飞镖#：使用投掷飞镖攻击时，以最终伤害的#x%造成追加打击 冷却时间 #cooltime秒",
+      "name": "强化暗影侍从/暗影瞬移",
+      "scaleField": "x",
+      "scaleTarget": 400041028
+    }
+  },
+  "source": "tools/ms282/export_skill_overrides.py"
+}

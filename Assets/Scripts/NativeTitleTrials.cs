@@ -229,6 +229,8 @@ public static class NativeTitleTrials
     public static IEnumerable<KeyValuePair<string, int>> BonusSet()
     {
         if (!GameSession.InGame) yield break;
+        // 「仅佩戴系列生效」：一次都没选过系列就没有佩戴对象，不给加成。
+        if (!NativeNameplate.HasSeries) yield break;
         EnsureLit();
         int n = Lit(NativeNameplate.Series);
         if (n <= 0) yield break;

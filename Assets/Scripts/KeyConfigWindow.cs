@@ -51,7 +51,7 @@ public static class KeyConfigWindow
         TouchInput.Reset();
     }
 
-    static void Close() { Visible = false; confirmMode = 0; carried = null; swallow = false; dragging = false; skillDraft.Clear(); }
+    public static void Close() { Visible = false; confirmMode = 0; carried = null; swallow = false; dragging = false; skillDraft.Clear(); }
 
     public static bool DropSkill(Vector2 point, int skillId)
     {

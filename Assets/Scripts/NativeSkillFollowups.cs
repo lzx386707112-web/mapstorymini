@@ -32,6 +32,15 @@ public partial class SkillSystem
     }
     void TriggerReactiveSkills(SkillDef cast,List<CapturedReplayHit> captured,Vector2 origin,int facing)
     {
+        // 282 的被动追加攻击（終極攻擊 / 魔法爆發 / 深淵黑暗 / 蝙蝠 / 風暴使者…）：
+        // 主攻击命中后按 prop 或命中计数结算一次，见 NativeProcSkills.cs。
+        TriggerProcSkills(cast,captured,origin,facing);
+        // 子状态驱动的周期领域（箭影纷飞「攻擊命中時」、暗黑天魔VI「狀態期間使用技能時」）
+        // 必须由一次真实命中启动，不能只靠计时器自己打。见 NativeFieldZones.cs。
+        if(captured!=null&&captured.Count>0)TriggerFieldZonesOnHit(cast,origin,facing);
+        // 资源/追加方向/符咒/技能替换/隐身回避：这些都是「命中后」的实体结算，
+        // 数值来自 NativeSkillMechanics.json，见 NativeSkillMechanics.cs。
+        OnMechanicHit(cast,captured,origin,facing);
         var field=FindObjectOfType<FieldDirector>();var map=field!=null?field.Map:null;
         var source=captured.Count>0?captured[0].Hits:Array.Empty<DamageResult>();
         int id=cast.native.Id;double now=Time.realtimeSinceStartupAsDouble;
@@ -160,5 +169,64 @@ public partial class SkillSystem
     void ClearNativeReplayEffects()
     {
         foreach(var a in nativeReplayEffects)if(a!=null)a.Remove();nativeReplayEffects.Clear();windDots.Clear();
+    }
+
+    // ——— 282「按一次、结算多次」的两类技能 ———
+    //
+    // (1) 周期自动攻击：common/time = 持续时间，common/attackDelay = 周期。
+    //     祝福之鎚 400011052 的 h 模板:「在#v秒內鐵鎚自動以#q%的傷害攻擊最多#s名敵人#z次」，
+    //     子技能 400011053 写死 attackDelay=1800、time=30 ⇒ 30 秒内每 1.8 秒打一次。
+    //     以前只在按下瞬间结算一次，剩下 29 秒的段数整段丢失。
+    //
+    // (2) 多道落雷：common/w = 道数。落雷凝聚 400021030 的 h 模板:
+    //     「最多對#q名的敵方使用以#v%傷害值攻擊#s次的閃電#w次」，w=8；
+    //     effect 有 16 层、每层 delay=60ms，正好 8 道 × 2 层 ⇒ 每道间隔 120ms。
+    //     以前只放 1 道，实际伤害约为原版的 1/8。
+    //
+    // 两份名单都只登记已经逐字段核实过的技能：282 的 time 字段单位并不统一
+    //（同一批 V 技能里 30/5/4000/15000 混用），没核实的不能按秒套，否则会把
+    // 一次性技能变成常驻。
+    static readonly HashSet<int> RepeatAttackSkills = new HashSet<int> { 400011052 };
+
+    void StartRepeatingAttack(SkillDef s)
+    {
+        if (s.native == null || !RepeatAttackSkills.Contains(s.native.Id)) return;
+        var row = SkillBook.Get(s.native.Id)?.Level(s.native.Level);
+        int period = Art.Int(row, "attackDelay");
+        int seconds = Art.Int(row, "time");
+        if (period <= 0 || seconds <= 0) return;
+        StartCoroutine(RepeatAttack(s, period / 1000f, seconds));
+    }
+
+    IEnumerator RepeatAttack(SkillDef s, float period, float seconds)
+    {
+        double end = Time.realtimeSinceStartupAsDouble + seconds;
+        // 首次结算由 Cast 自己完成，这里只补后续周期。
+        while (Time.realtimeSinceStartupAsDouble + period <= end)
+        {
+            yield return new WaitForSeconds(period);
+            if (p == null || p.hp <= 0 || GameLoop.I == null || GameLoop.I.state != GameLoop.GameState.Playing) yield break;
+            HitAt(s, s.native, p.FeetPos, p.facing);
+        }
+    }
+
+    void StartThunderSeries(SkillDef s, Vector2 origin, int facing)
+    {
+        if (s.native == null || s.native.Id != 400021030) return;
+        var row = SkillBook.Get(s.native.Id)?.Level(s.native.Level);
+        int bolts = Art.Int(row, "w");
+        if (bolts <= 1) return;
+        StartCoroutine(ThunderSeries(s, origin, facing, bolts));
+    }
+
+    IEnumerator ThunderSeries(SkillDef s, Vector2 origin, int facing, int bolts)
+    {
+        const float interval = .12f;   // 16 层 effect × 60ms ÷ 8 道
+        for (int index = 1; index < bolts; index++)
+        {
+            yield return new WaitForSeconds(interval);
+            if (p == null || p.hp <= 0 || GameLoop.I == null || GameLoop.I.state != GameLoop.GameState.Playing) yield break;
+            HitAt(s, s.native, origin, facing);
+        }
     }
 }

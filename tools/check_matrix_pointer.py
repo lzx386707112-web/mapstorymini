@@ -62,19 +62,33 @@ class Program {
 # Execute the real DrawAll routing with instrumented draw endpoints. In particular,
 # the matrix endpoint consumes even disabled clicks, reproducing the reported regression.
 windows = (root / "Assets/Scripts/GameWindows.cs").read_text()
-tail = windows.split("public static void DrawAll()", 1)[1]
-depth = 0
-for end, char in enumerate(tail):
-    if char == "{": depth += 1
-    elif char == "}":
-        depth -= 1
-        if depth == 0: break
-body = tail[:end+1]
+
+
+def braces(text):
+    depth = 0
+    for end, char in enumerate(text):
+        if char == "{": depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0: return text[:end + 1]
+    raise AssertionError("unbalanced braces")
+
+
+body = braces(windows.split("public static void DrawAll()", 1)[1])
+# 绘制链按 zOrder 排，真正的窗口调用在 DrawPanel 的 switch 里，一起展开才能插桩。
+draw_body = braces(windows.split("static void DrawPanel(Panel p)", 1)[1])
+panel_enum = "enum Panel { " + ", ".join(dict.fromkeys(re.findall(r"case Panel\.(\w+):", draw_body))) + " }"
+z_start = windows.index("static readonly List<Panel> zOrder")
+z_order = windows[z_start:windows.index("};", z_start) + 2].replace("List<Panel>", "System.Collections.Generic.List<Panel>")
 classes = {}
-for name, method in re.findall(r"\b([A-Z]\w*)\.(Draw\w*|Tick|Reset|Flush|Emit)\(\)", body):
+for name, method in re.findall(r"\b([A-Z]\w*)\.(Draw\w*|Tick|Reset|Flush|Emit)\(\)", body + draw_body):
     if name != "NativeUtilPrompt": classes.setdefault(name, set()).add(method)
 program += "static class GUI { public static bool enabled = true; }\n"
-program += "static class GameWindows { static void TrackPanels() {} public static void DrawAll() " + body + "}\n"
+program += "static class GameWindows { static void TrackPanels() {} static bool raisedPending; static Panel raisedPanel;"
+program += " static void BringToFront(Panel p) {} static Panel? TopPanelAtPointer() => null;\n"
+program += panel_enum + "\n" + z_order + "\n"
+program += "static void DrawPanel(Panel p) " + draw_body + "\n"
+program += "public static void DrawAll() " + body + "}\n"
 for name, methods in classes.items():
     program += f"static class {name} {{ public static bool AtPointer => Probe.Matrix==\"{name}\" && Pointer.HitsWindow(new Rect());"
     for method in methods:

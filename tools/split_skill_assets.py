@@ -150,7 +150,9 @@ def split_one(job: str, node, prefix: list[str], host: WzImage, out: list[dict],
     blob = serialize(img)
 
     children = node.children() if isinstance(node, WzSubProperty) else []
-    if len(blob) > MAX_PART and len(children) > 1 and depth < 3:
+    # 单子节点也要继续拆：400021157/customEffect 只有一个 start，但 start 下面
+    # 还有 0/1/2 三棵子树。旧口径 `len(children) > 1` 会把它钉死在 58.7MB。
+    if len(blob) > MAX_PART and len(children) > 0 and depth < 6:
         # 超限：把子节点挂回一个同名容器，逐个降级成分片
         container = WzSubProperty(node.name)
         parent._children.pop(node.name, None)
@@ -322,32 +324,46 @@ def resolve_outlink(value: str) -> str | None:
     head = "Skill/_Canvas/"
     if not value.startswith(head):
         return value
-    job, sep, tail = value[len(head):].partition(".img")
-    if not sep or not tail.startswith("/"):
+    rel = value[len(head):]
+    cut = rel.find(".img/")
+    if cut < 0:
         return value
-    rest = tail[1:]
+    stem, rest = rel[:cut], rel[cut + 5:]
     parts = rest.split("/")
     if not parts or not parts[0]:
         return value
 
-    if parts[0] != "skill":
-        root = _frag_root(f"{head}{job}.img")       # info 等留在原文件
-        return f"{head}{job}.img/{rest}" if root is not None and root.get(rest) is not None else None
+    def hit(cand: str) -> bool:
+        root = _frag_root(f"{head}{cand}.img")
+        return root is not None and root.get(rest) is not None
 
-    # 分片可能是 skill/<sid>.img、skill/<sid>/<b>.img、skill/<sid>/<b>/<c>.img……
-    # 由深到浅探测，命中第一个真实含有该节点的分片。
-    seg = parts[1:]
-    for depth in range(len(seg), 0, -1):
-        cand = f"{head}{job}/{('/'.join(seg[:depth]))}.img"
-        root = _frag_root(cand)
-        if root is not None and root.get(rest) is not None:
-            return f"{cand}/{rest}"
+    if parts[0] != "skill":
+        # info 等非 skill 分支留在 <job>.img；已经指向分片的写法原样沿用。
+        for cand in (stem, stem.split("/")[0]):
+            if hit(cand):
+                return f"{head}{cand}.img/{rest}"
+        return None
+
+    # rest = skill/<sid>/<分支…>。`stem` 有三种历史写法：
+    #   <job>（原始） / <job>/<sid>（单技能分片） / <job>/<sid>/<分支>（深拆分片）。
+    # 统一收敛成同一组候选，重复跑、单跑定义侧才幂等 —— 否则第二次重写会因为
+    # 读不懂自己上次写的二级路径而把引用判成悬空删掉。
+    job = stem.split("/")[0]
+    if len(parts) < 3:
+        return None
+    sid, branch = parts[1], parts[2:]
+    for depth in range(len(branch), 0, -1):
+        cand = f"{job}/{sid}/" + "/".join(branch[:depth])
+        if hit(cand):
+            return f"{head}{cand}.img/{rest}"
+    if hit(f"{job}/{sid}"):
+        return f"{head}{job}/{sid}.img/{rest}"
     # dry-run：分片还没落盘，退回本进程刚算出的分片表
-    if seg and seg[0] in split_index.get(job, ()):
-        for depth in range(len(seg), 1, -1):
-            if (job, seg[0], depth) in deep_shapes:
-                return f"{head}{job}/{('/'.join(seg[:depth]))}.img/{rest}"
-        return f"{head}{job}/{seg[0]}.img/{rest}"
+    if sid in split_index.get(job, ()):
+        for depth in range(len(branch), 0, -1):
+            if (job, sid, depth + 1) in deep_shapes:
+                return f"{head}{job}/{sid}/{('/'.join(branch[:depth]))}.img/{rest}"
+        return f"{head}{job}/{sid}.img/{rest}"
     return None
 
 
@@ -365,6 +381,9 @@ def rewrite_defs(job: str, dry: bool) -> dict:
             sid = parts[1] if len(parts) > 1 else job
             rel = video_rel(sid, parts)
             data = _read_opaque_payload(node)
+            # 已外置过（重复跑定义侧）：载荷就是 mcv:<相对路径>，原样留着即可。
+            if data.startswith(VIDEO_TAG):
+                continue
             if not data.startswith(b"MCV0"):
                 raise SystemExit(f"{job}.img {here}: 视频载荷不是 MCV0（{data[:8]!r}）")
             if not dry:

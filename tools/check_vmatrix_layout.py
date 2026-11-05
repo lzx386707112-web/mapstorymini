@@ -162,6 +162,26 @@ for name in ("job", "jobLocked", "enforce", "enforceLocked", "common", "commonLo
         assert left >= 0 and top >= 0 and left + iw <= fw and top + ih < 49
 print("V core icons: all normal/special frames centered above lock area; hover uses own origin PASS")
 
+# —————————————————— 3b. 等级数字：原图点阵，居中在等级槽 ——————————————————
+# core/levelNumber/0..9 是 5px 高的点阵数字；58x68 槽框的等级槽实测本地 (9..48, 50..58)，
+# 中心 x=28.5、5px 数字上沿 y=52。旧实现拿 font:levelCount(12px)+UpperLeft 画在
+# currentLevelPos 上，字高超过整条槽、又贴着左边缘，就是「数字对不上」的来源。
+for digit in "0123456789":
+    dw, dh = size("core/levelNumber/" + digit)
+    assert dh == 5 and 1 <= dw <= 5, (digit, dw, dh)
+assert "const float LevelBarCenterX = 28.5f, LevelBarTopY = 52f, LevelDigitGap = 1f;" in SOURCE
+assert 'static Texture2D LevelDigit(char digit)' in SOURCE
+assert 'Img + "core/levelNumber/" + digit' in SOURCE
+assert 'left + LevelBarCenterX - width / 2f' in SOURCE
+assert 'top + LevelBarTopY' in SOURCE
+assert "DrawLevelNumber(view.level, bx, by);" in SOURCE
+# 每帧 31 个槽：点数阵图只准两趟直读，不许建数组（UI 重绘不该产垃圾）
+assert "new Texture2D[" not in SOURCE
+# 槽位里再出现字体排版就是回退（字号下限 12 > 槽高 9，必然溢出）
+slots_source = SOURCE.split("static void DrawSlots", 1)[1].split("static void DrawSpecialCore", 1)[0]
+assert '"font:levelCount"' not in slots_source
+print("V core level: bitmap levelNumber digits centered in the 58x68 level bar PASS")
+
 # —————————————————— 4. 弹窗几何 ——————————————————
 for path, expected in (
     ("vSkillUpgradePopUp/enforcementAlert/backgrnd", (340, 491)),
@@ -272,7 +292,11 @@ print("OK — V matrix window layout and assets verified")
 for window_name in ("NativeVMatrixWindow", "NativeHexaMatrixWindow"):
     source = (ROOT / f"Assets/Scripts/{window_name}.cs").read_text()
     draw = source.split("public static void Draw()", 1)[1].split("static void Draw", 1)[0]
-    assert "dialog == Dialog.None && GrowthUi.Drag(" in draw, window_name
+    if window_name == "NativeVMatrixWindow":
+        # 按住核心格的那一段手势归「把核心拖到快捷栏」，不能再兼作整窗拖动。
+        assert "dialog == Dialog.None && !carrying && pressSlot < 0 &&" in draw, window_name
+    else:
+        assert "dialog == Dialog.None && GrowthUi.Drag(" in draw, window_name
     disabled = draw.index("GUI.enabled = parentEnabled && dialog == Dialog.None;")
     parent = draw.index('GrowthUi.Image(Img + "main/", "backgrnd", 0, 0);')
     enabled = draw.index("GUI.enabled = parentEnabled;")
@@ -283,28 +307,41 @@ for window_name in ("NativeVMatrixWindow", "NativeHexaMatrixWindow"):
     assert "Pointer.Pressed = Pointer.RightPressed = Pointer.RightReleased = false;" in draw
     assert draw.index("Pointer.ConsumeClick();", popup) > popup
 windows = (ROOT / "Assets/Scripts/GameWindows.cs").read_text().split("public static void DrawAll()", 1)[1]
-assert "bool matrixShield = hexaShield || NativeVMatrixWindow.AtPointer;" in windows
-assert "GUI.enabled &= !NativeUtilPrompt.Visible && !shield;" in windows
-assert windows.index("if(shield && !matrixShield)") < windows.index("NativeEnhancementWindow.Draw();")
-assert windows.index("if(shield && !hexaShield)") < windows.index("NativeVMatrixWindow.Draw();")
-vpos = windows.index("NativeVMatrixWindow.Draw();")
-hpos = windows.index("NativeHexaMatrixWindow.Draw();")
-assert "if(shield){pointerMask.Dispose();" in windows[vpos:hpos]
+# 当前层级模型是 zOrder（后画在上）：被盖住的下层统一用 Pointer.InputMask 遮指针，
+# 原先那套 matrixShield/hexaShield 布尔已随 zOrder 重写删除，语义由 covered mask 承担；
+# 矩阵窗口自身的下层屏蔽在 GameHUD 的 matrixPointer 里，见下面的顺序断言。
+assert "var covered = new Pointer.InputMask(true);" in windows
+assert "case Panel.VMatrix: NativeVMatrixWindow.Draw(); return;" in windows
+assert "case Panel.HexaMatrix: NativeHexaMatrixWindow.Draw(); return;" in windows
 hud = (ROOT / "Assets/Scripts/GameHUD.cs").read_text()
 assert hud.index("new Pointer.InputMask(matrixPointer)") < hud.index("NativeInventoryActions.CarryStep();")
+# 手上核心的落点判定必须抢在 BottomBar 之前：快捷格在那条链里先吃掉点击。
+assert hud.index("NativeVMatrixWindow.CarryStep();") < hud.index("BottomBar.Draw();")
+assert hud.index("NativeVMatrixWindow.DrawCarryGhost();") > hud.index("GameWindows.DrawAll();")
 assert hud.index("underlayPointer.Dispose();") < hud.index("GameWindows.DrawAll();")
-assert "new Pointer.InputMask(shield)" in windows
+# 手上核心的落点判定必须跑在矩阵遮罩之前。从核心按下再拖到快捷格这一整条手势，按下点落在
+# 矩阵窗口内，AtPointer 靠 PressPosition 一直为真，遮罩会把 DragEnded 抹掉——落点永远进不来，
+# 真机表现就是「拖到键盘上没反应」。
+assert hud.index("NativeVMatrixWindow.CarryStep();") < hud.index("new Pointer.InputMask(matrixPointer)")
+matrix = (ROOT / "Assets/Scripts/NativeVMatrixWindow.cs").read_text()
+carry = matrix.split("public static void CarryStep()", 1)[1].split("public static void DrawCarryGhost()", 1)[0]
+# 落点先于「窗口吃掉这次点击」：窗口右缘压着快捷栏最左两格，先判 AtPointer 会让那两格绑不上。
+assert carry.index("TryDropOnQuickSlot(Pointer.Pos)") < carry.index("if (Pointer.Clicked && AtPointer) return;")
+# 快捷栏 26 格默认只有前 8 格有键，落在没配键的格子上要改落到第一个有键的空格。
+assert "QuickBarKeys.FreeKeyedSlot()" in carry
 print("V/HEXA input: early HUD and lower windows masked; main/popup blank clicks consumed PASS (static)")
 
 # World interactions run outside DrawAll and must recognize both matrices as real windows.
-all_windows = (ROOT / "Assets/Scripts/GameWindows.cs").read_text().split("public static bool AnyVisible =>",1)[1].split(";",1)[0]
-assert "NativeVMatrixWindow.Visible" in all_windows and "NativeHexaMatrixWindow.Visible" in all_windows
+# 世界交互跑在 DrawAll 之外，必须把两个矩阵都当真窗口看（AnyVisible 走 panels → VisibleOf）。
+all_windows = (ROOT / "Assets/Scripts/GameWindows.cs").read_text().split("static bool VisibleOf(Panel p)", 1)[1].split("}", 1)[0]
+assert "Panel.VMatrix: return NativeVMatrixWindow.Visible;" in all_windows
+assert "Panel.HexaMatrix: return NativeHexaMatrixWindow.Visible;" in all_windows
 bots = (ROOT / "Assets/Scripts/Field/BotField.cs").read_text()
 assert "Pointer.RightPressed && !Pointer.Blocked && !NativeUi.WindowAtPointer" in bots
 print("V/HEXA world input: matrix visibility and live hit-test block NPC/player/bot interactions PASS (static)")
 
-# The screenshot's global YesNo prompt outranks matrix blank-area input consumption.
-assert windows.index("new Pointer.InputMask(NativeUtilPrompt.Visible)") < windows.index("bool hexaShield")
+# 全局 YesNo 提示框的优先级高于矩阵窗口的空白区点击消费。
+assert windows.index("new Pointer.InputMask(NativeUtilPrompt.Visible)") < windows.index("for (int i = 0; i < zOrder.Count; i++)")
 assert windows.index("promptPointer.Dispose();") < windows.index("NativeUtilPrompt.Draw();")
 assert "bool matrixPointer = NativeUtilPrompt.Visible ||" in hud
 prompt = (ROOT / "Assets/Scripts/NativeUtilPrompt.cs").read_text()

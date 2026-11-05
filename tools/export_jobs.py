@@ -308,8 +308,23 @@ def load_advanced_skills() -> tuple[dict[int, list[int]], dict[int, dict], dict[
     return by_job, skills, icons
 
 
+# 「damage 只在 proc 里结算」的旧世代技能。h 模板写得最直白：
+#   3100001 終極之弓 / 3200001 終極之弩
+#   h:「#c[終極攻擊類技能]# 以#prop%機率發動 #damage%傷害的終極攻擊技能」
+# 它们没有 mpCon、没有 cooltime，只靠 prop 在主攻击命中后触发。
+# 判成 attack 会让玩家直接按出来 —— 现在这类无框攻击技能按可见范围判定，
+# 等于一按打整屏，所以必须判 passive（BeginCast 会拒绝「被动技能无需施放」）。
+# 五六转同类的登记在 tools/ms282/export_advanced_skills.PROC_SKILLS。
+PROC_SKILLS = {3100001, 3200001}
+
+
 def classify(skill, level1: dict) -> str:
     """技能类型：只用于"能不能施放/怎么施放"，不参与数值。"""
+    try:
+        if int(skill.name) in PROC_SKILLS:
+            return "passive"
+    except (TypeError, ValueError):
+        pass
     if skill.get("summon") is not None:
         return "summon"
     if any(k in level1 for k in ("damage", "fixdamage", "mad", "attackCount")):
@@ -413,7 +428,9 @@ def main():
                 missing_icon.append(sid)
 
             prev = old_skills.get(sid) or {}
-            typ = prev.get("type") or classify(node, rows[0])
+            # PROC_SKILLS 的判定高于 advanced 表：3100001 在六转定义集里也有一条
+            # type=attack 的旧记录，直接沿用会把刚改的 passive 覆盖回去。
+            typ = "passive" if sid in PROC_SKILLS else (prev.get("type") or classify(node, rows[0]))
             invisible = num(node.get("invisible")) or 0
             skills[str(sid)] = {
                 "id": sid,

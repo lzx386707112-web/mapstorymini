@@ -1,0 +1,149 @@
+{
+ "source": "tools/ms282/export_skill_states.py",
+ "note": "282 的技能子状态：母技能施放后挂上的 invisible buff id，不是玩家可按的技能",
+ "states": {
+  "11141501": {
+   "name": "银河星爆",
+   "parent": 11141500,
+   "time": 20,
+   "role": "timedEffect",
+   "evidence": "11141500 h「使用時#w2秒內最終傷害增加#q2%」；11141501.y 与 q2 逐级相等",
+   "timedEffect": true
+  },
+  "1241501": {
+   "name": "圣域展开",
+   "parent": 1241500,
+   "time": 30,
+   "role": "procGate",
+   "evidence": "消耗MP#mpCon，施展时无敌 最多把#mobCount名的敌人锁定为目标，形成以#damage%的伤害攻击#attackCount次的冲击波#x次，发动以#dot%的伤害攻击#dotInterval次的攻击波#w次 连续#u秒内形成圣域，圣骑士在圣域内进行攻击时，发动最多对#v名的敌人以#y%的伤害攻击#z次的审判之光，审判之光会对敌人造成神圣烙印，冷却时间是#t秒 冷却时间#cooltime秒",
+   "triggers": [
+    1221009,
+    1221019,
+    1221021,
+    1221011,
+    1221052,
+    1211018,
+    1211012,
+    1201015,
+    1201013,
+    400011072,
+    400011132,
+    1241000,
+    1241003,
+    1241004,
+    1241007
+   ],
+   "bodies": [
+    1241502
+   ],
+   "cooldownMs": 500,
+   "maxActivations": 0
+  },
+  "14141021": {
+   "name": "暗黑天魔VI",
+   "parent": 14141017,
+   "time": 7,
+   "role": "duration",
+   "evidence": "消耗MP#mpCon，在#time秒内每#t秒召唤可对最多#mobCount名敌人以#damage%的伤害攻击#attackCount次的蝙蝠群"
+  },
+  "2141502": {
+   "name": "剧毒炼狱",
+   "parent": 2141500,
+   "time": 20,
+   "role": "timedEffect",
+   "evidence": "2141500 h「元素吸收的上限扩充至#x堆叠数」；2100009.common x=3/y=5，h「增加最终伤害#x%。最多适用#y个」",
+   "timedEffect": true,
+   "effectKey": "FinalDamage",
+   "effectPct": 30,
+   "elementAbsorbCap": 10
+  },
+  "2241504": {
+   "name": "殛冻领域",
+   "parent": 2241500,
+   "time": 30,
+   "role": "duration",
+   "evidence": "#time秒内出现流动闪电的冰寒地带"
+  },
+  "2341012": {
+   "name": "天堂之门VI",
+   "parent": 2341011,
+   "time": 600,
+   "role": "deathGuard",
+   "evidence": "2341011 h「對周圍的隊員賦予無視HP歸零一次的加持效果，#time秒內無法再次獲得」",
+   "deathGuard": true
+  },
+  "3141501": {
+   "name": "箭影纷飞",
+   "parent": 3141500,
+   "time": 30,
+   "role": "duration",
+   "evidence": "最后一次箭矢洗礼后，#time秒内攻击命中时，每隔#s秒发动最多锁定#z名敌方，以#x%伤害攻击#y次的箭矢洗礼#q2次"
+  },
+  "4141502": {
+   "name": "禁咒之符",
+   "parent": 4141500,
+   "time": 60,
+   "role": "duration",
+   "evidence": "生成#z个在#time秒内经过随机路径、以#y%的伤害对最多#u名敌人攻击#v次的巨型飞镖"
+  },
+  "4240014": {
+   "name": "暗影雾杀VI",
+   "parent": 4241013,
+   "time": 12,
+   "role": "duration",
+   "evidence": "4241013 h「#y秒內每隔一段時間…」，level/1.y=12"
+  },
+  "4240017": {
+   "name": "暗影之刃",
+   "parent": 4240016,
+   "time": 3,
+   "role": "duration",
+   "evidence": "直接攻击的技能命中时，有#y%几率发动以#x%伤害攻击#u次的追加攻击。隐身术持续#v秒以上时，强化为暗影之刃 #c暗影之刃#：持续#w秒，直接攻击的技能命中时，有#s%几率发动以#q2%伤害攻击#q次的致命一击。在烟雾弹或暗影雾杀内，当隐身术中直接攻击的技能首次命中时，立即套用暗影之刃"
+  },
+  "4241005": {
+   "name": "黑暗面",
+   "parent": 4001003,
+   "time": 6,
+   "role": "duration",
+   "evidence": "消耗MP#mpCon，#time秒内使身体隐藏于影子中"
+  },
+  "5141001": {
+   "name": "超级闪‧连杀",
+   "parent": 5141014,
+   "time": 10,
+   "role": "duration",
+   "evidence": "海龙怒击发动时，一定时间内闪．连杀VI变更为#c超级闪．连杀#。"
+  },
+  "5141501": {
+   "name": "海龙霸拳",
+   "parent": 5141500,
+   "time": 30,
+   "role": "procGate",
+   "evidence": "消耗MP#mpCon，在施展动作中无敌。 最初水龙涅普顿苏醒，发出可对最多#mobCount名敌人造成#damage%伤害、连续攻击#attackCount次的波动共#x次，之后触发以#y%伤害攻击#z次的海之愤怒，共#u次。 在#time秒内，除格斗技能与海龙螺旋外，使用五转技能时触发#c水龙斗气#。 #c水龙斗气#：冷却时间#dummyStr秒，最多可发动#dummyStr2次攻击。 第1击：对最多#w3名敌人造成#w%伤害，攻击#",
+   "triggers": [
+    5101012,
+    5111002,
+    5111009,
+    5121007,
+    5121016,
+    400051003,
+    400051042,
+    400051070,
+    400051071,
+    5141000,
+    5141002,
+    5141003,
+    5141015
+   ],
+   "bodies": [
+    5141502,
+    5141503,
+    5141504,
+    5141505,
+    5141506
+   ],
+   "cooldownSec": 2,
+   "maxActivations": 8
+  }
+ }
+}

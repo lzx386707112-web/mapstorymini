@@ -95,6 +95,12 @@ public class GameHUD : MonoBehaviour
             return;
         }
 
+        // 手上拿着 V 核心找落点，必须跑在遮罩之前：从核心按下再拖到快捷格这整条手势，
+        // 按下点落在矩阵窗口内，AtPointer 通过 PressPosition 一直为真，遮罩会把 DragEnded
+        // 抹掉，落点判定永远不触发（表现为「拖到键盘上没反应」）。这里先用原始指针判一次。
+        // 弹窗（Notice/Confirm）是模态的，它的点击不能顺手把核心放下去。
+        if (!NativeUtilPrompt.Visible) NativeVMatrixWindow.CarryStep();
+
         // Matrix windows own their pointer before any lower HUD/drag handler runs.
         bool matrixPointer = NativeUtilPrompt.Visible || NativeSymbolWindow.AtPointer || NativeVMatrixWindow.AtPointer || NativeHexaMatrixWindow.AtPointer;
         bool underlayEnabled = GUI.enabled;
@@ -125,6 +131,8 @@ public class GameHUD : MonoBehaviour
 
         // 浮窗（技能窗/能力值/帮助…）
         GameWindows.DrawAll();
+        // 手上核心的跟随图标压在浮窗之上，避免被面板指针遮罩改掉坐标
+        NativeVMatrixWindow.DrawCarryGhost();
         // 技能施放失败等即时提示
         DrawNotice();
         // NPC 对话（最上层）+ 靠近提示
@@ -136,7 +144,8 @@ public class GameHUD : MonoBehaviour
             PlayerPrefs.DeleteKey("debug_keyconfig");
             if (!KeyConfigWindow.Visible) KeyConfigWindow.Toggle();
         }
-        KeyConfigWindow.Draw();
+        // 键位设置窗已并入 GameWindows 的统一绘制链（Panel.KeyConfig），
+        // 这样它才能和其它面板一样被点击置顶，而不是永远压在最上面。
         NativeInventoryActions.DrawCarry();
         // 悬浮球/快捷菜单由 InputBridge.OnGUI 绘制（仅游戏内显示）
         // 虚拟按键编辑器也由 InputBridge.OnGUI 全局绘制。
@@ -193,6 +202,8 @@ public class GameHUD : MonoBehaviour
         var p = GameLoop.I != null ? GameLoop.I.player : null;
         var sys = p != null ? p.GetComponent<SkillSystem>() : null;
         string text = sys != null ? sys.ActiveNotice : null;
+        // 「完成任务：X」原本只写进 QuestNotice 没人读，播完特效玩家看不到文字
+        if (string.IsNullOrEmpty(text)) text = QuestNotice.Active;
         if (string.IsNullOrEmpty(text)) text = BottomBar.ActiveToast;
         if (string.IsNullOrEmpty(text)) return;
         var st = new GUIStyle(_small);

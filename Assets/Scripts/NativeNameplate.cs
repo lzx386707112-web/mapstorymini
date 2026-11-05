@@ -61,10 +61,20 @@ public static class NativeNameplate
     /// <summary>当前角色选的系列（服务端 nameplate_title_series 的本地镜像）。</summary>
     public static int Series => Mathf.Clamp(Profile.Data.nameplateTitleSeries, 0, SeriesCount - 1);
 
+    // 源端 titleState 从 1 起算（`movzx edx,byte[edi+8]; dec edx; cmp edx,8`），
+    // 0 表示「从没选过」，PacketCreator.nameplatePowerUpdate 此时整行不画。
+    // 本地 int 默认值 0 与「玄幻」撞车，所以「有没有选过」只看服务端扩展键存不存在。
+    static bool hasSeries;
+
+    /// <summary>是否已经选过称号系列（源端 titleState != 0）。没选过时名牌不显示称号行、也不吃称号加成。</summary>
+    public static bool HasSeries => hasSeries;
+
     public static void SetSeries(int series)
     {
         int value = Mathf.Clamp(series, 0, SeriesCount - 1);
         Profile.Data.nameplateTitleSeries = value;
+        hasSeries = true;
+        cachedSeries = -1;
         Profile.Save();
     }
 
@@ -78,7 +88,18 @@ public static class NativeNameplate
             { characterId = GameSession.CharacterId, name = "nameplate_title_series" }).value;
             if (int.TryParse(value, System.Globalization.NumberStyles.AllowLeadingSign,
                 System.Globalization.CultureInfo.InvariantCulture, out int series))
+            {
                 Profile.Data.nameplateTitleSeries = Mathf.Clamp(series, 0, SeriesCount - 1);
+                hasSeries = true;
+            }
+            else
+            {
+                // 键不存在 = 这个角色从没选过系列：源端 titleState 为 0，称号行整行不画。
+                // 不能因为本地 int 默认 0 就把「玄幻」当成玩家选过的结果。
+                Profile.Data.nameplateTitleSeries = 0;
+                hasSeries = false;
+            }
+            cachedSeries = -1;
         }
         catch (System.Exception error)
         {
@@ -111,6 +132,8 @@ public static class NativeNameplate
     public static string LineFor(PlayerCtrl player)
     {
         if (player == null || player.Attributes == null) return null;
+        // 没选过系列（源端 titleState == 0）：即使戴着名牌戒指也不出这一行。
+        if (!hasSeries) return null;
         long power = PowerOf(player);
         double now = Time.unscaledTimeAsDouble;
         if (now < cachedUntil && cachedPower == power && cachedSeries == Series) return cachedLine;

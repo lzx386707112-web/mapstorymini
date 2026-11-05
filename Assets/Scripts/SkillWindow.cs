@@ -342,7 +342,12 @@ public static class SkillWindow
                 // 连点「+」是连续加点，不能被当成双击施放
                 if (At(win, SpUpX, y + SpUpY, SpUpSize, SpUpSize).Contains(Pointer.Pos))
                 {
-                    SkillProgress.Raise(hit);
+                    // 加点失败要给提示框说清原因（SP 不足 / 前置未满 / 已满级），不能点了没反应
+                    if (!SkillProgress.Raise(hit))
+                    {
+                        string reason = SkillProgress.WhyNot(hit);
+                        if (!string.IsNullOrEmpty(reason)) NativeUtilPrompt.Notice(reason);
+                    }
                     return;
                 }
                 string why;
@@ -375,7 +380,11 @@ public static class SkillWindow
             if (plus.Contains(Pointer.Pos))
             {
                 CancelDrag();
-                SkillProgress.Raise(d);
+                if (!SkillProgress.Raise(d))
+                {
+                    string reason = SkillProgress.WhyNot(d);
+                    if (!string.IsNullOrEmpty(reason)) NativeUtilPrompt.Notice(reason);
+                }
                 return;
             }
             // 整行都能拿起（原版是拖图标，但手机上 32px 图标太难点中）。

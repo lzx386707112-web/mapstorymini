@@ -1,0 +1,190 @@
+{
+ "source": "tools/ms282/export_skill_mechanics.py",
+ "mechanics": {
+  "5141011": {
+   "kind": "resourceBurst",
+   "capField": "u",
+   "costField": "u",
+   "durationField": "time",
+   "maxBurstsField": "w3",
+   "gainSkills": [
+    5101012,
+    5111002,
+    5121016,
+    5141015,
+    5121007,
+    5141000,
+    5141002
+   ],
+   "bodies": [
+    5141013,
+    5141014
+   ],
+   "bodyFields": {
+    "damage": "damage",
+    "attackCount": "attackCount",
+    "mobCount": "mobCount"
+   },
+   "secondBodyFields": {
+    "damage": "z",
+    "attackCount": "w2",
+    "mobCount": "w"
+   },
+   "bonusField": "damPlus",
+   "bonusTargets": [
+    5141006,
+    5141008
+   ],
+   "hLine": "消耗#u个海龙石",
+   "name": "海龙石VI",
+   "evidence": "消耗#u个海龙石，#time秒内可发动突击技能  每次发动海龙技能时可获得1个海龙石，海龙石最多可持有#u个。 #c海龙突击VI# 消耗MP#v，最多以#damage%的伤害攻击#mobCount"
+  },
+  "400041001": {
+   "kind": "spread",
+   "durationField": "time",
+   "cooldownField": "cooltime",
+   "throwSkills": [
+    4121013,
+    4121017,
+    4121052,
+    4001344,
+    4101008,
+    4111010,
+    4111015,
+    4141000,
+    4141001,
+    4141005,
+    4141009,
+    4141010,
+    4141013,
+    400041017,
+    400041018
+   ],
+   "variants": [
+    {
+     "id": 400041017,
+     "field": "u",
+     "directions": 4,
+     "mobField": "dummyStr",
+     "bulletCount": 3,
+     "hLine": "三飞闪：追加4方向",
+     "triggers": [
+      400041017,
+      4111010,
+      4121007
+     ]
+    },
+    {
+     "id": 400041018,
+     "field": "damage",
+     "directions": 3,
+     "mobField": "dummyStr2",
+     "bulletCount": 4,
+     "hLine": "四飞闪：追加3方向",
+     "triggers": [
+      400041018,
+      4121013,
+      4141000,
+      4141001,
+      4141005,
+      4141009,
+      4141010,
+      4141013,
+      4121017,
+      4121052,
+      4001344,
+      4101008,
+      4111015
+     ]
+    }
+   ],
+   "directionTotal": 7,
+   "hLine": "使用投掷类技能时一次向多个方向投掷",
+   "name": "散式投掷",
+   "evidence": "消耗MP #mpCon，在#time秒期间使用投掷类技能时一次向多个方向投掷 三飞闪：追加4方向，追加方向以#u%的伤害攻击最多#dummyStr名敌人 四飞闪：追加3方向，追加方向以#damage%的伤害攻击最多#dummyStr2名敌人 冷却时间 #c"
+  },
+  "400041061": {
+   "kind": "charm",
+   "capField": "x",
+   "durationField": "time",
+   "cooldownField": "cooltime",
+   "minPerCastField": "s",
+   "maxPerCastField": "w",
+   "passiveIntervalField": "subTime",
+   "passiveSecondsField": "u",
+   "damageField": "z",
+   "hitsField": "q",
+   "mobsField": "v",
+   "body": 400041062,
+   "throwSkills": [
+    4121013,
+    4121017,
+    4121052,
+    4001344,
+    4101008,
+    4111010,
+    4111015,
+    4141000,
+    4141001,
+    4141005,
+    4141009,
+    4141010,
+    4141013
+   ],
+   "hLine": "爆炸符咒",
+   "name": "飞闪起爆符",
+   "evidence": "#c爆炸符咒#:投掷手里剑的攻击技能命中敌人时，可对敌人周围最多#v名敌人发动以#z%的伤害攻击#q次的爆炸 #c被动效果#:每#u秒会准备1个爆炸符咒并发动，主动效果和被动效果不会同时发动 ",
+   "bodyFromParentField": "z"
+  },
+  "5141001": {
+   "kind": "replace",
+   "state": 5141001,
+   "parent": 5141014,
+   "source": 5141000,
+   "durationField": "time",
+   "stateField": "time",
+   "triggerSkills": [
+    5121007,
+    5141000,
+    5141002
+   ],
+   "bodies": [
+    5141002,
+    5141003
+   ],
+   "shockFields": {
+    "damage": "w2",
+    "attackCount": "q2",
+    "mobCount": "v2"
+   },
+   "hLine": "发动海龙怒击时",
+   "name": "超级闪‧连杀",
+   "evidence": "mobCount名敌人以#damage%的伤害攻击#attackCount次， 发动海龙怒击时，#x秒内可使用超级闪‧连杀 #c超级闪‧连杀#:消耗MP#y，对最多#z名敌人以#s2%的伤害进行#u2次攻击后，产生最多对#v2名敌人以#w2%的伤害进行#q2次攻击的冲击波 "
+  },
+  "2141502": {
+   "kind": "elementAbsorb",
+   "state": 2141502,
+   "parent": 2141500,
+   "durationField": "time",
+   "capField": "x",
+   "perStackPct": 3,
+   "baseCap": 5,
+   "statKey": "FinalDamage",
+   "hLine": "元素吸收的上限扩充至#x堆叠数",
+   "name": "剧毒炼狱",
+   "evidence": "消耗MP#mpCon、施展时无敌 #time秒内元素吸收的上限扩充至#x堆叠数 火与毒的化身获得解放，发生对#mobCount名的敌人以#damage%的伤害攻击 #attackCount次的爆炸#q次 两个化身的魔力融合后，最多锁定#z名敌人，发动以#y%"
+  },
+  "4241005": {
+   "kind": "darkSight",
+   "state": 4241005,
+   "parent": 4001003,
+   "durationField": "time",
+   "maxEvadesField": "w2",
+   "cooldownPerEvadeSec": 3,
+   "maxStacks": 5,
+   "hLine": "回避依照最大HP的比率造成伤害的攻击时",
+   "name": "黑暗面",
+   "evidence": "消耗MP#mpCon，#time秒内使身体隐藏于影子中 回避依照最大HP的比率造成伤害的攻击时，会等隐身术解除后依照回避的次数套用冷却时间#cooltime秒，最多可重叠到#y次"
+  }
+ }
+}

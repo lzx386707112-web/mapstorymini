@@ -14,11 +14,15 @@ for cls, member in re.findall(r"\b((?:Native|\w+Window)\w*)\.(\w+)", body):
 code = "using System; using System.Collections.Generic;\nstatic class GameWindows {" + body + "}\n"
 for cls, members in classes.items():
     props = {prop for _, c, prop in visible if c == cls}
-    props.update(x for x in members if x in ("Visible", "Busy"))
+    # HasModal / AtPointer 这类也是 bool 属性，不能当成 void 方法生成
+    props.update(x for x in members if x in ("Visible", "Busy", "HasModal"))
     code += "static class " + cls + " {" + "".join("public static bool " + prop + ";" for prop in props)
     matrix = cls in ("NativeVMatrixWindow", "NativeHexaMatrixWindow")
     if matrix:
-        code += "public enum Dialog { None, Popup }; public static Dialog dialog; public static void Close() {Visible=false;}"
+        # Escape() 现在会先收掉手上拿着的核心（carrying / CancelCarry），替身类要补同名字段与空方法。
+        code += ("public enum Dialog { None, Popup }; public static Dialog dialog;"
+                 " public static bool carrying; public static void CancelCarry() {}"
+                 " public static void Close() {Visible=false;}")
     for method in members - props:
         if matrix and method == "Escape":
             source = (root / ("Assets/Scripts/" + cls + ".cs")).read_text()
