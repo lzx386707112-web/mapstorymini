@@ -109,7 +109,7 @@ public static class NativeItemUseEffects
         }
         if(skill==0) return "当前职业无法使用这本技能册";
         int master=GameSession.Character.skills.Find(s=>s.skillId==skill)?.masterLevel ?? 0;
-        if(SkillProgress.LevelOf(skill)<info.Int("reqSkillLevel") || master>=info.Int("masterLevel")) return "尚未满足技能等级要求，或技能上限已达到";
+        if(SkillProgress.BaseLevelOf(skill)<info.Int("reqSkillLevel") || master>=info.Int("masterLevel")) return "尚未满足技能等级要求，或技能上限已达到";
         if(!Profile.RemoveItem(id,1,position)) return "背包里没有这个物品";
         int rolls=GameServer.Local==null ? 1 : GameConfigDao.GetInt(GameServer.Local.Db,"scroll_chance_rolls",1);
         bool success=UnityEngine.Random.value>=Math.Pow(1-info.Int("success")/100.0,rolls);

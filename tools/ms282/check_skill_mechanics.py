@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""六条「机制实体」表 ↔ 运行时 的一致性守卫。
+"""七条「机制实体」表 ↔ 运行时 的一致性守卫。
 
-    ① 表结构   6 条齐全，kind/name/evidence 都有
+    ① 表结构   7 条齐全，kind/name/evidence 都有
     ② 数值回算 伤害体与母技能字段逐级相等、公式与 h 字段对得上
     ③ 有消费   C# 真读的键都在表里、表里的运行时键都在 C# 里出现
     ④ 反向孤儿 C# 里的 kind / MechanicId 都在表里；伤害体都真实存在
-    ⑤ 接线     施放门 / 替换 / 施放成功 / 命中 / 受击 / 清图 / 增益注册
+    ⑤ 接线     施放门 / 替换 / 施放成功 / 命中 / 受击 / 清图 / 增益注册 / 等级加成
 
 用法
     python3 tools/ms282/check_skill_mechanics.py
@@ -25,7 +25,8 @@ TABLE = ROOT / "Assets/Resources/NativeSkillMechanics.json"
 STATES = ROOT / "Assets/Resources/NativeSkillStates.json"
 RUNTIME = SCRIPTS / "NativeSkillMechanics.cs"
 
-KINDS = {"resourceBurst", "spread", "charm", "replace", "elementAbsorb", "darkSight"}
+KINDS = {"resourceBurst", "spread", "charm", "replace", "elementAbsorb", "darkSight", "levelBoost"}
+EXPECTED = {"5141011", "400041001", "400041061", "5141001", "2141502", "4241005", "400001004"}
 # C# 运行时真正读取的键（Str/Int/Ints/InList/MechField/chosen[...]）。
 RUNTIME_KEYS = {
     "kind", "capField", "costField", "durationField", "maxBurstsField", "bonusField",
@@ -42,7 +43,7 @@ STATE_KEYS = {"effectKey", "effectPct", "elementAbsorbCap"}
 EXPORT_ONLY = {
     "name", "evidence", "hLine", "id", "bulletCount", "directionTotal", "perStackPct",
     "baseCap", "statKey", "stateField", "shockFields", "bodyFields", "secondBodyFields",
-    "passiveSecondsField", "cooldownField", "bodyFromParentField",
+    "passiveSecondsField", "cooldownField", "bodyFromParentField", "resistanceField",
 }
 
 
@@ -80,8 +81,8 @@ def main() -> int:
     source = read(RUNTIME)
 
     # ① 表结构
-    if set(mech) != {"5141011", "400041001", "400041061", "5141001", "2141502", "4241005"}:
-        problems.append(f"机制条目不是预期的 6 条：{sorted(mech)}")
+    if set(mech) != EXPECTED:
+        problems.append(f"机制条目不是预期的 {len(EXPECTED)} 条：{sorted(mech)}")
     found_kinds = set()
     for sid, entry in mech.items():
         label = f"{sid} {entry.get('name')}"
@@ -151,6 +152,28 @@ def main() -> int:
     if int((((all_skills.get("4241005", {}).get("levels") or {}).get("1")) or {}).get("w2", 0)) != 20:
         problems.append("黑暗面的回避上限与 4001003.common.w2 不符")
 
+    # 实用的战斗命令：x 恒为 1、time=180+3x、asrR=u(x/5)（与导出脚本各自独立回算）
+    order = all_skills.get("400001004", {})
+    order_levels = order.get("levels") or {}
+    if not order_levels:
+        problems.append("400001004 不在技能表")
+    else:
+        total = int(order.get("maxLevel", 0))
+        xs = series(order, "x")
+        times = series(order, "time")
+        asrs = series(order, "asrR")
+        if len(xs) != total or any(v != 1 for v in xs):
+            problems.append("400001004.x 不是恒为 1（h「所有技能等级+1」）")
+        if any(v != 180 + 3 * lv for lv, v in enumerate(times, start=1)):
+            problems.append("400001004.time 与 common「180+3*x」不符")
+        if any(v != -(-lv // 5) for lv, v in enumerate(asrs, start=1)):
+            problems.append("400001004.asrR 与 common「u(x/5)」不符")
+        # 被动 asrR 必须真的进了 NativeSkillEffects 的被动表，否则「抗性」又是一句空话
+        effects_path = ROOT / "Assets/Resources/NativeSkillEffects.json"
+        effects = json.loads(effects_path.read_text(encoding="utf-8")) if effects_path.is_file() else {}
+        if (effects.get("passive") or {}).get("400001004", {}).get("ASR") != asrs:
+            problems.append("400001004 的 asrR 没有被导出成 NativeSkillEffects 的 ASR 被动")
+
     # ③ 有消费：运行时键必须在 C# 里出现，且 C# 里引用的键必须在表里
     declared = {key for entry in mech.values() for key in entry} - EXPORT_ONLY
     for var in mech.get("400041001", {}).get("variants", []):
@@ -170,6 +193,11 @@ def main() -> int:
             # 它的运行时在 NativeBuffs 注册增益，不进 OnMechanicHit 的 kind 分支。
             if "public static void AddTimedEffect" not in source:
                 problems.append("元素吸收没有 AddTimedEffect 运行时入口")
+        elif kind == "levelBoost":
+            # 它的运行时是「等级读取」而不是「命中结算」：标记在 NativeBuffs.SkillStats，
+            # 换算在 NativeCombatOrders（SkillProgress.LevelOf 调用）。
+            if 'Str(id, "kind") == "levelBoost"' not in read(SCRIPTS / "NativeBuffs.cs"):
+                problems.append("NativeBuffs 没有为 levelBoost 放 SKILL_ORDER 注册标记")
         elif f'case "{kind}"' not in source and f'MechanicId("{kind}")' not in source:
             problems.append(f'C# 没有处理 kind={kind}')
     # C# 里 MechField / Str 引用的键必须都在表里
@@ -208,6 +236,9 @@ def main() -> int:
         (SCRIPTS / "PlayerCtrl.cs", "TryEvadeHpRatioDamage()", "隐身回避"),
         (SCRIPTS / "NativeBuffs.cs", "NativeSkillMechanics.AddTimedEffect(result, id)", "元素吸收增益注册"),
         (SCRIPTS / "NativeSkillStates.cs", "IsDeathGuard", "（状态组件仍完整）"),
+        (SCRIPTS / "SkillBook.cs", "NativeCombatOrders.Bonus(id)", "等级加成读取"),
+        (SCRIPTS / "NativeCombatOrders.cs", "public static bool Applies(int id)", "等级加成的可用范围"),
+        (SCRIPTS / "Field/NativeMobDebuffs.cs", 'TryGetValue("ASR"', "状态异常抗性"),
     ]
     for path, token, label in wiring:
         if token not in read(path):

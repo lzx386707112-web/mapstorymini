@@ -482,10 +482,90 @@ h「按照自己的技能來給的持續性傷害，增加最終傷害`#x`%。�
 - `PlayerCtrl.TakeBossDamage` 加 `TryEvadeHpRatioDamage`；
   `NativeBuffs.SkillStats` 的 timedEffect 分支加 `AddTimedEffect`。
 - `check_skill_effects.py` 的 special 加入 6 条 ⇒ 「buff 无 stat」 **4→1**，
-  只剩用户明确排除的 `400001004`。
+  只剩当时按用户要求跳过的 `400001004`（§13 已补完，现为 0）。
 
-**验证**：`export_skill_mechanics.py` 6 条 0 不一致；`check_skill_mechanics.py`、
+**验证**：`export_skill_mechanics.py` 7 条 0 不一致（§12 的 6 条 + §13 的 `400001004`）；`check_skill_mechanics.py`、
 `check_skill_states.py`（13 条）、`check_skill_effects.py`、`check_proc_skills.py`、
 `check_shields.py`、`check_field_zones.py`、`check_skill_overrides.py` 全 0 不一致；
 Unity 编译 0 Warning / 0 Error、server-check 2246/0、面板 5 守卫 PASS。
+
+## 13. 实用的战斗命令 `400001004`：技能等级 +1（2026-11-05）
+
+§9–§12 之后「buff 无 stat」只剩这一条，用户最后要求补掉。它不是属性 buff，
+**时效侧连一条 stat 都产不出来**，所以 `NativeBuffs.ApplySkill` 过去直接
+`return false`：按下去没图标、没效果、没任何提示。
+
+### 原始节点（`Skill/40000.img/skill/400001004`）
+```
+info    = { pvp:0, type:10 }                       // 10 = buff
+common  = { x:"1", time:"180+3*x", asrR:"u(x/5)",
+            lt:(-400,-300), rb:(400,300),
+            cooltime:"180", hpCon:"100", maxLevel:30 }
+skillType / effect 节点：有 effect、无 skillType、无 hit/ball ⇒ OverTime() 判 true
+```
+h：「消耗HP `#hpCon`，在`#time`秒内所有技能等级+1／冷却时间 `#cooltime`秒／
+`[被动效果：状态异常抗性 #asrR增加]`」。
+所以这一条技能其实有**两个互不相干的产物**：
+
+| 产物 | 字段 | 性质 | 通道 |
+|---|---|---|---|
+| 所有技能等级 +1 | `x=1`，持续 `time`（183..270 秒） | 时效（自己不能产出 stat） | `SKILL_ORDER` 标记 + `NativeCombatOrders` |
+| 状态异常抗性 1..6% | `asrR = u(x/5)` | 括号内 = **永久被动** | `NativeSkillEffects` 的 `ASR` 键 → `NativeMobDebuffs` |
+
+### 谁能被提升（判据来自 desc 原文）
+desc：「一定时间内提升自身的所有技能等级。**限于4转技能可以增加到最大等级以上**，
+其他技能只能提高到最大等级为止。部分例外的特别技能和初心者技能、战斗命令、
+实用的战斗命令、超技能、5转、6转技能的等级是无法提高技能等级。无法与战斗命令重复使用。」
+
+判据落在 `Assets/Scripts/NativeCombatOrders.cs`：
+- `id / 10000 % 10 <= 2` ⇒ 一/二/三/四转可提升。四转 = 个位 2（含骑士团的 1100/1110/1111/1112）。
+- `id / 10000 % 10 >= 3` ⇒ 五转觉醒（四转+1）、六转（四转+2）与超技能编码，全部不动。
+- `id >= 400000000` ⇒ 五转 V 核心 / 六转 V 编码 / 强化核心 `400004xxx`，不动。
+- `id / 10000 % 1000 == 0` ⇒ 初心者与职业群共通（1000、2000…，精灵的祝福这类），不动。
+- `autoLearn`（精灵的祝福）与 `hexa`（`1141000` 这类六转）另外再挡一层。
+
+**为什么不用 282 的 `combatOrders` 节点**：282 的每条技能确实带一个 `combatOrders`
+（int，全库只有值 `1` 的 750 条、其余无节点），但它只写在 **282 自己保留的那批技能**上 ——
+`JobTree` 里 476 条「282 包里也有」的技能只有 43 条带这个标记，其余四转技能一条都没有
+（`Skill_112.img` 全包只有 24 个技能节点，`1121001 磁石` 根本不在 282 里）。
+拿它当唯一判据会让绝大多数四转技能失效，比不判更糟；北斗时代的 WZ 则完全没有这个节点。
+判决记在代码注释里，后续不要再拿节点当判据。
+
+### 上限
+- 四转：`MasterCapOf + bonus`（技能册的 `masterLevel=10` 可以被越过）。
+- 其他：`MasterCapOf`（非四转时它本来就等于 `maxLevel`），即「只到最大等级为止」。
+- 两侧最后都夹到 WZ 的 `maxLevel`：282 的技能表只有 `1..maxLevel` 行，31 级没有数值可读。
+  ⇒ 本工程里**满 30 级的四转技能提升后数值不变**（客户端原版存在 31 级行，这是数据缺口）。
+  按当前 JobTree 统计：可提升技能 414 条，其中满加点时会真的 +1 的是 37 条
+  （全是 `masterLevel=10` 的四转技能，10 → 11）。
+
+### 运行时接线
+- `NativeBuffs.SkillStats`：`kind == "levelBoost"` 时写 `SKILL_ORDER = x` 进 stats
+  （`shared`，否则 `Register` 的 singleton 分支会顶掉别的 buff），值就是加成级数；
+  生效期与 buff 图标由这一条 effect 承载，过期照旧走 `Tick`。
+- `NativeBuffs.SkillLevelBoost`：只读 `winners["SKILL_ORDER"]` + 判 `Until`，**刻意不 Tick**
+  —— `SkillProgress.LevelOf` 在每次伤害结算里都会走这条路，加 Tick 会顺手重建 buff 表
+  并触发 `RefreshBuffAttributes`，既慢又容易递归。
+- `SkillProgress.LevelOf` = `BaseLevelOf` + 加成（夹到 `NativeCombatOrders.Cap`）。
+  **加点 / 洗点 / 技能册 / SP 统计一律用 `BaseLevelOf`**（`Raise` / `WhyNot` / `SpentSp` /
+  `BeginnerSpent` / `Reset` / `Profile.ResetSp` / `NativeSpResetWindow` /
+  `NativeItemUseEffects`）：拿加成后的等级去比上限会把「+1 之后还能不能加点」判反，
+  `Raise` 还会白扣 1 点 SP。
+- 状态异常抗性：`NativeMobDebuffs.ResistancePercent` = `setItemBonus["ASR"]`（永久被动）
+  + `NativeBuffs.Value("ASR")`（时效，`400011066 钢铁之躯` 的 `indieAsrR`），
+  在 `Apply` 最前面按 `Random < 抗性%` 抵抗 —— 被抵抗掉的状态不占「最多两种病」的名额。
+  这条通道原先不存在（`asrR` 一直躺在 `export_skill_effects.py` 的 `UNCONSUMED` 里），
+  现在两个字段（`asrR` / `indieAsrR`）都映射到 `ASR`，`UNCONSUMED` 已清空。
+
+### 已知偏差
+- 「无法与战斗命令重复使用」：282 里另一条 `战斗命令`（`1211011`）不在本工程技能表，
+  没有可叠加的对象，未做互斥判定。
+- 满 30 级四转技能提升后数值不变（见「上限」）。
+- `use_buff_everlasting` 开启时 `SkillDuration` 会把已学 buff 的时长拉到极大，
+  这条 V 技能同样受影响 —— 那是北斗服务端配置的既有口径，不是本机制的判断。
+
+**验证**：`export_skill_mechanics.py` 7 条 0 不一致（`time=180+3*x`、`asrR=u(x/5)`、
+`x≡1` 逐级自证 + `NativeSkillEffects` 被动表交叉比对）；`check_skill_mechanics.py`
+七项守卫 0 不一致；`check_skill_effects.py` 的「buff 仍无 stat」**1 → 0**；
+Unity 编译 0 Warning / 0 Error；server-check 2246/0；面板 113 项 PASS。
 

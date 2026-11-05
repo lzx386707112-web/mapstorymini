@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""导出 282 剩余 6 条「buff 无 stat / timer-only」的真实机制 → NativeSkillMechanics.json
+"""导出 282 剩余 7 条「buff 无 stat / timer-only」的真实机制 → NativeSkillMechanics.json
 
-背景：check_skill_effects.py 的「无 stat」名单里，400001004 之外还剩 3 条真缺口
-（5141011 / 400041001 / 400041061），以及 §9 里 3 条只挂了计时器的子状态
-（2141502 / 5141001 / 4241005）。逐条查 282 原始节点后发现它们全都能落地，
-且数值不需要猜：
+背景：check_skill_effects.py 的「无 stat」名单里剩下的最后 7 条 —— 3 条真缺口
+（5141011 / 400041001 / 400041061）、§9 里 3 条只挂了计时器的子状态
+（2141502 / 5141001 / 4241005），以及上一轮被用户单独留下的 400001004。
+逐条查 282 原始节点后发现它们全都能落地，且数值不需要猜：
 
   5141011 海龍石VI   h「消耗#u个海龙石，#time秒內可發動突擊技能」「每次發動海龍技能時
       可獲得1個海龍石」「[被動效果：海龍之怒VI傷害增加#damPlus%p]」
@@ -38,6 +38,15 @@
       状态 4241005.common = {time:6, w2:20, subTime:4000}
       ⇒ 隐身期间免疫「按最大HP 比率」的伤害（本工程的 TakeBossDamage 就是这条通路），
         按回避次数 × 3 秒累计隐身术冷却，最多 5 次、单次窗口最多回避 20 次。
+  400001004 实用的战斗命令 h「消耗HP #hpCon，在#time秒内所有技能等级+1／冷却时间
+      #cooltime秒／[被动效果：状态异常抗性 #asrR增加]」
+      Skill/40000.img/skill/400001004/common = {x:1, time:"180+3*x", asrR:"u(x/5)",
+      cooltime:180, hpCon:100, maxLevel:30}
+      ⇒ 180..270 秒内所有技能等级 +x=1；被动 asrR 1..6% 单独走 NativeSkillEffects 的
+        ASR 通道（本项目原先没有状态抗性消费方，登记在 skipped 里）。
+      desc「限于4转技能可以增加到最大等级以上，其他技能只能提高到最大等级为止；
+      初心者技能、战斗命令、超技能、5转、6转技能无法提高」——判定在
+      Assets/Scripts/NativeCombatOrders.cs（按职业编码，理由见该文件头）。
 
 落盘只登记「字段名 / id 名单 / 原文证据」，所有伤害数值运行时从技能表逐级读。
 
@@ -136,6 +145,15 @@ MECHANICS: dict[int, dict] = {
         "cooldownPerEvadeSec": 3, "maxStacks": 5,
         "hLine": "回避依照最大HP的比率造成伤害的攻击时",
     },
+    400001004: {
+        "kind": "levelBoost",
+        # h「在#time秒内所有技能等级+1」：时效侧只有 time，加成级数在 x
+        "durationField": "time", "bonusField": "x",
+        # [被动效果：状态异常抗性 #asrR增加] —— 永久被动，走 NativeSkillEffects 的 ASR，
+        # 本表只登记字段名让守卫能交叉核对，运行时不读这个键。
+        "resistanceField": "asrR",
+        "hLine": "所有技能等级+1",
+    },
 }
 
 
@@ -196,7 +214,7 @@ def main() -> int:
             for key in ("capField", "costField", "durationField", "maxBurstsField",
                         "minPerCastField", "maxPerCastField", "passiveIntervalField",
                         "passiveSecondsField", "damageField", "hitsField", "mobsField",
-                        "bonusField", "cooldownField", "maxEvadesField"):
+                        "bonusField", "cooldownField", "maxEvadesField", "resistanceField"):
                 field = cfg.get(key)
                 if field and field not in lv1:
                     problems.append(f"{sid} 的 {key}={field} 不在 level/1")
@@ -262,6 +280,29 @@ def main() -> int:
     d1 = levels(dark).get("1", {})
     if int(d1.get("w2", 0)) != 20 or int(d1.get("time", 0)) <= 0:
         problems.append("4241005 的 w2/time 与 4001003.common 不符")
+
+    # 实用的战斗命令 400001004：common 的三条公式在小等级上都自证得出来
+    #   x = 1（h 写死「所有技能等级+1」）
+    #   time = 180+3*x            → 183..270
+    #   asrR = u(x/5)             → 1,1,1,1,1,2,…,6
+    # 冷却 180 秒、HP 消耗 100 是常量字段，与 h 的 #cooltime/#hpCon 对齐。
+    order = table.get("400001004", {})
+    o = levels(order)
+    max_level = int(order.get("maxLevel", 0))
+    if max_level <= 0 or len(o) != max_level:
+        problems.append("400001004 的逐级行数与 maxLevel 不符")
+    else:
+        xs = [int((o[str(lv)] or {}).get("x", 0)) for lv in range(1, max_level + 1)]
+        times = [int((o[str(lv)] or {}).get("time", 0)) for lv in range(1, max_level + 1)]
+        asrs = [int((o[str(lv)] or {}).get("asrR", 0)) for lv in range(1, max_level + 1)]
+        if any(v != 1 for v in xs):
+            problems.append("400001004.x 不是恒为 1（h「所有技能等级+1」）")
+        if any(v != 180 + 3 * lv for lv, v in enumerate(times, start=1)):
+            problems.append("400001004.time 与 common「180+3*x」不符")
+        if any(v != -(-lv // 5) for lv, v in enumerate(asrs, start=1)):
+            problems.append("400001004.asrR 与 common「u(x/5)」不符")
+        if int((o.get("1") or {}).get("cooltime", 0)) != 180 or int((o.get("1") or {}).get("hpCon", 0)) != 100:
+            problems.append("400001004 的 cooltime/hpCon 与 h 的常量不符")
 
     # —— h / desc 原文证据（判据是文案，不是字段名）——
     for sid, cfg in MECHANICS.items():

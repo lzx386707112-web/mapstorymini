@@ -36,7 +36,13 @@ public sealed class NativeBuffs : MonoBehaviour
         "CRIT_REINFORCE",
         // 强化核心接管的 summon（暗影瞬移 400041095）：本身没有属性字段，
         // 靠这个标记让 ApplySkill 能注册，NativeSummon 才认 HasSource 而存活。
-        "SUMMON_DURATION"
+        "SUMMON_DURATION",
+        // 实用的战斗命令 400001004：技能等级 +x，本身不产出属性，
+        // 靠这个标记承载生效期与 buff 图标（NativeCombatOrders 读它）。
+        "SKILL_ORDER",
+        // 状态异常耐性（400011066「#time秒内提升状态异常抗性#indieAsrR」）：
+        // 可叠加，且与永久被动的 ASR 相加（消费方 Field/NativeMobDebuffs）。
+        "ASR"
     };
     static bool ConfigBool(string key,bool fallback=false) => GameServer.Local == null ? fallback : GameConfigDao.GetBool(GameServer.Local.Db,key,fallback);
     static string Config(string key,string fallback) => GameServer.Local == null ? fallback : GameConfigDao.Get(GameServer.Local.Db,key,fallback);
@@ -135,6 +141,14 @@ public sealed class NativeBuffs : MonoBehaviour
         // stats 为空会直接 return false，连图标都没有），真正的换算在
         // PlayerCtrl.RefreshBuffAttributes 里读 x 完成。
         if (id == 400031023) result["CRIT_REINFORCE"] = 1;
+        // 实用的战斗命令 400001004：h「在#time秒内所有技能等级+1」，时效侧一条 stat 都没有，
+        // 所以同样只放注册标记（值 = 加成级数 x）。读取方 NativeCombatOrders.ActiveBonus
+        // → SkillProgress.LevelOf；被动 asrR 走 NativeSkillEffects 的 ASR 通道。
+        if (NativeSkillMechanics.Str(id, "kind") == "levelBoost")
+        {
+            int order = Art.Int(row, NativeSkillMechanics.Str(id, "bonusField"));
+            if (order > 0) result["SKILL_ORDER"] = order;
+        }
         if (((List<object>)Contract["mapChairs"]).Exists(v=>Convert.ToInt32(v)==id)) result["MAP_CHAIR"]=1;
         if (result.ContainsKey("RECOVERY") && ConfigBool("use_ultra_recovery")) result["RECOVERY"]*=10;
         // 282 的百分比增益（indieDamR / indieIgnoreMobpdpR / cr / nbdR / indieMadR …）：
@@ -248,6 +262,20 @@ public sealed class NativeBuffs : MonoBehaviour
         Rebuild(); Removed?.Invoke(id); GetComponent<PlayerCtrl>()?.RefreshBuffAttributes(); return true;
     }
     public bool HasSource(int id) { Tick(Now); return active.Exists(e=>e.Id==id); }
+    /// <summary>
+    /// 实用的战斗命令（400001004）生效中的技能等级加成；0 = 没有。
+    /// 刻意不调 Tick：SkillProgress.LevelOf 在每次伤害结算里都会走这条路，加 Tick 会让
+    /// 一条读等级的链路顺手重建 buff 表（并触发 RefreshBuffAttributes），既慢又容易递归。
+    /// 过期由 NativeBuffs.Update 的 Tick 清掉，这里只多判一次 Until。
+    /// </summary>
+    public int SkillLevelBoost
+    {
+        get
+        {
+            if (!winners.TryGetValue("SKILL_ORDER", out var effect) || effect.Until <= Now) return 0;
+            return effect.Stats.TryGetValue("SKILL_ORDER", out int value) ? value : 0;
+        }
+    }
     static Dictionary<string,object> LearnedRow(int id)
     {
         int level=SkillProgress.LevelOf(id);

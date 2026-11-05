@@ -198,7 +198,30 @@ def main() -> None:
     ap.add_argument("--sample", type=int, default=0,
                     help="dry-run 时对前 N 个大文件做真实转换，测实际压缩率")
     ap.add_argument("--no-backup", action="store_true", help="跳过备份（不推荐）")
+    ap.add_argument("--sync-index", action="store_true",
+                    help="不转换，只按磁盘重算 Skill/** 的 sha256（修复中断导致的索引不一致）")
     args = ap.parse_args()
+
+    if args.sync_index:
+        index = json.loads(INDEX.read_text(encoding="utf-8"))
+        table = {e["path"]: e for e in index["files"]}
+        fixed = missing = 0
+        for rel, entry in table.items():
+            if not rel.startswith("Skill/"):
+                continue
+            path = DATA / rel
+            if not path.is_file():
+                missing += 1
+                continue
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            if entry["sha256"] != digest:
+                entry["sha256"] = digest
+                fixed += 1
+        INDEX.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")),
+                         encoding="utf-8")
+        print(f"索引同步完成：Skill/** 共 {sum(1 for r in table if r.startswith('Skill/'))} 条，"
+              f"修正 {fixed} 条 sha256，磁盘缺失 {missing} 条")
+        return
 
     files = sorted(CANVAS.rglob("*.img"))
     if args.job:

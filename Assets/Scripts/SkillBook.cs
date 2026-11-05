@@ -621,7 +621,23 @@ public static class SkillProgress
     // 新手虚拟 SP 总量（旧客户端公式，源端新手本无 SP）
     public static int BeginnerSp => Mathf.Clamp(Profile.level - 1, 0, 6);
 
+    /// <summary>
+    /// **生效**等级：存档等级 + 实用的战斗命令（400001004）的临时加成。
+    /// 所有战斗/增益/伤害结算都读这一份 —— 战斗命令生效期间 1121008 就是 11 级，
+    /// 拿 10 级的表行算伤害会少一档。
+    /// 加点、洗点、技能册、SP 统计一律走 <see cref="BaseLevelOf"/>：那是存档里的真实等级，
+    /// 拿加成后的等级去比上限会让「+1 之后还能不能加点」判错（SP 还被白扣）。
+    /// </summary>
     public static int LevelOf(int id)
+    {
+        int level = BaseLevelOf(id);
+        if (level <= 0) return 0;
+        int bonus = NativeCombatOrders.Bonus(id);
+        return bonus <= 0 ? level : Mathf.Min(level + bonus, NativeCombatOrders.Cap(id, bonus));
+    }
+
+    /// <summary>存档里的等级（不含任何临时加成）。</summary>
+    public static int BaseLevelOf(int id)
     {
         if(NativeSoulWeapon.IsSkill(id))return NativeSoulWeapon.LevelOf(id);
         // 五转核心连接的技能：等级跟核心走（服务端 NativeMatrixSkills 投影进 skills 表，
@@ -661,7 +677,7 @@ public static class SkillProgress
         get
         {
             int sum = 0;
-            foreach (var d in AllSkills()) sum += LevelOf(d.id);
+            foreach (var d in AllSkills()) sum += BaseLevelOf(d.id);
             return sum;
         }
     }
@@ -672,7 +688,7 @@ public static class SkillProgress
     /// 新手线里还有「精灵的祝福」(12) 这类自动习得技能，不能算进消耗。
     /// </summary>
     public static int BeginnerSpent
-        => LevelOf(1000) + LevelOf(1001) + LevelOf(1002);
+        => BaseLevelOf(1000) + BaseLevelOf(1001) + BaseLevelOf(1002);
 
     /// <summary>可花费 SP。新手 = 虚拟总量 - 三个新手技能已点等级；其余直接读存档累计字段。</summary>
     public static int AvailableSp
@@ -711,8 +727,14 @@ public static class SkillProgress
         if (d.hexa) return d.id >= 400000000
             ? "这个技能只能在 V 矩阵里提升（核心等级）"
             : "六转技能只能在 HEXA 矩阵中提升";
-        if (LevelOf(d.id) >= SkillBook.MasterCapOf(d.id))
-            return "「" + NameOf(d) + "」已达最高等级 " + SkillBook.MasterCapOf(d.id) + " 级";
+        // 战斗命令加成期间生效等级会临时 +1，但加点上限看的是存档等级，
+        // 拿加成后的值比 MasterCap 会把「还能不能再点」判反（还会白扣 SP）。
+        if (BaseLevelOf(d.id) >= SkillBook.MasterCapOf(d.id))
+        {
+            int boosted = LevelOf(d.id) - BaseLevelOf(d.id);
+            return "「" + NameOf(d) + "」已达最高等级 " + SkillBook.MasterCapOf(d.id) + " 级"
+                + (boosted > 0 ? "（实用的战斗命令生效中，临时 +" + boosted + " 级）" : "");
+        }
         bool beginner = IsBeginnerSkill(d.id);
         if ((beginner ? BeginnerSp - BeginnerSpent : AvailableSp) <= 0)
             return beginner ? "可使用的新手技能点不足" : "SP 不足，无法继续提升技能";
@@ -734,7 +756,7 @@ public static class SkillProgress
     public static bool Raise(SkillData d)
     {
         if (!CanRaise(d)) return false;
-        SetLevel(d.id, LevelOf(d.id) + 1);
+        SetLevel(d.id, BaseLevelOf(d.id) + 1);
         if (!IsBeginnerSkill(d.id)) Profile.AddSp(-1);
         return true;
     }
@@ -747,7 +769,7 @@ public static class SkillProgress
         foreach (var d in AllSkills())
         {
             if (d.hexa) continue;              // 六转技能等级来自 HEXA 核心，重置 SP 时既不退点也不清零
-            refund += LevelOf(d.id);
+            refund += BaseLevelOf(d.id);
             Profile.Data.SetSkillLevel(d.id, 0);
         }
         if (Profile.JobId != 0 && refund > 0) Profile.AddSp(refund);

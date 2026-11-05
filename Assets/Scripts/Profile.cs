@@ -456,8 +456,8 @@ public static class Profile
         var to = SkillBook.Get(spToId);
         if (from == null || to == null) return "技能数据缺失";
         if (spFromId == spToId) return "AP/SP重置操作执行失败。";
-        int fromLv = SkillProgress.LevelOf(spFromId);
-        int toLv = SkillProgress.LevelOf(spToId);
+        int fromLv = SkillProgress.BaseLevelOf(spFromId);
+        int toLv = SkillProgress.BaseLevelOf(spToId);
         int cap = SkillBook.MasterCapOf(spToId);
         if (fromLv <= 0) return "你没有可以恢复的技能点。";
         if (toLv >= cap) return "目标技能等级已达到上限。";

@@ -97,7 +97,12 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
   （`BeginCast` 真替换）、`2141502` 元素吸收（锁满 10 层 → FinalDamage +30）、
   `4241005` 黑暗面（隐身回避 `TakeBossDamage` + 解除后冷却），统一走
   `NativeSkillMechanics.json` / `check_skill_mechanics.py`。
-  **真缺口只剩 `400001004` 实用的战斗命令**（等级 +1，需改 `SkillBook`，本轮按用户要求跳过）。
+  **§13 实用的战斗命令**（最后一条）：`400001004` 不是属性 buff —— 时效侧只有
+  `time`（183..270 秒）+ `x=1`（所有技能等级 +1），被动 `asrR`（1..6% 状态异常抗性）
+  走 `NativeSkillEffects` 的 `ASR` 键、由 `NativeMobDebuffs` 按百分比抵抗。
+  等级加成判定在 `NativeCombatOrders.cs`（四转可越过技能册上限、其余只到最大等级；
+  初心者/共通、5/6 转、V 与强化核心不动），`SkillProgress.LevelOf` = 存档等级 + 加成，
+  加点/洗点/技能册一律读 `BaseLevelOf`。至此「buff 无 stat」清零。
 
 **武器进化路线**（09 文档，2026-11-03）：
 - 武器段：1212=露米娜丝闪耀魔杖、1222=天使破坏者灵魂射手、1232=恶魔复仇者魔剑(Desperado)、

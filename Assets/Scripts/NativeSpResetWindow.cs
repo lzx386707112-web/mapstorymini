@@ -204,7 +204,7 @@ public static class NativeSpResetWindow
         var result = new List<SkillData>();
         foreach (var d in all)
         {
-            int lv = SkillProgress.LevelOf(d.id);
+            int lv = SkillProgress.BaseLevelOf(d.id);
             int cap = SkillBook.MasterCapOf(d.id);
             if (page == 1 && lv > 0) result.Add(d);
             if (page == 2 && lv < cap && d.id != fromId) result.Add(d);
@@ -227,7 +227,7 @@ public static class NativeSpResetWindow
             var icon = string.IsNullOrEmpty(d.icon) ? null : Art.Tex(d.icon);
             if (icon != null) GUI.DrawTexture(At(r, RowX + IconOffX, y + IconOffY, IconSize, IconSize), icon, ScaleMode.StretchToFill);
 
-            int lv = SkillProgress.LevelOf(d.id);
+            int lv = SkillProgress.BaseLevelOf(d.id);
             GUI.Label(At(r, NameX, y + NameY, NameW, NameH), d.name, Style(12, Ink, TextAnchor.MiddleLeft));
             int cap = SkillBook.MasterCapOf(d.id);
             GUI.Label(At(r, LevelX, y + LevelY, LevelW, LevelH),
@@ -331,8 +331,8 @@ public static class NativeSpResetWindow
 
         var from = SkillBook.Get(fromId);
         var to = SkillBook.Get(toId);
-        DrawGroup(r, 0, from, SkillProgress.LevelOf(fromId), SkillProgress.LevelOf(fromId) - 1);
-        DrawGroup(r, 1, to, SkillProgress.LevelOf(toId), SkillProgress.LevelOf(toId) + 1);
+        DrawGroup(r, 0, from, SkillProgress.BaseLevelOf(fromId), SkillProgress.BaseLevelOf(fromId) - 1);
+        DrawGroup(r, 1, to, SkillProgress.BaseLevelOf(toId), SkillProgress.BaseLevelOf(toId) + 1);
 
         // 0x8b5889 汇编常量是 BtOK2 @(87,207)、BtCancel2 @(129,207)，但 47 宽按钮只差 42 会重叠 5px
         // （实拍证实两钮叠成一个橙块）。按 AP 确认页同构间距（BtOK2 70 / BtCancel2 119，差 49）修正，

@@ -185,6 +185,15 @@
    "hLine": "回避依照最大HP的比率造成伤害的攻击时",
    "name": "黑暗面",
    "evidence": "消耗MP#mpCon，#time秒内使身体隐藏于影子中 回避依照最大HP的比率造成伤害的攻击时，会等隐身术解除后依照回避的次数套用冷却时间#cooltime秒，最多可重叠到#y次"
+  },
+  "400001004": {
+   "kind": "levelBoost",
+   "durationField": "time",
+   "bonusField": "x",
+   "resistanceField": "asrR",
+   "hLine": "所有技能等级+1",
+   "name": "实用的战斗命令",
+   "evidence": "消耗HP #hpCon，在#time秒内所有技能等级+1 冷却时间 #cooltime秒 [被动效果：状态异常抗性 #asrR增加]"
   }
  }
 }

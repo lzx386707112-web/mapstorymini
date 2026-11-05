@@ -64,6 +64,12 @@ def consumed_keys() -> tuple[set[str], set[str]]:
 
     # PlayerCtrl 对暴击/速度/跳跃走独立通道，不进 ApplyStat
     other |= {"CriticalChance", "Speed", "Jump"}
+
+    # 状态异常耐性：不参与 (base+flat)×(100+pct)/100，由 NativeMobDebuffs 在施加异常状态时
+    # 按百分比抵抗（asrR 永久被动 + indieAsrR 时效增益都读这个键）。
+    debuffs = read(SCRIPTS / "Field" / "NativeMobDebuffs.cs")
+    if 'TryGetValue("ASR"' in debuffs and 'Value("ASR")' in debuffs:
+        other.add("ASR")
     return set_keys, other
 
 

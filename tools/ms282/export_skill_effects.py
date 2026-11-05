@@ -84,15 +84,21 @@ FIELDS: dict[str, list[str]] = {
     # —— 暴击（ApplySpecialCore 单独转成 float）——
     "indieCr":     ["CriticalChance"],# 1141006「爆击几率#indieCr%」
     "cr":          ["CriticalChance"],# 400031055「额外爆击几率#cr%」
+    # —— 状态抗性 ——
+    # 不参与 (base+flat)×(100+pct)/100 的四维结算：消费方是 Field/NativeMobDebuffs，
+    # 施加异常状态时按百分比抵抗（原端 GetAsrR 的语义）。
+    #   asrR      —— 括号内的永久被动（400001004 实用的战斗命令，1..6%）
+    #   indieAsrR —— 括号外的时效增益（400011066 钢铁之躯「在#time秒内…提升状态异常抗性」）
+    # 两者都落 setItemBonus / buff 的 ASR 键，NativeMobDebuffs 相加后判定。
+    "asrR":        ["ASR"],
+    "indieAsrR":   ["ASR"],
     # —— 倍率 ——
     "expR":        ["ExpRate"],       # 500001000「经验值获得量增加#expR%」
 }
 
 # 认得但本工程没有消费方：写进 JSON 只会变成没人读的死键，先登记不映射。
-UNCONSUMED = {
-    "asrR":    "状态异常抗性：全工程无 ASR/状态抗性消费通道（400001004）",
-    "indieAsrR": "状态异常抗性：同上（400011066）",
-}
+# 2026-11-05：asrR / indieAsrR 已接上 Field/NativeMobDebuffs 的抵抗判定，从本表移出。
+UNCONSUMED: dict[str, str] = {}
 
 # 单字母字段是全局表碰不得的地方：同一个 `x` 在 400001002 是爆击几率、在 400001003 是
 # 最大HP%。所以这类只能**逐条**登记，而且每条都在 h 里写明了语义（下面逐行引原文）。
