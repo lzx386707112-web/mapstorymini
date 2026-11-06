@@ -394,6 +394,38 @@ public static class TooltipPreview
         return worn ?? bag;
     }
 
+    // 换装仿真自检：把已穿着的那件临时当成背包件再预览一次，差量必须是 0。
+    // 这一条能抓到「潜能 % 少算 / 套装条数多算 / 武器段叠了两次」这类口径错误，
+    // 比看截图可靠 —— 同件换同件，任何一处漏算都会让 after ≠ current。
+    static void VerifySwapInvariant()
+    {
+        var ch = GameSession.Character;
+        if (ch == null || ch.inventory == null) return;
+        int checks = 0, skipped = 0;
+        foreach (var worn in ch.inventory)
+        {
+            if (worn == null || worn.position >= 0 || worn.position <= -100 || worn.itemId <= 0) continue;
+            if (!CombatPower.IsEquippable(worn.itemId)) continue;
+            int saved = worn.position;
+            // harness 的 Prepare 只写 Profile 的槽位，DB 里那件可能不是同一个 id；
+            // 两边对不上时「当前面板」本身就是拼出来的，自检没有意义，跳过。
+            if (Profile.EquipOfSlot(saved) != worn.itemId) { skipped++; continue; }
+            worn.position = 1;                 // 只改内存，不落库
+            try
+            {
+                if (CombatPower.TryPreview(worn, out long now, out long after))
+                {
+                    checks++;
+                    if (after != now)
+                        throw new Exception("换装自检失败 item=" + worn.itemId + " 槽 " + saved + "：" + now + " → " + after);
+                }
+            }
+            finally { worn.position = saved; }
+        }
+        Note("换装自检：" + checks + " 件同件换同件，差量全部为 0（跳过 " + skipped + " 件 Profile/背包不一致的）");
+        Note("当前战斗力（不含 buff）：" + CombatPower.Current());
+    }
+
     static bool Ready() => GameLoop.I != null && GameLoop.I.player != null && GameLoop.I.state == GameLoop.GameState.Playing;
 
     // ───────── 一次把数据准备好：穿套装 + 发一把 12★ 武器 + 一瓶药 ─────────
@@ -430,6 +462,7 @@ public static class TooltipPreview
         { characterId = cid, itemId = StarWeapon, quantity = 1 });
         if (!added.ok) { Note("发武器失败 " + added.error); d.AddItem(Potion, 50); return; }
         GameSession.Character.inventory = added.inventory;
+        VerifySwapInvariant();
         var w = GameSession.Character.inventory.Find(x => x.itemId == StarWeapon);
         if (w == null) { Note("找不到刚发的武器"); d.AddItem(Potion, 50); return; }
 

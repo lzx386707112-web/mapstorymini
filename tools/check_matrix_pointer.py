@@ -59,6 +59,40 @@ class Program {
     }
 }
 """
+matrix = (root / "Assets/Scripts/NativeVMatrixWindow.cs").read_text()
+gesture = matrix[matrix.index("        if (Pointer.Pressed) specialOwnsGesture"):
+                 matrix.index("        // 抓手 =")]
+program = program.replace("        Seed();\n        var mask", "        SpecialGesture.Run();\n        Seed();\n        var mask", 1)
+program += """
+static class SpecialGesture {
+    static bool specialOwnsGesture, specialOpen = true;
+    static Rect SpecialRect() => new Rect();
+    static bool Step() {
+""" + gesture + r"""
+        return specialLayer;
+    }
+    static void Check(bool ok, string label) { if (!ok) throw new Exception(label); }
+    public static void Run() {
+        Pointer.Pos = new Vector2(30,40);
+        Pointer.Pressed = Pointer.Down = true; Pointer.Released = false;
+        Check(Step(), "special press belongs to overlay");
+        Pointer.Pressed = Pointer.Down = false; Pointer.Released = Pointer.Clicked = true;
+        Pointer.Pos = new Vector2(200,200);
+        Check(Step(), "special release outside must not reach underlying core");
+        Pointer.Released = Pointer.Clicked = false;
+        Check(!Step(), "idle clears special gesture ownership");
+        Pointer.Pos = new Vector2(30,40);
+        Check(Step(), "special hover hides underlying core tooltip");
+        Pointer.Pos = new Vector2(200,200); Pointer.Pressed = Pointer.Down = true;
+        Check(!Step(), "main panel press remains interactive");
+        Pointer.Pressed = false; Pointer.Pos = new Vector2(30,40);
+        Check(Step(), "dragging into overlay cannot activate covered main core");
+        specialOpen = false;
+        Check(!Step(), "closed special overlay cannot mask main panel");
+        Console.WriteLine("Special core overlay: 7 gesture checks PASS");
+    }
+}
+"""
 # Execute the real DrawAll routing with instrumented draw endpoints. In particular,
 # the matrix endpoint consumes even disabled clicks, reproducing the reported regression.
 windows = (root / "Assets/Scripts/GameWindows.cs").read_text()

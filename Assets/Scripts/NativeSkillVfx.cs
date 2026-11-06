@@ -105,6 +105,14 @@ public static class NativeSkillVfx
         skills.Add(key, clips); metadata.Add(key, meta); videos.Add(key, layerVideos);
         return key;
     }
+    /// <summary>
+    /// 帧元数据（origin/delay/z/a0/a1）该从哪个节点读。
+    /// 282 分体画布：占位节点带全部元数据、outlink 目标是只有像素的光板，
+    /// 所以优先占位节点；内嵌像素的老资源两者同一节点，退回 canvas 即可。
+    /// </summary>
+    static ImgNode MetaNode(ImgNode frame, ImgNode canvas) =>
+        frame != null && frame.Kind == "Canvas" ? frame : canvas;
+
     static void Read(ImgNode source, string sourcePath, string path,
         Dictionary<string, NativeVfxClip> clips, Dictionary<string, object> metadata,
         List<NativeVfxVideo> layerVideos, HashSet<ImgNode> ancestors)
@@ -123,10 +131,15 @@ public static class NativeSkillVfx
         {
             var canvas = frame.TryResolve();
             if (canvas == null || canvas.Kind != "Canvas") continue;
+            // 282 的 `Skill/<file>.img` 只留 1x1 占位 + `_outlink`，真画布在 `Skill/_Canvas/...`；
+            // **origin / delay / z / a0 / a1 全写在占位节点上，outlink 目标是光板**。
+            // 之前从 canvas 读，这些字段全退化成 origin=(0,0) / delay=100ms / 无渐隐，
+            // 表现就是特效整体偏移半个画布、帧率变慢（钢铁之躯 effect 实际 60ms 被当成 100ms）。
+            var frameMeta = MetaNode(frame, canvas);
             frames.Add(new NativeVfxFrame { file = "wz://" + sourcePath + (node.Kind == "Canvas" ? "" : "/" + frame.Name),
-                origin = WzAssets.Origin(canvas), delay = Mathf.Max(.001f, Mathf.Abs(canvas.Int("delay", 100)) / 1000f),
-                alpha0 = canvas.Int("a0", 255) / 255f, alpha1 = canvas.Int("a1", 255) / 255f,
-                z = canvas.Int("z", node.Int("z")) });
+                origin = WzAssets.Origin(frameMeta), delay = Mathf.Max(.001f, Mathf.Abs(frameMeta.Int("delay", 100)) / 1000f),
+                alpha0 = frameMeta.Int("a0", 255) / 255f, alpha1 = frameMeta.Int("a1", 255) / 255f,
+                z = frameMeta.Int("z", node.Int("z")) });
         }
         if (frames.Count > 0) clips[path] = new NativeVfxClip { path = path, frames = frames.ToArray(), meta = meta };
         if (node.Kind != "Canvas")
@@ -171,6 +184,7 @@ public static class NativeSkillVfx
         {
             var canvas = pair.Value.TryResolve();
             if (canvas == null || canvas.Kind != "Canvas") continue;
+            var meta = MetaNode(pair.Value, canvas);
             string clipPath = branch + "/" + pair.Value.Name;
             clips[clipPath] = new NativeVfxClip
             {
@@ -180,11 +194,11 @@ public static class NativeSkillVfx
                     new NativeVfxFrame
                     {
                         file = "wz://" + sourcePath + "/" + pair.Value.Name,
-                        origin = WzAssets.Origin(canvas),
+                        origin = WzAssets.Origin(meta),
                         delay = 1f,
                         alpha0 = 1f,
                         alpha1 = 1f,
-                        z = canvas.Int("z", node.Int("z")),
+                        z = meta.Int("z", node.Int("z")),
                     },
                 },
                 meta = new Dictionary<string, object> { { "index", pair.Key } },
@@ -346,6 +360,24 @@ public static class NativeSkillVfx
     public static bool RapidAttack(int id)
     {
         var root=WzAssets.Node("Skill/"+(id/10000).ToString("D3")+".img/skill/"+id.ToString("D7"));
-        return root!=null && root.Int("info/rapidAttack")!=0;
+        if(root==null) return false;
+        if(root.Int("info/rapidAttack")!=0) return true;
+        // 有一批「按住连续攻击」不写 info/rapidAttack，改用 keydown/keydownend +
+        // attackDelay/attackCount 三件套表达。400011068 槍刺旋風就是这种：
+        // info 只有 areaAttack/bodyAttack/invincible/movingAttack（type=11），
+        // common 却是 attackDelay=140、attackCount=8，h 写「最多#t秒內以#damage%傷害
+        // 連續攻擊前方#mobCount名敵人共#attackCount次」。
+        // 只看 rapidAttack 会把它当蓄力型（见 SkillSystem.BeginCast 的 charge 分支）：
+        // 按住只播 keydown 循环、伤害要松手才出一次 —— 和圣十字架「只播特效打不了怪」
+        // 是同一类症状。判据全部来自源端字段，不按 id 硬编码。
+        if(root.Get("keydown")==null || root.Get("keydownend")==null) return false;
+        return SafeInt(root,"common/attackDelay")>0 && SafeInt(root,"common/attackCount")>0;
+    }
+    // common 里可能是公式串（"675+27*x"），Convert.ToInt32 会抛，这里按「读不到」处理。
+    static int SafeInt(ImgNode node,string path)
+    {
+        var value=node?.Get(path)?.TryResolve()?.Value;
+        if(value==null) return 0;
+        try { return Convert.ToInt32(value); } catch { return 0; }
     }
 }

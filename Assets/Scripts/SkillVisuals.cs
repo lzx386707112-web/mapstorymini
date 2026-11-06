@@ -35,7 +35,29 @@ public partial class SkillSystem
                 PlayLayer(s.vfx,clip,field ? (Vector3)origin : (Vector3)p.FeetPos,facing,
                     field ? null : p.transform, z<0 ? p.SortingOrder-1 : 360+Mathf.Max(0,z));
             }
-        foreach(var clip in NativeSkillVfx.Parts(s.vfx,"affected")) Visual(s.vfx,clip.path,p.FeetPos,facing,p.transform);
+        // affected 也成族：affected0 是独立一层，不是 affected 的别名——400011003 神聖團結
+        // 的 affected 是 11 帧 216x92 起、affected0 是 6 帧 216x88 起，帧数与尺寸都不同。
+        // Parts 只认一级名，旧写法把 affected0 整层丢掉（受影响的还有 400011026 / 400011127）。
+        foreach(string branch in NativeSkillVfx.Layers(s.vfx,"affected"))
+            foreach(var clip in NativeSkillVfx.Parts(s.vfx,branch))
+                PlayLayer(s.vfx,clip,p.FeetPos,facing,p.transform,360);
+        // 282 V 技能把角色/链接对象身上的后续演出放在
+        // specialAffected、specialAffected1、specialAffected2，而不是 affected。
+        // 神聖團結的翅膀与持续光效就在这三组；只播 effect/special 会留下前半段的蓝色核心。
+        //
+        // 但 specialAffected 的子段是「羁绊对象槽」：400011003 的 /0../5 六段 origin 完全相同
+        // （都是 25,247）、像素却各不相同 —— /0 是自己，/1../5 是五名羁绊队员。
+        // 旧写法把六段一起挂在自己身上，六个不同角色的光效叠成一团，
+        // 表现就是「神聖團結放出来跟导出图完全不一样」。这里只演自己的那一份；
+        // 队员那五段要等队伍实体拿到各自锚点再分发，不能平铺在施法者身上。
+        foreach(string branch in NativeSkillVfx.Layers(s.vfx,"specialAffected"))
+        {
+            var clips=NativeSkillVfx.Parts(s.vfx,branch);
+            int take=clips.Count>1 && SameOrigin(clips) ? 1 : clips.Count;
+            // 走 PlayLayer 而不是 Visual：这几层的首帧 delay 就是「整层晚出现」的偏移
+            // （specialAffected1 首帧 210ms），直接 Visual 会把后段光效提前叠上来。
+            for(int i=0;i<take;i++) PlayLayer(s.vfx,clips[i],p.FeetPos,facing,p.transform,360);
+        }
         // effect_ple 是玩家专属层（PLEY 前缀），形态与 frameEffect 相同：
         // pre 播一次 → loop 循环 → end 收尾。
         foreach(string branch in NativeSkillVfx.Layers(s.vfx,"effect_ple"))
@@ -72,6 +94,19 @@ public partial class SkillSystem
             yield return SpecialField(s,origin,facing);
         // finish/0|1|2：连击收尾段，施法动作走完后播。
         PlayFinish(s,(Vector3)origin,facing,p.transform);
+    }
+    // 多段层是不是「同一锚点的多个对象槽」：282 用这个形状表达
+    // 「6 名队员身上各一份」。同 origin + 不同像素 ⇒ 只该演其中一份（自己）。
+    // 分裂波次（同一位置按 interval 依次发）origin 也相同，但那种层带 start/interval，
+    // 走 SpecialLayer；这里只用来判 specialAffected 这一族，不做通用推断。
+    static bool SameOrigin(List<NativeVfxClip> clips)
+    {
+        if(clips==null || clips.Count<2) return false;
+        if(clips[0].frames==null || clips[0].frames.Length==0) return false;
+        Vector2 first=clips[0].frames[0].origin;
+        foreach(var clip in clips)
+            if(clip.frames==null || clip.frames.Length==0 || clip.frames[0].origin!=first) return false;
+        return true;
     }
     // 三段层：pre|start 播一次 → loop|repeat 循环 → end 收尾。
     // branch 既可以是 effect_ple，也可以是 frameEffect/0 这种带编号的子分支。
@@ -115,7 +150,10 @@ public partial class SkillSystem
     // finish：连击收尾，按施放序号取一个变体，避免每次都放同一段。
     void PlayFinish(SkillDef s,Vector3 point,int facing,Transform follow)
     {
-        var finishes=NativeSkillVfx.Parts(s.vfx,"finish");
+        // finish 同理成族：400011026 的收尾段只有 finish0，没有 finish。
+        var finishes=new List<NativeVfxClip>();
+        foreach(string branch in NativeSkillVfx.Layers(s.vfx,"finish"))
+            finishes.AddRange(NativeSkillVfx.Parts(s.vfx,branch));
         if(finishes.Count==0)return;
         var clip=finishes[finishVariant++%finishes.Count];
         StartCoroutine(PlayStageLater(s.vfx,new List<NativeVfxClip>{clip},p.SkillActionDuration,point,facing,follow,360));

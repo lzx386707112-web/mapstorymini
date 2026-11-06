@@ -235,6 +235,12 @@ COMMON_ALIAS = {
     12141007: {"z": "damage"},                     # 極致熾烈VI
     400021030: {"v": "damage", "s": "attackCount", "q": "mobCount"},   # 落雷凝聚
     400011052: {"q": "damage", "s": "mobCount", "z": "attackCount", "v": "time"},  # 祝福之鎚
+    # 轟炸風暴VI h:「攻擊命中時對目標進行轟炸，以#dummyStr2%的傷害攻擊最多#dummyStr名敵人
+    #              #dummyStr3次／砲擊再發動冷卻時間 #dummyStr4秒」
+    # 这条技能连 damage/attackCount/mobCount 都没有，全塞在 dummyStr 系列里。
+    # dummyStr4 是「再发动冷却」的秒数，由 NativeProcSkills 的 CooldownField 直接读原字段，
+    # 不进 levels（否则会被当成毫秒）。判据就是上面这段 h 原文，改前先回去读。
+    5241009: {"dummyStr2": "damage", "dummyStr": "mobCount", "dummyStr3": "attackCount"},
 }
 
 
@@ -282,6 +288,10 @@ PROC_SKILLS = {
     # 自足的追加攻击（母体合一，自带 cooltimeMS 再发动冷却）
     500001016: ("passive", "突擊爆發：h「直接攻擊的技能命中時，對所有命中的敵人發動以#damage%的傷害#attackCount次攻擊的劍擊，劍擊再發動冷卻時間#t秒」"),
     500001020: ("passive", "突擊爆發(黑暗長槍版)：h「直接攻擊的技能命中時，對所有命中的敵人產生黑暗長槍，以#damage%的傷害#attackCount次」"),
+    # 开关型被动（info/type=33），自己不可施放；数值全在 dummyStr 系列，
+    # 所以光加 COMMON_ALIAS 还不够 —— 没有这条登记，classify() 会因为 common 里
+    # 没有 damage/attackCount 而落到兜底 passive，但它其实连施放动作都没有。
+    5241009: ("passive", "轟炸風暴VI：h「攻擊命中時對目標進行轟炸，以#dummyStr2%的傷害攻擊最多#dummyStr名敵人#dummyStr3次／砲擊再發動冷卻時間 #dummyStr4秒」"),
     # ——— 以下是「母技能 + 追加攻击体」里的伤害体 ———
     # info/type=53 + finalAttack=1 已能自动判成 passive（见 classify），
     # 这里登记是为了留下逐条的母子取证：每条体的 damage/attackCount 都等于

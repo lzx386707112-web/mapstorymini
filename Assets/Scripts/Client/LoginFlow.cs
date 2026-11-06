@@ -923,20 +923,23 @@ public class LoginFlow : MonoBehaviour
 
     void DoLogin()
     {
-        if (string.IsNullOrEmpty(account) || string.IsNullOrEmpty(password))
+        string name = account.Trim();
+        // admin 是免密码账号（见 LoginService.NoPasswordAccount）：密码框可以留空直接登。
+        bool noPassword = LoginService.IsNoPasswordAccount(name);
+        if (string.IsNullOrEmpty(name) || (string.IsNullOrEmpty(password) && !noPassword))
         {
             SetAlert("账号不能为空。请输入正确的账号和密码。", AlertEmptyImage);
             return;
         }
-        if (account.Trim().Length > 13)
+        if (name.Length > 13)
         {
             // 源端客户端输入框本身限 13 字符，服务端不做长度校验（LoginPasswordHandler 直接 readString）。
             SetAlert("账号不能超过 13 个字符，请确认后再输入。", null);
             return;
         }
 
-        var res = GameSession.Login(account.Trim(), password);
-        Debug.Log("[Login] account=" + account.Trim() + " code=" + res.code + " gender=" + res.gender);
+        var res = GameSession.Login(name, password);
+        Debug.Log("[Login] account=" + name + " code=" + res.code + " gender=" + res.gender);
         if (res.code != LoginResultCode.Ok)
         {
             ShowAlert(res);
@@ -945,7 +948,7 @@ public class LoginFlow : MonoBehaviour
 
         if (saveId)
         {
-            PlayerPrefs.SetString("login_account", account.Trim());
+            PlayerPrefs.SetString("login_account", name);
             PlayerPrefs.SetInt("login_save_id", 1);
             PlayerPrefs.Save();
         }
@@ -1331,7 +1334,16 @@ public class LoginFlow : MonoBehaviour
     /// </summary>
     public void ForceLogout(string message)
     {
-        account = "";
+        BackToLogin(message);
+    }
+
+    /// <summary>
+    /// 回到登录页（调用前账号态已由 GameSession.Logout 清掉）。「游戏结束」和强制下线都走这里。
+    /// 记住账号的玩家把账号名填回去：手机端重敲一遍账号太难受，密码仍然留空。
+    /// </summary>
+    public void BackToLogin(string message)
+    {
+        account = saveId ? PlayerPrefs.GetString("login_account", "") : "";
         password = "";
         charName = "";
         charList = null;
@@ -1340,6 +1352,14 @@ public class LoginFlow : MonoBehaviour
         worldIndex = -1;
         channelIndex = 0;
         slotToDelete = -1;
+        // 退场时可能还压着选角屏的弹窗：不清掉会盖在登录页上，还会占住 Pointer。
+        scrollOpen = false;
+        noticeOpen = false;
+        newAccountOpen = false;
+        genderOpen = false;
+        alertOpen = false;
+        page = 0;
+        selectedSlot = 0;
         stage = LoginStage.Login;
         status = string.IsNullOrEmpty(message) ? "" : message;
     }

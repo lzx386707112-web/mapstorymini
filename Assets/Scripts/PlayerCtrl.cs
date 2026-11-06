@@ -1332,7 +1332,14 @@ public class PlayerCtrl : MonoBehaviour
 
     // 键盘 Ctrl / 虚拟攻击键：把自动挥砍的计时器清零，下一次 Step 立刻结算。
     // 原版普攻是玩家主动挥的，这里保留自动索敌，只把「什么时候挥」交给玩家。
-    public void RequestAttack() { Sitting = false; attackRequested = true; }
+    public void RequestAttack()
+    {
+        // 极乐之境（400011055）形态期间，普通攻击被替换成黄泉十字架（400011056）：
+        // 原端 desc「在極樂之境中，可以以#c一般攻擊#使用交叉冥河」。见 NativeSkillSequences.cs。
+        var skills = GetComponent<SkillSystem>();
+        if (skills != null && skills.TrySequenceBasicAttack()) return;
+        Sitting = false; attackRequested = true;
+    }
 
     void Strike(EnemyUnit e)
     {

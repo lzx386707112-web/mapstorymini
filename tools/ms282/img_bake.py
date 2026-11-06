@@ -61,7 +61,13 @@ def decode_rgba(canvas: WzCanvasProperty, img: WzImage) -> np.ndarray:
         inflater = zlib.decompressobj(-15)
         data = inflater.decompress(payload[2:]) + inflater.flush()
         raw = BLOCK_DECODERS[canvas.format](data, canvas.width, canvas.height)
-        return np.frombuffer(raw, dtype=np.uint8).reshape((canvas.height, canvas.width, 4))
+        arr = np.frombuffer(raw, dtype=np.uint8).reshape((canvas.height, canvas.width, 4))
+        # texture2ddecoder 的 BC3/BC7 输出是 **BGRA**，而 encode_argb4444 与
+        # ImgFile.cs 的 Rgba() 都按 RGBA 落地。不换回来，整批烘焙成 4444 的
+        # 画布在运行时会红蓝互换：金色圣光变青蓝（2026-11-06 圣骑士特效回归）。
+        # 与 wzpy.decode_canvas 对同一 DXT5 载荷逐像素比对：交换后平均差
+        # 0.06~0.23/255（仅 4444 量化误差），不交换差 31~76/255。
+        return arr[:, :, [2, 1, 0, 3]].copy()
     return np.array(decode_canvas(canvas).convert("RGBA"))
 
 

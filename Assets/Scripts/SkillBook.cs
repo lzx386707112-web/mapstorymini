@@ -32,6 +32,23 @@ public sealed class SkillData
     public Dictionary<string, object> attackInfo;
     public Dictionary<string, object> levels = new Dictionary<string, object>();
 
+    /// <summary>
+    /// V/HEXA 矩阵 tooltip 专用的局部副本。核心名/说明的权威是 VCore.img /
+    /// HexaCore.img（VMatrix.json / HexaMatrix.json），不是 SkillBook 里那条可能被
+    /// 别的界面复用的技能定义。旧实现对 SkillBook.Get() 返回的共享单例直接写
+    /// data.name = 核心名，一次悬停就把名字钉死在 byId 里，之后技能窗、快捷栏、
+    /// 状态栏全部跟着串位 —— 这里只做副本，绝不回写共享状态。
+    /// </summary>
+    public SkillData ForTooltip(string title, string detail) => new SkillData
+    {
+        id = id, maxLevel = maxLevel, masterLevel = masterLevel, job = job,
+        name = string.IsNullOrEmpty(title) ? name : title,
+        desc = string.IsNullOrEmpty(detail) ? desc : detail,
+        type = type, icon = icon, magic = magic, noName = false,
+        autoLearn = autoLearn, hexa = hexa,
+        req = req, attackInfo = attackInfo, levels = levels,
+    };
+
     public Dictionary<string, object> Level(int lv)
     {
         if (lv < 1) lv = 1;
@@ -80,7 +97,9 @@ public static class SkillBook
             var d = pair.Value as Dictionary<string, object>;
             var s = new SkillData
             {
-                id = (int)Art.Num(d, "id"),
+                // 技能号 4 亿级，必须用 Art.Id 走 long；Art.Num 走 float 会把
+                // 400011088 舍成 400011072，byId 互相覆盖（见 Art.Long 注释）。
+                id = Art.Id(d, "id"),
                 maxLevel = Mathf.Max(1, (int)Art.Num(d, "maxLevel", 1)),
                 masterLevel = (int)Art.Num(d, "masterLevel"),
                 job = (int)Art.Num(d, "job"),
@@ -120,7 +139,7 @@ public static class SkillBook
         foreach (var item in (List<object>)root["jobs"])
         {
             if (!(item is Dictionary<string, object> d)) continue;
-            int id = Art.Int(d, "id");
+            int id = Art.Id(d, "id");
             var skillIds = new List<object>();
             if (d.TryGetValue("skills", out var sk) && sk is List<object> skList) skillIds = skList;
 
@@ -165,10 +184,14 @@ public static class SkillBook
         foreach (var pair in table)
         {
             if (!(pair.Value is Dictionary<string, object> d)) continue;
-            int id = (int)Art.Num(d, "id");
+            int id = Art.Id(d, "id");
             // JobTree 已收录的同 id（1141000 这类 xxxVI）以 JobTree 为准，不让两套导出分叉。
             if (id == 0) continue;
-            if (byId.TryGetValue(id, out var existing))
+            // V/HEXA definitions are authoritative in this export.  Do not let
+            // an older JobTree/cache entry keep a stale type/name/icon for the
+            // same connection skill (that makes a cross icon behave like Steel
+            // Body, or turns an active V skill into a passive one).
+            if (byId.TryGetValue(id, out var existing) && id < 400000000)
             {
                 // 但 282 的 info/magicDamage 标记只写在这份 VMatrixSkills 里（JobTree 那条
                 // 来自另一条导出链，没有 magic 字段）。不补的话，2141000 火焰之袭VI、2341000
@@ -269,6 +292,7 @@ public static class SkillBook
         // 282 用 info/magicDamage=1 标「走魔法管线」：V/HEXA 的 common 一条 mad 都没有。
         if (node.Int("info/magicDamage")!=0) d.magic=true;
         d.magic=MagicDamageOf(id,d.magic);
+        ApplyFieldAliases(id,d);
         var first=d.Level(1) ?? new Dictionary<string,object>();
         if (node.Get("summon")!=null) d.type="summon";
         else if (first.ContainsKey("damage") || first.ContainsKey("fixdamage") || first.ContainsKey("mad") || first.ContainsKey("attackCount")) d.type="attack";
@@ -278,8 +302,50 @@ public static class SkillBook
         return d;
     }
 
-    // common（282 的公式层）→ 与 level/N 同形的等级行。
-    //   · 常数（mpCon=250、maxLevel=30）原样搬
+    // 282 有一批技能把「伤害 / 段数 / 目标数」全塞在单字母或 dummyStr 里，真实含义由
+    // String/Skill.img 的 h 模板指定。导出链（tools/ms282/export_advanced_skills.py 的
+    // COMMON_ALIAS）只覆盖被导进 VMatrixSkills.json 的那批；其余走本方法的 IMG 兜底，
+    // 而兜底是按字段猜类型（damage/fixdamage/mad/attackCount → attack…）：
+    // 一个都读不到就留在 passive ⇒ 玩家装备了核心、按下去只回「被动技能无需施放」。
+    //
+    // 这张表就是同一条规则的 C# 侧：先补别名，再让下面的分类判类型。
+    // 每条的依据都是 282 h 原文，改之前先回去读那一段（与 python 表同一口径）。
+    static readonly Dictionary<int,Dictionary<string,string>> FieldAliases =
+        new Dictionary<int,Dictionary<string,string>>
+    {
+        // 協力攻擊 h：「1打：#q%的傷害攻擊#q2次／2打：#v%…#v2次／3打：#w%…#w2次」
+        // 只取第一打当主段（与落雷凝聚「只取主段」同一口径，多段各算需要 multiAttackInfo）。
+        { 400011039, new Dictionary<string,string> { {"q","damage"}, {"q2","attackCount"} } },
+        // [靈魂]部分解放：黑翼破天 h：「最多對#dummyStr名敵人發動以#dummyStr2%傷害
+        // 攻擊#dummyStr3次的黑色波動#dummyStr4次」
+        { 400021078, new Dictionary<string,string> {
+            {"dummyStr2","damage"}, {"dummyStr","mobCount"}, {"dummyStr3","attackCount"} } },
+        // [靈魂]部分解放：絕魂毒牙 h：「對最多#dummyStr名敵人造成#dummyStr2%傷害
+        // 攻擊#dummyStr3次的斬擊，觸發#dummyStr4次」
+        { 400021155, new Dictionary<string,string> {
+            {"dummyStr2","damage"}, {"dummyStr","mobCount"}, {"dummyStr3","attackCount"} } },
+        // 幽靈之刃-修羅 h：「最多對#y名敵人以#z%傷害攻擊#u次」
+        { 400041075, new Dictionary<string,string> {
+            {"z","damage"}, {"u","attackCount"}, {"y","mobCount"} } },
+        // ICBM h：「以#q%的傷害攻擊最多#u名敵人#q2次」（污染区域那段是 z% ，不并进主伤害）
+        { 400051024, new Dictionary<string,string> {
+            {"q","damage"}, {"q2","attackCount"}, {"u","mobCount"} } },
+    };
+
+    // 只在自身没有目标字段时写入，绝不覆盖已有定义（同 apply_alias 的 setdefault 口径）。
+    static void ApplyFieldAliases(int id,SkillData d)
+    {
+        if(!FieldAliases.TryGetValue(id,out var map)) return;
+        foreach(var entry in d.levels.Values)
+        {
+            if(!(entry is Dictionary<string,object> row)) continue;
+            foreach(var pair in map)
+                if(row.TryGetValue(pair.Key,out var value) && !row.ContainsKey(pair.Value))
+                    row[pair.Value]=value;
+        }
+    }
+
+    // common（282 的公式层）→ 与 level/N 同形的等级行。    //   · 常数（mpCon=250、maxLevel=30）原样搬
     //   · 公式（"30+x"、"50+d(x/2)"、"log20(x)*20"）按等级求值，整数就写 int，
     //     真的带小数（"1.8"、x/3）才写 float，保持与 WZ 原始 level 行同一取值口径
     //   · 矢量（lt/rb）保留 {x,y} 列表，和 level 行解析出来的形状一致
@@ -533,6 +599,14 @@ public static class SkillBook
         // 只有 attackInfo 型技能会真的写进 damage/attackCount；其余技能这里是空转。
         var jobRow = JobAttackRow(d, level);
         if (jobRow != null) foreach (var pair in jobRow) data[pair.Key] = pair.Value;
+        // 技能间伤害强化：h 的被动段「[被动效果：X 技能伤害增加 #field%p]」。
+        // 那 12 条技能（愤怒爆发VI → 狂暴攻击VI、勾拳爆破VI → 闪‧连杀VI 等）强化的
+        // 是**另一条技能**，字段既不是属性 stat 也产生不了伤害体，只能在这里按百分点
+        // 放大目标的 damage。放在 Native() 出口的理由同 attackInfo：proc / 召唤 /
+        // 普通施法共用这一个入口；data 每次都是新建副本，不会重复放大。
+        int boost = NativeSkillBoosts.Pct(d.id);
+        if (boost > 0 && data.ContainsKey("damage"))
+            data["damage"] = Art.Num(data, "damage") * (100 + boost) / 100.0;
         return new NativeSkillDefinition(skill, data);
     }
 
@@ -846,6 +920,30 @@ public static class QuickSlots
     // Item bindings use the native keymap type 2; keep their payload distinct from skill IDs.
     // 宏绑定也是负数（-1000000 - 宏位），与道具负 id 区间隔离。
     public static bool IsItem(int id) => id < 0 && !NativeSkillMacros.IsMacro(id);
+
+    /// <summary>
+    /// 这个 id 能不能绑到快捷格 / 键位上。
+    /// 原端只有「按得下去的东西」能进快捷栏：被动技能绑上去之后按一下只会弹
+    /// 「被动技能无需施放」，玩家会以为绑定失败。所以在绑定的那一刻就说清，
+    /// 不要等按下才报错。道具与宏标记另有一套通道，直接放行。
+    /// </summary>
+    public static bool CanBindToQuickBar(int id, out string why)
+    {
+        why = null;
+        if (id == 0) { why = "这一格没有可绑定的东西。"; return false; }
+        if (IsItem(id) || NativeSkillMacros.IsMacro(id)) return true;
+        var data = SkillBook.Get(id);
+        if (data == null) { why = "技能数据缺失，不能绑到快捷栏。"; return false; }
+        // IsPassive 已经排除了 InstantSelfSkill（箭镞切换 3141005 这类「标 passive 但可主动按」）
+        // 与 SpecialKind；剩余的都是真被动 / 强化核心包装技能。
+        if (data.IsPassive)
+        {
+            why = "「" + data.name + "」是被动技能，按不下去，不能绑到快捷栏。";
+            return false;
+        }
+        return true;
+    }
+
     public static Texture2D BindingIcon(int id)
     {
         if (NativeSkillMacros.IsMacro(id))
@@ -945,6 +1043,13 @@ public static class QuickBarKeys
 
     public static bool BindSkillToKey(KeyCode key, int skillId)
     {
+        // 所有「绑到键盘这一层」的入口最后都汇到这里（技能窗拖快捷格、矩阵面板拖键位、
+        // 键盘设定里拖键帽）。被动技能在这一步就拒掉，不要先绑上再让玩家按出报错。
+        if (!QuickSlots.CanBindToQuickBar(skillId, out string why))
+        {
+            if (!string.IsNullOrEmpty(why)) NativeUtilPrompt.Notice(why);
+            return false;
+        }
         int slot = SkillSlot(key);
         if (slot < 0)
             for (int i = 0; i < QuickSlots.Count; i++)
@@ -980,8 +1085,14 @@ public static class VMatrixLevels
         levels.Clear();
         foreach (var core in response.cores)
         {
-            if (core == null || core.skills == null) continue;
-            foreach (int skill in core.skills)
+            if (core == null) continue;
+            // The core id, rather than an old response payload, determines its
+            // connected skill.  Keep the level mirror on the same canonical id
+            // used by the V-matrix window and quick slots.
+            var canonical = VMatrixCatalog.Core(core.coreId);
+            var skills = canonical != null ? canonical.skills : core.skills;
+            if (skills == null) continue;
+            foreach (int skill in skills)
             {
                 if (skill == 0) continue;
                 if (!levels.TryGetValue(skill, out int old) || core.level > old) levels[skill] = core.level;

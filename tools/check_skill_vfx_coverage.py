@@ -500,6 +500,8 @@ def check_runtime() -> list[str]:
         issues.append("NativeSkillVfx 不再读源端 info/rapidAttack")
     if 'Layers(s.vfx,"effect")' not in visuals or 'Layers(s.vfx,"special")' not in visuals:
         issues.append("SkillVisuals 又退回写死的 effect/effect0 与 special")
+    if 'Layers(s.vfx,"specialAffected")' not in visuals:
+        issues.append("SkillVisuals 丢失 specialAffected 后续演出（神聖團結翅膀等）")
     if 'Layers(definition.vfx,"keydown")' not in held:
         issues.append("SkillHeldInput 不再枚举 keydown 族")
     if "NativeSkillVfx.RapidAttack" not in system:

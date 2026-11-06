@@ -32,7 +32,7 @@ public static class NativeKeyboardChecks
             {
                 Check(NativeKeyActions.Find(binding.type, binding.action, out var action), "默认功能ID可识别 " + binding.action);
                 InputHub.ReleaseAllVirtual();
-                var button = new VCElem { key = NativeKeyLayout.FromScanCode(binding.key), action = GameAction.Jump, skillId = 12345678 };
+                var button = new VCElem { key = NativeKeyLayout.FromScanCode(binding.key), action = GameAction.Jump };
                 send.Invoke(null, new object[] { button, true });
                 Check(InputHub.Pressed(action) && InputHub.Held(action), "默认虚拟键触发 " + action);
                 if (action != GameAction.Jump) Check(!InputHub.Pressed(GameAction.Jump), "旧动作不串入 " + action);
@@ -43,7 +43,7 @@ public static class NativeKeyboardChecks
             }
             var remapped = new List<KeymapEntry> { new KeymapEntry { key = 2, type = 6, action = 101 } };
             KeyMap.LoadCharacter(remapped);
-            var one = new VCElem { key = KeyCode.Alpha1, action = GameAction.Jump, skillId = 12345678 };
+            var one = new VCElem { key = KeyCode.Alpha1, action = GameAction.Jump };
             InputHub.ReleaseAllVirtual(); send.Invoke(null, new object[] { one, true });
             Check(InputHub.Pressed(GameAction.FaceSmile), "1改绑表情后触发表情");
             send.Invoke(null, new object[] { one, false }); InputHub.EndFrame();
@@ -60,6 +60,9 @@ public static class NativeKeyboardChecks
             CheckEscapeLayers();
             CheckKeyConfigCarry();
             CheckSkillWindowCarry();
+            // 技能只认「键盘」这一层：屏上按键不再持有技能（旧存档的直绑字段已废弃）。
+            // 这条断言防的是有人把「拖到按键就绑」的直绑通道再加回来。
+            Check(typeof(VCElem).GetField("skillId") == null, "屏上按键不持有技能，技能只能绑到键盘");
 
             // ↓+跳跃的门控要读得到原图属性：10000 号图有一整片 forbidFallDown 的段
             bool forbidParsed = false;

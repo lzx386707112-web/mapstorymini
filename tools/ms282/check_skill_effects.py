@@ -187,7 +187,20 @@ def main() -> int:
     mechanics_path = ROOT / "Assets/Resources/NativeSkillMechanics.json"
     if mechanics_path.is_file():
         special |= set(json.loads(mechanics_path.read_text(encoding="utf-8")).get("mechanics", {}))
+    # 技能间伤害强化：h 的被动段「[被动效果：X 技能伤害增加#field%p]」。
+    # 来源技能本身可能是 attack/summon（不是 buff），但它强化的是**另一条技能**的
+    # damage，字段 damPlus / u / v 不进 setItemBonus 也不产生伤害体 —— 由
+    # NativeSkillBoosts.Pct 在 SkillBook.Native 出口放大目标 damage。
+    boosts_path = ROOT / "Assets/Resources/NativeSkillBoosts.json"
+    if boosts_path.is_file():
+        special |= set(json.loads(boosts_path.read_text(encoding="utf-8")).get("boosts", {}))
     special |= {"3141009", "400001009"}
+    # 形态技能（母技能开形态、伤害在 psdSkill 子技能上）：按下去不产生属性 stat，
+    # 也不是「buff 无 stat」缺口 —— 攻击体/次数/伤口/裂缝都在 NativeSkillSequences.json，
+    # 由 check_skill_sequences.py 单独守。见 skill-system.md §15。
+    sequences_path = ROOT / "Assets/Resources/NativeSkillSequences.json"
+    if sequences_path.is_file():
+        special |= set(json.loads(sequences_path.read_text(encoding="utf-8")).get("sequences", {}))
     # 秘术超越 400001021 走 NativeBuffs.SkillStats 里的内置分支（x 阶段 × z% 逐段衰减），
     # 不是字段映射表能表达的（两个字段要相乘，不是一对一映射）。
     buffs_source = (SCRIPTS / "NativeBuffs.cs").read_text(encoding="utf-8")

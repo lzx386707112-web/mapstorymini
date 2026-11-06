@@ -54,6 +54,16 @@ public sealed class LoginResult
 
 public static class LoginService
 {
+    /// <summary>
+    /// 免密码账号。源端没有这个概念，是本工程给本地调试 / GM 留的后门：
+    /// 账号名等于它时跳过密码校验（密码留空也能登），客户端 DoLogin 同步放行空密码。
+    /// 后台（AdminBackend.Authenticate）不走这里，仍然必须校验密码。
+    /// </summary>
+    public const string NoPasswordAccount = "admin";
+
+    public static bool IsNoPasswordAccount(string name)
+        => string.Equals((name ?? "").Trim(), NoPasswordAccount, StringComparison.OrdinalIgnoreCase);
+
     // 源端的 loginattempt 计数属于 TCP 会话状态（Client.java:678），
     // 本地单机没有会话概念、登录页又常驻，照搬会把玩家永久锁死在登录页，
     // 所以这里不实现「失败 5 次返 6」，只在成功时清账。
@@ -86,7 +96,9 @@ public static class LoginService
             return new LoginResult { code = LoginResultCode.Banned, accountId = accId, accountName = name };
 
         string stored = (string)acc["password"];
-        if (!AccountsDao.VerifyPassword(pwd, stored))
+        // 免密码账号（admin）不看密码：留空或随便填都放行，登进来的还是同一条 accounts 记录，
+        // 所以身上的角色 / GM 权限都照旧。其它账号的校验一行不动。
+        if (!IsNoPasswordAccount(name) && !AccountsDao.VerifyPassword(pwd, stored))
             return new LoginResult { code = LoginResultCode.WrongPassword, accountId = accId, accountName = name };
 
         // LoginPasswordHandler:134 —— tempban 在密码通过之后才判，所以密码错时先报密码错。

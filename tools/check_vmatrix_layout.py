@@ -13,6 +13,7 @@
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -226,6 +227,68 @@ for name in ("DrawUpgrade", "DrawResult", "DrawRegister", "DrawTransform", "Draw
     assert "x0 +" not in body and "y0 +" not in body, f"{name} 还在用窗口坐标给弹窗内容加偏移"
 print("V dialog coordinate spaces: all 5 popups Shift into their own origin PASS")
 
+# —————————————————— 3c. 特殊核心图标（不在 VMatrixUI.img，也不在 skillicon） ——————————————————
+# 18 条 type==2 的 `skills` 全是空数组（400007xxx 没有 Skill 定义），所以
+# `skillicon/<id>` 对它们永远是 null —— 这就是「特殊核心面板没图标」的根因。
+# 图标本体只在 Etc/_Canvas/VCore.img/vSkill/CoreData/<id>/{icon,iconDisabled}，
+# 由 tools/ms282/import_special_core_icons.py 转码（BMS→GMS）并登记进清单。
+SPECIAL_ICON = "Etc/_Canvas/VCore.img"
+assert f'const string SpecialIconFile = "{SPECIAL_ICON}";' in SOURCE
+assert "WzAssets.HasFile(SpecialIconFile)" in SOURCE, "缺少 HasFile 保护：旧资源包上会每帧抛 FileNotFound"
+assert "SpecialIcon(view.coreId, opened)" in SOURCE, "特殊核心列表没有用 VCore 图标"
+assert "SpecialIcon(active.coreId, true)" in SOURCE, "展示位没有用 VCore 图标"
+assert "SpecialIcon(core.coreId, true)" in SOURCE, "登记弹窗没有用 VCore 图标"
+icon_file = DATA / SPECIAL_ICON
+assert icon_file.is_file(), f"数据树里缺少 {SPECIAL_ICON}（跑 tools/ms282/import_special_core_icons.py --write）"
+index_files = {entry["path"] for entry in json.loads(
+    (ROOT / "Assets/Resources/NativeAssetIndex.json").read_text(encoding="utf-8"))["files"]}
+assert SPECIAL_ICON in index_files, f"{SPECIAL_ICON} 没登记进 NativeAssetIndex.json：真机 HasFile 会是 false"
+# 共享素材必须能转回源端：文件头是 GMS 密钥，wzpy 用 GMS 密钥解得开才说明转码做对了。
+vcore = WzImage.from_bytes(icon_file.read_bytes(), key=WzKey.for_region("GMS"), name=SPECIAL_ICON)
+vcore.parse()
+assert not vcore.truncated and not vcore.parse_warnings, f"{SPECIAL_ICON} 结构不完整"
+special_ids = sorted(c["id"] for c in json.loads(
+    (ROOT / "Assets/Resources/UI/VMatrix.json").read_text(encoding="utf-8"))["cores"].values()
+    if c.get("type") == 2)
+assert len(special_ids) == 18, len(special_ids)
+for core_id in special_ids:
+    for name in ("icon", "iconDisabled"):
+        found = vcore.root.get(f"vSkill/CoreData/{core_id}/{name}")
+        assert isinstance(found, WzCanvasProperty), f"{SPECIAL_ICON}: 缺少 {core_id}/{name}"
+        assert (found.width, found.height) == (32, 32), (core_id, name)
+        assert found.format in SUPPORTED, f"{core_id}/{name} format {found.format} 不能被 ImgFile 解码"
+print(f"V special core icons: {len(special_ids)} cores x icon/iconDisabled in {SPECIAL_ICON} PASS")
+
+# —————————————————— 3d. 特殊核心子窗滚动条 ——————————————————
+# 原端 scrollBarInfo：lt(222,-1)、轨道 5x292、滑块 5x28，delta(10)/wheelRange(400)。
+# 本工程按行翻页，不用 delta/wheelRange，但落点与厚度必须和素材一致，
+# 否则滑块会压在槽位格子上或整条飘出子窗。
+bar = node("main/specialCore/slot/scrollBarInfo")
+assert bar is not None, "VMatrixUI.img 缺 main/specialCore/slot/scrollBarInfo"
+bar_lt = (bar.get("lt").x, bar.get("lt").y)
+bar_len = bar.get("length").value
+bar_track = canvas("main/specialCore/slot/scrollBarInfo/enabled/base")
+bar_thumb = canvas("main/specialCore/slot/scrollBarInfo/enabled/thumb0")
+assert (bar_track.width, bar_track.height) == (5, bar_len), (bar_track.width, bar_track.height, bar_len)
+assert (bar_thumb.width, bar_thumb.height) == (5, 28), (bar_thumb.width, bar_thumb.height)
+assert f"main/specialCore/slot/scrollBarInfo/lt\", {bar_lt[0]}, {bar_lt[1]})" in SOURCE, \
+    f"滚动条 lt 兜底值 {bar_lt} 与素材不一致"
+assert (f"const float barW = {bar_track.width}f, barH = {bar_len}f, "
+        f"thumbH = {bar_thumb.height}f;") in SOURCE, "滚动条尺寸常量与素材不一致"
+# 交互侧：拖滑块必须从槽区拖动里摘出去，否则一次拖动会翻两倍；
+# 一屏放得下时（maxScroll==0）不画滑块，和原端 disabled 分支（只有 base）一致。
+for snippet in (
+    'specialBarGrab = Pointer.PressPosition.y - thumb.y',
+    'if (!Pointer.Down) specialBarDrag = false;',
+    '&& !barHit.Contains(Pointer.PressPosition)',
+    'maxScroll > 0 ? "enabled/base" : "disabled/base"',
+    'specialBarDrag ? "thumb2" : over ? "thumb1" : "thumb0"',
+):
+    assert snippet in SOURCE, snippet
+assert 'specialBarDrag = false;' in SOURCE.split("public static void Close()")[1][:400], \
+    "Close() 没复位 specialBarDrag：关窗时手指还按着，下次开会带着残留拖动"
+print(f"V special core scrollbar: lt{bar_lt} {bar_track.width}x{bar_len} thumb {bar_thumb.width}x{bar_thumb.height} PASS")
+
 # —————————————————— 5. 代码引用的素材全部可解码 ——————————————————
 # 只认 Image/Button 的字面量参数：Text/ShadowText 的第二个参数是文案，不是素材路径。
 refs: set[str] = set()
@@ -241,6 +304,16 @@ for name in ("empty", "job", "jobLocked", "enforce", "enforceLocked",
 # 悬停高亮：0 = 空格位、1 = 有核心（两帧都要有，否则鼠标移上去就露底）
 refs.add("core/coreState/mouseOver/0")
 refs.add("core/coreState/mouseOver/1")
+# 展示位的空位两帧（常态「+」/ 发光版）。这两条是三元表达式选的，正则抓不到字面量，
+# 必须显式列出来：漏一帧的表现就是「鼠标移上去整格消失」。
+refs.add("main/layer:specialCoreUnregistered")
+refs.add("main/layer:specialCoreUnregisteredMouseOver")
+# 子窗滚动条：三帧滑块 + 轨道两态都是三元表达式挑的，正则同样抓不到。
+# 一屏放得下时画 disabled/base（原端 disabled 分支没有 thumb），有可翻的行才画滑块。
+for state in ("enabled", "disabled"):
+    refs.add(f"main/specialCore/slot/scrollBarInfo/{state}/base")
+for name in ("thumb0", "thumb1", "thumb2"):
+    refs.add(f"main/specialCore/slot/scrollBarInfo/enabled/{name}")
 
 problems = []
 checked = 0
@@ -275,6 +348,10 @@ for snippet in (
     'NativeUtilPrompt.Confirm(',
 ):
     assert snippet in SOURCE, snippet
+# 「特殊核心」开关是同一位置的两张图（箭头 → 开 / ← 关），必须按状态二选一：
+# 两张都画时后画的 ← 永远压在上面，面板关着也显示成「已展开」。
+assert 'specialOpen ? "button:specialCoreClose" : "button:specialCoreOpen"' in SOURCE
+assert 'button:specialCoreOpen") ||' not in SOURCE, "开关按钮又变回两张都画了"
 print("V interactions: upgrade/transform/gemstone/reset/special-core wired PASS")
 
 # —————————————————— 7. 玩家侧入口 ——————————————————

@@ -66,6 +66,46 @@ JOBS = [112, 122, 132, 212, 222, 232, 312, 322, 412, 422, 512, 522,
 _cache: dict[int, WzImage] = {}
 
 
+# ——— 「自身没有 damage，数值在同节点 psdSkill 引用的攻击技能上」———
+#
+# 500001005 灵魂赫卡忒 h:「消耗HP #hpCon，召喚靈魂赫卡忒／靈魂赫卡忒會自動追蹤敵人，
+# 並每隔一定時間生成高密度靈魂艾爾達粒子 #bulletCount個／#c靈魂艾爾達粒子#：
+# 以 #damage% 的傷害攻擊 #attackCount 次」
+# 但它的 common 只有召唤参数（lt/rb/attackDelay/speed/x=50…），damage 与 attackCount
+# 一个都没有 —— 这两项在 psdSkill 的 500001010 上：damage=660+22*x、bulletCount=4、
+# attackCount=2，与 h 的三个占位符逐项相等。不补的话 NativeSummon 拿到的
+# DamagePercent 恒为 0，召唤出来站着不打。
+#
+# 值 = (被引用的技能, (要补的字段…))；只在自身没有该字段时写入，不覆盖已有定义。
+LINKED_ATTACK = {
+    500001005: (500001010, ("damage", "attackCount", "mobCount", "bulletCount")),
+}
+
+
+def apply_linked_attack(sid: int, rows: dict) -> str:
+    """把 psdSkill 里真正的结算技能字段补进每一级；返回补上的字段名（逗号分隔）。"""
+    cfg = LINKED_ATTACK.get(sid)
+    if cfg is None:
+        return ""
+    linked, names = cfg
+    common = definition(linked).get("common")
+    if common is None:
+        raise SystemExit(f"{sid} 的伤害来源 {linked} 没有 common")
+    _, raw = level_rows(common)
+    filled: list[str] = []
+    for name in names:
+        if name not in raw:
+            continue
+        value = raw[name]
+        for level, row in rows.items():
+            if name not in row:
+                row[name] = eval_formula(value, int(level)) if isinstance(value, str) else value
+        filled.append(name)
+    if not filled:
+        raise SystemExit(f"{sid} 的伤害来源 {linked} 里一个字段都没取到")
+    return ",".join(filled)
+
+
 def definition(skill_id: int):
     img_id = skill_id // 10000
     if img_id not in _cache:
@@ -240,6 +280,7 @@ def export_skill(sid: int, kind: str, core_id: int) -> dict | None:
     # 单字母占位先改名成引擎认识的字段，classify() 才能看出这是攻击技能。
     apply_alias(sid, fields)
     rows = expand(fields, max_level)
+    linked_fields = apply_linked_attack(sid, rows)
     bounds_from = ""
     if not ({"lt", "rb"} <= set(rows.get("1") or {})):
         bounds_from = apply_child_bounds(sid, rows, max_level)
@@ -295,6 +336,8 @@ def export_skill(sid: int, kind: str, core_id: int) -> dict | None:
         entry["attackInfo"] = attack_info
     if bounds_from:
         entry["boundsFrom"] = int(bounds_from)
+    if linked_fields:
+        entry["linkedAttack"] = {"from": LINKED_ATTACK[sid][0], "fields": linked_fields}
     return entry
 
 

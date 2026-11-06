@@ -69,6 +69,25 @@ public static class NativeGrowthStats
         return delta;
     }
 
+    /// <summary>
+    /// swapSlot/swapEntry：把那格换成这件再结算一次（提示框「战斗力提升量」用）。
+    /// 与缓存版同一个口径，只是不走指纹缓存——预览每帧都要，但换了装备就换结果，
+    /// 缓存反而要额外记 swap 参数。
+    /// </summary>
+    public static GrowthStatDelta Accumulate(FullCharacter character, int level, int job, int swapSlot, InventoryEntry swapEntry)
+    {
+        if (character == null) return new GrowthStatDelta();
+        if (swapSlot == 0 || swapEntry == null) return Accumulate(character, level, job);
+        var delta = new GrowthStatDelta();
+        var growth = character.growth ?? new GrowthState();
+        AccumulateEquipment(character, delta, swapSlot, swapEntry);
+        AccumulateHyperStats(character, growth, level, delta);
+        AccumulatePotentials(character, growth, level, delta);
+        AccumulateHexa(character, job, delta);
+        AccumulateSoulWeapon(character, delta);
+        return delta;
+    }
+
     /// <summary>强制丢弃缓存（内容指纹已经能自动覆盖，这里只给「怀疑缓存错了」的场景兜底）。</summary>
     public static void Invalidate() { cachedOwner = null; cachedDelta = null; }
 
@@ -180,37 +199,45 @@ public static class NativeGrowthStats
     }
 
     // ——— 徽章 / 星火 / 灵魂：都挂在 inventoryequipment 行上 ———
-    static void AccumulateEquipment(FullCharacter character, GrowthStatDelta delta)
+    static void AccumulateEquipment(FullCharacter character, GrowthStatDelta delta, int swapSlot = 0, InventoryEntry swapEntry = null)
     {
-        if (character.inventory == null) return;
-        foreach (var item in character.inventory)
-        {
-            if (item == null || item.position >= 0 || item.quantity <= 0) continue;
-
-            // 徽章：槽位本身按负数段区分（-201..-222），不吃 Weapons/防具那套 Worn 表。
-            if (SymbolCatalog.IsSymbolSlot(item.position))
+        if (character.inventory != null)
+            foreach (var item in character.inventory)
             {
-                var symbol = SymbolCatalog.Of(item.itemId);
-                if (symbol == null) continue;
-                if (symbol.IsArcane) delta.arcaneForce += item.symbolInc;
-                else delta.authenticForce += item.symbolInc;
-                if (item.position == SymbolCatalog.SlotOf(item.itemId))
-                    foreach (string rate in new[] { "ExpRate", "MesoRate", "DropRate" })
-                        delta.Add(rate, SymbolCatalog.GrandBonus(item.itemId, item.symbolLevel, rate));
-                // 主属性/HP 是升级时直接写进装备行的（EquipSymbol.setInc 同口径），按 flat 叠加。
-                delta.Add("STR", item.str); delta.Add("DEX", item.dex);
-                delta.Add("INT", item.int_); delta.Add("LUK", item.luk);
-                delta.Add("HP", item.hp); delta.Add("MP", item.mp);
-                continue;
+                if (item == null || item.position >= 0 || item.quantity <= 0) continue;
+                // 换装预览：这一格原来的那件被换掉了，它的星火/灵魂/徽章加成不能算。
+                if (swapSlot != 0 && item.position == swapSlot) continue;
+                AccumulateWornItem(item, character, delta, item.position);
             }
+        // 悬停的那件按「已穿上」的语义补进来（背包里 position>=0，上面的循环收不到）。
+        if (swapEntry != null && swapEntry.quantity > 0) AccumulateWornItem(swapEntry, character, delta, swapSlot);
+    }
 
-            // 星火：exGradeOption 里每行只有 exGrade+tier，数值要按装备等级现算。
-            if (item.exGradeOption > 0) AccumulateFlame(item, delta);
-
-            // 灵魂：soulOption 是属性代码，SoulCatalog 给出键与值。
-            if (item.soulOption > 0 && (character.soulWeapon == null || !character.soulWeapon.unlocked))
-                ApplySoul(item.soulOption, delta);
+    static void AccumulateWornItem(InventoryEntry item, FullCharacter character, GrowthStatDelta delta, int position)
+    {
+        // 徽章：槽位本身按负数段区分（-201..-222），不吃 Weapons/防具那套 Worn 表。
+        if (position < 0 && SymbolCatalog.IsSymbolSlot(position))
+        {
+            var symbol = SymbolCatalog.Of(item.itemId);
+            if (symbol == null) return;
+            if (symbol.IsArcane) delta.arcaneForce += item.symbolInc;
+            else delta.authenticForce += item.symbolInc;
+            if (position == SymbolCatalog.SlotOf(item.itemId))
+                foreach (string rate in new[] { "ExpRate", "MesoRate", "DropRate" })
+                    delta.Add(rate, SymbolCatalog.GrandBonus(item.itemId, item.symbolLevel, rate));
+            // 主属性/HP 是升级时直接写进装备行的（EquipSymbol.setInc 同口径），按 flat 叠加。
+            delta.Add("STR", item.str); delta.Add("DEX", item.dex);
+            delta.Add("INT", item.int_); delta.Add("LUK", item.luk);
+            delta.Add("HP", item.hp); delta.Add("MP", item.mp);
+            return;
         }
+
+        // 星火：exGradeOption 里每行只有 exGrade+tier，数值要按装备等级现算。
+        if (item.exGradeOption > 0) AccumulateFlame(item, delta);
+
+        // 灵魂：soulOption 是属性代码，SoulCatalog 给出键与值。
+        if (item.soulOption > 0 && (character.soulWeapon == null || !character.soulWeapon.unlocked))
+            ApplySoul(item.soulOption, delta);
     }
 
     static void AccumulateFlame(InventoryEntry item, GrowthStatDelta delta)

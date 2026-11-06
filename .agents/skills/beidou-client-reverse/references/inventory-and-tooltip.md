@@ -485,3 +485,115 @@ Unity编译0warning/0error；截图/tmp/equip-sealed-genesis。Bot/Items.json随
 底部技能及套装7件档可见。新增LastSetRect屏内/不与装备组重叠断言，
 编译0warning/0error；复现目录/tmp/equip-columns、/tmp/equip-columns-mobile。
 手机APK本轮未安装；右侧全局悬浮按钮仍可能遮住局部，这不是分栏边界断言范围。
+
+### 2026-11-06 「可升级次数」行的 282 皮肤与 0 次显示
+
+用户在装备详情里报「漏了一个可升级次数」。根因不是算错，是本工程自己加的
+`if (upgrades > 0)` 把 **剩 0 次** 的整行吞掉（銀之心这类 `tuc=0`、以及砸满卷的装备）。
+282 的 tooltip 皮肤能直接证伪这种写法：
+
+| 节点（`Data/UI/UIToolTip.img/Item/Equip`） | 尺寸 | 主色（ARGB4444 量化后） | 用途 |
+|---|---|---|---|
+| `textIcon/scroll/normal` | 11×9 | `#85919F` 灰 | 次数已用尽 |
+| `textIcon/scroll/enhanced` | 11×9 | `#AFADFF` 淡紫 | 还有剩余次数 |
+| `font/scroll/normal` | 12px | `#AFADFF` | 这一行的文字色 |
+| `textIcon/hammer/{normal,enhanced}` | 12×10 | 灰 / `#AFADFF` | 黄金锤剩余次数（同套两态） |
+
+**normal 是「该效果为空但仍占位」的灰态，不是隐藏**：同一约定在
+`textIcon/starForce`（normal 灰 → enhanced `#FFCC00`，等于 `font/starForce`）与
+`textIcon/bonusStat`（normal 灰 → enhanced `#0AE3AD`，等于 `font/bonusStat`）上逐条复核过。
+所以 282 的装备框恒定画这一行，剩 0 次只把图标换成灰。布局常量在 `Item/Equip/space`：
+`statUpgradeOffsetX=123`、`statUpgradeSpaceX=6`、`textIconSpaceX=4`。
+`textIcon/hammer` 说明黄金锤次数是**独立一行**（本工程黄金锤机制整体未迁移，未实现）。
+
+落地（用户选「图标 + 中文标签 + 数字」）：
+- `tools/ms282/import_equipment_tooltip.py` 的 `SECTIONS` 增 `Item/Equip/textIcon/scroll`
+  （只导这两张 11×9，不导同级 hammer）。重导后 43 canvas / 9712 bytes，
+  新 `UI/UIToolTip.img` sha256 `7763a0ca68c33f6c5c4cd53c3a987f578534ea98e793374f8b129e6eab1a5f76`，
+  已同步 `NativeAssetIndex.json` 与 `MapleDashResources/resource-manifest.json`；
+  `Assets/Resources/UI/EquipmentTooltip.bytes` 同步覆盖。
+- `ItemTooltip.DrawEquipment`：判据由 `upgrades > 0` 改为
+  `info.Get("tuc") != null || upgrades > 0`（模板根本没有 tuc 节点的禁强化装备仍不显示——
+  1402267 封印创世剑 `exceptUpgrade1`/`exUpgradeBlock1`/无 tuc，截图核对依旧无此行）；
+  `upgradeSlots` 记录本次数值，渲染时 `textIcon/scroll/{enhanced|normal}` + 文字 `#AFADFF`，
+  文字 x 后移 `11+4`（图标 + `textIconSpaceX`），图标画在 `y+3`（行高 16 内垂直居中）。
+- 像素真值校验：用 `wzpy.decode_canvas` 独立解 282 原 `UI/_Canvas/UIToolTip.img` 作真值，
+  再解新包比对主色，未用同一 decoder 自证；通道未互换（R/B 正常，ARGB4444 量化误差 ±6）。
+
+验证：`unity-compile-check` 0 warning / 0 error；`TooltipLayoutChecks.Run`
+264 通过 / 0 失败；`TooltipPreview` 1280×720 实拍 23 场景——`02-weapon-0star`
+显示紫图标 + 「可升级次数 : 7」、`21-symbol` 显示**灰图标 + 「可升级次数 : 0」**（本次核心验收点），
+`01-sealed-genesis` 仍无此行。截图目录 `/tmp/mapledash-tooltip`。
+`MapleDashResources.zip` 本轮未重打（9.4 GiB），发版前需跑 `./tools/pack_resources.sh`。
+
+### 2026-11-06 战斗力（atkPow）与「万/亿」数值写法
+
+用户报两件事：① 282 有「战斗力的提升量」逻辑，问实现了没；② 金币、装备详情里的战力
+超过阈值会从纯数字变成「多少亿多少万」。
+
+**282 侧证据**
+
+- `Data/UI/UIToolTip.img/Item/Equip/imgFont/atkPow` 有 `plus` / `minus` 两套字形：
+  `sign` + `0..9` + `a` + `b`，`space=2`，外加一张 `equipped`（145×18，已装备态）。
+  像素在 `UI/_Canvas/UIToolTip.img`；`plus/sign` 白、`minus/sign` 洋红 `#F00068`，
+  数字 10×21、`a` 19×19、`b` 20×19 ⇒ a/b 是「万」「亿」两个字，且**整套字形没有小数点**。
+- 客户端 .rdata 的路径池同段出现 `/atkPow/imgFont`、`/atkPow/highlight`、
+  `/atkPow/highlight/particle`、`plus` / `minus`、`boxAppearTiming`、`baseBefore`、
+  `baseAfter`、`diff` ⇒ 画的是「穿上这件之后战斗力从 baseBefore 走到 baseAfter」，
+  增加时有高亮粒子；`atkPowBox` / `atkPowMinus` 还出现在 `UICubeWz2`（方块）与星火窗口。
+- 单位阶梯在 `String/StringPoolWz2.img`：`MasterDisciple/UI/NumberUnit1..4` = 京 / 兆 / 億 / 萬。
+  客户端 EXE 里没有 `%d亿` 这类格式串（`億`/`萬` 只以字形图片存在），所以单位是**图数字形**
+  拼出来的，不是 printf。
+- 文案侧只有 `StringPoolWz2` 的 `FamiliarLinkActivateNotice`「※ 啟用時 戰鬥力提升量 : {}」
+  与 `StringTable` 的 `SID_AUTOENCHANT_*_ATTACKPOWER_*`（方块自动洗潜能按战斗力比较），
+  装备提示框那一行本身没有 WZ 文案 —— 全是客户端算的。
+
+**界面位置（用户给 282 实拍，2026-11-06 二次修正）**
+
+不是正文行，而是**图标右侧顶部**：上行小灰字 `戰鬥力提升量`，下一行是大号数值
+`+ 220萬 4312`（增亮白；减少是洋红 `#F00068`，对应 `minus/sign`），再下面是类别徽标
+（`肩膀裝飾`）。**已穿着的装备**把数值那一行换成 `imgFont/atkPow/equipped` 那张 145×18
+（8 字 × 18px = 「目前穿戴中的裝備」），所以 282 里没有「未穿戴的装备」这行字 ——
+本工程原来那句 `未穿戴的装备` 是自己加的，已按 282 去掉。
+
+数值写法是 `单位 + 空格 + 余数`：2,204,312 → `220萬 4312`（余数照抄、不补零、无千分位），
+再上一档 `1亿 2345万 6789`；余数为 0 只留单位。
+
+**本工程原状**：只有名牌 `NativeNameplate.PowerOf`（BeiDou DLL 的
+`calculateNameplatePower`），提示框没有战力；金币用 `ToString("N0")`（113px 的框会被大额顶爆）；
+全工程没有万/亿格式化。
+
+**落地**
+
+- `Assets/Scripts/NumberFormat.cs`：<1万 逐位带千分位；≥1万 → `X万 Y` / `X亿 Y万 Z` /
+  `X兆 …` / `X京 …`（空格分单位，余数不补零，整数截断），阶梯与
+  `StringPoolWz2/MasterDisciple/UI/NumberUnit1..4`（京/兆/億/萬）一致。
+  只用于展示位置，交易/输入框仍用精确 `N0`。
+- `Assets/Scripts/CombatPower.cs`：公式唯一出口
+  `(str+dex+int+luk) × max(1, max(watk,matk)) + maxHp/10 + maxMp/20`，乘法溢出饱和到 long 上限；
+  **口径不算临时 buff**（用户 2026-11-06 定）：一律走派生层
+  `EquipLoadout.Apply(Profile.Attributes, 武器, 0)`，不读 PlayerCtrl 那份带 buff 的 Attributes。
+- `TryPreview` 走**完整换装仿真**：`EquipLoadout.Apply(..., swapSlot, swapId, swapEntry)` 把该槽位
+  换成悬停的那件重算整块面板 —— 套装条数、潜能 %、星火/灵魂、技能被动全部按「穿完之后」结算。
+  配套改动：`EquipCatalog.Apply` 加 `overrideInstance`（背包件 position≥0，按原来的
+  `position<0` 找实例会掉回模板、少掉卷轴/星力）；`WornSlots(swapSlot, swapId)` 顶替；
+  `AddPotentialBonus` 跳过被换掉那件、补进悬停件；`NativeGrowthStats.Accumulate` 加
+  swap 重载（不走缓存），`AccumulateEquipment` 拆出 `AccumulateWornItem` 复用。
+  **旧实现（按两件差值手工加减）会把没找到的旧武器当成 0 再叠新武器，实战多算一倍**
+  —— 实拍从 `+8,470` 修正到 `+3,157`（当前战力 5,412）。
+- `Assets/Scripts/ItemStats.cs`：装备实例的「基础 + 星力 + 星火」三层属性，提示框属性行用；
+  战斗力预览已改为整块重算，不再用它做差量。
+- 绘制在 `ItemTooltip.DrawEquipment` 的 header 段：`iconY-1` 起 16px 放标签，
+  `iconY+16` 起 30px 放数值，右对齐到 `width-margin`；数值字号按字符数退档
+  （≤10 字 20px / ≤16 16px / ≤22 14px / 其余 12px，`ItemTooltip.PowerFontSize`），
+  兆/京级不会顶出 209px 槽位。类别徽标仍在 `iconY+56`。
+- 金币框（`GameWindows.cs` 113px）、名牌「战斗力：N」、称号试炼未达标提示改走 `Compact`。
+
+**验证**：`unity-compile-check` 0/0；`TooltipLayoutChecks` 304 通过 / 0 失败；`TooltipPreview`
+新增「换装自检」——把已穿着的那件临时当成背包件再预览一次，差量必须为 0（同件换同件），
+本轮 1 件通过、3 件因 harness 的 Profile/背包不一致跳过；当前战力（不含 buff）5,412，
+换永恒破甲剑 `+3,157`
+（26 条数值缩写覆盖 0/个位/万/亿/兆/京/long.MaxValue/long.MinValue/负数 +
+7 条战力公式含溢出饱和 + 7 条字号退档 + 原布局与星级断言）；
+`TooltipPreview` 1280×720 实拍：未穿戴的武器显示 `战斗力提升量` + `+ 8,470`，
+已穿戴的帽子只显示标签（无数值）+「当前穿戴中的装备」，与 282 两张实拍的位置一致。

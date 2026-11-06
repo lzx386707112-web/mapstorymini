@@ -98,7 +98,7 @@ public partial class SkillSystem
             int visual=15121022+spearCombo.PressCount-1;
             p.PlayNativeSkill(visual);
             PlayNativeReplayEffect(visual,origin,facing);
-            actionUntil=Time.unscaledTime+.180f;
+            LockAction(.180f, cast.native);
             var numberMode = new NativeReplayStage { Total = true, Interval = 120 };
             foreach (var hit in captured)
                 ApplyReplayHit(cast,cast.native,hit.Target,hit.Hits,origin,facing,numberMode);

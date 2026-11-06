@@ -6,6 +6,10 @@ public sealed class NativeSkillDefinition
 {
     public readonly int Id, Level, MpCost, HpCost, HitCount, TargetCount, FixedDamage;
     public readonly float Cooldown, DamagePercent, MagicAttack, Duration, Probability, AttackBuff, SummonInterval;
+    // 连射/按住型技能的「每发间隔」（毫秒，源端 attackDelay）。
+    // 之前统一按 100ms 打：间隔 150ms 的会多打一半、间隔 60ms 的会少打一半，
+    // 伤害直接差一个乘区。0 表示源端没写，按调用方的默认值走。
+    public readonly int AttackDelay;
     public readonly Vector2 Min, Max;
     public readonly string Kind, Element;
     public readonly bool Magic, HasBounds;
@@ -21,11 +25,20 @@ public sealed class NativeSkillDefinition
 
     public NativeSkillDefinition(Dictionary<string, object> skill, Dictionary<string, object> level)
     {
-        Id = (int)Art.Num(skill, "id"); Level = (int)Art.Num(level, "level", 1);
+        // 技能号 4 亿级：走 Art.Id（long）避免 float 把 400011088 舍成 400011072。
+        Id = Art.Id(skill, "id"); Level = Art.Id(level, "level", 1);
         Element = skill.TryGetValue("element",out var element) ? element as string : "";
         Kind = skill["kind"] as string; Magic = skill["magic"] is bool b && b;
         SummonInterval = Mathf.Max(0.1f, Art.Num(skill, "summonInterval", 1f));
-        MpCost = (int)Art.Num(level, "mpCon"); Cooldown = Art.Num(level, "cooltime");
+        MpCost = (int)Art.Num(level, "mpCon");
+        // 282 有 8 条技能把冷却只写在 cooltimeMS（毫秒），与 cooltime（秒）互斥、从不并存：
+        // 400011131 雷神战槌 2500 / 400021086 神之惩罚 1500 / 400051042 海龙冲锋 500 …
+        // 只读 cooltime 会让它们变成 0 冷却 ⇒ 按一下放一次、可以无限连按，
+        // 每次重播三四十张 500px 画布，表现就是「这技能放起来特别卡」。
+        float cooldownSeconds = Art.Num(level, "cooltime");
+        if (cooldownSeconds <= 0) cooldownSeconds = Art.Num(level, "cooltimeMS") / 1000f;
+        Cooldown = cooldownSeconds;
+        AttackDelay = (int)Art.Num(level, "attackDelay");
         HpCost = (int)Art.Num(level, "hpCon");
         FixedDamage = (int)Art.Num(level, "fixdamage", -1);
         // AbstractDealDamageHandler:1103 —— 一次攻击允许的段数 = max(bulletCount, attackCount)。
@@ -36,9 +49,16 @@ public sealed class NativeSkillDefinition
         DamagePercent = Art.Num(level, "damage"); MagicAttack = Art.Num(level, "mad");
         Duration = Art.Num(level, "time"); Probability = Art.Num(level, "prop", 100) / 100f;
         AttackBuff = Art.Num(level, "pad");
-        HasBounds = level.ContainsKey("lt") && level.ContainsKey("rb");
-        Min = Point(level, "lt", new Vector2(-Art.Num(level, "range", 200), -100));
-        Max = Point(level, "rb", new Vector2(0, 100));
+        // 282 的多段攻击会把第二/三/四段的判定框写成 lt2/rb2、lt3/rb3、lt4/rb4。
+        // 400051024 ICBM 就只有 lt2=[-800,-400] rb2=[-250,80]，主 lt/rb 是空的 ——
+        // 只认 lt/rb 会得到 HasBounds=false，InRange 退回 0 宽的默认框，
+        // 表现是「技能放得出来、怪一点不掉血」。逐级回退，只认第一条存在的。
+        string bounds = "";
+        foreach (var suffix in new[] { "", "2", "3", "4" })
+            if (level.ContainsKey("lt" + suffix) && level.ContainsKey("rb" + suffix)) { bounds = suffix; break; }
+        HasBounds = bounds.Length > 0 || level.ContainsKey("lt") && level.ContainsKey("rb");
+        Min = Point(level, "lt" + bounds, new Vector2(-Art.Num(level, "range", 200), -100));
+        Max = Point(level, "rb" + bounds, new Vector2(0, 100));
         bool vMatrix = skill["vMatrix"] is bool vm && vm;
         // 只对攻击型生效：召唤物有自己的一套射程（NativeSummon.AttackRange），
         // 让它吃「可见范围」会把毒领域/炮击艇的召唤物变成全屏炮台。

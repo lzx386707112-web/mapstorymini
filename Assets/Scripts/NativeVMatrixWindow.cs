@@ -16,6 +16,8 @@ using UnityEngine;
 public static class NativeVMatrixWindow
 {
     const string Img = "UI/VMatrixUI.img/";
+    // 特殊核心的图标不在 UI/VMatrixUI.img，也不在 skillicon（见 SpecialIcon 注释）。
+    const string SpecialIconFile = "Etc/_Canvas/VCore.img";
     const float W = 506f, H = 719f;
     // 特殊核心子窗：main/vector:specialCore (414,172) + specialCore/backgrnd 247x402。
     const float SpecialLeft = 414f, SpecialTop = 172f, SpecialW = 247f, SpecialH = 402f;
@@ -32,6 +34,11 @@ public static class NativeVMatrixWindow
     static Dialog dialog;
     static int dialogCore, targetLevel, transformCount = 1, gemCount = 1;
     static int gemItem, specialScroll;
+    static int specialScrollStart = -1;   // 触屏拖动的起点行号；-1 = 本段手势不是从槽区起的
+    static bool specialBarDrag;           // 是否正按着滚动条滑块拖
+    static float specialBarGrab;          // 按下点距滑块顶端的距离（拖的时候保持不跳）
+    // 这一段手势是从特殊核心子窗里起的：主窗的格子/按钮整段都看不到指针。
+    static bool specialOwnsGesture;
     static int resultBefore, resultAfter;
 
     // 手上拿着的核心：源端 V 矩阵单击拿起、双击开强化，快捷栏靠「点一下放下」完成绑定
@@ -44,16 +51,35 @@ public static class NativeVMatrixWindow
     public static bool Carrying => visible && carrying;
     public static bool AtPointer => visible && (dragging || Pointer.HitsWindow(WindowRect()));
 
+    // 窗口宽度随子窗扩展：命中区/遮挡区必须盖住子窗伸到主窗之外的那一截（506..661），
+    // 否则子窗右半边的点击会直接落到地图/HUD 上。
     static float Width => specialOpen ? SpecialLeft + SpecialW : W;
     static float S => Mathf.Min(BottomBar.S, Mathf.Min((UiKit.W - 24) / Width, UiKit.H * .92f / H));
-    static Vector2 Free => positioned ? NativeUi.ClampWindowPosition(position, new Vector2(Width, H), S)
-        : new Vector2((UiKit.W / S - Width) / 2, (UiKit.H / S - H) / 2);
+    // 但**位置基线永远按主窗宽度算**：原来拿 Width 居中，打开子窗那一刻主窗整体左移
+    // (661-506)/2≈77px，关掉再弹回来，看起来像「点了特殊核心，整个面板跳了一下」。
+    // 现在主窗不动、子窗向右伸出，只有屏幕真的放不下（Clamp 用扩展尺寸）才整体左移。
+    static Vector2 Free
+    {
+        get
+        {
+            var size = new Vector2(Width, H);
+            if (positioned) return NativeUi.ClampWindowPosition(position, size, S);
+            var center = new Vector2((UiKit.W / S - W) / 2, (UiKit.H / S - H) / 2);
+            return NativeUi.ClampWindowPosition(center, size, S);
+        }
+    }
     static Rect WindowRect() => new Rect(Free.x * S, Free.y * S, Width * S, H * S);
+
+    // 特殊核心子窗在窗口内的固定矩形（main/vector:specialCore + specialCore/backgrnd）。
+    static Rect SpecialRect() => GrowthUi.At(SpecialLeft, SpecialTop, SpecialW, SpecialH);
 
     public static void Escape()
     {
         if (carrying) { CancelCarry(); return; }
         if (dialog != Dialog.None) { dialog = Dialog.None; return; }
+        // 特殊核心子窗是主窗内部的一层（不是独立 Panel），Esc 只能收这一层。
+        // 少了这一句，按一次 Esc 会把子窗和整扇 V 矩阵一起关掉。
+        if (specialOpen) { specialOpen = false; specialScroll = 0; specialBarDrag = false; specialOwnsGesture = false; return; }
         Close();
     }
 
@@ -61,6 +87,10 @@ public static class NativeVMatrixWindow
     {
         visible = dragging = positioned = specialOpen = false;
         state = null; error = null; selected = -1; dialog = Dialog.None;
+        specialScroll = 0;
+        specialScrollStart = -1;
+        specialBarDrag = false;
+        specialOwnsGesture = false;
         CancelCarry();
     }
 
@@ -124,7 +154,25 @@ public static class NativeVMatrixWindow
     static VMatrixCoreView Find(int coreId)
     {
         if (state?.cores == null) return null;
-        foreach (var core in state.cores) if (core.coreId == coreId) return core;
+        foreach (var core in state.cores)
+        {
+            if (core.coreId != coreId) continue;
+            // VCore.img is the authoritative connection table.  Older character
+            // snapshots can contain a stale name/skill payload (the visible
+            // cross icon then shows Steel Body in the tooltip and binds the wrong
+            // skill).  Normalize the presentation and binding fields by core id
+            // before any UI or quick-slot code consumes the view.
+            var canonical = VMatrixCatalog.Core(coreId);
+            if (canonical != null)
+            {
+                core.name = canonical.name;
+                core.desc = canonical.desc;
+                core.skills = canonical.skills;
+                core.type = canonical.type;
+                core.maxLevel = canonical.maxLevel;
+            }
+            return core;
+        }
         return null;
     }
 
@@ -147,6 +195,28 @@ public static class NativeVMatrixWindow
             ? new Vector2(x, y) : new Vector2(fallbackX, fallbackY);
     }
 
+    // 特殊核心没有 Skill —— VMatrix.json 里 18 条 type==2 的 `skills` 全是空数组
+    // （400007xxx 在客户端没有 Skill 定义），所以「skillicon/<id>」对它永远是 null，
+    // 子窗、展示位、登记弹窗三处就都是空的。真正的图标在
+    // Etc/VCore.img/vSkill/CoreData/<id>/icon 的 _outlink 目标
+    // Etc/_Canvas/VCore.img/vSkill/CoreData/<id>/{icon, iconDisabled}（32x32，ARGB4444），
+    // 见 docs/tms282-skill/07-job-advancement.md §7.3；画布由
+    // tools/ms282/import_special_core_icons.py 转成 GMS 密钥并登记进资源清单。
+    // 资源包没更新时 HasFile 为 false：静默不画，不要每帧抛 FileNotFound。
+    static readonly Dictionary<int, Texture2D> specialIcons = new Dictionary<int, Texture2D>();
+
+    static Texture2D SpecialIcon(int coreId, bool registered)
+    {
+        if (coreId <= 0 || !WzAssets.HasFile(SpecialIconFile)) return null;
+        int key = (coreId << 1) | (registered ? 1 : 0);
+        if (specialIcons.TryGetValue(key, out var cached)) return cached;
+        var node = WzAssets.Node(SpecialIconFile + "/vSkill/CoreData/" + coreId +
+            (registered ? "/icon" : "/iconDisabled"));
+        var texture = node == null ? null : WzAssets.Texture(node);
+        specialIcons[key] = texture;
+        return texture;
+    }
+
     // —————————————— 绘制 ——————————————
 
     public static void Draw()
@@ -157,12 +227,24 @@ public static class NativeVMatrixWindow
         bool ownsPointer = AtPointer;
         GrowthUi.S = S;
         GrowthUi.R = window;
+
+        // 特殊核心子窗是同一个 Panel 里的第二层：它晚画（视觉在上），但 IMGUI 是「先画的先吃事件」。
+        // 子窗 x414..661 正好压住主窗最右一列核心格（419..487）和右上展示位（414..446 / 172..200），
+        // 不遮的话点一下子窗，底下的格子先被选中、双击还会弹强化窗 —— 表现就是
+        // 「点特殊核心面板，点击穿透到底下的核心格」。这里只遮子窗矩形内的指针，
+        // 主窗左半边照常可点。整段手势在按下那一刻定下来：手指/鼠标移出子窗也不回吐给主窗，
+        // 否则拖到一半会突然选中路过的那一格。
+        if (Pointer.Pressed) specialOwnsGesture = specialOpen && SpecialRect().Contains(Pointer.Pos);
+        // Clicked/DragEnded 在松手帧产生，此时 Down 已为 false；下一空闲帧才能清归属。
+        else if (!Pointer.Down && !Pointer.Released) specialOwnsGesture = false;
+        bool specialLayer = specialOpen && (specialOwnsGesture || SpecialRect().Contains(Pointer.Pos));
+
         // 抓手 = 整条标题栏（排除右上关闭/帮助），特殊核心子窗打开时也要能拖；
         // slop 让整块面板都能抓（按下后走 6px 才转成拖动，点核心/按钮不受影响）。
         // 但按住落在核心格上的那一段手势归「把核心拖到快捷格」，不能再兼作窗口拖动。
-        if (Pointer.Pressed) pressSlot = dialog == Dialog.None ? SlotAt(Pointer.Pos) : -1;
+        if (Pointer.Pressed) pressSlot = dialog == Dialog.None && !specialLayer ? SlotAt(Pointer.Pos) : -1;
         else if (!Pointer.Down) pressSlot = -1;
-        if (dialog == Dialog.None && !carrying && pressSlot < 0 &&
+        if (dialog == Dialog.None && !carrying && pressSlot < 0 && !specialLayer &&
             GrowthUi.Drag(ref dragging, ref positioned, ref position, ref grab, Width, H, WindowRect, 46f, 100f,
                 owner: typeof(NativeVMatrixWindow), slop: 6f))
             window = WindowRect();
@@ -182,9 +264,12 @@ public static class NativeVMatrixWindow
         GUI.enabled = parentEnabled && dialog == Dialog.None;
         GrowthUi.Image(Img + "main/", "backgrnd", 0, 0);
         DrawPoints();
-        DrawSlots();
-        DrawSpecialCore();
-        DrawButtons();
+        // 主窗的格与按钮在子窗覆盖区里看不到这根指针；子窗自己（DrawSpecialCore）在外面用真实指针，
+        // 所以滚动条、格子、开关都照常响应。用 InputMask 而不是 GUI.enabled：后者会把按钮画成灰图。
+        // 两段分开包，绘制顺序保持「槽位 → 子窗 → 按钮」不变。
+        using (new Pointer.InputMask(specialLayer)) DrawSlots();
+        DrawSpecialCore(specialLayer);
+        using (new Pointer.InputMask(specialLayer)) DrawButtons();
 
         // 弹窗最后画：它们压在槽位与按钮之上，但仍在窗口矩形内。
         if (dialog != Dialog.None) MatrixPresentation.Begin();
@@ -237,11 +322,18 @@ public static class NativeVMatrixWindow
             NativeUtilPrompt.Notice("这个核心连接的技能（" + skills[0] + "）在技能表里找不到，暂时不能绑到快捷栏。");
             return;
         }
+        // 被动核心（终极攻击VI 这类追加攻击体）绑到键盘上也按不下去：
+        // 先在拿起这一步说清楚，别让玩家拖到一半、放下之后才看到「被动技能无需施放」。
+        if (!QuickSlots.CanBindToQuickBar(skills[0], out string reject))
+        {
+            if (!string.IsNullOrEmpty(reject)) NativeUtilPrompt.Notice(reject);
+            return;
+        }
         carrying = true;
         carryCore = coreId;
         carrySkill = skills[0];
         selected = slot;
-        BottomBar.Toast("点一下快捷格放下「" + (view?.name ?? definition?.name ?? "核心") + "」");
+        BottomBar.Toast("点一下快捷栏（或键盘设定里的键位），放下「" + (view?.name ?? definition?.name ?? "核心") + "」");
     }
 
     static void CancelCarry()
@@ -271,6 +363,32 @@ public static class NativeVMatrixWindow
         if (!carrying) return;
         if (!visible) { CancelCarry(); return; }
         if (!Pointer.Clicked && !Pointer.DragEnded) return;
+
+        // ① 键盘。技能只走「键盘」这一层：键盘设定窗里的键位（KeyConfigWindow），或底部快捷格
+        //    （每个格子本来就挂着 KeyCode，见 TryDropOnQuickSlot）。屏上虚拟按键不作为落点——
+        //    直接把技能挂到 VirtualControls 的元素上会绕过键位映射，那个键在键盘设定里看不到、
+        //    也改不了，玩家以为是另一套绑定。所以这里认出「落在虚拟按键上」只为给一句说明，
+        //    不能让它变成静默取消（静默取消＝玩家分不清是「不支持」还是「没拖准」）。
+        bool overKeycap = KeyConfigWindow.Visible && !KeyConfigWindow.Carrying
+                          && KeyConfigWindow.HitKey(Pointer.Pos) != KeyCode.None;
+        if (overKeycap)
+        {
+            if (KeyConfigWindow.DropSkill(Pointer.Pos, carrySkill))
+            {
+                Pointer.ConsumeClick();
+                Pointer.Pressed = false;
+                CancelCarry();
+                return;
+            }
+        }
+        else if (!KeyConfigWindow.Visible &&
+                 (VirtualControls.HitButtonAt(Pointer.Pos) || VirtualControls.HitButtonAt(Pointer.PressPosition)))
+        {
+            NativeUtilPrompt.Notice("技能只能绑到键盘的键位上：在键盘设定里拖到键位，或放进快捷栏后指定按键。");
+            CancelCarry();
+            return;
+        }
+
         // 收起状态下 SlotRect 一律是 Rect.zero，落点永远判不中——直接说清楚，别静默取消。
         if (BottomBar.QuickCollapsed)
         {
@@ -331,7 +449,8 @@ public static class NativeVMatrixWindow
     public static void DrawCarryGhost()
     {
         if (!carrying) return;
-        var texture = carrySkill != 0 ? WzAssets.Texture("skillicon/" + carrySkill) : null;
+        var texture = carryCore != 0 ? MatrixCoreIcons.Texture(carryCore, false) : null;
+        if (texture == null && carrySkill != 0) texture = WzAssets.Texture("skillicon/" + carrySkill);
         if (texture == null) return;
         float size = 32f * BottomBar.S;
         GUI.DrawTexture(new Rect(Pointer.Pos.x - size * .5f, Pointer.Pos.y - size * .5f, size, size),
@@ -408,14 +527,22 @@ public static class NativeVMatrixWindow
 
             if (coreId != 0)
             {
-                var icon = view == null || view.skills == null || view.skills.Length == 0
-                    ? null : WzAssets.Texture("skillicon/" + view.skills[0]);
+                // 核心图标按 coreId 取 282 的 VCore/HexaCore 原图：Skill 树里很多 V 技能的
+                // icon 只是 1×1 空桩，直接 skillicon/<skills[0]> 画出来就是一片空格。
+                var icon = view == null ? null
+                    : view.type == 2 ? SpecialIcon(view.coreId, view.level > 0)
+                    : MatrixCoreIcons.Core(view.coreId, false, view.skills);
                 if (icon != null)
                     DrawCoreIcon(icon, bx, by, 58f);
                 if (view != null && view.level > 0) DrawLevelNumber(view.level, bx, by);
             }
             if (hover && GUI.enabled && view != null)
-                MatrixPresentation.Skill(view.skills, view.level, view.name, view.desc);
+            {
+                var canonical = VMatrixCatalog.Core(view.coreId);
+                MatrixPresentation.Skill(view.skills, view.level,
+                    canonical != null ? canonical.name : view.name,
+                    canonical != null ? canonical.desc : view.desc);
+            }
             if (hover)
             {
                 string hoverState = coreId == 0 ? "0" : "1";
@@ -448,7 +575,7 @@ public static class NativeVMatrixWindow
         }
     }
 
-    static void DrawSpecialCore()
+    static void DrawSpecialCore(bool coveredByPanel)
     {
         // 主窗右上角的「已启用特殊核心」展示位。
         // 这一格的位置来自 main/layer:specialCoreUnregistered 的 origin(-380,-132) → (380,132)；
@@ -459,36 +586,110 @@ public static class NativeVMatrixWindow
         if (state?.cores != null) foreach (var core in state.cores) if (core.type == 2 && core.selected) active = core;
         if (active != null)
         {
-            var icon = active.skills.Length > 0 ? WzAssets.Texture("skillicon/" + active.skills[0]) : null;
-            if (icon != null)
-                DrawCoreIcon(icon, coverX, coverY, 66f);
+            // 装备中时这一格画的是「已登记」状态：66x68 的 special 底框 + 核心图标。
+            // 只画图标（原实现）会得到一个悬在深色底板上的 32x32 方块，没有槽框。
+            GrowthUi.Image(Img + "core/coreBackground/", "special", coverX, coverY);
+            var icon = SpecialIcon(active.coreId, true);
+            if (icon != null) DrawCoreIcon(icon, coverX, coverY, 66f);
         }
-        else GrowthUi.Image(Img + "main/", "layer:specialCoreUnregistered", coverX, coverY);
-        if (active != null && GUI.enabled && GrowthUi.At(coverX, coverY, 66, 68).Contains(Pointer.Pos))
-            MatrixPresentation.Details(active.name, active.desc, active.level);
+        else
+        {
+            // 空位是两帧：常态「+」在 (380,132)，鼠标移上去换成发光版。
+            // 发光版 70x72、origin(-378,-130) → 左上角 (378,130)，比常态外扩 2px。
+            // 子窗打开时它和子窗左上角有一块 (414..446 / 172..200) 重叠，那块归子窗，不发光。
+            bool over = GUI.enabled && !coveredByPanel && GrowthUi.At(coverX, coverY, 66, 68).Contains(Pointer.Pos);
+            GrowthUi.Image(Img + "main/",
+                over ? "layer:specialCoreUnregisteredMouseOver" : "layer:specialCoreUnregistered",
+                over ? coverX - 2f : coverX, over ? coverY - 2f : coverY);
+        }
+        if (active != null && GUI.enabled && !coveredByPanel
+            && GrowthUi.At(coverX, coverY, 66, 68).Contains(Pointer.Pos))
+            MatrixPresentation.Details(active.name, active.desc, active.level, false);
         if (!specialOpen) return;
 
         GrowthUi.Image(Img + "main/specialCore/", "backgrnd", SpecialLeft, SpecialTop);
+        // 列表按 CoreData 的原顺序（= VMatrix.json 里 cores 的顺序，也就是 AllCores 的枚举顺序），
+        // 已登记的只是换成自己的快照。先列已登记、再把未登记追加到末尾会造成
+        // 「登记一个核心，整张网格重排」——原端列表是固定的 18 格。
         var slots = new List<VMatrixCoreView>();
-        if (state?.cores != null) foreach (var core in state.cores) if (core.type == 2) slots.Add(core);
-        // 未登记的也列出来：点一下就走 Register 弹窗（源端 register 分支）。
         foreach (var core in VMatrixCatalog.AllCores)
         {
             if (!core.IsSpecial) continue;
-            bool listed = false;
-            foreach (var view in slots) if (view.coreId == core.id) { listed = true; break; }
-            if (!listed) slots.Add(new VMatrixCoreView { coreId = core.id, type = 2, name = core.name, skills = core.skills });
+            VMatrixCoreView owned = null;
+            if (state?.cores != null)
+                foreach (var view in state.cores) if (view.coreId == core.id) { owned = view; break; }
+            slots.Add(owned ?? new VMatrixCoreView
+            {
+                coreId = core.id, type = core.type, maxLevel = core.maxLevel,
+                name = core.name, desc = core.desc, skills = core.skills,
+            });
         }
 
         var lt = Vector("main/specialCore/vector:slotLT", 10, 47);
         var slotPos = Vector("main/specialCore/slot/slotPos", 36, 39);
         var offset = Vector("main/specialCore/slot/slotOffset", 75, 75);
+        var clip = Vector("main/specialCore/slot/mask/clip_rb", 230, 297);
         const int columns = 3, visibleRows = 4;
         int rows = (slots.Count + columns - 1) / columns;
         int maxScroll = Mathf.Max(0, rows - visibleRows);
-        if (GUI.enabled && GrowthUi.At(SpecialLeft, SpecialTop, SpecialW, SpecialH).Contains(Pointer.Pos)
-            && Mathf.Abs(Input.mouseScrollDelta.y) > .01f)
-            specialScroll = Mathf.Clamp(specialScroll - (int)Mathf.Sign(Input.mouseScrollDelta.y), 0, maxScroll);
+        var area = GrowthUi.At(SpecialLeft + lt.x, SpecialTop + lt.y, clip.x, clip.y);
+
+        // 滚动条几何全部读原端 scrollBarInfo：lt(222,-1)、轨道 5x292、滑块 5x28。
+        // delta(10)/wheelRange(400) 是原端的翻页量与内容总长，本工程按「行」翻页，不用这两个值。
+        var barLT = Vector("main/specialCore/slot/scrollBarInfo/lt", 222, -1);
+        const float barW = 5f, barH = 292f, thumbH = 28f;
+        float barX = SpecialLeft + barLT.x, barY = SpecialTop + barLT.y;
+        float barTravel = Mathf.Max(1f, barH - thumbH);
+        // 5px 宽在触屏上按不住，命中区向右放宽到 13px（只放宽命中，绘制仍是 5px）。
+        // 左边只退 1px：第三列的槽框右边缘在 slot 局部 x=219，再往左会抢掉格子的点击。
+        var barHit = GrowthUi.At(barX - 1f, barY, barW + 8f, barH);
+        Rect thumbAt(int scroll) => GrowthUi.At(barX,
+            barY + barTravel * (maxScroll <= 0 ? 0f : Mathf.Clamp01((float)scroll / maxScroll)), barW, thumbH);
+
+        if (GUI.enabled)
+        {
+            // 滚轮（桌面/编辑器）
+            if (area.Contains(Pointer.Pos) && Mathf.Abs(Input.mouseScrollDelta.y) > .01f)
+                specialScroll = Mathf.Clamp(specialScroll - (int)Mathf.Sign(Input.mouseScrollDelta.y), 0, maxScroll);
+            // 滚动条：按滑块拖、按轨道翻一行。命中后必须把这一段手势从槽区拖动里摘出去，
+            // 否则拖滑块会顺带按 y 位移把列表再翻一次。
+            if (maxScroll > 0)
+            {
+                var thumb = thumbAt(specialScroll);
+                if (Pointer.Pressed && barHit.Contains(Pointer.PressPosition))
+                {
+                    specialScrollStart = -1;
+                    if (thumb.Contains(Pointer.PressPosition))
+                    {
+                        specialBarDrag = true;
+                        specialBarGrab = Pointer.PressPosition.y - thumb.y;
+                    }
+                    else
+                        specialScroll = Mathf.Clamp(specialScroll
+                            + (Pointer.PressPosition.y < thumb.y ? -1 : 1), 0, maxScroll);
+                    Pointer.ConsumeClick();
+                }
+                else if (specialBarDrag && Pointer.Down)
+                {
+                    float t = Mathf.Clamp01((Pointer.Pos.y - specialBarGrab - barY) / barTravel);
+                    specialScroll = Mathf.Clamp(Mathf.RoundToInt(t * maxScroll), 0, maxScroll);
+                }
+            }
+            if (!Pointer.Down) specialBarDrag = false;
+            // 触屏没有滚轮：18 个特殊核心是 6 行、一屏只放 4 行，后两行只能靠拖。
+            // 按住槽区上下拖满一行翻一行（位移不足一行时回到按下时的位置，不会半格错位）。
+            // specialScrollStart = -1 表示「这一段手势不是从槽区开始的」，不能拿旧值去算。
+            if (maxScroll > 0 && Pointer.Pressed && area.Contains(Pointer.PressPosition)
+                && !barHit.Contains(Pointer.PressPosition))
+                specialScrollStart = specialScroll;
+            else if (!Pointer.Down)
+                specialScrollStart = -1;
+            else if (specialScrollStart >= 0)
+            {
+                int step = Mathf.Max(1, Mathf.RoundToInt(offset.y * S));
+                specialScroll = Mathf.Clamp(specialScrollStart - Mathf.RoundToInt((Pointer.Pos.y - Pointer.PressPosition.y) / step), 0, maxScroll);
+            }
+        }
         specialScroll = Mathf.Clamp(specialScroll, 0, maxScroll);
 
         for (int i = 0; i < slots.Count; i++)
@@ -498,16 +699,16 @@ public static class NativeVMatrixWindow
             float x = SpecialLeft + lt.x + col * offset.x + slotPos.x;
             float y = SpecialTop + lt.y + (row - specialScroll) * offset.y + slotPos.y;
             var view = slots[i];
-            bool opened = false;
-            foreach (var core in state.cores) if (core.coreId == view.coreId && core.level > 0) opened = true;
+            // 已登记（level>0）才有彩色图标；未登记的用 282 的 iconDisabled（灰）+ 锁底框。
+            bool opened = view.level > 0;
             var frame = WzAssets.Node(Img + "core/coreBackground/" + (opened ? "special" : "specialLocked"));
             var origin = frame == null ? new Vector2(34, 39) : WzAssets.Origin(frame);
             GrowthUi.Image(Img + "core/coreBackground/", opened ? "special" : "specialLocked", x - origin.x, y - origin.y);
-            var icon = view.skills != null && view.skills.Length > 0 ? WzAssets.Texture("skillicon/" + view.skills[0]) : null;
+            var icon = SpecialIcon(view.coreId, opened);
             if (icon != null)
                 DrawCoreIcon(icon, x - origin.x, y - origin.y, 66f);
             bool hover = GrowthUi.At(x - origin.x, y - origin.y, 66, 68).Contains(Pointer.Pos);
-            if (hover && GUI.enabled) MatrixPresentation.Details(view.name, VMatrixCatalog.Core(view.coreId)?.desc, view.level);
+            if (hover && GUI.enabled) MatrixPresentation.Details(view.name, view.desc, view.level, false);
             if (hover) GrowthUi.Veil(x - origin.x, y - origin.y, 66, 68, new Color(1f, 1f, 1f, .16f));
             if (!GUI.enabled || !GrowthUi.Repaint || !Pointer.Clicked || !hover) continue;
             Pointer.ConsumeClick();
@@ -520,6 +721,18 @@ public static class NativeVMatrixWindow
             if (toggled != null && toggled.ok)
                 BottomBar.Toast(view.selected ? "已停用特殊核心" : "已启用特殊核心");
         }
+
+        // 滚动条：轨道常驻（一屏放得下时用 disabled/base），有可翻的行才画滑块。
+        // 原端 disabled 分支就只有 base/prev/next，没有 thumb，所以这里也不画滑块。
+        GrowthUi.Image(Img + "main/specialCore/slot/scrollBarInfo/",
+            maxScroll > 0 ? "enabled/base" : "disabled/base", barX, barY);
+        if (maxScroll > 0)
+        {
+            var thumb = thumbAt(specialScroll);
+            bool over = barHit.Contains(Pointer.Pos);
+            string frame = specialBarDrag ? "thumb2" : over ? "thumb1" : "thumb0";
+            GrowthUi.Image(Img + "main/specialCore/slot/scrollBarInfo/enabled/", frame, thumb.x, thumb.y);
+        }
     }
 
     static void DrawButtons()
@@ -527,8 +740,10 @@ public static class NativeVMatrixWindow
         if (GrowthUi.Button(Img + "main/", "button:close")) { Close(); return; }
         if (GrowthUi.Button(Img + "main/", "button:help"))
             MatrixPresentation.Help(false);
-        if (GrowthUi.Button(Img + "main/", "button:specialCoreOpen") || GrowthUi.Button(Img + "main/", "button:specialCoreClose"))
-        { specialOpen = !specialOpen; specialScroll = 0; }
+        // 「特殊核心」开关是同一位置的两张图（箭头 → 开 / ← 关），必须按状态二选一。
+        // 两个都画就永远看到后画的 ←，看起来像「面板明明关着，按钮却显示已展开」。
+        if (GrowthUi.Button(Img + "main/", specialOpen ? "button:specialCoreClose" : "button:specialCoreOpen"))
+        { specialOpen = !specialOpen; specialScroll = 0; specialBarDrag = false; specialOwnsGesture = false; }
 
         if (GrowthUi.Button(Img + "main/", "button:reset"))
         {
@@ -557,7 +772,8 @@ public static class NativeVMatrixWindow
         // 弹窗内部一律用 enforcementAlert 自己的坐标（按钮 origin 就是相对它的）。
         var outer = GrowthUi.Shift((Width - 340) / 2, (H - 491) / 2, 340, 491);
         GrowthUi.Image(Img + "vSkillUpgradePopUp/enforcementAlert/", "backgrnd", 0, 0);
-        var icon = core.skills.Length > 0 ? WzAssets.Texture("skillicon/" + core.skills[0]) : null;
+        var icon = core.type == 2 ? SpecialIcon(core.coreId, true)
+            : MatrixCoreIcons.Core(core.coreId, false, core.skills);
         if (icon != null) GUI.DrawTexture(GrowthUi.At(154, 70, icon.width, icon.height), icon);
         GrowthUi.Image(Img + "vSkillUpgradePopUp/enforcementAlert/", "layer:coreCover", 132, 43);
 
@@ -615,7 +831,8 @@ public static class NativeVMatrixWindow
         var outer = GrowthUi.Shift((Width - 340) / 2, (H - 351) / 2, 340, 351);
         GrowthUi.Image(Img + "vSkillUpgradePopUp/enforcementResult/", "backgrnd", 0, 0);
         var pos = Vector("vSkillUpgradePopUp/enforcementResult/vector:corePos", 175, 92);
-        var icon = core.skills.Length > 0 ? WzAssets.Texture("skillicon/" + core.skills[0]) : null;
+        var icon = core.type == 2 ? SpecialIcon(core.coreId, true)
+            : MatrixCoreIcons.Core(core.coreId, false, core.skills);
         if (icon != null)
             GUI.DrawTexture(GrowthUi.At(pos.x - icon.width / 2f, pos.y - icon.height / 2f, icon.width, icon.height), icon);
         GrowthUi.Image(Img + "vSkillUpgradePopUp/enforcementResult/", "layer:coreCover", 132, 43);
@@ -670,7 +887,7 @@ public static class NativeVMatrixWindow
         }
         var outer = GrowthUi.Shift((Width - 342) / 2, (H - 361) / 2, 342, 361);
         GrowthUi.Image(Img + "specialCorePopUp/register/", "backgrnd", 0, 0);
-        var icon = core.skills.Length > 0 ? WzAssets.Texture("skillicon/" + core.skills[0]) : null;
+        var icon = SpecialIcon(core.coreId, true);
         if (icon != null) GUI.DrawTexture(GrowthUi.At(155, 96, icon.width, icon.height), icon);
         GrowthUi.ShadowText(Img + "specialCorePopUp/register/", core.name, 40, 150, 262, "",
             TextAnchor.MiddleCenter, 14);

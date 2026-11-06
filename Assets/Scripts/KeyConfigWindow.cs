@@ -57,6 +57,13 @@ public static class KeyConfigWindow
     {
         var key = HitKey(point);
         if (key == KeyCode.None) return false;
+        // 键盘设定里拖到键帽同样是「绑到键盘这一层」：被动技能先在这里拒掉，
+        // 不要写进草稿、保存之后玩家按了才看到「被动技能无需施放」。
+        if (!QuickSlots.CanBindToQuickBar(skillId, out string reject))
+        {
+            if (!string.IsNullOrEmpty(reject)) NativeUtilPrompt.Notice(reject);
+            return true;
+        }
         int slot = -1;
         for (int i = 0; i < QuickSlots.Count; i++)
         {

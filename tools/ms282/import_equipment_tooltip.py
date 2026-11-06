@@ -7,7 +7,10 @@ from import_enhancement_ui import Importer, ROOT
 
 SECTIONS = ["Item/Equip/frame/common", "Item/Equip/itemIcon", "Item/Equip/font",
             "Item/Equip/space", "Item/Equip/textIcon/starForce", "Item/Equip/textIcon/potential",
-            "Item/Equip/textIcon/additionalPotential", "Item/Equip/textIcon/soulWeaponWz2"]
+            "Item/Equip/textIcon/additionalPotential", "Item/Equip/textIcon/soulWeaponWz2",
+            # 「可升级次数」行的前缀图标：normal 灰 #85919F（剩 0 次）/ enhanced 紫 #AFADFF。
+            # 只导这两张 11x9，不导同级的 hammer（黄金锤机制本工程尚未迁移）。
+            "Item/Equip/textIcon/scroll"]
 
 def main():
     importer = Importer(Path.home()/"Documents/mxd/MapleStory/Data")

@@ -192,7 +192,7 @@ public static class NativeTitleTrials
         long requirement = NativeNameplate.TierRequirement(next);
         long power = NativeNameplate.PowerOf(player);
         if (power < requirement)
-            return "战力未达标：需要 " + requirement + "（当前 " + power + "）";
+            return "战力未达标：需要 " + NumberFormat.Compact(requirement) + "（当前 " + NumberFormat.Compact(power) + "）";
         long need = Need(series, next);
         long count = Count(series);
         if (count < need)

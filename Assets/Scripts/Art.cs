@@ -432,6 +432,34 @@ public static class Art
     public static float Num(Dictionary<string, object> d, string key, float def = 0f)
         => d != null && d.ContainsKey(key) && d[key] != null ? ToF(d[key]) : def;
 
+    // ——— 大整数 id 必须绕开 float ———
+    // 五转 / 六转的技能号动辄 4 亿（400011088）。float 只有 24 位尾数，2^28 以上
+    // 的步长就是 32，ToF(400011088) == 400011072f —— 于是
+    //   byId[400011072] = 「灵魂蚀日」(type=summon) 覆盖掉真正的「圣十字架」(type=attack)，
+    //   真正的 400011088 反而查不到自己的条目。
+    // 表现就是：核心 tooltip 名字串到别的技能、type 判错（attack→buff/summon）、
+    // 释放时走错结算与特效分支。所有 id 一律走 long 精确转换，绝不经 float。
+    public static long Long(object value)
+    {
+        switch (value)
+        {
+            case null: return 0;
+            case long l: return l;
+            case int i: return i;
+            case short sh: return sh;
+            case byte b: return b;
+            case double d: return (long)System.Math.Round(d);
+            case float f: return (long)System.Math.Round(f);
+            case string s:
+                return long.TryParse(s, System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out long parsed) ? parsed : 0;
+            default: return 0;
+        }
+    }
+
+    public static int Id(Dictionary<string, object> d, string key, int def = 0)
+        => d != null && d.ContainsKey(key) && d[key] != null ? (int)Long(d[key]) : def;
+
     // 背景图层是按「像素」存的，画的时候要按 PPU 换成世界单位
     public static Vector2 Size(Dictionary<string, object> d)
     {

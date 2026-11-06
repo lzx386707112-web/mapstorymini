@@ -223,6 +223,32 @@ public class GameLoop : MonoBehaviour
         flow.BackToCharSelect();
     }
 
+    /// <summary>
+    /// 菜单「游戏结束」的入口：只登记，真正的退场放到下一帧 Update 再跑。
+    /// 确认回调是在 OnGUI（GameWindows.DrawAll → NativeUtilPrompt.Draw）里执行的，
+    /// 在这一层拆场景会让同帧后续的 HUD 绘制读到已经清空的 Character/玩家。
+    /// </summary>
+    public void RequestExitToLogin() { exitToLoginPending = true; }
+    bool exitToLoginPending;
+
+    /// <summary>
+    /// 「游戏结束」：存档 → 清账号登录态 → 回登录页，不退出 App。
+    /// 与 ExitToCharSelect 的差别只在账号态：这里会 LoginService.Logout 并清空 AccountId，
+    /// 所以回来后只能停在登录屏（选角列表要重新登录才会加载）。
+    /// GameSession.Logout 是 DeselectChar 的超集（同样拆角色、清角色级窗口），不用再调一次。
+    /// </summary>
+    public void ExitToLogin()
+    {
+        if (DeathFlow.I != null) DeathFlow.I.ForceClear();
+        BottomMenu.Close();          // 入口就在这个菜单里，别让它跟着回到登录页
+        BottomBar.ResetChat();       // 收起聊天输入框/虚拟键盘（重登时 ApplyToProfile 本来也会清一次）
+        GameSession.Logout();
+        TeardownBattle();
+        state = GameState.Login;
+        var flow = LoginFlow.I != null ? LoginFlow.I : gameObject.AddComponent<LoginFlow>();
+        flow.BackToLogin("");
+    }
+
     void ClearBattleEntities()
     {
         foreach (var summon in FindObjectsOfType<NativeSummon>())
@@ -384,6 +410,7 @@ public class GameLoop : MonoBehaviour
         NativeHuntRuntime.Tick();
         NativeBotBossCombat.Tick(NativeMobController.Now);   // 自由市场假人集火 Boss 的攻击节拍
         NativeDojoService.Tick();                            // 武陵道场超时踢出（源端 TimerManager）
+        if (exitToLoginPending) { exitToLoginPending = false; ExitToLogin(); return; }
         if (state != GameState.Playing) return;
 
         if (gameOver)

@@ -41,6 +41,10 @@ public partial class SkillSystem
         // 资源/追加方向/符咒/技能替换/隐身回避：这些都是「命中后」的实体结算，
         // 数值来自 NativeSkillMechanics.json，见 NativeSkillMechanics.cs。
         OnMechanicHit(cast,captured,origin,facing);
+        // 黑影切断（400041025）的被动段：致命暗殺 / 音速狂襲命中 → 给最大 HP 最高的
+        // 那名敌人叠伤口（最多 3 层、10 秒），满层后才允许连携 400041026。
+        // 见 NativeSkillSequences.cs。
+        NotifySequenceHit(cast,captured);
         var field=FindObjectOfType<FieldDirector>();var map=field!=null?field.Map:null;
         var source=captured.Count>0?captured[0].Hits:Array.Empty<DamageResult>();
         int id=cast.native.Id;double now=Time.realtimeSinceStartupAsDouble;

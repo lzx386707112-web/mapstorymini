@@ -114,15 +114,9 @@ public static class NativeNameplate
     /// <summary>是否穿着名牌戒指（源端 ItemInformationProvider.isNameTagRing 的等价判定）。</summary>
     public static bool WearsNameTagRing => NativeNameTag.WearsField("nameTag");
 
-    /// <summary>PacketCreator.calculateNameplatePower。</summary>
+    /// <summary>PacketCreator.calculateNameplatePower（公式本体在 CombatPower，全工程只此一套）。</summary>
     public static long PowerOf(PlayerCtrl player)
-    {
-        if (player == null || player.Attributes == null) return 0;
-        var a = player.Attributes;
-        long stats = (long)a.str + a.dex + a.intelligence + a.luk;
-        long attack = Mathf.Max(player.WeaponAttack, player.MagicAttack);
-        return System.Math.Max(0L, stats * System.Math.Max(1L, attack) + a.maxHp / 10L + a.maxMp / 20L);
-    }
+        => player == null ? 0 : CombatPower.Of(player.Attributes, player.WeaponAttack, player.MagicAttack);
 
     /// <summary>
     /// 脚下那一行的文字；不显示时返回 null。
@@ -141,7 +135,7 @@ public static class NativeNameplate
         // 称号试炼：显示档位 = 已点亮最高档；一档都没点亮时回落战力自动档（兼容现状）。
         int lit = NativeTitleTrials.Lit(cachedSeries);
         int tier = lit > 0 ? lit - 1 : TierOf(power);
-        cachedLine = WearsNameTagRing ? TitleOf(cachedSeries, tier) + " || 战斗力：" + power : null;
+        cachedLine = WearsNameTagRing ? TitleOf(cachedSeries, tier) + " || 战斗力：" + NumberFormat.Compact(power) : null;
         return cachedLine;
     }
     static string cachedLine;

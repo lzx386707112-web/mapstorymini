@@ -19,10 +19,12 @@ for cls, members in classes.items():
     code += "static class " + cls + " {" + "".join("public static bool " + prop + ";" for prop in props)
     matrix = cls in ("NativeVMatrixWindow", "NativeHexaMatrixWindow")
     if matrix:
-        # Escape() 现在会先收掉手上拿着的核心（carrying / CancelCarry），替身类要补同名字段与空方法。
+        # Escape() 现在会按「手上拿着的核心 → 弹窗 → 子窗」逐层收，替身类要补齐同名字段与空方法。
         code += ("public enum Dialog { None, Popup }; public static Dialog dialog;"
-                 " public static bool carrying; public static void CancelCarry() {}"
-                 " public static void Close() {Visible=false;}")
+                 " public static bool carrying, miniOpen, specialOpen, specialBarDrag, specialOwnsGesture;"
+                 " public static int specialScroll, specialScrollStart; public static float specialBarGrab;"
+                 " public static void CancelCarry() {}"
+                 " public static void Close() {Visible=false; miniOpen=false; specialOpen=false; specialBarDrag=false;}")
     for method in members - props:
         if matrix and method == "Escape":
             source = (root / ("Assets/Scripts/" + cls + ".cs")).read_text()
@@ -40,6 +42,12 @@ code += "NativeVMatrixWindow.Visible=true; GameWindows.TrackPanels(); NativeUtil
 code += "NativeVegaWindow.Visible=true; NativeVegaWindow.Busy=true; GameWindows.TrackPanels(); Check(GameWindows.CloseTop() && NativeVegaWindow.Visible); NativeVegaWindow.Busy=false; Check(GameWindows.CloseTop() && !NativeVegaWindow.Visible); Check(!GameWindows.CloseTop());"
 for cls in ("NativeVMatrixWindow", "NativeHexaMatrixWindow"):
     code += f"{cls}.Visible=true; {cls}.dialog={cls}.Dialog.Popup; GameWindows.TrackPanels(); Check(GameWindows.CloseTop() && {cls}.Visible && {cls}.dialog=={cls}.Dialog.None); Check(GameWindows.CloseTop() && !{cls}.Visible);"
+# 子窗（V 的特殊核心 / HEXA 的索尔艾尔达迷你窗）也是主窗里的一层：
+# 一次 Esc 只收子窗，主窗必须还在；再一次才收主窗。
+for cls, field in (("NativeVMatrixWindow", "specialOpen"), ("NativeHexaMatrixWindow", "miniOpen")):
+    code += (f"{cls}.Visible=true; {cls}.{field}=true; GameWindows.TrackPanels();"
+             f" Check(GameWindows.CloseTop() && {cls}.Visible && !{cls}.{field});"
+             f" Check(GameWindows.CloseTop() && !{cls}.Visible);")
 code += 'Console.WriteLine($"Esc stack: {n} checks PASS"); }}'
 with tempfile.TemporaryDirectory(prefix="escape-panels-") as tmp:
     tmp = Path(tmp)

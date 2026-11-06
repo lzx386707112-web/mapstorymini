@@ -177,6 +177,7 @@ public static class ItemTooltip
     const string LCategory = "装备分类 :";      // 5530  CATEGORY :
     const string LAttackSpeed = "攻击速度 :";   // 656   ATTACK SPEED :
     const string LUpgrades = "可升级次数 :";    // 668   NUMBER OF UPGRADES AVAILABLE :
+    const string LPowerGain = "战斗力提升量";   // 282 装备框图标右侧顶部的小标签（客户端算，非 WZ 文案）
     const string LQuestItem = "任务道具";       // 693   Quest Item
     // 2042..2047, 657..665；HP/MP 源端没有翻译，保留原样
     static readonly string[] StatLabels =
@@ -203,6 +204,7 @@ public static class ItemTooltip
         if (info == null) return;
         float s = BottomBar.S;
         var rows = new List<string[]>();
+        int upgradeSlots = -1;   // -1 = 本次没有「可升级次数」行
         int prefix = id / 10000;
         string category = prefix >= 130 && prefix <= 149 && prefix - 130 < WeaponNames.Length
             ? WeaponNames[prefix - 130] : null;
@@ -232,47 +234,33 @@ public static class ItemTooltip
             int speed = info.Int("attackSpeed");
             if (speed >= 0 && speed < SpeedNames.Length) rows.Add(new[] { LAttackSpeed, " " + SpeedNames[speed] });
         }
-        string[] keys = { "incSTR", "incDEX", "incINT", "incLUK", "incMHP", "incMMP", "incPAD", "incMAD", "incPDD", "incMDD", "incACC", "incEVA", "incCraft", "incSpeed", "incJump" };
+        // 基础 / 星力 / 星火三层分开取：ItemStats 是 tooltip 与战斗力预览共用的一份口径，
+        // 免得「面板说 +36、预览按 +24 算」这种两套数字。
+        var stats = hoverItem != null ? ItemStats.Of(hoverItem) : ItemStats.Template(id);
         string[] labels = StatLabels;
         int[] actual = hoverItem?.isEquip == true ? new[] { hoverItem.str, hoverItem.dex, hoverItem.int_, hoverItem.luk,
             hoverItem.hp, hoverItem.mp, hoverItem.watk, hoverItem.matk, hoverItem.wdef, hoverItem.mdef,
             hoverItem.acc, hoverItem.avoid, hoverItem.hands, hoverItem.speed, hoverItem.jump } : null;
         bool version282 = hoverItem?.equipmentData != null &&
             hoverItem.equipmentData.TryGetValue("enhancementVersion", out var version) && System.Convert.ToInt32(version) == 282;
-        bool vestige = hoverItem?.equipmentData != null &&
-            hoverItem.equipmentData.TryGetValue("starForceVestige", out var trace) && System.Convert.ToInt32(trace) != 0;
-        string[] statKeys = { "str", "dex", "int", "luk", "hp", "mp", "watk", "matk", "wdef", "mdef", "acc", "avoid", "hands", "speed", "jump" };
-        var baseStats = new Dictionary<string, int>();
-        bool native = NativeScrollService.HasStats(hoverItem);
-        for (int i = 0; i < keys.Length; i++)
-            baseStats[statKeys[i]] = version282 ? (native && actual != null ? actual[i] : info.Int(keys[i]))
-                : actual == null ? info.Int(keys[i]) : System.Math.Max(actual[i], info.Int(keys[i]));
+        bool vestige = stats.starForceVestige;
         int requiredLevel = info.Int("reqLevel");
         if (hoverItem?.equipmentData != null && hoverItem.equipmentData.TryGetValue("iIncReq", out var incReq))
             requiredLevel += System.Convert.ToInt32(incReq);
-        var starStats = version282 && !vestige
-            ? StarForceStats.Calculate(id, requiredLevel, hoverItem.starLevel, info.Int("superiorEqp") != 0, baseStats)
-            : new Dictionary<string, int>();
-        var flameStats = new int[keys.Length];
-        // Same flat-stat mapping as NativeGrowthStats.ApplyFlameStat; percentages stay separate.
-        int[][] flameColumns = { new[]{0}, new[]{1}, new[]{2}, new[]{3}, new[]{0,1}, new[]{0,2},
-            new[]{0,3}, new[]{1,2}, new[]{1,3}, new[]{2,3}, new[]{6}, new[]{7}, new[]{8},
-            new[]{4}, new[]{5}, new[]{13}, new[]{14} };
-        foreach (var flame in NativeGrowthStats.DescribeFlame(hoverItem))
-            if (flame.statVal >= 0 && flame.statVal < flameColumns.Length)
-                foreach (int column in flameColumns[flame.statVal]) flameStats[column] += flame.value;
-        for (int i = 0; i < keys.Length; i++)
+        for (int i = 0; i < labels.Length; i++)
         {
-            starStats.TryGetValue(statKeys[i], out int delta);
-            int value = baseStats[statKeys[i]] + delta + flameStats[i];
+            int baseValue = stats.baseStats[i];
+            int delta = stats.starStats[i];
+            int flameValue = stats.flameStats[i];
+            int value = baseValue + delta + flameValue;
             if (value > 0)
             {
                 string detail = " +" + value;
-                if (delta != 0 || flameStats[i] != 0)
+                if (delta != 0 || flameValue != 0)
                 {
-                    detail += " (" + baseStats[statKeys[i]];
+                    detail += " (" + baseValue;
                     if (delta != 0) detail += " <color=#FFCC00>+" + delta + "</color>";
-                    if (flameStats[i] != 0) detail += " <color=#0AE3AD>+" + flameStats[i] + "</color>";
+                    if (flameValue != 0) detail += " <color=#0AE3AD>+" + flameValue + "</color>";
                     detail += ")";
                 }
                 rows.Add(new[] { labels[i], detail });
@@ -283,10 +271,8 @@ public static class ItemTooltip
             rows.Add(new[] { vestige ? "装备痕迹 :" : "星力强化 :", " " + hoverItem.starLevel + "星" });
             if (!vestige)
             {
-                starStats.TryGetValue("watk", out int starAttack);
-                starStats.TryGetValue("matk", out int starMagic);
-                rows.Add(new[] { "星力攻击力 :", " +" + starAttack });
-                rows.Add(new[] { "星力魔法力 :", " +" + starMagic });
+                rows.Add(new[] { "星力攻击力 :", " +" + stats.starStats[6] });
+                rows.Add(new[] { "星力魔法力 :", " +" + stats.starStats[7] });
             }
         }
         int upgrades = actual == null ? info.Int("tuc") : hoverItem.upgradeslots;
@@ -294,7 +280,25 @@ public static class ItemTooltip
         // 这种行不是砸光了次数（level/星力都是 0），按道具数据补显示，否则新装备看着像不能砸卷。
         if (actual != null && upgrades <= 0 && hoverItem.equipLevel == 0 && hoverItem.starLevel == 0)
             upgrades = System.Math.Max(upgrades, info.Int("tuc"));
-        if (upgrades > 0) rows.Add(new[] { LUpgrades, " " + upgrades });
+        // 282 恒定画这一行：UIToolTip.img/Item/Equip/textIcon/scroll/normal 是「次数已用尽」的
+        // 灰色 (#85919F)，/enhanced 是「还有次数」的紫色 (#AFADFF)，与 starForce、bonusStat 的
+        // normal/enhanced 同一套约定 —— normal 不代表隐藏，所以剩 0 次也要画出来（否则銀之心、
+        // 砸满卷的装备整行消失，用户看到的就是「漏了一个可升级次数」）。
+        // 只有模板完全没有 tuc 节点的装备（现金/特殊装备）才没有这一行。
+        if (info.Get("tuc") != null || upgrades > 0)
+        {
+            upgradeSlots = upgrades;
+            rows.Add(new[] { LUpgrades, " " + upgrades });
+        }
+
+        // 282 的「戰鬥力提升量」不在正文里：它是图标右侧顶部的一行小标签，数值画在标签下面
+        // （实拍：`戰鬥力提升量` 上行、`+ 220萬 4312` 下行，下面是类别徽标；已穿着时那一行
+        // 换成 imgFont/atkPow/equipped 那张 145×18 的「目前穿戴中的裝備」）。
+        // 所以这里只算数，正文不再加行，绘制在 header 那段。
+        long powerGain = 0;
+        bool hasPowerLabel = CombatPower.IsEquippable(id);
+        bool hasPowerGain = CombatPower.TryPreview(hoverItem, out long powerNow, out long powerAfter);
+        if (hasPowerGain) powerGain = powerAfter - powerNow;
 
         // 282 options belong to this equipment instance, never to the template or candidate journal.
         if (hoverItem?.equipmentData != null)
@@ -486,10 +490,26 @@ public static class ItemTooltip
             if (icon != null)
                 GUI.DrawTexture(new Rect(margin + 6 - 2 * (origin?.X ?? 0), iconY + 72 - 2 * (origin?.Y ?? 0),
                     icon.width * 2, icon.height * 2), icon);
+            // 282 实拍：图标右侧上方是「戰鬥力提升量」小标签，下面一行是大号数值
+            // `+ 220萬 4312`（增亮白 / 减洋红 #F00068）；已穿着的装备把数值这一行换成
+            // imgFont/atkPow/equipped 那张「目前穿戴中的裝備」。
             var state = new GUIStyle(title) { alignment = TextAnchor.MiddleCenter, fontSize = 18, fontStyle = FontStyle.Bold };
             state.normal.textColor = gray.normal.textColor;
-            GUI.Label(new Rect(100, iconY + 18, 209, 32),
-                hoverItem != null && hoverItem.position < 0 ? "当前穿戴中的装备" : "未穿戴的装备", state);
+            if (hoverItem != null && hoverItem.position < 0)
+                GUI.Label(new Rect(100, iconY + 18, width - 100 - margin, 32), "当前穿戴中的装备", state);
+            if (hasPowerLabel)
+            {
+                GUI.Label(new Rect(100, iconY - 1, width - 100 - margin, 16), LPowerGain,
+                    new GUIStyle(gray) { alignment = TextAnchor.UpperRight });
+                if (hasPowerGain && powerGain != 0)
+                {
+                    string text = (powerGain > 0 ? "+ " : "- ") + NumberFormat.Compact(System.Math.Abs(powerGain));
+                    var amount = new GUIStyle(title)
+                    { alignment = TextAnchor.MiddleRight, fontSize = PowerFontSize(text), fontStyle = FontStyle.Bold };
+                    amount.normal.textColor = powerGain > 0 ? Color.white : new Color32(240, 0, 104, 255);
+                    GUI.Label(new Rect(100, iconY + 16, width - 100 - margin, 30), text, amount);
+                }
+            }
             string categoryText = category ?? "装备";
             float categoryWidth = gray.CalcSize(new GUIContent(categoryText)).x + 18;
             float categoryX = width - margin - categoryWidth;
@@ -536,6 +556,15 @@ public static class ItemTooltip
                     x += header ? 15 : 12;
                 }
                 else if (row[0].StartsWith("星火")) style.normal.textColor = new Color32(10,227,173,255);
+                else if (row[0] == LUpgrades)
+                {
+                    // 282 把这一行前置一个 11x9 的卷轴图标（textIcon/scroll），文字取
+                    // font/scroll/normal = #AFADFF；剩 0 次时图标切到灰色 normal 态。
+                    style.normal.textColor = new Color32(175,173,255,255);
+                    EquipNode("textIcon/scroll/" + (upgradeSlots > 0 ? "enhanced" : "normal"),
+                        columnX + margin, y + 3);
+                    x += 15;   // 图标 11 + space/textIconSpaceX 4
+                }
                 GUI.Label(new Rect(columnX + x, y, width - margin - x, rowHeights[i]), row[0] + row[1], style);
                 y += rowHeights[i] - (header ? 9 : 0);
             }
@@ -729,6 +758,19 @@ public static class ItemTooltip
                     inset = 8, color = active ? new Color32(210,210,210,255) : gray });
         }
         return result;
+    }
+
+    /// <summary>
+    /// 「战斗力提升量」数值的字号：槽位只有 209px。兆/京级的数会拉长到二十多字，
+    /// 20px 会顶出边框，所以按字符数退档（282 那边是图数字形，宽度固定，我们只能缩字号）。
+    /// </summary>
+    public static int PowerFontSize(string text)
+    {
+        int length = string.IsNullOrEmpty(text) ? 0 : text.Length;
+        if (length <= 10) return 20;
+        if (length <= 16) return 16;
+        if (length <= 22) return 14;
+        return 12;
     }
 
     static void DrawSetColumns(Vector2 origin, List<SetRow> rows, string title, int perColumn, float s)

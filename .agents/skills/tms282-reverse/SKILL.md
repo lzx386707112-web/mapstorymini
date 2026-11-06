@@ -5,6 +5,8 @@ description: TMS282 客户端/服务端逆向与逻辑分析结论沉淀。分�
 
 # tms282-reverse
 
+- **五转圣骑士面板复报（2026-11-05）**：`references/skill-system.md` §6.1；特殊核心松手帧提前释放归属已修，7项手势回归通过；51职业核心组与客户端一致，当前17职业285条V技能及图标无缺项。聖十字架目录/图标存在、祝福之鎚为主动；特效资源链扫描不能等同实际演出验收，仍须核实神聖團結/雷神戰鎚状态选层。
+
 TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Documents/mxd/TMS282.5`）的已确定逻辑记录。
 规则来源：mxd-android/AGENTS.md 规则 8-12。282 服务端是 swordie 架构 Java 源码（`source/src/main/java/net/swordie/ms`），
 **本地套件不包含游戏脚本**（`套件驗證.txt:6` 明示；`data/scripts` 为空，源码及所附 JAR 的
@@ -103,6 +105,21 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
   等级加成判定在 `NativeCombatOrders.cs`（四转可越过技能册上限、其余只到最大等级；
   初心者/共通、5/6 转、V 与强化核心不动），`SkillProgress.LevelOf` = 存档等级 + 加成，
   加点/洗点/技能册一律读 `BaseLevelOf`。至此「buff 无 stat」清零。
+  **§14 五六转全量回归**：710 条逐条打标后剩下的三类「守卫看不见」的缺口 ——
+  `5241009` 轰炸风暴（数值全在 `dummyStr` 系列，`dummyStr4` 是秒不是毫秒）、
+  12 条 `damPlus` 被动（强化的是**另一条技能**，走 `NativeSkillBoosts`）、
+  `500001005` 灵魂赫卡忒（伤害在 `psdSkill` 的 `500001010` 上，走 `LINKED_ATTACK`）。
+  同一节还列了「查实后不是问题」的五类（attackInfo / invisible 标记 / 省略即默认 /
+  瞬发 buff / req 未迁移前置），避免后人重复排查。
+  **§15 形态技能**：§14 记成「需要新机制」的三条其实是数据里现成的 —— 母技能
+  `psdSkill` 指名一个 `invisible=1` 的攻击体（`400031055→400031056`、
+  `400011055→400011056`、`400041025→400041026`），母技能只负责「开形态 + 给次数」。
+  三种消费入口按 h/desc 原文定性：再按母技能 / 普通攻击替换 / 伤口满层连携。
+  同节还记了四件容易做错的事：① `buff 带 damage` 不能一律当主动攻击（另有 5 条是
+  proc 数值，走 `parentAttack` 表开关）；② 再按键分流必须早于冷却检查（60s buff vs
+  120s 冷却）；③ 单目标多轮不能用 `HitAt` 的 `struck` 去重（`count` 会被减成 0）；
+  ④ 极乐之境的母 common `damage` 是**裂缝爆炸**、`u4` 是逐级百分比。
+  表 `NativeSkillSequences.json`（序列 / 伤口 / 裂缝），守卫 `check_skill_sequences.py`。
 
 **武器进化路线**（09 文档，2026-11-03）：
 - 武器段：1212=露米娜丝闪耀魔杖、1222=天使破坏者灵魂射手、1232=恶魔复仇者魔剑(Desperado)、
@@ -173,3 +190,5 @@ TMS 282 端（客户端 `~/Documents/mxd/MapleStory`，服务端套件 `~/Docume
 - **截图指定装备详情卡（2026-11-05）**：beidou-client-reverse的`references/inventory-and-tooltip.md`末节；原UIToolTip 324px皮肤、36张Canvas转GMS/ARGB4444，导入身份/节点报告在根docs/tms282-skill/data/equipment-tooltip-import.json。截图适配不冒称EXE完整布局复刻。
 
 - 手机超长装备/套装详情自动右侧续栏（2026-11-05，用户授权布局）：beidou-client-reverse/references/inventory-and-tooltip.md末节；原素材、按行分栏、整组夹屏，720/600高模拟与手机验收边界分开记录。
+
+- **装备框「可升级次数」行（2026-11-06）**：同文档末节。282 用 `textIcon/scroll/normal`(灰 `#85919F`) / `enhanced`(紫 `#AFADFF`) 两态图标 + `font/scroll` 淡紫文字，**剩 0 次照样画**（normal 是「空但占位」不是隐藏；starForce/bonusStat 同构可互证）；`textIcon/hammer` 是独立的黄金锤行，本工程未迁。本工程原 `upgrades > 0` 条件已改为按模板 `tuc` 节点存在即显示，卷轴图标两态已随 tooltip 皮肤导入（43 canvas），源码/264 断言/23 场景实拍通过。

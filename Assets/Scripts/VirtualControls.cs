@@ -31,11 +31,10 @@ public class VCElem
     public float opacity = 1f;                   // 整体不透明度 0.15~1
     public string label = "";                    // 空则自动取键名/技能图标
 
-    // —— 技能绑定（原版快捷格的屏上等价物） ——
-    // 技能窗里把技能图标拖到这个按键上就绑定；0 = 没绑。
-    // 绑了技能的按键按下时直接施放该技能，不再走"按键 → 快捷格"那条绕路，
-    // 所以在快捷格没配好的情况下也能点一下就放（原端拖到快捷栏格子的语义）。
-    public int skillId;
+    // —— 技能 ——
+    // 屏上按键自己不持有技能：技能一律绑在「键盘」这一层（键盘设定里的键位 / 底部快捷格），
+    // 按键只按 key → QuickSlots 镜像那一格现在是什么（见 ButtonSkill / SendButton）。
+    // 旧存档里的 "sk" 直绑字段已经废弃，读到也丢掉。
 
     // —— 基础属性（编辑面板） ——
     public float scale = 1f;                     // 整体缩放
@@ -100,7 +99,6 @@ public class VCElem
     {
         return new VCElem { type = type, action = action, key = key, shiftMod = shiftMod,
             cx = cx, cy = cy, size = size, shape = shape, opacity = opacity, label = label,
-            skillId = skillId,
             scale = scale, rotation = rotation, aspect = aspect,
             borderW = borderW, halo = halo, bg = bg, line = line, bgDown = bgDown, lineDown = lineDown,
             stickStd = stickStd, upKey = upKey, downKey = downKey, leftKey = leftKey, rightKey = rightKey };
@@ -374,7 +372,6 @@ public static class VirtualControls
               .Append(",\"dbg\":").Append(Q(Hex(e.bgDown)))
               .Append(",\"dln\":").Append(Q(Hex(e.lineDown)))
               .Append(",\"label\":").Append(Q(e.label ?? ""))
-              .Append(",\"sk\":").Append(e.skillId)
               .Append(",\"ssd\":").Append(e.stickStd ? 1 : 0)
               .Append(",\"ku\":").Append((int)e.upKey)
               .Append(",\"kd\":").Append((int)e.downKey)
@@ -430,7 +427,6 @@ public static class VirtualControls
                     ApplyFlatSkin(e);
                 }
                 if (d.TryGetValue("label", out var lb)) e.label = lb as string ?? "";
-                if (d.TryGetValue("sk", out var skId)) e.skillId = Mathf.Max(0, Mathf.RoundToInt(ToF(skId, 0f)));
 
                 // 摇杆输入模式：没有 ssd 字段 = 老存档，按「标准输入」处理（和以前行为一致）
                 if (d.TryGetValue("ssd", out var ssd)) e.stickStd = ToF(ssd, 1f) > 0.5f;
@@ -661,7 +657,7 @@ public static class VirtualControls
         UpdateLift();
 
         // 门控关闭（大厅/暂停/编辑器/键位窗口/商城浮窗/整层隐藏）：全部松开，别把状态带进下一局
-        if (!feed || !Shown || SkillWindow.Dragging || !Application.isFocused)
+        if (!feed || !Shown || CarryingSkill || !Application.isFocused)
         {
             ReleaseAll();
             return;
@@ -751,6 +747,11 @@ public static class VirtualControls
     public static bool BlockingPointer { get; private set; }
     static bool wasOnControl;
 
+    // 手上拿着技能（技能窗）或 V 核心（矩阵窗）：虚拟层整层让位，别把这一下按成技能。
+    // 少了这一条，手指按在按键上时 HitsAtScreen 会命中，Pointer 整段手势都不产生点击，
+    // 拖拽方就收不到 Clicked —— 表现为「拖到按键上没绑上，还顺手把技能放出去了」。
+    static bool CarryingSkill => SkillWindow.Dragging || NativeVMatrixWindow.Carrying;
+
     // 虚拟层此刻是否真的接管输入（游戏中、没开编辑器/键位窗口、没隐藏、没被商城浮窗占用）
     public static bool Capturing
     {
@@ -758,7 +759,7 @@ public static class VirtualControls
         {
             var g = GameLoop.I;
             return g != null && g.state == GameLoop.GameState.Playing
-                   && Shown && !SkillWindow.Dragging && !VirtualControlsEditor.Visible
+                   && Shown && !CarryingSkill && !VirtualControlsEditor.Visible
                    && !GameSideMenu.Blocking;
         }
     }
@@ -792,7 +793,7 @@ public static class VirtualControls
     {
         // 后画的优先（列表尾部优先），与绘制顺序一致
         for (int i = elems.Count - 1; i >= 0; i--)
-            if ((!KeyConfigWindow.Visible || SkillWindow.Dragging || elems[i].type == VCElemType.Button &&
+            if ((!KeyConfigWindow.Visible || CarryingSkill || elems[i].type == VCElemType.Button &&
                 NativeKeyActions.Of(EffectiveAction(elems[i]))?.Type == 4) &&
                 (!NpcSession.Blocking || elems[i].type == VCElemType.Button &&
                 NativeKeyActions.AvailableDuringNpcDialog(EffectiveAction(elems[i]))) && elems[i].Hit(p)) return elems[i];
@@ -807,47 +808,18 @@ public static class VirtualControls
         return HitElement(p);
     }
 
-    // 把技能绑到一个虚拟按键上（技能窗拖到按键即调用）。
-    // 只接受 BUTTON 元素：摇杆/十字是方向输入，绑技能没有语义。
-    public static bool TryBindSkill(Vector2 guiPos, int skillId)
+    // GUI 坐标（UiKit 逻辑坐标）下是否真有按键。V 矩阵拿核心找落点时用这个认出「落在屏上
+    // 按键上了」并给一句说明——那里不接受虚拟按键当落点，但仍不能让玩家看到静默取消。
+    public static bool HitButtonAt(Vector2 guiPos)
     {
         Ensure();
         var e = HitElement(guiPos);
-        if (e == null || e.type != VCElemType.Button) return false;
-        var data = SkillBook.Get(skillId);
-        if (data == null) return false;
-        if (data.IsPassive) { BottomBar.Toast("被动技能不能绑定到按键"); return true; }
-        if (SkillProgress.LevelOf(skillId) <= 0) { BottomBar.Toast("先给技能加点，才能绑到按键"); return true; }
-
-        int previous = ButtonSkill(e);
-        bool replaced = previous > 0 && previous != skillId;
-        if (e.key != KeyCode.None)
-        {
-            // Explicit keys display and cast through KeyMap/QuickSlots, so update that same binding.
-            if (!QuickBarKeys.BindSkillToKey(e.Key, skillId)) return true;
-            e.skillId = 0;
-        }
-        else e.skillId = skillId;
-        SaveActive();
-        BottomBar.Toast((replaced ? "已替换为 " : "已绑定 ") + data.name + " → " + ElementCaption(e));
-        return true;
+        return e != null && e.type == VCElemType.Button;
     }
 
-    public static void UnbindSkill(VCElem e)
-    {
-        if (e == null || e.skillId == 0) return;
-        e.skillId = 0;
-        SaveActive();
-    }
-
-    // 按键的短名（提示/面板用）：优先技能名，其次键名，最后动作名
+    // 按键的短名（提示/面板用）：键名，其次动作名
     public static string ElementCaption(VCElem e)
     {
-        if (e != null && e.key == KeyCode.None && e.skillId > 0)
-        {
-            var d = SkillBook.Get(e.skillId);
-            if (d != null) return d.name;
-        }
         return e == null ? "" : ActionName(e);
     }
 
@@ -886,21 +858,8 @@ public static class VirtualControls
         }
         // Keep the virtual Enter available to submit/close chat without firing skills.
         if (down && BottomBar.ChatFocused && e.key != KeyCode.Return && e.key != KeyCode.KeypadEnter) return;
-        // 绑了技能的按键直接施放（原端"技能拖进快捷格，再按键出手"的屏上等价物）。
-        // 这里必须 return：继续往下发动作会让快捷格那条通道再放一次，
-        // 表现就是一次点击连放两个技能、第二个报"技能冷却中"。
-        if (e.key == KeyCode.None && e.skillId > 0)
-        {
-            if (down)
-            {
-                string why;
-                bool ok = SkillCast.TryCast(e.skillId, out why);
-                var data = SkillBook.Get(e.skillId);
-                lastPress = (data != null ? data.name : "技能") + (ok ? "" : " ✗");
-                lastNote = ok ? "" : (why ?? "");
-            }
-            return;
-        }
+        // 按键自己不持技能：按下只发它绑的键，技能由键盘那条通道（快捷格）结算。
+        // 无键按钮走动作注入，同样不会凭空放技能。
 
         var act = e.key != KeyCode.None ? ActionOfKey(e.key) : (GameAction?)EffectiveAction(e);
         // 显式绑键只走键盘通道；仅旧布局的动作按钮直接注入动作。
@@ -1039,7 +998,7 @@ public static class VirtualControls
         if (!inGame || VirtualControlsEditor.Visible || !Shown) return;
 
         // 键盘设定窗口打开时不再整层消失：降到半透明照常画出来，
-        // 这样用户在"显示键盘"的同时仍能看见自己的屏上按键（也才能把技能拖上去）。
+        // 这样用户在"显示键盘"的同时仍能看见自己的屏上按键落在哪个键位、对应的格子里是什么。
         // 此时 VirtualControls.Tick 拿到的 feed=false，按键只显示、不注入。
         float dim = KeyConfigWindow.Visible ? 0.42f : 1f;
 
@@ -1455,10 +1414,11 @@ public static class VirtualControls
             DrawLine(pts[i], pts[(i + 1) % pts.Length], col, w);
     }
 
+    // 这个按键现在能放出哪个技能：只认「键 → 快捷格」这条镜像。
+    // 技能绑在键盘上（QuickSlots），按键本身不持有技能，所以这里读到的永远是键盘那一份。
     static int ButtonSkill(VCElem e)
     {
         if (e.type != VCElemType.Button) return 0;
-        if (e.key == KeyCode.None && e.skillId > 0) return e.skillId;
         int slot = SlotOfKey(e.Key);
         return slot < 0 ? 0 : QuickSlots.Id(slot);
     }
@@ -1482,12 +1442,6 @@ public static class VirtualControls
     static string ElementText(VCElem e)
     {
         if (!string.IsNullOrEmpty(e.label)) return e.label;
-        // 技能键：有图标就不写字，图标缺失时退回技能名，至少还能认出来
-        if (e.key == KeyCode.None && e.skillId > 0)
-        {
-            var d = SkillBook.Get(e.skillId);
-            return d != null ? d.name : "";
-        }
         if (e.key != KeyCode.None) return ButtonLabel(e);
         return VirtualControlsEditor.Visible ? "" : ActionDisplayName(e.action);
     }

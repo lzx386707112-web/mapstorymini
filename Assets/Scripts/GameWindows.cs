@@ -47,22 +47,36 @@ public static class StatWindow
         var tex = Tex(node);
         if (tex != null) GUI.DrawTexture(At(r, x, y, tex.width, tex.height), tex);
     }
-    static void Text(Rect r, string text, float x, float y, int width = 135, int size = 11)
+    static void Text(Rect r, string text, float x, float y, int width = 135)
     {
-        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(size * S), clipping = TextClipping.Clip };
+        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(11 * S), clipping = TextClipping.Clip };
         style.normal.textColor = Color.black;
         GUI.Label(At(r, x, y, width, 16), text, style);
     }
+    /// <summary>按可用宽度自适应字号（11→8）：长串（总数+基础+叠加）也不许顶到加点按钮或裁字。</summary>
+    static void TextFit(Rect r, string text, float x, float y, int width, int maxSize = 11)
+    {
+        for (int size = maxSize; size >= 8; size--)
+        {
+            var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(size * S), clipping = TextClipping.Clip };
+            style.normal.textColor = Color.black;
+            if (style.CalcSize(new GUIContent(text)).x <= width * S || size == 8)
+            {
+                GUI.Label(At(r, x, y, width, 16), text, style);
+                return;
+            }
+        }
+    }
     /// <summary>
-    /// 四维的「基础值（+叠加值）」：基础 = AP 分配值（Profile.Attributes），
-    /// 叠加 = 面板最终值 − 基础值（装备 inc*、套装、潜力、星力、282 成长、增益）。
-    /// 无叠加时只写基础值，不给满屏 (+0)。
+    /// 四维的「总数（基础值+叠加值）」：总数 = 面板最终值，基础 = AP 分配值（Profile.Attributes），
+    /// 叠加 = 总数 − 基础（装备 inc*、套装、潜力、星力、282 成长、增益）。
+    /// 无叠加时只写总数，不给满屏 (总数+0)。
     /// </summary>
     static string StatLine(int baseValue, int total)
     {
         int bonus = total - baseValue;
-        if (bonus == 0) return baseValue.ToString();
-        return baseValue + " (" + (bonus > 0 ? "+" : "") + bonus + ")";
+        if (bonus == 0) return total.ToString();
+        return total + " (" + baseValue + (bonus > 0 ? "+" : "") + bonus + ")";
     }
     public static void Toggle() { Visible = !Visible; }
 
@@ -156,8 +170,8 @@ public static class StatWindow
                 if (Profile.JobId == 0 && i >= 2)
                     Image(r, "Disabled/" + (i == 2 ? "INT" : "LUK"), 8, 244 + i * 18);
                 string line = StatLine(baseStats[i], stats[i]);
-                // 六位数叠加会顶到按钮，长串降一档字号（11 → 9），不裁不挤压
-                Text(r, line, 61, 244 + i * 18, StatWidth, line.Length > 12 ? 9 : 11);
+                // 长串自动降字号（CalcSize 量真实宽度），不裁不挤压、也不压住加点箭头
+                TextFit(r, line, 61, 244 + i * 18, StatWidth);
                 var up = At(r, ApArrowX, 247 + i * 18, 12, 12);
                 if (!Profile.CanAssignAp(i)) Image(r, "BtApUp/disabled/0", ApArrowX, 247 + i * 18);
                 else if (NativeUi.Button(up, "UI/UIWindow.img/Stat/BtApUp")) Profile.AssignAp(i);
@@ -714,10 +728,12 @@ public static class InvenWindow
         if (NativeUi.Button(At(r, 7, 266, 14, 14), "UI/UIWindow.img/Item/BtCoin"))
             NativeInventoryActions.PromptDropMeso();
         // 81DC84: comma grouping; 81DCD8/81DD5F: right edge138, y266, font25 (black,12px).
+        // 数字框只有 113px：金币过万以后逐位加逗号会顶出框，按 282 的中文单位阶梯改成
+        // 「X万 / X亿Y万」（见 NumberFormat）。
         var mesoStyle = new GUIStyle { font = UiKit.Font, fontSize = Mathf.RoundToInt(12 * S),
             alignment = TextAnchor.UpperRight, clipping = TextClipping.Clip };
         mesoStyle.normal.textColor = Color.black;
-        GUI.Label(At(r, 25, 266, 113, 16), Profile.gold.ToString("N0", System.Globalization.CultureInfo.InvariantCulture), mesoStyle);
+        GUI.Label(At(r, 25, 266, 113, 16), NumberFormat.Compact(Profile.gold), mesoStyle);
 
         // 81CE50 / 81E47D：内部宽 W-20，再分别减30/15；基类负责最右侧关闭。
         if (NativeUi.Button(At(r, width - 50, 6, 12, 12), "UI/UIWindow.img/Item/" + (expanded ? "BtSmall" : "BtFull"))) { expanded = !expanded; scroll = 0; return; }
@@ -820,10 +836,17 @@ public static class BottomMenu
         if (index == 10) NativeRankingWindow.Toggle();
     }
 
-    // 源端「游戏结束」直接退客户端；手机端退出就是杀进程，加一道 YesNo 确认免得误触。
+    // 源端「游戏结束」在 PC 上是关掉客户端；手机端没有「关窗口」这种东西，直接 Quit 就是杀进程，
+    // 玩家的观感是「App 被关掉」而不是「退出游戏」，所以这里按存档 → 清账号态 → 回登录页处理。
+    // 确认框只是防误触（手机上很容易点错），点「是」不再退出 App。
     static void ConfirmQuit()
     {
-        NativeUtilPrompt.Confirm("确定要结束游戏吗？", ok => { if (ok) Application.Quit(); });
+        NativeUtilPrompt.Confirm("确定要结束游戏吗？", ok =>
+        {
+            if (!ok) return;
+            if (GameLoop.I != null) GameLoop.I.RequestExitToLogin();
+            else Application.Quit();
+        });
     }
 
     // —— 几何：面板/条目矩形对外公开，绘制与无渲染断言（MenuLayoutChecks）共用同一份算法 ——

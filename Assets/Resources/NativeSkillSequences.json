@@ -1,0 +1,1629 @@
+{
+ "source": {
+  "packs": "/tmp/packs",
+  "nodes": "Skill/<id//10000>.img/skill/<id> 的 psdSkill 与 common",
+  "text": "MapleStory/Data/String/Skill.img（h/desc，繁体转简体）"
+ },
+ "sequences": {
+  "400031055": {
+   "parent": 400031055,
+   "child": 400031056,
+   "childName": "极速射击",
+   "trigger": "recast",
+   "parentAttack": false,
+   "durationSec": 60,
+   "charges": 8,
+   "chargesField": "x",
+   "childMp": 150,
+   "repeat": 4,
+   "repeatField": "v",
+   "attackTimes": [
+    0,
+    120,
+    120,
+    120
+   ],
+   "childSkill": {
+    "kind": "Attack",
+    "magic": false,
+    "skillType": 0,
+    "areaAttack": 1,
+    "vMatrix": true,
+    "element": "",
+    "maxLevel": 30
+   },
+   "childLevels": {
+    "1": {
+     "mpCon": 150,
+     "damage": 520,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "2": {
+     "mpCon": 150,
+     "damage": 540,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "3": {
+     "mpCon": 150,
+     "damage": 560,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "4": {
+     "mpCon": 150,
+     "damage": 580,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "5": {
+     "mpCon": 150,
+     "damage": 600,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "6": {
+     "mpCon": 150,
+     "damage": 620,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "7": {
+     "mpCon": 150,
+     "damage": 640,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "8": {
+     "mpCon": 150,
+     "damage": 660,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "9": {
+     "mpCon": 150,
+     "damage": 680,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "10": {
+     "mpCon": 150,
+     "damage": 700,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "11": {
+     "mpCon": 150,
+     "damage": 720,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "12": {
+     "mpCon": 150,
+     "damage": 740,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "13": {
+     "mpCon": 150,
+     "damage": 760,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "14": {
+     "mpCon": 150,
+     "damage": 780,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "15": {
+     "mpCon": 150,
+     "damage": 800,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "16": {
+     "mpCon": 150,
+     "damage": 820,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "17": {
+     "mpCon": 150,
+     "damage": 840,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "18": {
+     "mpCon": 150,
+     "damage": 860,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "19": {
+     "mpCon": 150,
+     "damage": 880,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "20": {
+     "mpCon": 150,
+     "damage": 900,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "21": {
+     "mpCon": 150,
+     "damage": 920,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "22": {
+     "mpCon": 150,
+     "damage": 940,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "23": {
+     "mpCon": 150,
+     "damage": 960,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "24": {
+     "mpCon": 150,
+     "damage": 980,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "25": {
+     "mpCon": 150,
+     "damage": 1000,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "26": {
+     "mpCon": 150,
+     "damage": 1020,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "27": {
+     "mpCon": 150,
+     "damage": 1040,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "28": {
+     "mpCon": 150,
+     "damage": 1060,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "29": {
+     "mpCon": 150,
+     "damage": 1080,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    },
+    "30": {
+     "mpCon": 150,
+     "damage": 1100,
+     "attackCount": 9,
+     "cancelableTime": 420,
+     "updatableTime": 3000,
+     "lt": [
+      -780,
+      -190
+     ],
+     "rb": [
+      10,
+      100
+     ],
+     "mobCount": 1,
+     "z": 45
+    }
+   },
+   "evidence": "h「消耗MP #mpCon，#time秒內可使用#x個彈匣／#c極速射擊#：消耗MP #y，消耗1個彈匣，發射#v支以#w%的傷害攻擊#u次的箭矢」；desc「再次使用技能即可使用能利用箭筒的全速射擊」",
+   "childH": ""
+  },
+  "400011055": {
+   "parent": 400011055,
+   "child": 400011056,
+   "childName": "黄泉十字架",
+   "trigger": "basicAttack",
+   "parentAttack": false,
+   "durationSec": 30,
+   "charges": 30,
+   "chargesField": "w",
+   "childMp": 0,
+   "repeat": 5,
+   "repeatField": "u2",
+   "attackTimes": [
+    60,
+    30,
+    30,
+    30,
+    30
+   ],
+   "childSkill": {
+    "kind": "Attack",
+    "magic": false,
+    "skillType": 0,
+    "areaAttack": 1,
+    "vMatrix": true,
+    "element": "",
+    "maxLevel": 30
+   },
+   "childLevels": {
+    "1": {
+     "mpCon": 0,
+     "damage": 344,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "2": {
+     "mpCon": 0,
+     "damage": 358,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "3": {
+     "mpCon": 0,
+     "damage": 372,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "4": {
+     "mpCon": 0,
+     "damage": 386,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "5": {
+     "mpCon": 0,
+     "damage": 400,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "6": {
+     "mpCon": 0,
+     "damage": 414,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "7": {
+     "mpCon": 0,
+     "damage": 428,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "8": {
+     "mpCon": 0,
+     "damage": 442,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "9": {
+     "mpCon": 0,
+     "damage": 456,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "10": {
+     "mpCon": 0,
+     "damage": 470,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "11": {
+     "mpCon": 0,
+     "damage": 484,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "12": {
+     "mpCon": 0,
+     "damage": 498,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "13": {
+     "mpCon": 0,
+     "damage": 512,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "14": {
+     "mpCon": 0,
+     "damage": 526,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "15": {
+     "mpCon": 0,
+     "damage": 540,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "16": {
+     "mpCon": 0,
+     "damage": 554,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "17": {
+     "mpCon": 0,
+     "damage": 568,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "18": {
+     "mpCon": 0,
+     "damage": 582,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "19": {
+     "mpCon": 0,
+     "damage": 596,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "20": {
+     "mpCon": 0,
+     "damage": 610,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "21": {
+     "mpCon": 0,
+     "damage": 624,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "22": {
+     "mpCon": 0,
+     "damage": 638,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "23": {
+     "mpCon": 0,
+     "damage": 652,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "24": {
+     "mpCon": 0,
+     "damage": 666,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "25": {
+     "mpCon": 0,
+     "damage": 680,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "26": {
+     "mpCon": 0,
+     "damage": 694,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "27": {
+     "mpCon": 0,
+     "damage": 708,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "28": {
+     "mpCon": 0,
+     "damage": 722,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "29": {
+     "mpCon": 0,
+     "damage": 736,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    },
+    "30": {
+     "mpCon": 0,
+     "damage": 750,
+     "attackCount": 5,
+     "mobCount": 15,
+     "lt": [
+      -600,
+      -480
+     ],
+     "rb": [
+      10,
+      40
+     ],
+     "updatableTime": 600
+    }
+   },
+   "evidence": "h「消耗MP #mpCon，在#time秒內可使用#w次交叉冥河／#c交叉冥河#：發生#u2次斬擊，每次以#x%的傷害攻擊最多#v名敵人#v2次」；desc「在極樂之境中，可以以#c一般攻擊#使用交叉冥河」",
+   "childH": ""
+  },
+  "400041025": {
+   "parent": 400041025,
+   "child": 400041026,
+   "childName": "黑影切断",
+   "trigger": "chain",
+   "parentAttack": true,
+   "durationSec": 0,
+   "charges": 0,
+   "chargesField": null,
+   "childMp": 0,
+   "repeat": 5,
+   "repeatField": "q2",
+   "attackTimes": [
+    150,
+    60,
+    60,
+    60,
+    60
+   ],
+   "childSkill": {
+    "kind": "Attack",
+    "magic": false,
+    "skillType": 0,
+    "areaAttack": 1,
+    "vMatrix": true,
+    "element": "",
+    "maxLevel": 30
+   },
+   "childLevels": {
+    "1": {
+     "damage": 858,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "2": {
+     "damage": 891,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "3": {
+     "damage": 924,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "4": {
+     "damage": 957,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "5": {
+     "damage": 990,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "6": {
+     "damage": 1023,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "7": {
+     "damage": 1056,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "8": {
+     "damage": 1089,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "9": {
+     "damage": 1122,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "10": {
+     "damage": 1155,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "11": {
+     "damage": 1188,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "12": {
+     "damage": 1221,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "13": {
+     "damage": 1254,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "14": {
+     "damage": 1287,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "15": {
+     "damage": 1320,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "16": {
+     "damage": 1353,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "17": {
+     "damage": 1386,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "18": {
+     "damage": 1419,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "19": {
+     "damage": 1452,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "20": {
+     "damage": 1485,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "21": {
+     "damage": 1518,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "22": {
+     "damage": 1551,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "23": {
+     "damage": 1584,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "24": {
+     "damage": 1617,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "25": {
+     "damage": 1650,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "26": {
+     "damage": 1683,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "27": {
+     "damage": 1716,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "28": {
+     "damage": 1749,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "29": {
+     "damage": 1782,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    },
+    "30": {
+     "damage": 1815,
+     "mobCount": 1,
+     "attackCount": 7,
+     "cooltime": 20,
+     "mpCon": 650,
+     "updatableTime": 1200
+    }
+   },
+   "evidence": "h「如果有傷口減益效果到達最大值的敵人，可在致命暗殺的最終攻擊和音速狂襲中連接使用，且此時會移動到該名敵人的背後，發動以#w%的傷害攻擊#z次的斬擊#q2次，…攻擊後#t秒內無敵」",
+   "childH": ""
+  }
+ },
+ "wounds": {
+  "400041025": {
+   "parent": 400041025,
+   "maxStacks": 3,
+   "durationSec": 10,
+   "sources": [
+    4241000,
+    4241001,
+    400041039
+   ],
+   "evidence": "h「向被致命暗殺的最後攻擊和音速狂襲命中的敵人留下#time秒間最多重疊3次的傷口減益效果。傷口減益效果只會對1名敵人留下」"
+  }
+ },
+ "zones": {
+  "400011055": {
+   "parent": 400011055,
+   "child": 400011056,
+   "levels": {
+    "1": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 333,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 156
+    },
+    "2": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 346,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 162
+    },
+    "3": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 359,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 168
+    },
+    "4": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 372,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 174
+    },
+    "5": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 385,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 180
+    },
+    "6": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 398,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 186
+    },
+    "7": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 411,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 192
+    },
+    "8": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 424,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 198
+    },
+    "9": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 437,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 204
+    },
+    "10": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 450,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 210
+    },
+    "11": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 463,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 216
+    },
+    "12": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 476,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 222
+    },
+    "13": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 489,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 228
+    },
+    "14": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 502,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 234
+    },
+    "15": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 515,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 240
+    },
+    "16": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 528,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 246
+    },
+    "17": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 541,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 252
+    },
+    "18": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 554,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 258
+    },
+    "19": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 567,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 264
+    },
+    "20": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 580,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 270
+    },
+    "21": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 593,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 276
+    },
+    "22": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 606,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 282
+    },
+    "23": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 619,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 288
+    },
+    "24": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 632,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 294
+    },
+    "25": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 645,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 300
+    },
+    "26": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 658,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 306
+    },
+    "27": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 671,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 312
+    },
+    "28": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 684,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 318
+    },
+    "29": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 697,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 324
+    },
+    "30": {
+     "maxZones": 10,
+     "lifeSec": 10,
+     "regenSec": 1,
+     "stages": 5,
+     "damage": 710,
+     "attackCount": 6,
+     "mobCount": 15,
+     "expirePercent": 330
+    }
+   },
+   "evidence": "h「以交叉冥河攻擊時斬裂空間，留下持續#y秒的裂縫／#c裂縫#：持續以交叉冥河攻擊裂縫會使裂縫逐漸擴大，最終發動#q次爆炸，以#damage%的傷害攻擊最多#mobCount名敵人#attackCount次／裂縫在生成後#z秒可再次生成，最多生成#u3個，裂縫持續時間結束後會消失並立即爆炸，但傷害降低為#u4%」"
+  }
+ }
+}

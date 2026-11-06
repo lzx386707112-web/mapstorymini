@@ -50,6 +50,16 @@
 回归入口：`LoginFlowChecks.Run`（`-batchmode -quit -executeMethod LoginFlowChecks.Run`）直接在编辑器里 new 一个 `LoginFlow`、走它自己的 `DoLogin → ConfirmNewAccount → ConfirmNewGender → EnterWorldSelect`，覆盖弹窗顺序 / 库里的 gender / 性别不可二次修改 / autostart 自动补 0 / `Notice/text/6` 素材存在。2026-10-28 加入首次声明排版返回检查后，Unity batchmode 实跑 24 项全过（声明排版 21 行，进程退出码 0）；未打 Android 修复包，尚未实机验证修复结果。
 `LoginUiReview.Run` 是编辑器播放模式截图脚本，需要图形会话；**batchmode 下它不渲染**（`WaitForEndOfFrame` 不回调，协程停在第一次截图前，日志只剩 `GameLoop.Start`），不能当作通过依据。
 
+## 2026-11-06 免密码账号 admin（本工程后门，非原端行为）
+
+用户要求：登录页账号填 `admin` 时可以只按「连接」、密码留空直接进。**这是本工程自加的调试/GM 入口，原端 `LoginPasswordHandler` 没有任何免密分支**，不要在别处把「admin 免密」当成源端机制引用。
+
+- 唯一判定点 `LoginService.IsNoPasswordAccount(name)`（`NoPasswordAccount = "admin"`，忽略大小写与首尾空格）；`LoginService.Login` 在**封停判定之后、密码校验之前**跳过 `AccountsDao.VerifyPassword`。
+- 副本校验顺序不动：`admin` 有密码也照样放行，登进去仍是同一条 `accounts` 记录（角色、GM 标记、封停状态都照旧生效）。
+- 客户端 `LoginFlow.DoLogin` 同步放行空密码（否则会被「账号不能为空」拦在本地，根本发不到服务端）；账号名先 `Trim()` 再判，`name.Length > 13` 的检查口径没变。
+- **后台不走这条**：`AdminBackend.Authenticate` 仍然强制校验密码，避免网页后台也变成免密。
+- 回归：`tools/server-check` 的 `GmCommandChecks` / 多个 Editor 检查本来就用 `LoginService.Login(db, "admin", "<任意口令>")` 造号，此改动让它们不再依赖口令内容。
+
 ## 2026-10-28 声明弹窗纠正（本次）
 
 用户提供原端新账号声明截图并明确：只在创建新账号时出现。迁移实现据此改为未完成注册账号（gender=10）登录成功 → TOS 声明 → 确定 → 性别 → 选区；取消声明回到登录并清 pending，不删除已自动注册账号。老号、设备首次启动不弹声明，不再读写设备级 login_notice_ok。保留 gender=10 的重试入口，取消后重连不会跳过声明。此触发策略来自用户明确要求；原端完整 LOGIN_STATUS/TOS 分派仍不能由 Notice 类构造反推。

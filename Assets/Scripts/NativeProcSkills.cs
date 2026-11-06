@@ -65,15 +65,21 @@ public partial class SkillSystem
         // 倍率口径覆盖：非空时用该字段当「主攻击最终伤害的百分之几」，
         // 而不是 body 的 damage%（暗影侍从 400041028 的 x=46..75，自身没有 damage 字段）。
         public readonly string ScaleField;
+        // 再发动冷却的字段与单位。默认 cooltimeMS（毫秒）；轰炸风暴VI(5241009) 的 h 写
+        // 「砲擊再發動冷卻時間 #dummyStr4秒」，字段是 dummyStr4、单位是秒 ⇒ UnitMs=1000。
+        public readonly string CooldownField;
+        public readonly int CooldownUnitMs;
 
         public ProcSpec(int trigger, ProcMode mode, int body = 0, string chargeField = "x",
             string capField = "y", string propField = "prop", int brandBody = 0, bool basic = false,
-            string scaleField = "", int altState = 0, int altBody = 0, string altPropField = "")
+            string scaleField = "", int altState = 0, int altBody = 0, string altPropField = "",
+            string cooldownField = "cooltimeMS", int cooldownUnitMs = 1)
         {
             Trigger = trigger; Body = body == 0 ? trigger : body; Mode = mode;
             ChargeField = chargeField; CapField = capField; PropField = propField;
             BrandBody = brandBody; Basic = basic; ScaleField = scaleField;
             AltState = altState; AltBody = altBody; AltPropField = altPropField;
+            CooldownField = cooldownField; CooldownUnitMs = cooldownUnitMs;
         }
     }
 
@@ -97,6 +103,13 @@ public partial class SkillSystem
         // 母体合一、自带 cooltimeMS 再发动冷却的两条 V 技能。
         new ProcSpec(500001016, ProcMode.Roll),  // 突擊爆發（劍擊）
         new ProcSpec(500001020, ProcMode.Roll),  // 突擊爆發（黑暗長槍）
+        // ⑧ 开关型命中触发（info/type=33）＋ 数值全在 dummyStr 系列。
+        // 轟炸風暴VI h「攻擊命中時對目標進行轟炸，以#dummyStr2%的傷害攻擊最多#dummyStr名敵人
+        // #dummyStr3次／砲擊再發動冷卻時間 #dummyStr4秒」——没有 damage/attackCount/mobCount，
+        // 全靠 SkillBook.FieldAliases 摊平（damage=dummyStr2、段数=dummyStr3、目标数=dummyStr）。
+        // h 没写概率 ⇒ 每次命中都触发（prop 缺省 100），只受「再发动冷却」限制：
+        // dummyStr4 是秒，所以 CooldownUnitMs=1000。
+        new ProcSpec(5241009, ProcMode.Roll, cooldownField: "dummyStr4", cooldownUnitMs: 1000),
         // ② 命中计数。
         new ProcSpec(12140015, ProcMode.Charge, body: 12141016, chargeField: "x"),  // 魔法爆發VI
         new ProcSpec(14141019, ProcMode.Charge, chargeField: "x"),                  // 深淵黑暗
@@ -271,7 +284,7 @@ public partial class SkillSystem
             foreach (var target in targets)
                 FireProc(cast, body, ProcSource(captured, target, cast.native), fromPercent,
                     target, origin, facing, scale);
-            int cooldownMs = Art.Int(row, "cooltimeMS");
+            int cooldownMs = Art.Int(row, spec.CooldownField) * spec.CooldownUnitMs;
             if (cooldownMs > 0) procNext[spec.Trigger] = now + cooldownMs / 1000.0;
             // 烙印：每 u2 次追加攻击盖 1 个，集满 u 个消耗全部并发动强化版（闇靈懲戒）。
             if (spec.BrandBody > 0) TryBrand(spec, row, cast, captured, origin, facing);
@@ -472,7 +485,7 @@ public partial class SkillSystem
             if (UnityEngine.Random.Range(0, 100) >= Mathf.Clamp(Art.Int(row, spec.PropField, 100), 0, 100)) continue;
             PlayNativeReplayEffect(spec.Trigger, p.FeetPos, facing);
             FireProc(null, body, new[] { hit }, 100.0, target, p.FeetPos, facing, body.DamagePercent);
-            int cooldownMs = Art.Int(row, "cooltimeMS");
+            int cooldownMs = Art.Int(row, spec.CooldownField) * spec.CooldownUnitMs;
             if (cooldownMs > 0) procNext[spec.Trigger] = now + cooldownMs / 1000.0;
         }
     }

@@ -87,6 +87,68 @@ public static class TooltipLayoutChecks
             else { fail++; Debug.LogError("[Tooltip] 星数解析 \"" + named[i] + "\" 期望 " + want[i] + " 实得 " + got); }
         }
 
+        // —— 大额数值的万/亿/兆/京写法（282 单位阶梯：京/兆/億/萬，atkPow 字形只有 0-9 + 万 + 亿）——
+        // 每个档位都过一遍：不足万、万、亿、兆、京、long 上限、负数、long.MinValue。
+        var compact = new (long value, string text)[]
+        {
+            (0L, "0"), (1L, "1"), (999L, "999"), (9999L, "9,999"),
+            (10000L, "1万"), (10001L, "1万 1"), (12345L, "1万 2345"),
+            (2204312L, "220万 4312"), (99999999L, "9999万 9999"),
+            (100000000L, "1亿"), (100000001L, "1亿 1"),
+            (123456789L, "1亿 2345万 6789"), (503000000L, "5亿 300万"),
+            (999999999999L, "9999亿 9999万 9999"),
+            (1000000000000L, "1兆"), (1000000000001L, "1兆 1"),
+            (1234567890123L, "1兆 2345亿 6789万 123"),
+            (10000000000000000L, "1京"),
+            (12345678901234567L, "1京 2345兆 6789亿 123万 4567"),
+            (long.MaxValue, "922京 3372兆 368亿 5477万 5807"),
+            (-1L, "-1"), (-9999L, "-9,999"), (-12345L, "-1万 2345"),
+            (-100000000L, "-1亿"), (-1234567890123L, "-1兆 2345亿 6789万 123"),
+            (long.MinValue, "-922京 3372兆 368亿 5477万 5807")   // 绝对值溢出按上限夹
+        };
+        foreach (var c in compact)
+        {
+            string got = NumberFormat.Compact(c.value);
+            if (got == c.text) pass++;
+            else { fail++; Debug.LogError("[Tooltip] 数值缩写 " + c.value + " 期望 " + c.text + " 实得 " + got); }
+        }
+
+        // —— 战斗力公式（PacketCreator.calculateNameplatePower）——
+        (long stats, long attack, long hp, long mp, long power)[] powers =
+        {
+            (1000L, 10L, 5000L, 100L, 10505L),   // 1000×10 + 500 + 5
+            (0L, 0L, 0L, 0L, 0L),                // 属性 0 就是 0
+            (5L, 0L, 0L, 0L, 5L),                // max(1, 0) = 1
+            (0L, 0L, 12345L, 999L, 1283L),       // 只有 HP/MP：1234 + 49
+            (-10L, 5L, -100L, -100L, 0L),        // 负值全按 0
+            (1000000L, 100000L, 0L, 0L, 100000000000L),   // 10^11
+            (long.MaxValue, 2L, 0L, 0L, long.MaxValue)     // 溢出饱和，不回绕成负数
+        };
+        foreach (var p in powers)
+        {
+            long got = CombatPower.Of(p.stats, p.attack, p.hp, p.mp);
+            if (got == p.power) pass++;
+            else { fail++; Debug.LogError("[Tooltip] 战斗力 " + p.stats + "/" + p.attack + " 期望 " + p.power + " 实得 " + got); }
+        }
+
+        // —— 「战斗力提升量」数值的字号退档（209px 槽位，兆/京级不能顶出边框）——
+        var powerTexts = new (string text, int size)[]
+        {
+            ("+ 8,470", 20),
+            ("+ 1万 2345", 20),
+            ("+ 220万 4312", 16),
+            ("+ 1亿 2345万 6789", 16),
+            ("+ 9亿 9999万 9999", 16),
+            ("+ 922京 3372兆 368亿 5477万 5807", 12),
+            ("+ 1234兆 5678亿 9012万 3456", 12)
+        };
+        foreach (var t in powerTexts)
+        {
+            int got = ItemTooltip.PowerFontSize(t.text);
+            if (got == t.size) pass++;
+            else { fail++; Debug.LogError("[Tooltip] 战力字号 \"" + t.text + "\"(" + t.text.Length + "字) 期望 " + t.size + " 实得 " + got); }
+        }
+
         Debug.Log("[Tooltip] 布局断言 " + pass + " 通过 / " + fail + " 失败");
         EditorApplication.Exit(fail == 0 ? 0 : 1);
     }

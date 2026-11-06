@@ -227,11 +227,14 @@ public static class EquipCatalog
         Apply(itemId, result, ref watk, ref matk, slot, ref ignoredBoss);
     }
 
-    public static void Apply(int itemId, CharacterAttributes result, ref int watk, ref int matk, int slot, ref int bossDamage)
+    public static void Apply(int itemId, CharacterAttributes result, ref int watk, ref int matk, int slot, ref int bossDamage,
+        InventoryEntry overrideInstance = null)
     {
         var info = Info(itemId);
         if (info == null) return;
-        var instance=GameSession.Character?.inventory.Find(i=>i.itemId==itemId && i.position<0 && (slot==0 || i.position==slot));
+        // overrideInstance：换装预览时传被悬停的那件（它在背包里 position>=0，按原来的
+        // position<0 条件找不到，就会掉回模板值，少掉卷轴/星力）。
+        var instance = overrideInstance ?? GameSession.Character?.inventory.Find(i=>i.itemId==itemId && i.position<0 && (slot==0 || i.position==slot));
         if (instance?.equipmentData!=null && instance.equipmentData.TryGetValue("starForceVestige",out var vestige) && System.Convert.ToInt32(vestige)!=0) return;
         bool native=NativeScrollService.HasStats(instance);
         int Value(string key)=>!native ? info.Int(key) : key switch {
@@ -397,59 +400,81 @@ public static class EquipLoadout
         return bonus;
     }
 
-    static void AddPotentialBonus(Dictionary<string,int> set,CharacterAttributes result)
+    static void AddPotentialBonus(Dictionary<string,int> set,CharacterAttributes result,int swapSlot=0,InventoryEntry swapEntry=null)
     {
         var inventory=GameSession.Character?.inventory;
         if(inventory!=null)
         foreach(var item in inventory)
         {
             if(item.position>=0||System.Array.IndexOf(EquipSlot.Worn,item.position)<0||item.equipmentData==null)continue;
-            var data=item.equipmentData;
-            if(data.TryGetValue("starForceVestige",out var vestige)&&System.Convert.ToInt32(vestige)!=0)continue;
-            var options=new List<int>();
-            foreach(string prefix in new[]{"potentialOption","bonusOption"})
-                for(int line=1;line<=3;line++)if(data.TryGetValue(prefix+line,out var option))options.Add(System.Convert.ToInt32(option));
-            if(!options.Exists(id=>id>0))continue;
-            int level=EquipCatalog.Info(item.itemId)?.Int("reqLevel")??0;
-            if(data.TryGetValue("iIncReq",out var incReq))level+=System.Convert.ToInt32(incReq);
-            var effects=PotentialStats.Calculate(PotentialCatalog.Shared,level,options,result.level);
-            foreach(var pair in effects)
-                if(pair.Key=="CriticalChance")result.criticalChance+=pair.Value/100f;
-                else if(pair.Key=="CriticalDamage")result.criticalBonus+=pair.Value/100f;
-                else if(pair.Key=="Speed")result.equipmentSpeed+=pair.Value;
-                else if(pair.Key=="Jump")result.equipmentJump+=pair.Value;
-                else PotentialStats.Add(set,pair.Key,pair.Value);
+            // 换装预览：这一格原来的那件被换掉了，它的潜能不能再算。
+            if(swapSlot!=0&&item.position==swapSlot)continue;
+            ApplyPotential(item,set,result);
         }
+        // 悬停的那件按「已穿上」的语义补进来（它在背包里 position>=0，上面的循环不会收）。
+        if(swapEntry!=null&&swapEntry.equipmentData!=null)ApplyPotential(swapEntry,set,result);
     }
 
-    static IEnumerable<KeyValuePair<int, int>> WornSlots()
+    static void ApplyPotential(InventoryEntry item,Dictionary<string,int> set,CharacterAttributes result)
+    {
+        var data=item.equipmentData;
+        if(data.TryGetValue("starForceVestige",out var vestige)&&System.Convert.ToInt32(vestige)!=0)return;
+        var options=new List<int>();
+        foreach(string prefix in new[]{"potentialOption","bonusOption"})
+            for(int line=1;line<=3;line++)if(data.TryGetValue(prefix+line,out var option))options.Add(System.Convert.ToInt32(option));
+        if(!options.Exists(id=>id>0))return;
+        int level=EquipCatalog.Info(item.itemId)?.Int("reqLevel")??0;
+        if(data.TryGetValue("iIncReq",out var incReq))level+=System.Convert.ToInt32(incReq);
+        var effects=PotentialStats.Calculate(PotentialCatalog.Shared,level,options,result.level);
+        foreach(var pair in effects)
+            if(pair.Key=="CriticalChance")result.criticalChance+=pair.Value/100f;
+            else if(pair.Key=="CriticalDamage")result.criticalBonus+=pair.Value/100f;
+            else if(pair.Key=="Speed")result.equipmentSpeed+=pair.Value;
+            else if(pair.Key=="Jump")result.equipmentJump+=pair.Value;
+            else PotentialStats.Add(set,pair.Key,pair.Value);
+    }
+
+    /// <summary>该槽位穿着的装备（swapSlot 时用 swapId 顶替，换装预览要的就是「穿完之后」的条目）。</summary>
+    static IEnumerable<KeyValuePair<int, int>> WornSlots(int swapSlot = 0, int swapId = 0)
     {
         foreach (int slot in EquipSlot.Worn)
         {
-            int id = SlotItem(slot);
+            int id = swapSlot == slot && swapId > 0 ? swapId : SlotItem(slot);
             if (id > 0) yield return new KeyValuePair<int, int>(slot, id);
         }
     }
 
     /// <summary>基础属性 + 武器 + 全部防具 + 套装加成的最终面板（出战与能力值窗共用同一条路）。</summary>
     public static CharacterAttributes Apply(CharacterAttributes baseAttrs, WeaponDef weapon, int attackBuff, out int watk, out int matk)
+        => Apply(baseAttrs, weapon, attackBuff, out watk, out matk, 0, 0, null);
+
+    /// <summary>
+    /// swapSlot/swapId/swapEntry：把那格换成这件再算一遍（提示框的「战斗力提升量」用）。
+    /// 武器要由调用方把 weapon 换成新的那把；其余槽位靠 WornSlots 顶替，
+    /// 于是套装条数、潜能 %、星火/灵魂都按「穿完之后」的配置结算。
+    /// </summary>
+    public static CharacterAttributes Apply(CharacterAttributes baseAttrs, WeaponDef weapon, int attackBuff, out int watk, out int matk,
+        int swapSlot, int swapId, InventoryEntry swapEntry)
     {
         int w = attackBuff, m = 0, additionBoss = 0;
         var result = baseAttrs.Copy();
-        if(int.TryParse(weapon.id,out int weaponId)) EquipCatalog.Apply(weaponId,result,ref w,ref m,EquipSlot.Weapon,ref additionBoss);
-        foreach (var kv in WornSlots())
+        var weaponInstance = swapSlot == EquipSlot.Weapon ? swapEntry : null;
+        if(int.TryParse(weapon.id,out int weaponId))
+            EquipCatalog.Apply(weaponId,result,ref w,ref m,EquipSlot.Weapon,ref additionBoss,weaponInstance);
+        foreach (var kv in WornSlots(swapSlot, swapId))
         {
             if (kv.Key == EquipSlot.Weapon) continue;         // 武器已单独叠加
-            EquipCatalog.Apply(kv.Value, result, ref w, ref m,kv.Key,ref additionBoss);
+            EquipCatalog.Apply(kv.Value, result, ref w, ref m,kv.Key,ref additionBoss,
+                kv.Key == swapSlot ? swapEntry : null);
         }
 
         // —— 套装加成（≡ Character.reapplyLocalStats 的 setItemBonus 段）——
         // 源端 equipped 含武器（position<0 且 >-100），所以套装计数也把武器算上。
         var wornIds = new List<int>();
-        foreach (var kv in WornSlots()) wornIds.Add(kv.Value);
+        foreach (var kv in WornSlots(swapSlot, swapId)) wornIds.Add(kv.Value);
         var set = AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
         set = set == null ? new Dictionary<string,int>() : new Dictionary<string,int>(set);
-        AddPotentialBonus(set,result);
+        AddPotentialBonus(set,result,swapSlot,swapEntry);
 
         // —— 282 技能属性被动（h 里的「[被动效果：…]」段）——
         // 这段是学会即生效、与 buff 持续时间无关的属性（全属性+6、力量+30/最大HP+1500、
@@ -459,7 +484,7 @@ public static class EquipLoadout
         // —— 282 成长系统（徽章 / 星火 / 极限属性 / 内在能力 / 灵魂）——
         // 282 服务端只存状态、属性由客户端 7000xxx 公式算；本项目把同一份公式表在派生层结算，
         // 结果并进同一张差量表，于是 (base+flat)×(100+pct)/100 的语义与套装完全一致。
-        var growth = NativeGrowthStats.Accumulate(GameSession.Character, result.level, Profile.JobId);
+        var growth = NativeGrowthStats.Accumulate(GameSession.Character, result.level, Profile.JobId, swapSlot, swapEntry);
         foreach (var stat in growth.set)
             set[stat.Key] = (set.TryGetValue(stat.Key, out int hadStat) ? hadStat : 0) + stat.Value;
         // —— 称号试炼统一加成（NativeTitleTrials：佩戴系列已点亮档，差量并进同一张表）——

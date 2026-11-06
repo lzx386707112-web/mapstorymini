@@ -16,5 +16,9 @@ public static class NativeHeldSkill
         }
     }
     public static int ReleaseElapsed(int id,long elapsed) => KeyDown(id) ? (int)Math.Min(Continuous(id)?2000:1000,Math.Max(30,elapsed)) : 0;
-    public static bool ShotDue(long now,long previous) => now-previous>100;
+    public static bool ShotDue(long now,long previous) => ShotDue(now,previous,0);
+    // attackDelayMs > 0 时按源端 attackDelay 打；否则退回 100ms。
+    // 固定 100ms 对 400011072 圣十字架（150ms）会多打 50%，对 90ms 的会少打。
+    public static bool ShotDue(long now,long previous,int attackDelayMs)
+        => now-previous > (attackDelayMs>0 ? attackDelayMs : 100);
 }

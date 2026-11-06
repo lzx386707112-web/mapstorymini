@@ -33,7 +33,28 @@ public partial class SkillSystem : MonoBehaviour
     Dictionary<int, SkillRuntimeState> states = new Dictionary<int, SkillRuntimeState>();
     PlayerCtrl p;
     float actionUntil;
+    // 这次施法动作是「有命中帧要保护」的攻击动作吗？攻击动作期间挡所有技能，
+    // 增益/召唤这类投完就结算完的动作只挡它自己（防连按重复施放）。
+    bool actionBlocking;
+    int actionSkillId;
     readonly Dictionary<int,NativeSummon> summons = new Dictionary<int,NativeSummon>();
+
+    // 施法硬直的唯一写入口：时长与「挡不挡别人」一起记，
+    // 免得只更新 actionUntil 而把上一次的 blocking/skillId 留在原地。
+    void LockAction(float seconds, NativeSkillDefinition definition)
+    {
+        actionUntil = Time.unscaledTime + seconds;
+        actionSkillId = definition?.Id ?? 0;
+        actionBlocking = definition != null &&
+            (definition.Kind == "Attack" || definition.Kind == "Pull" || definition.DamagePercent > 0);
+    }
+
+    void ClearActionLock()
+    {
+        actionUntil = 0;
+        actionBlocking = false;
+        actionSkillId = 0;
+    }
 
     void Awake()
     {
@@ -159,9 +180,32 @@ public partial class SkillSystem : MonoBehaviour
             return Reject("当前无法释放技能");
         if (p.IsClimbing) return Reject("攀爬时无法释放技能");
         if (p.GetComponent<NativeMobDebuffs>()?.BlocksSkill == true && !NativeBuffs.IsHerosWill(s.native?.Id ?? 0)) return Reject("异常状态下无法释放技能");
-        if (heldSkill!=null && !continuousShot) return Reject("正在持续释放技能");
-        if (!continuousShot && Time.unscaledTime < actionUntil) return Reject("正在释放技能");
+        if (heldSkill!=null && !continuousShot)
+        {
+            // A held V skill must not dead-lock the rest of the skill bar.  A
+            // different skill interrupts the beam cleanly; the same skill is
+            // still rejected until its held input is released.
+            if (s.native == null || s.native.Id == heldSkill.native.Id) return Reject("正在持续释放技能");
+            StopHeld(false);
+        }
+        // 动作窗口挡谁要分开看：
+        //   攻击技能 —— 挡所有，命中帧还没出来，插进别的技能会打断结算。
+        //   增益/召唤（神圣团结、祝福之鎚这种）—— 按键那一刻就结算完了，
+        //     没有命中帧要保护，却因为施法动作回落成普攻要吃掉半秒多，
+        //     表现就是「放完 buff 点什么都在提示正在释放」。这里只挡它自己。
+        if (!continuousShot && Time.unscaledTime < actionUntil &&
+            (actionBlocking || (s.native != null && s.native.Id == actionSkillId)))
+            return Reject("正在释放技能");
         if (s.native == null) return Reject("技能等级数据缺失");
+        // 连射的「后续每一发」不是一次新施法。冷却、MP、弹药、物品都在按下那一刻付过
+        // （rapid 分支已挪到扣费之后），这里再校验一遍的后果不是保守而是错：
+        // 400011072 圣十字架冷却 120s，第 2 发（+100ms）就被自己的冷却挡掉，
+        // 表现是「特效一直播、怪只疼一下、后面再也打不到」。所以只对真正的施法付账。
+        bool payCost = !continuousShot;
+        // 形态技能（400031055 連射十字弓砲彈）：形态期间再按母技能 = 打一发子技能
+        // 400031056 極速射擊。必须早于冷却检查 —— buff 60 秒 < 冷却 120 秒，
+        // 放到冷却之后会被自己挡死。见 NativeSkillSequences.cs。
+        if (!continuousShot && TrySequenceRecast(s, out bool sequenceCast)) return sequenceCast;
         if (NativeMount.Item(p)>0) return Reject("请先解除骑乘状态");
         if (s.native.Kind == "Passive" && !InstantSelfSkill(s.native.Id)) return Reject("被动技能无需施放");
         if (s.native.Kind=="FlashJump" && !p.CanUseFlashJump(s.native.Id)) return Reject("当前无法使用二段跳");
@@ -171,7 +215,7 @@ public partial class SkillSystem : MonoBehaviour
         if (s.native.Kind=="Teleport" && !p.TeleportDestination(s.native,out teleportDestination))
         { LastFailure = null; return false; }
         bool frenzy=s.native.Id==4121023&&fourSeasonsFrenzy;
-        if (!frenzy && State(s.native.Id).Remaining(Time.realtimeSinceStartupAsDouble) > 0) return Reject("技能冷却中");
+        if (payCost && !frenzy && State(s.native.Id).Remaining(Time.realtimeSinceStartupAsDouble) > 0) return Reject("技能冷却中");
         // 原端 TryUseSkill：MP 不够直接拒绝，扣蓝在施法成功之后。
         // mpCon 来自 Skill.wz 对应等级的 mpCon（见 NativeSkillDefinition.MpCost），不是本地估值。
         var buffs=NativeBuffs.For(p);
@@ -183,18 +227,18 @@ public partial class SkillSystem : MonoBehaviour
         if (amplificationLevel>0) mpCost=(int)(mpCost*(Art.Int(SkillBook.Get(amplification).Level(amplificationLevel),"x")/100.0));
         if (buffs.HasStat("INFINITY")) mpCost=0;
         else mpCost -= (int)(mpCost*(buffs.Value("CONCENTRATE")/100.0));
-        if (p.mp < mpCost) return Reject("魔力不足（需要 " + s.native.MpCost + "）");
+        if (payCost && p.mp < mpCost) return Reject("魔力不足（需要 " + s.native.MpCost + "）");
         // StatEffect.calcHPChange + Character.applyHpMpChange: HP costs
         // cannot reduce the caster to zero; reject before MP/cooldown mutation.
-        if (s.native.HpCost > 0 && p.hp <= s.native.HpCost) return Reject("生命不足（需要大于 " + s.native.HpCost + "）");
+        if (payCost && s.native.HpCost > 0 && p.hp <= s.native.HpCost) return Reject("生命不足（需要大于 " + s.native.HpCost + "）");
         var costRow=SkillBook.Get(s.native.Id)?.Level(s.native.Level);
         // 射程口径（IsRangedSkill）与弹药消耗口径（ConsumesAmmo）必须分开：
         // 282 有 69 个远程 VI 技能没有任何发射物层，不该吃箭。
         bool ranged=s.native.Kind=="Attack" && !s.native.Magic && NativeProjectiles.ConsumesAmmo(s.native.Id);
         var projectile=ranged ? NativeProjectiles.For(p,s.native.Id,s.native.Level) : default;
-        if (ranged && !projectile.Allowed) return Reject("缺少可用弹药");
+        if (payCost && ranged && !projectile.Allowed) return Reject("缺少可用弹药");
         int itemId=Art.Int(costRow,"itemCon"),itemCount=Art.Int(costRow,"itemConNo");
-        if (itemCount>0 && Profile.ItemCount(itemId)<itemCount) return Reject("技能所需物品不足");
+        if (payCost && itemCount>0 && Profile.ItemCount(itemId)<itemCount) return Reject("技能所需物品不足");
         int starId=0,starPosition=0,starCount=s.native.Id==4121006 ? Art.Int(costRow,"bulletConsume") : 0;
         if (starCount>0)
         {
@@ -206,17 +250,12 @@ public partial class SkillSystem : MonoBehaviour
             }
             else foreach (int id in Profile.InventoryItems(1))
                 if (id/10000==207 && Profile.ItemCount(id)>=starCount) { starId=id; break; }
-            if (starId==0) return Reject("技能所需飞镖不足");
+            if (payCost && starId==0) return Reject("技能所需飞镖不足");
         }
         // SkillEffectHandler only broadcasts the key-down start; costs belong to each attack packet.
         // 连射判定：旧表三只四转技能 + 源端 info/rapidAttack（五六转同名技能全靠它）。
         bool rapid = !continuousShot && boundHeldAction.HasValue &&
             (NativeHeldSkill.Continuous(s.native.Id) || NativeSkillVfx.RapidAttack(s.native.Id));
-        if (rapid)
-        {
-            StartHeld(s,boundHeldAction.Value);
-            return true;
-        }
         // 蓄力型（雷霆万钧VI / 元素之炎VI）：有 keydown 循环层与 keydownend 收手段，
         // 但没有 rapidAttack。按住只累积表现、不逐发结算；松手才走一次正常施法。
         // 挨个塞进连射路径会把蓄力变成每 100ms 打一发，伤害与 MP 全错。
@@ -225,6 +264,7 @@ public partial class SkillSystem : MonoBehaviour
             NativeSkillVfx.HasLayer(s.vfx,"keydownend");
         if (charge)
         {
+            // 蓄力是松手才结算，按下这一下不扣费（否则松手时再扣一次，双重扣蓝）。
             StartHeld(s,boundHeldAction.Value,true);
             return true;
         }
@@ -234,19 +274,29 @@ public partial class SkillSystem : MonoBehaviour
         if (mechanicGate != null) return Reject(mechanicGate);
         // StatEffect.applyTo: primary caster consumes itemCon/itemConNo only.
         // All local rejection gates precede the authoritative inventory mutation.
-        if (itemCount>0 && !Profile.RemoveItem(itemId,itemCount)) return Reject("技能所需物品扣除失败");
-        if (starCount>0 && !Profile.ConsumeProjectile(starId,starCount,starPosition)) return Reject("技能所需飞镖扣除失败");
-        if (ranged && !NativeProjectiles.Spend(projectile)) return Reject("弹药扣除失败");
-        if (!frenzy && !State(s.native.Id).TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
-        p.TrySpendMp(mpCost);
-        float previousHp=p.hp;
-        p.hp -= s.native.HpCost;
-        NativePetAutopot.OnLoss(p,previousHp,p.mp);
-        if (s.native.Id==4111004)
+        if (payCost && itemCount>0 && !Profile.RemoveItem(itemId,itemCount)) return Reject("技能所需物品扣除失败");
+        if (payCost && starCount>0 && !Profile.ConsumeProjectile(starId,starCount,starPosition)) return Reject("技能所需飞镖扣除失败");
+        if (payCost && ranged && !NativeProjectiles.Spend(projectile)) return Reject("弹药扣除失败");
+        if (payCost && !frenzy && !State(s.native.Id).TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
+        if (payCost)
+        {
+            p.TrySpendMp(mpCost);
+            float previousHp=p.hp;
+            p.hp -= s.native.HpCost;
+            NativePetAutopot.OnLoss(p,previousHp,p.mp);
+        }
+        if (payCost && s.native.Id==4111004)
         {
             int money=Art.Int(costRow,"moneyCon");
             if (money>0)
                 Profile.Spend(System.Math.Min(Profile.gold,(long)money+Random.Range(0,money/2)));
+        }
+        // 连射要在这里才起手：它必须先付掉冷却/MP/弹药，之后的每一发才是纯结算。
+        // 放在扣费之前的话按下不扣蓝、每发各扣一次，1000 MP 的圣十字架打第二发就「魔力不足」。
+        if (rapid)
+        {
+            StartHeld(s,boundHeldAction.Value);
+            return true;
         }
         if (continuousShot)
         {
@@ -267,7 +317,7 @@ public partial class SkillSystem : MonoBehaviour
         {
             NativeImgAnimation.Spawn("Effect/BasicEff.img/Teleport",null,p.FeetPos,p.SortingOrder+1,p.facing>0);
             p.PlaceAt(teleportDestination.x,teleportDestination.y);
-            actionUntil=Time.unscaledTime+.12f; // 9580A8: native teleport deadline +120ms.
+            LockAction(.12f, s.native); // 9580A8: native teleport deadline +120ms.
             AudioManager.Play("Skill/"+s.native.Id+"/Use",0.9f);
             return true;
         }
@@ -288,15 +338,15 @@ public partial class SkillSystem : MonoBehaviour
         {
             p.PlaySkill(preparation > 0 ? s.action + "_prepare" : s.action, preparation);
             // 无冷却技能仍受角色动作时长限制，不允许一帧多次施法。
-            actionUntil = Time.unscaledTime + (NativeWarriorMelee(s.native.Id) ? p.SkillActionDuration :
-                Mathf.Max(p.SkillActionDuration, preparation + p.GetSkillActionDuration(s.action)));
+            LockAction(NativeWarriorMelee(s.native.Id) ? p.SkillActionDuration :
+                Mathf.Max(p.SkillActionDuration, preparation + p.GetSkillActionDuration(s.action)), s.native);
             BeginVisuals(s);
         }
         else
         {
             p.PlayNativeSkill(s.native.Id);
             PlayNativeReplayEffect(s.native.Id, p.FeetPos, p.facing);
-            actionUntil = Time.unscaledTime + Mathf.Max(p.SkillActionDuration, 0.32f);
+            LockAction(Mathf.Max(p.SkillActionDuration, 0.32f), s.native);
         }
 
         bool replay = BeginReplay(s, p.FeetPos, p.facing);
@@ -304,6 +354,13 @@ public partial class SkillSystem : MonoBehaviour
         // 282 子状态：母技能施放后挂上 invisible 状态（银河星爆的最终伤害增益、
         // 海龙霸拳的水龙斗气、暗影雾杀的区域…）。它们不是玩家能按的 buff，没有 stat。
         NativeSkillStates.For(p).Activate(s.native.Id, s.native.Level);
+        // 形态技能：母技能施放成功 → 开形态并给出次数（連射十字弓砲彈 的 8 个弹匣 /
+        // 極樂之境 的 30 次交叉冥河）。之后由再按键 / 普通攻击消费，见 NativeSkillSequences.cs。
+        var formSequence = FormSequenceOf(s.native.Id);
+        if (formSequence != null) StartSequenceForm(formSequence, s.native.Level);
+        // 连携段：黑影切断在「伤口满层的敌人」存在时，母技能打完再追加一次瞬移背刺。
+        var chainSequence = SequenceOf(s.native.Id, SeqTrigger.Chain);
+        if (chainSequence != null) StartCoroutine(RunSequenceChain(chainSequence, s.native.Level));
         // 资源型 / 追加方向 / 符咒 / 隐身回避：施放成功后扣资源、开窗口。
         OnMechanicCast(s, p.FeetPos, p.facing);
         // 周期领域（殛冻领域 / 禁咒之符）：子状态挂上后按 subTime 反复结算同族伤害体。
@@ -396,7 +453,12 @@ public partial class SkillSystem : MonoBehaviour
         }
         float preparation = Preparation(s);
         if (preparation > 0) yield return new WaitForSeconds(preparation);
-        if (s.native.Kind == "Buff" || s.native.Kind == "Summon") yield break;
+        if (s.native.Kind == "Summon") yield break;
+        // 282 的 info/type=33 是「buff + 攻击」复合技能（黑影切断 400041025 的主动效果
+        // 就是「向#v名敵人以#y%的傷害攻擊#q次」）。但同样是 buff 带 damage 的还有 5 条
+        // 是 proc/被动的数值（剑士意念VI / 海龙石VI / 风暴使者VI / 散式投掷 / 影之枪），
+        // 一律照打会凭空多出一发 ⇒ 由 NativeSkillSequences 的表显式决定。
+        if (s.native.Kind == "Buff" && !SequenceParentAttacks(s.native.Id)) yield break;
         if (UsesProjectile(s))
         {
             yield return ProjectileCast(s,origin,facing);
@@ -613,13 +675,14 @@ public partial class SkillSystem : MonoBehaviour
         spearCombo.Reset();
         ResetProcState();
         ClearFieldZones();
+        ClearSequences();
         ClearMechanics();
         ClearNativeReplayEffects();
         NativeSkillVideo.Stop(NativeSkillVideo.Channel.PlayerSkill);
         ClearVisuals();
         foreach (var summon in summons.Values)
             if (summon != null) { summon.gameObject.SetActive(false); Destroy(summon.gameObject); }
-        summons.Clear(); actionUntil = 0;
+        summons.Clear(); ClearActionLock();
         // 护盾 / 子状态都是技能生成物，换图/死亡要一起清掉，不能带进下一张图。
         if (p != null) {
             p.GetComponent<NativeShields>()?.Clear();

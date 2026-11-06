@@ -93,6 +93,8 @@ public static class NativeHexaMatrixWindow
     public static void Escape()
     {
         if (dialog != Dialog.None) { dialog = Dialog.None; return; }
+        // 索尔艾尔达迷你窗是主窗内部的一层，Esc 只收它，不连主窗一起关。
+        if (miniOpen) { miniOpen = false; return; }
         Close();
     }
 
@@ -309,8 +311,7 @@ public static class NativeHexaMatrixWindow
         float left = anchor.x - 34, top = anchor.y - 39;
 
         var iconPos = Vector("core/vector:iconPos", 18, 27);
-        var icon = core.skills != null && core.skills.Length > 0
-            ? WzAssets.Texture("skillicon/" + core.skills[0]) : null;
+        var icon = MatrixCoreIcons.Core(core.coreId, true, core.skills);
         if (icon != null) GUI.DrawTexture(GrowthUi.At(left + iconPos.x, top + iconPos.y, icon.width, icon.height), icon);
         if (core.level > 0)
             GrowthUi.ShadowText(Img + "core/", core.level.ToString(CultureInfo.InvariantCulture),
@@ -326,7 +327,15 @@ public static class NativeHexaMatrixWindow
 
         if (!Interactive()) return;
         bool hover = GrowthUi.At(left, top, 68, 78).Contains(Pointer.Pos);
-        if (hover) MatrixPresentation.Skill(core.skills, core.level, core.name, core.desc);
+        // 与 V 矩阵同口径：核心 id 才是权威，服务端快照里的 name/desc/skills 可能是旧数据。
+        // 早期这里直接用 core.skills，tooltip 就可能指向另一条技能（圣十字架显示灵魂蚀日）。
+        if (hover)
+        {
+            var canonical = HexaCatalog.Core(core.coreId);
+            MatrixPresentation.Skill(canonical != null ? canonical.skills : core.skills, core.level,
+                canonical != null ? canonical.name : core.name,
+                canonical != null ? canonical.desc : core.desc);
+        }
         if (hover) GrowthUi.Veil(left, top, 68, 78, new Color(1f, 1f, 1f, .14f));
         if (!hover || !Pointer.Clicked) return;
         Pointer.ConsumeClick();
@@ -780,7 +789,7 @@ public static class NativeHexaMatrixWindow
         GrowthUi.Image(Img + "hexaSkillPopUp/enforcementAlert/", "backgrnd", 0, 0);
 
         var corePos = Vector("hexaSkillPopUp/enforcementAlert/vector:corePos", 140, 61);
-        var icon = core.skills != null && core.skills.Length > 0 ? WzAssets.Texture("skillicon/" + core.skills[0]) : null;
+        var icon = MatrixCoreIcons.Core(core.coreId, true, core.skills);
         if (icon != null)
             GUI.DrawTexture(GrowthUi.At(corePos.x - 20, corePos.y - 10, icon.width, icon.height), icon);
         GrowthUi.Image(Img + "hexaSkillPopUp/enforcementAlert/", "layer:coreCover", 136, 57);
@@ -881,7 +890,7 @@ public static class NativeHexaMatrixWindow
         var outer = GrowthUi.Shift((W - 348) / 2, (H - 414) / 2, 348, 414);
         GrowthUi.Image(root, "backgrnd", 0, 0);
         var pos = Vector(branch + "vector:corePos", 140, 61);
-        var icon = core.skills != null && core.skills.Length > 0 ? WzAssets.Texture("skillicon/" + core.skills[0]) : null;
+        var icon = MatrixCoreIcons.Core(core.coreId, true, core.skills);
         if (icon != null) GUI.DrawTexture(GrowthUi.At(pos.x - 20, pos.y - 10, icon.width, icon.height), icon);
         GrowthUi.Image(root, "layer:coreCover", 135, 56);
         if (resultActivation)

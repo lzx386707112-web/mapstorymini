@@ -964,25 +964,48 @@ internal static class MatrixPresentation
     static int level;
     public static void Begin() { Active = true; text = null; skill = null; }
     public static void Hover(string value) { if (!string.IsNullOrEmpty(value)) text = value; }
-    public static void Details(string name, string desc, int current)
-    { skill = null; text = name + "  Lv" + current + "\n" + desc; }
+    // 特殊核心（type 2）上限就是 1 级、也没有「强化」这一步，工具提示里不该出现「Lv0 / Lv1」。
+    public static void Details(string name, string desc, int current, bool showLevel = true)
+    {
+        skill = null;
+        // 名字拿不到时不要留一行空的「  Lv0」：宁可只显示说明，也不要看起来像数据坏了。
+        string title = string.IsNullOrEmpty(name) ? null : showLevel ? name + "  Lv" + current : name;
+        text = string.IsNullOrEmpty(title) ? desc : title + "\n" + desc;
+    }
     public static void Skill(int[] skills, int current, string name, string desc)
-    { Details(name, desc, current); if (skills != null && skills.Length > 0) { skill = SkillBook.Get(skills[0]); level = current; } }
+    {
+        Details(name, desc, current);
+        if (skills == null || skills.Length == 0) return;
+        var data = SkillBook.Get(skills[0]);
+        if (data == null) return;   // 保留 Details() 的核心名/说明，不显示空白框
+        // 名字/说明以 coreId 对应的权威核心表为准；且只改局部副本，不碰 byId 单例。
+        // 旧实现在这里把核心名写进共享 SkillData.name（"别拿数字当标题"的兜底），
+        // 一次悬停就把名字永久钉在技能定义上，之后别的界面/别的核心 tooltip 会串位。
+        skill = data.ForTooltip(name, desc);
+        level = current;
+    }
     public static void Draw()
     {
         Active = false;
-        if (!GrowthUi.Repaint || NativeUtilPrompt.Visible) return;
-        if (skill != null) { SkillWindow.DrawSkillData(skill, Pointer.Pos, level); return; }
-        if (string.IsNullOrEmpty(text)) return;
-        float s = GrowthUi.S, w = 300 * s;
-        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.Max(9, Mathf.RoundToInt(12*s)), wordWrap = true };
-        style.normal.textColor = Color.white;
-        text = text.Replace("\\n", "\n");
-        float h = style.CalcHeight(new GUIContent(text), w - 20*s) + 20*s;
-        var rect = new Rect(Mathf.Clamp(Pointer.Pos.x + 16*s, 4, Mathf.Max(4, UiKit.W-w-4)),
-            Mathf.Clamp(Pointer.Pos.y + 14*s, 4, Mathf.Max(4, UiKit.H-h-4)), w, h);
-        ItemTooltip.DrawFrame(rect,s);
-        GUI.Label(new Rect(rect.x+10*s,rect.y+10*s,w-20*s,h-20*s),text,style);
+        // Begin() 每帧先清一次，但同一帧里 V 矩阵 / HEXA 矩阵可能先后画两个窗口，
+        // 弹窗还会二次 Begin()。收尾再清一次，静态 skill/text 既不跨帧残留，
+        // 也不会被后画的窗口复用到前一个窗口的悬停数据。
+        try
+        {
+            if (!GrowthUi.Repaint || NativeUtilPrompt.Visible) return;
+            if (skill != null) { SkillWindow.DrawSkillData(skill, Pointer.Pos, level); return; }
+            if (string.IsNullOrEmpty(text)) return;
+            float s = GrowthUi.S, w = 300 * s;
+            var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.Max(9, Mathf.RoundToInt(12*s)), wordWrap = true };
+            style.normal.textColor = Color.white;
+            text = text.Replace("\\n", "\n");
+            float h = style.CalcHeight(new GUIContent(text), w - 20*s) + 20*s;
+            var rect = new Rect(Mathf.Clamp(Pointer.Pos.x + 16*s, 4, Mathf.Max(4, UiKit.W-w-4)),
+                Mathf.Clamp(Pointer.Pos.y + 14*s, 4, Mathf.Max(4, UiKit.H-h-4)), w, h);
+            ItemTooltip.DrawFrame(rect,s);
+            GUI.Label(new Rect(rect.x+10*s,rect.y+10*s,w-20*s,h-20*s),text,style);
+        }
+        finally { skill = null; text = null; }
     }
     public static void Regions(string root)
     {

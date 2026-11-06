@@ -194,6 +194,19 @@ Snow2 分支会回退到全零密钥。
 
 ## 6. 帧元数据与时间模型
 
+### 6.1 五转核心面板与圣骑士技能复核（2026-11-05）
+
+- `VCore.img/coreGroup/122` 的四个圣骑士职业核心已核实为 `10010002 神聖團結 → 400011003`、`10010014 祝福之鎚 → 400011052`、`10010027 聖十字架 → 400011072`、`10010042 雷神戰鎚 → 400011131`；`VMatrix.json` 与 `VMatrixSkills.json` 均存在，`VMatrixSlots.Assign` 职业段容量为 4，故聖十字架不应缺席职业核心格。`400011052` 的 h/common 字段逐级导出为 `time=30`、`damage=546`、`mobCount=8`、`attackCount=4`、`attackDelay=1800`，类型为 `attack`，不是被动。
+- 282 原端特效层证据：400011003 有 `special/special0` 及 `specialAffected*`，400011131 有 `effect/effect0`、`special/0` 与 `special/front`；运行时须枚举分支和子分支并读取占位帧的 origin/delay/outlink。项目 `NativeSkillVfx` 已按该规则读取并在 `SkillVisuals` 播放 effect/special/video/分段层；`check_skill_vfx.py --vs282` 全量结果为项目无“源端有像素而项目整层为空”的条目，剩余 97 处与源端同为空、51 处为源端无对应分支，不能据此宣称所有演出已完成。
+- 特殊核心穿透复现及修复：`NativeVMatrixWindow.Draw` 的 `specialOwnsGesture` 在松手帧不能提前清零；现在保持到 `Released` 处理结束，并以子窗矩形 hover 继续屏蔽底层。`tools/check_matrix_pointer.py` 增加 7 项 overlay 手势检查，连同原有 Pointer mask/DrawAll 检查通过。
+- 用户模拟器复核补充：用户确认当前实际看到的“聖十字架”效果对应 `鋼鐵之軀(400011066)`，而 `神聖團結(400011003)` 只播到前半段；这与 VCore 核心表的连接 ID 不一致，属于运行时入口/按键绑定或旧角色快照映射问题，不能改动 VCore 静态连接表猜测修正。离线预览显示 400011003 的完整后续层为 `specialAffected/specialAffected1/specialAffected2`，此前 `SkillVisuals` 只播 `affected`，已补齐 `Layers(s.vfx,"specialAffected")`。钢铁之躯的 400011066 原端预览只有 `effect`，因此蓝色十字架不来自该技能资源本身，需在 Unity 模拟器用实际绑定复现入口映射后继续定位。
+- 截图复核：截图中十字图标与“鋼鐵之軀”悬浮说明同时出现，证明需要同时记录 coreId、connectSkill、SkillBook id、tooltip 数据名和 VFX key；不能只按图标外观判断技能。TMS282 客户端 `VCore.img` 与 `vmatrix-data.json` 均核实 `coreGroup/122` 第三职业槽为 `10010027 → 400011072 聖十字架`，`鋼鐵之軀` 是共通核心 `10010025 → 400011066`，两者静态连接没有互换。
+
+#### 复现与边界
+
+- 二进制身份：TMS282 客户端 `MapleStory.exe` SHA256 `def89cf3c51b5d196b90776d64a68898d722c26f8ce14f97f8c3930e9c4cfc27`，函数边界按 `.pdata`；本轮仅复核技能 ID 字符串引用及 IMG 节点，未把调用点推断成完整技能处理器。
+- 资源检查：`tools/ms282/check_skill_vfx.py --vs282`；技能数据检查：`tools/ms282/export_vhexa_skills.py --check`（526 核心技能，0 缺伤害等级、0 attackInfo 覆盖缺口）；面板检查：`tools/check_vmatrix_layout.py`、`tools/check_matrix_pointer.py`。
+
 - `delay` 以 **60 ms** 为主（13,059），其次 90（4,223）、120（769）、30（531）；
   有 >500ms 的长 delay，是**等待点**，不是帧时长 —— **不能把"所有 delay 之和"当技能时长**。
 - `z` 全量 18,547 个样本**全为 0**（不要指望它排序）。
@@ -569,3 +582,479 @@ desc：「一定时间内提升自身的所有技能等级。**限于4转技能�
 七项守卫 0 不一致；`check_skill_effects.py` 的「buff 仍无 stat」**1 → 0**；
 Unity 编译 0 Warning / 0 Error；server-check 2246/0；面板 113 项 PASS。
 
+
+## 14. 五六转全量回归：三条「看着有、其实没接」的通道（2026-11-05）
+
+把 710 条五六转技能（V 376 + 五转觉醒/超技能 334）按「运行时通道」逐条打标后，
+回归出三类**守卫看不见**的缺口 —— 它们都能通过「表结构自洽」检查，因为出问题的地方
+在**数据形状**上，而不是在某张表里漏键。
+
+### ① `5241009 轟炸風暴VI`：数值全在 `dummyStr` 系列
+
+原始节点只有 `info/type=33` 与 `common/{dummyStr=6, dummyStr2=643+12*x, dummyStr3=9, dummyStr4=2}`，
+一个 `damage` 都没有。h 才是字典：
+
+```
+攻擊命中時對目標進行轟炸，以#dummyStr2%的傷害攻擊最多#dummyStr名敵人#dummyStr3次
+砲擊再發動冷卻時間 #dummyStr4秒
+```
+
+⇒ `dummyStr2=damage`、`dummyStr=mobCount`、`dummyStr3=attackCount`，
+`dummyStr4` 是**秒**（不是毫秒），所以不进 levels，由 `ProcSpec.CooldownField` +
+`CooldownUnitMs=1000` 直读原字段。
+
+落地：
+- `export_advanced_skills.COMMON_ALIAS` 加这条映射（导出期摊平，运行时零改动）。
+  注意 `dummyStr4` **不能**摊进 levels —— 摊进去会被当成毫秒。
+- `PROC_SKILLS` 显式登记为 passive（它本来靠兜底也会判 passive，登记是为了留取证）。
+- `NativeProcSkills` 加 `new ProcSpec(5241009, Roll, cooldownField:"dummyStr4", cooldownUnitMs:1000)`。
+  h 没写概率 ⇒ prop 缺省 100，每次命中触发，只受 2 秒再发动冷却限制。
+
+### ② 12 条 `damPlus` 被动：强化的是**另一条技能**
+
+五六转技能的被动段普遍长这样：
+
+```
+[被动效果：狂暴攻擊VI的傷害增加#damPlus%p]
+[被动效果：閃‧連殺VI傷害增加#u%p、超級閃‧連殺傷害增加#damPlus%p、
+           超級閃‧連殺衝擊波傷害增加#v%p]
+```
+
+`damPlus` / `u` / `v` 既不是属性 stat（进不了 `setItemBonus` 的结算），也不产生伤害体
+（不是 proc），所以过去**零消费** —— 12 条技能的被动强化等于没做。
+
+落地：`NativeSkillBoosts.json` + `NativeSkillBoosts.Pct(target)`，
+在 `SkillBook.Native()` 出口把 `damage × (100+Σpct)/100`。
+放这个位置是因为 proc / 召唤 / 普通施法三条线都从 `Native()` 取定义，
+且 `data` 每次都是新建副本，不会重复放大。
+
+**目标 id 的定法**（表在 `export_skill_boosts.py`，逐条带 h 片段自证）：
+1. h 里点名的技能名必须出现在 `h` 原文里；
+2. 目标要么在来源的 `psdSkill` 里（数据层引用），要么名字确实出现在 h 里；
+3. 名字重名时取**实际结算伤害的那一个**：
+   - `4141008 → 4141004`（4141003 只是 proc 触发体，伤害在 body 上）
+   - `5241015 → 5241009`（proc 的 body 自己）
+   - `5141015 → 5141003`（5141002 的追加冲击波体）
+
+全套 12 条来源 / 14 条目标；`check_skill_boosts.py` 守卫五项 + 跨技能取数值一项。
+
+### ③ `500001005 靈魂赫卡忒`：伤害在 `psdSkill` 引用的子技能上
+
+它 `info/type=33` + 有 `summon` 节点，但 `common` 只有召唤参数（lt/rb/attackDelay/speed/x=50…），
+`damage` 与 `attackCount` **一个都没有** —— 这两项在 `psdSkill` 的 `500001010` 上：
+`damage=660+22*x`、`bulletCount=4`、`attackCount=2`，与 h 的三个占位符逐项相等。
+不补的话 `NativeSummon` 拿到的 `DamagePercent` 恒为 0，**召唤出来站着不打**。
+
+落地：`export_vhexa_skills.LINKED_ATTACK` 在导出期补字段（运行时零改动），
+导出条目带 `linkedAttack:{from,fields}` 便于反查。
+
+### 查实后**不是**问题的几类（别再重复排查）
+
+| 现象 | 实际 |
+|---|---|
+| `400001036/39/59` attack 无 damage | 走 `common/attackInfo/<四转ID>`，`SkillBook.JobAttackRow` 按 `Profile.JobId` 取行（id/10 落回同支线） |
+| 12 条 invisible passive 零引用 | 内部标记/动作体（`invisible` + common 无伤害无时长），不需要独立消费 |
+| 14 条 attack 无 attackCount、28 条无 mobCount | 282 省略即默认 1 / 单发，不是缺字段 |
+| 6 条 buff 无 time | proc 触发体（刺客刻印）或瞬发型（连接绳索/瞬移/满载骰子） |
+| 174 条 `req` 指向不在技能表的前置 | 前置是 282 重做的四转技能（`1121052 愤怒爆发` 等），本工程走 JobTree 那套。`req` 只在 `SkillBook.WhyNot` 的 SP 加点路径生效，而 hexa 技能在它之前就 `return`，不影响玩法 |
+
+### 仍未做（需要新机制，别按「补字段」去修）
+
+- 已在本轮补齐，见 §15：`400031055 連射十字弓彈`、`400041025 黑影切斷`、`400011055 極樂之境`。
+  它们不是「buff 期间解锁子技能」这种需要凭空造的系统 —— 机制本来就在数据里
+  （`psdSkill` 指向 invisible 攻击体 + `isSequenceOn`），只是本项目没接线。
+
+**验证**：`check_skill_boosts.py`（12/14，0 不一致）、`check_proc_skills.py`（24 条）、
+7 个技能守卫 + 8 个矩阵/面板守卫全 PASS；Unity 编译 0 Warning / 0 Error；
+server-check 2246/0。
+
+## 15. 形态技能：`psdSkill` 子技能 + 三种消费入口（2026-11-05）
+
+§14 的「仍未做」把这三条记成需要新机制。查原始节点后结论相反：**机制一直在数据里**，
+只是伤害不在母技能身上 —— 母技能是「开形态 + 给次数」，真正的攻击体是 `psdSkill`
+指名的 invisible 子技能。过去没接线，于是按下母技能等于开一个空 buff。
+
+### 判据：`psdSkill` 指名 + 子技能是 invisible 攻击体
+
+```
+Skill/40003.img/skill/400031055
+  info/type = 15            ← 「連射/形态」类
+  psdSkill/400031056
+  isSequenceOn = 1
+  common/{mpCon=750, cooltime=120, time=60, x=8, y=150, w=500+20*x, u=9, v=4, cr=100}
+
+Skill/40003.img/skill/400031056      ← invisible=1，不在技能窗、不能加点
+  common/{maxLevel=30, mpCon=150, damage=500+20*x, attackCount=9, mobCount=1,
+          lt=[-780,-190], rb=[10,100]}
+  multiAttackInfo/0..3（attackTime 0/120/120/120）  ← 4 轮 = 母技能 v「發射 4 支」
+```
+
+**自证链**（导出脚本期强制，逐级比对，对不上直接失败）：
+
+| 母技能 h | 母字段 | 子技能字段 |
+|---|---|---|
+| `#c極速射擊#：消耗MP #y` | `y`=150 | `mpCon`=150 |
+| `發射#v支以#w%的傷害攻擊#u次` | `w`=500+20x / `u`=9 / `v`=4 | `damage` / `attackCount` / `multiAttackInfo` 条数 |
+
+`magic` 一律**继承母技能**，不看子节点：`400031056` 挂着 `info/magicDamage=1`，
+但它是弩手的物理箭，按它结算会拿魔法力去打物理。
+
+三条技能的形状：
+
+| 母技能 | 子技能 | 触发 | 形态 | 子技能数值（lv1..lv30） |
+|---|---|---|---|---|
+| `400031055` 連射十字弓砲彈 (type=15) | `400031056` 極速射擊 | **再按母技能** | 60s / `x`=8 个弹匣 | 520..1100% × 9 段 × 1 目标 × 4 轮，150 MP |
+| `400011055` 極樂之境 (type=33) | `400011056` 黃泉十字架 | **普通攻击被替换** | 30s / `w`=30 次 | 344..750% × 5 段 × 15 目标 × 5 轮，0 MP |
+| `400041025` 黑影切斷 (type=33) | `400041026` 黑影切斷（成功版） | **伤口满层连携** | 无（靠伤口门） | 858..1815% × 7 段 × 1 目标 × 5 轮，连携不再扣 MP |
+
+触发方式用 h/desc 原文定性，不看 `isSequenceOn`（`2241007 闪电球VI` 也带它，
+但那是 summon 的召唤体，不是形态）：
+
+- `400031055` desc「**再次使用技能**即可使用能利用箭筒的全速射擊」
+- `400011055` desc「在極樂之境中，可以以#c**一般攻擊**#使用交叉冥河」
+- `400041025` h「如果有傷口減益效果到達最大值的敵人，可在致命暗殺的最終攻擊和音速狂襲中
+  **連接使用**，且此時會移動到該名敵人的背後」
+
+`400041025` 还有原端的连携窗口字段：`4241000.addAttack/{skill=400041025, reqCount=1,
+pattern=151, skipActionFrame=3}`、`400041039.cancelableSkillID` 含 `400041026`。
+`pattern=151` 是帧级输入窗口，本工程没做帧精确输入，改用「伤口仍在」等价表达
+（伤口只由这两个技能造成、10 秒，语义一致）。
+
+### 母技能按下去要不要打一段：**由表决定，不看 Kind**
+
+`info/type=33` 是「buff + 攻击」的复合标记，但同样是 buff 带 `damage` 的还有 5 条
+**是 proc/被动的数值**，一律照打会凭空多出一发：
+
+```
+1141006 剑士意念VI / 5141011 海龙石VI / 13141003 风暴使者VI / 400041001 散式投掷 / 400041008 影之枪
+```
+
+所以 `NativeSkillSequences.json` 每条带 `parentAttack`，`SkillSystem.Cast` 的短路改成：
+
+```csharp
+if (s.native.Kind == "Summon") yield break;
+if (s.native.Kind == "Buff" && !SequenceParentAttacks(s.native.Id)) yield break;
+```
+
+- `400041025` = true（h「#主動效果#:消耗MP#mpCon，最多向#v名敵人以#y%的傷害攻擊#q次」）
+- `400011055` = false（母 common 的 `damage=320+13x` 是**裂缝爆炸**，不是按下去那一下）
+
+### 伤口（`400041025` 的被动段）
+
+h「向被致命暗殺的最後攻擊和音速狂襲命中的敵人留下#time秒間最多重疊3次的傷口減益效果。
+傷口減益效果只會對**1名敵人**留下，如果對新的敵人留下減益效果，前一個則會消失」。
+
+- 来源：`4241000` / `4241001`（致命暗殺兩段）+ `400041039`（音速狂襲），由
+  `TriggerReactiveSkills` → `NotifySequenceHit` 挂接（`HitAt` 与 `BeginReplay` 共用）。
+- 目标：本批命中里 maxHP 最高的那一只（desc「優先…最大HP最高的敵方」）。
+- 层数 3 只写在文案里（common 没有对应字段），登记为常量并在表里注明出处。
+- 换敌人 ⇒ 旧伤口立刻清零（h 原文如此），不是并存。
+
+### 裂缝（`400011055` 的第二段）
+
+h「以交叉冥河攻擊時斬裂空間，留下持續#y秒的裂縫…持續以交叉冥河攻擊裂縫會使裂縫逐漸擴大，
+最終發動#q次爆炸，以#damage%的傷害攻擊最多#mobCount名敵人#attackCount次…裂縫在生成後#z秒
+可再次生成，最多生成#u3個，裂縫持續時間結束後會消失並立即爆炸，但傷害降低為#u4%」。
+
+所以母技能 common 的 `damage/attackCount/mobCount` 是**爆炸**的数值（`333% × 6 段 × 15 名`），
+`y=10 / z=1 / q=5 / u3=10` 是常量，`u4=150+6x` 是逐级百分比。
+裂缝是「被同一技能反复命中才长大」的区域实体，不是每发都炸：命中处无裂缝 → 建一个（有 `z` 秒
+再生间隔、上限 `u3` 个）；已有 → 层数 +1；满 `q` 层 → 立即爆炸；到期未满 → 爆炸但按 `u4%`
+折算。爆炸体按 `vMatrix` 攻击体重构造，走全屏可见范围（母技能是 buff 类，按 200px 口径
+只能打到贴脸的一只）。
+
+### 运行时为什么**不**走 `BeginCast` 递归
+
+子技能是 invisible 攻击体，不在 `SkillBook` / 技能窗里（`LevelOf` 恒 0），走 `BeginCast`
+会被「技能未学习」挡下，还会把母技能的 MP / 冷却 / 弹药口径重复扣一遍。
+`NativeSkillSequences.CastSequenceChild` 只做「校验并扣子技能 MP → 扣次数 → 播动作/特效 →
+按 `multiAttackInfo` 的轮数逐轮 `HitAt`」，命中管线（`RollAttack` / `TakeReplayHit` /
+`TriggerReactiveSkills` / 特殊核心计数）全部复用。
+
+**再按键分流必须早于冷却检查**：`400031055` 的 buff 是 60 秒、冷却 120 秒，形态期间一定
+处于「技能冷却中」，放在冷却之后第二发会被自己挡死。`check_skill_sequences.py` 会比对
+`TrySequenceRecast(` 与冷却判断在源码里的先后位置。
+
+### 单目标多轮 ≠ 多目标多轮
+
+`400031056` 是「4 支箭各打一个目标」，`400011056` 是「15 个目标各被打 5 次」。
+不能用 `HitAt` 的 `struck` 做跨轮去重 —— 那里 `count = max(0, count - struck.Count)`，
+第二发会变成 0 段。实现按 `TargetCount` 分流：`<=1` 时自己记已打目标、每轮挑一个没打过的；
+`>1` 时每轮重选同一批。
+
+### 落地与守卫
+
+| 文件 | 作用 |
+|---|---|
+| `Assets/Resources/NativeSkillSequences.json` | 序列 / 伤口 / 裂缝三张表 |
+| `Assets/Scripts/NativeSkillSequences.cs` | 形态、次数、三种触发、伤口、裂缝 |
+| `tools/ms282/export_skill_sequences.py` | 从 282 展开 + 逐级自证，失败不写文件 |
+| `tools/ms282/check_skill_sequences.py` | 六项：表结构 / 有出处 / 有消费 / 接线 / 口径 / 资源 |
+
+守卫的「有出处」会重跑导出脚本并逐字节比对表，手改 JSON 会立刻被抓
+（负向验证：把 `charges` 从 8 改成 9 ⇒ `FAIL sequences.400031055`）。
+「口径」还查三件事：子技能不在任何技能表（否则会出现在技能窗被加点）、
+`invisible==1`、子技能 IMG 在 `NativeAssetIndex` 里（否则动作/特效全空）。
+
+### 2026-11-05 V 核心连接技能一致性修复
+
+`Etc/VCore.img` / `VMatrix.json` 的 core id 才是连接关系的权威来源：圣骑士 `10010027 → 400011072 聖十字架`，共通核心 `10010025 → 400011066 鋼鐵之軀`。旧角色快照可能携带过期的 name/skills 字段，造成十字架图标、钢铁之躯提示、释放仍走十字架的三链分裂。
+
+运行时在 `NativeVMatrixWindow.Find` 和 `VMatrixLevels.Capture` 按 core id 回填 canonical name/desc/type/maxLevel/skills；`SkillBook.LoadMatrixSkills` 对 `>=400000000` 的 V/HEXA 定义改为覆盖旧缓存条目，保证 type、icon、主动/被动判断与 `VMatrixSkills.json` 同源。验证边界：服务端仍以 `VMatrixCatalog.Core` 校验，客户端只修复旧快照展示与技能等级镜像，不改变源端连接表。
+
+同日补充：`400011072 聖十字架` 的 `attackDelay/subTime` 表示按住期间重复命中，但 IMG 未设置 `info/rapidAttack`，旧客户端因此误判为蓄力技能，只在松手时命中；现由 `NativeSkillVfx.RapidAttack` 显式纳入连续攻击。持续攻击期间切换其它技能时先结束当前 held 状态，避免 `heldSkill` 全局锁死快捷栏。
+
+### 已知口径简化
+
+1. `4241000.addAttack.pattern=151` 的帧级输入窗口未做，用「伤口仍在」等价；
+2. `400041026` 的 `casterMove` 按「目标背面 60px + 面向目标」实现，不做逐帧位移曲线；
+3. 子技能角色动作走 `PlayNativeSkill(child)`，角色 WZ 无对应 clip 时回退 `atk`
+   （与项目里其它 V 技能同一条路径）；
+4. 形态时长取母技能 `time` 原值，不吃 `use_buff_everlasting` / 增益时长加成。
+
+## 16. 按住型技能「只播特效、打不了怪」（2026-11-06）
+
+### 16.1 症状
+
+400011072 圣十字架绑到快捷键、按住：光束特效照播，怪只疼一下（或一下都不疼），
+松手立刻没。用户原话「之前是只播效果，但是打不了怪」。
+
+### 16.2 根因：连射的「每一发」被当成一次新施法
+
+施法链是 `TryCastBoundSkill → rapid → StartHeld → Update() 每 attackDelay 一次
+BeginCast(continuousShot:true)`。问题在 `BeginCast` 里这几条判据**对每一发都重新跑、重新扣**：
+
+```csharp
+if (!frenzy && State(s.native.Id).Remaining(...) > 0) return Reject("技能冷却中");
+...
+if (!frenzy && !State(s.native.Id).TryStart(now, s.cd)) return Reject("技能冷却中");
+p.TrySpendMp(mpCost);
+```
+
+400011072 的 `cooltime=120`、`mpCon=1000`。于是：
+
+1. 按下 → `StartHeld`（**不扣蓝、不起冷却**，因为 rapid 分支当时在扣费之前 return）
+2. +0ms 第 1 发：冷却为空 → 扣 1000 MP → `TryStart(120s)` → `HitAt` ✔
+3. +150ms 第 2 发：`Remaining(120s) > 0` → **Reject("技能冷却中")**
+4. `Update()` 拿到 false → `Report` + `StopHeld(true)` → 光束拆掉、播 keydownend
+
+表现就是「特效闪一下、怪掉一点血、然后什么都没有」。冷却 120 秒的技能尤其明显；
+冷却短的连射技能（暴风神射这类）因为 `cd` 很小，症状轻，一直被掩盖。
+
+### 16.3 修复（`SkillSystem.BeginCast` / `SkillHeldInput`）
+
+1. **`payCost = !continuousShot`**：冷却、MP、HP、弹药、物品这五类判据与扣减
+   全部只在「真正发起一次施法」时执行。后续每一发只结算伤害。
+2. **`rapid` 分支挪到扣费之后**。放在之前的话按下不扣蓝、每发各扣一次，
+   1000 MP 的圣十字架第 2 发就「魔力不足」（换一个闸门挡死，症状一样）。
+3. **`charge`（蓄力型：雷霆万钧VI / 元素之炎VI）保持在扣费之前**：
+   它是松手才结算，按下扣一次、松手再扣一次就是双重扣蓝。
+4. **`AttackDelay` 读源端 `attackDelay`**（400011072 = 150ms），
+   不再写死 100ms —— 写死会让 150ms 的技能多打 50%、90ms 的少打。
+5. **保底一发**：`HeldVisuals` 要等 `prepare` 播完（圣十字架约 0.9s）才开火，
+   玩家点一下就松手会一发都打不出去 ⇒ `StopHeld(release)` 里若 `!heldFired`
+   就补一次 `BeginCast(previous,true)`。
+6. `heldReady` 闸门：`prepare` 没播完之前 `Update` 不开火，避免「怪先掉血、光束后到」。
+
+### 16.4 验证（`Assets/Editor/SkillDamagePlayChecks.cs`）
+
+走真实输入链路，不塞测试后门：
+
+```text
+QuickSlots.Bind(0, id) → InputHub.SetVirtualAction(action, down)
+→ QuickSlots.Cast(0) → TryCastBoundSkill → rapid → StartHeld
+→ 按住 N 秒（Update 逐发）→ SetVirtualAction(up) → StopHeld(true)
+```
+
+结果（按住 3.0s）：
+
+```text
+400011072「圣十字架」 → 打到怪：伤害包 9 帧 / 总伤害 8071，击杀 18，按住态保持完好
+```
+
+三条都过：**9 个伤害包**（≈200ms 一包，含起手 0.9s）、**按住态没被拆**、
+伤害不为 0。修复前只会有 1 包且按住态在 +150ms 就归零。
+
+### 16.5 量伤害时踩的坑（下次别再走）
+
+- **40001 的怪只有 8 血**，一发就死，死了 `EnemyUnit.All.Remove(this)`，
+  之后所有发包都打空气 —— 「1 包」和「20 包」看起来都是 1 次击杀。
+  正确做法：每帧检查目标是否死了，死了就**立刻换最近的一只并贴上去**，
+  这样 27 只怪能连续量出 9 包。只盯一只怪 / 只调 `hpMax` 都测不出来。
+- **别改 `hpMax`**：`EnemyUnit` 的刷新会把 `hpMax` 覆盖回原生值，
+  一帧从 5000 万掉到 0，看起来像「一刀 5000 万」，其实是重置。
+- **别改 `attackDamage`**：每帧由 `Attributes` 重算，写了也没用。
+- **`mp` 读数不可靠**：会被 `maxMp` 夹回去，不能拿 MP 差当「扣了几次」的证据。
+
+## 17. 对照 282 源端：极冰风暴的分类、枪刺旋风的按住判定（2026-11-06）
+
+### 17.1 400011121 極冰風暴：不是分类 bug，是没实现的「詛咒 + 冰塊」proc
+
+282 `h` 原文（`String/Skill.img`）：
+
+> 消耗 #mpCon MP，施展時增加 #z 鬥氣，對最多 #mobCount 名敵人施加**鑽石狼的詛咒**
+> 隨後 #q 秒內，定期發動能對最多 #w 名敵人施加詛咒的光芒
+> #c冰塊#：對最多 #u 名敵人造成 **#u2%** 傷害 **#u3 次**，冷卻時間為 #t 秒
+
+节点事实（`Skill/40001.img/skill/400011121`）：
+
+```text
+info    = {type=1}
+common  = {cooltime=60 maxLevel=30 mobCount=10 mpCon=1200 q=20 q2=20 t=0.4
+           u=15 u2=640+25*x u3=4 v=1 w=5 x=15 y=6 z=200}
+action  = 5thComboTempest
+顶层    = action additional_process common effect icon* info isSequenceOn
+          notCooltimeReset notIncBuffDuration preloadEff processtype special vSkill weapon
+```
+
+`common` 里**没有 `damage`、没有 `attackCount`、没有 `psdSkill`**，伤害全部藏在
+`u2`（冰塊伤害%）与 `u3`（次数）上，且「冰塊」是**命中带詛咒的敌人时生成**的追加攻击，
+不是施展时的一次伤害。
+
+`SkillBook.Get()` 的兜底分类（`SkillBook.cs:271` 先落 `type="passive"`，296-298 再按字段升级：
+`summon 节点 → summon` / `damage|fixdamage|mad|attackCount → attack` / `time|prop → buff`）
+三条全不命中 ⇒ 留在 `passive` ⇒ `TryCastSkill` 以「被动技能无需施放」拒绝。
+
+**结论：别为了「能按」把它改成 attack。** 它的 `DamagePercent` 是 0，
+放行之后就是「79 帧特效照播、怪一点血不掉」——正是我们要修的那个症状换了个技能。
+要做就补齐两条：①施展时施加詛咒（debuff 表）②直接攻击命中带詛咒目标 → 生成冰塊追加攻击
+（`u2%` × `u3` 次，冷却 `t` 秒）。属新功能，不是修 bug。
+
+### 17.2 400011068 槍刺旋風：`info/rapidAttack` 不是唯一判据
+
+282 节点：
+
+```text
+info   = {areaAttack=1 bodyAttack=1 invincible=1 movingAttack=1 rectBasedOnTarget=1 type=11}
+common = {attackCount=8 attackDelay=140 cooltime=120 damage=253+11*x mobCount=12 mpCon=100
+          s=564+23*x s5=50 t=4 updatableTime=4000 w=1 w2=10 x=100 y=12 z=8}
+psdSkill = {400011068, 400011069}
+action   = 5thPierceCycloneLoop
+```
+
+`h`：「最多 #t 秒內以 #damage% 傷害**連續攻擊**前方 #mobCount 名敵人共 #attackCount 次…
+按鍵持續結束時…造成 #s% 傷害並攻擊 #q 次的**衝擊波** #z 次作為收尾攻擊」。
+
+它 **没有** `info/rapidAttack`，但有 `attackDelay=140` + `attackCount=8`。
+旧判据只看 `info/rapidAttack` ⇒ 落到 `charge` 分支 ⇒ 按住只播 keydown 循环、
+伤害要松手才出一次。和圣十字架「只播特效打不了怪」是同一类症状。
+
+新判据（`NativeSkillVfx.RapidAttack`，全部来自源端字段、不按 id 硬编码）：
+
+```text
+info/rapidAttack != 0                                   → rapid
+否则 keydown 与 keydownend 都存在
+     且 common/attackDelay > 0
+     且 common/attackCount > 0                          → rapid
+```
+
+顺带删掉 `if (id == 400011072) return true;` 那条硬编码：282 的
+`400011072 聖十字架` 与 `400011028 火神重擊` **本身就写了 `info/rapidAttack=1`**，
+硬编码是多余的；真正漏掉这一位的是枪刺旋风。
+
+实测（`SkillDamagePlayChecks`，按住 3s）：
+
+```text
+400011068「枪刺旋风」→ 伤害包 6 帧 / 总伤害 8047 / 击杀 27 / 按住态保持完好
+```
+
+**边界**：蓄力型（`charge` 分支里的雷霆万钧VI / 元素之炎VI）不带 `attackDelay` ——
+`attackDelay` 的语义就是「连续攻击的每发间隔」，只有按住型才有。所以新判据不会把蓄力型误判成连射。
+三个按住型技能一起实测（同一轮、同一张图）：
+
+```text
+400011068 枪刺旋风  → 伤害包  6 帧 / 击杀 27 / 按住态保持完好
+400011072 圣十字架  → 伤害包 11 帧 / 击杀 21 / 按住态保持完好
+400011028 火神重击  → 伤害包 18 帧 / 击杀 21 / 按住态保持完好
+```
+
+**仍未做**：`psdSkill 400011069` 是松手那一下的冲击波，不在 `NativeSkillSequences.json` 里，
+所以「收尾冲击波」这一层还是缺的（伤害没缺，缺的是那一段表现 + 额外 `s%` × `q` 次）。
+
+## 18. 「装了核心却按不动」全量清单与单字母别名（2026-11-06）
+
+`tools/check_matrix_skill_coverage.py` 只验「技能能被 `SkillBook` 解析」，
+**解析成功 ≠ 能施放**。真跑一遍（`SkillCombatDump -dumpUncastable 1`，
+按 `VMatrix.json` 的 type=0 核心反查）得到：
+
+```text
+技能核心引用技能 264 个：可施放 247，被判被动 13，无定义 4      ← 修前
+技能核心引用技能 264 个：可施放 252，被判被动  8，无定义 4      ← 修后
+```
+
+### 18.1 根因：兜底分类器读不到单字母字段
+
+`SkillBook.Get()` 对不在 `VMatrixSkills.json` 里的技能走 IMG 兜底，类型是**按字段猜**的：
+
+```text
+summon 节点                             → summon
+damage / fixdamage / mad / attackCount  → attack
+time / prop                             → buff
+都不命中                                 → 留在 "passive"
+```
+
+282 有一批技能把「伤害 / 段数 / 目标数」写在 `q`、`z`、`dummyStr2` 这类占位字段上，
+真实含义由 `h` 模板指定。导出链（`export_advanced_skills.COMMON_ALIAS`）只覆盖
+被导进 `VMatrixSkills.json` 的那批，其余走到兜底就一个字段都读不到 ⇒ 判成被动 ⇒
+玩家装备核心、按下去只回「被动技能无需施放」。
+
+修：`SkillBook.FieldAliases` + `ApplyFieldAliases()`，在分类**之前**补别名，
+判据一律抄 h 原文：
+
+| 技能 | h 里的原文 | 别名 |
+| --- | --- | --- |
+| 400011039 協力攻擊 | 1打：#q%的傷害攻擊#q2次 | q→damage, q2→attackCount |
+| 400021078 黑翼破天 | #dummyStr2%傷害…#dummyStr3次…#dummyStr名敵人 | dummyStr2→damage, dummyStr→mobCount, dummyStr3→attackCount |
+| 400021155 絕魂毒牙 | 同上句式 | 同上 |
+| 400041075 幽靈之刃 | 修羅：最多對#y名敵人以#z%傷害攻擊#u次 | z→damage, u→attackCount, y→mobCount |
+| 400051024 ICBM | 以#q%的傷害攻擊最多#u名敵人#q2次 | q→damage, q2→attackCount, u→mobCount |
+
+只在自身没有目标字段时写入，不覆盖已有定义（同 python `apply_alias` 的 setdefault 口径）。
+多段技能只取第一打当主段（与落雷凝聚「只取主段」同一口径）。
+
+### 18.2 剩下 8 个被判被动的，逐个定性
+
+| 技能 | 源端 info | 定性 |
+| --- | --- | --- |
+| 400000005 实用的进阶祝福 | `pvp=0` | 真被动 ✔ |
+| 400000006 实用的最终极速 | `pvp=0` | 真被动 ✔ |
+| 400040000 爆破飞毒杀 | `type=51 dot=1` | 被动 proc ✔ |
+| 400001091 轮回之环 / 400001092 命运之力 | `type=12` | 需输入数字键交互，`400001092` 是 `MainSkillID_WZ2` 子技能 |
+| 400031078 风暴注入 | `type=12` | 属性切换开关 |
+| 400001024 普力特的祝福 | `type=10` | **可施放的 buff**（6 层叠加，h 有 w/z/q/u/v），缺的是效果表不是类型 |
+| 400011121 极冰风暴 | `type=1` | 詛咒 + 冰塊 proc（见 §17.1），强行放行 = 0 伤害 |
+
+### 18.3 4 个「无定义」是源端数据缺失
+
+`400021008 / 400021048 / 400021074 / 400021096`：`VMatrix.json` 的核心
+`connectSkill/0` 确实指向它们，但 **282 的 `Skill/40002.img` 里没有这些节点**
+（`load_img` 确认 282 源端也没有）。属源端数据缺失，不是本项目漏导。
+
+### 18.4 守卫
+
+```bash
+Unity -batchmode -projectPath . -executeMethod SkillCombatDump.Run -dumpUncastable 1 -quit
+# 产物 /tmp/skill_uncastable.txt
+```
+
+建议把这条接进回归：**核心引用的技能里，被判 passive 的数量只允许是那 8 个已知项**，
+多出来的就是新的分类漏判。
+
+### 18.5 另外补的一处：判定框只认 `lt/rb`，漏了 `lt2/rb2`
+
+ICBM `400051024` 的 `common` 里**没有 `lt/rb`**，只有：
+
+```text
+lt2 = [-800, -400]      rb2 = [-250, 80]      （爆炸落点）
+range = 1（秒）  q = 800+32*x（伤害%）  q2 = 5（段数）  u = 15（目标数）
+```
+
+`NativeSkillCatalog` 原来写死 `HasBounds = level.ContainsKey("lt") && level.ContainsKey("rb")`，
+于是 `HasBounds=false`，`InRange` 退回 0 宽的默认框 ⇒ 技能放得出来、怪一点血不掉。
+
+修：按 `lt/rb → lt2/rb2 → lt3/rb3 → lt4/rb4` 逐级回退，只认第一条存在的。
+修后 `ICBM` 的判定框是 `Min=(-20,-10) Max=(-6.25,2)`（世界单位，即身前 6.25~20 单位），
+与 `lt2/rb2 ÷ 40` 完全一致。
+
+顺带说明为什么它之前「测不出来」：贴脸 1.2 单位站位根本不在这个框里，
+探针加了 `-dmgStandoff <世界单位>` 才量得到。远程/落点型技能都要用它。

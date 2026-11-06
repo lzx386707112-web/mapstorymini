@@ -1004,7 +1004,7 @@ public static class SkillWindow
     static bool carrying;          // 手上有技能（源端 DragStart 之后的状态）
     static bool externalCarry;
 
-    // 给虚拟按键层用：手上有没有技能、是哪个
+    // 给输入层用：手上有没有技能、是哪个（虚拟按键层据此整层让位，别把这一下按成技能）
     public static bool Dragging => dragId != 0 && carrying;
     public static int DragSkillId => dragId;
 
@@ -1066,7 +1066,7 @@ public static class SkillWindow
 
     static bool DropOnSlot(int id)
     {
-        // 宏落点：只接受快捷格（虚拟按键的技能校验会拒绝宏标记）
+        // 宏落点：只接受快捷格（宏标记不是技能 id，键盘/按键通道都不认它）
         if (NativeSkillMacros.IsMacro(id))
         {
             for (int i = 0; i < QuickSlots.Count; i++)
@@ -1080,13 +1080,20 @@ public static class SkillWindow
             return false;
         }
         if (DropOnMacro(id)) return true;
-        // 放到屏上虚拟按键：把这个按键直接变成该技能键（原版"技能拖进快捷格"的屏上等价物）。
         // 键盘设定窗口盖住按键时，落在键帽上的优先算键位绑定——视觉在上面的那个先收到。
         // 但键位窗自己也拿着功能时让位给它，一次按下只做一件事。
         bool overKeycap = KeyConfigWindow.Visible && !KeyConfigWindow.Carrying
                           && KeyConfigWindow.HitKey(Pointer.Pos) != KeyCode.None;
-        if (!overKeycap && VirtualControls.TryBindSkill(Pointer.Pos, id)) return true;
         if (overKeycap && KeyConfigWindow.DropSkill(Pointer.Pos, id)) return true;
+        // 技能只能绑到「键盘」这一层：键盘设定里的键位，或底部快捷格（每格挂着 KeyCode）。
+        // 屏上虚拟按键不作为落点——把技能直接挂到 VirtualControls 元素上会绕过键位映射，
+        // 那个键在键盘设定里看不到、也改不了，等于多出一套玩家改不动第二份绑定。
+        // 认出落点只为给一句说明：静默取消会让玩家分不清「不支持」和「没拖准」。
+        if (!KeyConfigWindow.Visible && VirtualControls.HitButtonAt(Pointer.Pos))
+        {
+            NativeUtilPrompt.Notice("技能只能绑到键盘的键位上：在键盘设定里拖到键位，或放进快捷栏后指定按键。");
+            return true;
+        }
         for (int i = 0; i < QuickSlots.Count; i++)
         {
             if (!BottomBar.SlotRect(i).Contains(Pointer.Pos)) continue;
