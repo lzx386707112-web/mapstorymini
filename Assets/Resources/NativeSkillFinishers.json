@@ -1,0 +1,57 @@
+{
+ "source": {
+  "packs": "/tmp/packs",
+  "nodes": "Skill/<img>.img/skill/<id>/keydownFinish + 子技能 common + String/Skill.img h",
+  "note": "波数/间隔来自母技能 common 与 h；子技能数值由运行时 SkillBook.Native 从 IMG 展开"
+ },
+ "finishers": [
+  {
+   "parent": 400011068,
+   "child": 400011069,
+   "parentName": "枪刺旋风",
+   "waves": 8,
+   "wavesField": "z",
+   "intervalMs": 140,
+   "childDamage": "564+23*x",
+   "childAttackCount": "15",
+   "childMobCount": "12",
+   "evidence": "…造成#s%傷害並攻擊#q次的衝擊波#z次作為收尾攻擊"
+  },
+  {
+   "parent": 400041059,
+   "child": 400041060,
+   "parentName": "暗影投掷",
+   "waves": 1,
+   "wavesField": "1",
+   "intervalMs": 120,
+   "childDamage": "900+36*x",
+   "childAttackCount": "13",
+   "childMobCount": "10",
+   "evidence": "最後以巨型暗影飛鏢收尾，對最多#z名敵人造成#u%傷害，共攻擊#v次（v 是段數）"
+  },
+  {
+   "parent": 400051046,
+   "child": 400051097,
+   "parentName": "小萌新吉祥物",
+   "waves": 7,
+   "wavesField": "u2",
+   "intervalMs": 120,
+   "childDamage": "675+27*x",
+   "childAttackCount": "10",
+   "childMobCount": "15",
+   "evidence": "…發動以#x%的傷害攻擊#y次的爆炸#u2次"
+  },
+  {
+   "parent": 400051078,
+   "child": 400051079,
+   "parentName": "破碎连拳",
+   "waves": 8,
+   "wavesField": "v",
+   "intervalMs": 120,
+   "childDamage": "800+32*x",
+   "childAttackCount": "14",
+   "childMobCount": "10",
+   "evidence": "長按結束時將發動#v次衝擊"
+  }
+ ]
+}

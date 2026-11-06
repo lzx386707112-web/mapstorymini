@@ -36,6 +36,9 @@ public static class SkillVfxFamilyAudit
     {
         "prepare", "keydown", "keydownend", "effect", "special", "specialAffected",
         "affected", "effect_ple", "finish", "start", "repeat", "end", "screen",
+        "rushEffect",   // CastVisuals 按 effect 同口径播（400011104 突进残影）
+        "mask",         // 400011028 的 mask 是纯黑 stencil（1368x164, RGB=0, alpha 全 255），
+                        // 不能当精灵画（会盖出黑条），CastVisuals 故意不取；这里只防误报
     };
 
     // 不在 NativeSkillVfx 这条链上取的分支：由别的系统按 id 直接读 IMG，

@@ -22,17 +22,17 @@ SKIP_INSTALL_REASON="--no-install"
 # ---------- 0/5 前置检查（早失败，省得白等三分钟）----------
 echo "== 0/5 前置检查 =="
 
-# Unity 同一工程只能有一个进程持有；编辑器开着时 batchmode 会直接失败
-if pgrep -f "Unity.app/Contents/MacOS/Unity" >/dev/null 2>&1; then
-  echo "⚠️  Unity 编辑器正在运行，占用着工程。"
-  if [ -t 0 ]; then
-    read -p "   自动关闭它继续？未保存的改动会丢 [y/N] " ans
-    case "$ans" in
-      y|Y) pkill -f "Unity.app/Contents/MacOS/Unity"; sleep 4; echo "   已关闭" ;;
-      *)   echo "   已取消。请手动 ⌘Q 退出 Unity 后重跑。"; exit 1 ;;
-    esac
-  else
-    echo "   请先退出 Unity 编辑器后重跑。"; exit 1
+# 同一工程同时只能有一个 Unity 进程：Unity 退出会清空 Temp/，并发时另一个实例
+# 会把构建中的 Temp/StagingArea 删掉，报 EditorToUnityLinkerData.json 找不到。
+# 这里等待而不是 pkill —— 构建过程中别的任务启动 Unity 是没法靠启动瞬间检查挡住的。
+LOCK="$PROJ/tools/unity-lock.sh"
+if [ -x "$LOCK" ]; then
+  echo "   检查工程占用…"
+  "$LOCK" wait 900 || exit 1
+else
+  # 锁脚本不在时退回原来的单点检查（不能防止构建中途被别的 Unity 撞上）
+  if pgrep -f "Unity.app/Contents/MacOS/Unity" >/dev/null 2>&1; then
+    echo "❌ 有 Unity 进程占用工程，请先退出后重跑。"; exit 1
   fi
 fi
 
@@ -44,7 +44,7 @@ if [ "$NO_INSTALL" = "0" ]; then
   STATE=$("$ADB" get-state 2>/dev/null || echo "none")
   # adb 守护进程偶尔会因端口占用/旧进程残留起不来，先自愈一次
   if [ "$STATE" != "device" ]; then
-    echo "   adb 状态异常（$STATE），重启 adb 服务…"
+    echo "   adb 状态异常（${STATE}），重启 adb 服务…"
     "$ADB" kill-server >/dev/null 2>&1 || true
     sleep 2
     "$ADB" start-server >/dev/null 2>&1 || true
@@ -52,7 +52,7 @@ if [ "$NO_INSTALL" = "0" ]; then
     STATE=$("$ADB" get-state 2>/dev/null || echo "none")
   fi
   if [ "$STATE" != "device" ]; then
-    echo "   手机未连接或不可用（adb 状态：$STATE），继续构建 APK，跳过安装与启动。"
+    echo "   手机未连接或不可用（adb 状态：${STATE}），继续构建 APK，跳过安装与启动。"
     NO_INSTALL=1
     SKIP_INSTALL_REASON="无可用手机"
   else
@@ -107,6 +107,17 @@ if ! grep -q "结果=Succeeded" "$LOG" && grep -q "活动平台不是 Android" "
   unity_build
 fi
 
+# 构建过程中别的 Unity 实例启动/退出会清掉 Temp/StagingArea，
+# 表现为 Data/Managed 建不出来 -> EditorToUnityLinkerData.json 找不到。
+# 单纯清缓存没用（下次仍会被撞），这里等占用者退出、清污染缓存后自动重来一次。
+if ! grep -q "结果=Succeeded" "$LOG" &&
+   grep -q -E "EditorToUnityLinkerData|CreateDirectory .*StagingArea.*failed" "$LOG"; then
+  echo "⚠️  Temp/StagingArea 被并发的 Unity 实例清掉，等占用者退出后自动重来一次…"
+  if [ -x "$LOCK" ]; then "$LOCK" wait 900 || exit 1; fi
+  rm -rf "$PROJ/Temp" "$PROJ/Library/BuildPlayerData"
+  unity_build
+fi
+
 if ! grep -q "结果=Succeeded" "$LOG"; then
   echo "❌ 构建失败，日志关键行："
   grep -E "error CS|Exception|FAILURE:|\[Build\]" "$LOG" | tail -20
@@ -123,7 +134,7 @@ grep "\[Build\] 结果" "$LOG" | tail -1
 ls -lh "$PROJ/Builds/MapleDash.apk"
 
 if [ "$NO_INSTALL" = "1" ]; then
-  echo "已跳过安装（$SKIP_INSTALL_REASON）。APK：$PROJ/Builds/MapleDash.apk"
+  echo "已跳过安装（${SKIP_INSTALL_REASON}）。APK：$PROJ/Builds/MapleDash.apk"
   echo "APK 不含完整 Data；资源请自行放到 /sdcard/mapstory，安装可用 ./install_apk.sh。"
   exit 0
 fi

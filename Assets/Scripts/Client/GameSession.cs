@@ -283,6 +283,11 @@ public static class GameSession
         NativeMapWindows.WorldVisible = false;
         NativeMonsterBook.Visible = false;
         InGame = true;
+        // 核心等级 → 技能等级：V 强化核心（damR_5th/targetPlus/无视/Boss）与 HEXA 强化
+        // （damR_6th）都只认 VMatrixLevels 这张镜像，而它们的包装技能（400004xxx/500004xxx）
+        // 不在 JobTree 里、拿不到存档等级。以前只有「打开对应面板」才会写一次，
+        // 于是不开面板的玩家永远吃不到强化核心加成。登录时预热一次。
+        RefreshMatrixLevels();
         // PlayerLoggedinHandler:366 noteService.show：登录时有未读便签就弹便签窗
         if (Net != null && Net.Memo(new MemoRequest { characterId = CharacterId, action = 2 })?.notes is { Length: > 0 })
             NativeMemoWindow.Open();
@@ -314,6 +319,40 @@ public static class GameSession
     }
 
     /// <summary>只放开当前角色、保留账号登录态（退出战斗回选角用）。</summary>
+    /// <summary>
+    /// 登录预热：把 V 矩阵与 HEXA 的核心等级灌进 `VMatrixLevels`。
+    /// 两个快照都是只读的（commit=false 的查询），失败也只记一条日志 ——
+    /// 拿不到就退化成「打开面板后才生效」，不影响进游戏。
+    /// </summary>
+    static void RefreshMatrixLevels()
+    {
+        if (Net == null || CharacterId <= 0) return;
+        try
+        {
+            var matrix = Net.VMatrix(new VMatrixRequest
+            {
+                characterId = CharacterId, operation = VMatrixOperation.Snapshot,
+            });
+            if (matrix != null)
+            {
+                NativeSpecialCore.Observe(matrix);
+                VMatrixLevels.Capture(matrix, CharacterId);
+            }
+            var hexa = Net.Hexa(new HexaRequest
+            {
+                characterId = CharacterId, operation = HexaOperation.Snapshot,
+            });
+            if (hexa != null) VMatrixLevels.CaptureHexa(hexa, CharacterId);
+            if (PlayerPrefs.GetInt("debug_hitlog", 0) != 0)
+                Debug.Log("[Matrix] 登录预热：V 等级 " + VMatrixLevels.Count(false) +
+                          " 条 / HEXA 等级 " + VMatrixLevels.Count(true) + " 条");
+        }
+        catch (System.Exception error)
+        {
+            Debug.LogWarning("[Matrix] 登录预热失败：" + error.Message);
+        }
+    }
+
     public static void DeselectChar()    {
         if (InGame) SaveToDb();
         NativeCashWindow.Reset();

@@ -42,7 +42,12 @@ public sealed class NativeBuffs : MonoBehaviour
         "SKILL_ORDER",
         // 状态异常耐性（400011066「#time秒内提升状态异常抗性#indieAsrR」）：
         // 可叠加，且与永久被动的 ASR 相加（消费方 Field/NativeMobDebuffs）。
-        "ASR"
+        "ASR",
+        // 普力特的祝福 400001024 的 3/5/6 层：flat 全属性、Boss 伤害%、无敌，
+        // 以及承载叠层数的标记。消费方分别是 PlayerCtrl.RefreshAttributes /
+        // PlayerCtrl.cs:1731 / PlayerCtrl.cs:1406。新键必须进 shared，否则
+        // Register 会把先放的同名 buff 整个顶掉。
+        "STR", "DEX", "INT", "LUK", "BossDamage", "INVINCIBLE", "STACK_BLESSING"
     };
     static bool ConfigBool(string key,bool fallback=false) => GameServer.Local == null ? fallback : GameConfigDao.GetBool(GameServer.Local.Db,key,fallback);
     static string Config(string key,string fallback) => GameServer.Local == null ? fallback : GameConfigDao.Get(GameServer.Local.Db,key,fallback);
@@ -230,6 +235,17 @@ public sealed class NativeBuffs : MonoBehaviour
         var spec=NativeItemSource.Node(itemId)?.Get("spec");
         int interval=spec?.Int("mmpRRate")>0 ? spec.Int("mmpRRate") : spec?.Int("mhpRRate") ?? 0;
         effect.NextRecovery=now+(short)(interval*100)/1000.0;
+        Register(effect);
+    }
+    /// <summary>
+    /// 282 可叠层主动 buff（普力特的祝福 400001024）：每次施放按当前层数重写
+    /// 同一 skillId 的 Effect。Register 会先移除同 id 的旧 Effect，所以
+    /// 「叠一层 = 保留前面所有效果 + 新增一层」正好对应逐层累加的 stat 集合。
+    /// </summary>
+    public void ApplyStack(int skillId,int level,Dictionary<string,int> stats,int durationMs,double now)
+    {
+        var effect=new Effect { Id=skillId,Level=level,DurationMs=durationMs,Started=now,Until=now+durationMs/1000.0 };
+        foreach(var pair in stats) effect.Stats.Add(pair.Key,pair.Value);
         Register(effect);
     }
     public void Tick(double now)

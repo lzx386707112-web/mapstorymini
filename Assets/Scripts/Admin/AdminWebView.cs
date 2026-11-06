@@ -1,12 +1,16 @@
 using System;
 using UnityEngine;
 
-// 后台管理的「应用内浏览器」：Android 上用全屏 Dialog 承载 WebView 覆盖在游戏画面上，
-// 系统返回键关闭（Dialog 的默认行为），桌面/编辑器仍走系统浏览器。
+// 后台管理的打开方式，按平台分叉（别把桌面版也改成内嵌 WebView）：
+//   · Android：全屏 Dialog 承载 WebView，覆盖在游戏画面上，系统返回键关闭。
+//   · Windows / macOS 桌面版、编辑器、WebGL：Application.OpenURL → 系统默认浏览器，
+//     游戏内不嵌任何浏览器控件，也不做内置导航拦截。
 //
-// 为什么不用外部浏览器切屏：Android 切走后 Unity Activity onPause，主线程停摆，
+// 为什么 Android 不用外部浏览器切屏：Android 切走后 Unity Activity onPause，主线程停摆，
 // 后台请求全部等超时（见 AdminHost 的泵线程）；留在进程内就不存在这个问题，
 // 而且横竖屏直接跟游戏走，不用单独适配。
+// 桌面版反过来：runInBackground=true（见 ConfigureWindowsPlayer / AdminHost.Awake），
+// 切到浏览器后游戏主线程照常跑，HTTP 服务能正常响应，所以直接用系统浏览器更合适。
 //
 // Dialog 而不是往 decor view 塞 View：返回键默认 dismiss 整个后台，
 // 不用自定义 OnBackPressed 处理历史栈。

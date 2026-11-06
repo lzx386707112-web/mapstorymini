@@ -40,8 +40,10 @@ public static class TooltipPreview
     const string K_QUIT = "TooltipPreview.quitAfter";
     const string SnapKey = "mxd.profile.v1";
 
-    const int SetHat = 1003242, SetTop = 1052357, SetShoes = 1072521;
-    const int SetGlove = 1082314, SetCape = 1102294, SetWeapon = 1302169;
+    // 282 SetItemInfo.img set 504「航海师套装(战士)」7 件：预览穿 6 件 → 件数 6 / 7。
+    // 换掉旧的 beidou 55 套 id，否则迁到 282 数据后预览里根本不会出现套装面板。
+    const int SetHat = 1004422, SetTop = 1052882, SetShoes = 1073030;
+    const int SetGlove = 1082636, SetCape = 1102775, SetWeapon = 1302333;
     const int StarWeapon = 1302081;      // 永恒破甲剑，reqLevel 120 → 15 星上限，incPAD 110
     const int TwoRowWeapon = 1302343; // 神秘之影单手剑，reqLevel200，真实30星槽模板
     const int Potion = 2000000;
@@ -66,7 +68,7 @@ public static class TooltipPreview
             new Scene { key = "two-row-16", title = "两行30槽 · 跨行16星", itemId = TwoRowWeapon, forceStars = 16 },
             new Scene { key = "two-row-30", title = "两行30槽 · 满30星", itemId = TwoRowWeapon, forceStars = 30 },
             new Scene { key = "two-row-growth", title = "两行星条+完整长内容+右下边缘", itemId = TwoRowWeapon, forceStars = 30 },
-            new Scene { key = "equip-hat-set", title = "帽子 + 套装面板（宝石套 6/8）", itemId = SetHat },
+            new Scene { key = "equip-hat-set", title = "帽子 + 282 frame/set 套装面板（航海师套 6/7）", itemId = SetHat },
             new Scene { key = "hover-inventory", title = "真实背包格悬停", itemId = StarWeapon },
             new Scene { key = "potential-hidden", title = "未鉴定潜能", itemId = StarWeapon },
             new Scene { key = "potential-grade-0", title = "未定品级潜能", itemId = StarWeapon },
@@ -442,7 +444,7 @@ public static class TooltipPreview
         try { typeof(PlayerCtrl).GetMethod("ApplyLoadout", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(player, null); }
         catch (Exception e) { Note("ApplyLoadout 反射失败：" + e.Message); }
         player.ApplyProgression();
-        Note("角色 Lv." + Profile.level + " 职业 " + Profile.JobId + "，已穿 6 件宝石套");
+        Note("角色 Lv." + Profile.level + " 职业 " + Profile.JobId + "，已穿 6 件 282 set 504 航海师套");
 
         int cid = GameSession.CharacterId;
         if (cid <= 0) { Note("不在游戏内（CharacterId=0），武器场景只有 WZ 基础值"); d.AddItem(Potion, 50); return; }

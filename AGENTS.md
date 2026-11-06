@@ -70,3 +70,32 @@ cd MapleDash && dotnet build tools/server-check/MapleDash.ServerCheck.csproj && 
 cd MapleDash && dotnet build tools/unity-compile-check/Check.csproj
 ```
 
+## Unity 工程独占（所有任务必须遵守）
+
+**同一时刻只允许一个 Unity 进程打开本工程。** Unity 退出时会清空 `Temp/`；两个实例并发时，
+正在构建的 A 的 `Temp/StagingArea` 会被 B 删掉。报错固定是这个链条：
+
+```
+CreateDirectory '.../Temp/StagingArea/Data/Managed' failed: No such file or directory
+Could not write ... Temp/StagingArea/res.*.png                 （24 条图标写入失败）
+DirectoryNotFoundException: .../EditorToUnityLinkerData.json
+Build Finished, Result: Failure.
+```
+
+清 `Temp` 或 `Library/BuildPlayerData` 只能治一次，**只要并发还在就必然复发**。
+不要去查资产生成器、ScriptableObject 或贴图导入，也不要把这个报错当成代码 bug。
+
+任何会启动 Unity 的命令（打包、`-batchmode -executeMethod` 探针、Play 模式检查、
+编译验证）都必须经 `tools/unity-lock.sh` 串行，不要在脚本里裸跑 `Unity -batchmode`：
+
+```bash
+cd MapleDash
+tools/unity-lock.sh status          # 先看有没有别的实例
+tools/unity-lock.sh wait            # 只等，不执行（默认最多等 900s）
+tools/unity-lock.sh run Unity -batchmode -quit -projectPath "$PWD" \
+    -executeMethod Xxx.Run -logFile /tmp/xxx.log
+```
+
+`build_android.sh` / `build_windows.sh` 已经内置等待与一次自动重试；
+多任务并行时仍需让**发起任务的一方**串行，因为别的实例中途启动 Unity 无法靠启动瞬间的检查挡住。
+

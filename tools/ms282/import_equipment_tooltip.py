@@ -10,7 +10,15 @@ SECTIONS = ["Item/Equip/frame/common", "Item/Equip/itemIcon", "Item/Equip/font",
             "Item/Equip/textIcon/additionalPotential", "Item/Equip/textIcon/soulWeaponWz2",
             # 「可升级次数」行的前缀图标：normal 灰 #85919F（剩 0 次）/ enhanced 紫 #AFADFF。
             # 只导这两张 11x9，不导同级的 hammer（黄金锤机制本工程尚未迁移）。
-            "Item/Equip/textIcon/scroll"]
+            "Item/Equip/textIcon/scroll",
+            # 282 原生套装信息面板（2026-11-06 迁入）。EXE 实证：ASCII 路径表
+            # 0x087A40A0（strings -a 1665518-1665530）明确引用 /frame/set/boxNormal|boxLucky/*
+            # 与 /textIcon/set/{normal,lucky}；布局常量键名是 UTF-16LE 簇 0x087A3DF0，
+            # 由 0x05234xxx getter 按名逐个读取，故 set/lucky 两张常量表必须一并导入。
+            "Item/Equip/frame/set",
+            "Item/Equip/textIcon/set",
+            "Item/Equip/set",
+            "Item/Equip/lucky"]
 
 def main():
     importer = Importer(Path.home()/"Documents/mxd/MapleStory/Data")

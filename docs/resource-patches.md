@@ -1,6 +1,7 @@
 # Android 资源全量包与补丁
 
-从仓库根目录 MapleDash 或外层 mxd-android 根目录均可运行打包入口。
+打包入口在 MapleDash 工程里（外层 mxd-android 已不放同名转发脚本）：在 MapleDash 目录执行
+`./pack_resources.sh` / `./pack_resource_patch.sh`，或在任意目录用 `MapleDash/pack_resources.sh` 调用。
 
 ## 全量发布
 
@@ -17,6 +18,39 @@
 例如 `releases/v1.manifest.json`。已有全量包可从 ZIP 根目录取出
 `resource-manifest.json` 作为旧基线；不要拿已经更新后的本地清单冒充旧版本。
 
+## 分包（默认每包 2 GiB）
+
+Data 已接近 10 GiB，整包会顶到传输和文件系统上限，Android 侧解析超大 ZIP64 也不稳。
+打包脚本默认按 2 GiB 切成**互相独立**的分包：
+
+```
+MapleDashResources.part01.zip   ← 带 resource-manifest.json（补丁包另带 resource-patch.json）
+MapleDashResources.part02.zip
+MapleDashResources.part03.zip …
+```
+
+- 每个分包本身都是结构完整的 ZIP（根目录 `resource-pack.json` 写明 `index`/`count`），
+  手机端逐包解压，不需要先把 9 GiB 拼回整包，也不依赖 ZIP64 大包解析。
+- 分包命名固定为 `<包名>.partNN.zip`（两位以上数字序号），全量包与补丁包各自一套前缀。
+- 只有一段时输出仍是 `MapleDashResources.zip` / `MapleDashResources.patch.zip`（不会叫 part01）；
+  `--part-size 0` 可强制打整包，`--part-size 3G` 之类可自定上限。
+
+```bash
+./pack_resources.sh --part-size 0     # 打整包
+./pack_resources.sh --part-size 2G    # 默认
+```
+
+传输用 `tools/sync_android_data.py --zip` 会把所有分包推到 `/sdcard/mapstory`，
+并删掉上一次多出来的旧包（包数对不上时手机端会拒绝解压）。
+校验用 `tools/check_resource_pack.py`（也由 `pack_resources.sh` / `pack_resource_patch.sh` 自动调用）：
+清单位置、`Data/` 条目、包号是否 1..N 连续、各包声明的包数/类型/清单摘要是否一致、
+每包体积是否超上限、清单内文件是否恰好覆盖一次（补丁包用 `--patch`，只查变更文件不要求全覆盖）；
+`--deep` 会逐条解压验 CRC。
+
+手机端（`WzResourceParts`）在**开始解压前**统一校验：缺包、包号重复、包号不从 1 开始、
+包数与声明不符、第 1 包没有清单，都会直接报错并保留资源包，不会写出半份 Data。
+单包与分包同时存在时取修改时间较新的一份，成功后把所有同前缀包一起删除。
+
 ## 增量发布
 
 1. 更新 Data 及 `MapleDash/Assets/Resources/NativeAssetIndex.json`（与全量发布使用同一资源导出流程）。
@@ -24,15 +58,21 @@
 
 ```bash
 ./pack_resource_patch.sh /绝对路径/releases/v1.manifest.json
+# 补丁也可能超过 2 GiB（比如整批 UI/特效重导），同样会自动分包：
+./pack_resource_patch.sh releases/v1.manifest.json --part-size 2G
+# 指定 Data 目录：
+./pack_resource_patch.sh releases/v1.manifest.json --resources /资源目录
 ```
 
-默认输出 `MapleDashResources/MapleDashResources.patch.zip`，仅含新增/修改文件、完整目标清单、
-补丁标记。删除文件由完整目标清单决定。新版本快照为
+默认输出 `MapleDashResources/MapleDashResources.patch.zip`（超过上限则
+`MapleDashResources.patch.part01.zip…`），仅含新增/修改文件、完整目标清单、补丁标记
+（标记和清单都只在第 1 包里）。删除文件由完整目标清单决定。新版本快照为
 `MapleDashResources.patch.manifest.json`，发布后另存为 v2，下一次与 v2 比较。
-可追加 `--resources /资源目录` 指定 Data 所在目录。
+脚本末尾会跑一遍 `check_resource_pack.py --patch` 自检补丁包结构。
 
 3. 手动部署补丁时，资源清单改变需重新构建并安装对应 APK。在线更新见下节，可使用补丁自带目标清单独立更新资源。
-4. 把补丁放到手机 `/sdcard/mapstory/MapleDashResources.patch.zip`，重启游戏。
+4. 把补丁放进手机 `/sdcard/mapstory/`（单包 `MapleDashResources.patch.zip`，或全部分包
+   `MapleDashResources.patch.partNN.zip`），重启游戏。缺一个分包就会在开始解压前报错。
    首次使用本功能须先安装含补丁安装逻辑的新 APK；首次安装资源仍需全量包。
 
 ## 安装与恢复
@@ -57,7 +97,8 @@ cd MapleDash # 若已在仓库根目录则省略
 ```
 
 检查流式哈希、空文件、中断恢复、损坏包拒绝、目录切换失败回滚、补丁增删/复用、
-错误 APK/损坏底包拒绝，以及成功删除/失败保留压缩包。未替代 Android 实机验收。
+错误 APK/损坏底包拒绝，以及成功删除/失败保留压缩包；分包相关覆盖逐包解压、
+缺包/包号重复/包号不从 1 开始时拒绝且不写 Data、单包与分包混放取较新的一份。未替代 Android 实机验收。
 
 ## Gitee 在线资源更新
 
@@ -70,11 +111,32 @@ cd MapleDash # 若已在仓库根目录则省略
 }
 ```
 
-入口为 https://gitee.com/lzx_xzl/mxd/raw/master/resUpdate.json 。只使用以上两个字段。沙盒 files/resUpdate.json 不存在或无效时默认版本 1，因此远端 1 不提示；远端只高 1 时显示与 APK 更新一致的 Material 弹窗，可下载或暂不更新。远端高出超过 1 判定为跨版本，显示当前/最新资源版本并提示“请联系群主手动更新资源包”，仅允许退出，不下载、不推进资源版本、不继续 APK 更新。检查失败不阻断原有资源加载。启动顺序：存储授权 → 资源更新检查及安装 → APK 更新检查及安装 → 资源校验/加载 → 假人预热与进入游戏。两者都有更新时优先处理资源；若用户主动选择暂不更新资源，则继续 APK 检查。资源下载/安装失败时重试或退出，不会提前弹出 APK 更新。
+分包发布时用 `resParts` 代替 `resUrl`（数组，按包号顺序；单个补丁也可以继续用 `resUrl`）：
 
-先用现有 pack_resource_patch.sh 生成补丁并上传公开 Gitee Releases 附件，再递增远端 versionCode、填写 resUrl 为公开 HTTPS 下载直链。也支持同格式全量包。不能使用任意散文件 ZIP：必须包含 resource-manifest.json（完整目标清单），增量包另含 resource-patch.json 和所需 Data/ 文件。在线更新只允许相邻版本补丁；跨版本用户联系群主手动部署匹配的全量资源与版本回执（Data/.resUpdate.json，和远端相同的两个字段）。补丁未携带文件必须在玩家 Data 中具有与目标一致的哈希。
+```json
+{
+  "versionCode": 2,
+  "resUrl": "",
+  "resParts": ["https://…/MapleDashResources.patch.part01.zip",
+               "https://…/MapleDashResources.patch.part02.zip"]
+}
+```
 
-下载前删除旧沙盒 cache/resource-update.zip，流式下载完成后，以 64 KiB 缓冲复制到 /sdcard/mapstory/MapleDashResources.patch.zip.part；同步落盘、长度一致后才替换正式 patch.zip。复制不绕过权限，沿用已有 Android 存储授权。失败可重试或退出；开始更新后不允许带着待安装的补丁跳过进入游戏。安装成功清理 ZIP；失败保留目标 ZIP，下载半成品与复制半成品会清理。不支持断点续传。
+`resParts` 的每个地址都会依次下载到沙盒再复制到 `/sdcard/mapstory/MapleDashResources.patch.partNN.zip`；
+全部到位后才一次性改名成正式文件名，中途被杀/失败不会给 C# 留下缺包的集合。
+下载前会清掉上一次残留的整包与多余分包，避免「包数对不上」。
+
+入口为 https://gitee.com/lzx_xzl/mxd/raw/master/resUpdate.json 。只用这三个字段：`versionCode` 必填，
+`resUrl`（单包）与 `resParts`（分包数组）至少填一个，两个都有时以 `resParts` 为准。沙盒 files/resUpdate.json 不存在或无效时默认版本 1，因此远端 1 不提示；远端只高 1 时显示与 APK 更新一致的 Material 弹窗，可下载或暂不更新。远端高出超过 1 判定为跨版本，显示当前/最新资源版本并提示“请联系群主手动更新资源包”，仅允许退出，不下载、不推进资源版本、不继续 APK 更新。检查失败不阻断原有资源加载。启动顺序：存储授权 → 资源更新检查及安装 → APK 更新检查及安装 → 资源校验/加载 → 假人预热与进入游戏。两者都有更新时优先处理资源；若用户主动选择暂不更新资源，则继续 APK 检查。资源下载/安装失败时重试或退出，不会提前弹出 APK 更新。
+
+先用 `./pack_resource_patch.sh` 生成补丁并上传公开 Gitee Releases 附件，再递增远端 versionCode、把 `resUrl`（单包）或 `resParts`（全部分包，按包号顺序）填成公开 HTTPS 下载直链。也支持同格式全量包。不能使用任意散文件 ZIP：必须包含 resource-manifest.json（完整目标清单），增量包另含 resource-patch.json 和所需 Data/ 文件。在线更新只允许相邻版本补丁；跨版本用户联系群主手动部署匹配的全量资源与版本回执（Data/.resUpdate.json，和远端相同的两个字段）。补丁未携带文件必须在玩家 Data 中具有与目标一致的哈希。
+
+下载前删除旧的沙盒下载（`cache/resource-update-N.zip`），每个分包流式下载后以 64 KiB 缓冲复制到
+`/sdcard/mapstory/MapleDashResources.patch.partNN.zip.part`；同步落盘、长度一致才算这一包到位。
+所有分包都到位后才一次性改名成正式文件名（单包则是 `MapleDashResources.patch.zip`），
+中途被杀或失败只留下 `.part` 半成品，C# 不会拿缺包的集合去安装。复制不绕过权限，沿用已有 Android 存储授权。
+失败可重试或退出；开始更新后不允许带着待安装的补丁跳过进入游戏。安装成功清理所有包；失败保留正式包，
+下载半成品与复制半成品会清理。不支持断点续传。
 
 在线安装使用补丁内目标清单：旧安装回执与旧清单匹配时，哈希记录未变化的旧文件仅复制，不重新计算哈希；补丁内新增/修改文件始终逐个 SHA-256 校验。没有有效旧安装回执时回退全量校验。缺失文件、被校验文件损坏或基线不适配时不切换 Data。Data/.resource-manifest.json 与 Data/.resUpdate.json 随 Data 目录一起切换，成功后将回执原子写入沙盒 files/resUpdate.json。下次启动先同步 Data 回执，可恢复切换成功但尚未写沙盒时的中断。启动资源验证与 WzAssets 索引使用已安装清单，使新增/删除资源无需仅为清单重打 APK。补丁不能更新 C# 代码、Resources 内嵌脚本/数据库等 APK 内容；这些变化仍需 APK 更新。
 

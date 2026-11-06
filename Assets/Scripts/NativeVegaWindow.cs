@@ -45,7 +45,9 @@ public static class NativeVegaWindow
         if(!Visible || Busy || item==null || item.position<=0) return "当前无法选择物品";
         if(item.inventoryType==1)
         {
-            int slots=NativeScrollService.HasStats(item) ? item.upgradeslots : NativeItemSource.Node(item.itemId)?.Int("info/tuc") ?? 0;
+            // 槽位没种过（从没砸卷）时按模板 tuc 判断，别被「属性被星力种过、槽位仍 0」的行拦下。
+            int slots=NativeScrollService.HasStats(item) && !(item.upgradeslots<=0 && item.equipLevel==0)
+                ? item.upgradeslots : NativeItemSource.Node(item.itemId)?.Int("info/tuc") ?? 0;
             if(slots<=0) return "装备可升级次数不足";
             equip=item.Copy();return null;
         }

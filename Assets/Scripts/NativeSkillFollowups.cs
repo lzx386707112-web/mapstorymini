@@ -32,6 +32,9 @@ public partial class SkillSystem
     }
     void TriggerReactiveSkills(SkillDef cast,List<CapturedReplayHit> captured,Vector2 origin,int facing)
     {
+        // 持续伤害（dot/dotTime/dotInterval）：30 条技能以前只结算首段，后续几十跳全丢。
+        // 必须在每次真实命中后挂标记，见 NativeSkillDots.cs。
+        ApplyDots(cast,captured);
         // 282 的被动追加攻击（終極攻擊 / 魔法爆發 / 深淵黑暗 / 蝙蝠 / 風暴使者…）：
         // 主攻击命中后按 prop 或命中计数结算一次，见 NativeProcSkills.cs。
         TriggerProcSkills(cast,captured,origin,facing);
@@ -41,6 +44,9 @@ public partial class SkillSystem
         // 资源/追加方向/符咒/技能替换/隐身回避：这些都是「命中后」的实体结算，
         // 数值来自 NativeSkillMechanics.json，见 NativeSkillMechanics.cs。
         OnMechanicHit(cast,captured,origin,facing);
+        // 極冰風暴：直接攻击命中「被鑽石狼的詛咒」标记的目标 ⇒ 生成冰塊追加攻击
+        //（400011122，内置 400ms 冷却）。见 NativeSkillCurses.cs。
+        TriggerCurseOnHit(cast,captured,origin,facing);
         // 黑影切断（400041025）的被动段：致命暗殺 / 音速狂襲命中 → 给最大 HP 最高的
         // 那名敌人叠伤口（最多 3 层、10 秒），满层后才允许连携 400041026。
         // 见 NativeSkillSequences.cs。
@@ -173,6 +179,9 @@ public partial class SkillSystem
     void ClearNativeReplayEffects()
     {
         foreach(var a in nativeReplayEffects)if(a!=null)a.Remove();nativeReplayEffects.Clear();windDots.Clear();
+        ClearCurses();     // 换图/死亡：诅咒标记与光芒协程不能带进下一张图
+        ClearDots();       // 同上：持续伤害的标记与协程也不能跨图
+        ClearStacks();     // 叠层状态同理
     }
 
     // ——— 282「按一次、结算多次」的两类技能 ———
@@ -191,6 +200,15 @@ public partial class SkillSystem
     //（同一批 V 技能里 30/5/4000/15000 混用），没核实的不能按秒套，否则会把
     // 一次性技能变成常驻。
     static readonly HashSet<int> RepeatAttackSkills = new HashSet<int> { 400011052 };
+    // 282 把「母技能开状态」和「子技能出每一发」拆成两条：
+    //   400011052 祝福之鎚 common = mpCon/cooltime/x/y/w/q/z/s/v（没有 damage/time/attackDelay），
+    //               info/type=11 + areaAttack=1 ⇒ 范围攻击，不是弹道；顶层只有 special + ball。
+    //   400011053（invisible=1、action=5thBlessedHammer）common 才有
+    //               damage/attackCount/mobCount/time=30/attackDelay=1800/lt/rb，
+    //               特效层是 special(8) + ball/0..2 + effect(7) + effect0(8,z=-1) + hit/0。
+    // 只按母技能 vfx 播，后续每一发就只剩「凭空掉血」；必须换成子技能的层。
+    static readonly Dictionary<int,int> RepeatAttackBodies = new Dictionary<int,int> { { 400011052, 400011053 } };
+    public static bool IsRepeatingSkill(int id) => RepeatAttackSkills.Contains(id);
 
     void StartRepeatingAttack(SkillDef s)
     {
@@ -199,18 +217,42 @@ public partial class SkillSystem
         int period = Art.Int(row, "attackDelay");
         int seconds = Art.Int(row, "time");
         if (period <= 0 || seconds <= 0) return;
-        StartCoroutine(RepeatAttack(s, period / 1000f, seconds));
+        // 伤害/判定框仍用母技能（VMatrixSkills 已把子技能的 damage/lt/rb 合并进来），
+        // 取层换成子技能：BeginVisuals 的 effect/effect0/special、Impact 的 hit 都从它来。
+        SkillDef body = s;
+        if (RepeatAttackBodies.TryGetValue(s.native.Id, out int childId))
+        {
+            string childKey = NativeSkillVfx.Key(childId, s.native.Level);
+            body = new SkillDef(new ClassSkill { name = s.name, art = s.art, icon = s.icon }, s.native, childKey);
+        }
+        StartCoroutine(RepeatAttack(body, period / 1000f, seconds));
     }
 
-    IEnumerator RepeatAttack(SkillDef s, float period, float seconds)
+    IEnumerator RepeatAttack(SkillDef body, float period, float seconds)
     {
-        double end = Time.realtimeSinceStartupAsDouble + seconds;
-        // 首次结算由 Cast 自己完成，这里只补后续周期。
-        while (Time.realtimeSinceStartupAsDouble + period <= end)
+        var field = FindObjectOfType<FieldDirector>();
+        var map = field != null ? field.Map : null;
+        double start = Time.realtimeSinceStartupAsDouble;
+        double end = start + seconds;
+        int tick = 0;
+        // 用真实时间排程而不是 WaitForSeconds：后者受 timeScale 影响，
+        // 而 end 是真实时间，两者混用会在慢动作/暂停恢复后整段漂移。
+        while (start + (tick + 1) * period <= end)
         {
-            yield return new WaitForSeconds(period);
-            if (p == null || p.hp <= 0 || GameLoop.I == null || GameLoop.I.state != GameLoop.GameState.Playing) yield break;
-            HitAt(s, s.native, p.FeetPos, p.facing);
+            double due = start + (++tick) * period;
+            while (Time.realtimeSinceStartupAsDouble < due) yield return null;
+            if (!ReplayAlive(field, map)) yield break;
+            Vector2 origin = p.FeetPos;
+            int facing = p.facing;
+            // 先打 tick 标记：后面的 [FxPlay]/[Hit] 日志都归到这一发，
+            // 批次探针靠日志顺序归因，不靠 batchmode 里会被节流的时间戳。
+            if (PlayerPrefs.GetInt("debug_hitlog", 0) != 0)
+                Debug.Log("[Repeat] tick=" + tick + " body=" + body.native.Id + " vfx=" + body.vfx);
+            // 一发 = 本体层 + 可见锤体 + 一次范围结算，三者缺一就是
+            // 「怪突然掉血但看不到特效」或「只播特效打不到怪」。
+            BeginVisuals(body, true);
+            StartCoroutine(RepeatingHammer(body, origin, facing, .45f));
+            HitAt(body, body.native, origin, facing);
         }
     }
 

@@ -1,13 +1,23 @@
-// 套装管理（源端 SetItemController + SetItemConfigService，URL 与 DTO 字段对齐）。
+// 套装管理（持久化口径对齐源端 SetItemController + SetItemConfigService，URL 与 DTO 字段不变）。
 //
-// 内置套装来自源端 gms-server/src/main/resources/set-item/catalog.json（55 套，
-// 已拷为 Resources/Admin/SetItemCatalog.json）。两类持久化都进 game_config：
+// 2026-11-06 起内置套装改为 TMS282 客户端 Etc/SetItemInfo.img 全量导出的 877 套
+// （Resources/Admin/SetItem282.json，导出工具 tools/ms282/export_set_item_data.py）。
+// 显示层与玩法结算共用这一份数据（用户决策「全量替换结算数据」）；繁体原文留在 *Tw
+// 字段里供审计，运行时一律取简体字段。旧的 55 套 beidou catalog 只作为资源缺失时的回退。
+// 两类持久化仍进 game_config：
 //   set_item_bonus_overrides        {"套装id:档位件数": {"STAT": 差量}}（REMOVED_VALUE=int.MinValue 表示删除该属性）
 //   set_item_catalog_customizations {"customDefinitions":[...],"disabledBuiltInIds":[...],"slotOverrides":{...}}
 // 语义逐条对齐源端：覆盖层只存与默认值的差量；槽位与默认一致时删覆盖；自定义套装 id 从 20000 起。
 //
-// 已知边界：本工程玩法侧尚未消费套装加成（源端 refreshOnlineCharacters 在此为空操作），
-// 后台配置先落库，玩法接入时直接读这两条 game_config。
+// 推断边界（完整推导见 .agents/skills/beidou-client-reverse/references/inventory-and-tooltip.md）：
+//   ① 现代 ItemID 是扁平 int 表，槽位分组由装备 id 前缀推断，EXE 的分组函数未定位；
+//      因此结算改按「穿着件数中属于本套装的数量」计（可重复戒指套装才可达高档），
+//      显示仍按推断出的槽位行 + (无) 补齐 completeCount。
+//   ② activeSkill 的「达成→授予 / 卸下→移除」触发链未逐指令定位，本工程以
+//      ActiveSkillsFor() 每次重算出的授予表为准，由 NativeSetItemSkills 承接。
+//   ③ Option 的结算函数地址未定位，按 Item/ItemOption.img level 节点通用属性键映射；
+//      incDAMr 仅在该档带 boss:1 时归 BossDamage，否则归 Damage。
+//   ④ incPQEXPr 等无对应机制的字段只显示、不参与结算，面板上标注「未接入」。
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -20,7 +30,9 @@ public static class AdminSetItem
     const int FirstCustomId = 20000;
     const int RemovedValue = int.MinValue;
 
-    // 源端 SetItemManager.SUPPORTED_STAT_KEYS
+    // 源端 SetItemManager.SUPPORTED_STAT_KEYS + 282 Effect/Option 新增的键。
+    // 282 的 nbdR→IgnoreDefense、incCr→CriticalChance、Option 的 incAsrR→StatusRes
+    // 等在旧 55 套 catalog 里不存在，但不加进这张表后台就无法编辑/校验。
     static readonly string[] SupportedStats =
     {
         "STR", "DEX", "INT", "LUK", "PAD", "MAD", "PDD", "MDD", "ACC", "EVA",
@@ -28,14 +40,39 @@ public static class AdminSetItem
         "ExpRate", "DropRate", "MesoRate",
         "STRPct", "DEXPct", "INTPct", "LUKPct", "PADPct", "MADPct",
         "PDDPct", "MDDPct", "ACCPct", "EVAPct", "HPPct", "MPPct",
+        // 282 增量
+        "IgnoreDefense", "CriticalChance", "CriticalDamage", "StatusRes", "PvpDamage",
     };
 
-    sealed class Tier { public int Required; public Dictionary<string, int> Stats = new Dictionary<string, int>(); }
+    sealed class TierOption
+    {
+        public string Text;                 // 简体、占位符已替换
+        public Dictionary<string, int> Stats = new Dictionary<string, int>();
+    }
+    sealed class TierSkill { public int Id, Level; public string Name; }
+
+    sealed class Tier
+    {
+        public int Required;
+        // Effect/<n>/inc* 的直接属性（后台可改，写入 bonusStore 差量）
+        public Dictionary<string, int> Stats = new Dictionary<string, int>();
+        // Effect/<n>/Option 展开后的属性（只结算，不进后台差量）
+        public Dictionary<string, int> OptionStats = new Dictionary<string, int>();
+        public readonly List<TierOption> Options = new List<TierOption>();
+        public readonly List<TierSkill> Skills = new List<TierSkill>();
+        public readonly Dictionary<string, int> Unmapped = new Dictionary<string, int>();
+    }
+    sealed class SlotMeta { public string Part, Represent; }
     sealed class Definition
     {
         public int Id, JobIndex;
         public string Name;
+        public int CompleteCount;          // 282 completeCount；<=0 时回退 Slots.Count
         public List<List<int>> Slots = new List<List<int>>();
+        public readonly List<SlotMeta> Metas = new List<SlotMeta>();
+        public readonly Dictionary<string, string> Desc = new Dictionary<string, string>();
+        public HashSet<int> ItemIds;        // 282 结算用成员表（null = 旧 catalog 口径）
+        public int JokerPossible;
         public List<Tier> Tiers = new List<Tier>();
         public bool BuiltIn;
     }
@@ -60,43 +97,181 @@ public static class AdminSetItem
     // 加成差量，key = "套装id:档位件数"（源端 SetItemBonusOverrides.key），REMOVED_VALUE 表示删除
     static readonly Dictionary<string, Dictionary<string, int>> bonusStore = new Dictionary<string, Dictionary<string, int>>();
 
+    // 282 迁入的旁表：装备名（GMS083 String 树缺的 282 专属道具）、技能名、反向索引。
+    static readonly Dictionary<int, string> equipNames282 = new Dictionary<int, string>();
+    static readonly Dictionary<int, string> skillNames282 = new Dictionary<int, string>();
+    static readonly Dictionary<int, string> skillDescs282 = new Dictionary<int, string>();
+    static readonly Dictionary<int, List<Definition>> defsByItem = new Dictionary<int, List<Definition>>();
+    static bool using282Data;
+
+    public static bool Using282Data { get { EnsureLoaded(); return using282Data; } }
+    public static int BuiltInSetCount { get { EnsureLoaded(); return builtins.Count; } }
+    public static string EquipName282(int id)
+    {
+        EnsureLoaded();
+        return equipNames282.TryGetValue(id, out var n) ? n : "";
+    }
+    public static string SkillName282(int id)
+    {
+        EnsureLoaded();
+        return skillNames282.TryGetValue(id, out var n) ? n : ("技能 " + id);
+    }
+
     static void EnsureLoaded()
     {
         if (builtins != null) return;
         builtins = new List<Definition>();
+        equipNames282.Clear(); skillNames282.Clear(); skillDescs282.Clear(); defsByItem.Clear();
 
-        string json = PlatformRes.LoadText("Admin/SetItemCatalog");
-        var rows = AdminJson.AsList(AdminJson.Parse(json));
-        if (rows != null)
-            foreach (var row in rows)
-            {
-                var d = AdminJson.AsDict(row);
-                var def = new Definition
-                {
-                    Id = AdminJson.GetInt(d, "id"),
-                    JobIndex = AdminJson.GetInt(d, "jobIndex", -1),
-                    Name = AdminJson.GetString(d, "name"),
-                    BuiltIn = true,
-                };
-                foreach (var slot in AdminJson.AsList(d["slots"]))
-                {
-                    var items = new List<int>();
-                    foreach (var id in AdminJson.AsList(slot)) items.Add(Convert.ToInt32(id));
-                    def.Slots.Add(items);
-                }
-                foreach (var t in AdminJson.AsList(d["tiers"]))
-                {
-                    var td = AdminJson.AsDict(t);
-                    var tier = new Tier { Required = AdminJson.GetInt(td, "requiredCount") };
-                    foreach (var kv in AdminJson.AsDict(td["stats"]))
-                        tier.Stats[kv.Key] = Convert.ToInt32(kv.Value);
-                    def.Tiers.Add(tier);
-                }
-                def.Tiers.Sort((a, b) => a.Required.CompareTo(b.Required));
-                builtins.Add(def);
-            }
+        string json = PlatformRes.LoadText("Admin/SetItem282");
+        var root = AdminJson.AsDict(AdminJson.Parse(json));
+        if (root != null) Load282(root);
+        // 资源缺失/坏 JSON 时退回旧的 55 套 beidou catalog，保证后台与玩法不至于空转。
+        if (builtins.Count == 0) LoadLegacyCatalog();
+        using282Data = builtins.Count > 0 && root != null && builtins.Count > 55;
 
+        RebuildItemIndex();
         ReloadConfig();
+    }
+
+    // ——————————— 282 SetItemInfo.img 导出的 JSON ———————————
+    static void Load282(Dictionary<string, object> root)
+    {
+        foreach (var kv in AdminJson.AsDict(AdminJson.Get(root, "equipNames")) ?? new Dictionary<string, object>())
+            if (int.TryParse(kv.Key, out int id)) equipNames282[id] = kv.Value as string ?? "";
+        foreach (var kv in AdminJson.AsDict(AdminJson.Get(root, "skills")) ?? new Dictionary<string, object>())
+        {
+            if (!int.TryParse(kv.Key, out int id)) continue;
+            var s = AdminJson.AsDict(kv.Value);
+            if (s == null) continue;
+            skillNames282[id] = AdminJson.GetString(s, "name");
+            skillDescs282[id] = AdminJson.GetString(s, "desc");
+        }
+
+        foreach (var row in AdminJson.AsList(AdminJson.Get(root, "sets")) ?? new List<object>())
+        {
+            var d = AdminJson.AsDict(row);
+            if (d == null) continue;
+            var def = new Definition
+            {
+                Id = AdminJson.GetInt(d, "id"),
+                // 282 数据没有 jobIndex：套装本身按道具限定职业，不做额外门控。
+                JobIndex = -1,
+                Name = AdminJson.GetString(d, "name"),
+                CompleteCount = AdminJson.GetInt(d, "completeCount"),
+                JokerPossible = AdminJson.GetInt(d, "jokerPossible"),
+                BuiltIn = true,
+                ItemIds = new HashSet<int>(),
+            };
+            foreach (var slotObj in AdminJson.AsList(AdminJson.Get(d, "slots")) ?? new List<object>())
+            {
+                var slot = AdminJson.AsDict(slotObj);
+                if (slot == null) continue;
+                var items = new List<int>();
+                foreach (var idObj in AdminJson.AsList(AdminJson.Get(slot, "items")) ?? new List<object>())
+                {
+                    int itemId = Convert.ToInt32(idObj);
+                    if (itemId > 0) { items.Add(itemId); def.ItemIds.Add(itemId); }
+                }
+                def.Slots.Add(items);
+                def.Metas.Add(new SlotMeta
+                {
+                    Part = AdminJson.GetString(slot, "part"),
+                    Represent = AdminJson.GetString(slot, "represent"),
+                });
+            }
+            foreach (var kv in AdminJson.AsDict(AdminJson.Get(d, "desc")) ?? new Dictionary<string, object>())
+                def.Desc[kv.Key] = kv.Value as string ?? "";
+
+            foreach (var tObj in AdminJson.AsList(AdminJson.Get(d, "tiers")) ?? new List<object>())
+            {
+                var td = AdminJson.AsDict(tObj);
+                if (td == null) continue;
+                var tier = new Tier { Required = AdminJson.GetInt(td, "required") };
+                foreach (var kv in AdminJson.AsDict(AdminJson.Get(td, "stats")) ?? new Dictionary<string, object>())
+                    tier.Stats[kv.Key] = Convert.ToInt32(kv.Value);
+                foreach (var kv in AdminJson.AsDict(AdminJson.Get(td, "unmapped")) ?? new Dictionary<string, object>())
+                    tier.Unmapped[kv.Key] = Convert.ToInt32(kv.Value);
+                foreach (var oObj in AdminJson.AsList(AdminJson.Get(td, "options")) ?? new List<object>())
+                {
+                    var od = AdminJson.AsDict(oObj);
+                    if (od == null) continue;
+                    var option = new TierOption { Text = AdminJson.GetString(od, "text") };
+                    foreach (var kv in AdminJson.AsDict(AdminJson.Get(od, "stats")) ?? new Dictionary<string, object>())
+                    {
+                        int v = Convert.ToInt32(kv.Value);
+                        option.Stats[kv.Key] = v;
+                        tier.OptionStats[kv.Key] = tier.OptionStats.TryGetValue(kv.Key, out int cur) ? cur + v : v;
+                    }
+                    tier.Options.Add(option);
+                }
+                foreach (var sObj in AdminJson.AsList(AdminJson.Get(td, "activeSkills")) ?? new List<object>())
+                {
+                    var sd = AdminJson.AsDict(sObj);
+                    if (sd == null) continue;
+                    int skillId = AdminJson.GetInt(sd, "id");
+                    if (skillId <= 0) continue;
+                    tier.Skills.Add(new TierSkill
+                    {
+                        Id = skillId,
+                        Level = Math.Max(1, AdminJson.GetInt(sd, "level", 1)),
+                        Name = skillNames282.TryGetValue(skillId, out var n) ? n : ("技能 " + skillId),
+                    });
+                }
+                def.Tiers.Add(tier);
+            }
+            def.Tiers.Sort((a, b) => a.Required.CompareTo(b.Required));
+            builtins.Add(def);
+        }
+    }
+
+    // ——————————— 回退：旧 beidou 55 套 ———————————
+    static void LoadLegacyCatalog()
+    {
+        string json = PlatformRes.LoadText("Admin/SetItemCatalog");
+        foreach (var row in AdminJson.AsList(AdminJson.Parse(json)) ?? new List<object>())
+        {
+            var d = AdminJson.AsDict(row);
+            var def = new Definition
+            {
+                Id = AdminJson.GetInt(d, "id"),
+                JobIndex = AdminJson.GetInt(d, "jobIndex", -1),
+                Name = AdminJson.GetString(d, "name"),
+                BuiltIn = true,
+            };
+            foreach (var slot in AdminJson.AsList(d["slots"]) ?? new List<object>())
+            {
+                var items = new List<int>();
+                foreach (var id in AdminJson.AsList(slot) ?? new List<object>()) items.Add(Convert.ToInt32(id));
+                def.Slots.Add(items);
+                def.Metas.Add(new SlotMeta());
+            }
+            foreach (var t in AdminJson.AsList(d["tiers"]) ?? new List<object>())
+            {
+                var td = AdminJson.AsDict(t);
+                var tier = new Tier { Required = AdminJson.GetInt(td, "requiredCount") };
+                foreach (var kv in AdminJson.AsDict(td["stats"]) ?? new Dictionary<string, object>())
+                    tier.Stats[kv.Key] = Convert.ToInt32(kv.Value);
+                def.Tiers.Add(tier);
+            }
+            def.Tiers.Sort((a, b) => a.Required.CompareTo(b.Required));
+            builtins.Add(def);
+        }
+    }
+
+    static void RebuildItemIndex()
+    {
+        defsByItem.Clear();
+        foreach (var def in builtins)
+        {
+            foreach (var slot in def.Slots)
+                foreach (int id in slot)
+                {
+                    if (!defsByItem.TryGetValue(id, out var list))
+                        defsByItem[id] = list = new List<Definition>();
+                    if (!list.Contains(def)) list.Add(def);
+                }
+        }
     }
 
     // 从 game_config 读覆盖层（reload 语义，源端 reload()）
@@ -246,7 +421,7 @@ public static class AdminSetItem
                 "id", (long)def.Id,
                 "jobIndex", (long)def.JobIndex,
                 "name", def.Name,
-                "completeCount", (long)slots.Count,
+                "completeCount", (long)(def.CompleteCount > 0 ? def.CompleteCount : slots.Count),
                 "builtIn", def.BuiltIn,
                 "enabled", def.BuiltIn ? !disabledIds.Contains(def.Id) : true,
                 "slots", slotDtos,
@@ -377,7 +552,9 @@ public static class AdminSetItem
     static bool IsRate(string stat)
     {
         string s = stat.ToLowerInvariant();
-        return s.EndsWith("rate") || s.EndsWith("pct") || s.EndsWith("damage") || s == "statusres" || s == "buffduration";
+        return s.EndsWith("rate") || s.EndsWith("pct") || s.EndsWith("damage")
+            || s.EndsWith("chance") || s == "ignoredefense"
+            || s == "statusres" || s == "buffduration";
     }
 
     // ——————————— 重置 ———————————
@@ -567,8 +744,42 @@ public static class AdminSetItem
         }
     }
 
-    // ≡ SetItemManager.compute：逐槽组匹配（一组只计一件）、档位**累加**、jobEligible 才给加成。
-    // 返回的 map 同时供面板（STR/HP/PAD…）、伤害（Damage/FinalDamage…）与倍率（ExpRate…）读取。
+    // 计件口径（282）：客户端每套装备信息里的 setItemID 指向本套装，穿着件数按「穿了几件
+    // 属于本套装的道具」计，重复戒指/同类武器各算一件 —— 这正是 282 里 completeCount=5
+    // 但 ItemID 只有一个戒指 id 的套装能达成 5 档的原因。旧 catalog 与后台 slotOverrides
+    // 仍走「逐槽组一组只计一件」的原口径。
+    // 返回 (定义, 达成件数)，ComputeBonus 与 ActiveSkillsFor 共用，避免两套计数漂移。
+    static IEnumerable<KeyValuePair<Definition, int>> AchievedDefs(IEnumerable<int> wornIds, int jobIndex)
+    {
+        EnsureLoaded();
+        var worn = new List<int>();
+        if (wornIds != null) foreach (int id in wornIds) if (id > 0) worn.Add(id);
+        var equipped = new HashSet<int>(worn);
+        foreach (var def in AllDefs())
+        {
+            if (def.JobIndex >= 0 && def.JobIndex != jobIndex) continue;
+            if (def.BuiltIn && disabledIds.Contains(def.Id)) continue;
+            bool overridden = slotOverrides.ContainsKey(def.Id);
+            var slots = overridden ? slotOverrides[def.Id] : def.Slots;
+            int count;
+            if (def.ItemIds != null && !overridden)
+            {
+                count = 0;
+                foreach (int id in worn) if (def.ItemIds.Contains(id)) count++;
+            }
+            else
+            {
+                count = 0;
+                foreach (var slot in slots)
+                    foreach (int itemId in slot)
+                        if (equipped.Contains(itemId)) { count++; break; }
+            }
+            if (count > 0) yield return new KeyValuePair<Definition, int>(def, count);
+        }
+    }
+
+    // ≡ SetItemManager.compute：档位**累加**（count >= requiredCount 的每一档都算），
+    // 另把 282 Effect/<档>/Option 展开的属性并入。返回的 map 同时供面板、伤害与倍率读取。
     public static Dictionary<string, int> ComputeBonus(IEnumerable<int> wornIds, int jobIndex)
     {
         var bonus = new Dictionary<string, int>();
@@ -580,28 +791,12 @@ public static class AdminSetItem
         }
         try
         {
-            EnsureLoaded();
-            var equipped = new HashSet<int>(wornIds);
-            foreach (var def in AllDefs())
+            foreach (var achieved in AchievedDefs(wornIds, jobIndex))
             {
-                bool jobEligible = def.JobIndex < 0 || def.JobIndex == jobIndex;
-                if (!jobEligible) continue;
-                if (def.BuiltIn && disabledIds.Contains(def.Id)) continue;
-
-                // 槽位差量生效的槽组（Catalog 同一条路）
-                var slots = slotOverrides.TryGetValue(def.Id, out var ov) ? ov : def.Slots;
-                int count = 0;
-                foreach (var slot in slots)
-                {
-                    foreach (int itemId in slot)
-                    {
-                        if (equipped.Contains(itemId)) { count++; break; }
-                    }
-                }
-                // 源端：count >= requiredCount 的每一档都累加（不是只取最高档）
+                var def = achieved.Key;
                 foreach (var tier in def.Tiers)
                 {
-                    if (count < tier.Required) continue;
+                    if (achieved.Value < tier.Required) continue;
                     var stats = new Dictionary<string, int>(tier.Stats);
                     // 差量覆盖（SetItemBonusOverrides.withOverrides；RemovedValue=删除该属性）
                     if (bonusStore.TryGetValue(def.Id + ":" + tier.Required, out var diff))
@@ -611,11 +806,57 @@ public static class AdminSetItem
                             else stats[kv.Key] = kv.Value;
                         }
                     Add(stats);
+                    // Option 是 282 复用 ItemOption 的通用属性键，后台不提供差量编辑。
+                    Add(tier.OptionStats);
                 }
             }
         }
         catch { /* 无库/WZ 缺文件时无加成（源端 compute 异常同样回 NONE） */ }
         return bonus;
+    }
+
+    // ——————————— 282 activeSkill 授予接口 ———————————
+    public sealed class GrantedSkill
+    {
+        public int Id, Level;
+        public string Name, Desc;
+    }
+
+    /// <summary>
+    /// 当前穿着下所有已达成套装档位授予的 8000xxxx 技能。同 id 取最高等级。
+    /// 边界：EXE 的「装备变更 → 档位重算 → 技能增删」触发链未逐指令定位，
+    /// 本工程在 EquipLoadout.CurrentSetBonus() 里按当前穿着重算并写 NativeSetItemSkills，
+    /// 卸下装备后下一次重算即自动移除（不写存档）。
+    /// </summary>
+    public static List<GrantedSkill> ActiveSkillsFor(IEnumerable<int> wornIds, int jobIndex)
+    {
+        var result = new List<GrantedSkill>();
+        try
+        {
+            var byId = new Dictionary<int, GrantedSkill>();
+            foreach (var achieved in AchievedDefs(wornIds, jobIndex))
+                foreach (var tier in achieved.Key.Tiers)
+                {
+                    if (achieved.Value < tier.Required) continue;
+                    foreach (var skill in tier.Skills)
+                    {
+                        if (!byId.TryGetValue(skill.Id, out var g))
+                        {
+                            g = new GrantedSkill
+                            {
+                                Id = skill.Id, Level = skill.Level, Name = skill.Name,
+                                Desc = skillDescs282.TryGetValue(skill.Id, out var d) ? d : "",
+                            };
+                            byId[skill.Id] = g;
+                        }
+                        else if (skill.Level > g.Level) g.Level = skill.Level;
+                    }
+                }
+            result.AddRange(byId.Values);
+            result.Sort((a, b) => a.Id.CompareTo(b.Id));
+        }
+        catch { /* 同 ComputeBonus：缺资源时没有授予技能 */ }
+        return result;
     }
 
     // ≡ SetItemManager.Bonus.apply(key, base)：flat 先加，再按 (key+"Pct")% 乘
@@ -650,19 +891,19 @@ public static class AdminSetItem
     }
 
     // ——————————— 装备提示的套装面板 ———————————
-    // 源端是 BeiDouSetItemCompat.dll 自己建的 native layer（0x65C82F00 段）：解 0x17A 包后
-    // 按「套装名 (已穿/完整件数) + 每件装备(槽位名) + 套装效果 + [N件] 属性」排版，宽 236。
-    // 本工程不跑那个 DLL 的包，直接用同一份 catalog 现算，保证与后台改动一致。
+    // 2026-11-06 起按 282 原生 frame/set 面板供数（298 宽、itemPartPos/itemNamePos 两列、
+    // 状态文案装备中 / 未装备 / (无)、件数 "%d / %d"）。完整推导见 inventory-and-tooltip.md。
+    // 数据来自 282 SetItemInfo.img，与玩法结算同源，后台改动两边同步。
     public sealed class SetPanelAlt
     {
         public int ItemId;
-        public string Name;
-        public string SlotName;
+        public string Name, SlotName;
         public bool Equipped;
     }
 
     public sealed class SetPanelSlot
     {
+        public string Part, Represent;
         public readonly List<SetPanelAlt> Alts = new List<SetPanelAlt>();
         public bool AnyWorn { get { foreach (var a in Alts) if (a.Equipped) return true; return false; } }
     }
@@ -671,16 +912,36 @@ public static class AdminSetItem
     {
         public int Required;
         public readonly List<KeyValuePair<string, int>> Stats = new List<KeyValuePair<string, int>>();
+        public readonly List<string> Options = new List<string>();   // ItemOption 文案（简体）
+        public readonly List<string> Skills = new List<string>();    // activeSkill 授予技能
+        public readonly List<string> Unmapped = new List<string>();  // 无机制对应，标注「未接入」
     }
 
     public sealed class SetPanel
     {
         public int Id;
         public string Name;
-        public int CompleteCount;   // 套装完整件数（= 槽位数）
-        public int EquippedCount;   // 当前穿着的件数
+        public int CompleteCount;   // 282 completeCount
+        public int EquippedCount;
+        public int JokerPossible;
         public readonly List<SetPanelSlot> Slots = new List<SetPanelSlot>();
         public readonly List<SetPanelTier> Tiers = new List<SetPanelTier>();
+    }
+
+    // Desc/<key> 是「选择一件…」这类替代文案，键是英文部件名。
+    static readonly Dictionary<string, string> DescKeyOfPart = new Dictionary<string, string>
+    {
+        { "武器", "weapon" }, { "副武器", "subweapon" }, { "口袋", "pocket" },
+        { "纹章", "emblem" }, { "帽子", "cap" },
+    };
+
+    static string UnmappedLabel(string key)
+    {
+        switch (key)
+        {
+            case "incPQEXPr": return "组队任务经验获得";
+            default: return key;
+        }
     }
 
     // 源端 PacketCreator.setItemSlotName
@@ -708,7 +969,7 @@ public static class AdminSetItem
         }
     }
 
-    // 悬停装备所属的套装（源端按已穿件数降序，同一件装备通常只落一个套装）
+    // 悬停装备所属的套装（按已穿件数降序）。走 defsByItem 反向索引，避免每次悬停扫 877 套。
     public static List<SetPanel> PanelsFor(int itemId, IEnumerable<int> wornIds)
     {
         var result = new List<SetPanel>();
@@ -716,51 +977,101 @@ public static class AdminSetItem
         try
         {
             EnsureLoaded();
-            var worn = new HashSet<int>();
-            if (wornIds != null) foreach (int id in wornIds) if (id > 0) worn.Add(id);
+            // 重复道具按件计（282 戒指套装可同时戴多枚同 id 戒指）。
+            var wornRemaining = new Dictionary<int, int>();
+            if (wornIds != null)
+                foreach (int id in wornIds)
+                    if (id > 0) wornRemaining[id] = wornRemaining.TryGetValue(id, out int n) ? n + 1 : 1;
+            var wornKeys = new HashSet<int>(wornRemaining.Keys);
 
-            foreach (var def in AllDefs())
+            var candidates = new List<Definition>();
+            if (defsByItem.TryGetValue(itemId, out var indexed)) candidates.AddRange(indexed);
+            // 后台 slotOverrides 可能把悬停道具塞进原本不含它的套装。
+            foreach (var kv in slotOverrides)
+                foreach (var slot in kv.Value)
+                    if (slot.Contains(itemId))
+                    {
+                        var d = builtins.FirstOrDefault(b => b.Id == kv.Key)
+                             ?? customDefs.FirstOrDefault(c => c.Id == kv.Key);
+                        if (d != null && !candidates.Contains(d)) candidates.Add(d);
+                        break;
+                    }
+
+            foreach (var def in candidates)
             {
                 if (def.BuiltIn && disabledIds.Contains(def.Id)) continue;
                 var slots = slotOverrides.TryGetValue(def.Id, out var ov) ? ov : def.Slots;
-                bool belongs = false;
-                foreach (var slot in slots) if (slot.Contains(itemId)) { belongs = true; break; }
-                if (!belongs) continue;
-
+                int complete = def.CompleteCount > 0 ? def.CompleteCount : slots.Count;
+                if (complete <= 0) continue;
                 var panel = new SetPanel
                 {
                     Id = def.Id,
                     Name = string.IsNullOrEmpty(def.Name) ? ("套装 " + def.Id) : def.Name,
-                    CompleteCount = slots.Count,
+                    CompleteCount = complete,
+                    JokerPossible = def.JokerPossible,
                 };
-                int wornCount = 0;
-                foreach (var slot in slots)
+                // 282 的 ItemID 是扁平表，completeCount 可能大于推断出的槽组数（戒指/同类武器
+                // 套装）。多出来的行复用最后一槽；每次消耗一份 wornRemaining，于是多枚同 id
+                // 戒指会分别点亮多行，件数与结算的重复计件口径一致。
+                var remaining = new Dictionary<int, int>(wornRemaining);
+                int wornRows = 0;
+                int rowCount = Math.Max(complete, slots.Count);
+                for (int i = 0; i < rowCount; i++)
                 {
-                    var ps = new SetPanelSlot();
+                    int slotIndex = i < slots.Count ? i : slots.Count - 1;
+                    if (slotIndex < 0) break;
+                    var slot = slots[slotIndex];
+                    var meta = slotIndex < def.Metas.Count ? def.Metas[slotIndex] : null;
+                    var ps = new SetPanelSlot
+                    {
+                        Part = meta != null && !string.IsNullOrEmpty(meta.Part) ? meta.Part
+                            : slot.Count > 0 ? SlotNameOf(slot[0]) : "装备",
+                        Represent = meta != null ? meta.Represent : "",
+                    };
+                    if (string.IsNullOrEmpty(ps.Represent) && DescKeyOfPart.TryGetValue(ps.Part, out var descKey))
+                        def.Desc.TryGetValue(descKey, out ps.Represent);
                     foreach (int id in slot)
+                    {
+                        string name = ItemCatalog.Name(id);
+                        if (string.IsNullOrEmpty(name)) name = EquipName282(id);
+                        if (string.IsNullOrEmpty(name)) name = ps.Represent;
+                        if (string.IsNullOrEmpty(name)) name = id.ToString();
                         ps.Alts.Add(new SetPanelAlt
                         {
-                            ItemId = id,
-                            Name = ItemCatalog.Name(id),
-                            SlotName = SlotNameOf(id),
-                            Equipped = worn.Contains(id),
+                            ItemId = id, Name = name, SlotName = SlotNameOf(id),
+                            Equipped = wornKeys.Contains(id),
                         });
-                    if (ps.AnyWorn) wornCount++;
+                    }
+                    // 这一行是否「装备中」：按剩余份数消费，避免一枚戒指点亮全部重复行。
+                    bool equipped = false;
+                    foreach (var alt in ps.Alts)
+                        if (remaining.TryGetValue(alt.ItemId, out int n) && n > 0)
+                        {
+                            remaining[alt.ItemId] = n - 1;
+                            equipped = true;
+                            break;
+                        }
+                    foreach (var alt in ps.Alts) alt.Equipped = equipped;
+                    ps.Represent = ps.Represent ?? "";
+                    if (equipped) wornRows++;
                     panel.Slots.Add(ps);
                 }
-                panel.EquippedCount = wornCount;
+                panel.EquippedCount = wornRows;
+
                 foreach (var t in def.Tiers)
                 {
                     var pt = new SetPanelTier { Required = t.Required };
-                    // 与源端一致：按 STAT_KEYS 顺序输出（服务端也是这个顺序写包）
                     foreach (var key in SupportedStats)
                         if (t.Stats.TryGetValue(key, out int v) && v != 0)
                             pt.Stats.Add(new KeyValuePair<string, int>(key, v));
+                    foreach (var o in t.Options) if (!string.IsNullOrEmpty(o.Text)) pt.Options.Add(o.Text);
+                    foreach (var s in t.Skills) pt.Skills.Add("Lv." + s.Level + " " + s.Name);
+                    foreach (var kv in t.Unmapped)
+                        pt.Unmapped.Add(UnmappedLabel(kv.Key) + " +" + kv.Value + "（未接入）");
                     panel.Tiers.Add(pt);
                 }
                 result.Add(panel);
             }
-            // 源端 setItemUpdate 按 equippedCount 降序
             result.Sort((a, b) => b.EquippedCount.CompareTo(a.EquippedCount));
         }
         catch { /* 无库/缺 catalog：不显示套装块 */ }

@@ -3,7 +3,7 @@
 横版 2.5D 冒险岛风格手游 —— 北斗（BeiDou）冒险岛源端的 Android 客户端重写。
 
 游戏逻辑完全遵循 `beidou.exe` 与北斗服务端；所有 UI 素材直接引用源端 WZ IMG 资源，
-禁止自行设计绘制。Unity **2022.3.62f3c1**，Android 优先。
+禁止自行设计绘制。Unity **2022.3.62f3c1**，Android 为主，另有 Windows 桌面版（见第六节）。
 
 ---
 
@@ -75,14 +75,17 @@ tools/package_native_assets.py --data <源Data> --wzpy <wz-python>
 生成 Android 资源包：
 
 ```sh
-rtk proxy python3 tools/build_resource_pack.py   # 生成 ../MapleDashResources/MapleDashResources.zip
+rtk proxy python3 tools/build_resource_pack.py   # 默认按 2 GiB 分包：../MapleDashResources/MapleDashResources.part01.zip …
+rtk proxy python3 tools/check_resource_pack.py   # 校验清单/分包连续性/体积上限
 rtk proxy python3 tools/sync_android_data.py --zip
 ```
 
-- Android 资源目录统一为 `/sdcard/mapstory`：可放 `MapleDashResources.zip`，也可放已展开的 `Data/`
-- 首次启动自动解压并逐文件校验；已安装资源启动时校验后直接进游戏
+- Android 资源目录统一为 `/sdcard/mapstory`：可放 `MapleDashResources.zip`，也可放 `MapleDashResources.part01.zip…` 全部分包，或已展开的 `Data/`
+- Windows 桌面版的资源目录固定为 `D:\mapstory`（同样的三种放法，见第六节）
+- 单个资源包超过 2 GiB 会自动切成互相独立的 `partNN.zip`（每包都是完整 ZIP）；加分包要全部传齐，缺包会在开始解压前报错
+- 首次启动自动逐包解压；已安装资源启动时直接进游戏
 - Android 11+ 需在系统设置允许「所有文件访问」，Android 10 及以下申请存储权限
-- ZIP 必须保留 `resource-manifest.json` 与 `Data/` 这一层结构；资源缺失、损坏或权限未授予时停留加载页
+- 包内必须有 `resource-manifest.json` 与 `Data/` 这一层结构；资源缺失、损坏或权限未授予时停留加载页
 
 此共享目录方案用于当前测试，商店发布时需按渠道要求调整资源目录/分发方式。
 
@@ -104,7 +107,44 @@ rtk proxy python3 tools/sync_android_data.py --zip
 
 ---
 
-## 六、后台管理系统
+## 六、Windows 桌面版
+
+在 macOS 上交叉构建，需要 Unity Hub 里装 **Windows Build Support (Mono)**：
+
+```sh
+./build_windows.sh          # 出 Builds/Windows/MapleDash.exe
+./build_windows.sh --zip    # 再压成 Builds/MapleDash-Windows.zip
+```
+
+- 脚本先切平台再构建（两次 batchmode，和 `build_android.sh` 同一个原因），并在开工前检查 Windows 模块是否装好
+- **本机已装好模块（2026-11-06）**：从中国版 CDN 下官方 `windows-mono` 包（MD5 `6ddf26211c9405a414f2c977d3112d3a` 校验通过），
+  因官方 pkg 要求 root 安装，改为把 payload 展开到 `/Applications/Unity/Unity.app/Contents/PlaybackEngines/WindowsStandaloneSupport`。
+  Unity 已实测识别并完成 Windows 构建；**Hub 界面里可能仍显示「未安装」**，不影响出包。
+  安装包留在 `~/Downloads/UnitySetup-Windows-Mono-Support-for-Editor-2022.3.62f3c1.pkg`，
+  以后要由 Hub 正式接管就双击它（会要管理员密码）。
+- 用 **Mono** 后端：IL2CPP 的 Windows 变体要在 Windows 上用 MSVC 链接，macOS 上出不来
+- **默认 1280×720 窗口**（`FullScreenMode.Windowed` + `defaultIsNativeResolution=false`）：
+  正好是 `UiKit` 的虚拟设计基准，`Scale = 720/720 = 1`，UI 1:1 不糊。全屏窗口模式会按桌面原生分辨率
+  铺满、忽略尺寸设置，所以别改回 `FullScreenWindow`；Alt+Enter 仍可临时全屏。
+  这些是跨平台共用字段，`BuildToDevice.ConfigurePlayer`（Android）会显式写回手机端原值，别删
+- 产物是整份 `Builds/Windows` 目录（`MapleDash.exe` + `MapleDash_Data/` + `UnityPlayer.dll`），少一个都起不来
+- 资源不进安装包：目标机放到 **`D:\mapstory`**，放 `MapleDashResources.zip`、全部分包，或已展开的 `Data\`
+  （启动时自动解压并删掉 zip；没有 D 盘时退回 exe 同级的 `mapstory`，加载页会把实际路径显示出来）
+- 桌面版与手机端的差异，全部收口在 `Assets/Scripts/GamePlatform.cs`：
+  - **没有更新检查**：不查 `resUpdate.json`、不下载 APK、不比对资源补丁；`Data` 在就直接进游戏
+  - **没有屏上虚拟按键**：`VirtualControls` 整层不绘制、不吃点击，侧边菜单里的「虚拟按键」「按键布局」不列出；
+    操作走键鼠，键位仍在 `KeyConfigWindow` 里改
+  - **没有 MCV 视频解码库**：Boss 登场/技能视频直接跳过，其余画面照常
+  - **后台管理用系统默认浏览器**：侧边栏「后台系统」走 `Application.OpenURL("http://127.0.0.1:8686/")`，
+    不在游戏内嵌 WebView（那是 Android 专属的 Dialog 方案）；`runInBackground=true` 保证切到浏览器后
+    进程内 HTTP 服务继续响应。见 `Assets/Scripts/Admin/AdminWebView.cs` 的 `#if` 分支。
+    桌面版**不启动** `AdminBackgroundPump`（只为 Android 的 `onPause` 兜底）——桌面主线程不停，
+    队列由主线程独占排空，避免和 `Run<T>` 的 DB 访问并发（详见 `AdminHost.cs` / `AdminBackend.cs` 注释）
+- 编译器口径自检：`cd tools/unity-compile-check && dotnet build CheckStandalone.csproj`
+
+---
+
+## 七、后台管理系统
 
 源端 `gms-ui` 已原样接入：游戏进程内起一个只监听 `127.0.0.1` 的 HTTP 服务，
 侧边栏「后台系统」用系统浏览器打开 `http://127.0.0.1:8686/`
@@ -117,7 +157,7 @@ rtk proxy python3 tools/sync_android_data.py --zip
 
 ---
 
-## 七、验证工具
+## 八、验证工具
 
 | 工具 | 用途 |
 |---|---|
@@ -134,7 +174,7 @@ UI 验收优先写无渲染断言（`LoginFlowChecks` 那种：new 组件 + 反�
 
 ---
 
-## 八、开发规约（摘要）
+## 九、开发规约（摘要）
 
 完整规则见根目录 [AGENTS.md](../AGENTS.md)：
 
@@ -147,7 +187,7 @@ UI 验收优先写无渲染断言（`LoginFlowChecks` 那种：new 组件 + 反�
 
 ---
 
-## 九、文档索引
+## 十、文档索引
 
 | 文档 | 内容 |
 |---|---|

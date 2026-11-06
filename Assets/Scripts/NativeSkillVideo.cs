@@ -14,6 +14,7 @@ public sealed class NativeSkillVideo : MonoBehaviour
     static readonly List<NativeSkillVideo> layers = new List<NativeSkillVideo>();
     static Dictionary<string, object> skillFiles;
     static string pendingBoss;
+    static bool warnedNoMovie;
     McvPlayback playback;
     SpriteRenderer image;
     Texture2D texture;
@@ -47,7 +48,8 @@ public sealed class NativeSkillVideo : MonoBehaviour
         if (!fx.Attach(File.ReadAllBytes(Path.Combine(WzAssets.DataRoot, relative)), player,
                 sortingOrder ?? (channel == Channel.BossScene ? 800 : 801), false, 0))
         {
-            Debug.LogError("[MCV] " + relative);
+            // 平台本身没有解码库（Windows）时只在 Attach 里提示一次，不按错误刷屏
+            if (GamePlatform.MoviePlayback) Debug.LogError("[MCV] " + relative);
             Delete(go); return false;
         }
         active[index] = fx;
@@ -105,6 +107,18 @@ public sealed class NativeSkillVideo : MonoBehaviour
 
     bool Attach(byte[] bytes, PlayerCtrl player, int sortingOrder, bool loop, float delay)
     {
+        // Windows 版没有 mapledash_mcv.dll（Native/Mcv/build.py 只出 dylib / so），
+        // 硬着头皮解码会在工作线程上抛 DllNotFoundException。这里直接按「没有视频」处理：
+        // Boss 登场/技能视频不播，其余画面照旧。
+        if (!GamePlatform.MoviePlayback)
+        {
+            if (!warnedNoMovie)
+            {
+                warnedNoMovie = true;
+                Debug.LogWarning("[MCV] 当前平台没有视频解码库，跳过所有 MCV 播放");
+            }
+            return false;
+        }
         source = bytes;
         this.loop = loop;
         this.delay = delay;

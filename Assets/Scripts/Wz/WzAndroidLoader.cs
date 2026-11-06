@@ -148,7 +148,7 @@ public sealed class WzAndroidLoader : MonoBehaviour
             string zip = Path.Combine(Root, "MapleDashResources.zip");
 
             string patch = Path.Combine(Root, "MapleDashResources.patch.zip");
-            if (File.Exists(patch) && !WzResourceUpdate.InstalledThisLaunch)
+            if (WzResourceParts.Exists(patch) && !WzResourceUpdate.InstalledThisLaunch)
             {
                 // Do not skip patches via the fast receipt path, or hide patch errors.
                 string targetManifest = WzResourceInstaller.ReadArchiveManifest(patch);
@@ -159,8 +159,8 @@ public sealed class WzAndroidLoader : MonoBehaviour
                 return;
             }
 
-            // 全量包直接解压；已有 Data 直接加载，不再抽样/全量哈希或匹配 APK 清单。
-            if (File.Exists(zip))
+            // 全量包直接解压（单包或 part01..NN 分包）；已有 Data 直接加载，不再抽样/全量哈希或匹配 APK 清单。
+            if (WzResourceParts.Exists(zip))
             {
                 workerPhase = "正在解压资源";
                 string extracted = WzResourceInstaller.ExtractFull(zip, Root,
@@ -168,7 +168,8 @@ public sealed class WzAndroidLoader : MonoBehaviour
                 if (extracted != null) manifest = extracted;
             }
             if (!Directory.Exists(data))
-                throw new FileNotFoundException("未找到资源。请把 MapleDashResources.zip 放到 /sdcard/mapstory/ 后重试。");
+                throw new FileNotFoundException("未找到资源。请把 MapleDashResources.zip（或全部分包 " +
+                    "MapleDashResources.part01.zip、part02.zip…）放到 /sdcard/mapstory/ 后重试。");
             loaded = 1; total = 1;
         });
     }
@@ -279,7 +280,7 @@ public sealed class WzAndroidLoader : MonoBehaviour
             yield break;
         }
         string fullZip = Path.Combine(Root, "MapleDashResources.zip");
-        if (File.Exists(fullZip))
+        if (WzResourceParts.Exists(fullZip))
         {
             phase = "正在解压资源";
             var extract = Task.Run(() => WzResourceInstaller.ExtractFull(fullZip, Root,

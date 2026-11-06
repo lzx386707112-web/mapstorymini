@@ -9,11 +9,15 @@ public sealed class SkillDef
     public string vfx => visualKey ?? (visualKey = NativeSkillVfx.Key(native.Id, native.Level, art));
     public readonly NativeSkillDefinition native;
     public float cd => native.Cooldown;
-    public SkillDef(ClassSkill presentation, NativeSkillDefinition definition)
+    // visualKeyOverride：母技能开状态、子技能出伤害/表现时用（祝福之鎚 400011052
+    // 的数值挂在母技能，而每一发铁鎚的 effect/effect0/ball/hit 全在 400011053）。
+    // 伤害仍按传进来的 definition 结算，只是取层换成子技能的 key。
+    public SkillDef(ClassSkill presentation, NativeSkillDefinition definition, string visualKeyOverride = null)
     {
         name = presentation.name; art = presentation.art;
         icon = string.IsNullOrEmpty(presentation.icon) ? art : presentation.icon;
         native = definition;
+        visualKey = visualKeyOverride;
         action = native.Id + "@" + native.Level;
         hint = "Lv." + native.Level;
     }
@@ -277,7 +281,9 @@ public partial class SkillSystem : MonoBehaviour
         if (payCost && itemCount>0 && !Profile.RemoveItem(itemId,itemCount)) return Reject("技能所需物品扣除失败");
         if (payCost && starCount>0 && !Profile.ConsumeProjectile(starId,starCount,starPosition)) return Reject("技能所需飞镖扣除失败");
         if (payCost && ranged && !NativeProjectiles.Spend(projectile)) return Reject("弹药扣除失败");
-        if (payCost && !frenzy && !State(s.native.Id).TryStart(Time.realtimeSinceStartupAsDouble, s.cd)) return Reject("技能冷却中");
+        // 普力特的祝福 1 层「其余技能冷却缩短 w%」对所有技能生效；叠满/耗尽时
+        // 该技能自己走 h 的 y 秒长冷却。见 NativeSkillStacks.EffectiveCooldown。
+        if (payCost && !frenzy && !State(s.native.Id).TryStart(Time.realtimeSinceStartupAsDouble, EffectiveCooldown(s))) return Reject("技能冷却中");
         if (payCost)
         {
             p.TrySpendMp(mpCost);
@@ -309,6 +315,16 @@ public partial class SkillSystem : MonoBehaviour
         // 周期自动攻击（祝福之鎚 30 秒 / 每 1.8 秒一次）：首次结算仍走下面的正常路径，
         // 这里只挂后续周期。见 NativeSkillFollowups.RepeatAttackSkills。
         StartRepeatingAttack(s);
+        // 極冰風暴 400011121：施放即给范围内敌人上「鑽石狼的詛咒」，并启动
+        // 400011123 的 periodic 光芒补层；后续命中由 TriggerCurseOnHit 生成冰塊。
+        // 见 NativeSkillCurses.cs。
+        StartCurse(s);
+        // 技能震屏（trembleEffect）：56 条技能带它，以前一条都没接。
+        // 按源端 delay 起震、time 毫秒线性衰减，见 NativeSkillTremble.cs。
+        PlayTremble(s);
+        // 普力特的祝福 400001024：每按一次叠一层（最多 6），重写当前生效的 stat 集合，
+        // 刷新 30 秒；到期或叠满走 240 秒长冷却。见 NativeSkillStacks.cs。
+        ApplyStack(s);
         // Buff 期间概率触发的 proc（風暴使者VI / 影之槍）：这两条的 common 没有属性字段，
         // NativeBuffs.ApplySkill 会拒绝注册，所以持续时间由 NativeProcSkills 自己记。
         StartProcBuff(s);
@@ -350,6 +366,11 @@ public partial class SkillSystem : MonoBehaviour
         }
 
         bool replay = BeginReplay(s, p.FeetPos, p.facing);
+        // 自动追加攻击（`addAttack{skill, isAuto=1}`）：主技能施放成功后补一段隐藏技能。
+        // 必须挂在 BeginCast 而不是 Cast/ProjectileCast 的末尾 —— BeginReplay / buff / 召唤
+        // / 形态技能都会提前 return，挂末尾会整条漏掉（400021034 就是这样只播主技能）。
+        // 不接这一句，「五连投掷」只剩四连、且少掉最后那段 1104% 的伤害与弹道。
+        PlayAddAttack(s);
         NativeBuffs.For(p).ApplySkill(s.native.Id, s.native.Level, NativeBuffs.Now);
         // 282 子状态：母技能施放后挂上 invisible 状态（银河星爆的最终伤害增益、
         // 海龙霸拳的水龙斗气、暗影雾杀的区域…）。它们不是玩家能按的 buff，没有 stat。
@@ -459,7 +480,12 @@ public partial class SkillSystem : MonoBehaviour
         // 是 proc/被动的数值（剑士意念VI / 海龙石VI / 风暴使者VI / 散式投掷 / 影之枪），
         // 一律照打会凭空多出一发 ⇒ 由 NativeSkillSequences 的表显式决定。
         if (s.native.Kind == "Buff" && !SequenceParentAttacks(s.native.Id)) yield break;
-        if (UsesProjectile(s))
+        // 周期技能（祝福之鎚 400011052）是 info/areaAttack=1 的范围攻击：
+        // 它的 ball 是「召唤出来的锤体」，不是按一次射一发的弹道。
+        // 走 ProjectileCast 会被 p.SkillActionDuration*500 延迟到 6 秒后才飞出去，
+        // 表现就是「画面上莫名其妙多一发、周期里该出的那一发反而没有」。
+        // 每一发统一由 NativeSkillFollowups.RepeatAttack 走范围结算 + 子技能表现。
+        if (UsesProjectile(s) && !IsRepeatingSkill(s.native.Id))
         {
             yield return ProjectileCast(s,origin,facing);
             yield break;
@@ -514,15 +540,29 @@ public partial class SkillSystem : MonoBehaviour
             min = range.Value.min / Art.PPU;
             max = range.Value.max / Art.PPU;
         }
-        return x >= -max.x && x <= -min.x && delta.y >= -max.y && delta.y <= -min.y;
+        // 绝大多数技能是「左朝向负框」，要镜像到身前；4 条正框技能保持原方向
+        // （ForwardBox 的判据见 NativeSkillCatalog.cs，别把这条改回统一镜像）。
+        bool forward = d.ForwardBox && d.Kind != "Summon";
+        float left = forward ? min.x : -max.x;
+        float right = forward ? max.x : -min.x;
+        return x >= left && x <= right && delta.y >= -max.y && delta.y <= -min.y;
     }
 
     bool InRange(Component target,NativeSkillDefinition d,Vector2 origin,int facing)
     {
         if (InRange(target.transform.position,d,origin,facing)) return true;
         if (d.Kind=="Summon" || !d.HasBounds || !(target is EnemyUnit enemy) || !enemy.SelectionBounds.HasValue) return false;
-        float left=facing<0 ? d.Min.x : -d.Max.x;
-        float right=facing<0 ? d.Max.x : -d.Min.x;
+        float left, right;
+        if (d.ForwardBox)
+        {
+            left = facing<0 ? -d.Max.x : d.Min.x;
+            right = facing<0 ? -d.Min.x : d.Max.x;
+        }
+        else
+        {
+            left=facing<0 ? d.Min.x : -d.Max.x;
+            right=facing<0 ? d.Max.x : -d.Min.x;
+        }
         var attack=Rect.MinMaxRect(origin.x+left,origin.y-d.Max.y,origin.x+right,origin.y-d.Min.y);
         return attack.Overlaps(enemy.SelectionBounds.Value);
     }
@@ -553,7 +593,8 @@ public partial class SkillSystem : MonoBehaviour
         var targets = SelectTargets(s, d, origin, facing, struck, onlyTarget);
         // 起源之塔第 14 层只允许普通攻击：技能包同样要走 handleAttack 才会回「本层只能使用普通攻击」。
         if (SeedTowerCompat.HandleAttack(d.Id, targets.Count > 0 ? targets[0] as EnemyUnit : null)) return 0;
-        int count = d.Kind == "Summon" ? NativeSummon.AttackInfo(d)?.Int("mobCount", 1) ?? 1 : d.TargetCount;
+        int count = d.Kind == "Summon" ? NativeSummon.AttackInfo(d)?.Int("mobCount", 1) ?? 1
+            : d.TargetCount + Mathf.Max(0, NativeSkillEnhance.TargetPlus(d.Id));
         if (struck != null) count = Mathf.Max(0,count-struck.Count);
         int hits = Mathf.Min(count, targets.Count);
         long totalDamage=0;
@@ -658,6 +699,14 @@ public partial class SkillSystem : MonoBehaviour
         if(d.Id==s.native.Id && d.Kind!="Summon")TriggerReactiveSkills(s,captured,origin,facing);
         // 海神护体 15140010：「连接技能命中时生成保护罩」，命中即累积，不需要按键。
         if (d.Id==s.native.Id && hits>0 && d.Kind!="Summon") NativeShields.OnSkillHit(p, p.hpMax);
+        // 排查「技能放得出来但怪不掉血」用：把这次结算的真实数字打出来。
+        // 只看「有没有打死」判断不出问题——小怪一发就死，伤害是 1 还是 1 万都一样。
+        // 默认关闭，PlayerPrefs "debug_hitlog"=1 时开（批次探针会自己设）。
+        if (PlayerPrefs.GetInt("debug_hitlog", 0) != 0)
+            Debug.Log("[Hit] id=" + d.Id + " lv=" + d.Level + " kind=" + d.Kind +
+                      " dmg%=" + d.DamagePercent + " 段=" + d.HitCount + " 目标上限=" + d.TargetCount +
+                      " 框=" + d.Min + "~" + d.Max + " hasBounds=" + d.HasBounds +
+                      " ⇒ 选中=" + targets.Count + " 命中=" + hits + " 总伤害=" + totalDamage);
         return hits;
     }
     public static int DrainRecovery(int skillId,long cumulativeDamage,long monsterMaxHp,int playerMaxHp,int percent)

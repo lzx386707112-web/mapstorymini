@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 // 施法结算体检：把「按下去之后到底会不会打到怪」这条链上的每一个判据都打出来。
@@ -15,6 +16,20 @@ using UnityEngine;
 public static class SkillCombatDump
 {
     static readonly int[] Default = { 400011072, 400011003, 400011052, 400011131 };
+
+    // 排查「放得出来但怪不掉血」的开关：打开后每次 HitAt 都会打一行
+    // [Hit] id=… 选中=N 命中=N 总伤害=N。小怪一发就死，只看死没死判断不出问题；
+    // 这一行才看得出「选中=0」（打空）还是「伤害=0」（算出 0）。
+    [MenuItem("Tools/技能诊断/伤害日志 开/关")]
+    static void ToggleHitLog()
+    {
+        int next = PlayerPrefs.GetInt("debug_hitlog", 0) != 0 ? 0 : 1;
+        PlayerPrefs.SetInt("debug_hitlog", next);
+        PlayerPrefs.Save();
+        Debug.Log(next != 0
+            ? "[Hit] 伤害日志已开启：每次结算会打印 选中/命中/总伤害"
+            : "[Hit] 伤害日志已关闭");
+    }
 
     public static void Run()
     {
@@ -91,6 +106,24 @@ public static class SkillCombatDump
                 if (row == null) continue;
                 lines.Add("  level/" + pick + " = " + Flatten(row, 1));
             }
+        }
+
+        // 每个一级分支自己的参数（count/interval/x/y/duration/z/start…）+ 画布数。
+        // 「锤子该不该飞出去」这类问题只能看这几个参数，看顶层名字是看不出来的。
+        foreach (var child in node.Children)
+        {
+            if (child.Kind == "Canvas") continue;
+            int canvases = 0;
+            var items = new List<string>();
+            foreach (var sub in child.Children)
+            {
+                if (sub.Kind == "Canvas") { canvases++; continue; }
+                items.Add(sub.Name + "=" + Format(sub.Value));
+            }
+            if (canvases == 0 && items.Count == 0) continue;
+            items.Sort(StringComparer.Ordinal);
+            lines.Add("    · " + child.Name + "  canvas=" + canvases +
+                      (items.Count > 0 ? "  {" + string.Join("  ", items.ToArray()) + "}" : ""));
         }
     }
 

@@ -383,6 +383,17 @@ public static class InputHub
         }
     }
 
+    // 屏上快捷格「按住」专用：只维护按下态，不产生本帧按下沿。
+    // 按下沿会被 InputBridge 的快捷格分派再读一次，同一按就会 Cast 两遍
+    // （第二遍不是被冷却挡掉，就是把刚起来的光束直接打断）。
+    // 施放本身由调用方显式 QuickSlots.Cast 完成，这里只负责让
+    // SkillHeldInput.Update 的 InputHub.Held(动作) 在整段按住期间为真。
+    public static void SetVirtualHeld(GameAction a, bool down)
+    {
+        if (down) virtualActionsHeld.Add(a);
+        else virtualActionsHeld.Remove(a);
+    }
+
     public static float AxisX
     {
         get
@@ -697,6 +708,9 @@ public class InputBridge : MonoBehaviour
         // 侧滑菜单先读原始触摸：它决定本帧要不要冻结下面的游戏输入。
         GameSideMenu.Tick();
         Pointer.Tick();
+        // 屏上快捷格的按住态按帧收尾：OnGUI 在暂停/切场景/开面板时可能整帧不跑，
+        // 只靠 Draw 里松手会把 virtualActionsHeld 永久留在按下态，光束停不下来。
+        BottomBar.TickHeldSlot();
 
         bool playing = game != null && game.state == GameLoop.GameState.Playing &&
                        game.player != null && !game.gameOver && !PlayerCtrl.InputLocked && !BottomBar.ChatFocused &&

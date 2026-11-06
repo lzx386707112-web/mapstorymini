@@ -153,7 +153,9 @@ static class Program
             WzResourceInstaller.ExtractFull(directZip, directRoot);
             Require(File.Exists(Path.Combine(directRoot, "Data/fresh.img")), "Direct extraction failed");
             Require(!File.Exists(directZip), "Direct archive not cleaned up");
-            Console.WriteLine("PASS: streaming hash (large/empty), interrupted install recovery, progress phases, corrupt pack rejection, promotion rollback, delta add/remove/reuse, wrong APK/base rejection, archive cleanup, online manifest and version promotion/rollback, unchanged files untouched, journal recovery and commit cleanup");
+
+            CheckSplitPacks(root);
+            Console.WriteLine("PASS: streaming hash (large/empty), interrupted install recovery, progress phases, corrupt pack rejection, promotion rollback, delta add/remove/reuse, wrong APK/base rejection, archive cleanup, online manifest and version promotion/rollback, unchanged files untouched, journal recovery and commit cleanup, split-part extraction/rejection, split pack cleanup, split patch transaction");
         }
         finally
         {
@@ -169,6 +171,136 @@ static class Program
         catch (IOException) { return; }
         catch (UnauthorizedAccessException) { return; }
         throw new Exception("Expected installation to fail");
+    }
+
+    static string ManifestOf(Dictionary<string, byte[]> files)
+    {
+        var entries = new List<object>();
+        foreach (var file in files) entries.Add(new { path = file.Key, sha256 = WzResourceInstaller.Hash(file.Value) });
+        return JsonSerializer.Serialize(new { files = entries });
+    }
+
+    static string[] PackSplit(string directory, string stem, string manifest,
+        Dictionary<string, byte[]> files, int partCount, int firstIndex = 1, bool patch = false)
+    {
+        Directory.CreateDirectory(directory);
+        var buckets = new List<KeyValuePair<string, byte[]>>[partCount];
+        for (int i = 0; i < partCount; i++) buckets[i] = new List<KeyValuePair<string, byte[]>>();
+        int n = 0;
+        foreach (var file in files) buckets[n++ % partCount].Add(file);
+        var paths = new List<string>();
+        for (int i = 0; i < partCount; i++)
+        {
+            string path = Path.Combine(directory, stem + ".part" + (i + firstIndex).ToString("00") + ".zip");
+            if (File.Exists(path)) File.Delete(path);
+            using (var zip = ZipFile.Open(path, ZipArchiveMode.Create))
+            {
+                if (i == 0)
+                {
+                    using (var writer = new StreamWriter(zip.CreateEntry("resource-manifest.json").Open()))
+                        writer.Write(manifest);
+                    if (patch) zip.CreateEntry("resource-patch.json");
+                }
+                string info = "{\"format\":1,\"kind\":\"" + (patch ? "patch" : "full") + "\",\"index\":" +
+                    (i + firstIndex) + ",\"count\":" + partCount + ",\"partSize\":2147483648,\"totalFiles\":" +
+                    files.Count + "}";
+                using (var writer = new StreamWriter(zip.CreateEntry("resource-pack.json").Open())) writer.Write(info);
+                foreach (var file in buckets[i])
+                {
+                    using var output = zip.CreateEntry("Data/" + file.Key).Open();
+                    output.Write(file.Value, 0, file.Value.Length);
+                }
+            }
+            paths.Add(path);
+        }
+        return paths.ToArray();
+    }
+
+    // 分包（part01..partNN）：逐包解压、缺包/重号必须在写 Data 之前拒绝、成功才删包。
+    static void CheckSplitPacks(string root)
+    {
+        var files = new Dictionary<string, byte[]>
+        {
+            ["a.img"] = new byte[] { 1 },
+            ["b.img"] = new byte[] { 2, 2 },
+            ["c.img"] = new byte[] { 3, 3, 3 },
+            ["empty.img"] = Array.Empty<byte>()
+        };
+        string manifest = ManifestOf(files);
+
+        // 1) 完整分包：全部解压出来，包文件整体删除
+        string completeDir = Path.Combine(root, "split-complete");
+        PackSplit(completeDir, "MapleDashResources", manifest, files, 3);
+        string completeRoot = Path.Combine(root, "split-complete-out");
+        var phases = new List<int>();
+        string extracted = WzResourceInstaller.ExtractFull(Path.Combine(completeDir, "MapleDashResources.zip"),
+            completeRoot, (done, total) => { Require(total == files.Count, "Split progress total is wrong"); phases.Add(done); });
+        Require(extracted == manifest, "Split pack returned the wrong manifest");
+        foreach (var file in files)
+            Require(File.ReadAllBytes(Path.Combine(completeRoot, "Data/" + file.Key)).Length == file.Value.Length,
+                "Split extraction lost " + file.Key);
+        Require(phases[phases.Count - 1] == files.Count, "Split progress did not reach the file count");
+        Require(Directory.GetFiles(completeDir, "*.zip").Length == 0, "Split parts were not deleted after success");
+
+        // 2) 缺第 2 包：在解压任何文件之前失败，Data 目录不产生
+        string gapDir = Path.Combine(root, "split-gap");
+        PackSplit(gapDir, "MapleDashResources", manifest, files, 3);
+        File.Delete(Path.Combine(gapDir, "MapleDashResources.part02.zip"));
+        string gapRoot = Path.Combine(root, "split-gap-out");
+        ExpectFailure(() => WzResourceInstaller.ExtractFull(Path.Combine(gapDir, "MapleDashResources.zip"), gapRoot));
+        Require(!Directory.Exists(Path.Combine(gapRoot, "Data")), "Incomplete split started extracting");
+        Require(Directory.GetFiles(gapDir, "*.zip").Length == 2, "Incomplete split deleted its parts");
+
+        // 3) 包号重复（part02 被 part01 覆盖）：拒绝，不要装出缺文件的 Data
+        string dupDir = Path.Combine(root, "split-dup");
+        PackSplit(dupDir, "MapleDashResources", manifest, files, 3);
+        File.Copy(Path.Combine(dupDir, "MapleDashResources.part01.zip"),
+            Path.Combine(dupDir, "MapleDashResources.part02.zip"), true);
+        ExpectFailure(() => WzResourceInstaller.ExtractFull(Path.Combine(dupDir, "MapleDashResources.zip"),
+            Path.Combine(root, "split-dup-out")));
+
+        // 4) 包号不从 1 开始（只传了后面几包）：拒绝
+        string shiftDir = Path.Combine(root, "split-shift");
+        PackSplit(shiftDir, "MapleDashResources", manifest, files, 2, firstIndex: 2);
+        ExpectFailure(() => WzResourceInstaller.ExtractFull(Path.Combine(shiftDir, "MapleDashResources.zip"),
+            Path.Combine(root, "split-shift-out")));
+
+        // 5) 分包也要能走校验安装路径：条目分散在不同包里照样逐文件校验
+        string installDir = Path.Combine(root, "split-install");
+        PackSplit(installDir, "MapleDashResources", manifest, files, 2);
+        string installRoot = Path.Combine(root, "split-install-out");
+        WzResourceInstaller.Install(Path.Combine(installDir, "MapleDashResources.zip"), installRoot, manifest, null);
+        WzResourceInstaller.Verify(installRoot, manifest, null);
+        Require(Directory.GetFiles(installDir, "*.zip").Length == 0, "Split install left parts behind");
+
+        // 6) 单包与分包同时存在时按修改时间取新的：旧整包不能被新分包顶掉
+        string mixDir = Path.Combine(root, "split-mix");
+        PackSplit(mixDir, "MapleDashResources", manifest, new Dictionary<string, byte[]> { ["only.img"] = new byte[] { 7 } }, 2);
+        string staleZip = Path.Combine(mixDir, "MapleDashResources.zip");
+        Pack(staleZip, manifest, new Dictionary<string, byte[]> { ["stale.img"] = new byte[] { 9 } });
+        File.SetLastWriteTimeUtc(staleZip, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        string mixRoot = Path.Combine(root, "split-mix-out");
+        WzResourceInstaller.ExtractFull(staleZip, mixRoot);
+        Require(File.Exists(Path.Combine(mixRoot, "Data/only.img")), "Newer split pack was ignored");
+        Require(!File.Exists(Path.Combine(mixRoot, "Data/stale.img")), "Stale single archive won over split parts");
+        Require(Directory.GetFiles(mixDir, "*.zip").Length == 0, "Mixed pack cleanup missed files");
+
+        // 7) 分包补丁走在线事务安装：变更文件分散在多个包里也要逐个校验并提交
+        string patchDir = Path.Combine(root, "split-patch");
+        var patched = new Dictionary<string, byte[]>(files) { ["added.img"] = new byte[] { 11, 12 } };
+        patched.Remove("b.img");
+        string patchedManifest = ManifestOf(patched);
+        PackSplit(patchDir, "MapleDashResources.patch", patchedManifest,
+            new Dictionary<string, byte[]> { ["added.img"] = patched["added.img"] }, 2, patch: true);
+        const string version = "{\"versionCode\":7,\"resUrl\":\"https://example.com/p.zip\"}";
+        WzResourceInstaller.Install(Path.Combine(patchDir, "MapleDashResources.patch.zip"), installRoot,
+            patchedManifest, null, null, version, manifest);
+        WzResourceInstaller.Verify(installRoot, patchedManifest, null);
+        Require(File.Exists(Path.Combine(installRoot, "Data/added.img")), "Split patch lost its new file");
+        Require(!File.Exists(Path.Combine(installRoot, "Data/b.img")), "Split patch kept a deleted file");
+        Require(File.ReadAllText(Path.Combine(installRoot, "Data/.resUpdate.json")) == version,
+            "Split patch did not carry the resource version");
+        Require(Directory.GetFiles(patchDir, "*.zip").Length == 0, "Split patch left parts behind");
     }
 
     static void Pack(string path, string manifest, Dictionary<string, byte[]> files)

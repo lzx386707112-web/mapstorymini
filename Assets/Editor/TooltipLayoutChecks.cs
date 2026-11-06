@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,6 +13,8 @@ public static class TooltipLayoutChecks
 {
     // 真实数据：八件套（冒险岛宝石）展开约 516 逻辑高；小套装约 200
     const float SetTall = 516f, SetShort = 200f;
+    // 装备卡 UI/UIToolTip.img/Item/Equip/frame/common 的实测宽度
+    const float EquipCardWidth = 324f;
 
     public static void Run()
     {
@@ -26,7 +29,9 @@ public static class TooltipLayoutChecks
         for (int i = 0; i < scales.Length; i++)
         {
             float s = scales[i], W = screensW[i], H = screensH[i];
-            float tooltipW = 236f * s;
+            // 装备卡 frame/common 是 324 宽；套装面板 282 frame/set 是 298 宽
+            //（旧 beidou DLL 的套装层是 236，落点断言必须跟着改）。
+            float tooltipW = EquipCardWidth * s;
             // 装备框 tooltip：高 = 166 + 行数×16（帽子 12 行 → 358）
             float tooltipH = (166f + 12 * 16f) * s;
 
@@ -42,19 +47,30 @@ public static class TooltipLayoutChecks
                     var set = ItemTooltip.SetPanelRect(equip, h, s, W, H);
                     string tag = "s=" + s + " 屏=" + W + "x" + H + " 面板高=" + h + " 指针x=" + Mathf.Round(px);
 
-                    if (set.Overlaps(equip))
-                    {
-                        fail++; Debug.LogError("[Tooltip] 套装面板压住装备框：" + tag +
-                            " equip=" + Fmt(equip) + " set=" + Fmt(set));
-                        continue;
-                    }
-                    // 装得下就必须完整在屏内（两侧都不够时才允许夹取）
+                    // 单侧放得下 ⇒ 必须彻底不重叠且完整在屏内。
+                    // 两侧都放不下时（298+324 在窄屏上几何上摆不下两栏），重叠不可避免：
+                    // 只要求面板被夹在屏内、顶边可见，不再要求零重叠。
                     bool fitsRight = equip.xMax + 4f * s + set.width <= W - 4f;
                     bool fitsLeft = equip.x - 4f * s - set.width >= 4f;
                     bool inside = set.x >= -0.5f && set.xMax <= W + 0.5f && set.y >= -0.5f && set.yMax <= H + 0.5f;
-                    if ((fitsRight || fitsLeft) && !inside)
+                    if (fitsRight || fitsLeft)
                     {
-                        fail++; Debug.LogError("[Tooltip] 装得下却跑到屏外：" + tag +
+                        if (set.Overlaps(equip))
+                        {
+                            fail++; Debug.LogError("[Tooltip] 装得下却压住装备框：" + tag +
+                                " equip=" + Fmt(equip) + " set=" + Fmt(set));
+                            continue;
+                        }
+                        if (!inside)
+                        {
+                            fail++; Debug.LogError("[Tooltip] 装得下却跑到屏外：" + tag +
+                                " equip=" + Fmt(equip) + " set=" + Fmt(set));
+                            continue;
+                        }
+                    }
+                    else if (!inside)
+                    {
+                        fail++; Debug.LogError("[Tooltip] 两侧都放不下时未夹进屏幕：" + tag +
                             " equip=" + Fmt(equip) + " set=" + Fmt(set));
                         continue;
                     }
@@ -148,6 +164,56 @@ public static class TooltipLayoutChecks
             if (got == t.size) pass++;
             else { fail++; Debug.LogError("[Tooltip] 战力字号 \"" + t.text + "\"(" + t.text.Length + "字) 期望 " + t.size + " 实得 " + got); }
         }
+
+        // —— 282 套装数据全量迁入（877 套 / 简体 / Option / activeSkill）——
+        void Check(bool ok, string tag)
+        {
+            if (ok) pass++;
+            else { fail++; Debug.LogError("[Tooltip] 282 套装断言失败：" + tag); }
+        }
+
+        Check(AdminSetItem.Using282Data && AdminSetItem.BuiltInSetCount == 877,
+            "内置套装应为 282 的 877 套，实得 " + AdminSetItem.BuiltInSetCount);
+        var worn504 = new List<int> { 1004422, 1052882, 1073030, 1082636, 1102775, 1302333 };
+        var panels = AdminSetItem.PanelsFor(1004422, worn504);
+        Check(panels.Count > 0 && panels[0].Name == "航海师套装(战士)",
+            "504 套装名应为简体「航海师套装(战士)」");
+        Check(panels.Count > 0 && panels[0].CompleteCount == 7 && panels[0].EquippedCount == 6,
+            "504 件数应为 6 / 7");
+        Check(panels.Count > 0 && panels[0].Tiers.Count > 0
+              && panels[0].Tiers[0].Options.Count > 0
+              && panels[0].Tiers[0].Options[0].Contains("攻击Boss怪物时伤害"),
+            "Option 文案应为简体且占位符已替换");
+        Check(AdminSetItem.EquipName282(1004422).Contains("航海师"),
+            "282 专属道具名应来自 String/Eqp.img");
+
+        // Option incDAMr：boss:1 → BossDamage，否则 → Damage（导出期修，不在运行时兜底）。
+        var b504 = AdminSetItem.ComputeBonus(new List<int> { 1004422, 1052882 }, -1);
+        Check(b504.TryGetValue("BossDamage", out int bossDmg) && bossDmg == 10,
+            "504 的 2 件档应给 BossDamage 10");
+        Check(!b504.TryGetValue("Damage", out int plainDmg) || plainDmg == 0,
+            "boss:1 的 Option 不能误算成普通 Damage");
+        var b996 = AdminSetItem.ComputeBonus(new List<int> { 1112019, 1022234, 1122286 }, -1);
+        Check(b996.TryGetValue("Damage", out int dmg996) && dmg996 == 3,
+            "996 的非 boss Option 应给 Damage 3");
+
+        // activeSkill 授予 / 移除：set 40 的 2 件档给 80001037 lv1。
+        var granted = AdminSetItem.ActiveSkillsFor(new List<int> { 5000084, 5000089 }, -1);
+        Check(granted.Exists(g => g.Id == 80001037 && g.Level == 1), "2 件档应授予 80001037 lv1");
+        NativeSetItemSkills.Refresh(new List<int> { 5000084, 5000089 }, -1);
+        bool registered = NativeSetItemSkills.IsSkill(80001037);
+        Check(registered, "授予表应登记 80001037");
+        // 数据没装载时不要拿不存在的技能去探 SkillBook.Get（会抛 FileNotFoundException），
+        // 上面的 registered 断言已经把「数据没读到」这件事报出来了。
+        if (registered)
+        {
+            Check(SkillProgress.BaseLevelOf(80001037) == 1, "授予表应接到 SkillProgress.BaseLevelOf");
+            NativeSetItemSkills.Refresh(new List<int>(), -1);
+            // 卸下后 IsSkill 为 false 即等价于 BaseLevelOf 回 0；这里不直接探 BaseLevelOf，
+            // 否则会走到 SkillBook.Get(80001037) 去读资源包里不存在的 Skill/8000.img。
+            Check(!NativeSetItemSkills.IsSkill(80001037), "卸下装备后应自动移除授予技能");
+        }
+        Check(AdminSetItem.ActiveSkillsFor(new List<int>(), -1).Count == 0, "空穿着不应授予技能");
 
         Debug.Log("[Tooltip] 布局断言 " + pass + " 通过 / " + fail + " 失败");
         EditorApplication.Exit(fail == 0 ? 0 : 1);

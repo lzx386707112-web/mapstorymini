@@ -375,7 +375,12 @@ def level_rows(common) -> tuple[int, dict]:
             fields[child.name] = value
         elif isinstance(value, (int, float)):
             fields[child.name] = value
-        elif child.name in ("lt", "rb") and value is not None:
+        elif isinstance(value, (list, tuple)):
+            # 282 的多段判定框不只是 lt/rb：圣十字架 400011072 有四组
+            # (lt/rb, lt2/rb2, lt3/rb3, lt4/rb4)，ICBM 400051024 只有 lt2/rb2，
+            # 落雷凝聚等还带别的 vector 参数。旧实现把白名单写死成 ("lt","rb")，
+            # 其余全部丢掉 ⇒ 导出表看起来「源端没有框」，运行时只能拿 w/range
+            # 硬凑判定范围。这里一律保留（expand() 本就支持 list/tuple 透传）。
             fields[child.name] = list(value)
     return max_level, fields
 

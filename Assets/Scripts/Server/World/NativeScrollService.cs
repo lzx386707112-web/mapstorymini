@@ -21,6 +21,11 @@ public static class NativeScrollService
         for(int i=0;i<Columns.Length;i++) if(DbStore.Int(row,Columns[i])!=0) return false;
         return true;
     }
+    // 「属性已经种上、只有槽位还是 0」：先上过星力/星火、砸卷次数没跟着种子的行（星力只种 base 属性，
+    // 不写 upgradeslots；老存档建行时代也没种）。判据只看「从没砸过卷」——等级/邪惡/槽位全 0；
+    // 绝不能看属性列，否则补种时会把星力基础属性一起重置回模板值。
+    static bool UnsownSlots(DbRow row)
+        => DbStore.Int(row,"level")==0 && DbStore.Int(row,"vicious")==0 && DbStore.Int(row,"upgradeslots")==0;
     static bool Clean(int id)=>id>=2049000 && id<=2049003;
     static bool Chaos(int id)=>id>=2049100 && id<=2049103 || id==2049115 || id==2049116;
     static bool Modifier(int id)=>id==2040727 || id==2041058;
@@ -88,15 +93,25 @@ public static class NativeScrollService
         var eq=new DbRow();
         if(storedEq!=null) foreach(var pair in storedEq) eq[pair.Key]=pair.Value;
         var entry=CharService.ToInventoryEntry(db,item);
+        int seedSlots=BotItemCatalog.Int(BotItemCatalog.Shared.Info(id),"tuc");
         if(!HasStats(entry) || Pristine(eq))
         {
             var clean=BotItemCatalog.Shared.EquipStats(id);
             for(int i=0;i<Columns.Length;i++) eq[Columns[i]]=(long)(short)(clean!=null && clean.TryGetValue(WzStats[i],out int v) ? v : 0);
-            eq["upgradeslots"]=(long)BotItemCatalog.Int(BotItemCatalog.Shared.Info(id),"tuc");
+            eq["upgradeslots"]=(long)seedSlots;
         }
+        else if(UnsownSlots(eq)) eq["upgradeslots"]=(long)seedSlots;
         int slots=DbStore.Int(eq,"upgradeslots"),level=DbStore.Int(eq,"level"),vicious=DbStore.Int(eq,"vicious");
         int total=BotItemCatalog.Int(BotItemCatalog.Shared.Info(id),"tuc");
-        if(Clean(sid) && (total==0 || slots+level>=total+vicious)) return Reject("没有可恢复的升级次数");
+        // 白卷：源端 canUseCleanSlate（free + applied < tuc + vicious）。良医卷 2049920 源端是
+        // 「无条件 +1 槽」，但本地单机按用户决定一并收口到同一上限，否则能与普通卷轮流无限刷。
+        // 失败掉过次数时 slots+level 才小于上限，恢复类卷轴只能把损失补回来，不能超过 tuc+vicious。
+        bool restores=Clean(sid)||sid==2049920;
+        if(restores)
+        {
+            if(total==0) return Reject("这件装备没有可升级次数（tuc=0），无法恢复");
+            if(slots+level>=total+vicious) return Reject("没有可恢复的升级次数（已用 "+(slots+level)+" / 上限 "+(total+vicious)+" 次）");
+        }
         if(!Clean(sid) && !Modifier(sid) && sid!=2049920 && slots<1)
         {
             // 报清楚是哪件装备、还剩几次、上限几次——不然「没砸过却说次数不足」无从判断。
@@ -147,13 +162,17 @@ public static class NativeScrollService
                     }
                 }
                 else for(int i=0;i<Columns.Length;i++) if(stats.TryGetValue(WzStats[i],out int delta)) eq[Columns[i]]=(long)(short)Math.Min(short.MaxValue,DbStore.Int(eq,Columns[i])+delta);
-                if(!perfect && !Modifier(sid)) eq["upgradeslots"]=(long)(sbyte)(slots-1);
+                // GM 完美卷轴只保留「必成功」，不再免扣升级次数。源端 use_perfect_gm_scroll 的
+                // never uses up slots 语义在本地单机不成立：admin 号恒定 gm>0，不扣次数就能无限砸卷。
+                // 扣槽后 slots+level 恒等于 tuc+vicious，砸满即被下面的 slots<1 拦住。
+                if(!Modifier(sid)) eq["upgradeslots"]=(long)(sbyte)(slots-1);
                 eq["level"]=(long)(sbyte)(level+1);
             }
         }
         else
         {
-            if(!perfect && !GameConfigDao.GetBool(db,"use_perfect_scrolling",false) && white==null && !Clean(sid) && sid!=2049920 && !Modifier(sid)) eq["upgradeslots"]=(long)(sbyte)(slots-1);
+            // 失败掉一次升级次数：GM 必成功不会走到这里；普通玩家由 use_perfect_scrolling / 祝福卷保护。
+            if(!GameConfigDao.GetBool(db,"use_perfect_scrolling",false) && white==null && !Clean(sid) && sid!=2049920 && !Modifier(sid)) eq["upgradeslots"]=(long)(sbyte)(slots-1);
             destroyed=random.Next(100)<stats["cursed"];
         }
         if(white!=null && !Clean(sid)) Consume(db,white);

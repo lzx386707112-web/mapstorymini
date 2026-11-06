@@ -46,5 +46,6 @@ sysinfo.txt
 !/tools/admin-check/AdminCheck.csproj
 !/tools/enhancement-check/EnhancementCheck.csproj
 !/tools/server-check/MapleDash.ServerCheck.csproj
+!/tools/unity-compile-check/CheckStandalone.csproj
 /tools/enhancement-check/bin/
 /tools/enhancement-check/obj/

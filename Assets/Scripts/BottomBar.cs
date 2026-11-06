@@ -169,6 +169,9 @@ public static class BottomBar
     public static bool ChatFocused;
     static bool focusChat;
     static bool enterPending;
+    // 一次物理 Enter 只处理一次：OnGUI 一帧会跑 Layout/KeyDown/Repaint 多个事件，
+    // 而 InputBridge 的 enterPending 与下面的 IMGUI 兜底可能在同一帧同时到达。
+    static int enterHandledFrame = -1;
     public static NativeChatChannel ChatChannel { get; private set; }
     static string whisperTarget = "";
     static readonly string[] ChatNames = { "所有人", "悄悄话", "组队", "好友", "家族", "联盟", "夫妻", "讯息", "宠物" };
@@ -329,13 +332,23 @@ public static class BottomBar
         // Read it before consuming the queued key, on every GUI event, not just Repaint.
         if (chatKeyboard != null) ReadChatKeyboard(chatKeyboard.text, chatKeyboard.status);
         // InputBridge captures physical and virtual Enter before EndFrame clears its edge.
-        if (enterPending) {
-            enterPending = false;
-            if (!NpcSession.Blocking) {
-                if (!ChatFocused) FocusChat();
-                else FinishChat();
-            }
+        // 桌面端还有第二条路：聊天输入框是 GUI.TextField，Enter 的 IMGUI KeyDown 可能被它
+        // 抢先消费，Input.GetKeyDown 不再投递给 InputBridge，enterPending 就永远等不到
+        // （表现为「电脑端聊天按 Enter 没发出去」）。这里直接以 OnGUI 的 KeyDown 事件兜底：
+        // 聊天框本身就是 IMGUI 控件，这个事件一定到得了。Android 用软键盘 Done，不参与。
+        bool guiEnter = !Application.isMobilePlatform && !NativeUtilPrompt.Visible &&
+                        !KeyConfigWindow.Visible && !VirtualControlsEditor.Visible && !GameSideMenu.Blocking &&
+                        e.type == EventType.KeyDown &&
+                        (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter);
+        bool enter = enterPending || guiEnter;
+        enterPending = false;
+        if (enter && enterHandledFrame != Time.frameCount && !NpcSession.Blocking)
+        {
+            enterHandledFrame = Time.frameCount;
+            if (!ChatFocused) FocusChat();
+            else FinishChat();
         }
+        // 吞掉这次 KeyDown，别让 GUI.TextField 把回车当成输入内容或顺手清掉焦点。
         if (!NpcSession.Blocking && !NativeUtilPrompt.Visible && e.type == EventType.KeyDown &&
             (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter)) e.Use();
 
@@ -809,14 +822,46 @@ public static class BottomBar
                     SkillWindow.CancelSkillDrag();
                 continue;
             }
-            if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.Clicked && r.Contains(Pointer.Pos))
+            // 有绑定的格子：按下沿就施放，并把这一格的动作保持成「按住」。
+            // 原端快捷格是键盘键，按下即放、按住不放由键状态维持；屏上格子以前只在
+            // Pointer.Clicked（抬起）Cast 一次，连射/蓄力技能拿不到按住区间，
+            // SkillHeldInput.Update 下一帧就 StopHeld —— 这就是「虚拟按钮不支持长按」。
+            // 触屏 Pointer.Pressed 在短按的抬起帧、长按越过 0.35s 阈值时产生，两条都覆盖。
+            if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.Pressed &&
+                id != 0 && heldSlot < 0 && r.Contains(Pointer.Pos))
+            {
+                heldSlot = skillSlot;
+                InputHub.SetVirtualHeld(QuickSlots.Action(skillSlot), true);
+                AudioManager.Play("UI/BtMouseClick", 0.7f, false);
+                QuickSlots.Cast(skillSlot);
+            }
+            // 空格子仍是原端的一次性点击（攻击键 / 未绑定键的脉冲）。
+            // 有绑定的格子绝不能在这里再 Cast：Clicked 就是上面那段按住的抬起帧，
+            // 补一次就是「按一下放两次」（冷却/蓝量还会再扣一遍）。
+            if (PointerAvailable && Event.current.type == EventType.Repaint && Pointer.Clicked &&
+                id == 0 && r.Contains(Pointer.Pos))
             {
                 AudioManager.Play("UI/BtMouseClick", 0.7f, false);
-                if (id != 0) QuickSlots.Cast(skillSlot);
-                else if (key != KeyCode.None && key == KeyMap.Of(GameAction.Attack)) GameLoop.I.player.RequestAttack();
+                if (key != KeyCode.None && key == KeyMap.Of(GameAction.Attack)) GameLoop.I.player.RequestAttack();
                 else if (key != KeyCode.None) { InputHub.SetVirtual(key, true); InputHub.SetVirtual(key, false); }
             }
         }
+    }
+
+    // 屏上快捷格的按住态。由 InputBridge.Update 每帧调用（早于 SkillSystem.Update），
+    // 不依赖 OnGUI：暂停/切场景/开面板时 Draw 可能整帧不跑，只靠 Draw 收尾会把
+    // virtualActionsHeld 永久留在按下态，光束再也停不下来。
+    static int heldSlot = -1;
+    public static void TickHeldSlot()
+    {
+        if (heldSlot < 0) return;
+        var game = GameLoop.I;
+        bool keep = game != null && game.state == GameLoop.GameState.Playing && game.player != null &&
+                    !game.gameOver && Pointer.Down && !Pointer.Released && !Pointer.Suppressed &&
+                    !NpcSession.Blocking && !ChatFocused && !GameSideMenu.Blocking;
+        if (keep) return;
+        InputHub.SetVirtualHeld(QuickSlots.Action(heldSlot), false);
+        heldSlot = -1;
     }
 
     // 技能等级：原版 StatusBar.img/number 的 5×7 点阵数字，右对齐贴格子右下角。

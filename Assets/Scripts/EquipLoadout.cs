@@ -388,6 +388,9 @@ public static class EquipLoadout
     {
         var wornIds = new List<int>();
         foreach (var kv in WornSlots()) wornIds.Add(kv.Value);
+        // 282 activeSkill：这里是「当前穿着 → 档位重算 → 技能增删」的工程侧触发点。
+        // 换装/进游戏会走这条路；卸下装备后重算出的表里没有该技能，等价于移除。
+        NativeSetItemSkills.Refresh(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
         var source=AdminSetItem.ComputeBonus(wornIds, AdminSetItem.JobIndexOf(Profile.JobId));
         var bonus=source==null?new Dictionary<string,int>():new Dictionary<string,int>(source);
         AddPotentialBonus(bonus,new CharacterAttributes {level=GameSession.Character?.record.level??1});
@@ -523,6 +526,13 @@ public static class EquipLoadout
         w = AdminSetItem.ApplyStat(set, "PAD", w);
         m = AdminSetItem.ApplyStat(set, "MAD", result.intelligence + m) - result.intelligence;
         // SPD/JMP are merged with active temporary stats by PlayerCtrl, as SetItemNativeStats does.
+
+        // 282 套装 Effect / Option 新增的暴击两键：潜能那条路是直接加到 criticalChance /
+        // criticalBonus（不进 set 字典），这里同口径消费，否则这 10 个档位会静默无效。
+        if (set.TryGetValue("CriticalChance", out int setCriticalChance))
+            result.criticalChance += setCriticalChance / 100f;
+        if (set.TryGetValue("CriticalDamage", out int setCriticalDamage))
+            result.criticalBonus += setCriticalDamage / 100f;
 
         result.maxHp = Mathf.Max(50, result.maxHp);
         result.maxMp = Mathf.Max(5, result.maxMp);

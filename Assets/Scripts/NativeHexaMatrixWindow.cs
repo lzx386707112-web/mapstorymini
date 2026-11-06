@@ -121,6 +121,9 @@ public static class NativeHexaMatrixWindow
         if (selectedCore != 0 && CoreOf(selectedCore) == null) selectedCore = 0;
         if (state.stats != null && StatOf(statCore, preset) == null && StatOf(statCore, 1 - preset) != null)
             preset = 1 - preset;
+        // 核心等级 → 包装技能（500004xxx）等级：HEXA 强化的 damR_6th 靠这条链生效，
+        // 而且刚升完级还没重拉角色数据时也能立刻算进伤害。
+        VMatrixLevels.CaptureHexa(response, owner);
     }
 
     static HexaResponse Send(HexaOperation operation, int core = 0, int target = 0, int presetIndex = 0,
@@ -134,7 +137,7 @@ public static class NativeHexaMatrixWindow
         if (response == null) return null;
         if (!response.ok) { error = response.error; BottomBar.Toast(response.error); return response; }
         error = null;
-        if (commit) { state = response; GameSession.ReloadAfterCommand(); }
+        if (commit) { state = response; GameSession.ReloadAfterCommand(); VMatrixLevels.CaptureHexa(response, owner); }
         return response;
     }
 

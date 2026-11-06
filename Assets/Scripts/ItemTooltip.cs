@@ -277,8 +277,10 @@ public static class ItemTooltip
         }
         int upgrades = actual == null ? info.Int("tuc") : hoverItem.upgradeslots;
         // 老存档里存在「建了装备行但没种 WZ 值」的实例（upgradeslots 一直是 0）。
-        // 这种行不是砸光了次数（level/星力都是 0），按道具数据补显示，否则新装备看着像不能砸卷。
-        if (actual != null && upgrades <= 0 && hoverItem.equipLevel == 0 && hoverItem.starLevel == 0)
+        // 这种行不是砸光了次数（level 还是 0），按道具数据补显示，否则新装备看着像不能砸卷。
+        // 判据只认 level==0：上过星力/星火不等于砸过卷（星力不写 upgradeslots），
+        // 以前把 starLevel==0 也写进条件，结果武器上完星就永远显示 0 次。
+        if (actual != null && upgrades <= 0 && hoverItem.equipLevel == 0)
             upgrades = System.Math.Max(upgrades, info.Int("tuc"));
         // 282 恒定画这一行：UIToolTip.img/Item/Equip/textIcon/scroll/normal 是「次数已用尽」的
         // 灰色 (#85919F)，/enhanced 是「还有次数」的紫色 (#AFADFF)，与 starForce、bonusStat 的
@@ -426,30 +428,33 @@ public static class ItemTooltip
         float descriptionHeight = string.IsNullOrEmpty(description) ? 0
             : body.CalcHeight(new GUIContent(description), bodyWidth) + 8;
         // User-requested mobile overflow: flow rows into original-skin columns.
-        var setRows = SetRowsFor(id, out string setTitle);
+        var setRows = SetRowsFor(id, out var setHeader);
         var rowColumns = new List<int>();
         var rowPositions = new List<float>();
         var columnHeights = new List<float>();
         float maxHeight = 0;
-        int setColumns = 0, setRowsPerColumn = 0;
+        int setColumns = 0;
+        List<int[]> setColumnSplit = null;
         s = Mathf.Max(.01f, Mathf.Min(s, (UiKit.H - 8) / (contentY + 44)));
         for (int attempt = 0; attempt < 8; attempt++)
         {
             maxHeight = (UiKit.H - 8) / s;
             FlowEquipRows(rows, rowHeights, contentY, descriptionHeight, maxHeight,
                 rowColumns, rowPositions, columnHeights);
-            setRowsPerColumn = Mathf.Max(2, Mathf.FloorToInt((maxHeight - 38) / 16));
-            setColumns = setRows.Count == 0 ? 0 : (setRows.Count + setRowsPerColumn - 1) / setRowsPerColumn;
-            float totalWidth = columnHeights.Count * 328 - 4 + setColumns * 240;
+            setColumnSplit = setRows.Count == 0 ? null : SplitSetColumns(setRows, maxHeight);
+            setColumns = setColumnSplit == null ? 0 : setColumnSplit.Count;
+            float totalWidth = columnHeights.Count * 328 - 4 + setColumns * SetPanelPitch;
             float fit = (UiKit.W - 8) / totalWidth;
             if (s <= fit + .0001f) break;
             s = Mathf.Max(.01f, fit);
         }
         float equipmentWidth = columnHeights.Count * 328 - 4;
-        float groupWidth = equipmentWidth + setColumns * 240;
+        float groupWidth = equipmentWidth + setColumns * SetPanelPitch;
         float groupHeight = 0;
         foreach (float ch in columnHeights) groupHeight = Mathf.Max(groupHeight, ch);
-        if (setColumns > 0) groupHeight = Mathf.Max(groupHeight, 38 + Mathf.Min(setRows.Count, setRowsPerColumn) * 16);
+        if (setColumnSplit != null)
+            foreach (var c in setColumnSplit)
+                groupHeight = Mathf.Max(groupHeight, ColumnHeight(setRows, c[0], c[1]));
         float groupX = Mathf.Clamp(anchor.x, 4, Mathf.Max(4, UiKit.W - groupWidth * s - 4));
         float groupY = Mathf.Clamp(anchor.y + 20 * s, 4, Mathf.Max(4, UiKit.H - groupHeight * s - 4));
         var rect = new Rect(groupX, groupY, width * s, columnHeights[0] * s);
@@ -580,7 +585,7 @@ public static class ItemTooltip
             GUI.enabled = oldEnabled;
         }
         DrawSetColumns(new Vector2(groupX + (equipmentWidth + 4) * s, groupY),
-            setRows, setTitle, setRowsPerColumn, s);
+            setRows, setHeader, setColumnSplit, s);
     }
 
     static void FlowEquipRows(List<string[]> rows, List<float> heights, float firstY,
@@ -703,24 +708,59 @@ public static class ItemTooltip
         StarForceStars.Draw(bar.x + bar.width * .5f, bar.y + bar.height * .5f, s, stars, capacity, superior);
     }
 
-    // —— 套装块（源端 BeiDouSetItemCompat.dll 的 native set panel）——
-    // 0x65C82F00 段：宽 0xEC(236)；标题 y=7「%s (%d/%d)」居中金 FFFFE137；
-    // 装备行 y=25 起步进 16，左 x=8 名称（悬停件金 / 已穿白 / 未穿 90949D），右对齐「(%s)」槽位名；
-    // 「套装效果」= 槽位末 +3；「[%d件]」= 槽位末 +19（白/灰），其属性行 x=16「%s +%d%s」（D2D2D2/90949D）步进 16。
+    // —— 套装块：282 原生 frame/set 面板 ——
+    // 2026-11-06 从 beidou DLL 的 236 宽代码帧切到 UIToolTip.img/Item/Equip/frame/set。
+    // 常量逐条来自 Item/Equip/set（EXE 0x05234xxx getter 按 UTF-16 键名读取，非硬编码），
+    // 完整证据与推断边界见 inventory-and-tooltip.md「282 原生套装信息面板」两节。
+    public const float SetPanelWidth = 298f;          // frame/set/{top,mid,btm,line} 宽
+    public const float SetPanelPitch = 302f;          // 298 + 4（保持多栏拆分，只改宽度）
+    const float SetLineSpace = 15f;                   // set/lineSpace，y = 起始 + 15·i
+    const float SetTitleH = 30f, SetBtmH = 12f;       // frame/set/top、btm
+    const float SetPartX = 14f;                       // set/itemPartPos.x / setPartPos.x
+    const float SetNameX = 89f;                       // set/itemNamePos.x / setEffectPos.x
+    const float SetStatusRight = 283f;                // 状态列右落点（推断，见下）
+    const float SetFirstRowY = 48f;                   // set/itemPartPos.y
+    const float SetItemBottomMargin = 7f;             // set/itemListBottomMargin
+    const float SetEffectMargin = 7f;                 // set/setEffectMargin
+    const float SetListBottomMargin = 12f;            // set/setListBottomMargin
+    // 推断项（EXE 逐指令未坐实）：状态文案的具体 x/y、达成态的字色逐分支对应、
+    // guide 图标的确切摆放、两框相对位置。这里按坐标常量 + 合成图取最自洽的一组，
+    // 状态右落点借用同侧 cashItemPartPos.x=283。
+    static readonly Color32 SetWhite = new Color32(255, 255, 255, 255);
+    static readonly Color32 SetGray = new Color32(183, 191, 197, 255);     // font/common/gray
+    static readonly Color32 SetDarkGray = new Color32(133, 145, 159, 255); // font/common/darkGray
+    static readonly Color32 SetEmphasis = new Color32(255, 204, 0, 255);   // font/common/emphasis
+    static readonly Color32 SetRed = new Color32(255, 138, 24, 255);       // font/common/red
+    static readonly Color32 SetFrameBody = new Color32(46, 53, 61, 255);   // frame/set/mid 中心像素
+
     static int setCacheKey = int.MinValue;
     static List<AdminSetItem.SetPanel> setCache;
     static readonly List<int> wornBuffer = new List<int>();
 
-    sealed class SetRow
+    sealed class SetHeader
     {
-        public string text, slot;
-        public Color32 color;
-        public float inset;
+        public string Title, Count;
+        public bool Lucky;      // jokerPossible → textIcon/set/lucky
     }
 
-    static List<SetRow> SetRowsFor(int itemId, out string title)
+    sealed class SetRow
     {
-        title = null;
+        public string part, text, status;
+        public Color32 partColor, textColor, statusColor;
+        public bool guide;      // 效果区标题行：guide 图标 + 简体标题
+        public bool separator;  // 装备列表与效果区之间：itemListBottomMargin 7 + frame/set/line 3
+        public bool spacer;     // 档位之间：setEffectMargin 7
+        public bool highlight;  // boxNormal / boxLucky 行高亮底框
+        public bool lucky;
+        public bool tierLabel;
+        public float height = SetLineSpace;
+    }
+
+    // 282 三列：部件名 (14) / 道具名或效果正文 (89) / 状态 (右对齐 283)。
+    // 状态文案用简体：装备中 / 未装备 / (无)（原端是 裝備中 / 未裝備 / (無)）。
+    static List<SetRow> SetRowsFor(int itemId, out SetHeader header)
+    {
+        header = new SetHeader { Title = "", Count = "" };
         wornBuffer.Clear();
         if (GameSession.Character != null)
             foreach (var it in GameSession.Character.inventory)
@@ -736,28 +776,92 @@ public static class ItemTooltip
         var result = new List<SetRow>();
         if (setCache.Count == 0) return result;
         var panel = setCache[0];
-        title = panel.Name + " (" + panel.EquippedCount + "/" + panel.CompleteCount + ")";
-        var gold = new Color32(255,225,55,255);
-        var gray = new Color32(144,148,157,255);
+        header.Title = panel.Name;
+        header.Count = panel.EquippedCount + " / " + panel.CompleteCount;   // EXE "%d / %d"
+        header.Lucky = panel.JokerPossible != 0;
+
+        // —— 装备列表 ——
         foreach (var slot in panel.Slots)
         {
-            var alt = slot.Alts.Count > 0 ? slot.Alts[0] : null;
-            foreach (var candidate in slot.Alts) if (candidate.Equipped) { alt = candidate; break; }
-            foreach (var candidate in slot.Alts) if (candidate.ItemId == itemId) { alt = candidate; break; }
-            if (alt == null) continue;
-            result.Add(new SetRow { text = alt.Name, slot = "(" + alt.SlotName + ")",
-                color = alt.ItemId == itemId ? gold : alt.Equipped ? (Color32)Color.white : gray });
+            var alt = ChooseAlt(slot, itemId);
+            bool equipped = alt != null && alt.Equipped;
+            string name = alt != null ? alt.Name : "";
+            bool choice = !equipped && (alt == null || alt.ItemId != itemId) && slot.Alts.Count > 1;
+            if (choice && !string.IsNullOrEmpty(slot.Represent)) name = slot.Represent; // Desc「选择一件…」
+            if (string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(slot.Represent)) name = slot.Represent;
+            // (无) 对应 EXE 的 NOT_EXIST：槽组里一件候选都没有。282 的扁平 ItemID 表
+            // 让 completeCount 大于槽组数时，PanelsFor 会重复末槽补行（戒指/同类武器套装），
+            // 那些行有候选道具，所以显示「未装备」而不是「(无)」。
+            string status = equipped ? "装备中" : slot.Alts.Count == 0 ? "(无)" : "未装备";
+            var textColor = equipped ? SetWhite : slot.Alts.Count == 0 ? SetDarkGray : SetGray;
+            if (alt != null && alt.ItemId == itemId) textColor = SetEmphasis;
+            result.Add(new SetRow
+            {
+                part = "（" + slot.Part + "）",
+                text = name,
+                status = status,
+                partColor = SetGray,
+                textColor = textColor,
+                statusColor = equipped ? SetGray : SetDarkGray,
+                highlight = alt != null && alt.ItemId == itemId,
+                lucky = header.Lucky,
+            });
         }
-        if (panel.Tiers.Count > 0) result.Add(new SetRow { text = "套装效果", color = gold });
+
+        // —— 效果区（itemListBottomMargin 7 + frame/set/line 3 之后，guide 图标 + 档位 / 正文）——
+        if (panel.Tiers.Count > 0)
+        {
+            result.Add(new SetRow { separator = true, height = SetItemBottomMargin + 3f });
+            result.Add(new SetRow { guide = true, partColor = SetGray });
+        }
+        bool firstTier = true;
         foreach (var tier in panel.Tiers)
         {
+            if (!firstTier) result.Add(new SetRow { spacer = true, height = SetEffectMargin });
+            firstTier = false;
             bool active = panel.EquippedCount >= tier.Required;
-            result.Add(new SetRow { text = "[" + tier.Required + "件]", color = active ? (Color32)Color.white : gray });
-            foreach (var stat in tier.Stats)
-                result.Add(new SetRow { text = SetStatName(stat.Key) + " +" + stat.Value + SetStatSuffix(stat.Key),
-                    inset = 8, color = active ? new Color32(210,210,210,255) : gray });
+            var labelColor = active ? SetEmphasis : SetDarkGray;
+            var bodyColor = active ? SetWhite : SetDarkGray;
+            bool first = true;
+            foreach (var line in EffectLines(tier))
+            {
+                // 无对应机制的字段（如 incPQEXPr）用 red 标出「未接入」，不静默吞掉。
+                var color = line.EndsWith("（未接入）") ? SetRed : bodyColor;
+                result.Add(new SetRow
+                {
+                    part = first ? "[" + tier.Required + " 件]" : "",
+                    text = line,
+                    partColor = labelColor,
+                    textColor = color,
+                    statusColor = SetDarkGray,
+                    tierLabel = first,
+                });
+                first = false;
+            }
         }
         return result;
+    }
+
+    static AdminSetItem.SetPanelAlt ChooseAlt(AdminSetItem.SetPanelSlot slot, int itemId)
+    {
+        if (slot.Alts.Count == 0) return null;
+        foreach (var a in slot.Alts) if (a.ItemId == itemId) return a;
+        foreach (var a in slot.Alts) if (a.Equipped) return a;
+        return slot.Alts[0];
+    }
+
+    static IEnumerable<string> EffectLines(AdminSetItem.SetPanelTier tier)
+    {
+        bool any = false;
+        foreach (var stat in tier.Stats)
+        {
+            any = true;
+            yield return SetStatName(stat.Key) + " +" + stat.Value + SetStatSuffix(stat.Key);
+        }
+        foreach (var option in tier.Options) { any = true; yield return option; }
+        foreach (var skill in tier.Skills) { any = true; yield return skill; }
+        foreach (var unmapped in tier.Unmapped) { any = true; yield return unmapped; }
+        if (!any) yield return "—";
     }
 
     /// <summary>
@@ -773,40 +877,159 @@ public static class ItemTooltip
         return 12;
     }
 
-    static void DrawSetColumns(Vector2 origin, List<SetRow> rows, string title, int perColumn, float s)
+    // 保持工程原有的多栏拆分（用户决策「保持拆开」），只把单栏换成 282 的 298 宽
+    // frame/set 皮肤与三列坐标。每栏都重画顶栏，跨栏时件数与 SET 徽标不丢。
+    // 行高不统一（正文 15 / 分隔 10 / 档位间距 7），所以按累计高度切栏，不能按行数均分。
+    const float SetFooterH = SetListBottomMargin + SetBtmH;
+
+    static List<int[]> SplitSetColumns(List<SetRow> rows, float maxHeight)
     {
-        if (rows.Count == 0) return;
-        int columns = (rows.Count + perColumn - 1) / perColumn;
-        float tallest = (38 + Mathf.Min(rows.Count, perColumn) * 16) * s;
-        LastSetRect = new Rect(origin.x, origin.y, (columns * 240 - 4) * s, tallest);
-        var style = new GUIStyle { font = UiKit.Font, fontSize = Mathf.Max(1, Mathf.RoundToInt(12 * s)) };
-        for (int column = 0; column < columns; column++)
+        var columns = new List<int[]>();
+        int i = 0;
+        while (i < rows.Count)
         {
-            int start = column * perColumn, count = Mathf.Min(perColumn, rows.Count - start);
-            var rect = new Rect(origin.x + column * 240 * s, origin.y, 236 * s, (38 + count * 16) * s);
-            DrawFrame(rect, s);
-            style.normal.textColor = new Color32(255,225,55,255);
-            GUI.Label(new Rect(rect.x + 8*s, rect.y + 5*s, 220*s, 16*s), title,
-                new GUIStyle(style) { alignment = TextAnchor.MiddleCenter });
+            int start = i;
+            float used = 0f;
+            while (i < rows.Count)
+            {
+                float next = used + rows[i].height;
+                if (i > start && SetFirstRowY + next + SetFooterH > maxHeight) break;
+                used = next;
+                i++;
+            }
+            if (i == start) i++;   // 单行比整屏还高时也至少吃掉一行
+            columns.Add(new[] { start, i - start });
+        }
+        return columns;
+    }
+
+    static float ColumnHeight(List<SetRow> rows, int start, int count)
+    {
+        float used = 0f;
+        for (int i = 0; i < count; i++) used += rows[start + i].height;
+        return SetFirstRowY + used + SetFooterH;
+    }
+
+    static void DrawSetColumns(Vector2 origin, List<SetRow> rows, SetHeader header, List<int[]> columns, float s)
+    {
+        if (rows.Count == 0 || columns.Count == 0) return;
+        float tallest = 0f;
+        foreach (var c in columns) tallest = Mathf.Max(tallest, ColumnHeight(rows, c[0], c[1]));
+        LastSetRect = new Rect(origin.x, origin.y, (columns.Count * SetPanelPitch - 4f) * s, tallest * s);
+
+        var body = new GUIStyle
+        {
+            font = UiKit.Font,
+            fontSize = Mathf.Max(1, Mathf.RoundToInt(12 * s)),
+            alignment = TextAnchor.MiddleLeft,
+            clipping = TextClipping.Clip,
+            padding = new RectOffset(), margin = new RectOffset(),
+        };
+        var titleStyle = new GUIStyle(body)
+        {
+            fontSize = Mathf.Max(1, Mathf.RoundToInt(14 * s)),
+            fontStyle = FontStyle.Bold,
+        };
+        var countStyle = new GUIStyle(titleStyle) { alignment = TextAnchor.MiddleRight };
+        var rightStyle = new GUIStyle(body) { alignment = TextAnchor.MiddleRight };
+        var boldBody = new GUIStyle(body) { fontStyle = FontStyle.Bold };
+        var guideStyle = new GUIStyle(body);
+        guideStyle.normal.textColor = SetGray;
+
+        for (int column = 0; column < columns.Count; column++)
+        {
+            int start = columns[column][0], count = columns[column][1];
+            float x = origin.x + column * SetPanelPitch * s;
+            float h = ColumnHeight(rows, start, count);
+            EquipTexture("frame/set/mid", new Rect(x, origin.y + SetTitleH * s,
+                SetPanelWidth * s, (h - SetTitleH - SetBtmH) * s));
+            EquipTexture("frame/set/top", new Rect(x, origin.y, SetPanelWidth * s, SetTitleH * s));
+            EquipTexture("frame/set/btm", new Rect(x, origin.y + (h - SetBtmH) * s,
+                SetPanelWidth * s, SetBtmH * s));
+
+            // 顶栏：titleCanvasPos(14,20) SET 徽标 / titleNamePos(46,19) 套装名 /
+            // setCountPos(260,19)「%d / %d」。图标按 30px 顶栏垂直居中。
+            SetIcon("textIcon/set/normal", x + SetPartX * s, origin.y + 14f * s, 23f, 11f, s);
+            titleStyle.normal.textColor = SetWhite;
+            GUI.Label(new Rect(x + 46f * s, origin.y + 10f * s, 192f * s, 18f * s), header.Title, titleStyle);
+            if (header.Lucky)
+            {
+                float nameW = titleStyle.CalcSize(new GUIContent(header.Title)).x / Mathf.Max(.01f, s);
+                SetIcon("textIcon/set/lucky", x + (46f + nameW + 4f) * s, origin.y + 17f * s, 7f, 7f, s);
+            }
+            countStyle.normal.textColor = SetEmphasis;
+            GUI.Label(new Rect(x + 240f * s, origin.y + 10f * s, 43f * s, 18f * s), header.Count, countStyle);
+
+            float ry = origin.y + SetFirstRowY * s;
             for (int i = 0; i < count; i++)
             {
                 var row = rows[start + i];
-                style.normal.textColor = row.color;
-                float y = rect.y + (25 + i * 16) * s;
-                GUI.Label(new Rect(rect.x + (8 + row.inset)*s, y,
-                    (row.slot == null ? 220 - row.inset : 150)*s, 16*s), row.text, style);
-                if (row.slot != null)
-                    GUI.Label(new Rect(rect.x + 158*s, y, 70*s, 16*s), row.slot,
-                        new GUIStyle(style) { alignment = TextAnchor.MiddleRight });
+                if (row.separator)
+                {
+                    // itemListBottomMargin 7 之后是 frame/set/line（3px），再进入效果区。
+                    EquipTexture("frame/set/line",
+                        new Rect(x, ry + (row.height - 3f) * s, SetPanelWidth * s, 3f * s));
+                    ry += row.height * s;
+                    continue;
+                }
+                if (row.spacer) { ry += row.height * s; continue; }
+                if (row.guide)
+                {
+                    DrawGuide(x + SetPartX * s, ry, s, guideStyle);
+                    ry += row.height * s;
+                    continue;
+                }
+                if (row.highlight) DrawRowBox(x, ry - s, s, row.lucky);
+                var partStyle = row.tierLabel ? boldBody : body;
+                partStyle.normal.textColor = row.partColor;
+                GUI.Label(new Rect(x + SetPartX * s, ry, 72f * s, row.height * s), row.part, partStyle);
+                body.normal.textColor = row.textColor;
+                GUI.Label(new Rect(x + SetNameX * s, ry, 146f * s, row.height * s), row.text, body);
+                if (row.status != null)
+                {
+                    body.normal.textColor = row.statusColor;
+                    GUI.Label(new Rect(x + 235f * s, ry, (SetStatusRight - 235f) * s,
+                        row.height * s), row.status, rightStyle);
+                }
+                ry += row.height * s;
             }
         }
     }
 
-    // 套装面板的落点。源端 0x65C83012：x = 236 + 装备框 x + 4、y = 装备框 y（顶部对齐）。
+    static void SetIcon(string path, float px, float py, float w, float h, float s)
+    {
+        var node = EquipSkinNode(path);
+        if (node == null || node.Kind != "Canvas") return;
+        var texture = WzAssets.Texture(node);
+        if (texture == null) return;
+        var origin = node.Get("origin");
+        GUI.DrawTexture(new Rect(px - (origin?.X ?? 0) * s, py - (origin?.Y ?? 0) * s,
+            w * s, h * s), texture);
+    }
+
+    // textIcon/set/guide 61×12：左 48px 烘焙的是繁体「套組效果」，右侧是滑鼠捲动提示。
+    // 按「繁体数据转简体显示」把左侧盖成框体底色再写简体，右侧原像素保留。
+    static void DrawGuide(float px, float py, float s, GUIStyle style)
+    {
+        EquipTexture("textIcon/set/guide", new Rect(px, py, 61f * s, 12f * s));
+        Fill(new Rect(px, py, 48f * s, 12f * s), SetFrameBody);
+        GUI.Label(new Rect(px, py, 48f * s, 12f * s), "套装效果", style);
+    }
+
+    static void DrawRowBox(float x, float y, float s, bool lucky)
+    {
+        string pre = lucky ? "frame/set/boxLucky/" : "frame/set/boxNormal/";
+        float bh = lucky ? 16f : 14f;
+        EquipTexture(pre + "w", new Rect(x, y, 8f * s, bh * s));
+        EquipTexture(pre + "c", new Rect(x + 8f * s, y, (SetPanelWidth - 16f) * s, bh * s));
+        EquipTexture(pre + "e", new Rect(x + (SetPanelWidth - 8f) * s, y, 8f * s, bh * s));
+    }
+
+    // 套装面板的落点：x = 装备框 xMax + 4、y = 装备框 y（顶部对齐）。
     // 右边放不下改贴左侧；两侧都放不下才夹进屏幕。抽成纯函数是为了无渲染断言（TooltipLayoutChecks）。
     public static Rect SetPanelRect(Rect equip, float h, float s, float screenW, float screenH)
     {
-        float gap = 4f * s, w = 236f * s, ph = h * s;
+        float gap = 4f * s, w = SetPanelWidth * s, ph = h * s;
         float x = equip.xMax + gap;
         if (x + w > screenW - 4f)
         {
@@ -841,15 +1064,23 @@ public static class ItemTooltip
         if (key.Contains("LUK")) return "幸运";
         if (key.Contains("SPD")) return "移动速度";
         if (key.Contains("JMP")) return "跳跃力";
+        // 282 Effect/Option 新增口径
+        if (key.Contains("IgnoreDefense")) return "无视防御率";
+        if (key.Contains("CriticalChance")) return "暴击率";
+        if (key.Contains("CriticalDamage")) return "暴击伤害";
+        if (key.Contains("StatusRes")) return "状态异常耐性";
+        if (key.Contains("PvpDamage")) return "PvP伤害";
         return "属性";
     }
 
-    // 百分比后缀：StatusRes/BuffDuration 是绝对值，其余（Damage/Pct/Rate）带 %
+    // 百分比后缀：StatusRes 在 282 ItemOption 里是绝对值（+#incAsrR，无 %），
+    // 其余百分比类（Damage/Pct/Rate/Chance/IgnoreDefense）带 %。
     static string SetStatSuffix(string key)
     {
         if (key == null) return "";
         if (key.Contains("StatusRes") || key.Contains("BuffDuration")) return "";
-        if (key.Contains("Pct") || key.Contains("Rate") || key.Contains("Damage")) return "%";
+        if (key.Contains("Pct") || key.Contains("Rate") || key.Contains("Damage")
+            || key.Contains("Chance") || key.Contains("IgnoreDefense")) return "%";
         return "";
     }
 

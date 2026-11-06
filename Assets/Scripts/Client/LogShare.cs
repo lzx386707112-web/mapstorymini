@@ -168,6 +168,7 @@ public static class LogShare
 
         static void Publish(AndroidJavaObject activity, string name, byte[] data)
         {
+            AndroidJNI.AttachCurrentThread();
             try
             {
                 int sdk = new AndroidJavaClass("android.os.Build$VERSION").GetStatic<int>("SDK_INT");
@@ -181,6 +182,7 @@ public static class LogShare
                 Debug.LogError("[Log] 日志分享失败：" + e.Message);
                 try { SaveToDownloads(name, data); } catch (Exception) { }
             }
+            finally { AndroidJNI.DetachCurrentThread(); }
         }
 
         // Android 10+：MediaStore.Downloads 是官方给「导出文件」用的入口，

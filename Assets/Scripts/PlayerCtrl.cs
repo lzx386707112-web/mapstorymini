@@ -1684,6 +1684,12 @@ public class PlayerCtrl : MonoBehaviour
             Attributes.dex += baseAttributes.dex*warrior/100;
             Attributes.intelligence += baseAttributes.intelligence*warrior/100;
             Attributes.luk += baseAttributes.luk*warrior/100;
+            // 282 普力特的祝福第 3 层「全屬性增加#q」是 flat 主属性（q=25+等级），
+            // 不是百分比；MAPLE_WARRIOR 那条是%，两者口径不同不能合并。
+            Attributes.str += buffs.Value("STR");
+            Attributes.dex += buffs.Value("DEX");
+            Attributes.intelligence += buffs.Value("INT");
+            Attributes.luk += buffs.Value("LUK");
             int hpBuff=buffs.Value("HYPERBODYHP"),mpBuff=buffs.Value("HYPERBODYMP");
             if (hpBuff!=0) Attributes.maxHp=(int)System.Math.Max(50,System.Math.Min(50000,Attributes.maxHp+(long)Attributes.maxHp*hpBuff/100));
             if (mpBuff!=0) Attributes.maxMp=(int)System.Math.Max(5,System.Math.Min(50000,Attributes.maxMp+(long)Attributes.maxMp*mpBuff/100));

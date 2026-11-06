@@ -1058,3 +1058,353 @@ range = 1（秒）  q = 800+32*x（伤害%）  q2 = 5（段数）  u = 15（目�
 
 顺带说明为什么它之前「测不出来」：贴脸 1.2 单位站位根本不在这个框里，
 探针加了 `-dmgStandoff <世界单位>` 才量得到。远程/落点型技能都要用它。
+
+## 19. 两处「看着像缺效果」的实测结论（2026-11-06 下午）
+
+### 19.1 雷霆戰槌 `400011131` 没有 `ball`，锤子体是 `special/front`
+
+282 pack 的顶层子节点里根本没有 `ball`：
+
+```text
+action common effect(17帧) effect0(23帧,z=-1) extraSkillInfo hit number(99)
+psd psdSkill showStackCooltimeNum skillList special vSkill weapon*
+```
+
+`special` 下挂 `0` 与 `front` 两个子段（锤子本体 + 前方拖影）。
+所以「缺 ball」不是漏导，是本来就没有这一层。
+
+真正的问题在 `SkillVisuals.SpecialLayer`：它把 `special` 一律当成「按 count 多次生成」，
+沿 `x`（默认 200px）对称铺开 —— 于是 `special/0` 落在人物左边 100px、
+`special/front` 落在右边 100px，**且不分朝向**。表现就是「锤子没飞出去／左右各一个」。
+
+修：`special` 有两种形态，数据能区分：
+
+```text
+分支上写了 count        → 多次生成（400011003 神聖團結的 special 才是分波次），按份数铺开
+分支上没有 count        → 层级容器（锤子本体 + 前方拖影），叠在同一处；
+                          子段名以 /front 结尾 → 放到朝向那一侧，/back → 反侧
+```
+
+### 19.2 圣十字架「没伤害」：命中框是真的窄，先看 `[Hit]` 日志再判断
+
+加了开关（菜单 `Tools/技能诊断/伤害日志 开/关`，键 `PlayerPrefs "debug_hitlog"`），
+打开后每次结算打印一行：
+
+```text
+[Hit] id=400011072 lv=30 kind=Attack dmg%=515 段=12 目标上限=12
+      框=(-5.25, -2.50)~(5.25, 0.75) hasBounds=True ⇒ 选中=1 命中=1 总伤害=381
+```
+
+小怪一发就死，**只看死没死判断不出问题**：伤害是 1 还是 1 万都叫「打死了」。
+这一行才能区分三种情况：`选中=0`（打空）、`命中>0 总伤害=0`（算出 0）、`总伤害` 太小（数值不够）。
+
+实测得到的关键事实：
+
+- 命中框 `±210px` 是**真实 282 数据**（pack 里 `lt=[-210,-100] rb=[210,30]`），
+  而光束视觉长度是 `w=1080`。**看得见 ≠ 打得到**，这是源端口径。
+- ⚠️ ~~项目 IMG 与 282 pack 的 `lt/rb` 不一致~~ **此结论已作废（2026-11-06 复核）**。
+  用 BMS 密钥解出商业端 `Skill_00005.ms → Skill/40001.img`，与项目
+  `MapleDashResources/Data/Skill/40001.img`（GMS 等长 XOR 版）逐字段比对：
+  `400011072` 两份都是 `lt=[-210,-100] rb=[210,30]` 且都有 `lt2/rb2/lt3/rb3/lt4/rb4`。
+  真正写 `lt/rb=null` 的是 **`400011052` 祝福之鎚母技能**（商业端本来就没有框，
+  `VMatrixSkills.json` 里的 ±210 是按 `boundsFrom` 从子技能 `400011053` 继承的合成值）。
+  旧结论把「导出表丢字段」误记成了「源端两份数据不同」，详见 §21。
+- 按住期间后续发包 `选中=0` 多数是**目标已经不在框内**（框只有 ±210px），
+  不是冷却/结算被挡。
+
+### 19.3 圣十字架的光束长度：`w` 要接到判定框上
+
+`common` 同时给了两个互相矛盾的数：
+
+```text
+lt = [-210, -100]   rb = [210, 30]    ← 每发判定框，前向只有 210px
+w  = 1080                             ← 光束的视觉长度（px）
+```
+
+只按 `lt/rb` 结算，画面上一道光束贯穿半个屏幕、实际只有贴身的怪掉血。
+`w` 是源端给的光束长度，按住期间应该沿朝向把前向接到 `w` 上。
+
+修（`NativeSkillDefinition` 构造末尾，**只对按住连续攻击生效**）：
+
+```text
+Kind == "Attack" 且 NativeSkillVfx.RapidAttack(id) 且 common/w > 0
+⇒ 若 w/PPU > -Min.x，则 Min.x = -w/PPU
+```
+
+不动后向（`Max.x`）与高度（`Min.y/Max.y`），也不碰非按住型技能 ——
+普通技能的 `w` 语义不是光束长度（雷神战槌 `w=60`，神聖團結 `w=1000` 都不是光束）。
+
+修后 `圣十字架` 的框从 `Min(-5.25,-2.50)` 变成 `Min(-27.00,-2.50)`，即身前 1080px。
+
+## 20. 周期攻击（祝福之鎚）：母技能开状态、子技能出每一发
+
+用户原话「祝福之锤有连续攻击效果，但是后续的攻击没看到特效」。先看 282 节点再改代码：
+
+- `400011052`：只有 `common` 的 `mpCon/cooltime/x/y/w/q/z/s/v`，
+  `info/type=11 + areaAttack=1`，层只有 `special`(8) 与 `ball/0..2`。
+  **没有 damage / time / attackDelay**，这是「召唤/开状态」的壳。
+- `400011053`（`invisible=1`）：`damage=525+21*x`、`attackCount=4`、`mobCount=8`、
+  `time=30`、`attackDelay=1800`、`subTime=300`、`lt=[-210,-245] rb=[210,175]`，
+  层有 `special`(8)、`ball/0..2`、`effect`(7)、`effect0`(8, z=-1)、`hit/0`、
+  `action/0=5thBlessedHammer`。**每一发的数值与表现都在这里。**
+- `VMatrixSkills.json` 把子技能数值合并进了母技能行（所以 C# 侧从母技能行能读到
+  `time/attackDelay/damage/lt/rb`）。这不是母技能 IMG 的字段，别拿 `400011052` 的 vfx
+  去播后续发次 —— 它只有召唤动画。
+
+修复（`NativeSkillFollowups.cs` / `SkillVisuals.cs` / `SkillSystem.cs`）：
+
+1. `SkillDef` 加 `visualKeyOverride`：`native` 仍用母技能（判定框/伤害/proc 的 id 口径不变），
+   `vfx` 换成 `NativeSkillVfx.Key(400011053, level)`。`BeginVisuals` 的
+   `effect/effect0/special` 与 `Impact` 的 `hit/0` 因此全部走子技能。
+2. `RepeatAttack` 每发 = `BeginVisuals(body,true)` + `RepeatingHammer` + `HitAt`；
+   另加 `[Repeat] tick=N` 调试标记（`debug_hitlog=1` 时）。
+3. `RepeatingHammer` 轮换 `ball/0..2`、至少 0.45s：普通 `Fly` 只有 ~70ms，肉眼看不见，
+   这是「没特效」的第二个根因。
+4. `Cast` 协程对 `IsRepeatingSkill(id)` 跳过 `ProjectileCast`。母技能带 `ball` 会被
+   `UsesProjectile` 误判成弹道，而其 `launch=p.SkillActionDuration*500` 是 **6 秒**，
+   表现就是「周期里该出的没有，6 秒后莫名多飞出一颗」。
+5. 排程用真实时间 deadline，不用 `WaitForSeconds`（后者受 timeScale 影响，与
+   `Time.realtimeSinceStartupAsDouble` 混用会漂移）。
+
+验证用 `Assets/Editor/SkillRepeatPlayChecks.cs`：Play Mode 运行时协程采样 +
+`Application.logMessageReceived` 按日志顺序归因（`[Repeat] tick=N` → `[FxPlay]`/`[Hit]`）。
+**batchmode 的 `EditorApplication.update` 会被节流、帧时间戳会跳变，按时间分窗必错。**
+修前三个周期窗口新特效层全 0；修后 9 个 tick 每发 4~6 个新层 + 1 次结算，
+6 次真实命中 1483 伤害，截图能看到金色锤环与爆点。
+
+## 21. 商业端 vs 服务端：逐项复核「导错了」还是「没找到」（2026-11-06）
+
+用户指出「282 是商业端，技能没问题；服务端不是商业端，会有问题」，据此把上一轮
+登记成「源端数据缺失」的条目全部重查。**先分清三份数据**，否则任何"源端没有"都是假结论：
+
+| 身份 | 路径 | 读法 |
+|---|---|---|
+| **商业端客户端** | `~/Documents/mxd/MapleStory/Data/Packs/*.ms` | ChaCha20-v4 加密容器，`java -cp tools/ms282/out ms282.MsUnpack <file.ms> list/extract` 解包；解出的 `Skill_*.img` 要 **BMS 密钥**（GMS 读会静默得到 0 节点） |
+| 商业端散落资源 | `MapleStory/Data/Etc/{VCore,HexaCore}.img`、`String/Skill.img` | 同样 BMS 密钥 |
+| **服务端套件（非商业端）** | `TMS282.5/data/wz282/*.img.xml`、`data/protocol/tms282.3/vmatrix-data.json`、`data/dat282/skills` | XML 是导出快照，缺画布/部分字段，不能拿来断言商业端 |
+| 项目运行资源 | `MapleDashResources/Data/Skill/*.img` | 商业端 IMG 的 **GMS 等长 XOR 改写版**，字段与商业端逐字一致 |
+
+复核结论：
+
+1. **技能定义数据源没导错**：`/tmp/packs/Skill_40001.img`、`40002.img` 与从
+   `Skill_00005.ms` 现解的 IMG **MD5 完全相同**。`export_vhexa_skills.py` 用的就是商业端。
+2. **核心表没导错**：商业端 `VCore.img/vSkill/CoreData` 580 个核心与
+   `Assets/Resources/UI/VMatrix.json` 逐条比对 → id / name / connectSkill **0 差异**
+   （只有强化核心的 `jobs` 是项目从职业组补的，商业端 coreData 里为空，属正常补全）。
+   注意 `VMatrix.json` 的 `source.file` 指向服务端协议 `vmatrix-data.json`，但内容与商业端一致。
+3. ✅ **真正「导错了」**：`tools/ms282/export_advanced_skills.py:362 level_rows()` 把
+   vector 字段白名单写死成 `("lt","rb")`，商业端的
+   `lt2/rb2 / lt3/rb3 / lt4/rb4 / pos` 全被丢弃。
+   例：`400011072 聖十字架` 商业端 `common` 有 **四组框**
+   (`[-210,-100]..[210,30]`、`[-65,-245]..[65,175]`、`[-300,-160]..[300,90]`、
+   `[-125,-335]..[125,265]`)，导出表只剩第一组 ⇒ 之前只能拿 `w=1080` 硬凑前向框，
+   ICBM `400051024` 也只有 `lt2/rb2`，得在 C# 侧另打回退补丁。
+   **已修**：`level_rows()` 改为保留所有 `(list,tuple)` 字段并重新导出；
+   diff = 526 技能不变、**已有字段数值 0 变化**、补回 1800 个字段
+   (`lt2/rb2` 各 660、`lt3/rb3` 各 180、`lt4/rb4` 各 30、`pos` 60)。
+4. ✅ 配套修 `NativeSkillCatalog.cs`：282 的 `ltN/rbN` 不全是判定框，
+   `400021092 火蜥蜴的恶作剧` 的 `lt2/rb2=[65,-42]..[67,-40]` 只有 2×2px（真框在
+   `lt3/rb3=±1300×±750`），`400001008/400041038` 的 lt2 是 0 宽竖线。
+   补全字段后若不过滤，这些技能会从「可见范围」退化成几像素框 ⇒ 放得出来打不到怪。
+   现在备用框宽/高 <20px 就跳过，主 `lt/rb` 口径不变。
+5. ✅ 「项目 IMG 无框 / pack 有框」是**错误记忆**：两份都有 `±210`。
+   真正无框的是 `400011052 祝福之鎚` 母技能，`VMatrixSkills.json` 的 `±210` 是
+   `boundsFrom` 从子技能 `400011053` 继承的**合成值**。
+6. ✅ 「两套口径」的真相：`VMatrixSkills.json` 只收录 526 个技能（`JOBS` 17 个职业 +
+   核心连接技能），而核心表共引用 857 个 id。其余走 `SkillBook.Get()` 的 IMG 兜底
+   （按字段猜类型）。所以差异来自**导出覆盖**，不是商业端有两份数据。
+
+### 逐项分类（上一轮被误记为「源端缺」的条目）
+
+| 条目 | 商业端证据 | 定性 |
+|---|---|---|
+| `400011069` 枪刺旋风收尾冲击波 | `400011068/keydownFinish=400011069`、`psdSkill` 里也有；400011069 自己有 `damage=564+23*x / attackCount / lt/rb / multiAttackInfo` | **没接**（`StopHeld` 松手路径未分发），不是源端缺 |
+| `400011121 極冰風暴` | 有 `lt/rb=±500/-400..250`、`additional_process`、`effect/special` 79 帧；`h` 写明 `u2`=冰塊伤害%、`u3`=次数、`u`=敌人数、`t`=冰块冷却 | **没接机制**（诅咒状态 + 命中生成冰塊 proc）；按 `damage/attackCount` 猜类型才判成 passive，不能简单补别名当 AOE（会凭空多一发） |
+| `400001024 普力特祝福` | `h` 完整写出 6 层：`w`=CD 缩短、`z`=异常耐性、`q`=全属性、`u`=攻/魔、`v`=Boss 伤、`x`=最大叠加 | **没导效果表**（数值都在 common），不是源端缺 |
+| `400011028/mask`、`400011104/rushEffect` | 商业端技能节点里确实有这两层 | **没接取层**（`CastVisuals` 层名白名单没覆盖） |
+| `400021008 / 048 / 074 / 096` | 商业端 `VCore.img` 有 4 个核心（`job=14212` 超能力者）指向它们；但全 6 个商业端 Skill IMG **节点名 0、整数引用 0**，`String/Skill.img` 97 个 4000210xx 名字里也没有，`HexaCore.img` 无对应核心 | **商业端自身不同步**：核心表先登记、技能包未打包（且导出脚本 `JOBS` 不含 14212）。既不是我们导错，也不是没找到；不要再用服务端 XML 去"证明源端有" |
+
+复验（Unity Play Mode，重导数据后）：编译 0/0、三份日志 0 异常；
+圣十字架 6 包 / 8054 伤害 / 击杀 27，枪刺旋风 10 包 / 8086 / 21，
+祝福之鎚 9 个 tick 每发都有新层+结算，雷神战槌 `effect0/effect/special/0` 正常。
+`400021092` 是 `type=summon`（`time=40 / dot=15`），`Cast` 在 Summon 分支直接
+`yield break`，伤害探针测不到 `HitAt` 属探针不适用，特效 `effect/effect0` 正常。
+
+## 22. 四条「商业端有、我们没接」的机制全部接上（2026-11-06 下午）
+
+上一轮 §21 把四条定性为「没接」。这一轮全部接完，并在 Play Mode 里逐条验过。
+共同前提：这四条技能在 `SkillBook` 里都会**掉进 passive**（`common` 没有
+`damage/attackCount/time/prop`），按下去只回「被动技能无需施放」——
+所以每条都要先在 `SkillBook.Get()` 的分类之后显式登记类型。
+
+### 22.1 `keydownFinish` 松手收尾子技能
+- 商业端节点：`Skill/<img>.img/skill/<id>/keydownFinish`，**全库只有 4 条**
+  （`400011068→400011069` 槍刺旋風 / `400041059→400041060` 暗影投擲 /
+  `400051046→400051097` 小萌新吉祥物 / `400051078→400051079` 破碎連拳）。
+  子技能一律 `invisible=1`，`common` 自带 `damage/attackCount/mobCount/lt/rb`，
+  `String/Skill.img` 里只有名字、没有 `h` ⇒ 数值与表现全在子技能。
+- 导出：`tools/ms282/export_skill_finishers.py` → `Assets/Resources/NativeSkillFinishers.json`
+  （母技能 `common` + `h` 给「几波 / 间隔多少」，波数字段名逐条不同：`z`/`u2`/`v`）。
+- 运行时：`Assets/Scripts/NativeSkillFinishers.cs`，入口 `SkillHeldInput.StopHeld(true)`；
+  蓄力型不叠加（它自己松手才结算）。伤害/判定框全走子技能的 `SkillBook.Native(childId, level)`，
+  本文件不写任何伤害常量。
+- 守卫：`tools/ms282/check_skill_finishers.py`。
+
+### 22.2 `mask` / `rushEffect` 取层
+- `400011104 [神速]奔馳的閃光` 的 `rushEffect/0` 是 13 帧突进残影，跟着角色走，
+  `SkillVisuals.CastVisuals` 已按 `effect` 同一口径取层（`z` 先读 clip 再回退分支，`z<0` 画在施法者之后）。
+- ⚠️ `400011028 火神重擊` 的 `mask` **不是可直绘图层**：商业端节点只是占位
+  （`origin=967,116 / z=0 / delay=90 / _outlink=Skill/_Canvas/40001/400011028.img/...`），
+  解出来的画布是 **1368x164、R=G=B=0、alpha 99.9% 不透明** 的纯黑 stencil。
+  第一版把它当精灵播，Play Mode 截图里就是屏幕正中一条黑条，把角色整个人盖掉。
+  282 是拿它做遮罩/混合用的，**EXE 侧混合方式未逆向 ⇒ 一个像素都不要画**。
+  审计白名单里保留 `mask` 只为不误报，取层代码里已显式排除（注释写明原因）。
+
+### 22.3 極冰風暴 400011121：诅咒 + 冰塊 proc
+- 整条链是**三个技能**：`400011121` 母技能（`info/type=1`，`lt/rb=-500,-400..500,250`，
+  `effect` 23 帧 + `special` 4 组 = 那 79 帧）/ `400011123` 光芒状态
+  （`invisible=1`、`time=20 / subTime=5000 / mobCount=5`、自带 `lt/rb=-550,-350..550,200`）/
+  `400011122` 冰塊伤害体（`invisible=1`、`damage=640+25*x / attackCount=4 / mobCount=15 /
+  cooltimeMS=400 / lt/rb=±750..400`）。
+- `h` 的字母语义：`u2`=冰塊伤害%、`u3`=段数、`u`=敌人数、`t`=冰塊冷却(秒)、
+  `q/q2`=持续与刷新上限、`y`=叠层上限、`v`=每层加的攻击次数。
+- 导出 `tools/ms282/export_skill_curses.py` → `NativeSkillCurses.json`；运行时
+  `NativeSkillCurses.cs`：`StartCurse` 按母技能框上诅咒 + 起 `CurseLights`（每 5s 补一层，
+  **用 400011123 自己的框选人**，不是母技能的）；`TriggerCurseOnHit` 在每次真实命中后，
+  若命中的是「被诅咒目标」且过了 400ms 冷却，就生成冰塊（段数按叠层加）。
+- **不要给它补 `u2→damage` 别名**：那会把母技能变成一发凭空的 1390% AOE。
+- 守卫 `tools/ms282/check_skill_curses.py`。
+
+### 22.4 普力特的祝福 400001024：六层叠加
+- `h` 逐层写死：1 层 `w`=其余技能 CD 缩短%、2 层 `z`=异常耐性、3 层 `q`=全属性、
+  4 层 `u`=攻/魔、5 层 `v`=Boss 伤害%、6 层无敌；`x`=最多 6 层、`s`=持续 30s、
+  `cooltime=25`，若到期或叠满则冷却 `y=240s`。
+- 导出 `tools/ms282/export_skill_stacks.py` → `NativeSkillStacks.json`（按 1..maxLevel 展开）；
+  运行时 `NativeSkillStacks.cs`：每次施放 `stackCount+1` 并**重写同 skillId 的 Effect**
+  （`NativeBuffs.ApplyStack` 内部 `Register` 会先移除旧条目），所以「叠一层 = 保留前面所有层
+  + 新增一层」正好是逐层累加的 stat 集合；`EffectiveCooldown` 读 `CooldownReducePercent`
+  对所有技能生效；到期协程清层并把该技能锁进 240s。
+- 第 3 层的 `STR/DEX/INT/LUK` 是**flat**（不是 %），`PlayerCtrl.RefreshBuffAttributes` 里
+  单独加，不能和 `MAPLE_WARRIOR` 的百分比合并。
+- 守卫 `tools/ms282/check_skill_stacks.py`。
+
+### 22.5 验证探针 `Assets/Editor/SkillFeaturePlayChecks.cs`
+```text
+Unity -batchmode -projectPath . -executeMethod SkillFeaturePlayChecks.Run \
+      -featureHold 2.0 -featureShots /tmp/feature -logFile /tmp/feature.log
+```
+四条纪律，违反任何一条都会得到假结论：
+1. **每发之前 `Prep`**（补 `mpMax/mp`、清 `actionUntil/actionBlocking/actionSkillId`、清 `states`）。
+   阶段内连放两个技能时，前一个的 `actionUntil` 会把后一个拒成「正在释放技能」
+   （`400011131` 就这么假失败过一次）。
+2. **收尾冲击波单独成段放最后**：8 波 × `intervalMs` 在 batchmode 节流下真实耗时会膨胀好几倍，
+   放中间会被后面的阶段切断统计；这一段等「8 波全到或超时」再收尾。
+3. **收尾的 `StartFinisher` 必须在松手之后判**：松手在前、等待在后，顺序反了就永远等不到。
+4. **放 500px 框的技能前要贴到最近怪身前**（`StandNearMob`）：测试场小怪常站在框外，
+   否则 `[Curse] apply targets=0`，看着像机制没接上，其实是没框到人。
+
+实测（`/tmp/feature4` 那一轮）：① 收尾 8/8 波、`400011069` 命中 8 次；
+② `mask` / `rushEffect/0` 都出层；③ 诅咒 `applied=4`、冰塊 `body=400011122 stacks=3 hits=6 targets=3`；
+④ 六层逐层 `cdReduce=10 → +ASR → +STR..LUK → +PAD/MAD → +BossDamage → +INVINCIBLE`。
+编译 0/0、日志 0 异常。
+
+## 23. 全职业技能回归（2026-11-06）：覆盖面与唯一实质缺口
+
+一次性扫 1343 个技能（JobTree ∪ VMatrix 核心连接，去重去 invisible），
+探针 `Assets/Editor/SkillFullSweepChecks.cs`：
+
+```text
+Unity -batchmode -projectPath . -executeMethod SkillFullSweepChecks.Run \
+      -sweepFrom 0 -sweepCount 450 -sweepHold 0.18 -logFile /tmp/sweep_0.log
+```
+
+### 23.1 结果
+- **节点解析**：`SkillVfxFamilyAudit` 族层丢层 0、没人在播的视觉分支 0；
+  `check_skill_vfx.py` 的 148 处「整族没像素」全是源端 1×1 空占位（无 outlink），不是解析漏。
+- **施放**：676 被动 / 624 可施放 / 43 被拒。被拒原因全可解释：`hpCon` 18、物品 8、
+  弹药 4（+复测 21）、二段跳 2、轮回碑石/飞镖/海龙石 3、**`400021008/048/074/096` 缺技能数据 4**
+  （商业端核心表登记、技能包没打包，再次确认）。
+- **命中**：攻击型 414 → 324 直接命中、58 长窗口命中（投射物飞行）、
+  21 缺弹药未测、11 仍 0 命中（`400031053` 是源端点框 20×0px；其余多为探针归因窗口太短）。
+- **效果解释**：唯一实质缺口是**强化核心四件套没结算**，已修（见 23.2）；
+  其余未接字段（`damR_6th` 65、`indie*`、`dotInterval`、`updatableTime`、`forceCon`、
+  `ballDelay*`）只是没接，不是读不到。
+
+### 23.2 强化核心（VMatrix type=1）的加成
+- 结构：核心连 `400004xxx` 包装技能（`info/type=50`），包装技能 `psdSkill` 列出被强化的
+  既有技能，`common` 只有 `damR_5th`（最终伤害%）、`targetPlus_5th`（目标数）、
+  `ignoreMobpdpR`（无视防御%）、`bdR`（Boss 伤害%）。306 核 / 1156 条连线。
+- 导出 `tools/ms282/export_enhance_cores.py` → `NativeSkillEnhance.json`（每级压成
+  `[damR,targetPlus,ignorePdp,boss]` 数组，对象写法会到 1.7MB）；
+  运行时 `NativeSkillEnhance.cs`，等级读 `VMatrixLevels.TryGet(包装技能id)`。
+- 结算点：`CombatRules.Attack` 里 damage% 之后乘 `1+damR/100`、无视防御并入
+  `ignoreDefense`、Boss% 并入 `ApplyDamage` 的额外百分比；`SkillSystem.HitAt` 目标数
+  `+ targetPlus`。未装核心时四项恒 0，既有口径不变。
+- 守卫 `check_enhance_cores.py`；验证 `SkillEnhanceChecks.Run`（静态）与
+  `SkillEnhanceChecks.RunDamage`（伤害通道：78 → 172，倍率 2.205）。
+- ⚠️ **踩到的老坑**：第一版用 `Art.Int(core,"w")` 取包装技能 id，400004008 被 float 舍成
+  400004000 ⇒ 加成恒 0。id 一律 `Art.Id`（IRON-RULES §7.1），守卫里已加这条断言。
+
+## 24. 全职业回归扫出来的第二、三、四类缺口（2026-11-06 下午）
+
+§23 修掉「强化核心装了等于没装」之后，继续按同一份扫测结果往下清。这一轮补的四条
+都是「字段/机制在商业端写得很清楚、项目里一条都没读」的类型，不是猜的。
+
+### 24.1 强化核心的等级链路本身是断的（比 damR_5th 更根本）
+- `400004xxx`（V 强化核心包装）与 `500004xxx`（HEXA 强化包装）都是 `info/type=50`，
+  **不在 JobTree 里** ⇒ `SkillBook.Get()` 返回 null ⇒ `SkillProgress.LevelOf(wrapper)` 恒 0。
+  所以这类强化只能靠 `VMatrixLevels` 这张等级镜像表。
+- 这张表以前只有**打开面板**才会写（`NativeVMatrixWindow.Load` / `NativeHexaMatrixWindow.Load`）。
+  不打开面板的玩家 ⇒ 等级 0 ⇒ 306 个 V 强化核心 + 65 个 HEXA 强化全都不生效。
+  已修：`GameSession.SelectChar` 里 `RefreshMatrixLevels()` 主动拉一次 V / HEXA 快照。
+- 更隐蔽的一条：`Capture` 与 `CaptureHexa` 都是「整份重建」语义，共用一张表时
+  **打开一次 V 面板就会把 HEXA 等级清掉**。已拆成 `matrixLevels` / `hexaLevels` 两张表，
+  `TryGet` 先查 V 再查 HEXA。
+- 守卫 `check_enhance_cores.py` 现在断言：`RefreshMatrixLevels()` 存在、`CaptureHexa` 被调用、
+  两张表分开、运行时不用 `SkillProgress.LevelOf` 取包装技能等级。
+
+### 24.2 六转强化 `damR_6th`（65 条 / 138 个被强化技能）
+- 结构与 V 强化核心同构，只是列只有「最终伤害」一项：
+  `500004006 強化聖十字架 psdSkill=[400011072] common{damR_6th=10+x+5*log10(x)+5*log20(x)+10*log30(x)}`
+  ⇒ Lv1=11%、Lv30=60%。
+- 导出并入 `NativeSkillEnhance.json`（`s` 字段区分等级来源：0=V、1=HEXA），
+  运行时同一套 `Bonus()` 结算 —— 不需要第二套乘区。
+- 实测：`400011072` 无 HEXA 143 → Lv30 230，**倍率 1.608**（+60% 完全对上）。
+
+### 24.3 持续伤害 `dot` / `dotTime` / `dotInterval`（30 条可结算）
+- 三字段成组：`dot`=每跳伤害%（与 `damage` 同口径）、`dotInterval`=间隔秒、`dotTime`=总时长秒。
+  例 `1121015 藍焰恐懼` Lv30：`dot=165% / 2s / 60s` = 30 跳。
+- 项目此前**一条都没结算**（全代码搜不到 `dotInterval`）：这些技能只出首段 `damage`，
+  后续几十跳全丢，血条是「一下掉一段」而不是持续下滑。
+- 导出 `tools/ms282/export_skill_dots.py` → `NativeSkillDots.json`（按级展开 `[dmg,秒,间隔]`）；
+  运行时 `NativeSkillDots.cs`：命中后给每个目标挂标记，每 `interval` 秒结算一次，
+  走 `NativeSkillReplay.Adapt(首段行, 1, damage%, dot%)` + `ApplyReplayHit` ——
+  保留暴击/无视/强化核心整条乘区，不另起一条 roll 通道。
+- **同技能同目标重复命中 = 刷新不是叠加**（源端 dot 是覆盖）；换图/死亡清标记。
+- 6 条只有 `dot` 没 `dotTime`：`1241500` `15141500` `2241000` `400011039` `400021042` `400041009`。
+  前两条是放置型领域（时长归 `updatableTime`/`ndTime`），后两条 `dotInterval` 不是 DoT 语义
+  （`2241000` 暴风雪VI 的间隔另有含义）。全部登记在 `unresolved`，**没有硬套**。
+- 守卫 `check_skill_dots.py`。
+
+### 24.4 技能震屏（93 条 = 单段 56 + 多段 37）
+- **两种写法都要读**：`trembleEffect{force,time,delay,reduction}` 是单段；
+  `trembleEffectList/{0,1,2..}` 是**多段**（每段自带 delay/force/time，共 37 条、其中 33 个多段技能）。
+  只读单段的话，暴风系列 / 连续打击类技能一次都不震 —— 第一次就漏了这 37 条。
+- `force` 是原端点阵振幅（实测 1~80）、`time` 毫秒、`delay` 起播延迟毫秒。
+  多段按 `delay` 升序逐段起协程，不能串行（后面的段会被推到最后）。
+- 换算照抄已验证过的怪物震屏（`NativeMobController.TrembleAmplitude = 30f/Art.PPU`）：
+  `force / Art.PPU` 就是世界单位振幅。不另设夹值 —— 夹了就跟源端不成比例。
+- 导出 `tools/ms282/export_skill_tremble.py` → `NativeSkillTremble.json`；
+  运行时 `NativeSkillTremble.cs`（`SkillSystem` 的 partial），`Cast` 里 `PlayTremble(s)`，
+  每个 wave 一条协程，按 `delay` 起震、`time` 衰减，走 `HitFeel.Shake`
+  （系统设置「画面效果」总开关已经在那里判）。
+- 守卫 `check_skill_tremble.py`。
+
+### 24.5 Play Mode 探针的两个致命坑（`Assets/Editor/SkillSidePlayChecks.cs`）
+1. **进 Play 会触发域重载**：静态字段与 `EditorApplication.update` 的委托全丢。
+   只在 `Run()` 里注册一次 ⇒ `Tick` 永不再跑，进程空转几分钟、日志刷满
+   `There are no audio listeners in the scene`。必须在 `[InitializeOnLoadMethod]` 里重新挂。
+2. **刷怪要按候选图轮换并设上限**：在同一张空图上反复 `field.Enter` 会无限循环。
+   换图计时与阶段计时必须是两个变量，共用一个会让阶段推进乱序。
+3. 测试角色没学某条技能时 `TryCastSkill` 回「技能尚未学习」—— 用
+   `VMatrixLevels.Capture` 注入一个假核心给它 30 级（`BaseLevelOf` 里镜像优先于存档）。

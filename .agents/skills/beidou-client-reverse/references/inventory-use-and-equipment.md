@@ -54,6 +54,16 @@ info来自spec/npc与spec/script；脚本名可空（2029001快捷菜单npc99000
 
 - NativeItemUseEffects：210召唤袋按mob/id与prob独立抽取；228/229按职业、reqSkillLevel/masterLevel及scroll_chance_rolls；技能上限不再依赖持有书籍，未学技能的master也持久化。
 - 普通卷轴走 NativeScrollService：原分类、req、升级次数、白卷保护、织女星、混沌/诅咒、GM/config；原装备实例属性参与战斗。白卷/织女星的窗口与动画仍待接线。
+
+### 砸卷上限：源端语义与本地单机口径（2026-11-06 用户决定，属已确定结论）
+
+源端身份与调用链：`gms-server/src/main/java/org/gms/net/server/channel/handlers/ScrollHandler.java`（普通卷 `toScroll.getUpgradeSlots() < 1` 拒绝；`isCleanSlate` 走 `canUseCleanSlate`；`isModifierScroll` / `isLiangyiScroll` 豁免槽位检查）→ `ItemInformationProvider.scrollEquipWithId`（`assertGM = isGM && GameConfig.getServerBoolean("use_perfect_gm_scroll")`；`if (!assertGM && !isModifierScroll) setUpgradeSlots(slots-1)`、`setLevel(level+1)`；`canUseCleanSlate` 判据 `freeUpgradeCount + appliedScrollCount < totalUpgradeCount + viciousCount`；`LIANGYI_SCROLL=2049920` 成功时无条件 `+1` 槽且不加 level）。配置身份 `V1.7.0__create_game_config.sql` 的 `('server','GM',...,'use_perfect_gm_scroll','true','GM砸卷不消耗次数，必成功')`。
+
+偏差原因：本项目默认 `admin` 账号恒 `gm=6`（`AccountsDao.DefaultGmLevel`，教程 `GrantTutorialAdmin` 也写 gm=6），因此源端「GM 不消耗次数」在本地等价于所有玩家可无限砸卷，属性无限叠加；良医卷能与普通卷轮流把槽位刷上去。用户 2026-11-06 明确选择「GM 必成功但照扣次数」。
+
+本地落地（`Assets/Scripts/Server/World/NativeScrollService.cs`）：`perfect` 只决定 `success`（保留 100% 成功），成功分支去掉 `!perfect` 条件、除修饰卷外一律 `slots-1`；失败分支去掉 `!perfect`；`restores = Clean(sid) || sid==2049920` 统一按 `slots+level >= tuc+vicious` 或 `tuc==0` 拒绝，提示带「已用 / 上限」。扣槽后 `slots+level` 恒等于 `tuc+vicious`，砸满即被 `slots<1` 拦住。修饰卷 2040727/2041058（只改 flag）、`NativeMakerService.AddBoostedMakerItem`、`MarketScrollPricing.ScrollEquip` 三处仍按源端口径，未改。
+
+复现依据：`tools/server-check/ScrollChecks.cs` 新增回归——GM 连续砸 9 次只有 7 次成功、槽 0 / level 7 / 攻击力只 +7、第 8 次起提示含「剩 0 次」；模拟失败损失 2 次后良医卷补 2 次、第 3 次被「已用 7 / 上限 7」拒绝；白卷同判据。守卫 2267/0，`tools/unity-compile-check/Check.csproj` 0 error。验证边界：仅服务端结算与提示，客户端 `NativeItemUseEffects.Scroll` 只转发请求；未做 Android 实机验收，未验证后台手改 `upgradeslots` 的脏存档。
 - 203城镇卷轴读spec/moveTo、跨大陆条件、目标图随机出生点；2030100回驱逐前位置限5分钟；NativeMobController驱逐先记录来源。
 - spec/isHasItem按原hasItemId/Quantity/Time生成带分钟到期的物品，加载/使用/运行时清除到期；26件缺脚本物品经用户决定保持源端不可用并归为源端缺失。
 - 原damage_cap_breakthrough.js保持原文，NpcSession保存ItemId，im.getItemId/isItemScript/useDamageCapBreakthroughStone接入；2431152..7增加30万/50万/200万/1000万/1亿/5亿，50%成功，溢出不增但扣石，persist damageCap接攻击/追击。

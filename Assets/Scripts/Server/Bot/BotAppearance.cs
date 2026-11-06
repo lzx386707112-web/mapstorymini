@@ -21,11 +21,15 @@ namespace Server.Bot
                 int slot = -entry.Key;
                 if (slot > 100 && slot != 111) visible[slot - 100] = entry.Value;
             }
-            var ids = new List<string> { (2000 + actor.skinColor).ToString("D8"),
-                (12000 + actor.skinColor).ToString("D8"), actor.face.ToString("D8"), actor.hair.ToString("D8") };
+            int skin = actor.skinColor;
+            int face = actor.face > 0 ? actor.face : (actor.gender == 1 ? 21009 : 20012);
+            int hair = actor.hair > 0 ? actor.hair : (actor.gender == 1 ? 31000 : 30000);
+            var ids = new List<string> { (2000 + skin).ToString("D8"),
+                (12000 + skin).ToString("D8"), face.ToString("D8"), hair.ToString("D8") };
             int weapon = 0;
             foreach (var entry in visible)
             {
+                if (entry.Value <= 0) continue;
                 int type = entry.Value / 10000;
                 if (entry.Key == 11) { weapon = entry.Value; continue; }
                 if (type == 100 || type == 104 || type == 105 || type == 106 || type == 107 ||

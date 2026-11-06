@@ -47,6 +47,10 @@ public partial class SkillSystem
         heldPreparation=null;
         // 起手动作播完 = 光束已经出来，从这里开始 Update 才会逐发结算。
         heldReady=true;
+        // 本体层必须在这里补播：rapid 分支在 BeginCast 里是提前 return 的，
+        // 走不到正常施法那条 BeginVisuals ⇒ effect / special / affected 这些
+        // 「真正的主特效」从来没出现过。表现就是「按住了、怪掉血，但屏幕上只有起手动作」。
+        BeginVisuals(definition,true);
     }
     void StopHeld(bool release)
     {
@@ -65,9 +69,20 @@ public partial class SkillSystem
             // 蓄力松手才真正施放一次：这条调用不带 boundHeldAction，
             // 所以不会再次落进 held 分支（不会自我递归）。
             if(charging && previous.native!=null)TryCastSkill(previous.native.Id);
-            // 连射的保底一发：起手动作还没播完（0.9s 的 prepare）就松手时，
-            // Update 一次都没轮到，不补这一发就是「特效放了、怪一点没掉血」。
-            else if(!charging && !heldFired && previous.native!=null)BeginCast(previous,true);
+            // 「点一下就出伤害」：起手动作还没播完（0.9s 的 prepare）就抬手时，
+            // Update 一次都没轮到，heldFired 还是 false。这里补一发纯结算包
+            // （continuousShot=true ⇒ 不再扣冷却/MP/弹药，也不重新校验闸门），
+            // 不补就是「只播特效、怪一点没掉血」。屏上快捷格点按、虚拟按钮短按
+            // 都走这条；按住超过 prepare 的由 Update 逐发结算，heldFired 已是 true。
+            else if(!charging && !heldFired && previous.native!=null)
+            {
+                heldFired=true;
+                BeginCast(previous,true);
+            }
+            // 282 的 keydownFinish：按住结束时按子技能再打 N 波收尾冲击波
+            // （槍刺旋風 400011068 → 400011069，8 波 x 15 段）。见 NativeSkillFinishers.cs。
+            // 蓄力型有自己的松手结算，不叠加收尾。
+            if(!charging)StartFinisher(previous);
         }
     }
     void Update()

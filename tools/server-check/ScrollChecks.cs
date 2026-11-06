@@ -134,6 +134,28 @@ static class ScrollChecks
             Check(DbStore.Int(InventoryDao.EquipmentOf(db, legacy), "upgradeslots") == 9,
                 "补种后 tuc 10 → 9，实际 " + DbStore.Int(InventoryDao.EquipmentOf(db, legacy), "upgradeslots"));
 
+            // 属性已经被星力/星火种上、槽位仍是 0（星力只写 base 属性，从不写 upgradeslots）；
+            // 砸卷必须只补槽位，不能把已有属性重置回模板，更不能以「0 槽」拒绝。
+            // 用户实测：武器上完星力，提示里的「可升级次数」变成 0，且砸不上卷。
+            long starred = InventoryDao.InsertItem(db, cid, 1302000, 1, 40, 1);
+            InventoryDao.InsertEquipment(db, starred);
+            NativeInventoryService.Handle(db, new InventoryChangeRequest
+            { characterId = cid, itemId = 1302000, equip = true, quantity = 1, equipSlot = -11, sourcePosition = 40 });
+            var starredEq = InventoryDao.EquipmentOf(db, starred);
+            starredEq["watk"] = 205L; starredEq["starLevel"] = 12L;
+            starredEq["upgradeslots"] = 0L; starredEq["level"] = 0L;
+            starredEq["nativeStats"] = 1L; starredEq["enhancementVersion"] = 282L;
+            InventoryDao.InsertItem(db, cid, 2043000, 2, 41, 1);
+            var starredScroll = NativeScrollService.Apply(db, new EquipPatchRequest
+            { characterId = cid, inventoryItemId = starred, scrollId = 2043000, scrollPosition = 41 }, new Random(7));
+            Check(starredScroll.ok, "上过星力、槽位 0 的武器能砸卷（" +
+                (starredScroll.ok ? starredScroll.scrollResult : starredScroll.error) + "）");
+            var starredAfter = InventoryDao.EquipmentOf(db, starred);
+            Check(DbStore.Int(starredAfter, "upgradeslots") == 6,
+                "补种 7 次后砸掉 1 次，实际 " + DbStore.Int(starredAfter, "upgradeslots"));
+            Check(DbStore.Int(starredAfter, "watk") == 206,
+                "补槽位不能重置已有属性（205+1），实际 " + DbStore.Int(starredAfter, "watk"));
+
             // 提示必须能自己说明白：哪件装备、还剩几次、上限几次（不然「没砸过却说不足」无从查）
             long steel = Wear(db, cid, 1672043, Check);   // 鋼鐵未來心臟 tuc2
             for (int round = 0; round < 2; round++)
@@ -166,6 +188,57 @@ static class ScrollChecks
                 && silverScroll.error.Contains("鋼鐵未來心臟（2 槽）") && silverScroll.error.Contains("鈦未來心臟（10 槽）")
                 && silverScroll.error.Contains("銀未來心臟（0 槽）"),
                 "2616004 砸銀未來心臟 → 0 槽提示 + 六款槽数清单（" + silverScroll.error + "）");
+
+            // —— GM 完美卷轴不再无限砸卷（用户「装备砸卷没有上限」）——
+            // 源端 use_perfect_gm_scroll 默认 true：GM 必成功且不扣升级次数。本项目默认 admin 号
+            // gm=6，等于无限砸。本地只保留「必成功」，成功照样扣次数，砸满 tuc 即停。
+            db.Table("characters").Update(DbStore.Eq("id", (long)cid), new DbRow { ["gm"] = 6L });
+            long gmWeapon = WearWeapon(db, cid, 1302000, Check);
+            var gmBefore = InventoryDao.EquipmentOf(db, gmWeapon);
+            int gmSlots = DbStore.Int(gmBefore, "upgradeslots"), gmAttack = DbStore.Int(gmBefore, "watk");
+            Check(gmSlots == 7, "GM 武器按 tuc 补种 7 次，实际 " + gmSlots);
+            int gmSuccess = 0;
+            EquipPatchResponse gmLast = null;
+            for (int round = 0; round < 9; round++)
+            {
+                InventoryDao.InsertItem(db, cid, 2043000, 2, 70 + round, 1);
+                var r = NativeScrollService.Apply(db, new EquipPatchRequest
+                { characterId = cid, inventoryItemId = gmWeapon, scrollId = 2043000, scrollPosition = 70 + round }, new Random(7));
+                gmLast = r;
+                if (r.ok && r.scrollResult == "success") gmSuccess++;
+            }
+            var gmAfter = InventoryDao.EquipmentOf(db, gmWeapon);
+            Check(gmSuccess == 7, "GM 必成功但只砸得动 7 次（tuc），实际 " + gmSuccess);
+            Check(DbStore.Int(gmAfter, "upgradeslots") == 0 && DbStore.Int(gmAfter, "level") == 7,
+                "GM 砸满后槽 0 / level 7，实际 " + DbStore.Int(gmAfter, "upgradeslots") + " / " + DbStore.Int(gmAfter, "level"));
+            Check(DbStore.Int(gmAfter, "watk") == gmAttack + 7,
+                "GM 攻击力只涨 7 次，实际 +" + (DbStore.Int(gmAfter, "watk") - gmAttack));
+            Check(gmLast != null && !gmLast.ok && gmLast.error.Contains("剩 0 次"),
+                "第 8 次起砸卷被拒（" + (gmLast == null ? "无结果" : gmLast.error) + "）");
+
+            // 恢复类卷轴统一按 tuc + vicious 封顶：良医卷 2049920 源端是「无条件 +1 槽」。
+            long restoreWeapon = WearWeapon(db, cid, 1302000, Check);
+            var restoreEq = InventoryDao.EquipmentOf(db, restoreWeapon);
+            restoreEq["upgradeslots"] = 5L;   // 模拟失败损失 2 次：slots+level=5 < tuc=7
+            restoreEq["level"] = 0L;
+            for (int round = 0; round < 2; round++)
+            {
+                InventoryDao.InsertItem(db, cid, 2049920, 2, 100 + round, 1);
+                var r = NativeScrollService.Apply(db, new EquipPatchRequest
+                { characterId = cid, inventoryItemId = restoreWeapon, scrollId = 2049920, scrollPosition = 100 + round }, new Random(7));
+                Check(r.ok && DbStore.Int(InventoryDao.EquipmentOf(db, restoreWeapon), "upgradeslots") == 6 + round,
+                    "良医卷把损失的次数补回第 " + (round + 1) + " 次（" + (r.ok ? r.scrollResult : r.error) + "）");
+            }
+            InventoryDao.InsertItem(db, cid, 2049920, 2, 102, 1);
+            var over = NativeScrollService.Apply(db, new EquipPatchRequest
+            { characterId = cid, inventoryItemId = restoreWeapon, scrollId = 2049920, scrollPosition = 102 }, new Random(7));
+            Check(!over.ok && over.error.Contains("没有可恢复的升级次数") && over.error.Contains("上限 7"),
+                "良医卷不能超过 tuc（" + over.error + "）");
+            InventoryDao.InsertItem(db, cid, 2049000, 2, 103, 1);
+            var cleanOver = NativeScrollService.Apply(db, new EquipPatchRequest
+            { characterId = cid, inventoryItemId = restoreWeapon, scrollId = 2049000, scrollPosition = 103 }, new Random(7));
+            Check(!cleanOver.ok && cleanOver.error.Contains("没有可恢复的升级次数") && cleanOver.error.Contains("上限 7"),
+                "白卷同样不能超过 tuc（" + cleanOver.error + "）");
         }
         finally
         {
@@ -181,6 +254,27 @@ static class ScrollChecks
         var res = NativeInventoryService.Handle(db, new InventoryChangeRequest
         { characterId = cid, itemId = itemId, equip = true, quantity = 1, equipSlot = -54, sourcePosition = 0 });
         Check(res.ok, "穿上心脏 " + itemId + (res.ok ? "" : "（" + res.error + "）"));
+        return rowId;
+    }
+
+    // 必须走真实发装备路径：建行时按 tuc 补种 upgradeslots。手工 InsertEquipment 会留下
+    // 全 0 行，砸第一张卷时 Pristine 补种会把属性重置成模板值，基线就不准了。
+    static long WearWeapon(DbStore db, int cid, int itemId, Action<bool, string> Check)
+    {
+        var gain = NativeInventoryService.Handle(db, new InventoryChangeRequest
+        { characterId = cid, itemId = itemId, quantity = 1 });
+        Check(gain.ok, "发一件武器 " + itemId + (gain.ok ? "" : "（" + gain.error + "）"));
+        long rowId = 0; int bagPosition = 0;
+        foreach (var row in db.Table("inventoryitems").rows)
+            if (DbStore.Int(row, "characterid") == cid && DbStore.Int(row, "itemid") == itemId
+                && DbStore.Int(row, "position") > 0 && DbStore.Long(row, "inventoryitemid") > rowId)
+            { rowId = DbStore.Long(row, "inventoryitemid"); bagPosition = DbStore.Int(row, "position"); }
+        Check(rowId > 0 && bagPosition > 0, "找到新发的武器行");
+        var res = NativeInventoryService.Handle(db, new InventoryChangeRequest
+        { characterId = cid, itemId = itemId, equip = true, quantity = 1, equipSlot = -11, sourcePosition = bagPosition });
+        Check(res.ok, "穿上武器 " + itemId + (res.ok ? "" : "（" + res.error + "）"));
+        var worn = db.Table("inventoryitems").Find(x => DbStore.Long(x, "inventoryitemid") == rowId);
+        Check(worn != null && DbStore.Int(worn, "position") < 0, "武器落在穿着位 -11");
         return rowId;
     }
 

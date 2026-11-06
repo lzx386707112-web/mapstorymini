@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 // ————————————————————————————————————————————————————————————
@@ -70,6 +71,7 @@ public static class GameSideMenu
         public string title;
         public string desc;          // 普通项的描述
         public bool gameplayOnly;
+        public bool touchOnly;       // 只有触屏端（Android）才有意义的条目，桌面版不列出来
         public Action run;
 
         // —— 开关项：state 不为 null 就是「点一下改状态」的条目 ——
@@ -94,6 +96,7 @@ public static class GameSideMenu
             descOn = "显示中 · 点击隐藏",
             descOff = "已隐藏 · 点击显示",
             gameplayOnly = false,
+            touchOnly = true,           // 桌面版是纯键鼠，没有屏上按键
             state = () => VirtualControls.OverlayVisible,
             run = ToggleVirtualControls,
         },
@@ -103,6 +106,7 @@ public static class GameSideMenu
             title = "按键布局",
             desc = "调整位置、大小与样式",
             gameplayOnly = false,
+            touchOnly = true,           // 同上：布局编辑器是给屏上按键摆位置的
             run = OpenVirtualEditor,
         },
         new MenuEntry
@@ -139,6 +143,23 @@ public static class GameSideMenu
     static float openedAt;
     static bool fromRight;
     static bool swallow;
+
+    // 实际列出来的条目：桌面版去掉触屏专用项。
+    // 命中、绘制、可用性全部走这张表，索引不会和绘制顺序错位。
+    static List<MenuEntry> entries;
+    static List<MenuEntry> Entries
+    {
+        get
+        {
+            if (entries == null)
+            {
+                entries = new List<MenuEntry>(items.Length);
+                foreach (var item in items)
+                    if (!item.touchOnly || GamePlatform.TouchControls) entries.Add(item);
+            }
+            return entries;
+        }
+    }
 
     static bool pressing;
     static bool pressMouse;
@@ -673,15 +694,15 @@ public static class GameSideMenu
             if (hit >= 0 && hit == EntryAt(pressPos) && EntryEnabled(hit))
             {
                 // 开关项：原地切换，面板留着 —— 关掉面板就看不到状态怎么变的
-                if (items[hit].IsSwitch)
+                if (Entries[hit].IsSwitch)
                 {
-                    var toggle = items[hit].run;
+                    var toggle = Entries[hit].run;
                     ResetPress();
                     toggle?.Invoke();
                     return;
                 }
 
-                var run = items[hit].run;
+                var run = Entries[hit].run;
                 Close(true);
                 run?.Invoke();
                 return;
@@ -733,13 +754,13 @@ public static class GameSideMenu
 
     static int EntryAt(Vector2 p)
     {
-        for (int i = 0; i < items.Length; i++)
+        for (int i = 0; i < Entries.Count; i++)
             if (EntryRect(i).Contains(p)) return i;
         return -1;
     }
 
     static bool EntryEnabled(int index)
-        => !items[index].gameplayOnly
+        => !Entries[index].gameplayOnly
         || (GameLoop.I != null && GameLoop.I.state == GameLoop.GameState.Playing);
 
     static Color A(Color c, float a)
@@ -839,11 +860,11 @@ public static class GameSideMenu
         UiKit.Fill(new Rect(r.x + Inset + 46f, HeaderH + 17f, PanelW - Inset * 2f - 46f, 1f),
             new Color(1f, 1f, 1f, 0.05f));
 
-        for (int i = 0; i < items.Length; i++)
+        for (int i = 0; i < Entries.Count; i++)
         {
             bool enabled = EntryEnabled(i);
-            bool isSwitch = items[i].IsSwitch;
-            bool on = isSwitch && items[i].state();
+            bool isSwitch = Entries[i].IsSwitch;
+            bool on = isSwitch && Entries[i].state();
             var card = EntryRect(i);
             bool down = enabled && pressing && !pressOutside && !pressDragged && hotEntry == i;
             bool hover = enabled && !Application.isMobilePlatform && !pressing && card.Contains(MouseGui());
@@ -854,7 +875,7 @@ public static class GameSideMenu
             var icon = new Rect(card.x + 14f, card.y + (card.height - 52f) * 0.5f, 52f, 52f);
             Round(icon, !enabled ? new Color(0.10f, 0.12f, 0.15f, 0.9f)
                                  : isSwitch && !on ? new Color(0.115f, 0.135f, 0.17f, 0.95f) : IconBg);
-            VirtualControls.Label(icon, items[i].GlyphNow, 24,
+            VirtualControls.Label(icon, Entries[i].GlyphNow, 24,
                 enabled ? (isSwitch && !on ? new Color(0.66f, 0.72f, 0.80f) : new Color(0.88f, 0.96f, 1f))
                         : new Color(0.58f, 0.62f, 0.68f),
                 TextAnchor.MiddleCenter, 1);
@@ -862,9 +883,9 @@ public static class GameSideMenu
             float tx = icon.xMax + 14f;
             float tw = card.xMax - tx - (isSwitch ? 70f : 42f);
             VirtualControls.Label(new Rect(tx, card.y + 18f, tw, 26f),
-                items[i].title, 19, enabled ? TxtMain : TxtDim, TextAnchor.MiddleLeft, 1);
+                Entries[i].title, 19, enabled ? TxtMain : TxtDim, TextAnchor.MiddleLeft, 1);
             VirtualControls.Label(new Rect(tx, card.y + 46f, tw, 20f),
-                enabled ? items[i].DescNow : "进入游戏后可编辑", 12,
+                enabled ? Entries[i].DescNow : "进入游戏后可编辑", 12,
                 enabled ? TxtDim : new Color(0.48f, 0.51f, 0.57f),
                 TextAnchor.MiddleLeft, 0);
 

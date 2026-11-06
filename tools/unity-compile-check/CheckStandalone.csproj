@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    桌面独立播放器（Windows 版）口径的编译检查。
+
+    Windows Build Support 没装时无法真正出包，这里用 MacStandalone 的 Mono Managed 程序集
+    配 UNITY_STANDALONE_WIN 定义，把 #if UNITY_STANDALONE && !UNITY_EDITOR 里的代码
+    （WzWindowsLoader、GamePlatform 的桌面分支）也过一遍编译器。
+    只编 Assets/Scripts —— Assets/Editor 在播放器构建里根本不参与。
+
+    用法：dotnet build CheckStandalone.csproj
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>AssemblyCSharpStandaloneCheck</AssemblyName>
+    <NoWarn>CS0649;CS0414;CS0169;CS0219;CS0162;CS0067;CS0108;CS0114</NoWarn>
+    <UnityManaged>/Applications/Unity/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/Variations/mono/Managed</UnityManaged>
+    <DefineConstants>UNITY_STANDALONE;UNITY_STANDALONE_WIN;ENABLE_MONO;UNITY_2022_3_OR_NEWER</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(UnityManaged)/*.dll" />
+  </ItemGroup>
+</Project>

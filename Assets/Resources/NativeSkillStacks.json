@@ -1,0 +1,2011 @@
+{
+ "source": {
+  "packs": "/tmp/packs",
+  "nodes": "Skill/<img>.img/skill/<id>/common + String/Skill.img h",
+  "note": "公式按 1..maxLevel 展开；stat 键对应本项目 PlayerCtrl / NativeBuffs 现有消费点"
+ },
+ "stacks": {
+  "400001024": {
+   "parent": 400001024,
+   "parentName": "普力特的祝福",
+   "levels": {
+    "1": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 10,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 26,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 10,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 10,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "2": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 11,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 27,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 11,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 11,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "3": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 11,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 28,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 11,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 11,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "4": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 12,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 29,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 12,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 12,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "5": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 12,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 30,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 12,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 12,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "6": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 13,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 31,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 13,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 13,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "7": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 13,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 32,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 13,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 13,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "8": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 14,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 33,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 14,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 14,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "9": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 14,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 34,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 14,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 14,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "10": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 15,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 35,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 15,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 15,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "11": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 15,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 36,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 15,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 15,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "12": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 16,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 37,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 16,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 16,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "13": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 16,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 38,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 16,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 16,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "14": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 17,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 39,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 17,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 17,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "15": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 17,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 40,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 17,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 17,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "16": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 18,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 41,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 18,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 18,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "17": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 18,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 42,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 18,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 18,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "18": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 19,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 43,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 19,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 19,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "19": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 19,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 44,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 19,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 19,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "20": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 20,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 45,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 20,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 20,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "21": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 20,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 46,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 20,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 20,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "22": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 21,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 47,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 21,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 21,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "23": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 21,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 48,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 21,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 21,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "24": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 22,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 49,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 22,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 22,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "25": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 22,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 50,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 22,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 22,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "26": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 23,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 51,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 23,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 23,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "27": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 23,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 52,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 23,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 23,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "28": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 24,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 53,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 24,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 24,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "29": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 24,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 54,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 24,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 24,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    },
+    "30": {
+     "maxStacks": 6,
+     "durationSec": 30,
+     "cooldownSec": 25,
+     "exhaustCooldownSec": 240,
+     "effects": [
+      {
+       "layer": 1,
+       "field": "w",
+       "stats": [
+        "CooldownReduce"
+       ],
+       "value": 10,
+       "h": "不受冷卻時間初始化效果影響的技能之外，其餘技能的冷卻時間縮短#w%"
+      },
+      {
+       "layer": 2,
+       "field": "z",
+       "stats": [
+        "ASR"
+       ],
+       "value": 25,
+       "h": "異常狀態耐性增加#z"
+      },
+      {
+       "layer": 3,
+       "field": "q",
+       "stats": [
+        "STR",
+        "DEX",
+        "INT",
+        "LUK"
+       ],
+       "value": 55,
+       "h": "全屬性增加#q"
+      },
+      {
+       "layer": 4,
+       "field": "u",
+       "stats": [
+        "PAD",
+        "MAD"
+       ],
+       "value": 25,
+       "h": "攻擊力/魔力增加#u"
+      },
+      {
+       "layer": 5,
+       "field": "v",
+       "stats": [
+        "BossDamage"
+       ],
+       "value": 25,
+       "h": "攻擊Boss怪物時傷害增加#v%"
+      },
+      {
+       "layer": 6,
+       "field": "invincible",
+       "stats": [
+        "INVINCIBLE"
+       ],
+       "value": 100,
+       "h": "持續時間內無敵"
+      }
+     ]
+    }
+   },
+   "evidence": {
+    "hStack": "使用時持續#s秒並賦予可疊加最多#x次的增益，每疊加一次獲得先前效果並疊加新效果",
+    "hExhaust": "若未刷新疊加而持續時間結束或達到最大疊加，則冷卻時間為#y秒",
+    "nodes": [
+     "common",
+     "info",
+     "notIncBuffDuration",
+     "notCooltimeReset",
+     "vSkill",
+     "icon",
+     "iconMouseOver",
+     "iconDisabled",
+     "canJobRidingUse",
+     "changeSkillJob"
+    ]
+   }
+  }
+ }
+}

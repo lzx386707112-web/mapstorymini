@@ -6,24 +6,43 @@ using UnityEngine;
 public partial class SkillSystem
 {
     readonly List<SkillFx> ownedVisuals=new List<SkillFx>();
+    // 调试开关：PlayerPrefs "debug_hitlog"=1 时把每次真正生成的层打一行日志。
+    // 不能在 static 字段初始化器里读 PlayerPrefs —— MonoBehaviour 的构造/字段初始化
+    // 阶段 Unity 禁止调用它，会让整个 SkillSystem 抛 TypeInitializationException。
+    // 改成首次真正播层时（已经在 Play 的 Update 里）惰性读一次并缓存。
+    static bool fxDebugChecked, fxDebugValue;
+    static bool FxDebug
+    {
+        get
+        {
+            if (!fxDebugChecked) { fxDebugChecked = true; fxDebugValue = PlayerPrefs.GetInt("debug_hitlog", 0) != 0; }
+            return fxDebugValue;
+        }
+    }
     SkillFx Visual(string key,string part,Vector3 point,int facing,Transform follow=null,bool loop=false,int order=360)
     {
         var fx=SkillFx.PlayPart(key,part,point,facing,1,order,loop);
         if(fx!=null){ownedVisuals.RemoveAll(item=>item==null);ownedVisuals.Add(fx);if(follow!=null)fx.Follow(follow);}
+        if(FxDebug && fx!=null)Debug.Log("[FxPlay] key="+key+" part="+fx.Part);
         return fx;
     }
-    void BeginVisuals(SkillDef s)
+    void BeginVisuals(SkillDef s,bool bodyOnly=false)
     {
-        StartCoroutine(CastVisuals(s,p.FeetPos,p.facing));
+        StartCoroutine(CastVisuals(s,p.FeetPos,p.facing,bodyOnly));
     }
-    IEnumerator CastVisuals(SkillDef s,Vector2 origin,int facing)
+    // bodyOnly：只播「本体」层（effect/affected/special…），跳过 prepare 与起手等待。
+    // 周期攻击（祝福之鎚每 1.8 秒补一发）复用它，否则后续每一发只有伤害、屏幕上什么都没有。
+    IEnumerator CastVisuals(SkillDef s,Vector2 origin,int facing,bool bodyOnly=false)
     {
-        foreach(string branch in NativeSkillVfx.Layers(s.vfx,"prepare"))
-            foreach(var clip in NativeSkillVfx.Parts(s.vfx,branch))
-                PlayLayer(s.vfx,clip,p.FeetPos,facing,p.transform,360);
-        float delay=Preparation(s);
-        if(delay>0)yield return new WaitForSeconds(delay);
-        if(delay>0)p.PlaySkill(s.action);
+        if(!bodyOnly)
+        {
+            foreach(string branch in NativeSkillVfx.Layers(s.vfx,"prepare"))
+                foreach(var clip in NativeSkillVfx.Parts(s.vfx,branch))
+                    PlayLayer(s.vfx,clip,p.FeetPos,facing,p.transform,360);
+            float delay=Preparation(s);
+            if(delay>0)yield return new WaitForSeconds(delay);
+            if(delay>0)p.PlaySkill(s.action);
+        }
         // z<0 是施法者后层，不是全场景背景。282 的 effect 是 effect/effect1..6 的族，
         // 每层的 z 可能写在分支上（effect1 z=-1），逐层取。
         foreach(string branch in NativeSkillVfx.Layers(s.vfx,"effect"))
@@ -41,6 +60,21 @@ public partial class SkillSystem
         foreach(string branch in NativeSkillVfx.Layers(s.vfx,"affected"))
             foreach(var clip in NativeSkillVfx.Parts(s.vfx,branch))
                 PlayLayer(s.vfx,clip,p.FeetPos,facing,p.transform,360);
+        // 400011104 [神速]奔馳的閃光 的 rushEffect/0（13 帧突进残影，画布约 1000x400）。
+        // 口径同 effect：z 先读 clip、再回退分支；z<0 画在施法者之后。
+        //
+        // 400011028 火神重擊 的 mask **不能这样画**：解出来的画布是 1368x164、
+        // R=G=B=0、alpha 99.9% 不透明 —— 那是**纯黑 stencil**（282 拿它做遮罩/混合），
+        // 当精灵直接叠上去就是屏幕正中一条黑条，把角色整个人盖掉（实测截图即是）。
+        // 想做对必须先逆向 EXE 对 mask 的混合方式，没逆向前一个像素都不要画。
+        foreach(string stem in new[]{"rushEffect"})
+            foreach(string branch in NativeSkillVfx.Layers(s.vfx,stem))
+                foreach(var clip in NativeSkillVfx.Parts(s.vfx,branch))
+                {
+                    int z=(int)NativeSkillVfx.Number(s.vfx,clip.path,"z");
+                    if(z==0) z=(int)NativeSkillVfx.Number(s.vfx,branch,"z");
+                    PlayLayer(s.vfx,clip,p.FeetPos,facing,p.transform,z<0 ? p.SortingOrder-1 : 360+Mathf.Max(0,z));
+                }
         // 282 V 技能把角色/链接对象身上的后续演出放在
         // specialAffected、specialAffected1、specialAffected2，而不是 affected。
         // 神聖團結的翅膀与持续光效就在这三组；只播 effect/special 会留下前半段的蓝色核心。
@@ -335,10 +369,28 @@ public partial class SkillSystem
         float width=NativeSkillVfx.Number(s.vfx,branch,"x",200)/Art.PPU;
         float height=NativeSkillVfx.Number(s.vfx,branch,"y")/Art.PPU;
         float fall=height>0 ? NativeSkillVfx.Number(s.vfx,branch,"duration",500)/1000 : 0;
+        // `special` 有两种形态，数据本身能区分，不能一律按「多次生成」沿 x 铺开：
+        //   ① 多次生成：分支上写了 count（400011003 神聖團結的 special 才是分波次）；
+        //   ② 层级容器：分支上没有 count，子段是「同一处的前后景分层」
+        //      （400011131 雷神戰槌的 special/0 + special/front，一锤子的本体 + 前方拖影）。
+        // 旧写法对 ② 也按份数铺开，结果锤子在人物左右各一个、且不分朝向 ——
+        // 表现就是「锤子没飞出去／多出一个」。
+        bool spread=NativeSkillVfx.Number(s.vfx,branch,"count")>0;
         for(int i=0;i<count;i++)
         {
+            var clip=parts[i%parts.Count];
             // y 是发射高度，不能拿 fall 当高度，否则烈火箭会从屏幕外落下。
-            float x=origin.x+((i+.5f)/count*2-1)*width;
+            float x;
+            if(spread) x=origin.x+((i+.5f)/count*2-1)*width;
+            else
+            {
+                // 不铺开时只按子段名分前后：front 放到朝向那一侧，back 放反侧，其余叠在原点。
+                // 子段可能是 `special/front`（一层）也可能是 `special/front/0`（多层），
+                // 所以按「路径里含 /front/」判断，不能只看结尾。
+                int dir=ContainsSegment(clip.path,"front")?facing
+                    :ContainsSegment(clip.path,"back")?-facing:0;
+                x=origin.x+dir*width;
+            }
             Vector3 point=new Vector3(x,origin.y+height,0);
             if(s.art=="doom")
             {
@@ -346,7 +398,6 @@ public partial class SkillSystem
                 point.x=origin.x+Mathf.Lerp(s.native.Min.x,s.native.Max.x,(i+.5f)/count);
                 point.y=origin.y+(i%3)*45/Art.PPU;
             }
-            var clip=parts[i%parts.Count];
             // special 也会分前后景：层 z 为负就落到施法者之后。
             float z=NativeSkillVfx.Number(s.vfx,clip.path,"z");
             if(z==0) z=NativeSkillVfx.Number(s.vfx,branch,"z");
@@ -355,8 +406,21 @@ public partial class SkillSystem
             yield return new WaitForSeconds(Mathf.Max(.001f,interval));
         }
     }
-    IEnumerator Fall(SkillFx fx,Vector3 from,Vector3 to,float duration)
+    // 路径里是否含某一段名字：`special/front` 与 `special/front/0` 都算含 "front"，
+    // 但 `special/front2` 不算（段名必须整段相等）。
+    static bool ContainsSegment(string path,string segment)
     {
+        if(string.IsNullOrEmpty(path))return false;
+        int index=path.IndexOf("/"+segment,StringComparison.Ordinal);
+        while(index>=0)
+        {
+            int after=index+1+segment.Length;
+            if(after>=path.Length||path[after]=='/')return true;
+            index=path.IndexOf("/"+segment,index+1,StringComparison.Ordinal);
+        }
+        return false;
+    }
+    IEnumerator Fall(SkillFx fx,Vector3 from,Vector3 to,float duration)    {
         float elapsed=0;
         while(fx!=null && elapsed<duration)
         {
@@ -712,7 +776,28 @@ public partial class SkillSystem
         if(!NativeSkillVfx.Has(s.vfx,"flipBall"))return "ball";
         return (ballVariant++&1)==0 ? "ball" : "flipBall";
     }
-    int ballVariant;
+    int ballVariant, hammerVariant;
+    // 周期攻击（祝福之鎚）的「一发锤体」：282 的 ball/0..2 是三种铁鎚形态，
+    // 不是一次性弹道。普通 Fly 从角色飞到 1~2 世界单位外的怪只要 ~70ms，
+    // 肉眼根本看不见 —— 这就是「后续攻击没特效」的第二个根因。
+    // 这里按发取变体、至少播 minSeconds，纯表现不结算（结算由 HitAt 统一做）。
+    IEnumerator RepeatingHammer(SkillDef body,Vector2 origin,int facing,float minSeconds)
+    {
+        var balls=NativeSkillVfx.Parts(body.vfx,"ball");
+        if(balls.Count==0)yield break;
+        var clip=balls[hammerVariant++%balls.Count];
+        Vector3 from=new Vector3(origin.x,origin.y+28/Art.PPU,0);
+        Vector3 to=from+Vector3.right*facing*Mathf.Max(2f,ProjectileRange(body));
+        var fx=Visual(body.vfx,clip.path,from,facing,null,true,360);
+        float duration=Mathf.Max(minSeconds,Vector3.Distance(from,to)/ProjectileSpeed),elapsed=0;
+        while(elapsed<duration)
+        {
+            elapsed+=Time.deltaTime;
+            if(fx!=null)fx.transform.position=Vector3.Lerp(from,to,Mathf.Clamp01(elapsed/Mathf.Max(.001f,duration)));
+            yield return null;
+        }
+        if(fx!=null)fx.Stop();
+    }
     IEnumerator Fly(SkillDef s,Vector3 from,Vector3 to,Component target,int facing)
     {
         var fx=Visual(s.vfx,BallPart(s),from,facing,null,true);

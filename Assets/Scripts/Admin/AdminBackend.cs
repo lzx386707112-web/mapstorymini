@@ -18,8 +18,9 @@ using System.Threading;
 //
 // Android 上 Application.runInBackground 不生效：切到浏览器后 Activity onPause，Unity 主线程
 // 整个暂停，Update 里的 Pump 不会跑，所有请求都超时（「游戏主线程繁忙」）。所以 AdminHost
-// 另起一条后台泵线程，只在 Foreground=false（主线程已停，没有并发 DB 访问）时接管队列；
+// 仅在这些平台另起一条后台泵线程，只在 Foreground=false（主线程已停，没有并发 DB 访问）时接管队列；
 // 回前台时先等它把手头一条跑完（AwaitIdle），再交还主线程，保证 DB 始终单线程访问。
+// 桌面独立播放器不启泵：runInBackground 生效、主线程不停，DB 访问天然只在主线程。
 public static class AdminMainThread
 {
     static readonly object gate = new object();

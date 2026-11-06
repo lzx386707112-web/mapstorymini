@@ -297,6 +297,18 @@ public static class SkillBook
         if (node.Get("summon")!=null) d.type="summon";
         else if (first.ContainsKey("damage") || first.ContainsKey("fixdamage") || first.ContainsKey("mad") || first.ContainsKey("attackCount")) d.type="attack";
         else if (first.ContainsKey("time") || first.ContainsKey("prop")) d.type="buff";
+        // 282「主动上 debuff」技能（極冰風暴 400011121）common 里 damage/attackCount/
+        // time/prop 一个都没有，上面三条都不命中 ⇒ 留在 passive，按下去只回
+        // 「被动技能无需施放」。登记在 NativeSkillCurses.json 里的都给主动 Buff：
+        // Cast 协程在 Buff 分支 yield break，不会凭空多打一发；诅咒与冰塊
+        // 由 NativeSkillCurses 驱动。别给它补 u2→damage 别名，那会把母技能
+        // 变成一发凭空的 1390% AOE。
+        if (SkillSystem.IsCurseParent(id)) d.type="buff";
+        // 普力特的祝福 400001024：common 只有 s(持续 30s)/x(最多 6 层)/cooltime/mpCon
+        // 与六个效果字段，没有 time/prop ⇒ 上面三条都不命中，按下去只回「被动技能无需施放」。
+        // 它是**主动叠层 buff**（h：「使用時持續#s秒並賦予可疊加最多#x次的增益」），
+        // 持续时间由 NativeSkillStacks 的 durationSec 记，所以这里直接给 buff。
+        if (SkillSystem.IsStackSkill(id)) d.type="buff";
         d.noName=string.IsNullOrEmpty(d.name);if(d.noName)d.name=id.ToString();
         byId[id]=d;
         return d;
@@ -713,6 +725,9 @@ public static class SkillProgress
     /// <summary>存档里的等级（不含任何临时加成）。</summary>
     public static int BaseLevelOf(int id)
     {
+        // 282 套装档位授予的 8000xxxx 技能：不写存档，等级来自当前穿着重算出的授予表。
+        // 必须在 SkillBook.Get() 之前判，因为这些技能不在 GMS083 的 Skill.wz 树里。
+        if(NativeSetItemSkills.IsSkill(id))return NativeSetItemSkills.LevelOf(id);
         if(NativeSoulWeapon.IsSkill(id))return NativeSoulWeapon.LevelOf(id);
         // 五转核心连接的技能：等级跟核心走（服务端 NativeMatrixSkills 投影进 skills 表，
         // 面板快照给了更及时的一份，见 VMatrixLevels）。
@@ -1064,25 +1079,41 @@ public static class QuickBarKeys
 /// <summary>
 /// V 核心连接技能的等级镜像（skillId → 核心等级）。
 ///
-/// 服务端 NativeMatrixSkills 已经把核心等级投影进 skills 表（升级时与登录时各同步一次），
-/// 但客户端在「刚升完级 → 立刻绑键施放」这条路径上还没重拉角色数据，LevelOf 会读到 0，
-/// 表现就是「核心能强化却放不出来」。这里用面板快照顶一段，等下次登录自然回落到存档。
-///
-/// 只装 V 矩阵（type 0/1/2）响应里的 core.skills；六转技能不在这里，仍走 HEXA 投影。
+/// 核心等级 → 技能等级的唯一镜像。**包装技能（400004xxx / 500004xxx）不在 JobTree 里，
+/// 拿不到 Profile 里的技能等级**，所以强化核心的加成全靠这张表。
+/// 三条写入路径：登录预热（GameSession.SelectChar）、打开 V 面板、打开 HEXA 面板。
+/// V 与 HEXA 各一张表，互不覆盖（见下面的注释）。
 /// </summary>
 public static class VMatrixLevels
 {
-    static readonly Dictionary<int, int> levels = new Dictionary<int, int>();
+    // V 强化核心（vmatrix_cores）与 HEXA 强化核心（hexa_skills）各一张表。
+    // 必须分开：两边都是「整份重建」语义，共用一张表会互相清掉 ——
+    // 打开一次 V 面板就会把 HEXA 的等级冲掉，HEXA 强化的 damR_6th 立刻归零。
+    static readonly Dictionary<int, int> matrixLevels = new Dictionary<int, int>();
+    static readonly Dictionary<int, int> hexaLevels = new Dictionary<int, int>();
     static int owner = -1;
 
-    public static void Clear() { levels.Clear(); owner = -1; }
+    public static void Clear()
+    {
+        matrixLevels.Clear();
+        hexaLevels.Clear();
+        owner = -1;
+    }
+
+    static void Own(int characterId)
+    {
+        if (owner == characterId) return;
+        matrixLevels.Clear();
+        hexaLevels.Clear();
+        owner = characterId;
+    }
 
     /// <summary>整份重建：快照里没出现的技能自然回落到 skills 表。</summary>
     public static void Capture(VMatrixResponse response, int characterId)
     {
-        if (owner != characterId) { levels.Clear(); owner = characterId; }
+        Own(characterId);
         if (response?.cores == null) return;
-        levels.Clear();
+        matrixLevels.Clear();
         foreach (var core in response.cores)
         {
             if (core == null) continue;
@@ -1095,10 +1126,35 @@ public static class VMatrixLevels
             foreach (int skill in skills)
             {
                 if (skill == 0) continue;
-                if (!levels.TryGetValue(skill, out int old) || core.level > old) levels[skill] = core.level;
+                if (!matrixLevels.TryGetValue(skill, out int old) || core.level > old) matrixLevels[skill] = core.level;
             }
         }
     }
 
-    public static bool TryGet(int skillId, out int level) => levels.TryGetValue(skillId, out level);
+    /// <summary>
+    /// HEXA 核心等级 → 它的包装技能（`500004xxx`，`info/type=50`）等级。
+    /// HEXA 强化的 `damR_6th` 靠这条链路生效（65 条 / 138 个被强化技能）。
+    /// 注意 HEXA 的核心 id 是 `300000xx`，不是包装技能 id —— 等级必须挂在 `core.skills` 上。
+    /// </summary>
+    public static void CaptureHexa(HexaResponse response, int characterId)
+    {
+        Own(characterId);
+        if (response?.cores == null) return;
+        hexaLevels.Clear();
+        foreach (var core in response.cores)
+        {
+            if (core == null || core.level <= 0 || core.skills == null) continue;
+            foreach (int skill in core.skills)
+            {
+                if (skill == 0) continue;
+                if (!hexaLevels.TryGetValue(skill, out int old) || core.level > old) hexaLevels[skill] = core.level;
+            }
+        }
+    }
+
+    public static bool TryGet(int skillId, out int level)
+        => matrixLevels.TryGetValue(skillId, out level) || hexaLevels.TryGetValue(skillId, out level);
+
+    /// <summary>调试用：当前镜像里有多少条等级（V / HEXA 分开计）。</summary>
+    public static int Count(bool hexa) => hexa ? hexaLevels.Count : matrixLevels.Count;
 }

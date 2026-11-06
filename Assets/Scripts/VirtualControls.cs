@@ -163,7 +163,10 @@ public static class VirtualControls
     // 进场也要让位（EntranceDone）：选角双击 → BuildScene → 地图首帧上屏之间确实跨了场景切换。
     // 切场景那一帧的 OnGUI 里登录页已经不再绘制、战斗画面又还没渲染出来，
     // 虚拟按键若照常画就会先于游戏滑上屏幕（"按键先亮，画面后到"）。
-    public static bool Shown => OverlayVisible && !ShopWindow.Visible && EntranceDone;
+    // 桌面版（Windows）是纯键鼠：这一层整层不生效——不画、不吃点击、不注入按键。
+    // 门控放在 Shown / HitElement 两处：Draw、Tick、Capturing、HitsAtScreen、HitButtonAt
+    // 以及技能窗拖放判定全都从这里过，不会漏掉某一条路。
+    public static bool Shown => GamePlatform.TouchControls && OverlayVisible && !ShopWindow.Visible && EntranceDone;
 
     // —————————— 进场让位 ——————————
     // 进入战斗时由 GameLoop 记下时刻：至少跳过一个渲染帧（切场景那一帧）再多等一小段，
@@ -791,6 +794,9 @@ public static class VirtualControls
 
     static VCElem HitElement(Vector2 p)
     {
+        // 桌面版没有虚拟按键：任何调用方（含技能窗/V 矩阵的落点判定）都拿不到命中，
+        // 否则会把「拖到按键上」的提示和拦截逻辑带到 Windows 上。
+        if (!GamePlatform.TouchControls) return null;
         // 后画的优先（列表尾部优先），与绘制顺序一致
         for (int i = elems.Count - 1; i >= 0; i--)
             if ((!KeyConfigWindow.Visible || CarryingSkill || elems[i].type == VCElemType.Button &&
@@ -864,6 +870,19 @@ public static class VirtualControls
         var act = e.key != KeyCode.None ? ActionOfKey(e.key) : (GameAction?)EffectiveAction(e);
         // 显式绑键只走键盘通道；仅旧布局的动作按钮直接注入动作。
         if (e.key == KeyCode.None) InputHub.SetVirtualAction(act.Value, down);
+        // 键位型按钮的补通道：快捷格动作在键位表里没绑键时（KeyMap.Of=None），
+        // 只发 KeyCode 会让 Pressed/Held(动作) 全为 false —— 技能放不出来，或者
+        // 放出来后 SkillHeldInput.Update 下一帧就把光束拆掉（长按失效）。
+        // 这里按按钮自己登记的动作注入；按下沿与键通道合流仍只算一次 Pressed。
+        // 只补「快捷格」动作，默认键盘布局那种没绑动作的键不会被误当成跳跃/攻击。
+        else
+        {
+            var direct = EffectiveAction(e);
+            // 抬起时无条件撤：按住期间键位表若被重读（LoadCharacter/改键），
+            // KeyMap.Of 可能从 None 变成有值，按按下时的条件判断会漏撤 ⇒ 卡键。
+            if (QuickSlots.Index(direct) >= 0 && (!down || KeyMap.Of(direct) == KeyCode.None))
+                InputHub.SetVirtualAction(direct, down);
+        }
         // 显式绑了键的按钮 = 那个物理键的屏上替身：无条件把键也发一遍。
         // 只靠「键 → 动作」反查是不够的——比如攻击从 Ctrl 改到 C 后，
         // 快捷格、技能栏这些按 KeyCode 判定的通道拿不到 C，就会出现

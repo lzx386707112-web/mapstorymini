@@ -1,0 +1,1473 @@
+{
+ "source": {
+  "nodes": "Skill/<img>.img/skill/<id>/trembleEffect 或 trembleEffectList/<n>，字段 {force,time,delay,reduction,remote}",
+  "usage": "每段按自己的 delay 起震：HitFeel.Shake(force / Art.PPU, time / 1000)",
+  "note": "force 是原端点阵振幅，换算口径与怪物震屏 TrembleAmplitude=30f/Art.PPU 一致"
+ },
+ "skills": {
+  "11141504": {
+   "waves": [
+    {
+     "force": 25,
+     "time": 150,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 15,
+     "time": 100,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 10,
+     "time": 50,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 5,
+     "time": 50,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 40,
+     "time": 200,
+     "delay": 840,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1121015": {
+   "waves": [
+    {
+     "force": 7,
+     "time": 720,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1121052": {
+   "waves": [
+    {
+     "force": 12,
+     "time": 900,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1141002": {
+   "waves": [
+    {
+     "force": 18,
+     "time": 540,
+     "delay": 0,
+     "reduction": 0.949999988079071
+    },
+    {
+     "force": 6,
+     "time": 360,
+     "delay": 240,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1141008": {
+   "waves": [
+    {
+     "force": 7,
+     "time": 600,
+     "delay": 360,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1141502": {
+   "waves": [
+    {
+     "force": 20,
+     "time": 150,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 25,
+     "time": 300,
+     "delay": 2070,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "12121052": {
+   "waves": [
+    {
+     "force": 2,
+     "time": 1080,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 12,
+     "time": 1800,
+     "delay": 1650,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "12141503": {
+   "waves": [
+    {
+     "force": 15,
+     "time": 120,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 7,
+     "time": 300,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 3,
+     "time": 300,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 20,
+     "time": 600,
+     "delay": 2160,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1221052": {
+   "waves": [
+    {
+     "force": 6,
+     "time": 810,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1241007": {
+   "waves": [
+    {
+     "force": 7,
+     "time": 690,
+     "delay": 390,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1241504": {
+   "waves": [
+    {
+     "force": 13,
+     "time": 420,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 7,
+     "time": 300,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 20,
+     "time": 600,
+     "delay": 1680,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "13141506": {
+   "waves": [
+    {
+     "force": 4,
+     "time": 60,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 22,
+     "time": 240,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 16,
+     "time": 120,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 9,
+     "time": 180,
+     "delay": 360,
+     "reduction": 1.0
+    },
+    {
+     "force": 30,
+     "time": 180,
+     "delay": 1440,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1321052": {
+   "waves": [
+    {
+     "force": 7,
+     "time": 390,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1341003": {
+   "waves": [
+    {
+     "force": 7,
+     "time": 390,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1341500": {
+   "waves": [
+    {
+     "force": 18,
+     "time": 120,
+     "delay": 0,
+     "reduction": 0.8999999761581421
+    },
+    {
+     "force": 10,
+     "time": 540,
+     "delay": 0,
+     "reduction": 0.9800000190734863
+    },
+    {
+     "force": 7,
+     "time": 540,
+     "delay": 0,
+     "reduction": 0.9800000190734863
+    },
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 0,
+     "reduction": 0.9800000190734863
+    },
+    {
+     "force": 2,
+     "time": 360,
+     "delay": 0,
+     "reduction": 0.9800000190734863
+    },
+    {
+     "force": 25,
+     "time": 420,
+     "delay": 4260,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "1341502": {
+   "waves": [
+    {
+     "force": 30,
+     "time": 420,
+     "delay": 990,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "14121052": {
+   "waves": [
+    {
+     "force": 70,
+     "time": 2000,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "14141018": {
+   "waves": [
+    {
+     "force": 70,
+     "time": 2000,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "14141503": {
+   "waves": [
+    {
+     "force": 3,
+     "time": 780,
+     "delay": 210,
+     "reduction": 1.0
+    },
+    {
+     "force": 30,
+     "time": 600,
+     "delay": 780,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "15141500": {
+   "waves": [
+    {
+     "force": 25,
+     "time": 1860,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 10,
+     "time": 300,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 5,
+     "time": 480,
+     "delay": 0,
+     "reduction": 0.9900000095367432
+    },
+    {
+     "force": 15,
+     "time": 180,
+     "delay": 1800,
+     "reduction": 1.0
+    },
+    {
+     "force": 33,
+     "time": 780,
+     "delay": 2700,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "15141502": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 600,
+     "delay": 120,
+     "reduction": 1.0
+    },
+    {
+     "force": 80,
+     "time": 1080,
+     "delay": 1320,
+     "reduction": 0.8999999761581421
+    }
+   ]
+  },
+  "2141500": {
+   "waves": [
+    {
+     "force": 33,
+     "time": 750,
+     "delay": 0,
+     "reduction": 0.5
+    },
+    {
+     "force": 8,
+     "time": 780,
+     "delay": 0,
+     "reduction": 0.8999999761581421
+    },
+    {
+     "force": 3,
+     "time": 120,
+     "delay": 0,
+     "reduction": 0.9800000190734863
+    },
+    {
+     "force": 15,
+     "time": 930,
+     "delay": 5000,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "2141504": {
+   "waves": [
+    {
+     "force": 20,
+     "time": 300,
+     "delay": 0,
+     "reduction": 0.5
+    },
+    {
+     "force": 8,
+     "time": 210,
+     "delay": 0,
+     "reduction": 0.8999999761581421
+    },
+    {
+     "force": 3,
+     "time": 120,
+     "delay": 0,
+     "reduction": 0.9800000190734863
+    },
+    {
+     "force": 35,
+     "time": 360,
+     "delay": 2280,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "2241500": {
+   "waves": [
+    {
+     "force": 7,
+     "time": 450,
+     "delay": 0,
+     "reduction": 0.8999999761581421
+    },
+    {
+     "force": 5,
+     "time": 450,
+     "delay": 0,
+     "reduction": 0.8999999761581421
+    },
+    {
+     "force": 3,
+     "time": 480,
+     "delay": 0,
+     "reduction": 0.8999999761581421
+    },
+    {
+     "force": 2,
+     "time": 300,
+     "delay": 0,
+     "reduction": 0.8999999761581421
+    },
+    {
+     "force": 10,
+     "time": 480,
+     "delay": 420,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 6,
+     "time": 120,
+     "delay": 660,
+     "reduction": 1.0
+    },
+    {
+     "force": 10,
+     "time": 180,
+     "delay": 720,
+     "reduction": 0.8999999761581421
+    },
+    {
+     "force": 6,
+     "time": 180,
+     "delay": 2100,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "3141504": {
+   "waves": [
+    {
+     "force": 45,
+     "time": 480,
+     "delay": 960,
+     "reduction": 0.949999988079071
+    }
+   ]
+  },
+  "3241500": {
+   "waves": [
+    {
+     "force": 70,
+     "time": 540,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 20,
+     "time": 300,
+     "delay": 0,
+     "reduction": 0.9800000190734863
+    },
+    {
+     "force": 10,
+     "time": 300,
+     "delay": 0,
+     "reduction": 0.9800000190734863
+    },
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 0,
+     "reduction": 0.9800000190734863
+    },
+    {
+     "force": 20,
+     "time": 840,
+     "delay": 1020,
+     "reduction": 1.0
+    },
+    {
+     "force": 10,
+     "time": 540,
+     "delay": 3900,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "3241502": {
+   "waves": [
+    {
+     "force": 40,
+     "time": 600,
+     "delay": 450,
+     "reduction": 0.949999988079071
+    },
+    {
+     "force": 30,
+     "time": 420,
+     "delay": 1170,
+     "reduction": 0.949999988079071
+    }
+   ]
+  },
+  "400001039": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 1170,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400001059": {
+   "waves": [
+    {
+     "force": 3,
+     "time": 480,
+     "delay": 780,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011159": {
+   "waves": [
+    {
+     "force": 25,
+     "time": 510,
+     "delay": 840,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011138": {
+   "waves": [
+    {
+     "force": 25,
+     "time": 510,
+     "delay": 840,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011028": {
+   "waves": [
+    {
+     "force": 1,
+     "time": 8000,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400010028": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 420,
+     "delay": 630,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011031": {
+   "waves": [
+    {
+     "force": 6,
+     "time": 90,
+     "delay": 60,
+     "reduction": 1.0
+    },
+    {
+     "force": 3,
+     "time": 90,
+     "delay": 60,
+     "reduction": 1.0
+    },
+    {
+     "force": 11,
+     "time": 90,
+     "delay": 90,
+     "reduction": 1.0
+    },
+    {
+     "force": 1,
+     "time": 90,
+     "delay": 90,
+     "reduction": 1.0
+    },
+    {
+     "force": 15,
+     "time": 90,
+     "delay": 240,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011038": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 150,
+     "delay": 90,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011039": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 360,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011046": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 360,
+     "delay": 540,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011065": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 140,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011060": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 360,
+     "delay": 180,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011061": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 360,
+     "delay": 180,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011069": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 270,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400010070": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 390,
+     "delay": 180,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011089": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 300,
+     "delay": 270,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011092": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011093": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011094": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011095": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011096": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011097": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011098": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 70,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011100": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 70,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011105": {
+   "waves": [
+    {
+     "force": 8,
+     "time": 600,
+     "delay": 3480,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011132": {
+   "waves": [
+    {
+     "force": 3,
+     "time": 180,
+     "delay": 120,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400011152": {
+   "waves": [
+    {
+     "force": 11,
+     "time": 60,
+     "delay": 60,
+     "reduction": 1.0
+    },
+    {
+     "force": 9,
+     "time": 60,
+     "delay": 60,
+     "reduction": 1.0
+    },
+    {
+     "force": 7,
+     "time": 30,
+     "delay": 60,
+     "reduction": 1.0
+    },
+    {
+     "force": 30,
+     "time": 390,
+     "delay": 960,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021134": {
+   "waves": [
+    {
+     "force": 8,
+     "time": 600,
+     "delay": 3480,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021082": {
+   "waves": [
+    {
+     "force": 8,
+     "time": 700,
+     "delay": 480,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021035": {
+   "waves": [
+    {
+     "force": 20,
+     "time": 360,
+     "delay": 300,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021034": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 620,
+     "delay": 560,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021026": {
+   "waves": [
+    {
+     "force": 2,
+     "time": 180,
+     "delay": 90,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021025": {
+   "waves": [
+    {
+     "force": 2,
+     "time": 180,
+     "delay": 360,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021024": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 300,
+     "delay": 450,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021030": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 240,
+     "delay": 540,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021040": {
+   "waves": [
+    {
+     "force": 2,
+     "time": 150,
+     "delay": 210,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021123": {
+   "waves": [
+    {
+     "force": 3,
+     "time": 480,
+     "delay": 390,
+     "reduction": 1.0
+    },
+    {
+     "force": 3,
+     "time": 600,
+     "delay": 450,
+     "reduction": 1.0
+    },
+    {
+     "force": 6,
+     "time": 360,
+     "delay": 540,
+     "reduction": 1.0
+    },
+    {
+     "force": 6,
+     "time": 360,
+     "delay": 1260,
+     "reduction": 1.0
+    },
+    {
+     "force": 10,
+     "time": 1080,
+     "delay": 1440,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021129": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 480,
+     "delay": 300,
+     "reduction": 1.0
+    },
+    {
+     "force": 1,
+     "time": 720,
+     "delay": 600,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021159": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 600,
+     "delay": 1590,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400021165": {
+   "waves": [
+    {
+     "force": 11,
+     "time": 240,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 3,
+     "time": 180,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 17,
+     "time": 300,
+     "delay": 720,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400031036": {
+   "waves": [
+    {
+     "force": 1,
+     "time": 60,
+     "delay": 240,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400031067": {
+   "waves": [
+    {
+     "force": 1,
+     "time": 60,
+     "delay": 240,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400031064": {
+   "waves": [
+    {
+     "force": 15,
+     "time": 4440,
+     "delay": 1560,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400041026": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 270,
+     "delay": 150,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400041040": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 300,
+     "delay": 1560,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400041053": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 1500,
+     "delay": 2610,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400051089": {
+   "waves": [
+    {
+     "force": 25,
+     "time": 300,
+     "delay": 340,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400051088": {
+   "waves": [
+    {
+     "force": 45,
+     "time": 300,
+     "delay": 200,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400051084": {
+   "waves": [
+    {
+     "force": 25,
+     "time": 300,
+     "delay": 570,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400051040": {
+   "waves": [
+    {
+     "force": 8,
+     "time": 700,
+     "delay": 990,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400051071": {
+   "waves": [
+    {
+     "force": 5,
+     "time": 2400,
+     "delay": 120,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400051078": {
+   "waves": [
+    {
+     "force": 2,
+     "time": 360,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400051079": {
+   "waves": [
+    {
+     "force": 2,
+     "time": 720,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 10,
+     "time": 480,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 5,
+     "time": 480,
+     "delay": 0,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "400051080": {
+   "waves": [
+    {
+     "force": 2,
+     "time": 1440,
+     "delay": 30,
+     "reduction": 1.0
+    },
+    {
+     "force": 10,
+     "time": 240,
+     "delay": 290,
+     "reduction": 1.0
+    },
+    {
+     "force": 10,
+     "time": 780,
+     "delay": 960,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "4141500": {
+   "waves": [
+    {
+     "force": 30,
+     "time": 240,
+     "delay": 300,
+     "reduction": 0.8500000238418579
+    },
+    {
+     "force": 30,
+     "time": 180,
+     "delay": 1440,
+     "reduction": 0.8500000238418579
+    }
+   ]
+  },
+  "4141503": {
+   "waves": [
+    {
+     "force": 12,
+     "time": 120,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 27,
+     "time": 180,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 20,
+     "time": 120,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 20,
+     "time": 180,
+     "delay": 420,
+     "reduction": 1.0
+    },
+    {
+     "force": 35,
+     "time": 180,
+     "delay": 1080,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "4241503": {
+   "waves": [
+    {
+     "force": 23,
+     "time": 120,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 15,
+     "time": 120,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 30,
+     "time": 120,
+     "delay": 1350,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "500001008": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 120,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 5,
+     "time": 60,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 15,
+     "time": 210,
+     "delay": 900,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "5121013": {
+   "waves": [
+    {
+     "force": 1,
+     "time": 1080,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 12,
+     "time": 600,
+     "delay": 720,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "5141009": {
+   "waves": [
+    {
+     "force": 1,
+     "time": 1080,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 12,
+     "time": 600,
+     "delay": 660,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "5141507": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 100,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 5,
+     "time": 50,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 13,
+     "time": 150,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 10,
+     "time": 100,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 5,
+     "time": 50,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 20,
+     "time": 200,
+     "delay": 420,
+     "reduction": 1.0
+    },
+    {
+     "force": 45,
+     "time": 300,
+     "delay": 1080,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "5221013": {
+   "waves": [
+    {
+     "force": 1,
+     "time": 1080,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 12,
+     "time": 600,
+     "delay": 720,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "5221052": {
+   "waves": [
+    {
+     "force": 8,
+     "time": 480,
+     "delay": 660,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "5241017": {
+   "waves": [
+    {
+     "force": 7,
+     "time": 450,
+     "delay": 330,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "5241018": {
+   "waves": [
+    {
+     "force": 1,
+     "time": 1080,
+     "delay": 0,
+     "reduction": 1.0
+    },
+    {
+     "force": 12,
+     "time": 600,
+     "delay": 660,
+     "reduction": 1.0
+    }
+   ]
+  },
+  "5241503": {
+   "waves": [
+    {
+     "force": 10,
+     "time": 150,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 5,
+     "time": 50,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 13,
+     "time": 150,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 9,
+     "time": 100,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 5,
+     "time": 50,
+     "delay": 0,
+     "reduction": 0.800000011920929
+    },
+    {
+     "force": 20,
+     "time": 1300,
+     "delay": 120,
+     "reduction": 1.0
+    },
+    {
+     "force": 15,
+     "time": 300,
+     "delay": 1380,
+     "reduction": 1.0
+    }
+   ]
+  }
+ }
+}

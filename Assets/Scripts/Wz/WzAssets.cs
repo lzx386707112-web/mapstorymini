@@ -17,10 +17,9 @@ public static class WzAssets
 #if UNITY_WEBGL && !UNITY_EDITOR
             if (WzWebLoader.Root == null) throw new InvalidOperationException("Native assets not downloaded yet");
             return WzWebLoader.Root;
-#elif UNITY_ANDROID && !UNITY_EDITOR
-            return "/sdcard/mapstory/Data";
 #else
-            return Path.GetFullPath(Path.Combine(Application.dataPath, "../../MapleDashResources/Data"));
+            // Android：/sdcard/mapstory/Data；Windows 桌面版：D:\mapstory\Data；编辑器：工程外的 MapleDashResources/Data
+            return GamePlatform.DataRoot;
 #endif
         }
     }
@@ -50,7 +49,9 @@ public static class WzAssets
                 var asset = Resources.Load<TextAsset>("NativeAssetIndex");
                 if (asset == null) throw new FileNotFoundException("NativeAssetIndex missing; run tools/package_native_assets.py");
                 string manifest = asset.text;
-#if UNITY_ANDROID && !UNITY_EDITOR
+#if (UNITY_ANDROID || UNITY_STANDALONE) && !UNITY_EDITOR
+                // 外置资源包装完之后会在 Data 里留一份清单，和安装包内嵌的那份一致；
+                // 有它就以它为准（资源包比安装包新时，内嵌清单会少文件）。
                 string installedManifest = Path.Combine(DataRoot, ".resource-manifest.json");
                 if (File.Exists(installedManifest)) manifest = File.ReadAllText(installedManifest);
 #endif

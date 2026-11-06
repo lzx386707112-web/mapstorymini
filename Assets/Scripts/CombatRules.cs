@@ -41,6 +41,10 @@ public static class CombatRules
         double roll, double critRoll, double hitRoll,long damageCap=InitialDamageCap)
     {
         bool magic = skill != null && skill.Magic;
+        // 强化核心（VMatrix type=1）对既有技能的加成：最终伤害/无视防御/Boss 伤害。
+        // 未装核心时全为 0，既有口径不变。见 NativeSkillEnhance.cs。
+        NativeSkillEnhance.Bonus(skill != null ? skill.Id : 0,
+            out int enhanceFinal, out _, out int enhanceIgnore, out int enhanceBoss);
         int diff = Math.Max(0, NativeCombatData.Int(target,"level",1) - a.level);
         double accuracy = magic ? a.intelligence / 10.0 + a.luk / 10.0 : a.accuracy + a.dex * .8 + a.luk * .5;
         double required = (1.84 + .07 * diff) * NativeCombatData.Int(target,"eva");
@@ -63,6 +67,7 @@ public static class CombatRules
         damage *= Math.Max(0,1-.01*diff);
         int ignoreDefense=0;
         if(a.setItemBonus!=null)a.setItemBonus.TryGetValue("IgnoreDefense",out ignoreDefense);
+        if (enhanceIgnore > 0) ignoreDefense = Math.Min(100, ignoreDefense + enhanceIgnore);
         damage *= PercentageDefense.Multiplier(NativeCombatData.Int(target,magic ? "MDRate" : "PDRate"),100-(100-ignoreDefense)*(1-a.hexaIgnorePercent/100.0));
         bool critical = !magic && critRoll < Math.Max(0,Math.Min(1,a.criticalChance));
         // 282 的 V/HEXA 技能把伤害写在 damage% 里、mad 整条留空（526 条无一带 mad），
@@ -74,12 +79,16 @@ public static class CombatRules
             // overCritBonus 在没有那条 buff 时恒为 0，所以既有口径不变。
             damage *= (skill == null ? 100 : skill.DamagePercent) / 100.0 +
                       (critical ? a.criticalBonus + a.overCritBonus : 0);
+        // 强化核心的 damR_5th 是「对这条技能的最终伤害 +%」，乘在 damage% 之后、
+        // 套装/Boss/最终伤害applyDamage 之前（与源端 StatEffect 的独立乘区同序）。
+        if (enhanceFinal > 0) damage *= 1.0 + enhanceFinal / 100.0;
         double element = ElementModifier(target,skill == null ? "" : skill.Element);
         damage = element == 0 ? 0 : Math.Max(1,damage * element);
         // ≡ MapleMap 收到攻击后 SetItemManager.applyDamage：套装 Damage%/Boss|NormalDamage%/FinalDamage%
         if (damage > 0 && a.setItemBonus != null)
             damage = AdminSetItem.ApplyDamage(a.setItemBonus, NativeCombatData.Int(target,"boss",0) != 0,
-                (long)Math.Ceiling(damage),a.hexaDamagePercent+(NativeCombatData.Int(target,"boss",0)!=0 ? a.hexaBossPercent : 0));
+                (long)Math.Ceiling(damage),a.hexaDamagePercent+
+                    (NativeCombatData.Int(target,"boss",0)!=0 ? a.hexaBossPercent + enhanceBoss : 0));
         return Resolve(damage,critical,damageCap);
     }
 

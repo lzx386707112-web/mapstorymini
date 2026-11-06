@@ -31,6 +31,8 @@ public static class SkillDamagePlayChecks
     const string K_TAP  = "DmgPlay.tap";
     const string K_T0   = "DmgPlay.t0";
     const string K_STAND = "DmgPlay.standoff";
+    const string K_PATHS = "DmgPlay.paths";
+    const string K_TAPF = "DmgPlay.tapSeconds";
 
     static readonly int[] DefaultIds = { 400011072 };
     static int[] ids;
@@ -48,6 +50,22 @@ public static class SkillDamagePlayChecks
     static bool rapidSkill;
     static float standoff = 1.2f;
     static float tapModeFloat;
+    // 一次 Unity 会话里连跑多条输入路径：hold=真按住 / tap=短按 / click=屏上快捷格点一下
+    // （不注入任何虚拟保持态，最接近真机底部快捷格的点按）。
+    static string[] paths = { "hold" };
+    static int pathCursor;
+    const float SettleSeconds = 1.4f;
+    static string CurrentPath => paths != null && pathCursor < paths.Length ? paths[pathCursor] : "hold";
+    static float PhaseSeconds()
+    {
+        if (CurrentPath == "click") return 0.08f;
+        if (CurrentPath == "tap") return Mathf.Max(0.05f, EditorPrefs.GetFloat(K_TAPF, 0.25f));
+        return EditorPrefs.GetFloat(K_HOLD, 2f);
+    }
+    static string PathLabel()
+        => CurrentPath == "click" ? " 点一下(无保持态)" :
+           CurrentPath == "tap" ? " 点一下" + PhaseSeconds().ToString("0.00") + "s" :
+           " 按住 " + PhaseSeconds().ToString("0.0") + "s";
     static readonly int[] MapCandidates = { 40001, 100000000, 100010000, 104040000, 120000000 };
     static int mapCursor;
     static double mapHopAt;
@@ -70,35 +88,43 @@ public static class SkillDamagePlayChecks
     public static void Run()
     {
         var args = Environment.GetCommandLineArgs();
-        string idArg = "";
+        string idArg = "", pathArg = "";
         float hold = 2.0f, tap = 0f, standoff = 1.2f;
         for (int i = 0; i < args.Length - 1; i++)
         {
             if (args[i] == "-dmgIds") idArg = args[i + 1];
             if (args[i] == "-dmgHold") float.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out hold);
             if (args[i] == "-dmgTap") float.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out tap);
+            if (args[i] == "-dmgPaths") pathArg = args[i + 1];
             // 站位距离（世界单位）。远程/落点型技能的判定框离施法者很远
             // （ICBM 的 lt2/rb2 换算后是身前 6.25~20 单位），贴脸站必然打不到。
             if (args[i] == "-dmgStandoff") float.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out standoff);
         }
         ids = ParseIds(idArg);
         tapMode = tap > 0f;
+        if (string.IsNullOrEmpty(pathArg)) pathArg = tapMode ? "tap" : "hold";
+        paths = ParsePaths(pathArg);
+        pathCursor = 0;
         EditorPrefs.SetString(K_IDS, string.Join(",", Array.ConvertAll(ids, x => x.ToString())));
-        EditorPrefs.SetFloat(K_HOLD, tapMode ? tap : Mathf.Max(0.3f, hold));
+        EditorPrefs.SetFloat(K_HOLD, Mathf.Max(0.3f, hold));
+        EditorPrefs.SetFloat(K_TAPF, tapMode ? tap : 0.25f);
         EditorPrefs.SetBool(K_TAP, tapMode);
+        EditorPrefs.SetString(K_PATHS, string.Join(",", paths));
         EditorPrefs.SetFloat(K_STAND, standoff);
 
         PlayerPrefs.SetInt("autostart", 1);
         PlayerPrefs.SetInt("debug_god", 1);
         PlayerPrefs.SetInt("hide_tuning", 1);
         PlayerPrefs.SetInt("debug_start_level", 0);
+        // 打开 HitAt 的真实伤害日志（SkillSystem 里按这个键判断）
+        PlayerPrefs.SetInt("debug_hitlog", 1);
         PlayerPrefs.Save();
 
         cursor = 0; phase = 0; damage = 0; failCount = 0; lastFail = null; target = null; targetHp = -1L;
         report.Clear();
         EditorPrefs.SetBool(K_RUN, true);
         EditorPrefs.SetString(K_T0, Now());
-        Debug.Log("[DmgPlay] 准备进入 Play，技能 " + EditorPrefs.GetString(K_IDS, "") + "，按住 " + EditorPrefs.GetFloat(K_HOLD, 2f) + "s");
+        Debug.Log("[DmgPlay] 准备进入 Play，技能 " + EditorPrefs.GetString(K_IDS, "") + "，路径 " + string.Join(",", paths));
         EditorApplication.update += Tick;
         EditorApplication.EnterPlaymode();
     }
@@ -109,6 +135,8 @@ public static class SkillDamagePlayChecks
         if (ids == null)
         {
             ids = ParseIds(EditorPrefs.GetString(K_IDS, ""));
+            paths = ParsePaths(EditorPrefs.GetString(K_PATHS, "hold"));
+            pathCursor = 0;
             tapMode = EditorPrefs.GetBool(K_TAP, false);
             standoff = EditorPrefs.GetFloat(K_STAND, 1.2f);
         }
@@ -162,19 +190,29 @@ public static class SkillDamagePlayChecks
             // ContinuousSkillId 归零 = 按住态被提前拆掉（冷却/蓝量/弹药闸门把某一发踢了）。
             // 只有真正走 rapid 的技能才有「按住态」；普通一次性技能本来就一直是 0，
             // 不判断就会把每一次普通施法都误报成失败。
-            if (rapidSkill && sys.ContinuousSkillId == 0 && failCount == 0 && lastFail == null)
+            // 点按路径本来就只保持一两帧，ContinuousSkillId 归零是正常收尾，不是拆链。
+            if (CurrentPath == "hold" && rapidSkill && sys.ContinuousSkillId == 0 && failCount == 0 && lastFail == null)
             {
                 failCount++;
                 lastFail = sys.ActiveNotice;
             }
-            if (EditorApplication.timeSinceStartup - phaseAt < EditorPrefs.GetFloat(K_HOLD, 2f)) return;
+            if (EditorApplication.timeSinceStartup - phaseAt < PhaseSeconds()) return;
             Release(sys, id, gl);
             return;
         }
 
-        // phase 2：收尾并换下一个技能
+        // phase 2：留足收尾窗口再判伤害。点一下的「保底一发」和投射物飞行
+        // 都发生在松手之后，松手那一刻就下结论会把它误判成「没打到怪」。
         AccumulateDamage(gl);
-        cursor++;
+        if (EditorApplication.timeSinceStartup - phaseAt < SettleSeconds) return;
+        EmitVerdict(gl, id);
+        QuickSlots.Bind(0, 0);
+        pathCursor++;
+        if (pathCursor >= paths.Length) { pathCursor = 0; cursor++; }
+        // 每个用例重新找怪：上一条路径可能已经把当前图的怪清空。
+        everFoundMobs = false;
+        mapCursor = 0;
+        mapHopAt = 0;
         phase = 0;
     }
 
@@ -244,14 +282,21 @@ public static class SkillDamagePlayChecks
         var unit = target as EnemyUnit;
         if (unit != null) targetHp = unit.hp;
 
+        // 同一个技能连测三条路径：上一条用例留下的 120s 冷却会把下一条直接挡成
+        // 「技能冷却中」，量出来的是假阴性。100% 减免把剩余冷却清零（不动其它数值）。
+        sys.ReduceCooldowns(100);
         InputHub.Enabled = true;
-        InputHub.SetVirtualAction(action, true);
+        InputHub.SetVirtualHeld(action, false);            // 清掉上一条路径可能残留的保持态
+        // 只注入「保持态」不注入按下沿：按下沿会被 InputBridge 的快捷格分派再读一次，
+        // 同一按就 Cast 两遍。施放由下面的 QuickSlots.Cast 显式完成。
+        // click = 真机底部快捷格的点按：连保持态都没有，抬手由 SkillHeldInput 自己发现。
+        if (CurrentPath != "click") InputHub.SetVirtualHeld(action, true);
         rapidSkill = false;
         try { rapidSkill = NativeSkillVfx.RapidAttack(id); } catch { rapidSkill = false; }
         QuickSlots.Cast(slot);          // → TryCastBoundSkill → rapid → StartHeld
         // 按下这一下的结论要立刻记，等到松手时 LastFailure 可能已被后续帧清掉。
         string immediate = sys.LastFailure;
-        Debug.Log("[DmgPlay] 按下 " + id + " → 立即失败原因=" + (string.IsNullOrEmpty(immediate) ? "(无)" : immediate) +
+        Debug.Log("[DmgPlay] 按下 " + id + " [" + CurrentPath + "] → 立即失败原因=" + (string.IsNullOrEmpty(immediate) ? "(无)" : immediate) +
                   "  目标=" + (unit != null ? unit.hp.ToString("0") + "/" + unit.hpMax.ToString("0") : "null") +
                   "  怪数=" + EnemyUnit.All.Count + "  MP=" + gl.player.mp.ToString("0"));
 
@@ -261,30 +306,28 @@ public static class SkillDamagePlayChecks
 
     static void Release(SkillSystem sys, int id, GameLoop gl)
     {
-        int slot = 0;
-        InputHub.SetVirtualAction(QuickSlots.Action(slot), false);   // 松手 → StopHeld(true)
+        // click 路径本来就没有保持态，抬手由 SkillHeldInput.Update 自己发现。
+        if (CurrentPath != "click") InputHub.SetVirtualHeld(QuickSlots.Action(0), false);  // 松手 → StopHeld(true)
+        phase = 2;
+        phaseAt = EditorApplication.timeSinceStartup;
+    }
 
+    // 伤害结论必须等收尾窗口跑完再算：保底一发在 StopHeld 里结算、投射物还要飞一段。
+    static void EmitVerdict(GameLoop gl, int id)
+    {
         float mpDelta = mpBefore - gl.player.mp;
         int kills = gl.killCount - killsBefore;
         var data = SkillBook.Get(id);
-        float hold = EditorPrefs.GetFloat(K_HOLD, 2f);
-        bool tap = EditorPrefs.GetBool(K_TAP, false);
 
-        string verdict =
-            damage > 0 ? "打到怪" : "没打到怪";
-        string line = "  " + id + "「" + (data != null ? data.name : "?") + "」" +
-                      (tap ? " 点一下" : " 按住 " + hold.ToString("0.0") + "s") +
+        string verdict = damage > 0 ? "打到怪" : "没打到怪";
+        string line = "  " + id + "「" + (data != null ? data.name : "?") + "」" + PathLabel() +
                       " → " + verdict +
                       "：伤害包 " + damageFrames + " 帧 / 总伤害 " + damage +
-                      "，击杀 " + kills +
+                      "，击杀 " + kills + "，耗蓝 " + mpDelta.ToString("0") +
                       (!rapidSkill ? "，一次性施法" :
                        failCount > 0 ? "，按住态被提前拆掉（" + lastFail + "）" : "，按住态保持完好");
         report.Add(line);
         Debug.Log("[DmgPlay]" + line);
-
-        QuickSlots.Bind(slot, 0);
-        phase = 2;
-        phaseAt = EditorApplication.timeSinceStartup;
     }
 
     // 全场累计掉血。只盯一只怪没用：40001 的怪只有 8 血，一发就死，
@@ -306,7 +349,15 @@ public static class SkillDamagePlayChecks
     static void AccumulateDamage(GameLoop gl)
     {
         var e = target as EnemyUnit;
-        if (e == null) { Retarget(gl); return; }
+        if (e == null)
+        {
+            // 目标被一击打死时 GameObject 会被销毁，Unity 的假 null 让上面这句直接成立。
+            // 不在这里补记的话，整包伤害（含满血地板值）会被静默丢掉，
+            // 表现成「[Hit] 明明打了 38343，报表却是 0 帧 / 0 伤害」。
+            if (targetHp > 0L) { damage += targetHp; damageFrames++; targetHp = -1L; }
+            Retarget(gl);
+            return;
+        }
         if (e.dead || e.hp <= 0L)
         {
             // 这一包把它打空了：整池算作伤害，然后立刻换下一个靶子。
@@ -349,6 +400,17 @@ public static class SkillDamagePlayChecks
         foreach (string part in text.Split(','))
             if (int.TryParse(part.Trim(), out int id) && id > 0) list.Add(id);
         return list.Count == 0 ? DefaultIds : list.ToArray();
+    }
+
+    static string[] ParsePaths(string text)
+    {
+        var list = new List<string>();
+        foreach (string part in (text ?? "").Split(','))
+        {
+            var p = part.Trim();
+            if (p == "hold" || p == "tap" || p == "click") list.Add(p);
+        }
+        return list.Count == 0 ? new[] { "hold" } : list.ToArray();
     }
 
     static string Now() => EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture);

@@ -57,10 +57,16 @@ public final class ResourceUpdater {
                         }).show());
                     return;
                 }
-                next.getString("resUrl");
-                remote = new JSONObject().put("versionCode", next.getLong("versionCode"))
-                    .put("resUrl", next.getString("resUrl"));
+                String url = next.optString("resUrl", "");
+                org.json.JSONArray parts = next.optJSONArray("resParts");
+                if (parts != null && parts.length() == 0) parts = null;
+                if (parts == null && url.isEmpty()) throw new IOException("资源地址为空");
+                if (parts != null && parts.length() > 99) throw new IOException("资源分包过多");
+                remote = new JSONObject().put("versionCode", next.getLong("versionCode")).put("resUrl", url);
+                if (parts != null) remote.put("resParts", parts);
+                final int partCount = parts == null ? 1 : parts.length();
                 host.runOnUiThread(() -> dialog("发现资源更新", "资源版本 " + remote.optLong("versionCode") +
+                    (partCount > 1 ? "（共 " + partCount + " 个分包）" : "") +
                     "，下载后将自动应用补丁。")
                     .setPositiveButton("下载更新", (d, w) -> download())
                     .setNegativeButton("暂不更新", (d, w) -> state = 2).show());
@@ -99,6 +105,23 @@ public final class ResourceUpdater {
                 activity.finishAffinity(); android.os.Process.killProcess(android.os.Process.myPid());
             }).show();
     }
+    /** resParts（多分包）优先，否则退回单个 resUrl。 */
+    private static String[] downloadUrls() throws Exception {
+        org.json.JSONArray parts = remote.optJSONArray("resParts");
+        if (parts != null && parts.length() > 0) {
+            String[] urls = new String[parts.length()];
+            for (int i = 0; i < urls.length; i++) urls[i] = parts.getString(i);
+            return urls;
+        }
+        return new String[] { remote.getString("resUrl") };
+    }
+
+    /** 与打包脚本的分包命名对齐：MapleDashResources.patch.part01.zip … */
+    private static String partName(int index, int count) {
+        return count <= 1 ? "MapleDashResources.patch.zip"
+            : String.format(java.util.Locale.ROOT, "MapleDashResources.patch.part%02d.zip", index + 1);
+    }
+
     private static void download() {
         Context context = AppUpdater.dialogContext();
         LinearLayout content = new LinearLayout(context);
@@ -126,59 +149,101 @@ public final class ResourceUpdater {
             .setTitle("正在下载资源补丁").setView(content).setCancelable(false).create();
         progress.show();
         new Thread(() -> {
-            File sandbox = new File(activity.getCacheDir(), "resource-update.zip");
-            File copy = new File(ROOT, "MapleDashResources.patch.zip.part");
-            File target = new File(ROOT, "MapleDashResources.patch.zip");
+            final java.util.List<File> staged = new java.util.ArrayList<>();
             try {
-                if (sandbox.exists() && !sandbox.delete()) throw new IOException("无法清理旧资源下载");
-                HttpsURLConnection c = AppUpdater.connect(remote.getString("resUrl"));
-                try {
-                    long total = c.getContentLengthLong();
-                    if (total > 0 && activity.getCacheDir().getUsableSpace() < total + 16777216L)
-                        throw new IOException("沙盒存储空间不足");
-                    long received = 0, last = 0;
-                    try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(sandbox)) {
-                        byte[] buffer = new byte[65536]; int n;
-                        while ((n = in.read(buffer)) != -1) {
-                            out.write(buffer, 0, n); received += n;
-                            long now = android.os.SystemClock.elapsedRealtime();
-                            if (now - last > 200) {
-                                last = now; final long done = received;
-                                activity.runOnUiThread(() -> {
-                                    bar.setIndeterminate(total <= 0);
-                                    if (total > 0) {
-                                        int value = (int) Math.min(100, done * 100 / total);
-                                        bar.setProgress(value); percent.setText(value + "%");
-                                    }
-                                    detail.setText(String.format(java.util.Locale.ROOT, "%.1f MB%s", done / 1048576.0,
-                                        total > 0 ? String.format(java.util.Locale.ROOT, " / %.1f MB", total / 1048576.0) : ""));
-                                });
-                            }
-                        }
-                        out.getFD().sync();
-                    }
-                    if (received == 0 || (total > 0 && received != total)) throw new IOException("资源下载不完整");
-                } finally { c.disconnect(); }
-                activity.runOnUiThread(() -> { bar.setIndeterminate(true); detail.setText("正在复制资源补丁…"); percent.setText("请保持应用打开"); });
-                if (!ROOT.isDirectory() && !ROOT.mkdirs()) throw new IOException("无法创建资源目录，请检查存储权限");
-                if (ROOT.getUsableSpace() < sandbox.length() + 16777216L) throw new IOException("资源目录空间不足");
-                // 文件不整包进入内存；复制完成并同步落盘后再改为正式文件名。
-                try (InputStream in = new FileInputStream(sandbox); FileOutputStream out = new FileOutputStream(copy)) {
-                    byte[] buffer = new byte[65536]; int n;
-                    while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
-                    out.getFD().sync();
+                String[] urls = downloadUrls();
+                long total = 0;
+                for (int i = 0; i < urls.length; i++) {
+                    // 先全部落成 *.zip.part：中途被杀或失败时，C# 看不到正式分包，不会拿缺包的集合去安装。
+                    File part = new File(ROOT, partName(i, urls.length) + ".part");
+                    staged.add(part);
+                    total += transfer(i, urls[i], urls.length, part);
                 }
-                if (copy.length() != sandbox.length()) throw new IOException("资源复制不完整");
-                if (target.exists() && !target.delete()) throw new IOException("无法清理旧资源补丁");
-                if (!copy.renameTo(target)) throw new IOException("无法保存资源补丁");
-                sandbox.delete();
+                if (total <= 0) throw new IOException("资源下载不完整");
+                publish(staged, urls.length);
                 state = 1;
             } catch (Exception e) {
-                sandbox.delete(); copy.delete();
+                for (File file : staged) file.delete();
+                // 改名到一半失败会留下缺包的正式文件，宁可全删也不要让 C# 装一份残包。
+                dropStaleParts();
                 Log.w("ResourceUpdate", "下载或复制失败", e);
                 activity.runOnUiThread(() -> { progress.dismiss(); error(e.getMessage()); });
             }
         }, "ResourceDownload").start();
+    }
+
+    /** 沙盒下载完成后复制到 /sdcard/mapstory，长度一致并落盘才算成功；返回字节数。 */
+    private static long transfer(int index, String url, int count, File stage) throws Exception {
+        File sandbox = new File(activity.getCacheDir(), "resource-update-" + index + ".zip");
+        String label = count > 1 ? "第 " + (index + 1) + "/" + count + " 包" : "资源包";
+        try {
+            if (sandbox.exists() && !sandbox.delete()) throw new IOException("无法清理旧资源下载");
+            HttpsURLConnection c = AppUpdater.connect(url);
+            long received = 0;
+            try {
+                long length = c.getContentLengthLong();
+                if (length > 0 && activity.getCacheDir().getUsableSpace() < length + 16777216L)
+                    throw new IOException("沙盒存储空间不足");
+                long last = 0;
+                try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(sandbox)) {
+                    byte[] buffer = new byte[65536]; int n;
+                    while ((n = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, n); received += n;
+                        long now = android.os.SystemClock.elapsedRealtime();
+                        if (now - last > 200) {
+                            last = now; final long done = received; final long all = length;
+                            activity.runOnUiThread(() -> {
+                                bar.setIndeterminate(all <= 0);
+                                if (all > 0) {
+                                    int value = (int) Math.min(100, done * 100 / all);
+                                    bar.setProgress(value); percent.setText(value + "%");
+                                }
+                                detail.setText(String.format(java.util.Locale.ROOT, "%s %.1f MB%s", label,
+                                    done / 1048576.0, all > 0
+                                        ? String.format(java.util.Locale.ROOT, " / %.1f MB", all / 1048576.0) : ""));
+                            });
+                        }
+                    }
+                    out.getFD().sync();
+                }
+                if (received == 0 || (length > 0 && received != length)) throw new IOException("资源下载不完整");
+            } finally { c.disconnect(); }
+            activity.runOnUiThread(() -> { bar.setIndeterminate(true); detail.setText("正在复制" + label + "…"); percent.setText("请保持应用打开"); });
+            if (!ROOT.isDirectory() && !ROOT.mkdirs()) throw new IOException("无法创建资源目录，请检查存储权限");
+            if (ROOT.getUsableSpace() < sandbox.length() + 16777216L) throw new IOException("资源目录空间不足");
+            // 文件不整包进入内存；复制完成并同步落盘后才算这一包到位。
+            try (InputStream in = new FileInputStream(sandbox); FileOutputStream out = new FileOutputStream(stage)) {
+                byte[] buffer = new byte[65536]; int n;
+                while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                out.getFD().sync();
+            }
+            if (stage.length() != sandbox.length()) throw new IOException("资源复制不完整");
+            return received;
+        } catch (Exception e) {
+            stage.delete();
+            throw e;
+        } finally { sandbox.delete(); }
+    }
+
+    /** 所有分包都到位后一次性改名成正式文件名，并清掉上一次残留的整包/多余分包。 */
+    private static void publish(java.util.List<File> staged, int count) throws IOException {
+        dropStaleParts();
+        for (File stage : staged) {
+            String name = stage.getName();
+            File target = new File(ROOT, name.substring(0, name.length() - ".part".length()));
+            if (target.exists() && !target.delete()) throw new IOException("无法清理旧资源补丁");
+            if (!stage.renameTo(target)) throw new IOException("无法保存资源补丁");
+        }
+    }
+
+    /** 上一次可能留下整包或更多分包；不清掉会让手机端「包数对不上」直接拒绝解压。 */
+    private static void dropStaleParts() {
+        String[] names = ROOT.list();
+        if (names == null) return;
+        for (String name : names)
+            if (name.equals("MapleDashResources.patch.zip") ||
+                (name.startsWith("MapleDashResources.patch.part") && name.endsWith(".zip")))
+                new File(ROOT, name).delete();
     }
     public static String installing() {
         state = 0;

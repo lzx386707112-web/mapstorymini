@@ -1,0 +1,213 @@
+{
+ "source": {
+  "nodes": "Skill/<img>.img/skill/<id>[/level/<n>]/addAttack",
+  "note": "isAuto=1 ⇒ 主技能结算后自动补一段；其余写法是取消链，未接"
+ },
+ "skills": {
+  "14101020": {
+   "next": 14101021,
+   "auto": 1,
+   "delay": 0
+  },
+  "14111020": {
+   "next": 14111021,
+   "auto": 1,
+   "delay": 0
+  },
+  "14121001": {
+   "next": 14121002,
+   "auto": 1,
+   "delay": 0
+  },
+  "14141000": {
+   "next": 14141001,
+   "auto": 1,
+   "delay": 0
+  },
+  "14141002": {
+   "next": 14141003,
+   "auto": 1,
+   "delay": 0
+  },
+  "400021034": {
+   "next": 400021035,
+   "auto": 1,
+   "delay": 0
+  },
+  "400021026": {
+   "next": 400021027,
+   "auto": 1,
+   "delay": 0
+  },
+  "400021025": {
+   "next": 400021026,
+   "auto": 1,
+   "delay": 0
+  },
+  "400021023": {
+   "next": 400021024,
+   "auto": 1,
+   "delay": 0
+  },
+  "400021021": {
+   "next": 400021022,
+   "auto": 1,
+   "delay": 0
+  },
+  "400021020": {
+   "next": 400021021,
+   "auto": 1,
+   "delay": 0
+  }
+ },
+ "deferred": {
+  "15001020": {
+   "next": 15001021,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType），语义未逆向"
+  },
+  "15001021": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType,permitTime），语义未逆向"
+  },
+  "15101020": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType），语义未逆向"
+  },
+  "15101021": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType），语义未逆向"
+  },
+  "15111020": {
+   "next": 15111021,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skipActionFrame,type,skillPlus,patternType），语义未逆向"
+  },
+  "15111021": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType），语义未逆向"
+  },
+  "15111022": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType），语义未逆向"
+  },
+  "15120003": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType,skipActionFramePlus），语义未逆向"
+  },
+  "15121001": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType,skipActionFramePlus），语义未逆向"
+  },
+  "15121002": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType,skipActionFramePlus），语义未逆向"
+  },
+  "15121052": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType,skipActionFramePlus），语义未逆向"
+  },
+  "15141000": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType,skipActionFramePlus），语义未逆向"
+  },
+  "15141003": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType,skipActionFramePlus），语义未逆向"
+  },
+  "15141004": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType,skipActionFramePlus），语义未逆向"
+  },
+  "15141006": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType,skipActionFramePlus），语义未逆向"
+  },
+  "15141007": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType,skipActionFramePlus），语义未逆向"
+  },
+  "400010070": {
+   "next": 21001010,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,patternType,skipActionFrame,type），语义未逆向"
+  },
+  "400021038": {
+   "next": 400021019,
+   "why": "按段数/前置技能触发的取消链（skill,useAddAttackHavingOrder,type,reqCount,pattern,patternType），语义未逆向"
+  },
+  "400021036": {
+   "next": 400021019,
+   "why": "按段数/前置技能触发的取消链（skill,useAddAttackHavingOrder,type,reqCount,pattern,patternType），语义未逆向"
+  },
+  "400021027": {
+   "next": 400021019,
+   "why": "按段数/前置技能触发的取消链（skill,useAddAttackHavingOrder,type,reqCount,pattern,patternType），语义未逆向"
+  },
+  "400021022": {
+   "next": 400021019,
+   "why": "按段数/前置技能触发的取消链（skill,useAddAttackHavingOrder,type,reqCount,pattern,patternType），语义未逆向"
+  },
+  "400051016": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType），语义未逆向"
+  },
+  "400051096": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,patternType），语义未逆向"
+  },
+  "400051059": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,isCancelable,patternType），语义未逆向"
+  },
+  "400051060": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,isCancelable,patternType），语义未逆向"
+  },
+  "400051061": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,isCancelable,patternType），语义未逆向"
+  },
+  "400051062": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,isCancelable,patternType），语义未逆向"
+  },
+  "400051063": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,isCancelable,patternType），语义未逆向"
+  },
+  "400051064": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,isCancelable,patternType），语义未逆向"
+  },
+  "400051066": {
+   "next": 15001020,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skillPlus,skipActionFrame,type,isCancelable,patternType），语义未逆向"
+  },
+  "4221014": {
+   "next": 400041025,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skipActionFrame,type,isCancelableOverPermitTime,ignoreSetAddAttackDoingSkill），语义未逆向"
+  },
+  "4221016": {
+   "next": 400041025,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skipActionFrame,type,skillPlus），语义未逆向"
+  },
+  "4241000": {
+   "next": 400041025,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skipActionFrame,type,isCancelableOverPermitTime,ignoreSetAddAttackDoingSkill），语义未逆向"
+  },
+  "4241001": {
+   "next": 400041025,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skipActionFrame,type,skillPlus），语义未逆向"
+  },
+  "4241002": {
+   "next": 400041025,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skipActionFrame,type,isCancelableOverPermitTime,ignoreSetAddAttackDoingSkill），语义未逆向"
+  },
+  "4241003": {
+   "next": 400041025,
+   "why": "按段数/前置技能触发的取消链（skill,reqCount,pattern,skipActionFrame,type,skillPlus），语义未逆向"
+  },
+  "5111009": {
+   "next": 5121007,
+   "why": "按段数/前置技能触发的取消链（skill,permitTime,reqCount,pattern,skipActionFrame,patternType,skillPlus），语义未逆向"
+  }
+ }
+}

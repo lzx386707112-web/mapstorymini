@@ -75,7 +75,8 @@ public static class WzResourcePatchInstaller
             catch (UnauthorizedAccessException) { }
         });
     }
-    public static void Install(string zipPath, string root, string manifest, string fallbackManifest,
+    // 补丁可以是单包，也可以是分包；条目按名跨分包查，删包交给调用方统一处理。
+    public static void Install(WzResourceParts pack, string root, string manifest, string fallbackManifest,
         string versionJson, Action<int, int> progress, Action<string> phase)
     {
         Recover(root);
@@ -90,15 +91,14 @@ public static class WzResourcePatchInstaller
         bool committed = false;
         try
         {
-            using (var zip = ZipFile.OpenRead(zipPath))
             {
-                if (WzResourceInstaller.ReadArchiveManifest(zipPath) != manifest)
+                if (pack.ManifestText != manifest)
                     throw new InvalidDataException("补丁目标清单不匹配");
                 long total = 0;
                 foreach (var file in target)
                 {
                     SafePath(data, file.Key);
-                    var entry = zip.GetEntry("Data/" + file.Key);
+                    var entry = pack.FindEntry("Data/" + file.Key);
                     if (entry != null) { changes.Add(file.Key); total = checked(total + entry.Length); }
 
                 }
@@ -106,7 +106,7 @@ public static class WzResourcePatchInstaller
                 var buffer = new byte[128 * 1024];
                 foreach (var file in target)
                 {
-                    var entry = zip.GetEntry("Data/" + file.Key);
+                    var entry = pack.FindEntry("Data/" + file.Key);
                     if (entry == null) continue; // 未变化文件零复制、零哈希。
                     phase?.Invoke("正在解压补丁资源");
                     string destination = SafePath(staging, "Data/" + file.Key);
@@ -173,6 +173,5 @@ public static class WzResourcePatchInstaller
         }
         // 提交之后清理失败不会回滚，启动时可继续清理。
         try { Recover(root); } catch (IOException) { } catch (UnauthorizedAccessException) { }
-        WzResourceInstaller.DeleteInstalledArchive(zipPath);
     }
 }

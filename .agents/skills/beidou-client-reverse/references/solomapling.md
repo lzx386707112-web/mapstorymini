@@ -766,3 +766,19 @@ Android实机输入与画面仍待验收。
 验证边界：原资源五款三层解码通过；Android现场画面待验收；本次未扩展effect/say动画或514皮肤链。
 
 本轮Unity compile-check：0错误/0警告；git diff --check通过。未构建APK或执行Android实机验收。
+
+### 2026-11-06 假人全局不可见与日志分享
+
+依据用户日志 `/Users/lizixian/Downloads/client-2026-11-06.txt`：
+`BotAppearancePrebake` 及 `BotField.Create -> WzCharacter.Appearance -> Compose -> Placements -> WzAssets.FileRoot`
+反复报缺少 `/sdcard/mapstory/Data/Character/00000000.img`。视图创建失败不终止服务端假人行为，
+因此人物、名字与气泡同时不显示，打怪和掉落仍执行。此处是项目外观投影问题，不是缺少待补的源端资源。
+源端 `Beidou-Server/clien/Data/Character` 无 `00000000.img`，存在 `00002000.img`、`00012000.img`，
+以及 Face/00020012.img、Face/00021009.img、Hair/00030000.img、Hair/00031000.img。
+本次仅检查资源和项目调用链，未新增EXE逆向地址或二进制行为结论。
+
+`BotAppearance.CharacterIds` 对非正数脸型/发型按性别使用上述有效默认值，跳过非正数装备编号；
+保持原有肤色投影。增加空外观回归，确保不输出00000000。
+用户日志另报 `Field SDK_INT or type signature not found`：LogShare自建Thread执行JNI前未显式附加JVM，
+已在Publish入口AttachCurrentThread、finally DetachCurrentThread，保留真实SDK分支，避免猜测系统版本。
+Android实机显示与分享仍待验收；不以静态编译代替设备验证。

@@ -9,6 +9,8 @@
 //
 // 为什么必须 runInBackground=true：点开浏览器后游戏切到后台，如果 Unity 主线程停了，
 // 请求就会一直等到超时。开启后主线程继续跑，后台页面才拿得到数据。
+// 桌面（Windows 等）靠这一条就够，队列始终由主线程排空，不另起泵线程；
+// Android 上 runInBackground 不生效（Activity onPause 会停主线程），才需要失焦泵兜底。
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -81,9 +83,12 @@ public sealed class AdminHost : MonoBehaviour
         // 主线程暂停），所以下面用失焦泵线程兜底，这里仍然先声明意图。
         Application.runInBackground = true;
 
-        // 失焦泵线程：只在游戏切到后台（主线程已暂停）时接管 AdminMainThread 队列。
-        // 回前台后 Foreground 置回 true，泵线程自动让位，DB 访问恢复「主线程独占」。
-#if !UNITY_WEBGL
+        // 失焦泵线程只给「主线程真的会停」的平台用（Android onPause / 编辑器非 RunInBackground）。
+        // 桌面独立播放器（Windows 等）runInBackground 生效，切到系统浏览器后主线程照常 Update，
+        // 队列始终由主线程独占排空；此时若也起泵线程，会和主线程 Pump、以及 Run<T> 在主线程
+        // 直接执行的 DB 操作并发，破坏 AdminBackend.cs 里「DbStore 单线程访问」的约定。
+        // 网页版是单线程，同样不能起。
+#if !UNITY_WEBGL && (UNITY_ANDROID || UNITY_IOS || UNITY_EDITOR)
         pumpThread = new Thread(BackgroundPump) { IsBackground = true, Name = "AdminBackgroundPump" };
         pumpThread.Start();
 #endif

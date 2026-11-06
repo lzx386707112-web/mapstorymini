@@ -72,6 +72,10 @@ static class BotChecks
     {
         Console.WriteLine("== SoloMapling 核心回归 ==");
         CheckMarketData(check);
+        var emptyAppearance = BotAppearance.CharacterIds(new BotCharacter());
+        check(Array.IndexOf(emptyAppearance, "00000000") < 0 &&
+            Array.IndexOf(emptyAppearance, "00020012") >= 0 && Array.IndexOf(emptyAppearance, "00030000") >= 0,
+            "假人空外观使用有效脸型和发型，不加载00000000.img");
         var appearanceActor = new BotCharacter { skinColor = 2, face = 20000, hair = 30000 };
         appearanceActor.equips[-105] = 1050000;
         appearanceActor.equips[-5] = 1040000;

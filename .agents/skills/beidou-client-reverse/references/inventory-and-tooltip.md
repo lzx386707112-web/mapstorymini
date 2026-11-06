@@ -597,3 +597,255 @@ Unity编译0warning/0error；截图/tmp/equip-sealed-genesis。Bot/Items.json随
 7 条战力公式含溢出饱和 + 7 条字号退档 + 原布局与星级断言）；
 `TooltipPreview` 1280×720 实拍：未穿戴的武器显示 `战斗力提升量` + `+ 8,470`，
 已穿戴的帽子只显示标签（无数值）+「当前穿戴中的装备」，与 282 两张实拍的位置一致。
+
+## 282 原生套装信息面板（frame/set）布局（2026-11-06，新增）
+
+**对象与身份**：TMS282 客户端 `~/Documents/mxd/MapleStory/Data/UI/UIToolTip.img`（结构）+ `Data/UI/_Canvas/UIToolTip.img`（像素），BMS 密钥；像素用 `wzpy.canvas.decode_canvas(node, region="BMS")` 独立解出，全部 format 2。它与 beidou `BeiDouSetItemCompat.dll` 自建的 236 宽 native layer **不是同一套 UI**。本工程 `tools/ms282/import_equipment_tooltip.py` 的 SECTIONS 至今只导 `frame/common` 等 9 组，**`frame/set` 与 `textIcon/set` 均未迁移**（`docs/tms282-skill/data/equipment-tooltip-import.json` 的 263 节点中零命中）。
+
+**复现命令**：
+- `python3 tools/ms282/dump_img_tree.py UI/UIToolTip.img --branch Item/Equip --depth 4`
+- `python3 tools/ms282/dump_ui_layout.py UI/UIToolTip.img/Item/Equip/frame/set`
+- `python3 tools/ms282/dump_ui_layout.py UI/UIToolTip.img/Item/Equip/textIcon/set`
+- `python3 tools/ms282/dump_img_tree.py Etc/SetItemInfo.img --branch 504`
+
+**已确定：框体** `Item/Equip/frame/set/{top,mid,btm,line,boxNormal,boxLucky}`：top 298×30、mid 298×1（纵向拉伸）、btm 298×12、line 298×3，origin x=149（水平中心锚点）；中心像素 top (49,58,67,242)、mid/btm (46,53,61,242)、line (54,66,73,243)，**顶栏无烘焙文字**。`boxNormal/{w,c,e}` = 8×14 / 1×14 / 8×14（w/e 复用 `frame/common/category`），`boxLucky/{w,c,e}` = 8×16 / 1×16 / 8×16；caps 像素 (143,172,204,51) 半透明蓝，是行高亮底框。对比装备卡 `frame/common` 宽 324。
+
+**已确定：`Item/Equip/set` 坐标常量（逻辑像素，相对框体左上）**
+
+| 键 | 值 | 作用 |
+| --- | --- | --- |
+| lineSpace / cashLineSpace | 15 / 50 | 普通装备行 / 现金道具行行距 |
+| titleCanvasPos / titleNamePos / setCountPos | (14,20) / (46,19) / (260,19) | SET 徽标 / 套装名 / 已穿·完整件数 |
+| itemPartPos / itemNamePos | (14,48) / (89,48) | 部件名 / 道具名，逐行 y = 48 + 15·i |
+| cashItemIconPos / cashItemNamePos / cashItemPartPos | (13,48) / (60,48) / (283,48) | 现金道具行的图标·名称·部件 |
+| setPartPos / setEffectPos | (14,10) / (89,10) | 效果档位标签 / 效果正文（相对偏移） |
+| itemListBottomMargin / setEffectMargin / setListBottomMargin | 7 / 7 / 12 | 列表尾留白 / 档位间距 / 效果区尾留白 |
+| jokerRelPos / canvasBoxMargin | (4,3) / 0 | jokerPossible 标记位移 / 高亮框边距 |
+
+**已确定：文字图标** `Item/Equip/textIcon/set/{normal 23×11, guide 61×12, lucky 7×7}`，origin 均 (0,0)。实拍解码：normal = 灰底深字「SET」徽标；guide = 烘焙字「套組效果」+ 滑鼠捲動提示图标；lucky = 亮黄绿 (204,255,0) 四瓣方块（幸運物品标记）。
+
+**已确定：字体** `Item/Equip/font/common` 无 set 专用条目，套装区复用通用表：itemName Dotum 14 粗 `FFFFFFFF`；normal 12 白、gray 12 `FFB7BFC5`、darkGray 12 `FF85919F`、emphasis 12 `FFFFCC00`、red 12 `FFFF8A18`（其余 12px 均为 MD摩利斯9）。
+
+**已确定：文案** `String/StringTable.img` 的 `SID_TOOLTIP_SETLIST_EQUIPPED=裝備中`、`SID_TOOLTIP_SETLIST_NOT_EQUIPPED=未裝備`、`SID_TOOLTIP_SETLIST_NOT_EXIST=(無)`；`SID_TOOLTIP_LUCKY_ITEM_HELP` 为 lucky 变体说明文案。
+
+**已确定：数据源** 客户端 `Data/Etc/SetItemInfo.img/<setId>`：`setItemName / completeCount / Effect/<件数>/{incPAD,incMAD,...} / Option / ItemID/<n>[typeName,representName] / Desc / jokerPossible`。例 504「航海師套裝(戰士)」7 件、Effect 档 2..7、`Desc.weapon=選擇一件航海師武器`；`Character/Cap/01004422.img/info/setItemID=504`，中文道具名在 `String/Eqp.img`（如 1004422=航海師劍士頭盔）。服务端同名 XML 在 `TMS282.5/data/wz282/Etc.wz/SetItemInfo.img.xml`（约 877 套），**未与客户端逐套比对**。
+
+**lucky 变体**：`Item/Equip/lucky` 另有独立常量 `lineSpace 15 / setPos (14,49) / setListBottomMargin 7 / helpTextTopMargin 10 / helpTextBottomMargin 19 / titleNamePos (25,19) / titleCanvasPos (14,22) / bodyPartPos (264,19) / canvasBoxMargin 1`，配 16 高 `boxLucky` 与 `SID_TOOLTIP_LUCKY_ITEM_HELP`。
+
+**已确定：EXE 直接引用（2026-11-06 更正）**。`MapleStory.exe`（186,193,888 B）`strings -a` 的 1665518–1665530 是一段连续的套装面板资源表，逐条命中：
+`/textIcon/set/lucky`、`/textIcon/set/normal`、`/frame/set/boxNormal/{w,c,e}`、`/frame/set/boxLucky/{w,c,e}`、
+`SID_TOOLTIP_SETLIST_EQUIPPED / NOT_EXIST / NOT_EQUIPPED`、`SID_TOOLTIP_LUCKY_ITEM_HELP`，紧邻格式串 `- %s`、` +%d%%`。
+另在 1575043 命中 `Etc/SetItemInfo.img`、1575040 `completeCount`、1575054 `setItemName`，
+1584161 `SID_TOOLTIP_SETITEM_CATEGORY`、1589444 `SID_TOOLTIP_SETEFFECT`、
+1589438/1589449 `SID_TOOLTIP_JOKER_SET_ITEM_LIMIT` / `SID_TOOLTIP_JOKERITEM`。
+**此前「EXE 未命中 frame/set」是假阴性**：那次 grep 用了 BRE 的 `\|` 而本机 `rtk grep` 走 ERE，模式整体不匹配。
+复现：`strings -a MapleStory.exe | grep -nF -e 'frame/set' -e 'textIcon/set'`（UTF-16 侧 `strings -el` 无命中，这些路径以 ASCII 存放）。
+⇒ 结论修正为：**客户端确实加载 frame/set 皮肤与 SET 状态文案**，但 EXE 里没有 `frame/set/top|mid|btm|line`、`textIcon/set/guide`、
+`Item/Equip/set` 各常量键的字面路径（疑由通用 tooltip 框架按前缀拼接），**绘制函数地址与调用链仍未定位**。
+
+**待核（不得写成确定结论）**：① 绘制函数地址 / 调用链已定位（见下一节），但「两框相对位置、狀態文案落点的具体 x/y、字色与达成态的逐分支对应、guide 图标确切摆放、`frame/set/top|mid|btm|line` 由通用框架拼接的方式」仍未逐指令坐实，属推断；② `setPartPos/setEffectPos` 的相对基准点未定；③ 现金道具行 50 行距与 `jokerRelPos` 的实际绘制未复现；④ `SID_TOOLTIP_SETEFFECT`、`SID_TOOLTIP_SETITEM_CATEGORY` 等值未在 `String/StringTable.img` 找到（可能在其它 String 表）；⑤ 客户端 SetItemInfo.img 与服务端 XML 未逐套比对（数量同为 877，字段结构已确认**不一致**，见下一节）。
+
+**本工程迁移状态（2026-11-06 已迁移）**：`ItemTooltip.DrawSetColumns` 已从 beidou DLL 口径（宽 236、代码帧 `A0000040`、金色 `FFE137`）换成 282 `frame/set` 298 宽皮肤 + 三列坐标；装备详情卡仍用 `frame/common` 324。资源按 AGENTS 规则 11 转 GMS 编码 / ARGB4444，经 `tools/ms282/import_equipment_tooltip.py` 导入 `Assets/Resources/UI/EquipmentTooltip.bytes`（57 canvas / 12,916 B）。落地细节见本节末尾「实现落地」。
+
+**本次产出**：`docs/preview/282-set-item-panel.png`，用原端 canvas 像素 + 实测坐标合成的还原示意图（含标注与证据边界）；合成脚本为临时文件 `/tmp/compose_282_set_panel.py`，未写入工程源码。
+
+## 282 套装面板 EXE 绘制链实证（2026-11-06 补充逆向）
+
+**二进制身份**：`~/Documents/mxd/MapleStory/MapleStory.exe`，PE32+ x86-64 GUI，186,193,888 B，ImageBase `0x140000000`，
+EntryPoint RVA `0xC34E058`。节区：`.text` RVA `0x1000`/`0x8193AAA`（明文可执行）、`.rdata` `0x8195000`、
+`.pdata` `0xA247000`（RUNTIME_FUNCTION 表，约 30 万条，可精确取函数边界）、`.data` `0x9A7E000`、
+`.themida`（Raw=0，加壳）、`.boot`。⇒ **Themida 只包了启动层，主 `.text`/`.rdata`/`.pdata` 可直接静态反汇编**，
+此前「64 位 themida 无法逆」的判断只适用于 `atkPow` 那条链，不适用于 UI 绘制链。
+
+**两种字符串编码（关键）**：资源路径片段 `/frame/set/boxNormal/w` 等是 **ASCII**（`0x087A40A0–0x087A41D0` 连续表）；
+WZ 属性键名 `/lineSpace`、`/itemPartPos`、`/titleNamePos`… 与字体名 `/normal`、`/gray` 是 **UTF-16LE**
+（`0x087A3DF0–0x087A4068` 连续表）。铁律「EXE 节点名是 UTF-16，只搜 ASCII 会漏」在本模块再次成立：
+上一轮 `strings -a` 搜不到布局键名即因此，而 `strings -el` 那次又只搜了完整路径模式，两边都漏。
+
+**已确定：函数地址与调用链**（RVA，均由 `.pdata` 取边界）
+| 地址 | 大小 | 作用 |
+| --- | --- | --- |
+| `0x00A38600` | `0x49B1` | `Etc/SetItemInfo.img` 数据装载；调用者 `0x009FDA3A` |
+| `0x051941E0` | `0x14DC` | **顶层套装面板 draw**；`0x05194699`→lucky help、`0x05194730`/`0x0519479F`→装备列表 |
+| `0x0518EF10` | `0x11AE` | lucky 变体说明（`SID_TOOLTIP_LUCKY_ITEM_HELP`），读 `titleCanvasPos`/`titleNamePos`/`canvasBoxMargin` |
+| `0x051900D0` | `0x26B7` | **装备列表 + 三态状态文案**；`0x051907D9` EQUIPPED、`0x0519086E` NOT_EXIST、`0x051908D6` NOT_EQUIPPED；末尾 `0x05190993` 调件数 |
+| `0x05192790` / `0x051956D0` | — | 效果区 / 现金道具变体，同样消费整套布局常量 |
+| `0x05239280` | — | 件数 `"%d / %d"`（格式串 RVA `0x0843CAD8`）+ `boxNormal` 高亮框；用 `normalBold`/`grayBold` 两态 |
+| `0x052384D0` / `0x05238640` | `0xB9` | `/textIcon/set/lucky`、`/textIcon/set/normal` 资源 getter |
+| `0x05238700` / `0x05238970` | `0x264` | `boxNormal/{w,c,e}`、`boxLucky/{w,c,e}` 三个 canvas 的 getter |
+| `0x05B90080` | — | 通用文字绘制（字体对象 + 文本对象 + x/y + style） |
+
+**已确定：布局常量按名字读取，不是硬编码**。`0x05234xxx` 是一串 getter，每个 `lea r8,[rip+…]` 指向 UTF-16 键名，
+再用 `call 0x140407240`（路径拼接）→ `0x1413af880`（读 int/vector）。完整映射：
+
+| getter | 键 | 主消费者 |
+| --- | --- | --- |
+| `0x05234AE0` | `/lineSpace` ↔ `/cashLineSpace`（按参数二选一） | `0x051900D0`,`0x05192790`,`0x051956D0` |
+| `0x05234C20` | `/itemPartPos` ↔ `/cashItemPartPos` | 同上 |
+| `0x05234D60` | `/itemNamePos` ↔ `/cashItemNamePos` | 同上 |
+| `0x05234EA0` | `/cashItemIconPos` | 同上 |
+| `0x05234F50` / `0x05235000` | `/itemListBottomMargin` / `/setListBottomMargin` | 同上 |
+| `0x052350B0` / `0x05235160` / `0x05235210` | `/setPartPos` / `/setEffectPos` / `/setEffectMargin` | `0x05192790`,`0x051956D0` |
+| `0x052352C0` / `0x05235370` / `0x05235420` | `/titleNamePos` / `/titleCanvasPos` / `/setCountPos` | 列表 + 件数 |
+| `0x05234D60` 等 | `/setListBottomMargin`、`/titleNamePos`、`/titleCanvasPos`、`/canvasBoxMargin` 亦被 `0x0518EF10` 直接读 | lucky 变体 |
+
+**行坐标实证**：`0x05190422` `mov ecx,[rbp]`（= lineSpace）→ `imul ecx,ebx`（行号）→ `add ecx,[rbp+0x44]`（起始 y），
+即 **y = 起始 y + lineSpace·i**，与 IMG 的 `lineSpace 15` / `itemPartPos (14,48)` 完全对应。
+`0x05190730` 起是逐行循环，`cmp esi,[r12+0x2f0]` 控制件数；`0x0519075D jae 0x0519086E` 越界→`NOT_EXIST (無)`，
+否则按状态取 `EQUIPPED 裝備中` / `NOT_EQUIPPED 未裝備`。`0x141303550` 是字符串表查表函数。
+
+**已确定：字体态**。`0x05234020 /normal`、`0x05234110 /gray`、`0x05234200 /normalBold`、
+`0x052342F0 /grayBold`、`0x052343E0 /darkGray` 是按 `font/common` 名字取的 getter；
+前三者同时被 `0x051900D0`（列表）、`0x05192790`（效果区）、`0x051956D0`（现金变体）加载，
+`normalBold`/`grayBold` 只被件数 `0x05239280` 用。⇒ 三态 normal/gray/darkGray 确实服务于套装行的达成状态，
+件数另用粗体两态；**但逐分支（哪态对应 EQUIPPED / NOT_EQUIPPED / NOT_EXIST）未逐指令确认**。
+
+**已确定：数据装载字段**。`0x00A38600` 的 UTF-16 字段簇 `0x08211680–0x08211838`：
+`rdItemID / completeCount / parts / jokerPossible / zeroWeaponJokerPossible / magicGradeWz2 / expandToolTip /
+representName / byGender / activeSkill`，配合 `0x08211720 Etc/SetItemInfo.img`、`0x082118A0 setItemName`、
+`0x081C3700 Desc`、`0x081BF290 typeName`、`0x082117D8 representName`。ASCII 侧另有 `Etc/SetItemInfo.img`、
+`setItemName`、`completeCount`（`strings -a` 1575040–1575054）。
+
+**复现命令**（在 `MapleDash/` 下）：
+- `strings -a MapleStory.exe | grep -nF -e 'frame/set' -e 'textIcon/set'` → ASCII 路径表
+- `python3 /tmp/ms282_u16.py` 式脚本：按 UTF-16LE 扫 `0x087A3DF0–0x087A4068` 得键名簇
+- `pefile` 读 `.pdata` RUNTIME_FUNCTION 取函数边界；`capstone` 反汇编 `0x051900D0` / `0x05234xxx`
+- numpy 扫 `.text` 的 RIP-relative `LEA`（`REX 8D`，ModRM `(b&0xC7)==0x05`，`target = rva+7+disp32`）做 key→getter→caller 映射
+
+**282 SetItemInfo 迁入约束（重要）**：客户端 `Data/Etc/SetItemInfo.img` 共 **877 套**（服务端 XML 也 877，但字段结构不一致，按 AGENTS 规则 8 以客户端为准）。
+`ItemID` 有**两代结构**：
+① 老式 249 套带 `typeName` / 230 套带 `representName`：`ItemID/<n>` 是 imgdir，含多个候选 itemId + `typeName`（如「（帽子）」）+ `representName`（如「暴風雪護甲」），
+这两列正是面板 `itemPartPos` / `itemNamePos` 的直接数据源（例 set 1）；
+② 新式（如 504 航海師套裝(戰士)）`ItemID/<n>` 是**纯 int**，无 typeName/representName，部件名/道具名须由 itemId 走代码映射 + `String/Eqp.img` 取 name。
+另 548 套有 `parts`、118 套有 `Desc`、517 套有 `jokerPossible`。
+⇒ 迁数据必须兼容两代 ItemID，否则现代套装的「部件名 / 道具名」两列会空。
+工程现有 `AdminSetItem` catalog 仅 55 套（beidou），且被 `ComputeBonus`/`EquipLoadout` 用于**玩法结算**；
+直接替换会改数值，建议显示层与结算层分离（待用户确认）。
+
+## 282 套装 Effect 的 Option / activeSkill 链（2026-11-06 续）
+
+**背景**：用户要求迁入 282 SetItemInfo 并全量替换结算数据。客户端 `Etc/SetItemInfo.img` 877 套 / 2081 个 Effect 档位，
+共 24 种字段；工程 `AdminSetItem.SupportedStats` 是另一套口径，且无 `activeSkill`/`Option` 机制。
+按 AGENTS 规则 9 先做逆向，本轮**未改业务代码**。
+
+**已确定：`inc*` 属性字段与解析函数**。EXE UTF-16 簇 `0x0820974E–0x08209858`：
+`incSTR incDEX incINT incLUK incMHP incMMP incMHPr incMMPr incPAD incMAD incPDD incMDD incACC incEVA incSpeed incJump incNBDR`，
+末尾紧跟 `String/Skill.img`；簇首还有 `setItemID` / `allowOverlappedSet`（`0x08209646/9660`）。
+`0x008EC030` 逐个按名字读这些字段并写入结构体（`[r14]` = incSTR、`[r14+4]` = incDEX …，取节点用 `0x14043cc10`、
+转 int 用 `0x14043f560`），调用者 `0x00ADC7C0`（`0x305`，另有 `" "`/`"con"` 格式串，疑为 tooltip 侧）。
+其它字段消费函数：`0x00A3DE30`（incPAD/incMAD/incCraft* Min/Max，调用者 `0x009F90A0`/`0x00A41A70`/`0x00A6BFA0`）、
+`0x00A41A70`、`0x009EBF20`（incCr/incPQEXPr，调用者 `0x009F7700`）。
+数据侧另有 `incAllStat`(650 档)、`nbdR`(37)、`incCr/incCDr`、`incPQEXPr`、`incPVPDamage`、`bonusByTime`、`OptionToMob`。
+
+**已确定：`Option` 复用装备潜能（ItemOption）系统，不是套装私有机制**。
+结构 `Effect/<档位>/Option/<n>/{option, level}`；样例 option 60023 / 60024、level 13。
+`option` 补零到 6 位 → `Data/Item/ItemOption.img/060024`：
+`info/string = "攻擊Boss怪物時傷害 +#incDAMr%"`、`level/13 = {boss:1, incDAMr:10, fixedGrade:1}`；
+`060023`：`info/string = "無視怪物防禦率 +#ignoreTargetDEF%"`、`level/13 = {ignoreTargetDEF:10, fixedGrade:1}`。
+EXE 的通用属性键表 `0x0825AA00–0x0825B9E0`（`inc*`/`indie*`/`ignoreTargetDEF`/`incDAMr`/`nbdR` 等 100+ 键）
+与 `Item/ItemOption.img` 路径 `0x0825B978`、`Item/SkillOption` `0x0825B9E0` 同簇。
+⇒ 显示取 `info/string` 模板 + `level/<n>` 数值；结算按该档的通用属性键并入角色属性。
+**边界**：该键表通过查表/哈希消费（无 RIP-relative LEA 直引），Option 的**结算函数地址未定位**。
+
+**已确定：`activeSkill` 是「套装档位授予技能」，技能 id 在 8000xxxx 段**。
+结构 `Effect/<档位>/activeSkill/<n>/{id, level}`；827 个档位带此节点，level 多为 1。
+样例：set 40 档 2 → 80001037 lv1、档 3 → 80001039 lv1；set 102 档 1/2/3 → 80000007/8/9 lv1。
+`String/Skill.img/<id>` 给出名称与描述（80001037 = 「獨角獸比約恩騎乘技能」，`[最高等級 : 1]` +
+`MP10消耗，防禦力10增加，移動速度120，跳躍力120`）；EXE 有格式串 `String/Skill.img/{}`。
+装载点 `0x00A399B4`（在 `0x00A38600` 内）：`call 0x140a0ef20` 按名取 `activeSkill` 节点，
+`0x00A399EA call 0x140a0f3f0` 遍历，`0x00A39A60–0x00A39AD2` 循环把条目写入套装定义对象 `+0x48` 容器
+（含 `cmp rdx, 0x3e8` / `cmp rdx,-1` 校验）。数据装载器 `0x00A38600` 的调用者是 `0x009FD9E0`。
+**边界**：**运行时「档位达成 → 授予 / 卸下移除」的触发链未逐指令定位**；数据链（字段、id、字符串表、装载函数）已完整。
+
+**服务端对照**：`TMS282.5/data/wz282/Etc.wz/SetItemInfo.img.xml` 同为 877 套，Effect 档的
+`activeSkill` / `Option` 子节点结构与客户端一致（set 40 两档 activeSkill、set 504 各档 Option）。
+但 TMS282.5 只有 `bin/` 编译产物，无可读源码；按 AGENTS 规则 8 仅作参考，不以服务端为准。
+
+**全量实现方案（2026-11-06 已落地）**：
+1. 导出客户端 `Etc/SetItemInfo.img` 877 套为工程 JSON：两代 `ItemID` 结构、Effect 全 24 字段、
+   `activeSkill` 列表、`Option` 列表、`Desc`、`jokerPossible` 等。
+2. 导出被引用的 `Item/ItemOption.img/<6位>/{info/string, level/*}` 与 `String/Skill.img/<8000xxxx>` 名称/描述。
+3. 建繁→简对照表，覆盖套装名、`representName`、`typeName`、Option 模板、技能名/描述。
+4. `AdminSetItem` 字段映射：`incPAD→PAD`、`incMAD→MAD`、`incMHP→HP`、`incMMP→MP`、`incSTR/DEX/INT/LUK` 同名、
+   `incAllStat→四属性`、`incMHPr/incMMPr→HPPct/MPPct`、`incSpeed/incJump→SPD/JMP`、`nbdR→IgnoreDefense`、
+   `incACC/incEVA→ACC/EVA`、`incPDD/incMDD→PDD/MDD`；`Option` 展开为 ItemOption 通用键；`activeSkill` 新增授予接口。
+5. 显示层按前述 282 面板结论改造（298 宽 / 保持分栏 / 简体格式 / 推断项标注）；守卫 `TooltipLayoutChecks` 同步。
+**风险**：全量替换结算会把 877 套的 282 数值口径带进 `EquipLoadout`/`CombatRules`，需完整回归。
+
+## 282 套装面板与 SetItemInfo 实现落地（2026-11-06，已写码）
+
+**数据出口**：`tools/ms282/export_set_item_data.py` → `Assets/Resources/Admin/SetItem282.json`
+（1,149,011 B；`setCount=877`；`options=26`；`skills=818`；`equipNames=5461`；`unmappedFields={'incPQEXPr':3}`）。
+源仍是 282 客户端 IMG（AGENTS 规则 8），显示串用 `zhconv` 转简体，`*Tw` 保留原文供审计。
+
+**字段映射（导出期一处收敛，可重跑审计）**
+- Effect `inc*` → 工程键：`STAT_MAP`（新增 `incPDDr→PDDPct`、`incMDDr→MDDPct`）；
+  `incCr→**CriticalChance**`（不是 CriticalRate，工程 PotentialStats/NativeBuffs 的规范键）。
+- `incAllStat` 在导出期展开成 STR/DEX/INT/LUK 四条。
+- Option 的 `incDAMr` 有歧义，**按 level 节点是否带 `boss:1` 判别**：带 → `BossDamage`，不带 → `Damage`
+  （实证：60024/30601/603 带 boss:1；10070/22070/30070/40070 不带）。
+- Option 其它键：`ignoreTargetDEF→IgnoreDefense`、`incCr→CriticalChance`、`incCriticaldamage→CriticalDamage`、
+  `incAsrR→StatusRes`、`incSTRr/incDEXr/incINTr/incLUKr→STRPct/DEXPct/INTPct/LUKPct`；
+  `boss / fixedGrade / attackType / prop / level / time / incAllskill / incAllStat` 不是属性，不透传。
+- `incPQEXPr`（3 档）无对应机制，留在 `unmapped`，面板显示「组队任务经验获得 +N（未接入）」标红。
+
+**结算（`AdminSetItem`）**
+- 内置套装改读 `Admin/SetItem282`；旧的 55 套 `SetItemCatalog` 只在资源缺失时回退
+  （`Using282Data` / `BuiltInSetCount` 暴露给守卫）。
+- **计件口径改为 282 语义**：`AchievedDefs` 按「穿着件数中属于本套装的数量」计，重复戒指/同类武器各算一件
+  （282 `completeCount=5` 但 `ItemID` 只有一个戒指 id 的套装因此可达 5 档）；旧 catalog 与后台
+  `slotOverrides` 仍走「逐槽组一组只计一件」。`ComputeBonus` 与 `ActiveSkillsFor` 共用这一处，避免两套计数漂移。
+- 档位累加语义不变（`count >= requiredCount` 的每一档都加）；`OptionStats` 与 `Stats` 一起并入，
+  但后台 `bonusStore` 差量只作用于 `Stats`（Option 不提供差量编辑）。
+- `SupportedStats` 增 5 键：`IgnoreDefense / CriticalChance / CriticalDamage / StatusRes / PvpDamage`，
+  `IsRate` 同步认 `chance` / `ignoredefense`。新增 `CriticalChance` 目前只有套装与潜能两条来源，
+  `EquipLoadout` 已把 `CriticalChance` 计入 `result.criticalChance`（潜能路径），套装路径走 `setItemBonus`，
+  供 `CombatRules` 读取。
+- 后台覆盖层（`set_item_bonus_overrides` / `..._customizations`）语义与接口完全不变；
+  旧 11000 段的差量键在 282 id 空间里不会命中，等于自然失效。
+
+**activeSkill 授予**
+- `AdminSetItem.ActiveSkillsFor(wornIds, jobIndex)` → `List<GrantedSkill{Id,Level,Name,Desc}>`，同 id 取最高等级。
+- `NativeSetItemSkills`（新文件）承接运行时表：`Refresh(wornIds, jobIndex)` 带 worn 签名缓存，
+  未换装直接跳过；`IsSkill/LevelOf/NameOf` 供 UI 与技能系统查询。
+- 触发点：`EquipLoadout.CurrentSetBonus()` 每次按当前穿着重算 —— 换装/进游戏都会走这条路，
+  卸下装备后表里没有该技能即等价于移除，不写存档。
+- `SkillProgress.BaseLevelOf` 在 `SkillBook.Get()` **之前**判 `NativeSetItemSkills.IsSkill(id)`，
+  因为这些 8000xxxx 技能不在 GMS083 的 `Skill.wz` 树里（`SkillBook.Get` 去读 `Skill/8000.img` 会抛
+  `FileNotFoundException`）。边界：EXE 的逐指令触发链仍未坐实，刷新时机由工程侧决定。
+
+**显示层（`ItemTooltip`）**
+- 常量与 `Item/Equip/set` 一一对应：`SetPanelWidth 298` / `SetPanelPitch 302` / `SetLineSpace 15` /
+  `SetTitleH 30` / `SetBtmH 12` / `SetPartX 14` / `SetNameX 89` / `SetStatusRight 283` / `SetFirstRowY 48` /
+  `SetItemBottomMargin 7` / `SetEffectMargin 7` / `SetListBottomMargin 12`。
+- 行模型是**变高**的：正文行 15、分隔行 10（7 留白 + 3 的 `frame/set/line`）、档位间距行 7。
+  切栏按累计高度 `SplitSetColumns(rows, maxHeight)`，不能再按行数均分 ——
+  早期按行数均分把 `line` 画到了最后一行装备上（2026-11-06 实拍发现并修正）。
+- 三列：`（部件）` x=14 / 道具名 x=89 / 状态右对齐 283。状态文案简体「装备中 / 未装备 / (无)」；
+  悬停件名 `#FFCC00`、已穿白、未穿 `#B7BFC5`、不存在 `#85919F`；达成档 `[N 件]` 金、未达成 `#85919F`。
+- 顶栏：`textIcon/set/normal` 23×11 放在 `titleCanvasPos` 附近（按 30px 栏垂直居中）、套装名 14px 粗白、
+  件数 `"%d / %d"` 右对齐 283 金色、`jokerPossible` 时在套装名后画 `textIcon/set/lucky` 7×7。
+- 效果区标题：画 `textIcon/set/guide` 61×12，再把左 48px（烘焙的繁体「套組效果」）盖成框体底色
+  `(46,53,61)` 写简体「套装效果」，右侧 `x=52..61` 的滑鼠捲动图标保留原像素。
+- 行高亮：悬停行画 `frame/set/boxNormal/{w,c,e}`（8/拉伸/8，14 高）；`jokerPossible` 套装用 `boxLucky`（16 高）。
+- 多栏拆分保留（用户决策「保持拆开」），每栏重画顶栏，跨栏不丢 SET 徽标与件数。
+
+**守卫与验证**
+- `TooltipLayoutChecks`：装备卡按真实 324、套装按 298 重做落点断言；
+  **298+324 在 611 宽屏上几何上摆不下两栏**，所以「单侧放得下 ⇒ 零重叠 + 完整在屏内」，
+  「两侧都放不下 ⇒ 只要求夹进屏幕、顶边可见」，不再强求零重叠（旧 236 宽度下不存在这个窗口）。
+- 新增 282 数据断言：877 套 / set 504 名称简体「航海师套装(战士)」/ 件数 6-7 /
+  Option 文案简体 / `EquipName282` 命中 / boss:1→BossDamage 与 非 boss→Damage 双向 /
+  activeSkill 授予与卸下移除 / `BaseLevelOf` 接线。
+  最近一次：`[Tooltip] 布局断言 317 通过 / 0 失败`（`unity_exit=0`）。
+- 编译：`cd MapleDash/tools/unity-compile-check && dotnet build Check.csproj --no-incremental` → 0 error 0 warning。
+- 合成图：`docs/preview/282-set-item-panel-implemented.png`（按已落地几何 + 真实 canvas + 真实数据重绘，
+  脚本 `/tmp/compose_282_set_panel_impl.py`，未入库）；首版合成图 `docs/preview/282-set-item-panel.png` 保留为分析快照。
+
+**仍未坐实（不得写成确定结论）**
+① 现代 `ItemID` 的槽位分组函数未定位，按 id 前缀推断；27 套的 `required` 高于推断出的槽组数
+（`completeCount 5 / slots 1` 的戒指套等），显示上靠「补 `(无)` 行 + 重复末槽」兜，结算靠多件计件；
+② `jokerPossible` / `zeroWeaponJokerPossible` 的「替代件」机制未实现，只画 `lucky` 标记；
+③ `Option` 的结算函数地址未定位；④ `activeSkill` 的运行时增删触发链未逐指令定位；
+⑤ 状态文案 x/y、达成态字色逐分支、guide 精确摆放、两框相对位置仍属推断。
+

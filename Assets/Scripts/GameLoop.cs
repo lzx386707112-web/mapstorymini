@@ -58,6 +58,9 @@ public class GameLoop : MonoBehaviour
         WzWebLoader.Begin(CreateGame);
 #elif UNITY_ANDROID && !UNITY_EDITOR
         WzAndroidLoader.Begin(CreateGame);
+#elif UNITY_STANDALONE && !UNITY_EDITOR
+        // 桌面版：只确认 D:\mapstory 下的资源就绪，不查更新（见 WzWindowsLoader）
+        WzWindowsLoader.Begin(CreateGame);
 #else
         CreateGame();
 #endif
